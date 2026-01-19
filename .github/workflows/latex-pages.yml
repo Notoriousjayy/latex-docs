@@ -39,33 +39,24 @@ jobs:
       - name: Build all documents (docs/**/src/*.tex)
         run: make build-all
 
-      - name: Stage site (PDF library + index)
+            - name: Stage site (PDF library + index)
         shell: bash
         run: |
           set -euo pipefail
           rm -rf site
           mkdir -p site/pdfs
 
-          while IFS= read -r -d '' f; do
-            pdf="${f%.tex}.pdf"
-            if [[ ! -f "$pdf" ]]; then
-              echo "WARNING: expected PDF not found for root: $f (missing: $pdf)"
-              continue
-            fi
-
-            doc_root="$(dirname "$(dirname "$f")")"
-            rel="${doc_root#docs/}"            # e.g. food/recipes/shrimp-po-boys
-            out="site/pdfs/${rel}.pdf"
-
+          while IFS= read -r -d '' pdf; do
+            rel="${pdf#src/}"
+            out="site/pdfs/${rel}"
             mkdir -p "$(dirname "$out")"
             cp -v "$pdf" "$out"
-          done < <(find docs -type f -path "*/src/*.tex" -print0)
+          done < <(find src -type f -name '*.pdf' -print0)
 
           count="$(find site/pdfs -type f -name '*.pdf' | wc -l | tr -d ' ')"
           echo "Staged PDFs: $count"
           test "$count" -gt 0
 
-          # Generate a simple index.html
           {
             echo '<!doctype html>'
             echo '<html><head><meta charset="utf-8">'
@@ -74,7 +65,7 @@ jobs:
             echo '<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:960px;margin:2rem auto;padding:0 1rem} code{background:#f3f4f6;padding:.1rem .3rem;border-radius:.25rem}</style>'
             echo '</head><body>'
             echo '<h1>LaTeX PDFs</h1>'
-            echo '<p>Published from <code>docs/**/src/*.tex</code> on the <code>main</code> branch.</p>'
+            echo '<p>Published from <code>src/**/*.tex</code> roots on the <code>main</code> branch.</p>'
             echo '<ul>'
             find site/pdfs -type f -name '*.pdf' | sort | sed 's|^site/||' | while read -r p; do
               label="${p#pdfs/}"
@@ -83,6 +74,7 @@ jobs:
             echo '</ul>'
             echo '</body></html>'
           } > site/index.html
+
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
