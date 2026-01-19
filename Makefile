@@ -1,11 +1,11 @@
-SHELL := /usr/bin/env bash
+SHELL := /usr/bin/bash
 .ONESHELL:
 .SHELLFLAGS := -euo pipefail -c
 
 LATEXMK ?= latexmk
 LATEXMK_OPTS ?= -pdf -interaction=nonstopmode -halt-on-error -file-line-error
 
-# Treat any .tex with \documentclass as a standalone build root.
+# Standalone build roots = any .tex containing \documentclass under src/
 ROOT_TEX := $(shell grep -rl --include='*.tex' '^[[:space:]]*\\documentclass' src || true)
 ROOT_PDF := $(patsubst %.tex,%.pdf,$(ROOT_TEX))
 
