@@ -1,0 +1,199 @@
+% !TEX program = pdflatex
+% Compile with: pdflatex -shell-escape dependabot-cheatsheet.tex
+\documentclass[11pt,letterpaper]{article}
+
+% ---------- Packages ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[a4paper,margin=0.8in]{geometry} % change to letter if preferred
+\usepackage{parskip}
+\usepackage{enumitem}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{multicol}
+\usepackage[most]{tcolorbox}
+\usepackage{pifont}
+\usepackage[newfloat]{minted} % syntax highlighting (requires -shell-escape)
+
+% ---------- Styling ----------
+\definecolor{Link}{HTML}{0A66C2}
+\definecolor{NoteBG}{HTML}{F5F7FF}
+\definecolor{Accent}{HTML}{1F7A8C}
+\definecolor{LightGray}{gray}{0.97}
+
+\hypersetup{colorlinks=true, linkcolor=Link, urlcolor=Link, citecolor=Link}
+\setlist{itemsep=2pt, topsep=4pt, leftmargin=1.1em}
+
+\newcommand{\cmark}{\textcolor{ForestGreen}{\ding{51}}}
+\newcommand{\xmark}{\textcolor{BrickRed}{\ding{55}}}
+
+\newtcolorbox{callout}[1][]{
+  enhanced, colback=NoteBG, colframe=Accent!40!black, left=8pt, right=8pt,
+  arc=2mm, boxrule=0.4pt, toptitle=2pt, bottomtitle=2pt, #1
+}
+
+% A compact heading style
+\makeatletter
+\def\section{\@startsection{section}{1}{0pt}{6pt}{4pt}{\large\bfseries\color{Accent}}}
+\def\subsection{\@startsection{subsection}{2}{0pt}{6pt}{3pt}{\normalsize\bfseries}}
+\makeatother
+
+% ---------- Document ----------
+\begin{document}
+
+\begin{minipage}{0.72\linewidth}
+  {\huge\bfseries Dependabot Alerts \& Updates — Quick Cheatsheet}\\[2pt]
+  \textit{Enable, configure, and triage GitHub dependency updates with confidence.}
+\end{minipage}
+\hfill
+\begin{minipage}{0.25\linewidth}
+  \raggedleft \small
+  \textbf{Scope:} GitHub repos \\
+  \textbf{Audience:} Dev, Sec, Maintainers
+\end{minipage}
+
+\vspace{6pt}
+\begin{callout}
+\textbf{Key defaults:} \emph{Public} repos have alerts on by default. \emph{Private} repos require enabling in Settings. Viewing alerts typically requires \texttt{read}+ access; enabling/managing may require \texttt{admin} depending on org policy.
+\end{callout}
+
+\begin{multicols}{2}
+% =================== Column 1 ===================
+\section{Enable \& Visibility}
+\begin{itemize}
+  \item \textbf{Repo} $\rightarrow$ \textbf{Settings} $\rightarrow$ \textbf{Code security \& analysis} $\rightarrow$ toggle \textbf{Dependabot alerts}.
+  \item \textbf{Who can view:} anyone with \texttt{read}+ (and everyone for public repos).
+  \item \textbf{Who can enable/manage:} usually \texttt{admin}/\texttt{maintain}; org policies may restrict repo-level toggles.
+\end{itemize}
+
+\subsection*{Roles (repo level)}
+\begin{tabularx}{\linewidth}{@{}l *{5}{>{\centering\arraybackslash}X}@{}}
+\toprule
+ & \textbf{Read} & \textbf{Triage} & \textbf{Write} & \textbf{Maint.} & \textbf{Admin} \\
+\midrule
+View alerts & \cmark & \cmark & \cmark & \cmark & \cmark \\
+Dismiss alert & \xmark & \cmark & \cmark & \cmark & \cmark \\
+Merge PRs & \xmark & \cmark & \cmark & \cmark & \cmark \\
+Enable alerts & \xmark & \xmark & \xmark & \cmark & \cmark \\
+\bottomrule
+\end{tabularx}
+
+\section{Configuration Basics}
+\textbf{File:} \texttt{.github/dependabot.yml}
+
+\begin{minted}[fontsize=\footnotesize, breaklines, bgcolor=LightGray, frame=lines]{yaml}
+version: 2
+updates:
+  - package-ecosystem: "npm"     # npm, pip, gomod, maven, gradle, cargo, etc.
+    directory: "/"               # path to manifest(s)
+    schedule:
+      interval: "weekly"         # daily, weekly, monthly
+    # groups:                    # optional: group related changes into one PR
+    #   minor-deps:
+    #     patterns: ["*"]
+    #     update-types: ["minor", "patch"]
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    ignore:                       # optional: ignore certain deps/versions
+      - dependency-name: "example"
+        versions: ["<1.2.3"]
+\end{minted}
+
+\subsection*{Common Options}
+\begin{itemize}
+  \item \texttt{schedule.interval}: \texttt{daily} | \texttt{weekly} | \texttt{monthly}.
+  \item \texttt{allow}/\texttt{ignore}: control which dependencies update.
+  \item \texttt{groups}: consolidate related updates into fewer PRs.
+  \item \texttt{open-pull-requests-limit}: cap concurrent update PRs.
+\end{itemize}
+
+\section{Notifications \& Automation}
+\begin{itemize}
+  \item \textbf{Alerts}: GitHub notifications, email, or webhooks (e.g., Slack/Teams via your integration).
+  \item \textbf{PRs}: Auto-opened by Dependabot; configure required checks to ensure safe merges.
+  \item \textbf{Rules UI}: At org/repo scope you can define rules to auto-dismiss low-risk alerts or auto-open PRs by severity/ecosystem.
+\end{itemize}
+
+% =================== Column 2 ===================
+\columnbreak
+
+\section{Triage \& Remediation Flow}
+\begin{enumerate}
+  \item \textbf{Assess} severity, reachability, and exploitability.
+  \item \textbf{Decide} on \emph{upgrade}, \emph{pin}, \emph{patch}, or \emph{temporary dismiss}.
+  \item \textbf{Validate} with tests, SCA/SAST/DAST, and runtime checks.
+  \item \textbf{Merge} when CI passes; monitor post-deploy.
+\end{enumerate}
+
+\subsection*{Recommended Dismissal Reasons}
+\begin{itemize}
+  \item \emph{Not affected} (unreachable code path).
+  \item \emph{Legacy/unmaintained} with compensating controls.
+  \item \emph{False positive} (erroneous advisory match).
+  \item \emph{Will fix} in planned upgrade window with ticket reference.
+\end{itemize}
+
+\section{Best Practices}
+\begin{itemize}
+  \item Keep \texttt{interval} small for critical services; group minor/patch updates.
+  \item Set \textbf{required checks} on Dependabot PRs (tests, build, security scans).
+  \item Gate merges by \textbf{vuln severity} via branch protection or policy.
+  \item Use \textbf{labels} and \textbf{codeowners} to route reviews quickly.
+  \item Limit \textbf{concurrent PRs} to avoid queue congestion.
+\end{itemize}
+
+\section{Sample Policies \& Patterns}
+\subsection*{Limit Concurrent PRs}
+\begin{minted}[fontsize=\footnotesize, breaklines, bgcolor=LightGray, frame=lines]{yaml}
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    open-pull-requests-limit: 5
+    schedule: { interval: "daily" }
+\end{minted}
+
+\subsection*{Group Minor/Patch Updates}
+\begin{minted}[fontsize=\footnotesize, breaklines, bgcolor=LightGray, frame=lines]{yaml}
+updates:
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule: { interval: "weekly" }
+    groups:
+      routine-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+\end{minted}
+
+\subsection*{Ignore Specific Versions}
+\begin{minted}[fontsize=\footnotesize, breaklines, bgcolor=LightGray, frame=lines]{yaml}
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule: { interval: "weekly" }
+    ignore:
+      - dependency-name: "example.com/libfoo"
+        versions: ["1.4.x", "<1.3.2"]
+\end{minted}
+
+\section{Quick Links}
+\begin{itemize}
+  \item \textbf{Repo Settings:} Code security \& analysis \textrightarrow{} Dependabot alerts.
+  \item \textbf{Config File:} \texttt{.github/dependabot.yml} at repo root.
+  \item \textbf{Routing:} Labels + CODEOWNERS for fast PR assignment.
+\end{itemize}
+
+\begin{callout}
+\textbf{Compile tip:} This document uses \texttt{minted} for syntax highlighting. Compile with \texttt{-shell-escape} enabled (e.g., \texttt{pdflatex -shell-escape}).
+\end{callout}
+
+\end{multicols}
+
+\end{document}

@@ -1,0 +1,116 @@
+% !TEX program = pdflatex
+\documentclass[10pt,letterpaper]{article}
+
+% ---------- Packages ----------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[letterpaper,margin=0.8in]{geometry}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{inconsolata}
+\usepackage{fvextra}    % improves verbatim (used by minted)
+\usepackage[newfloat]{minted} % <-- syntax highlighting (requires -shell-escape)
+
+% ---------- Styling ----------
+\definecolor{Ink}{HTML}{1F2937}
+\definecolor{Accent}{HTML}{2563EB}
+\definecolor{CodeBG}{HTML}{F3F4F6}
+\definecolor{Gray}{HTML}{6B7280}
+\hypersetup{colorlinks=true, linkcolor=Accent, urlcolor=Accent, citecolor=Accent}
+\setlist{nosep, leftmargin=1.1em, topsep=2pt}
+\titleformat{\section}{\large\bfseries\color{Ink}}{}{0pt}{}
+\titlespacing*{\section}{0pt}{6pt}{3pt}
+\titleformat{\subsection}{\bfseries\color{Ink}}{}{0pt}{}
+\titlespacing*{\subsection}{0pt}{4pt}{2pt}
+
+% ---------- Minted defaults ----------
+\setminted{
+  fontsize=\small,
+  breaklines=true,
+  breakanywhere=true,
+  autogobble=true,
+  frame=single,
+  bgcolor=CodeBG,
+  tabsize=2,
+}
+
+\begin{document}
+\begin{center}
+{\Large \textbf{Dependabot \& Dependency Graph — 1 Page Cheat Sheet}}\\
+\smallskip
+\textcolor{Gray}{Quick reference for GHAS dependency risk management}
+\end{center}
+
+\section{Core Concepts}
+\textbf{Vulnerability.} A weakness in software, hardware, or systems that attackers can exploit to gain access, steal data, or disrupt operations. Examples include buffer overflows that allow code injection.\\[2pt]
+\textbf{Dependabot Alerts.} Automatic findings when dependencies in your repo match known vulnerable versions. Alerts include metadata, severity, and links to remediation guidance.\\[2pt]
+\textbf{Dependabot Security Updates vs Version Updates.}
+\begin{itemize}
+  \item \textbf{Security Updates:} When a vulnerable version is detected and a safe version exists, Dependabot opens a PR to patch it.
+  \item \textbf{Version Updates:} Dependabot proactively opens PRs to keep dependencies current as new versions are released (not just during vulnerability scans).
+\end{itemize}
+\textbf{Dependency Graph (SBOM).} A dynamic inventory of your repository's dependencies and their relationships; integrates with Dependabot and supports SBOM export.
+\medskip
+
+\section{How It Works (At a Glance)}
+\begin{enumerate}
+  \item Repo manifests (e.g., \texttt{requirements.txt}, \texttt{package-lock.json}, \texttt{pom.xml}) are analyzed.
+  \item Dependabot builds the \emph{dependency graph} and tracks versions.
+  \item Versions are compared against multiple sources (e.g., NVD, vendor advisories, package registries).
+  \item When a match with a known vulnerable version is found, Dependabot issues an alert and, if enabled, opens a PR.
+\end{enumerate}
+
+\section{Quick Start: \texttt{.github/dependabot.yml}}
+\noindent\textit{Place at repo root in \texttt{.github/}. Compile this doc with \texttt{-shell-escape} to enable syntax highlighting.}
+\begin{minted}[linenos]{yaml}
+version: 2
+updates:
+  - package-ecosystem: "pip"          # npm, maven, gradle, cargo, etc.
+    directory: "/"                    # location of manifest (e.g., /app)
+    schedule:
+      interval: "weekly"              # daily | weekly | monthly
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "org/security-reviewers"
+    labels: ["dependabot", "security"]
+    ignore:
+      - dependency-name: "pytest"
+        versions: ["< 5.0.0"]
+\end{minted}
+
+\section{Notify Chat Platforms (Example)}
+\noindent\textit{Idea: post new alerts or open PRs to Teams via webhook (similar patterns work for Slack).}
+\begin{minted}[linenos]{bash}
+# In a workflow step, send a message with curl (Teams Incoming Webhook)
+curl -X POST "$TEAMS_WEBHOOK_URL" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "text": "Dependabot found a vulnerable dependency. See Security tab."
+  }'
+\end{minted}
+
+\section{Operational Tips}
+\begin{itemize}
+  \item \textbf{Act early.} Treat alerts like code reviews; triage continuously to reduce risk and PR backlog.
+  \item \textbf{Tune noise.} Limit open Dependabot PRs per repo; batch schedules to avoid alert floods.
+  \item \textbf{Label \& route.} Auto-label Dependabot PRs, assign reviewers, and wire notifications to Teams/Slack.
+  \item \textbf{Dismiss responsibly.} Use consistent dismissal reasons (e.g., false positive, already remediated, will not fix with rationale).
+\end{itemize}
+
+\section{Exam/Interview Recall}
+\begin{itemize}
+  \item Dependabot sources include public vulnerability feeds (e.g., NVD), vendor advisories, package registries, partner feeds, community reports, and GitHub research.
+  \item The \textbf{dependency graph} powers SBOM export and links findings to manifests.
+  \item \textbf{Security updates} vs \textbf{version updates}: both make PRs; security updates react to vulnerabilities, version updates keep you current.
+\end{itemize}
+
+\bigskip
+{\footnotesize Compile with: \texttt{latexmk -pdf -shell-escape -interaction=nonstopmode ghas-dependabot-cheatsheet-minted.tex}}
+\end{document}

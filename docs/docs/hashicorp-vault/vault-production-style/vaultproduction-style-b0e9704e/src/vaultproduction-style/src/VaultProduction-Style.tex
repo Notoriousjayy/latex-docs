@@ -1,0 +1,244 @@
+\documentclass[11pt]{article}
+
+% ---------- Setup ----------
+\usepackage[margin=1in]{geometry}
+\usepackage{parskip}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[colorlinks=true,linkcolor=NavyBlue,urlcolor=NavyBlue]{hyperref}
+\usepackage[newfloat]{minted} % requires -shell-escape
+\usepackage{caption}
+\captionsetup[listing]{position=bottom,skip=4pt}
+\setminted{fontsize=\small, breaklines, autogobble}
+
+% Use widely-available lexers to avoid failures on minimal Pygments installs
+\newminted[bashcode]{bash}{}
+\newminted[textcode]{text}{} % fallback for HCL-like snippets
+\newminted[sqlcode]{sql}{}
+
+\title{Vault (Production-Style) \& Integrations — Hands-On Cheat Sheet}
+\author{Your Name}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Read Me First}
+\textbf{Scope.} Pragmatic, production\emph{-style} demo (not fully hardened). TLS is disabled in several steps for learning only; enable TLS and hardening before real use. \\
+\textbf{Dependencies.} Vault CLI, Docker Compose, a terminal with \texttt{bash}, and \texttt{pdflatex} with \texttt{minted} (Pygments).
+
+\section{Production-Style Server: Minimal Config \& Boot}
+Create \texttt{vault/config.hcl}:
+\begin{textcode}
+storage "file" {
+  path = "/var/lib/vault"
+}
+
+listener "tcp" {
+  address     = "127.0.0.1:8200"
+  tls_disable = 1   # LEARNING ONLY. Use TLS in real deployments.
+}
+
+disable_mlock = true
+ui            = true
+\end{textcode}
+
+Start Vault (may require sudo):
+\begin{minted}{bash}
+sudo vault server -config=vault/config.hcl
+\end{minted}
+
+In a second terminal, point the CLI at the server:
+\begin{minted}{bash}
+export VAULT_ADDR=http://127.0.0.1:8200
+vault status    # should show "initialized: false"
+\end{minted}
+
+\paragraph{Initialize \& Unseal (Shamir)}
+\begin{minted}{bash}
+vault operator init
+# Copy: 5 unseal keys (key shards) + initial root token. Store separately.
+
+# Provide 3 distinct unseal keys (example threshold 3 of 5):
+vault operator unseal
+vault operator unseal
+vault operator unseal
+
+# Login with the initial root token:
+vault login <ROOT_TOKEN>
+vault secrets list
+\end{minted}
+
+\section{Training Stack via Docker Compose}
+From the exercises root:
+\begin{minted}{bash}
+docker-compose -v
+docker-compose up -d     # starts: vaultserver, ssh, mariadb, jenkins
+export VAULT_ADDR=http://0.0.0.0:8200
+vault status             # not initialized yet (first boot)
+vault operator init
+vault operator unseal    # 3x with different keys
+vault login <ROOT_TOKEN>
+vault secrets list
+\end{minted}
+
+\subsection*{Jenkins UI (demo)}
+Open \texttt{http://localhost:8080}. (Setup demo occurs later.)
+
+\subsection*{Stop/Start}
+\begin{minted}{bash}
+docker-compose stop
+docker-compose up -d     # re-unseal after restart
+\end{minted}
+
+\section{SSH Secrets Engine (One-Time Password / OTP)}
+\subsection*{Enable Engine \& Role}
+\begin{minted}{bash}
+vault login <ROOT_TOKEN>
+vault secrets enable ssh
+
+# Create role "admin" that issues OTP for user "vaultuser"
+vault write ssh/roles/admin \
+  key_type=otp \
+  default_user=vaultuser \
+  cidr_list="0.0.0.0/0,0.0.0.0/0"
+\end{minted}
+\clearpage
+
+\subsection*{Prepare SSH Server (inside the SSH container)}
+SSH in (password: \texttt{vaultpwd}):
+\begin{minted}{bash}
+ssh root@localhost -p 3000
+\end{minted}
+
+Install \texttt{vault-ssh-helper} and test (script provided in exercises):
+\begin{minted}{bash}
+. ./vault-ssh-setup.sh
+vault-ssh-helper -verify-only -config=/etc/vault-ssh-helper.d/config.hcl
+\end{minted}
+
+Update PAM to call the helper (learning demo):
+\begin{minted}{bash}
+nano /etc/pam.d/sshd
+# comment "auth include common-auth"
+# add:
+# auth requisite pam_exec.so quiet expose_authtok log=/var/log/vault-ssh-helper.log /usr/local/bin/vault-ssh-helper -config=/etc/vault-ssh-helper.d/config.hcl
+# auth sufficient pam_exec.so quiet expose_authtok log=/var/log/vault-ssh-helper.log /usr/local/bin/vault-ssh-helper -config=/etc/vault-ssh-helper.d/config.hcl
+\end{minted}
+
+Create the target login user:
+\begin{minted}{bash}
+adduser vaultuser
+# (password value irrelevant for OTP demo)
+exit
+\end{minted}
+
+\subsection*{Request OTP and Log In}
+\begin{minted}{bash}
+# Request an OTP for role "admin" to the SSH server's bridge IP:
+vault write ssh/creds/admin ip=172.16.238.20
+# => copy 'key' field (one-time password)
+
+ssh vaultuser@localhost -p 3000   # paste OTP when prompted
+# Try again with same OTP -> should FAIL (one-time)
+\end{minted}
+
+\section{Database Secrets Engine (MariaDB) — Dynamic Users}
+\subsection*{Enable \& Configure Connection}
+\begin{minted}{bash}
+docker-compose down && docker-compose up -d   # clean slate as needed
+vault operator init && vault operator unseal && vault login <ROOT_TOKEN>
+
+vault secrets enable database
+
+# Configure DB connection (compatible plugin for MariaDB)
+vault write database/config/my-mariadb \
+  plugin_name=mysql-database-plugin \
+  allowed_roles="datareader,datawriter" \
+  connection_url="{{username}}:{{password}}@tcp(mariadb:3306)/" \
+  username="root" password="mysql"
+\end{minted}
+\clearpage
+
+\subsection*{Define Roles (Capabilities via SQL)}
+\begin{minted}{bash}
+# Read-only role
+vault write database/roles/datareader \
+  db_name=my-mariadb \
+  creation_statements="CREATE USER '{{name}}' IDENTIFIED BY '{{password}}'; GRANT SELECT ON *.* TO '{{name}}';" \
+  default_ttl=1h max_ttl=24h
+
+# Read-write role
+vault write database/roles/datawriter \
+  db_name=my-mariadb \
+  creation_statements="CREATE USER '{{name}}' IDENTIFIED BY '{{password}}'; GRANT ALL ON *.* TO '{{name}}';" \
+  default_ttl=1h max_ttl=24h
+\end{minted}
+
+\subsection*{Policies \& Short-Lived Tokens}
+\begin{minted}{bash}
+# Minimal policies (inline HCL examples, shown as plain text for portability)
+cat > datareader.hcl <<'HCL'
+path "database/creds/datareader" {
+  capabilities = ["read"]
+}
+HCL
+
+cat > datawriter.hcl <<'HCL'
+path "database/creds/datawriter" {
+  capabilities = ["read"]
+}
+HCL
+
+vault policy write datareader datareader.hcl
+vault policy write datawriter datawriter.hcl
+
+# Issue tokens bound to policies
+vault token create -policy=datareader   # copy token A
+vault token create -policy=datawriter   # copy token B
+\end{minted}
+
+\subsection*{Generate Credentials and Use Them}
+\paragraph{Reader session}
+\begin{minted}{bash}
+vault login <TOKEN_A_DATAREADER>
+vault read database/creds/datareader     # yields username/password
+
+# Use MySQL CLI in SSH container
+ssh root@localhost -p 3000    # password: vaultpwd
+mysql -u <DB_USER> -p<DB_PASS> -h mariadb
+# Inside MySQL:
+#   SHOW DATABASES;
+#   CREATE DATABASE testDB;   # should fail (read-only)
+\end{minted}
+\clearpage
+
+\paragraph{Writer session}
+\begin{minted}{bash}
+vault login <TOKEN_B_DATAWRITER>
+vault read database/creds/datawriter     # yields username/password
+
+ssh root@localhost -p 3000
+mysql -u <DB_USER> -p<DB_PASS> -h mariadb
+# Inside MySQL:
+#   CREATE DATABASE testDB;   # should succeed
+#   SHOW DATABASES;
+\end{minted}
+
+\section{Security Notes (Before Real Use)}
+\begin{itemize}
+  \item \textbf{Always enable TLS} on listeners; manage certs/keys securely.
+  \item Store unseal keys separately (use \emph{auto-unseal} with a KMS/HSM).
+  \item Replace root token with tightly-scoped tokens tied to policies.
+  \item Lock down Docker networks/ports; segregate secrets backends.
+  \item Instrument audit devices; monitor leases and revocations.
+\end{itemize}
+
+\section*{Troubleshooting}
+\begin{itemize}
+  \item \texttt{vault status} shows \texttt{sealed=true}: run \texttt{vault operator unseal} with distinct keys until threshold met.
+  \item CLI fails to connect: ensure \texttt{VAULT\_ADDR} is set and listener address matches.
+  \item OTP rejected: remember it's single-use; request a fresh OTP.
+  \item DB auth fails: verify plugin, host \texttt{mariadb}, root password, and role SQL grants.
+\end{itemize}
+
+\end{document}

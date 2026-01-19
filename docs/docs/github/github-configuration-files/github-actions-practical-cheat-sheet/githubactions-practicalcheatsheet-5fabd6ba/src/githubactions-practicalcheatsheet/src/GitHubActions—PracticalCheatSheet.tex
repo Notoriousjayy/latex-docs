@@ -1,0 +1,291 @@
+%========================================================
+% GitHub Actions — Practical Cheat Sheet
+%========================================================
+\documentclass[11pt]{article}
+
+% ---------- Encoding & layout ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{microtype}
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=1.4em}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{pifont}
+
+% ---------- Colors, links, boxes ----------
+\usepackage{xcolor}
+\definecolor{Ink}{HTML}{111827}      % gray-900
+\definecolor{Soft}{HTML}{F9FAFB}     % gray-50
+\definecolor{Accent}{HTML}{2563EB}   % blue-600
+\definecolor{OK}{HTML}{059669}       % emerald-600
+\definecolor{Warn}{HTML}{D97706}     % amber-600
+\definecolor{Bad}{HTML}{DC2626}      % red-600
+
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=Accent,
+  urlcolor=Accent,
+  citecolor=Accent
+}
+
+\usepackage[most]{tcolorbox}
+\tcbset{boxrule=0.5pt, colframe=Ink, colback=Soft, arc=2pt, left=8pt,right=8pt,top=6pt,bottom=6pt}
+
+% ---------- Code (minted) ----------
+% NOTE: Compile with: latexmk -pdf -shell-escape "<filename>.tex"
+\usepackage[newfloat]{minted} % <-- removed frozencache/finalizecache to avoid style errors
+\usemintedstyle{default}
+\setminted{
+  fontsize=\small,
+  breaklines,
+  breaksymbolleft=\raisebox{0.8ex}{\tiny\color{Ink}\ding{229}}\ ,
+  linenos,
+  numbersep=8pt,
+  framesep=2mm,
+  frame=single
+}
+\newmintedfile[yamlfile]{yaml}{}
+\newminted[yamlcode]{yaml}{}
+\newminted[bashcode]{bash}{}
+\newminted[jsfile]{javascript}{}
+\newminted[jsoncode]{json}{}
+
+% ---------- Title ----------
+\usepackage{titling}
+\setlength{\droptitle}{-1em}
+\title{\textbf{GitHub Actions — Practical Cheat Sheet}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{tcolorbox}
+\textbf{Scope.} A rapid, no-fluff reference for: (1) workflow placement \& triggers, (2) reusable workflows, (3) authoring custom actions, (4) job summaries, (5) CODEOWNERS, and (6) org workflow templates—plus common gotchas and a setup checklist.
+\end{tcolorbox}
+
+\section{Workflows \& Triggers (Placement That \emph{Actually} Works)}
+\begin{itemize}
+  \item Put workflow files in \texttt{.github/workflows/} (lower-case, plural). Extensions: \texttt{.yml} or \texttt{.yaml}.
+  \item Many events (e.g., \texttt{pull\_request}, \texttt{issues}, \texttt{release}, \texttt{schedule}, UI \texttt{workflow\_dispatch}) are only recognized when the workflow file exists on the repository's \emph{default branch}.
+  \item File name does not matter; the \texttt{name:} field sets the display name in the UI.
+\end{itemize}
+
+\begin{yamlcode}
+# .github/workflows/ci.yml
+name: CI
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Build stuff"
+\end{yamlcode}
+
+\paragraph{Event filters that save time.}
+\begin{itemize}
+  \item Use \texttt{paths}/\texttt{paths-ignore} to scope when a workflow runs.
+  \item For \texttt{pull\_request}, prefer \texttt{pull\_request\_target} only when you \emph{must} run with base-branch permissions (be mindful of security).
+\end{itemize}
+\clearpage
+
+\section{Reusable Workflows (Calling \& Inputs)}
+\begin{itemize}
+  \item Reusable workflows are also stored under \texttt{.github/workflows/}.
+  \item Call with \texttt{jobs.<id>.uses: <owner>/<repo>/.github/workflows/<file>@<ref>}.
+  \item Pass parameters via \texttt{with:} and secrets via \texttt{secrets:}.
+\end{itemize}
+
+\begin{yamlcode}
+# .github/workflows/reuse-caller.yml
+name: Reuse CI
+on: workflow_dispatch
+jobs:
+  call-reusable:
+    uses: your-org/your-repo/.github/workflows/ci.yml@v1
+    with:
+      some-input: "value"
+    secrets:
+      TOKEN: ${{ secrets.MY_TOKEN }}
+\end{yamlcode}
+
+\begin{tcolorbox}
+\textbf{Tip.} Version reusable workflows with moving tags (\texttt{v1}) plus immutable releases (\texttt{v1.2.3}). Update the moving tag on each release to provide stability with opt-in upgrades.
+\end{tcolorbox}
+
+\section{Authoring Custom Actions (JavaScript or Docker)}
+\begin{itemize}
+  \item Prefer one published action per repo with definition at repo root as \texttt{action.yml} (or \texttt{action.yaml}).
+  \item You \emph{can} keep multiple actions in subfolders, but that repository cannot be published to the Marketplace as a single action.
+  \item Set \texttt{runs.using} to \texttt{node20} for JavaScript actions; point \texttt{main} at your compiled entry (e.g., \texttt{dist/index.js}).
+\end{itemize}
+
+\begin{yamlcode}
+# action.yml (JavaScript action)
+name: "Hello Action"
+description: "Greets and exits"
+runs:
+  using: "node20"
+  main: "dist/index.js"
+inputs:
+  who:
+    description: "Who to greet"
+    default: "world"
+\end{yamlcode}
+
+\noindent\textbf{Using your action:}
+\begin{yamlcode}
+- uses: your-org/hello-action@v1
+  with:
+    who: "Jordan"
+\end{yamlcode}
+
+\begin{tcolorbox}
+\textbf{Release hygiene.} Create a release (e.g., \texttt{v1.2.3}), then move the major tag (e.g., \texttt{v1}) to that commit. Consumers can pin either \texttt{@v1} or \texttt{@v1.2.3}.
+\end{tcolorbox}
+
+\section{Job Summaries (Fast, Pretty Reports)}
+Write Markdown to \texttt{\$GITHUB\_STEP\_SUMMARY} to show a per-job summary in the UI.
+\begin{itemize}
+  \item One summary file per job, up to 20 writes, about 1 MB total content.
+  \item Supports tables, code fences, and Mermaid diagrams in GitHub Markdown.
+\end{itemize}
+
+\begin{bashcode}
+# step: Summarize test results
+echo "## Test Summary" >> "$GITHUB_STEP_SUMMARY"
+echo "" >> "$GITHUB_STEP_SUMMARY"
+echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+echo "|---|---:|" >> "$GITHUB_STEP_SUMMARY"
+echo "| Total | 120 |" >> "$GITHUB_STEP_SUMMARY"
+echo "| Passed | 118 |" >> "$GITHUB_STEP_SUMMARY"
+echo "| Failed | 2 |" >> "$GITHUB_STEP_SUMMARY"
+\end{bashcode}
+
+\section{CODEOWNERS (Code Owner Reviews That Stick)}
+\begin{itemize}
+  \item File must be named \texttt{CODEOWNERS} (exact name). Valid locations: repo root, \texttt{.github/}, or \texttt{docs/}.
+  \item The file must exist on the \emph{base branch} for a PR to apply owners. Combine with Branch Protection: ``Require review from Code Owners.''
+  \item Pattern order matters; the \emph{first} match wins.
+  \item Each pattern must list at least one owner (users or teams); owners must have \emph{write} access to count as code owners.
+  \item No negation (\texttt{!}) and no bracket character classes in patterns.
+\end{itemize}
+
+\begin{minted}[fontsize=\small,breaklines,linenos,frame=single]{text}
+# CODEOWNERS (place at /.github/CODEOWNERS or at repo root)
+# Comments begin with '#'
+/docs/           @org/docs-team
+/apps/           @octocat
+/apps/secret/    @org/security-reviewers
+\end{minted}
+
+\begin{tcolorbox}
+\textbf{Enforcement.} In \emph{Branch protection rules}, enable: Require a pull request before merging \(\rightarrow\) Require review from Code Owners. Owners cannot auto-approve their own PRs unless allowed by policy.
+\end{tcolorbox}
+\clearpage
+
+\section{Org Workflow Templates (Show Up in ``New Workflow'')}
+To offer curated starter workflows across the org:
+\begin{enumerate}
+  \item Create a \emph{public} org repository named \texttt{.github}.
+  \item Add templates under \texttt{workflow-templates/}.
+  \item Each template needs a workflow file and a matching \texttt{properties/*.properties.json}.
+  \item Icon can be an Octicon name or an SVG in the folder (reference by filename without \texttt{.svg}).
+  \item Templates are discovered from the default branch.
+\end{enumerate}
+
+\begin{yamlcode}
+# .github/workflow-templates/node-ci.yml
+name: Node CI
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm ci
+      - run: npm test --silent
+\end{yamlcode}
+
+\begin{jsoncode}
+// .github/workflow-templates/properties/node-ci.properties.json
+{
+  "name": "Node CI (Org Standard)",
+  "description": "Lint, test, and build using our org baseline.",
+  "iconName": "repo-push",
+  "categories": ["JavaScript"]
+}
+\end{jsoncode}
+\clearpage
+
+\section{Security, Permissions, Caching (Quick Wins)}
+\begin{itemize}
+  \item \textbf{GITHUB\_TOKEN permissions:} set least privilege at the workflow or job level.
+\end{itemize}
+
+\begin{yamlcode}
+permissions:
+  contents: read
+  pull-requests: write  # only if you need to comment/update PRs
+\end{yamlcode}
+
+\begin{itemize}
+  \item \textbf{Concurrency:} cancel superseded builds to save minutes.
+\end{itemize}
+
+\begin{yamlcode}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+\end{yamlcode}
+
+\begin{itemize}
+  \item \textbf{Caching:} pair cache keys with a fallback to avoid cache misses.
+\end{itemize}
+
+\begin{yamlcode}
+- uses: actions/cache@v4
+  with:
+    path: ~/.npm
+    key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+    restore-keys: |
+      npm-${{ runner.os }}-
+\end{yamlcode}
+
+\section{Gotchas \& Troubleshooting}
+\begin{itemize}
+  \item \textbf{Default branch rule:} Schedules and many UI-driven triggers use the workflow from the default branch.
+  \item \textbf{Path filters:} When using \texttt{paths}, remember that a workflow still appears in the run list even if all jobs are skipped by conditions.
+  \item \textbf{Reusable workflows:} Inputs are strings by default; coerce types in the called workflow if needed.
+  \item \textbf{Marketplace pinning:} Pin third-party actions to a tag and, ideally, a commit SHA for supply-chain safety.
+  \item \textbf{Matrix limits:} Large matrices can hit concurrency or minutes limits—chunk by \texttt{include}/\texttt{exclude}.
+\end{itemize}
+
+\section{New Repository Setup — Mini Checklist}
+\begin{tcolorbox}
+\begin{itemize}
+  \item Create \texttt{.github/workflows/ci.yml} with \texttt{push} and \texttt{workflow\_dispatch}.
+  \item Set \textbf{Branch protection}: require PRs, require status checks, and require review from Code Owners.
+  \item Add \texttt{CODEOWNERS} at repo root or \texttt{.github/}.
+  \item Lock down \texttt{GITHUB\_TOKEN} permissions to least privilege.
+  \item Configure cache for your package manager and test runner.
+  \item (Org-wide) Keep curated templates in the public \texttt{.github} repo under \texttt{workflow-templates/}.
+\end{itemize}
+\end{tcolorbox}
+
+\vfill
+\begin{center}
+\footnotesize This cheat sheet is intended as a fast operational reference. For deeper context, consult the official GitHub Actions documentation for events, expressions, and security guidance.
+\end{center}
+
+\end{document}

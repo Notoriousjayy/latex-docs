@@ -1,0 +1,359 @@
+%========================================================
+% Continuous Delivery & Deployment — Quick-Start
+% GitHub Actions -> AWS (ECR + EKS)
+%========================================================
+\documentclass[11pt]{article}
+
+% ---------- Encoding & layout ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{microtype}
+\usepackage{setspace}
+\setstretch{1.1}
+
+% ---------- Colors, links ----------
+\usepackage{xcolor}
+\definecolor{ink}{HTML}{111827}      % gray-900
+\definecolor{soft}{HTML}{F9FAFB}     % gray-50
+\definecolor{accent}{HTML}{2563EB}   % blue-600
+\definecolor{ok}{HTML}{059669}       % emerald-600
+\definecolor{warn}{HTML}{D97706}     % amber-600
+\definecolor{bad}{HTML}{DC2626}      % red-600
+\usepackage[colorlinks=true,linkcolor=accent,citecolor=accent,urlcolor=accent]{hyperref}
+
+% ---------- Code (minted) ----------
+% Requires: compile with -shell-escape
+\usepackage[newfloat]{minted}
+\usemintedstyle{tango}
+\setminted{fontsize=\small,breaklines,linenos,tabsize=2}
+\usepackage{caption}
+\usepackage{float}
+\SetupFloatingEnvironment{listing}{name=Listing}
+
+% ---------- Title ----------
+\title{Continuous Delivery \& Deployment --- Quick-Start\\
+GitHub Actions to AWS (Amazon ECR + Amazon EKS)}
+\author{Practical DevOps Handout}
+\date{November 4, 2025}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\clearpage
+
+\section{Goals and Scope}
+This quick-start shows how to build a container with GitHub Actions, push it to \textbf{Amazon ECR}, and deploy it to \textbf{Amazon EKS}. We use \textbf{GitHub OpenID Connect (OIDC)} to assume an AWS IAM role (no static keys).
+
+\paragraph{You will:}
+\begin{itemize}
+  \item Create an ECR repository and an EKS cluster (Managed Node Group or Fargate).
+  \item Create an IAM role trusted by GitHub OIDC with least-privilege permissions.
+  \item Map that role into EKS RBAC via the \texttt{aws-auth} ConfigMap.
+  \item Deploy a \texttt{Deployment} \& \texttt{Service}, then roll out new images on pushes to \texttt{main}.
+\end{itemize}
+
+\paragraph{Outcomes:}
+\begin{itemize}
+  \item Commits to \texttt{main} build, tag, and push an image to ECR and roll the EKS \texttt{Deployment}.
+  \item Review gates via GitHub Environments (\texttt{production}).
+  \item Optional status badge in \texttt{README.md}.
+\end{itemize}
+
+\section{One-Time AWS Setup}
+\subsection{Create or Choose an ECR Repository}
+Pick a region (e.g., \texttt{us-east-1}) and repository name (e.g., \texttt{myapp}).
+\begin{minted}{bash}
+aws ecr create-repository \
+  --repository-name myapp \
+  --image-scanning-configuration scanOnPush=true \
+  --region us-east-1
+\end{minted}
+
+\subsection{Create an EKS Cluster}
+You can use the console or \texttt{eksctl}. Example (Managed Node Group):
+\begin{minted}{bash}
+eksctl create cluster \
+  --name my-eks \
+  --region us-east-1 \
+  --nodes 2 --node-type t3.small
+\end{minted}
+Or with Fargate (serverless pods):
+\begin{minted}{bash}
+eksctl create cluster --name my-eks --region us-east-1 --fargate
+\end{minted}
+
+\subsection{IAM Role for GitHub OIDC}
+Enable the GitHub OIDC provider once per account. Then create an IAM role (e.g., \texttt{GitHubActionsDeployRole}) with this trust policy. Replace \texttt{ACCOUNT\_ID}, \texttt{OWNER}, and \texttt{REPO}; the \texttt{sub} pins to the \texttt{main} branch.
+\begin{minted}{json}
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::ACCOUNT_ID:oidc-provider/token.actions.githubusercontent.com"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+          "token.actions.githubusercontent.com:sub": "repo:OWNER/REPO:ref:refs/heads/main"
+        }
+      }
+    }
+  ]
+}
+\end{minted}
+\clearpage
+
+Attach a minimal policy for ECR push and EKS describe (needed to build kubeconfig). Scope ARNs where possible.
+\begin{minted}{json}
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "EcrPushPull",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:GetAuthorizationToken",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:CompleteLayerUpload",
+        "ecr:UploadLayerPart",
+        "ecr:InitiateLayerUpload",
+        "ecr:PutImage",
+        "ecr:DescribeRepositories",
+        "ecr:CreateRepository"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "EksDescribe",
+      "Effect": "Allow",
+      "Action": [ "eks:DescribeCluster" ],
+      "Resource": "*"
+    }
+  ]
+}
+\end{minted}
+
+\paragraph{Map the Role into EKS RBAC}
+Add the role ARN to the cluster's \texttt{aws-auth} ConfigMap so kubectl can act. For quick-start you can map to \texttt{system:masters}; in production, map to a specific group and bind a scoped \texttt{ClusterRole}.
+
+\begin{minted}{bash}
+kubectl edit configmap aws-auth -n kube-system
+\end{minted}
+
+Then add an entry like:
+\begin{minted}{yaml}
+mapRoles:
+- rolearn: arn:aws:iam::ACCOUNT_ID:role/GitHubActionsDeployRole
+  username: gha-deployer
+  groups:
+    - system:masters
+\end{minted}
+
+\paragraph{Node IAM for ECR pulls}
+For Managed Node Groups, ensure the node instance role has \texttt{AmazonEC2ContainerRegistryReadOnly}. Fargate profiles have ECR access handled by the service.
+
+\section{GitHub Repository Setup}
+\subsection{Environment and Protection Rules}
+Create \texttt{production} environment. Optionally add required reviewers and a wait timer.
+
+\subsection{Status Badge in README}
+\begin{minted}{text}
+![deploy](https://github.com/OWNER/REPO/actions/workflows/deploy.yml/badge.svg)
+\end{minted}
+\clearpage
+
+\section{Kubernetes Manifests (Apply Once)}
+A minimal \texttt{Deployment} and \texttt{Service} exposing port 3000. Replace \texttt{ACCOUNT\_ID}, \texttt{REGION}, and names.
+\begin{listing}[H]
+\caption{deployment.yaml + service.yaml}
+\begin{minted}{yaml}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+  namespace: prod
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: myapp }
+  template:
+    metadata:
+      labels: { app: myapp }
+    spec:
+      containers:
+      - name: app
+        image: ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/myapp:latest
+        ports: [{containerPort: 3000}]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp
+  namespace: prod
+spec:
+  type: LoadBalancer
+  selector: { app: myapp }
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3000
+\end{minted}
+\end{listing}
+
+Apply once:
+\begin{minted}{bash}
+kubectl create namespace prod
+kubectl apply -n prod -f k8s/deployment.yaml
+kubectl apply -n prod -f k8s/service.yaml
+\end{minted}
+\clearpage
+
+\section{GitHub Actions Workflow (ECR + EKS Rollout)}
+Save as \texttt{.github/workflows/deploy.yml}. Adjust variables under \texttt{env:}.
+
+\captionof{listing}{Build, push to ECR, and roll out on EKS}
+\begin{minted}[fontsize=\footnotesize]{yaml}
+name: build-and-deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  id-token: write   # OIDC for AWS
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPO: myapp
+  CLUSTER_NAME: my-eks
+  K8S_NAMESPACE: prod
+  K8S_DEPLOYMENT: myapp
+  K8S_CONTAINER: app
+  K8S_SERVICE: myapp
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::ACCOUNT_ID:role/GitHubActionsDeployRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Ensure ECR repository exists
+        run: |
+          aws ecr describe-repositories --repository-names "$ECR_REPO" >/dev/null 2>&1 || \
+          aws ecr create-repository --repository-name "$ECR_REPO" \
+            --image-scanning-configuration scanOnPush=true
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPO }}:latest
+            ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPO }}:${{ github.sha }}
+
+      - name: Set image URI output
+        id: meta
+        run: echo "image=${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPO }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: production
+      url: ${{ steps.svc.outputs.url }}
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::ACCOUNT_ID:role/GitHubActionsDeployRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name "$CLUSTER_NAME" --region "$AWS_REGION"
+
+      - name: Set new image on Deployment
+        run: |
+          kubectl -n "$K8S_NAMESPACE" set image deployment/"$K8S_DEPLOYMENT" \
+            "$K8S_CONTAINER"="${{ needs.build.outputs.image }}" --record
+
+      - name: Wait for rollout
+        run: kubectl -n "$K8S_NAMESPACE" rollout status deployment/"$K8S_DEPLOYMENT" --timeout=5m
+
+      - name: Discover Service URL
+        id: svc
+        run: |
+          URL=$(kubectl -n "$K8S_NAMESPACE" get svc "$K8S_SERVICE" \
+            -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          if [ -n "$URL" ]; then echo "url=https://$URL" >> $GITHUB_OUTPUT; fi
+\end{minted}
+\clearpage
+
+\subsection{Why this works}
+\begin{itemize}
+  \item \texttt{id-token: write} + \texttt{configure-aws-credentials} enables short-lived AWS creds via OIDC.
+  \item \texttt{aws eks update-kubeconfig} fetches the cluster endpoint/cert and uses your IAM role identity; EKS RBAC is granted by \texttt{aws-auth}.
+  \item A simple \texttt{kubectl set image} + \texttt{rollout status} implements a clean, observable deploy.
+\end{itemize}
+
+\section{Operational Tips}
+\subsection{Zero-downtime and health checks}
+Use \texttt{readinessProbe} and \texttt{livenessProbe} on the container. Keep \texttt{maxUnavailable=0} if you require strict availability.
+
+\subsection{Security hardening}
+\begin{itemize}
+  \item Restrict the IAM trust policy to specific branches, tags, or environments.
+  \item Scope policy \texttt{Resource} to your ECR repo ARN and (optionally) the specific cluster ARN for \texttt{eks:DescribeCluster}.
+  \item In-cluster AWS access should use IRSA (IAM Roles for Service Accounts), not node credentials.
+\end{itemize}
+
+\subsection{Cost awareness}
+EKS control plane has a fixed cost; nodes bill per instance (or Fargate per vCPU/memory). ECR charges for storage and data transfer. Start small.
+
+\section{Troubleshooting}
+\paragraph{Access denied to cluster.} Ensure your IAM role appears in \texttt{aws-auth} and has a ClusterRoleBinding matching the verbs you need. Re-run \texttt{aws eks update-kubeconfig}.
+
+\paragraph{Image cannot pull.} Confirm node role has \texttt{AmazonEC2ContainerRegistryReadOnly} and the image URI/tag is correct; check \texttt{kubectl describe pod}.
+
+\paragraph{Service has no external hostname.} If using \texttt{type: LoadBalancer} on EKS in private subnets, provision an Ingress (ALB) or expose via \texttt{NodePort} and an external LB.
+\clearpage
+
+\section{Appendix A: Minimal Dockerfile}
+\begin{minted}{docker}
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY . .
+EXPOSE 3000
+CMD ["node", "server.js"]
+\end{minted}
+
+\section{Appendix B: Variables and Secrets Checklist}
+\begin{itemize}
+  \item \textbf{GitHub Environment:} \texttt{production}
+  \item \textbf{Workflow \texttt{env}:} \texttt{AWS\_REGION}, \texttt{ECR\_REPO}, \texttt{CLUSTER\_NAME}, \texttt{K8S\_NAMESPACE}, \texttt{K8S\_DEPLOYMENT}, \texttt{K8S\_CONTAINER}, \texttt{K8S\_SERVICE}
+  \item \textbf{IAM:} GitHub OIDC provider, role trust policy, least-privilege policy, node role ECR read access.
+\end{itemize}
+
+\end{document}

@@ -1,0 +1,593 @@
+%========================================================
+% Advanced GitHub Actions — Very Detailed Cheat Sheet
+%========================================================
+\documentclass[11pt]{article}
+
+% ---------- Encoding & layout ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{microtype}
+\usepackage{enumitem}
+\setlist{topsep=4pt,itemsep=3pt,parsep=0pt}
+
+% ---------- Colors & links ----------
+\usepackage{xcolor}
+\definecolor{ink}{HTML}{111827}      % gray-900
+\definecolor{soft}{HTML}{F9FAFB}     % gray-50
+\definecolor{accent}{HTML}{2563EB}   % blue-600
+\definecolor{ok}{HTML}{059669}       % emerald-600
+\definecolor{warn}{HTML}{D97706}     % amber-600
+\definecolor{bad}{HTML}{DC2626}      % red-600
+\usepackage[colorlinks=true,linkcolor=accent,urlcolor=accent,citecolor=accent]{hyperref}
+
+% ---------- Code (minted) ----------
+\usepackage[cache=false]{minted} % avoids frozencache style issues
+\usemintedstyle{friendly}
+\setminted{
+  fontsize=\footnotesize,
+  breaklines,
+  linenos,
+  autogobble,
+  tabsize=2
+}
+
+\title{Advanced GitHub Actions --- Very Detailed Cheat Sheet}
+\author{Hands-on, copy-pasteable examples}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\clearpage
+
+\section{Events \& Triggers (\texttt{on:})}
+\subsection{Common Triggers}
+\begin{minted}{yaml}
+name: Triggers and Filters
+on:
+  push:
+    branches: [ "main", "release/**" ]
+    tags: [ "v*", "release-*" ]
+    paths:
+      - "src/**"
+      - "!docs/**"           # exclude
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [ "main" ]
+    paths:
+      - "src/**"
+      - "package.json"
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Environment to deploy"
+        type: choice
+        options: [dev, staging, prod]
+        required: true
+      ref:
+        description: "Ref (branch/sha) to run"
+        default: "main"
+        required: false
+  schedule:
+    - cron: "15 6 * * 1-5"   # 06:15 UTC Mon-Fri
+  workflow_run:
+    workflows: ["Build"]
+    types: [completed]
+\end{minted}
+
+\paragraph{Notes}
+\begin{itemize}
+  \item \textbf{Paths filters} are evaluated per trigger: use to limit runs in monorepos.
+  \item \texttt{pull\_request\_target} runs in the base repo context (caution with secrets).
+  \item \texttt{workflow\_dispatch.inputs} support \texttt{type} (\texttt{string|choice|boolean|environment}).
+\end{itemize}
+\clearpage
+
+\section{Jobs, Runners, Strategy, Defaults}
+\begin{minted}{yaml}
+jobs:
+  build:
+    name: Build (${{ matrix.os }} / Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    continue-on-error: false  # or {matrix: allow-failure == 'true'}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [18, 20]
+        include:
+          - os: ubuntu-latest
+            node: 20
+            allow-failure: 'true'
+        exclude:
+          - os: windows-latest
+            node: 18
+    defaults:
+      run:
+        shell: bash
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci
+      - run: npm test -- --ci
+\end{minted}
+
+\paragraph{Key Points}
+\begin{itemize}
+  \item \texttt{runs-on}: hosted images or self-hosted labels.
+  \item \texttt{strategy.fail-fast=false}: do not cancel siblings on first fail.
+  \item \texttt{timeout-minutes}: cancel long-running jobs automatically.
+\end{itemize}
+
+\section{Contexts Overview}
+\begin{itemize}
+  \item \texttt{github}, \texttt{env}, \texttt{vars}, \texttt{secrets}, \texttt{runner}, \texttt{job}, \texttt{steps}, \texttt{matrix}, \texttt{needs}, \texttt{inputs}, \texttt{strategy}.
+\end{itemize}
+\begin{minted}{yaml}
+- name: Dump contexts (redact secrets yourself!)
+  run: |
+    echo 'actor: ${{ github.actor }}'
+    echo 'ref_name: ${{ github.ref_name }}'
+    echo 'event: ${{ github.event_name }}'
+    echo 'runner: ${{ toJSON(runner) }}'
+    echo 'job: ${{ toJSON(job) }}'
+    echo 'matrix: ${{ toJSON(matrix) }}'
+\end{minted}
+
+\section{Expressions \& Built-in Functions}
+\subsection{Operators \& Types}
+\begin{itemize}
+  \item Types: \texttt{boolean}, \texttt{null}, \texttt{number}, \texttt{string}.
+  \item Operators: \texttt{==}, \texttt{!=}, \texttt{<}, \texttt{<=}, \texttt{>}, \texttt{>=}, \texttt{\&\&}, \texttt{||}, \texttt{!}.
+\end{itemize}
+
+\subsection{Functions (with examples)}
+\begin{minted}{yaml}
+if: contains(github.ref, 'refs/heads/release/') && !cancelled()
+
+# String helpers
+if: startsWith(github.ref, 'refs/tags/') || endsWith(github.ref_name, '-rc')
+
+# JSON coercion
+env:
+  FLAG: 'false'
+if: ${{ fromJSON(env.FLAG) }}   # false -> step skipped
+
+# Formatting & joining
+env:
+  MSG: ${{ format('Deploy {0} to {1}', github.sha, inputs.env) }}
+  LIST: ${{ join(fromJSON('["a","b","c"]'), ',') }}
+
+# Hashing files for cache keys
+key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+\end{minted}
+
+\subsection{Status Checks in \texttt{if}}
+\begin{minted}{yaml}
+if: success()     # default for steps/jobs
+if: failure()     # previous step failed
+if: always()      # run regardless
+if: cancelled()   # run if run cancelled
+\end{minted}
+\clearpage
+
+\section{Variables, Secrets, and \texttt{vars}}
+\subsection{Scopes \& Precedence}
+\begin{itemize}
+  \item Declare at \textbf{workflow}, \textbf{job}, or \textbf{step} via \texttt{env:}.
+  \item \texttt{vars.X} are configuration variables (repo/org/environment).
+  \item \texttt{secrets.X} are masked, not echoed by default.
+\end{itemize}
+\begin{minted}{yaml}
+env:
+  WF_VAR: "workflow-level"
+
+jobs:
+  demo:
+    env:
+      JOB_VAR: "job-level"
+    steps:
+      - name: Step vars
+        env:
+          STEP_VAR: "step-level"
+        run: |
+          echo "WF_VAR=${WF_VAR}"
+          echo "JOB_VAR=${JOB_VAR}"
+          echo "STEP_VAR=${STEP_VAR}"
+          echo "CONF VAR: ${{ vars.MY_CONFIG }}"
+          echo "SECRET: ${{ secrets.MY_SECRET }}"
+\end{minted}
+
+\paragraph{Tip}
+\begin{itemize}
+  \item Booleans in \texttt{env} are strings; coerce with \texttt{fromJSON}.
+\end{itemize}
+
+\section{Permissions \& \texttt{GITHUB\_TOKEN}}
+\begin{minted}{yaml}
+permissions:              # default -> fine-grained least-privilege recommended
+  contents: read
+  pull-requests: write
+  id-token: write         # required for OIDC federation
+  actions: read
+  checks: write
+
+jobs:
+  secure:
+    permissions:
+      contents: read
+      packages: write
+\end{minted}
+\paragraph{Notes}
+\begin{itemize}
+  \item Prefer explicit \texttt{permissions} at workflow/job scope.
+  \item Exercise care with \texttt{pull\_request\_target}.
+\end{itemize}
+
+\section{Job/Step Outputs, Artifacts, and Cache}
+\subsection{Step \& Job Outputs}
+\begin{minted}{yaml}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      image_sha: ${{ steps.meta.outputs.sha }}
+    steps:
+      - id: meta
+        run: echo "sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Got image sha = ${{ needs.build.outputs.image_sha }}"
+\end{minted}
+
+\subsection{Artifacts}
+\begin{minted}{yaml}
+- name: Upload build
+  uses: actions/upload-artifact@v4
+  with:
+    name: web-dist
+    path: dist/
+
+- name: Download build
+  uses: actions/download-artifact@v4
+  with:
+    name: web-dist
+    path: ./dist
+\end{minted}
+
+\subsection{Cache}
+\begin{minted}{yaml}
+- uses: actions/cache@v4
+  with:
+    path: ~/.cache/pip
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    restore-keys: |
+      ${{ runner.os }}-pip-
+\end{minted}
+
+\section{Concurrency \& Cancel In-Progress}
+\begin{minted}{yaml}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+\end{minted}
+\paragraph{Pattern} For PRs, use \texttt{github.head\_ref}; for branches use \texttt{ref\_name}.
+\clearpage
+
+\section{Environments \& Required Reviews}
+\begin{minted}{yaml}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.example.com
+    steps:
+      - run: ./deploy.sh
+\end{minted}
+\paragraph{Note} Environments can enforce approvals and restrict secrets.
+
+\section{Reusable Workflows (\texttt{workflow\_call})}
+\subsection{Called Workflow}
+\begin{minted}{yaml}
+# .github/workflows/reusable.yml
+name: Reusable
+on:
+  workflow_call:
+    inputs:
+      service:
+        type: string
+        required: true
+    secrets:
+      DEPLOY_KEY:
+        required: true
+    outputs:
+      version:
+        description: "Output version"
+        value: ${{ jobs.publish.outputs.version }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.tag.outputs.version }}
+    steps:
+      - id: tag
+        run: echo "version=1.2.3" >> "$GITHUB_OUTPUT"
+\end{minted}
+
+\subsection{Caller Workflow}
+\begin{minted}{yaml}
+# .github/workflows/caller.yml
+name: Caller
+on: workflow_dispatch
+jobs:
+  use-reusable:
+    uses: ./.github/workflows/reusable.yml
+    with:
+      service: api
+    secrets:
+      DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+\end{minted}
+
+\section{Composite Actions (local \texttt{action.yml})}
+\subsection{Metadata}
+\begin{minted}{yaml}
+# .github/actions/greet/action.yml
+name: "Greet"
+description: "Say hello"
+inputs:
+  who:
+    description: "Name to greet"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: echo "Hello, ${{ inputs.who }}!"
+\end{minted}
+
+\subsection{Use the Composite Action}
+\begin{minted}{yaml}
+- uses: ./.github/actions/greet
+  with:
+    who: "Jordan"
+\end{minted}
+
+\section{Containers \& Service Containers}
+\subsection{Job Container}
+\begin{minted}{yaml}
+jobs:
+  dockerized:
+    runs-on: ubuntu-latest
+    container:
+      image: node:20-bullseye
+      options: --cpus 2
+    steps:
+      - uses: actions/checkout@v4
+      - run: node -v
+\end{minted}
+
+\subsection{Service Container (Postgres)}
+\begin{minted}{yaml}
+jobs:
+  integ:
+    runs-on: ubuntu-latest
+    services:
+      pg:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s --health-timeout=5s --health-retries=5
+    steps:
+      - run: |
+          psql "postgresql://postgres:postgres@localhost:5432/postgres" -c "SELECT 1"
+\end{minted}
+
+\section{OpenID Connect (OIDC) to Cloud (Example: AWS)}
+\begin{minted}{yaml}
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::123456789012:role/GitHubOIDCDeployRole
+      - run: aws sts get-caller-identity
+\end{minted}
+\paragraph{Note} Configure an AWS IAM role with a trust policy allowing GitHub OIDC provider and repository conditions.
+
+\section{Logging \& Debugging Tricks}
+\begin{minted}{yaml}
+- name: Group logs
+  run: |
+    echo "::group::Build"
+    npm ci && npm run build
+    echo "::endgroup::"
+
+- name: Enable step debug (set once in repo secrets)
+  run: echo "ACTIONS_STEP_DEBUG=true" >> "$GITHUB_ENV"
+
+- name: Mask a value (extra safety)
+  run: echo "::add-mask::${SECRET_VALUE}"
+
+- name: Export env for later steps
+  run: echo "FOO=bar" >> "$GITHUB_ENV"
+
+- name: Prepend to PATH
+  run: echo "$HOME/bin" >> "$GITHUB_PATH"
+\end{minted}
+
+\section{Monorepo Patterns (Paths, Concurrency)}
+\subsection{Paths-based Workflows}
+\begin{minted}{yaml}
+on:
+  push:
+    paths:
+      - "services/web/**"
+      - ".github/workflows/web-*.yml"
+\end{minted}
+
+\subsection{Per-branch Concurrency}
+\begin{minted}{yaml}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}-web
+  cancel-in-progress: true
+\end{minted}
+
+\section{Production-Ready Recipes}
+\subsection{Node Build \& Test (Matrix, Cache)}
+\begin{minted}{yaml}
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [ "main" ]
+jobs:
+  node:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [18, 20]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test -- --ci
+\end{minted}
+
+\subsection{Python Build \& Test with Pip Cache}
+\begin{minted}{yaml}
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - run: python -m pip install -U pip
+      - run: pip install -r requirements.txt
+      - run: pytest -q
+\end{minted}
+\clearpage
+
+\subsection{Docker Build \& Push to GHCR}
+\begin{minted}{yaml}
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Build
+        run: |
+          IMAGE=ghcr.io/${{ github.repository_owner }}/myapp:${{ github.sha }}
+          docker build -t "$IMAGE" .
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+        id: build
+      - name: Push
+        run: docker push "${{ steps.build.outputs.image }}"
+\end{minted}
+
+\subsection{Deploy with Environment Protection}
+\begin{minted}{yaml}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: prod
+      url: https://app.example.com
+    steps:
+      - run: ./deploy-prod.sh
+\end{minted}
+
+\subsection{PR Label Gate (Example)}
+\begin{minted}{yaml}
+jobs:
+  gated:
+    if: contains(join(github.event.pull_request.labels.*.name, ','), 'ready')
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Label 'ready' is present; proceeding."
+\end{minted}
+
+\subsection{Required Check/Manual Retry Pattern}
+\begin{minted}{yaml}
+jobs:
+  flaky-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run flaky test (retry)
+        uses: nick-invision/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: npm run test:flaky
+\end{minted}
+
+\section{Security Best Practices (Quick Hits)}
+\begin{itemize}
+  \item Use \texttt{permissions} least-privilege explicitly.
+  \item Prefer OIDC over long-lived cloud keys.
+  \item Avoid \texttt{pull\_request\_target} unless you know why; sanitize inputs.
+  \item Never print secrets; rely on masking and \texttt{::add-mask::} for derived values.
+  \item Pin third-party actions by version or commit SHA.
+\end{itemize}
+
+\section{Appendix: Handy Snippets}
+\subsection{Only on Tags}
+\begin{minted}{yaml}
+if: startsWith(github.ref, 'refs/tags/')
+\end{minted}
+
+\subsection{Mark Step as Skipped by Condition}
+\begin{minted}{yaml}
+- name: Skip if docs-only change
+  if: "!contains(join(github.event.commits.*.modified, ','), 'src/')"
+  run: echo "Docs-only change."
+\end{minted}
+
+\subsection{Read JSON and Access Fields}
+\begin{minted}{yaml}
+- name: Parse JSON
+  id: parse
+  run: |
+    echo 'json={"a":1,"b":2}' >> "$GITHUB_OUTPUT"
+- name: Use JSON
+  run: |
+    echo '${{ fromJSON(steps.parse.outputs.json).a }}'
+\end{minted}
+
+\bigskip
+\noindent\rule{\linewidth}{0.4pt}\par
+\small This cheat sheet focuses on portability and clean compilation under \texttt{minted}. Replace action versions with pinned SHAs in production and validate runner images as your platform evolves.
+
+\end{document}

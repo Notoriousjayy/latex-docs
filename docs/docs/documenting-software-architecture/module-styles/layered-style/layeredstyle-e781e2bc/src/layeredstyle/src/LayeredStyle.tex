@@ -1,0 +1,985 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{parskip}
+
+\setlist[itemize]{leftmargin=1.5em}
+\setlist[enumerate]{leftmargin=1.5em}
+\setlist[description]{leftmargin=2.5em,labelsep=0.8em}
+
+% Section formatting
+\titleformat{\section}{\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+% Header and footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Layered Architectural Style}
+\fancyhead[R]{\small Software Architecture Documentation}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\begin{document}
+
+\title{\textbf{The Layered Architectural Style}\\[0.5em]
+\large A Comprehensive Reference for Hierarchical System Organization}
+\author{}
+\date{}
+\maketitle
+
+\tableofcontents
+\newpage
+
+%==============================================================================
+\section{Overview}
+%==============================================================================
+
+The layered style is a module architectural style that puts together layers---groupings of modules that offer a cohesive set of services---in a unidirectional \emph{allowed-to-use} relation with each other. This hierarchical organization constrains dependencies so that modules in higher layers may use modules in lower layers, but not vice versa, creating a clear structure that promotes separation of concerns and manages complexity.
+
+Layering is one of the most widely used architectural patterns in software engineering. From operating systems to web applications to enterprise systems, layers provide a fundamental organizing principle that partitions functionality by abstraction level. Each layer provides services to the layer above it and acts as a client to the layer below, creating a stack of increasingly abstract capabilities.
+
+The power of layering comes from its constraints. By restricting which modules can use which other modules, layering reduces the potential for arbitrary dependencies that create tangled, unmaintainable systems. The unidirectional dependency rule ensures that changes to higher layers do not affect lower layers, enabling lower layers to be stable foundations upon which higher layers build.
+
+\subsection{Scope and Applicability}
+
+The layered style applies to systems that benefit from hierarchical organization by abstraction level. This includes operating systems where hardware abstraction, kernel services, system services, and applications form natural layers; network protocols where the OSI model and TCP/IP stack exemplify layered communication; enterprise applications where presentation, business logic, and data access form common layers; web applications where client, server, and database tiers create layered architecture; embedded systems where hardware drivers, operating system, middleware, and application form layers; compiler design where lexical analysis, parsing, semantic analysis, and code generation form phases; and library design where low-level utilities support higher-level abstractions.
+
+The style is particularly valuable when the system can be organized by abstraction level, when lower-level services should be reusable across higher-level clients, when changes should be isolated to specific layers, when teams can be organized around layers, and when portability requires isolating platform-specific code.
+
+\subsection{Historical Context}
+
+Layering has been fundamental to software architecture since the early days of computing.
+
+Operating system design pioneered layering, with Dijkstra's THE operating system (1968) demonstrating rigorous layered construction where each layer was built and verified before the next layer was added.
+
+Network protocol design adopted layering through the OSI reference model (1984), which defined seven layers from physical transmission to application protocols.
+
+Database systems used layering to separate query processing, storage management, and buffer management.
+
+Enterprise application architecture embraced three-tier and n-tier architectures, separating presentation, business logic, and data management.
+
+Modern web architecture continues the tradition with client-side, server-side, and database layers, often with additional layers for APIs, services, and caching.
+
+Understanding this history helps architects recognize layering patterns and apply them appropriately.
+
+\subsection{Relationship to Other Styles}
+
+The layered style relates to several other architectural views and styles.
+
+It builds on the decomposition style by adding dependency constraints to the module hierarchy. While decomposition shows what modules exist, layering constrains how they may interact.
+
+It specializes the uses style by defining specific rules for the allowed-to-use relation based on layer membership.
+
+It complements the generalization style because layers often define abstract interfaces that modules in adjacent layers implement.
+
+It relates to the tiered component-and-connector style, though tiers describe runtime distribution while layers describe code organization.
+
+It can be combined with other styles. A service-oriented architecture might be layered internally. A microservices system might use layers within each service.
+
+\subsection{Layers vs. Tiers}
+
+Layers and tiers are related but distinct concepts.
+
+Layers are a logical organization of code modules by abstraction level. Layers exist at design time and compile time. Layer relationships are about which modules can use which other modules.
+
+Tiers are a physical distribution of runtime components across computing nodes. Tiers exist at deployment time and runtime. Tier relationships are about which components communicate over network boundaries.
+
+A three-layer application (presentation, business, data) might deploy as a single tier (monolith), two tiers (client and server), or three tiers (client, application server, database server). The layers remain the same; the tier deployment varies.
+
+This document focuses on layers as a module organization style, though the principles inform tier architecture as well.
+
+%==============================================================================
+\section{Elements}
+%==============================================================================
+
+The layered style has one primary element type: the layer. Layers contain modules that collectively provide a cohesive set of services.
+
+\subsection{Layers}
+
+A layer is a grouping of modules that offer a cohesive set of services at a particular level of abstraction. The description of a layer should define what modules the layer contains.
+
+\subsubsection{Layer Characteristics}
+
+Layers have several defining characteristics.
+
+Cohesion means the modules within a layer work together to provide related services. A layer has a unified purpose that its modules collectively fulfill.
+
+Abstraction level means each layer operates at a particular level of abstraction. Higher layers deal with more abstract, application-specific concerns. Lower layers deal with more concrete, general-purpose concerns.
+
+Service provision means each layer provides services to layers above it. The layer's interface defines what services are available.
+
+Service consumption means each layer consumes services from layers below it. The layer depends on lower layers for capabilities it needs but does not implement.
+
+Encapsulation means layers hide their internal structure. Clients of a layer interact with its interface, not its internal modules.
+
+\subsubsection{Types of Layers}
+
+Layers can be categorized by their role in the system.
+
+Foundation layers provide basic services used throughout the system. They have no dependencies on application-specific code. Examples include utility libraries, platform abstraction, and basic data structures.
+
+Infrastructure layers provide technical services that support application functionality. They depend on foundation layers but not on application layers. Examples include persistence frameworks, communication services, and security infrastructure.
+
+Domain layers implement business logic and domain concepts. They depend on infrastructure and foundation layers. Examples include business rules, domain entities, and application services.
+
+Application layers coordinate domain functionality for specific use cases. They depend on domain layers and below. Examples include use case implementations, workflow coordination, and application services.
+
+Presentation layers handle user interface concerns. They depend on application layers and below. Examples include UI components, view models, and presentation logic.
+
+Integration layers handle communication with external systems. They may appear at various levels depending on what they integrate.
+
+\subsubsection{Essential Properties of Layers}
+
+When documenting layers, architects should capture several property categories.
+
+Identity properties include layer name providing a unique identifier, and layer description explaining the layer's purpose and scope.
+
+Content properties include contained modules listing what modules belong to the layer, provided services describing what capabilities the layer offers, and required services describing what the layer needs from lower layers.
+
+Dependency properties include allowed dependencies specifying which lower layers this layer may use, and actual dependencies documenting which dependencies exist.
+
+Quality properties include stability indicating how frequently the layer changes, and abstraction level describing the layer's position in the abstraction hierarchy.
+
+Organizational properties include owning team identifying responsibility, and technology describing implementation technologies.
+
+\subsection{Modules Within Layers}
+
+Layers contain modules that implement the layer's services.
+
+\subsubsection{Module Organization}
+
+Modules within a layer may be organized in various ways.
+
+Flat organization places all modules directly in the layer without further structure.
+
+Sublayer organization groups related modules into sublayers within the layer.
+
+Feature organization groups modules by feature or capability within the layer.
+
+Technical organization groups modules by technical concern within the layer.
+
+\subsubsection{Layer Interfaces}
+
+Layers typically define interfaces that expose their services.
+
+Facade modules provide simplified interfaces to layer functionality.
+
+Interface definitions specify the contracts that the layer fulfills.
+
+API surfaces define what is accessible from outside the layer.
+
+Internal modules are hidden from layer clients.
+
+%==============================================================================
+\section{Relations}
+%==============================================================================
+
+The layered style has one primary relation: the allowed-to-use relation, which constrains dependencies between layers.
+
+\subsection{Allowed-to-Use Relation}
+
+The \textit{allowed-to-use} relation is a specialization of the generic \textit{depends-on} relation. It specifies which layers may use which other layers.
+
+\subsubsection{Semantics of Allowed-to-Use}
+
+Allowed-to-use defines permissions, not requirements. If layer A is allowed to use layer B, modules in A may depend on modules in B, but they are not required to.
+
+The relation constrains what dependencies are permitted. Dependencies that violate allowed-to-use rules are architectural violations.
+
+The relation is typically transitive. If A may use B and B may use C, then A may use C (directly or through B, depending on the layering rules).
+
+\subsubsection{Layer Usage Rules}
+
+The design should define the layer usage rules and any allowable exceptions. Common rules include:
+
+Strict layering requires each layer to use only the layer immediately below it. Layer N may use only layer N-1. This maximizes isolation but may require pass-through methods.
+
+Relaxed layering allows each layer to use any layer below it. Layer N may use layers N-1, N-2, and so on down to layer 1. This provides flexibility but increases potential coupling.
+
+Selective layering specifies custom rules for which layers may use which. Some layers may have restricted access while others are broadly available.
+
+\subsubsection{Properties of Allowed-to-Use}
+
+Several properties characterize allowed-to-use relationships.
+
+Directness indicates whether usage must be through adjacent layers (strict) or can skip layers (relaxed).
+
+Visibility indicates what is accessible---only layer interfaces or all layer contents.
+
+Exceptions document any violations of the general rules that are permitted for specific reasons.
+
+\subsection{Layer Ordering Relation}
+
+Layers have an implicit ordering from lowest to highest abstraction.
+
+\subsubsection{Semantics of Ordering}
+
+Layer ordering establishes the direction of allowed dependencies. Higher layers depend on lower layers, never the reverse.
+
+Ordering reflects abstraction level. Lower layers are more general and stable. Higher layers are more specific and volatile.
+
+\subsubsection{Properties of Ordering}
+
+Position indicates each layer's place in the ordering, often numbered from bottom (1) to top (N).
+
+Distance measures how many layers separate two layers, relevant for strict layering rules.
+
+\subsection{Actual Uses Relation}
+
+Beyond allowed-to-use, documentation may capture actual usage.
+
+\subsubsection{Semantics of Actual Uses}
+
+Actual uses documents which allowed dependencies are actually present in the implementation.
+
+Comparing actual uses to allowed-to-use reveals unused permissions and potential violations.
+
+\subsubsection{Analysis Value}
+
+Coverage analysis shows which layer services are actually used.
+
+Violation detection identifies dependencies that break layering rules.
+
+Coupling analysis measures the degree of inter-layer coupling.
+
+%==============================================================================
+\section{Layering Patterns}
+%==============================================================================
+
+Several common patterns organize layers for different purposes.
+
+\subsection{Strict Layering Pattern}
+
+Each layer uses only the layer immediately below it.
+
+\subsubsection{Structure}
+
+Layer N uses only layer N-1. No skipping of layers is permitted. All communication passes through intermediate layers.
+
+\subsubsection{Benefits}
+
+Maximum isolation between non-adjacent layers means changes in layer N-2 don't directly affect layer N.
+
+Clear interfaces at each boundary define what each layer provides.
+
+Substitutability enables replacing a layer if its interface is preserved.
+
+\subsubsection{Drawbacks}
+
+Pass-through methods are required when higher layers need lower-layer services, adding code without value.
+
+Performance overhead may occur from multiple layer crossings.
+
+Rigidity makes it difficult to optimize across layer boundaries.
+
+\subsubsection{When to Use}
+
+Strict layering is appropriate when layer interfaces are truly stable, when layers may be independently replaced, and when maximum isolation is worth the overhead.
+
+\subsection{Relaxed Layering Pattern}
+
+Each layer may use any layer below it.
+
+\subsubsection{Structure}
+
+Layer N may use layers N-1, N-2, and so on through layer 1. Layers can skip intermediate layers for direct access.
+
+\subsubsection{Benefits}
+
+Flexibility allows layers to use the most appropriate lower layer directly.
+
+Efficiency avoids pass-through overhead.
+
+Simplicity reduces the code needed to access lower-layer services.
+
+\subsubsection{Drawbacks}
+
+Increased coupling means changes to lower layers may affect many higher layers.
+
+Reduced isolation makes it harder to replace layers.
+
+Complexity of understanding which layers use which grows.
+
+\subsubsection{When to Use}
+
+Relaxed layering is appropriate when layer stability varies (some layers are very stable and broadly used), when performance matters, and when pass-through methods would dominate strict layering.
+
+\subsection{Layering with Sidecar Pattern}
+
+Some modules exist outside the layer hierarchy.
+
+\subsubsection{Structure}
+
+Core layers follow normal layering rules. Sidecar modules (often utilities or cross-cutting concerns) are accessible from multiple layers.
+
+\subsubsection{Benefits}
+
+Common utilities need not be replicated per layer.
+
+Cross-cutting concerns have a home outside the hierarchy.
+
+\subsubsection{Drawbacks}
+
+Sidecars can become dumping grounds for misfit modules.
+
+Overuse can undermine layering benefits.
+
+\subsubsection{When to Use}
+
+Use sidecars sparingly for genuinely cross-cutting utilities like logging, basic data structures, and common algorithms.
+
+\subsection{Layering with Callback Pattern}
+
+Higher layers provide callbacks to lower layers.
+
+\subsubsection{Structure}
+
+Lower layers define callback interfaces. Higher layers implement callbacks. Lower layers invoke callbacks without depending on higher layers.
+
+\subsubsection{Benefits}
+
+Lower layers can be extended without modification.
+
+The dependency direction is preserved through interfaces.
+
+Event-driven behavior is supported within layered architecture.
+
+\subsubsection{Drawbacks}
+
+Callback interfaces add complexity.
+
+Control flow becomes harder to follow.
+
+\subsubsection{When to Use}
+
+Callbacks are appropriate for event notification, plugin systems, and framework extension points.
+
+\subsection{Layered Architecture with Dependency Injection}
+
+Dependencies are injected rather than directly instantiated.
+
+\subsubsection{Structure}
+
+Layers define interfaces for their dependencies. Concrete implementations are injected from outside. A composition root wires layers together.
+
+\subsubsection{Benefits}
+
+Layers depend on abstractions, not concretions.
+
+Testing can inject mock implementations.
+
+Configuration can vary layer implementations.
+
+\subsubsection{Implementation}
+
+Dependency injection containers manage object creation. Layers receive dependencies through constructors or setters. Layer interfaces define contracts.
+
+%==============================================================================
+\section{Constraints}
+%==============================================================================
+
+The layered style imposes constraints that ensure valid layered structure.
+
+\subsection{Complete Allocation Constraint}
+
+Every piece of software is allocated to exactly one layer.
+
+\subsubsection{Rationale}
+
+Complete allocation ensures all code is governed by layering rules. No code exists outside the layer structure. Responsibilities are clearly assigned.
+
+\subsubsection{Implications}
+
+Every module must have a layer assignment. Orphan modules violate the constraint. The layer hierarchy must be complete.
+
+\subsubsection{Challenges}
+
+Cross-cutting concerns may not fit naturally into any layer. Utility code may be used across layers. The sidecar pattern or dedicated utility layers address these challenges.
+
+\subsection{Minimum Layer Constraint}
+
+There are at least two layers (typically three or more).
+
+\subsubsection{Rationale}
+
+A single layer provides no layering benefit. Two layers establish the basic pattern. Three or more layers provide meaningful separation.
+
+\subsubsection{Typical Counts}
+
+Two layers separate interface from implementation or application from infrastructure.
+
+Three layers commonly separate presentation, business logic, and data access.
+
+Four or more layers provide finer-grained separation for complex systems.
+
+\subsubsection{Balance}
+
+Too few layers provide insufficient separation. Too many layers add complexity and overhead. The appropriate count depends on system complexity and separation needs.
+
+\subsection{Acyclicity Constraint}
+
+The allowed-to-use relations should not be circular; that is, a lower layer cannot use a layer above.
+
+\subsubsection{Rationale}
+
+Circular dependencies defeat the purpose of layering. If A uses B and B uses A, neither can be understood or modified independently. The abstraction hierarchy becomes meaningless.
+
+\subsubsection{Enforcement}
+
+Layer ordering defines the dependency direction. Dependency analysis tools detect violations. Build configurations can enforce layer boundaries. Code reviews verify compliance.
+
+\subsubsection{Addressing Violations}
+
+Callback patterns invert problematic dependencies. Interface extraction moves abstractions to lower layers. Restructuring may be needed for fundamental violations.
+
+\subsection{Layer Cohesion Constraint}
+
+Modules within a layer should be cohesive.
+
+\subsubsection{Rationale}
+
+Cohesive layers are easier to understand and maintain. Layers with unrelated modules become dumping grounds. Cohesion supports the layer's unified purpose.
+
+\subsubsection{Indicators of Poor Cohesion}
+
+A layer contains modules with unrelated purposes. Layer boundaries are frequently crossed for basic operations. Modules in a layer don't share common dependencies.
+
+\subsubsection{Improving Cohesion}
+
+Split incoherent layers into multiple focused layers. Move misplaced modules to appropriate layers. Restructure to align modules with layer purposes.
+
+%==============================================================================
+\section{What the Style is For}
+%==============================================================================
+
+The layered style supports several essential architectural purposes.
+
+\subsection{Promoting Modifiability and Portability}
+
+Layering promotes modifiability and portability through isolation of concerns.
+
+\subsubsection{Modifiability Benefits}
+
+Changes are localized to specific layers. Lower layers are insulated from higher-layer changes. Interface stability enables independent layer evolution.
+
+When business rules change, modifications occur in the business layer without affecting presentation or data layers. When data storage technology changes, only the data layer is affected.
+
+\subsubsection{Portability Benefits}
+
+Platform-specific code is isolated in lower layers. Platform abstraction layers hide platform differences. Upper layers are platform-independent.
+
+An application can be ported to a new platform by replacing the platform abstraction layer while preserving business and presentation logic.
+
+\subsubsection{Achieving These Benefits}
+
+Define stable interfaces between layers. Hide implementation details within layers. Isolate volatile concerns in specific layers. Design lower layers for reuse across platforms.
+
+\subsection{Managing Complexity and Facilitating Communication}
+
+Layering manages complexity and facilitates the communication of the code structure to developers.
+
+\subsubsection{Complexity Management}
+
+Layering divides the system into comprehensible chunks. Developers can understand one layer at a time. Dependencies are constrained and predictable.
+
+A developer working on presentation code need not understand data access implementation. A developer working on business rules need not understand UI framework details.
+
+\subsubsection{Communication Benefits}
+
+Layers provide a vocabulary for discussing the system. Architecture diagrams clearly show the layer structure. New developers can quickly understand the overall organization.
+
+``This logic belongs in the business layer'' is clear communication. Layer diagrams convey system structure at a glance.
+
+\subsubsection{Achieving These Benefits}
+
+Name layers meaningfully. Document layer responsibilities clearly. Enforce layer boundaries consistently. Use layers as the organizing principle for code navigation.
+
+\subsection{Promoting Reuse}
+
+Layering promotes reuse by creating general, reusable lower layers.
+
+\subsubsection{Vertical Reuse}
+
+Lower layers serve multiple higher-layer clients. Foundation services are used throughout the system. Infrastructure capabilities support multiple application features.
+
+A data access layer serves multiple business operations. A logging infrastructure serves all layers.
+
+\subsubsection{Horizontal Reuse}
+
+Layers can be reused across applications. A platform abstraction layer can support multiple applications. Business rule layers can serve multiple user interfaces.
+
+\subsubsection{Achieving Reuse}
+
+Design lower layers without higher-layer dependencies. Create clean, general interfaces for lower layers. Avoid application-specific assumptions in reusable layers.
+
+\subsection{Achieving Separation of Concerns}
+
+Layering achieves separation of concerns by organizing code by concern type.
+
+\subsubsection{Concern Separation}
+
+Each layer addresses specific concerns. Presentation concerns are separate from business concerns. Business concerns are separate from persistence concerns.
+
+UI layout decisions don't pollute business rule code. Database query optimization doesn't affect presentation logic.
+
+\subsubsection{Benefits of Separation}
+
+Each concern can be addressed by specialists. Changes to one concern don't affect others. Testing can focus on specific concerns.
+
+\subsubsection{Achieving Separation}
+
+Identify the primary concerns in the system. Assign each concern to an appropriate layer. Enforce boundaries between concern areas.
+
+%==============================================================================
+\section{Common Layer Architectures}
+%==============================================================================
+
+Several common architectures apply layering principles.
+
+\subsection{Three-Layer Architecture}
+
+The classic three-layer architecture separates presentation, business, and data.
+
+\subsubsection{Layer Structure}
+
+The presentation layer handles user interface concerns including views, controllers, and user interaction. The business layer handles domain logic including business rules, domain entities, and application services. The data layer handles persistence including data access, database interaction, and storage.
+
+\subsubsection{Dependencies}
+
+Presentation uses business for domain operations. Business uses data for persistence. Data has no upward dependencies.
+
+\subsubsection{Benefits}
+
+Clear separation of UI, logic, and storage concerns. UI changes don't affect business rules. Database changes don't affect presentation.
+
+\subsubsection{Variations}
+
+Additional layers may be inserted, such as an application layer between presentation and business or an infrastructure layer below data.
+
+\subsection{Clean Architecture}
+
+Clean Architecture (Robert Martin) emphasizes dependency rules and entity-centric design.
+
+\subsubsection{Layer Structure}
+
+Entities at the core contain enterprise business rules. Use Cases contain application business rules. Interface Adapters convert between use cases and external formats. Frameworks and Drivers contain external tools and delivery mechanisms.
+
+\subsubsection{Dependency Rule}
+
+Dependencies point inward only. Inner layers know nothing of outer layers. Outer layers depend on inner layers.
+
+\subsubsection{Benefits}
+
+Business rules are independent of frameworks. UI and database are details that can be deferred. Testing focuses on business rules without external dependencies.
+
+\subsection{Hexagonal Architecture}
+
+Hexagonal Architecture (Alistair Cockburn) organizes around ports and adapters.
+
+\subsubsection{Structure}
+
+The application core contains business logic. Ports define interfaces for interacting with the core. Adapters implement ports for specific technologies.
+
+\subsubsection{Layer Interpretation}
+
+The core is the innermost layer. Ports form the interface layer. Adapters form the outer layer.
+
+\subsubsection{Benefits}
+
+The application is symmetric---multiple UIs and databases can connect. Technology choices are deferred to adapters. Testing can substitute test adapters.
+
+\subsection{Domain-Driven Design Layers}
+
+Domain-Driven Design defines a standard layer architecture.
+
+\subsubsection{Layer Structure}
+
+User Interface handles presentation and user interaction. Application coordinates domain activities for use cases. Domain contains business logic and domain model. Infrastructure provides technical capabilities for other layers.
+
+\subsubsection{Dependencies}
+
+UI uses Application. Application uses Domain. Domain is independent. Infrastructure supports all layers but is not depended upon by Domain.
+
+\subsubsection{Benefits}
+
+The domain model is isolated and protected. Application logic is separate from domain rules. Infrastructure is pluggable.
+
+\subsection{Operating System Layers}
+
+Operating systems exemplify layered architecture.
+
+\subsubsection{Layer Structure}
+
+Hardware provides physical computation. HAL (Hardware Abstraction Layer) abstracts hardware differences. Kernel provides core OS services. System Services provide higher-level OS functionality. Applications run on top of the OS.
+
+\subsubsection{Benefits}
+
+Applications are portable across hardware. Kernel can be modified without affecting applications. Hardware can be upgraded without changing software.
+
+%==============================================================================
+\section{Notations}
+%==============================================================================
+
+Layered architectures can be represented using various notations.
+
+\subsection{Stacked Box Diagrams}
+
+The most common notation shows layers as horizontal rectangles stacked vertically.
+
+\subsubsection{Conventions}
+
+Higher layers are drawn above lower layers. Layer names are centered in rectangles. Arrows or descriptions show allowed-to-use relationships.
+
+\subsubsection{Variations}
+
+Simple diagrams show only layer boxes. Detailed diagrams show modules within layers. Dependencies may be shown explicitly or implied by position.
+
+\subsection{UML Package Diagrams}
+
+UML can represent layered architectures.
+
+\subsubsection{Notation}
+
+Packages represent layers. Dependencies show allowed-to-use relationships. Stereotypes can indicate layer roles.
+
+\subsubsection{Benefits}
+
+Standard notation understood by many stakeholders. Can be combined with other UML diagrams. Tools support UML modeling.
+
+\subsection{Onion Diagrams}
+
+Concentric circles show layers from core outward.
+
+\subsubsection{Conventions}
+
+The innermost circle is the most abstract or central layer. Outer circles depend on inner circles. The dependency direction is always inward.
+
+\subsubsection{Use Cases}
+
+Onion diagrams are popular for Clean Architecture and Hexagonal Architecture. They emphasize the protected inner core.
+
+\subsection{Tabular Notation}
+
+Tables document layer structure and rules.
+
+\subsubsection{Layer Catalog}
+
+Tables list layers with their descriptions, contained modules, and dependencies.
+
+\subsubsection{Dependency Matrix}
+
+Matrices show which layers may use which, with layers on both axes and marks indicating allowed dependencies.
+
+\subsection{Architecture Description Languages}
+
+Formal ADLs can specify layered architectures.
+
+\subsubsection{Notation}
+
+Layers are formally defined elements. Allowed-to-use is a formally specified relation. Constraints can be verified automatically.
+
+%==============================================================================
+\section{Quality Attributes}
+%==============================================================================
+
+Layering decisions significantly affect system quality attributes.
+
+\subsection{Modifiability}
+
+Layering strongly supports modifiability.
+
+\subsubsection{Positive Effects}
+
+Changes are localized to specific layers. Layer interfaces provide stable boundaries. Lower layers are protected from higher-layer changes.
+
+\subsubsection{Negative Effects}
+
+Layer boundaries can make some changes awkward. Cross-cutting changes may require modifications in multiple layers. Strict layering may require pass-through code.
+
+\subsubsection{Design Guidelines}
+
+Align layers with likely change dimensions. Define stable inter-layer interfaces. Accept some cross-layer changes for cross-cutting concerns.
+
+\subsection{Performance}
+
+Layering has performance implications.
+
+\subsubsection{Overhead}
+
+Layer crossings add method call overhead. Strict layering adds pass-through overhead. Data transformation between layers adds processing.
+
+\subsubsection{Mitigation}
+
+Relaxed layering reduces pass-through overhead. Layer interfaces can be designed for efficient data passing. Performance-critical paths can be optimized across layers.
+
+\subsubsection{When It Matters}
+
+For most systems, layering overhead is negligible. High-performance systems may need careful layer boundary design. Latency-sensitive operations may require layer bypass.
+
+\subsection{Testability}
+
+Layering supports testability through isolation.
+
+\subsubsection{Layer Testing}
+
+Each layer can be tested independently. Lower layers are tested first, then higher layers. Layer interfaces define test boundaries.
+
+\subsubsection{Mock and Stub Support}
+
+Lower layers can be mocked when testing higher layers. Layer interfaces define what needs mocking. Dependency injection facilitates substitution.
+
+\subsubsection{Integration Testing}
+
+Layer integration tests verify inter-layer communication. Full stack tests verify all layers together.
+
+\subsection{Portability}
+
+Layering enables portability through isolation.
+
+\subsubsection{Platform Abstraction}
+
+Platform-specific code is isolated in lower layers. Upper layers are platform-independent. Porting requires replacing platform layers.
+
+\subsubsection{Technology Abstraction}
+
+Technology-specific code is isolated in specific layers. Technology changes affect only those layers.
+
+\subsection{Reusability}
+
+Layering promotes reusability of lower layers.
+
+\subsubsection{Foundation Reuse}
+
+Lower layers can be reused across applications. Utility and infrastructure layers are particularly reusable.
+
+\subsubsection{Constraints on Reuse}
+
+Reusable layers must not depend on application-specific code. Layer interfaces must be general enough for multiple uses.
+
+\subsection{Security}
+
+Layering supports security through isolation.
+
+\subsubsection{Trust Boundaries}
+
+Layers can correspond to trust boundaries. Higher layers may be less trusted. Lower layers enforce security policies.
+
+\subsubsection{Defense in Depth}
+
+Each layer can implement security checks. Multiple layers of security provide defense in depth.
+
+%==============================================================================
+\section{Examples}
+%==============================================================================
+
+Concrete examples illustrate layering concepts.
+
+\subsection{Web Application Layers}
+
+A typical web application illustrates three-layer architecture.
+
+\subsubsection{Presentation Layer}
+
+The presentation layer contains web controllers handling HTTP requests, view templates rendering HTML, client-side JavaScript for interactivity, and API endpoints exposing services.
+
+\subsubsection{Business Layer}
+
+The business layer contains domain entities representing business concepts, business services implementing operations, validation rules enforcing business constraints, and workflow logic coordinating activities.
+
+\subsubsection{Data Layer}
+
+The data layer contains repositories accessing databases, data mappers converting between objects and records, query builders constructing database queries, and connection management handling database connections.
+
+\subsubsection{Dependencies}
+
+Controllers use services. Services use repositories. Repositories use database connections. No upward dependencies exist.
+
+\subsection{Mobile Application Layers}
+
+A mobile application has similar but adapted layers.
+
+\subsubsection{UI Layer}
+
+The UI layer contains activities or view controllers, view models supporting data binding, and UI components and layouts.
+
+\subsubsection{Domain Layer}
+
+The domain layer contains use cases implementing features, domain models representing business concepts, and business rules and validation.
+
+\subsubsection{Data Layer}
+
+The data layer contains repositories abstracting data sources, local storage for offline data, and network services for remote APIs.
+
+\subsubsection{Platform Layer}
+
+A platform layer may contain platform-specific implementations and device feature access.
+
+\subsection{Embedded System Layers}
+
+An embedded system illustrates hardware-oriented layering.
+
+\subsubsection{Application Layer}
+
+The application layer contains application logic, user interface (if any), and communication protocols.
+
+\subsubsection{Middleware Layer}
+
+The middleware layer contains operating system services, communication stacks, and file systems.
+
+\subsubsection{Board Support Layer}
+
+The board support layer contains device drivers, hardware initialization, and interrupt handling.
+
+\subsubsection{Hardware Layer}
+
+The hardware layer contains the physical hardware and hardware abstraction.
+
+\subsection{Compiler Layers}
+
+A compiler illustrates processing-oriented layering.
+
+\subsubsection{Layer Structure}
+
+Lexical analysis tokenizes source text. Syntax analysis parses tokens into AST. Semantic analysis validates and annotates AST. Optimization transforms for efficiency. Code generation produces target code.
+
+\subsubsection{Data Flow}
+
+Each layer transforms input to output for the next layer. The pipeline creates a natural layered structure.
+
+%==============================================================================
+\section{Best Practices}
+%==============================================================================
+
+Experience suggests several best practices for layered architectures.
+
+\subsection{Define Clear Layer Responsibilities}
+
+Each layer should have a clear, documented purpose.
+
+Layer names should communicate purpose. Layer responsibilities should not overlap. Documentation should clarify what belongs where.
+
+\subsection{Design Stable Inter-Layer Interfaces}
+
+Interfaces between layers should be stable.
+
+Define interfaces explicitly rather than allowing arbitrary access. Design interfaces for the needs of client layers. Version interfaces when changes are necessary.
+
+\subsection{Enforce Layer Boundaries}
+
+Layer rules should be enforced, not just documented.
+
+Use build tools to detect violations. Use code reviews to verify compliance. Use static analysis to monitor architecture.
+
+\subsection{Choose Appropriate Strictness}
+
+Select strict or relaxed layering based on needs.
+
+Use strict layering when layer independence is paramount. Use relaxed layering when flexibility and performance matter. Document and justify the choice.
+
+\subsection{Handle Cross-Cutting Concerns Thoughtfully}
+
+Some concerns don't fit neatly into layers.
+
+Logging, security, and monitoring may span layers. Use sidecars, aspects, or infrastructure layers appropriately. Don't let cross-cutting concerns undermine layering.
+
+\subsection{Align Layers with Team Structure}
+
+Consider team organization when defining layers.
+
+Teams can own specific layers. Layer boundaries can be team boundaries. Conway's Law suggests architecture will follow organization.
+
+\subsection{Evolve Layers Deliberately}
+
+Layers may need to change as the system evolves.
+
+Add layers when separation needs increase. Merge layers when separation is unnecessary. Refactor when layer boundaries become problematic.
+
+%==============================================================================
+\section{Common Challenges}
+%==============================================================================
+
+Layered architectures present several common challenges.
+
+\subsection{Layer Violation Creep}
+
+Over time, violations of layer rules accumulate.
+
+Shortcuts bypass layer boundaries. Urgency overrides architecture. Accumulated violations undermine the layered structure.
+
+Strategies include automated enforcement, regular architecture reviews, and technical debt management.
+
+\subsection{Pass-Through Overhead}
+
+Strict layering requires passing data through intermediate layers.
+
+Pass-through methods add code without adding value. Development effort is spent on boilerplate. Changes require updates at multiple layers.
+
+Strategies include relaxed layering where appropriate, data transfer objects that traverse layers efficiently, and accepting pass-through as the cost of strict isolation.
+
+\subsection{Layer Bloat}
+
+Layers can become too large and complex.
+
+Incoherent layers contain too many unrelated modules. Layers become hard to understand. The benefits of layering diminish.
+
+Strategies include sublayers within large layers, splitting large layers, and refactoring to maintain cohesion.
+
+\subsection{Inappropriate Layering}
+
+Not every system benefits from layering.
+
+Simple systems may not need layer overhead. Some concerns don't map to layers. Forced layering creates artificial boundaries.
+
+Strategies include evaluating whether layering fits the problem, considering alternative styles, and using layers where they add value.
+
+\subsection{Performance Bottlenecks}
+
+Layer boundaries can become performance bottlenecks.
+
+Data transformation between layers consumes resources. Method call chains through layers add latency. Layer isolation prevents some optimizations.
+
+Strategies include relaxed layering for performance-critical paths, efficient data transfer between layers, and profiling to identify actual bottlenecks.
+
+\subsection{Testing Complexity}
+
+Layered systems require testing at multiple levels.
+
+Unit tests must mock lower layers. Integration tests verify layer interactions. Full-stack tests are complex to set up.
+
+Strategies include dependency injection for testability, contract testing between layers, and layered test strategies matching system layers.
+
+%==============================================================================
+\section{Conclusion}
+%==============================================================================
+
+The layered style provides a fundamental organizing principle for software systems. By grouping modules into layers with constrained dependencies, layering promotes modifiability, manages complexity, enables reuse, and achieves separation of concerns.
+
+Effective layered architecture requires thoughtful layer definition, stable inter-layer interfaces, appropriate strictness choices, and consistent enforcement. The patterns and practices described in this document provide guidance for creating well-structured layered systems.
+
+Layering has proven its value across decades of software development, from operating systems to enterprise applications to mobile apps. Understanding layered architecture equips architects to organize systems effectively, communicate structure clearly, and create maintainable, evolvable software.
+
+The layered style complements other architectural styles and views. It can be combined with decomposition, generalization, and component-and-connector styles to create comprehensive architectural descriptions that address both static structure and runtime behavior.
+
+%==============================================================================
+\section*{References}
+%==============================================================================
+
+\begin{itemize}
+  \item Clements, P., Bachmann, F., Bass, L., Garlan, D., Ivers, J., Little, R., Merson, P., Nord, R., \& Stafford, J. (2010). \textit{Documenting Software Architectures: Views and Beyond} (2nd ed.). Addison-Wesley Professional.
+  \item Bass, L., Clements, P., \& Kazman, R. (2021). \textit{Software Architecture in Practice} (4th ed.). Addison-Wesley Professional.
+  \item Martin, R. C. (2017). \textit{Clean Architecture: A Craftsman's Guide to Software Structure and Design}. Prentice Hall.
+  \item Evans, E. (2003). \textit{Domain-Driven Design: Tackling Complexity in the Heart of Software}. Addison-Wesley Professional.
+  \item Fowler, M. (2002). \textit{Patterns of Enterprise Application Architecture}. Addison-Wesley Professional.
+  \item Buschmann, F., Meunier, R., Rohnert, H., Sommerlad, P., \& Stal, M. (1996). \textit{Pattern-Oriented Software Architecture, Volume 1: A System of Patterns}. Wiley.
+\end{itemize}
+
+\end{document}

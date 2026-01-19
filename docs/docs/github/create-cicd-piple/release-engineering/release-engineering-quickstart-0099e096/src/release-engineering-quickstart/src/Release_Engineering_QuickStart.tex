@@ -1,0 +1,603 @@
+
+%========================================================
+% Release Engineering Quick-Start (Polished & Detailed)
+%========================================================
+% Compile with: lualatex -shell-escape Release_Engineering_QuickStart.tex
+\documentclass[11pt]{article}
+
+% ---------- Encoding & layout ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{microtype}
+\usepackage{setspace}
+\setstretch{1.12}
+
+% ---------- Colors & links ----------
+\usepackage{xcolor}
+\definecolor{ink}{HTML}{111827}      % gray-900
+\definecolor{soft}{HTML}{F9FAFB}     % gray-50
+\definecolor{accent}{HTML}{2563EB}   % blue-600
+\definecolor{ok}{HTML}{059669}       % emerald-600
+\definecolor{warn}{HTML}{D97706}     % amber-600
+\definecolor{bad}{HTML}{DC2626}      % red-600
+\usepackage[hidelinks]{hyperref}
+
+% Plain verbatim for huge plain-text blobs
+\usepackage{verbatim}
+
+% ---------- Lists & tables ----------
+\usepackage{enumitem}
+\setlist[itemize]{topsep=4pt,itemsep=2pt,parsep=0pt}
+\setlist[enumerate]{topsep=4pt,itemsep=2pt,parsep=0pt}
+\usepackage{booktabs}
+\usepackage{array}
+
+% ---------- Code (minted) ----------
+\usepackage[cache=false]{minted} % no frozencache to avoid style missing errors
+\setminted{breakanywhere=true, fontsize=\small, 
+  breaklines=true,
+  fontsize=\small,
+  xleftmargin=1em,
+  linenos,
+  numbersep=6pt
+}
+\newenvironment{code}[1]{\VerbatimEnvironment\begin{minted}{#1}}{\end{minted}}
+
+\title{\bfseries Release Engineering Quick-Start}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\clearpage
+
+\section{Why Release Engineering Matters}
+Release Engineering (\emph{RelEng}) turns source code into dependable, reproducible artifacts and makes delivery routine.
+Core outcomes:
+\begin{itemize}
+  \item A \textbf{versioning model} (usually SemVer) that maps change scope to version numbers.
+  \item \textbf{Tagged source}, signed builds, and \textbf{immutable artifacts}.
+  \item \textbf{Automations} that build, test, package, sign, scan, and publish on events (merge, tag, or manual).
+  \item \textbf{Auditability}: release notes, provenance, SBOMs, checksums, signatures.
+\end{itemize}
+
+\section{Versioning Strategy (SemVer + Conventional Commits)}
+\subsection{Semantic Versioning}
+\begin{itemize}
+  \item \texttt{MAJOR}: breaking changes (\texttt{v2.0.0})
+  \item \texttt{MINOR}: new backward-compatible features (\texttt{v1.1.0})
+  \item \texttt{PATCH}: bug fixes (\texttt{v1.0.1})
+\end{itemize}
+
+\subsection{Conventional Commits (supports automation)}
+Use commit types to drive changelogs and version bumps (e.g., \texttt{feat:}, \texttt{fix:}, \texttt{perf:}, \texttt{docs:}, \texttt{refactor:}).
+Mark breaking changes with \texttt{!} or \texttt{BREAKING CHANGE:}.
+
+\begin{code}{bash}
+# Examples
+git commit -m "feat(auth): add OIDC login flow"
+git commit -m "fix(router): handle trailing slash redirects"
+git commit -m "feat(api)!: drop deprecated /v1 endpoints"
+\end{code}
+\clearpage
+
+\section{Source Tagging \& GitHub Releases}
+\subsection{Tag and Release (UI + CLI)}
+\paragraph{GitHub UI}
+\begin{enumerate}
+  \item Repo \textrightarrow{} \textbf{Releases} \textrightarrow{} \textbf{Draft a new release}.
+  \item Create tag (e.g., \texttt{v1.0.0}) targeting \texttt{main} (or your release branch).
+  \item Generate notes; attach binaries if applicable; \textbf{Publish}.
+\end{enumerate}
+
+\paragraph{GitHub CLI}
+\begin{code}{bash}
+gh auth login
+gh release create v1.1.0 --generate-notes
+gh release list
+\end{code}
+
+\subsection{Auto-Generate Release Notes}
+GitHub can generate notes from merged PRs and commits.
+Keep PR titles crisp and use labels to improve sections.
+
+\section{Packaging Paths}
+Choose the artifact type(s) that fit your distribution model.
+
+\subsection{Node Package (GitHub Packages or npmjs)}
+\paragraph{package.json essentials}
+\begin{code}{json}
+{
+  "name": "@<owner>/<repo>",
+  "version": "1.1.1",
+  "main": "dist/index.js",
+  "files": ["dist"],
+  "repository": {"type":"git","url":"https://github.com/<owner>/<repo>.git"},
+  "publishConfig": {"registry":"https://npm.pkg.github.com"}
+}
+\end{code}
+
+\paragraph{.npmrc for owner scope}
+\begin{code}{text}
+@<owner>:registry=https://npm.pkg.github.com
+\end{code}
+
+\paragraph{Local publish (PAT with packages:write)}
+\begin{code}{bash}
+npm ci
+npm publish --access public   # or private if using GitHub Packages
+\end{code}
+
+\paragraph{GitHub Actions: publish on Release}
+\begin{code}{yaml}
+name: Publish package
+on:
+  release:
+    types: [published]
+permissions:
+  contents: read
+  packages: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://npm.pkg.github.com
+          scope: "@<owner>"
+      - run: npm ci
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+\end{code}
+
+\subsection{Python Package (PyPI or GitHub Packages)}
+\paragraph{Project metadata (pyproject.toml)}
+\begin{code}{toml}
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "your-package"
+version = "1.0.0"
+description = "Awesome thing"
+requires-python = ">=3.9"
+\end{code}
+
+\paragraph{Publish with Twine}
+\begin{code}{bash}
+python -m build
+python -m twine upload dist/*     # uses ~/.pypirc
+\end{code}
+\clearpage
+
+\paragraph{GitHub Actions: build \& publish on tag}
+\begin{code}{yaml}
+name: PyPI publish
+on:
+  push:
+    tags: ["v*.*.*"]
+jobs:
+  build-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install build twine
+      - run: python -m build
+      - run: python -m twine upload dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+\end{code}
+
+\subsection{Java (Maven) to GitHub Packages}
+\paragraph{pom.xml distributionManagement}
+\begin{code}{xml}
+<distributionManagement>
+  <repository>
+    <id>github</id>
+    <name>GitHub Packages</name>
+    <url>https://maven.pkg.github.com/&lt;owner&gt;/&lt;repo&gt;</url>
+  </repository>
+</distributionManagement>
+\end{code}
+
+\paragraph{Settings (GITHUB\_TOKEN)}
+\begin{code}{xml}
+<servers>
+  <server>
+    <id>github</id>
+    <username>${env.GITHUB_ACTOR}</username>
+    <password>${env.GITHUB_TOKEN}</password>
+  </server>
+</servers>
+\end{code}
+\clearpage
+
+\paragraph{Workflow}
+\begin{code}{yaml}
+name: Maven publish
+on:
+  release:
+    types: [published]
+permissions:
+  contents: read
+  packages: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+      - run: mvn -B -DskipTests deploy
+\end{code}
+
+\section{Containers to GHCR (GitHub Container Registry)}
+\subsection{Dockerfile (example)}
+\begin{code}{dockerfile}
+FROM node:20-alpine
+LABEL org.opencontainers.image.source="https://github.com/<owner>/<repo>"
+WORKDIR /app
+COPY . /app
+RUN npm ci --omit=dev
+EXPOSE 3000
+CMD ["npm","start"]
+\end{code}
+
+\subsection{Build \& push (CLI)}
+\begin{code}{bash}
+export IMAGE=ghcr.io/<owner>/<repo>:v1.0.0
+echo $GITHUB_TOKEN | docker login ghcr.io -u <owner> --password-stdin
+docker build -t $IMAGE .
+docker push $IMAGE
+\end{code}
+\clearpage
+
+\subsection{Workflow: docker/build-push-action}
+\begin{code}{yaml}
+name: Build & Push Image
+on:
+  push:
+    tags: ["v*.*.*"]
+permissions:
+  contents: read
+  packages: write
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+\end{code}
+
+
+\section{Containers to AWS (ECR, ECS Fargate, EKS)}
+
+\subsection{Amazon ECR: Build, Tag, Push}
+\paragraph{Create (or use) a repository}
+\begin{code}{bash}
+aws ecr create-repository --repository-name <name> --region <region> \
+  --image-scanning-configuration scanOnPush=true
+\end{code}
+
+\paragraph{Authenticate (OIDC or static credentials)}
+\begin{code}{bash}
+aws ecr get-login-password --region <region> \
+| docker login --username AWS --password-stdin <account>.dkr.ecr.<region>.amazonaws.com
+\end{code}
+
+\paragraph{Build, tag, push}
+\begin{code}{bash}
+IMAGE=<account>.dkr.ecr.<region>.amazonaws.com/<name>:v1.0.0
+docker build -t "$IMAGE" .
+docker push "$IMAGE"
+\end{code}
+\clearpage
+
+\subsection{GitHub Actions \texorpdfstring{$\rightarrow$}{->} ECR (OIDC)}
+\paragraph{Set up AWS IAM OIDC trust (once)}
+Create an IAM role trusted by \texttt{token.actions.githubusercontent.com} (replace placeholders).
+\begin{code}{json}
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": {"Federated": "arn:aws:iam::<account>:oidc-provider/token.actions.githubusercontent.com"},
+    "Action": "sts:AssumeRoleWithWebIdentity",
+    "Condition": {
+      "StringEquals": {
+        "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+      },
+      "StringLike": {
+        "token.actions.githubusercontent.com:sub": "repo:<owner>/<repo>:ref:refs/heads/main"
+      }
+    }
+  }]
+}
+\end{code}
+
+Attach a policy granting ECR push (minimal example).
+\begin{code}{json}
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": [
+      "ecr:GetAuthorizationToken",
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:CompleteLayerUpload",
+      "ecr:DescribeRepositories",
+      "ecr:InitiateLayerUpload",
+      "ecr:PutImage",
+      "ecr:UploadLayerPart"
+    ],
+    "Resource": "*"
+  }]
+}
+\end{code}
+\clearpage
+
+\paragraph{Workflow: build-push-to-ECR (with cache)}
+\begin{code}{yaml}
+name: Build and Push (ECR)
+on:
+  push:
+    tags: ["v*.*.*"]
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::<account>:role/<role-name>
+          aws-region: <region>
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            <account>.dkr.ecr.<region>.amazonaws.com/<name>:${{ github.ref_name }}
+            <account>.dkr.ecr.<region>.amazonaws.com/<name>:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+\end{code}
+\clearpage
+
+\subsection{ECS Fargate: Deploy}
+\paragraph{Task definition (snippet)}
+\begin{code}{json}
+{
+  "family": "my-service",
+  "networkMode": "awsvpc",
+  "cpu": "512",
+  "memory": "1024",
+  "requiresCompatibilities": ["FARGATE"],
+  "executionRoleArn": "arn:aws:iam::<account>:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::<account>:role/appTaskRole",
+  "containerDefinitions": [{
+    "name": "web",
+    "image": "<account>.dkr.ecr.<region>.amazonaws.com/<name>:v1.0.0",
+    "portMappings": [{"containerPort": 3000, "protocol": "tcp"}],
+    "essential": true
+  }]
+}
+\end{code}
+\clearpage
+
+\paragraph{Workflow: update ECS service (rolling)}
+\begin{code}{yaml}
+name: Deploy to ECS
+on:
+  workflow_dispatch: {}
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::<account>:role/<role-name>
+          aws-region: <region>
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: <account>.dkr.ecr.<region>.amazonaws.com/<name>:${{ github.sha }}
+
+      - name: Render task definition
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ecs-task-def.json
+          container-name: web
+          image: <account>.dkr.ecr.<region>.amazonaws.com/<name>:${{ github.sha }}
+
+      - name: Deploy service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.render.outputs.task-definition }}
+          service: my-service
+          cluster: my-cluster
+          wait-for-service-stability: true
+\end{code}
+
+\paragraph{Blue/Green (optional)}
+Use ECS + CodeDeploy for canary/blue-green; wire the service to a CodeDeploy application and deployment group, then trigger a deployment with a new task definition revision.
+
+\subsection{EKS: Deploy}
+\paragraph{Configure \texttt{kubeconfig} via OIDC role}
+Grant the role \texttt{eks:DescribeCluster}. Map the role to a Kubernetes RBAC subject with cluster-admin or a bound role.
+\begin{code}{bash}
+aws eks update-kubeconfig --name <cluster> --region <region> --role-arn arn:aws:iam::<account>:role/<role-name>
+\end{code}
+
+\paragraph{Minimal Deployment (snippet)}
+\begin{code}{yaml}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: web } }
+  template:
+    metadata: { labels: { app: web } }
+    spec:
+      containers:
+      - name: web
+        image: <account>.dkr.ecr.<region>.amazonaws.com/<name>:v1.0.0
+        ports: [{containerPort: 3000}]
+\end{code}
+
+\paragraph{Workflow: kubectl rollout}
+\begin{code}{yaml}
+name: Deploy to EKS
+on: { workflow_dispatch: {} }
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::<account>:role/<role-name>
+          aws-region: <region>
+      - name: Get kubeconfig
+        run: aws eks update-kubeconfig --name <cluster> --region <region>
+      - name: Update image
+        run: |
+          kubectl set image deploy/web web=<account>.dkr.ecr.<region>.amazonaws.com/<name>:${{ github.sha }}
+          kubectl rollout status deploy/web
+\end{code}
+
+\subsection{Tips \& Gotchas}
+\begin{itemize}
+  \item Enable \textbf{scanOnPush} in ECR; fail builds on critical vulns (e.g., pre-deploy gate with Trivy/Grype).
+  \item Use \texttt{cache-to: type=gha,mode=max} to speed Docker builds.
+  \item Prefer \textbf{multi-arch} images when you have arm64/amd64 hosts (\texttt{platforms: linux/amd64,linux/arm64}).
+  \item Grant the OIDC role least-privilege: ECR push, ECS deploy, or EKS describe; use separate roles per workflow if needed.
+\end{itemize}
+
+
+\section{Security: Checksums, Signatures, SBOM, Provenance}
+\subsection{Checksums}
+Generate \texttt{SHA256} for assets and publish alongside releases.
+\begin{code}{bash}
+shasum -a 256 artifact.tar.gz > artifact.tar.gz.sha256
+\end{code}
+
+\subsection{Signing (cosign) and SBOM (syft)}
+\begin{code}{bash}
+# Image signature
+cosign sign ghcr.io/<owner>/<repo>:v1.0.0
+
+# SBOM
+syft ghcr.io/<owner>/<repo>:v1.0.0 -o spdx-json > sbom.spdx.json
+\end{code}
+
+\subsection{Supply-chain provenance (SLSA generator gist)}
+Record build provenance and attach to the release (or publish as attestation).
+
+\section{Release Trains, Channels, and Promotion}
+\begin{itemize}
+  \item \textbf{Channels}: \texttt{-alpha}, \texttt{-beta}, \texttt{-rc}, \texttt{-stable}.
+  \item \textbf{Promotion}: build once, promote by retagging (no rebuild).
+  \item \textbf{Canary \textrightarrow{} Staged \textrightarrow{} Global} rollouts with metrics and fast rollback.
+\end{itemize}
+
+\section{Branching \& Protection}
+\begin{itemize}
+  \item Protect \texttt{main}: require PR reviews, status checks, linear history.
+  \item Optional maintenance branches (\texttt{release/1.x}) for patch backports.
+  \item Tag from a green build of \texttt{main} (or from a release branch commit).
+\end{itemize}
+
+\section{Automated Changelog}
+\subsection{Keep a Changelog (example sections)}
+\begin{itemize}
+  \item Added, Changed, Deprecated, Removed, Fixed, Security.
+\end{itemize}
+
+\subsection{Action example (conventional commits)}
+\begin{code}{yaml}
+name: Changelog
+on:
+  push:
+    tags: ["v*.*.*"]
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate changelog
+        uses: metcalfc/changelog-generator@v4.3.1
+        with:
+          mytoken: ${{ secrets.GITHUB_TOKEN }}
+\end{code}
+
+\section{Monorepos (optional)}
+\begin{itemize}
+  \item Workspaces (npm/pnpm/yarn) or tools like Lerna/Changesets.
+  \item Independent versioning per package vs. fixed version for all.
+  \item Filtered workflows: build/test only what changed.
+\end{itemize}
+
+\section{Troubleshooting Cheatsheet}
+\begin{tabular}{@{}p{0.33\linewidth}p{0.62\linewidth}@{}}
+\toprule
+\textbf{Symptom} & \textbf{Likely Fix} \\ \midrule
+403 on package publish & Missing scopes: add \texttt{packages:write}; ensure registry/scope in \texttt{.npmrc}. \\
+Image push denied & Workflow permissions: enable ``Read and write'' for GITHUB\_TOKEN; login to GHCR. \\
+Wrong version & Ensure tag matches version file; automate version bump via CI. \\
+SBOM empty & Build stage excluded deps; generate SBOM from final artifact/image. \\
+\bottomrule
+\end{tabular}
+
+\end{document}

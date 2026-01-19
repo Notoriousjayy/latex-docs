@@ -1,0 +1,281 @@
+
+\documentclass[11pt,a4paper]{article}
+
+% --- Page + typography ---
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{parskip}
+
+% --- Color + links ---
+\usepackage[dvipsnames]{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=MidnightBlue,
+  urlcolor=MidnightBlue,
+  citecolor=MidnightBlue
+}
+
+% --- Structure + lists ---
+\usepackage{enumitem}
+\setlist{itemsep=3pt, topsep=6pt, leftmargin=1.2em}
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{8pt plus 2pt}{4pt}
+\titlespacing*{\subsection}{0pt}{6pt}{3pt}
+\titlespacing*{\subsubsection}{0pt}{5pt}{3pt}
+
+% --- Code (minted) ---
+\usepackage{fvextra}
+\usepackage{minted}
+\setminted{
+  fontsize=\small,
+  breaklines,
+  autogobble,
+  frame=single,
+  framesep=3mm,
+  baselinestretch=1.0
+}
+
+% --- Handy macros ---
+\newcommand{\term}[1]{\texttt{#1}}
+
+\title{External Scanning $\rightarrow$ SARIF Upload \& Categories (GitHub)}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{Build note.} This document uses the \term{minted} package (Pygments). Compile with:
+\begin{minted}[fontsize=\footnotesize]{bash}
+# Example (latexmk)
+latexmk -pdf -shell-escape external-scanning-sarif-upload.tex
+
+# Or (pdflatex, run twice if needed)
+pdflatex -shell-escape external-scanning-sarif-upload.tex
+\end{minted}
+
+\section{Why SARIF \& Categories}
+GitHub Code Scanning ingests SARIF 2.1.0 files so that third-party scanning results (for example Bandit, Sonar, etc.) appear alongside CodeQL alerts. When uploading multiple analyses for the \emph{same commit} you should assign a unique \emph{category} per analysis to prevent uploads from overwriting one another and to enable filtering by category in the Code scanning UI.
+
+\section{Generate SARIF From Your Tool}
+\subsection{Bandit (Python)}
+If your Bandit build supports SARIF directly, you can emit SARIF 2.1.0 like this:
+\begin{minted}{bash}
+pip install bandit
+bandit -r . -f sarif -o bandit.sarif
+\end{minted}
+
+If you need an external formatter, install the SARIF formatter and pipe Bandit results through it (common in some setups):
+\begin{minted}{bash}
+pip install bandit-sarif-formatter
+bandit -r . -f sarif -o bandit.sarif
+\end{minted}
+
+\subsection{CodeQL CLI (exporting SARIF)}
+If you analyze with the CodeQL CLI, export SARIF and set a distinct category at the same time:
+\begin{minted}{bash}
+codeql database analyze my-db my-suite.qls \
+  --format=sarifv2.1.0 \
+  --output results.sarif \
+  --sarif-category codeql-python
+\end{minted}
+
+\section{Preferred Upload: GitHub Actions}
+Add a minimal workflow that uploads your SARIF (from any tool). Use the \term{category} input to keep analyses separate.
+\begin{minted}{yaml}
+name: Upload third-party SARIF
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  security-events: write
+  actions: read
+  contents: read
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # (Optional) Run your scanner here to produce results.sarif
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: results.sarif
+          category: bandit-sast   # separates this analysis
+\end{minted}
+
+\subsection{Multiple SARIF Files in One Run}
+When uploading multiple SARIF files for a single commit, give each a distinct category.
+\begin{minted}{yaml}
+- name: Upload Bandit SARIF
+  uses: github/codeql-action/upload-sarif@v4
+  with:
+    sarif_file: bandit.sarif
+    category: bandit-sast
+
+- name: Upload Trivy SARIF
+  uses: github/codeql-action/upload-sarif@v4
+  with:
+    sarif_file: trivy.sarif
+    category: trivy-container-scan
+\end{minted}
+\clearpage
+
+\section{API Upload (outside Actions)}
+If your scanner runs off-platform, you can POST SARIF directly to GitHub. The payload must be \emph{gzip} compressed and Base64 encoded.
+
+\subsection{Prepare the SARIF payload}
+\begin{minted}{bash}
+# Linux: write a single-line Base64 string
+gzip -c results.sarif | base64 -w 0 > results.sarif.gz.b64
+
+# macOS: base64 strips newlines by default
+# gzip -c results.sarif | base64 > results.sarif.gz.b64
+\end{minted}
+
+\subsection{POST to the SARIF ingestion endpoint}
+Replace placeholders like \term{OWNER}, \term{REPO}, and \term{COMMIT\_SHA\_HERE}. The token needs \term{security\_events: write} on private repos.
+\begin{minted}{bash}
+export GH_TOKEN=ghp_your_token_here
+
+curl -sS -X POST \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer $GH_TOKEN" \
+  https://api.github.com/repos/OWNER/REPO/code-scanning/sarifs \
+  -d @- <<'JSON'
+{
+  "commit_sha":  "COMMIT_SHA_HERE",
+  "ref":         "refs/heads/main",
+  "sarif":       "$(cat results.sarif.gz.b64)",
+  "checkout_uri":"file:///home/runner/work/REPO/REPO",
+  "tool_name":   "Bandit"
+}
+JSON
+\end{minted}
+
+\section{Making Categories Stick}
+You have three reliable ways to ensure each upload has a unique category:
+\begin{enumerate}
+  \item \textbf{CodeQL CLI}: pass \term{--sarif-category my-category}.
+  \item \textbf{GitHub Action \term{upload-sarif}}: set \term{with: category: my-category}.
+  \item \textbf{Embed in SARIF}: add a unique \term{runAutomationDetails.id} to the SARIF file \emph{before} upload.
+\end{enumerate}
+\clearpage
+
+\subsection{Embedding \texttt{runAutomationDetails.id} in SARIF}
+A minimal SARIF snippet showing where to add the identifier:
+\begin{minted}{json}
+{
+  "version": "2.1.0",
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "tool": { "driver": { "name": "Bandit" } },
+      "runAutomationDetails": { "id": "bandit-sast" },
+      "results": [ /* ... */ ]
+    }
+  ]
+}
+\end{minted}
+
+\paragraph{Important.} If you reuse the same tool \emph{and} category for another upload to the same commit, the newer upload replaces the earlier one. Keep categories unique per tool, per slice (language, directory, service), or per pipeline stage.
+
+\section{After Upload: Where Results Appear \& Gotchas}
+\begin{itemize}
+  \item Navigate to \textbf{Security $\rightarrow$ Code scanning alerts} to see findings. Filter by \emph{Tool} (e.g., Bandit, CodeQL) and by \emph{Category}.
+  \item \textbf{Fingerprints}: include \term{partialFingerprints} in results or let \term{upload-sarif} compute them with access to the source tree; this reduces duplicate alerts across runs.
+  \item \textbf{Size/limits}: gzip'ed SARIF should be reasonably small; extremely large runs may be truncated in the UI.
+  \item \textbf{Spec}: target SARIF 2.1.0.
+\end{itemize}
+\clearpage
+
+\section{Ready-to-Use Workflow Templates}
+\subsection{Bandit $\rightarrow$ Code Scanning (simple)}
+\begin{minted}{yaml}
+name: Bandit (SAST) → Code Scanning
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  security-events: write
+  actions: read
+  contents: read
+
+jobs:
+  bandit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: pipx install bandit
+      - run: bandit -r . -f sarif -o bandit.sarif || true
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: bandit.sarif
+          category: bandit-sast
+\end{minted}
+\clearpage
+
+\subsection{Multi-scan Monorepo Slice (two uploads, distinct categories)}
+\begin{minted}{yaml}
+name: Monorepo multi-scan
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  security-events: write
+  actions: read
+  contents: read
+
+jobs:
+  scans:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Python SAST (Bandit)
+        run: |
+          pipx install bandit
+          bandit -r services/api -f sarif -o bandit-api.sarif || true
+
+      - name: Container scan (Trivy)
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          trivy image --format sarif --output trivy.sarif ghcr.io/org/app:latest || true
+
+      - name: Upload Bandit SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: bandit-api.sarif
+          category: bandit-sast-api
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy.sarif
+          category: trivy-container-scan
+\end{minted}
+
+\section*{Appendix: Quick Checklist}
+\begin{itemize}
+  \item Produce valid \textbf{SARIF 2.1.0}.
+  \item \textbf{One category per analysis} per commit to avoid overwrite and enable filtering.
+  \item Prefer \textbf{GitHub Actions} with \term{upload-sarif}; use the API when off-platform.
+  \item Keep SARIF files reasonably small; split huge scans across slices with distinct categories.
+  \item For repeatability, pin tool versions and document the exact command lines in the repo.
+\end{itemize}
+
+\end{document}

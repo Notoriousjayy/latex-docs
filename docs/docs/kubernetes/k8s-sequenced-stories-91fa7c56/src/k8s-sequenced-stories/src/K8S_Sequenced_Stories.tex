@@ -1,0 +1,965 @@
+% !TEX TS-program = pdflatex
+\documentclass[11pt]{article}
+
+% -------------------- Packages --------------------
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}                    % readable serif/sans defaults
+\usepackage{inconsolata}                % clearer monospace for code
+\usepackage{upquote}                    % straight quotes in verbatim/listings
+\usepackage{microtype}
+\usepackage[margin=1in]{geometry}
+\usepackage[hyphens]{url}               % better URL breaks
+\usepackage{hyperref}
+\usepackage{bookmark}                   % robust PDF outlines (load after hyperref)
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage[most]{tcolorbox}
+% Fallback: define MidnightBlue if not provided by xcolor (dvipsnames)
+\makeatletter
+\@ifundefinedcolor{MidnightBlue}{\definecolor{MidnightBlue}{RGB}{25,25,112}}{}
+\makeatother
+
+\usepackage{amssymb}
+\usepackage{titlesec}
+\usepackage{graphicx}
+\usepackage{listings}
+
+% -------------------- Readability Tweaks --------------------
+\linespread{1.03}                       % slight line-height increase
+\setlength{\parindent}{0pt}             % block paragraphs
+\setlength{\parskip}{0.55em}            % space between paragraphs
+\setlength{\emergencystretch}{2em}      % fewer overfull lines
+\renewcommand{\arraystretch}{1.12}      % roomier tables
+\raggedbottom                           % avoid vertical stretch on pages
+
+% Prevent widows/orphans for smoother page breaks
+\clubpenalty=10000
+\widowpenalty=10000
+\displaywidowpenalty=10000
+
+% Tighter, consistent spacing for headings
+\titlespacing*{\section}{0pt}{0.9em}{0.35em}
+\titlespacing*{\subsection}{0pt}{0.75em}{0.25em}
+
+% Lists: compact but readable and aligned with body text
+\setlist{leftmargin=*,itemsep=2pt,topsep=4pt}
+\setlist[itemize]{itemsep=2pt}
+\setlist[enumerate]{itemsep=2pt}
+
+% -------------------- Colors --------------------
+\definecolor{Primary}{HTML}{0E7490}   % teal-700
+\definecolor{Accent}{HTML}{0EA5E9}    % sky-500
+\definecolor{Soft}{HTML}{F1F5F9}      % slate-100
+\definecolor{Ink}{HTML}{0F172A}       % slate-900
+\definecolor{Meta}{HTML}{475569}      % slate-600
+\definecolor{OK}{HTML}{16A34A}        % green-600
+\definecolor{Warn}{HTML}{EA580C}      % orange-600
+\definecolor{Bad}{HTML}{DC2626}       % red-600
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=Primary,
+  urlcolor=Primary,
+  citecolor=Primary,
+  breaklinks=true,
+  pdfauthor={Jordan Suber},
+  pdftitle={Kubernetes Stories — Phased End-to-End Workflow}
+}
+\urlstyle{same}
+
+\titleformat{\section}{\large\bfseries\color{Ink}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries\color{Ink}}{\thesubsection}{0.6em}{}
+
+\newcommand{\checkbox}{\(\square\)}
+\newcommand{\checkedbox}{\(\blacksquare\)}
+\newcommand{\eg}{e.g.\ }
+\newcommand{\ie}{i.e.\ }
+
+% -------------------- Gherkin (listings) --------------------
+\lstdefinelanguage{Gherkin}{
+  morekeywords={Feature,Background,Scenario,Scenario\ Outline,Examples,Given,When,Then,And,But},
+  sensitive=true,
+}
+\lstset{
+  language=Gherkin,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{Primary}\bfseries,
+  commentstyle=\itshape\color{Meta},
+  showstringspaces=false,
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{Soft},
+  backgroundcolor=\color{Soft},
+  tabsize=2,
+  columns=fullflexible,
+  keepspaces=true,                      % preserve alignment
+  breaklines=true,                      % wrap long steps
+  breakatwhitespace=true,
+  xleftmargin=1ex,                      % breathing room inside frame
+  framexleftmargin=1ex,
+  framesep=0.6ex,
+  aboveskip=3pt,                        % tighter vertical rhythm
+  belowskip=6pt
+}
+
+% -------------------- Story Card Box --------------------
+\tcbset{
+  colback=white,
+  colframe=Primary,
+  coltitle=white,
+  fonttitle=\bfseries,
+  sharp corners,
+  boxrule=0.8pt,
+  left=8pt,right=8pt,top=8pt,bottom=8pt,
+  title filled,
+  enhanced,
+  breakable                              % allow page breaks inside cards
+}
+
+\newtcolorbox{StoryCard}[2][]{title={#2},#1}
+
+% A compact label column for TabularX
+\newcolumntype{L}{>{\raggedleft\arraybackslash\footnotesize\color{Meta}}p{0.22\linewidth}}
+\newcolumntype{V}{>{\raggedright\arraybackslash}X}
+
+% -------------------- Upgraded StoryCard helpers --------------------
+% Consume 9 args and render a meta table like the original detailed cards:
+% 1: ID   2: Title   3: Epic/Feature   4: Business Value
+% 5: Priority   6: Estimate(SP)   7: Persona   8: Dependencies   9: Assumptions/Risks
+\makeatletter
+\@ifundefined{BeginCard}{
+  \newcommand{\BeginCard}[9]{%
+    \clearpage
+    \begin{StoryCard}{\textbf{#1} ~|~ \textit{#2}}%
+      \vspace{2pt}
+      \begin{tabularx}{\linewidth}{L V}
+        \textbf{Epic / Feature} & #3 \\
+        \textbf{Business Value} & #4 \\
+        \textbf{Priority} & #5 \quad \textbf{Estimate (SP):}~#6 \\
+        \textbf{Persona} & #7 \\
+        \textbf{Dependencies} & #8 \\
+        \textbf{Assumptions / Risks} & #9 \\
+      \end{tabularx}
+      \vspace{6pt}
+      {\footnotesize
+        \textbf{Definition of Ready:} Persona clear; AC drafted; Dependencies known; Estimate set.\\
+        \textbf{Definition of Done:} All ACs pass; Tests green; Security/observability checks; Docs updated; Evidence attached.
+      }
+      \vspace{4pt}
+  }%
+}{
+  \renewcommand{\BeginCard}[9]{%
+    \clearpage
+    \begin{StoryCard}{\textbf{#1} ~|~ \textit{#2}}%
+      \vspace{2pt}
+      \begin{tabularx}{\linewidth}{L V}
+        \textbf{Epic / Feature} & #3 \\
+        \textbf{Business Value} & #4 \\
+        \textbf{Priority} & #5 \quad \textbf{Estimate (SP):}~#6 \\
+        \textbf{Persona} & #7 \\
+        \textbf{Dependencies} & #8 \\
+        \textbf{Assumptions / Risks} & #9 \\
+      \end{tabularx}
+      \vspace{6pt}
+      {\footnotesize
+        \textbf{Definition of Ready:} Persona clear; AC drafted; Dependencies known; Estimate set.\\
+        \textbf{Definition of Done:} All ACs pass; Tests green; Security/observability checks; Docs updated; Evidence attached.
+      }
+      \vspace{4pt}
+  }%
+}
+\makeatother
+\providecommand{\EndCard}{\end{StoryCard}}
+
+% -------------------- Tasks Box (list wrapper) --------------------
+% Provides \begin{TasksBox} ... \item ... \end{TasksBox}
+\newenvironment{TasksBox}[1][]{
+  \begin{tcolorbox}[colback=Soft, colframe=Primary, title=\textbf{Tasks}, #1]
+  \begin{itemize}[leftmargin=1.2em,itemsep=2pt,topsep=4pt]
+}{
+  \end{itemize}
+  \end{tcolorbox}
+}
+
+
+% ===== Screenshot-style card + tasks styling patch (drop-in) =====
+\usepackage{ragged2e}
+% Badges/pills for metadata and NFR chips
+\newtcbox{\pill}{on line, arc=3pt, boxsep=0.8pt, left=4pt,right=4pt,top=1pt,bottom=1pt,
+  colframe=gray!50, colback=gray!15, boxrule=0.3pt}
+\newcommand{\badge}[1]{\pill{\footnotesize #1}}
+
+% Match screenshot look for tcolorbox defaults
+\tcbset{
+  colback=gray!2,
+  colframe=gray!50,
+  colbacktitle=gray!6,
+  coltitle=black,
+  fonttitle=\bfseries\large,
+  arc=2pt,
+  boxrule=0.4pt,
+  left=8pt,right=8pt,top=8pt,bottom=8pt,
+  enhanced,
+  breakable,
+  borderline west={2pt}{0pt}{draw=MidnightBlue}
+}
+
+% Robust two-column meta table (no tabularx dependency inside cards)
+\newlength{\StoryLabelW}
+\setlength{\StoryLabelW}{3.2cm}
+\newlength{\StoryValueW}
+\setlength{\StoryValueW}{\dimexpr\linewidth-\StoryLabelW-2\tabcolsep\relax}
+
+% Re-style \BeginCard and \EndCard to match screenshot
+\makeatletter
+\renewcommand{\BeginCard}[9]{%
+  \begin{StoryCard}{\textbf{#1}\ \textemdash\ #2}%
+  \small
+  \begin{tabular}{@{}>{\raggedleft\arraybackslash\bfseries}p{\StoryLabelW} >{\RaggedRight\arraybackslash}p{\StoryValueW}@{}}
+    Epic / Feature          & #3 \\
+    Business Value          & #4 \\
+    Priority / Estimate     & \badge{Priority: #5}\ \badge{SP: #6} \\
+    Persona                 & #7 \\
+    Dependencies            & #8 \\
+    Assumptions / Risks     & #9 \\
+  \end{tabular}
+  \medskip
+  \textbf{Non-Functional}\quad
+  \badge{Performance}\ \badge{Security}\ \badge{Reliability}\ \badge{Accessibility}\ \badge{Privacy}\ \badge{i18n}
+  \medskip
+}
+\makeatother
+
+\renewcommand{\EndCard}{%
+  \vspace{0.2\baselineskip}
+  {\footnotesize\color{gray!60}\textbf{Definition of Ready:} Persona clear; AC drafted; Dependencies known; Estimate set.\ \textbullet\ \textbf{Definition of Done:} All ACs pass; Tests green; Security/a11y checks; Docs updated; Deployed/flagged.}
+  \end{StoryCard}
+}
+
+% Tasks box styling to match screenshot
+\renewenvironment{TasksBox}[1][Tasks]{%
+  \begin{tcolorbox}[
+    enhanced,breakable,
+    colback=gray!1, colframe=gray!35,
+    colbacktitle=gray!6, coltitle=black,
+    title={#1}, fonttitle=\bfseries,
+    borderline west={1.8pt}{0pt}{draw=MidnightBlue},
+    arc=2pt, boxrule=0.4pt,
+    left=10pt,right=10pt,top=6pt,bottom=6pt,
+    before skip=6pt, after skip=10pt
+  ]
+  \small
+  \begin{itemize}[label=\checkbox, leftmargin=*, labelsep=0.6em, itemsep=4pt, topsep=2pt, parsep=0pt]
+}{%
+  \end{itemize}
+  \end{tcolorbox}
+}
+% ===== End patch =====
+
+\begin{document}
+\begin{center}
+  {\huge \textbf{Kubernetes Stories — Phased End-to-End Workflow}}\\[2pt]
+  \textcolor{Meta}{Foundations → Visibility → Automation → Release → Scale → Security → Traffic → Depth → Advanced}\\[6pt]
+\end{center}
+
+% ============================================================
+\section{Workflow Phases (Overview)}
+% ============================================================
+\subsection*{Foundations \& Dev Experience}
+\begin{itemize}
+  \item \textbf{KBP-01} — Basic service + Helm + ingress (hello world end-to-end).
+  \item \textbf{KBP-02} — Developer workflows (namespaces, RBAC, inner loop).
+  \item \textbf{KBP-04} — Config \& secrets baseline (separate config, non-secret vs secret).
+\end{itemize}
+
+\subsection*{Observability First (make issues visible early)}
+\begin{itemize}
+  \item \textbf{KBP-03} — Monitoring + logging (Prometheus, Grafana, Loki/EFK).
+\end{itemize}
+
+\subsection*{Ship Automatically}
+\begin{itemize}
+  \item \textbf{KBP-05} — CI pipeline to build/test/deploy.
+  \item \textbf{KBP-18} — Adopt GitOps for deployments (pipeline hands off to GitOps).
+\end{itemize}
+
+\subsection*{Release Discipline}
+\begin{itemize}
+  \item \textbf{KBP-06} — Versioning, releases, rollout patterns (blue/green, canary).
+\end{itemize}
+
+\subsection*{Efficiency \& Stability}
+\begin{itemize}
+  \item \textbf{KBP-08} — Requests/limits, HPA, PDB (right-size + graceful disruptions).
+  \item \textbf{KBP-20} — Resilience \& performance tests (chaos/load with SLO checks).
+\end{itemize}
+
+\subsection*{Security Baseline \& Guardrails}
+\begin{itemize}
+  \item \textbf{KBP-10} — Workload hardening (PSA, seccomp, non-root).
+  \item \textbf{KBP-17} — Admission control \& authorization (API governance levers).
+  \item \textbf{KBP-11} — Policy-as-code (Gatekeeper/Kyverno) to enforce standards.
+  \item \textbf{KBP-19} — Holistic security posture (images, SBOMs, scanners, posture views).
+\end{itemize}
+
+\subsection*{Networking \& Traffic Control}
+\begin{itemize}
+  \item \textbf{KBP-09} — Networking hardening, Gateway API / service mesh (mTLS, traffic splits).
+\end{itemize}
+
+\subsection*{Scale Out \& Multi-Everything}
+\begin{itemize}
+  \item \textbf{KBP-07} — Multi-region staging \& controlled rollout (regional values/canaries).
+  \item \textbf{KBP-12} — Multi-cluster management with GitOps (fleet-level practices).
+\end{itemize}
+
+\subsection*{App/Platform Depth}
+\begin{itemize}
+  \item \textbf{KBP-16} — Stateful services (storage, backups, operators).
+  \item \textbf{KBP-13} — External integrations (safe service-to-service, egress controls).
+  \item \textbf{KBP-15} — Higher-level app/platform patterns (golden paths, templates).
+\end{itemize}
+
+\subsection*{Advanced \& Extensibility}
+\begin{itemize}
+  \item \textbf{KBP-21} — Build a simple operator (Kubebuilder) to encode ops runbooks.
+  \item \textbf{KBP-14} — ML inference on K8s (only after observability, security, scaling are in).
+\end{itemize}
+
+\subsection*{Wrap-Up \& Forward Plan}
+\begin{itemize}
+  \item \textbf{KBP-22} — Document conclusions \& next-90-day roadmap (what to double-down on).
+\end{itemize}
+
+% ============================================================
+\section{Sequenced Story Index by Phase}
+% ============================================================
+% Map your actual story cards (K8S-xx) into these phases.
+\subsection*{Foundations \& Dev Experience}
+\begin{enumerate}
+  \item \textbf{K8S-01} — Get a Local Cluster Running
+  \item \textbf{K8S-02} — Provision Clusters (kubeadm + managed)
+  \item \textbf{K8S-03} — Master \texttt{kubectl} Fundamentals
+  \item \textbf{K8S-04} — Deploy Core Workloads
+  \item \textbf{K8S-06} — Package with Helm \& Friends
+  \item \textbf{K8S-07} — Govern with Namespaces/Quotas
+  \item \textbf{K8S-08} — Persist \& Configure Safely
+\end{enumerate}
+
+\subsection*{Observability First}
+\begin{enumerate}
+  \item \textbf{K8S-11} — Observe Health \& Behavior (metrics/logs/traces, dashboards/alerts)
+\end{enumerate}
+
+\subsection*{Ship Automatically}
+\begin{itemize}
+  \item \emph{Add your CI \& GitOps stories here if present (e.g., KBP-05, KBP-18).}
+\end{itemize}
+
+\subsection*{Release Discipline}
+\begin{enumerate}
+  \item \textbf{K8S-05} — Expose Applications Reliably (Ingress/Gateway, TLS, rollout patterns)
+\end{enumerate}
+
+\subsection*{Efficiency \& Stability}
+\begin{enumerate}
+  \item \textbf{K8S-09} — Autoscale Workloads (HPA, right-size requests/limits)
+  \item \textbf{K8S-12} — Diagnose \& Repair Fast (troubleshooting runbooks, SLO-driven fixes)
+\end{enumerate}
+
+\subsection*{Security Baseline \& Guardrails}
+\begin{enumerate}
+  \item \textbf{K8S-10} — Enforce Least Privilege (RBAC, securityContext, PSA/Pod Security)
+\end{enumerate}
+
+\subsection*{Networking \& Traffic Control}
+\begin{enumerate}
+  \item \textbf{K8S-05} — Expose Applications Reliably (applies here for traffic policy)
+  \item \textbf{K8S-13} — Introduce Mesh Traffic Control (mTLS, retries, timeouts, splits)
+\end{enumerate}
+
+\subsection*{Scale Out \& Multi-Everything}
+\begin{itemize}
+  \item \emph{Add multi-region/multi-cluster GitOps stories here if present (e.g., KBP-07, KBP-12).}
+\end{itemize}
+
+\subsection*{App/Platform Depth}
+\begin{enumerate}
+  \item \textbf{K8S-14} — Scale-to-Zero with Knative (eventing/serving)
+  \item \textbf{K8S-15} — Build/Extend the Platform (golden paths, templates)
+\end{enumerate}
+
+\subsection*{Advanced \& Extensibility}
+\begin{itemize}
+  \item \emph{Add operator/ML stories here if present (e.g., KBP-21, KBP-14).}
+\end{itemize}
+
+\subsection*{Wrap-Up \& Forward Plan}
+\begin{itemize}
+  \item \emph{Retrospective, platform scorecard, and next-90-day roadmap.}
+\end{itemize}
+
+% =======================
+% Original Story Cards
+% =======================
+
+\begin{center}
+  {\huge \textbf{Kubernetes Stories — End-to-End Workflow}}\\[2pt]
+  \textcolor{Meta}{Sequenced, dependency-aware path from local lab to platform operation}\\[6pt]
+\end{center}
+
+\section*{Workflow at a Glance}
+\begin{enumerate}
+  \item K8S-01 — Get a Local Cluster Running
+  \item K8S-02 — Provision Clusters (kubeadm + managed)
+  \item K8S-03 — Master kubectl Fundamentals
+  \item K8S-04 — Deploy Core Workloads
+  \item K8S-05 — Expose Applications Reliably
+  \item K8S-06 — Package with Helm \& Friends
+  \item K8S-08 — Persist \& Configure Safely
+  \item K8S-07 — Govern with Namespaces/Quotas
+  \item K8S-10 — Enforce Least Privilege
+  \item K8S-11 — Observe Health \& Behavior
+  \item K8S-09 — Autoscale Workloads
+  \item K8S-12 — Diagnose \& Repair Fast
+  \item K8S-13 — Introduce Mesh Traffic Control
+  \item K8S-14 — Scale-to-Zero with Knative
+  \item K8S-15 — Build/Extend the Platform
+\end{enumerate}
+\clearpage
+
+% --- Sequenced Stories (sourced from original, preserved content) ---
+
+\section{Getting Started with Kubernetes}
+\BeginCard{K8S-01}{Get a Local Cluster Running}{Kubernetes Basics}
+{Establish a reproducible local lab to safely experiment and learn}
+{Must}{3}
+{developer}
+{Docker, \texttt{kubectl}, \texttt{kind} or \texttt{minikube}}
+{Resource constraints on laptop; network/proxy issues}
+    % --- Auto-generated Acceptance Criteria for K8S-01 ---
+    \textbf{Story:} As a \emph{developer}, I want to get a Local Cluster Running so that \emph{Establish a reproducible local lab to safely experiment and learn}.
+
+    \textbf{Acceptance Criteria (BDD)}
+    \begin{lstlisting}
+    Scenario: Install \texttt{kubectl} and \texttt{kind} or \texttt{miniku
+  Given Docker, \texttt{kubectl}, \texttt{kind} or \texttt{minikube}
+  When Install \texttt{kubectl} and \texttt{kind} or \texttt{minikube}; verify \texttt{kubectl version} and context
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Create a cluster; enable metrics-server (minikube addon or Y
+  Given Docker, \texttt{kubectl}, \texttt{kind} or \texttt{minikube}
+  When Create a cluster; enable metrics-server (minikube addon or YAML)
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Deploy a sample Deployment + Service; confirm Pod readiness 
+  Given Docker, \texttt{kubectl}, \texttt{kind} or \texttt{minikube}
+  When Deploy a sample Deployment + Service; confirm Pod readiness and Service reachability
+  Then expected outcome is observable in logs/CLI/UI
+    \end{lstlisting}
+\begin{TasksBox}
+  \item Install \texttt{kubectl} and \texttt{kind} or \texttt{minikube}; verify \texttt{kubectl version} and context.
+  \item Create a cluster; enable metrics-server (minikube addon or YAML).
+  \item Deploy a sample Deployment + Service; confirm Pod readiness and Service reachability.
+  \item Capture a cheatsheet of 20 \texttt{kubectl} commands in \texttt{/labs/ch01/README.md}.
+\end{TasksBox}
+\EndCard
+\clearpage
+
+
+\section{Creating a Kubernetes Cluster}
+\BeginCard{K8S-02}{Provision Clusters (kubeadm + managed)}{Cluster Provisioning}
+{Understand DIY vs. managed tradeoffs and create a repeatable runbook}
+{Must}{5}
+{platform engineer}
+{Linux VMs, cloud account (GKE/EKS/AKS), CNI}
+{Quota/permissions in cloud; VM CPU/mem limits}
+    % --- Auto-generated Acceptance Criteria for K8S-02 ---
+    \textbf{Story:} As a \emph{platform engineer}, I want to provision Clusters so that \emph{Understand DIY vs. managed tradeoffs and create a repeatable runbook}.
+
+    \textbf{Acceptance Criteria (BDD)}
+    \begin{lstlisting}
+    Scenario: Bootstrap a single-control-plane cluster via \texttt{kubeadm
+  Given Linux VMs, cloud account (GKE/EKS/AKS), CNI
+  When Bootstrap a single-control-plane cluster via \texttt{kubeadm}; install a CNI
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Join a worker; validate node readiness; label/taint as neede
+  Given Linux VMs, cloud account (GKE/EKS/AKS), CNI
+  When Join a worker; validate node readiness; label/taint as needed
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Create one managed cluster (pick a cloud); install metrics-s
+  Given Linux VMs, cloud account (GKE/EKS/AKS), CNI
+  When Create one managed cluster (pick a cloud); install metrics-server \& Dashboard (protected)
+  Then expected outcome is observable in logs/CLI/UI
+    \end{lstlisting}
+\begin{TasksBox}
+  \item Bootstrap a single-control-plane cluster via \texttt{kubeadm}; install a CNI.
+  \item Join a worker; validate node readiness; label/taint as needed.
+  \item Create one managed cluster (pick a cloud); install metrics-server \& Dashboard (protected).
+  \item Write a \texttt{create/destroy} runbook for both environments.
+\end{TasksBox}
+\EndCard
+\clearpage
+
+\section{Learning to Use the Kubernetes Client}
+
+\BeginCard{K8S-03}{Master kubectl Fundamentals}{Developer Experience}
+{Reduce MTTR and increase flow via fluent CLI usage}
+{Must}{2}
+{developer}
+{Context/namespace helpers}
+{Risk of destructive commands; use \texttt{--dry-run=client}}
+    % --- Auto-generated Acceptance Criteria for K8S-03 ---
+    \textbf{Story:} As a \emph{developer}, I want to master kubectl Fundamentals so that \emph{Reduce MTTR and increase flow via fluent CLI usage}.
+
+    \textbf{Acceptance Criteria (BDD)}
+    \begin{lstlisting}
+    Scenario: Practice \texttt{get}, \texttt{describe}, \texttt{logs}, \te
+  Given Context/namespace helpers
+  When Practice \texttt{get}, \texttt{describe}, \texttt{logs}, \texttt{exec}, \texttt{delete --cascade}
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Use \texttt{kubectl explain} and JSONPath queries; export YA
+  Given Context/namespace helpers
+  When Use \texttt{kubectl explain} and JSONPath queries; export YAML via \texttt{-o yaml}
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Create namespace shortcuts (\texttt{kubens}) and context swi
+  Given Context/namespace helpers
+  When Create namespace shortcuts (\texttt{kubens}) and context switches
+  Then expected outcome is observable in logs/CLI/UI
+    \end{lstlisting}
+\begin{TasksBox}
+  \item Practice \texttt{get}, \texttt{describe}, \texttt{logs}, \texttt{exec}, \texttt{delete --cascade}.
+  \item Use \texttt{kubectl explain} and JSONPath queries; export YAML via \texttt{-o yaml}.
+  \item Create namespace shortcuts (\texttt{kubens}) and context switches.
+\end{TasksBox}
+\EndCard
+\clearpage
+
+\section{Creating and Modifying Fundamental Workloads}
+\BeginCard{K8S-04}{Deploy Core Workloads}{Workload Primitives}
+{Safely roll out, pause, and roll back application changes}
+{Must}{3}
+{app developer}
+{Container image registry}
+{Image pull limits; tag discipline}
+    % --- Auto-generated Acceptance Criteria for K8S-04 ---
+    \textbf{Story:} As a \emph{app developer}, I want to deploy Core Workloads so that \emph{Safely roll out, pause, and roll back application changes}.
+
+    \textbf{Acceptance Criteria (BDD)}
+    \begin{lstlisting}
+    Scenario: Create Pod, Deployment (with rolling update), Job, CronJob, 
+  Given Container image registry
+  When Create Pod, Deployment (with rolling update), Job, CronJob, DaemonSet examples
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Trigger a rollout; verify \texttt{rollout status/history}; p
+  Given Container image registry
+  When Trigger a rollout; verify \texttt{rollout status/history}; perform rollback
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Add \texttt{readiness/liveness} probes to one Deployment
+  Given Container image registry
+  When Add \texttt{readiness/liveness} probes to one Deployment
+  Then expected outcome is observable in logs/CLI/UI
+    \end{lstlisting}
+\begin{TasksBox}
+  \item Create Pod, Deployment (with rolling update), Job, CronJob, DaemonSet examples.
+  \item Trigger a rollout; verify \texttt{rollout status/history}; perform rollback.
+  \item Add \texttt{readiness/liveness} probes to one Deployment.
+\end{TasksBox}
+\EndCard
+\clearpage
+
+\section{Working with Services}
+\BeginCard{K8S-05}{Expose Applications Reliably}{Networking \& Discovery}
+{Provide stable service discovery and ingress to users}
+{Must}{3}
+{application SRE}
+{CoreDNS, Ingress controller}
+{Ingress misconfig; path conflicts}
+    % --- Auto-generated Acceptance Criteria for K8S-05 ---
+    \textbf{Story:} As a \emph{application SRE}, I want to expose Applications Reliably so that \emph{Provide stable service discovery and ingress to users}.
+
+    \textbf{Acceptance Criteria (BDD)}
+    \begin{lstlisting}
+    Scenario: Create ClusterIP/NodePort/LoadBalancer Services and compare
+  Given CoreDNS, Ingress controller
+  When Create ClusterIP/NodePort/LoadBalancer Services and compare
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Install NGINX Ingress; route \texttt{/} to an app; verify fr
+  Given CoreDNS, Ingress controller
+  When Install NGINX Ingress; route \texttt{/} to an app; verify from host
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Validate DNS inside Pods using \texttt{nslookup} or \texttt{
+  Given CoreDNS, Ingress controller
+  When Validate DNS inside Pods using \texttt{nslookup} or \texttt{dig}
+  Then expected outcome is observable in logs/CLI/UI
+    \end{lstlisting}
+\begin{TasksBox}
+  \item Create ClusterIP/NodePort/LoadBalancer Services and compare.
+  \item Install NGINX Ingress; route \texttt{/} to an app; verify from host.
+  \item Validate DNS inside Pods using \texttt{nslookup} or \texttt{dig}.
+\end{TasksBox}
+\EndCard
+\clearpage
+
+\section{Managing Application Manifests}
+\BeginCard{K8S-06}{Package with Helm \& Friends}{Deployment Packaging}
+{Enable repeatable, parameterized deployments across envs}
+{Must}{5}
+{platform engineer}
+{Helm, optional: Kompose/Carvel}
+{Values drift; document overrides}
+    % --- Auto-generated Acceptance Criteria for K8S-06 ---
+    \textbf{Story:} As a \emph{platform engineer}, I want to package with Helm \& Friends so that \emph{Enable repeatable, parameterized deployments across envs}.
+
+    \textbf{Acceptance Criteria (BDD)}
+    \begin{lstlisting}
+    Scenario: Install Helm; deploy a public chart with custom \texttt{valu
+  Given Helm, optional: Kompose/Carvel
+  When Install Helm; deploy a public chart with custom \texttt{values.yaml}
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Convert a simple docker-compose app using \texttt{kompose}; 
+  Given Helm, optional: Kompose/Carvel
+  When Convert a simple docker-compose app using \texttt{kompose}; compare output
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Author a tiny Helm chart for your sample app; include Notes 
+  Given Helm, optional: Kompose/Carvel
+  When Author a tiny Helm chart for your sample app; include Notes and README
+  Then expected outcome is observable in logs/CLI/UI
+    \end{lstlisting}
+\begin{TasksBox}
+  \item Install Helm; deploy a public chart with custom \texttt{values.yaml}.
+  \item Convert a simple docker-compose app using \texttt{kompose}; compare output.
+  \item Author a tiny Helm chart for your sample app; include Notes and README.
+\end{TasksBox}
+\EndCard
+\clearpage
+
+\section{Volumes and Configuration Data}
+
+\BeginCard{K8S-08}{Persist \& Configure Safely}{State \& Config}
+{Separate config/secrets from code and preserve state across restarts}
+{Must}{5}
+{app developer}
+{ConfigMap, Secret, PV/PVC}
+{Secret sprawl; adopt rotation practices}
+    % --- Auto-generated Acceptance Criteria for K8S-08 ---
+    \textbf{Story:} As a \emph{app developer}, I want to persist \& Configure Safely so that \emph{Separate config/secrets from code and preserve state across restarts}.
+
+    \textbf{Acceptance Criteria (BDD)}
+    \begin{lstlisting}
+    Scenario: Mount ConfigMap values; inject a Secret (env or volume)
+  Given ConfigMap, Secret, PV/PVC
+  When Mount ConfigMap values; inject a Secret (env or volume)
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Create a PVC; verify data survives Pod restarts
+  Given ConfigMap, Secret, PV/PVC
+  When Create a PVC; verify data survives Pod restarts
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Document secret handling (at-rest encryption, \texttt{.docke
+  Given ConfigMap, Secret, PV/PVC
+  When Document secret handling (at-rest encryption, \texttt{.dockerconfigjson}, \texttt{imagePullSecrets})
+  Then expected outcome is observable in logs/CLI/UI
+    \end{lstlisting}
+\begin{TasksBox}
+  \item Mount ConfigMap values; inject a Secret (env or volume).
+  \item Create a PVC; verify data survives Pod restarts.
+  \item Document secret handling (at-rest encryption, \texttt{.dockerconfigjson}, \texttt{imagePullSecrets}).
+\end{TasksBox}
+\EndCard
+\clearpage
+
+\section{Exploring the Kubernetes API and Key Metadata}
+\BeginCard{K8S-07}{Govern with Namespaces/Quotas}{API \& Metadata}
+{Constrain resource usage and organize multi-team tenancy}
+{Should}{3}
+{platform engineer}
+{ResourceQuota, LimitRange}
+{Overly strict quotas can block deploys}
+    % --- Auto-generated Acceptance Criteria for K8S-07 ---
+    \textbf{Story:} As a \emph{platform engineer}, I want to govern with Namespaces/Quotas so that \emph{Constrain resource usage and organize multi-team tenancy}.
+
+    \textbf{Acceptance Criteria (BDD)}
+    \begin{lstlisting}
+    Scenario: List resources via \texttt{kubectl api-resources}; inspect v
+  Given ResourceQuota, LimitRange
+  When List resources via \texttt{kubectl api-resources}; inspect versions
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Create Namespaces with \texttt{ResourceQuota} and \texttt{Li
+  Given ResourceQuota, LimitRange
+  When Create Namespaces with \texttt{ResourceQuota} and \texttt{LimitRange}
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Label/annotate resources; query with selectors
+  Given ResourceQuota, LimitRange
+  When Label/annotate resources; query with selectors
+  Then expected outcome is observable in logs/CLI/UI
+    \end{lstlisting}
+\begin{TasksBox}
+  \item List resources via \texttt{kubectl api-resources}; inspect versions.
+  \item Create Namespaces with \texttt{ResourceQuota} and \texttt{LimitRange}.
+  \item Label/annotate resources; query with selectors.
+\end{TasksBox}
+\EndCard
+\clearpage
+
+\section{Security}
+\BeginCard{K8S-10}{Enforce Least Privilege}{Platform Security}
+{Reduce blast radius through RBAC and Pod hardening}
+{Must}{5}
+{security champion}
+{ServiceAccount, Role/Binding, Pod Security Standards}
+{Permissions confusion; validate with \texttt{can-i}}
+    % --- Auto-generated Acceptance Criteria for K8S-10 ---
+    \textbf{Story:} As a \emph{security champion}, I want to enforce Least Privilege so that \emph{Reduce blast radius through RBAC and Pod hardening}.
+
+    \textbf{Acceptance Criteria (BDD)}
+    \begin{lstlisting}
+    Scenario: Create a dedicated ServiceAccount for an app; bind minimal R
+  Given ServiceAccount, Role/Binding, Pod Security Standards
+  When Create a dedicated ServiceAccount for an app; bind minimal Role
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Add \texttt{securityContext}: \texttt{runAsNonRoot}, \texttt
+  Given ServiceAccount, Role/Binding, Pod Security Standards
+  When Add \texttt{securityContext}: \texttt{runAsNonRoot}, \texttt{readOnlyRootFilesystem}, drop caps
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Apply Pod Security admission (baseline/restricted) at namesp
+  Given ServiceAccount, Role/Binding, Pod Security Standards
+  When Apply Pod Security admission (baseline/restricted) at namespace level
+  Then expected outcome is observable in logs/CLI/UI
+    \end{lstlisting}
+\begin{TasksBox}
+  \item Create a dedicated ServiceAccount for an app; bind minimal Role.
+  \item Add \texttt{securityContext}: \texttt{runAsNonRoot}, \texttt{readOnlyRootFilesystem}, drop caps.
+  \item Apply Pod Security admission (baseline/restricted) at namespace level.
+\end{TasksBox}
+\EndCard
+\clearpage
+
+\section{Monitoring and Logging}
+\BeginCard{K8S-11}{Observe Health \& Behavior}{Observability}
+{Shorten detection time with probes, metrics, and dashboards}
+{Must}{5}
+{SRE}
+{Probes, kube-prometheus-stack/Grafana}
+{Dashboard noise; focus on SLI panels}
+    % --- Auto-generated Acceptance Criteria for K8S-11 ---
+    \textbf{Story:} As a \emph{SRE}, I want to observe Health \& Behavior so that \emph{Shorten detection time with probes, metrics, and dashboards}.
+
+    \textbf{Acceptance Criteria (BDD)}
+    \begin{lstlisting}
+    Scenario: Add liveness/readiness/startup probes; induce failures to se
+  Given Probes, kube-prometheus-stack/Grafana
+  When Add liveness/readiness/startup probes; induce failures to see effects
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Deploy Prometheus+Grafana on local cluster; import a simple 
+  Given Probes, kube-prometheus-stack/Grafana
+  When Deploy Prometheus+Grafana on local cluster; import a simple dashboard
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Collect and link logs for a failing Pod in \texttt{/labs/ch1
+  Given Probes, kube-prometheus-stack/Grafana
+  When Collect and link logs for a failing Pod in \texttt{/labs/ch11/README.md}
+  Then expected outcome is observable in logs/CLI/UI
+    \end{lstlisting}
+\begin{TasksBox}
+  \item Add liveness/readiness/startup probes; induce failures to see effects.
+  \item Deploy Prometheus+Grafana on local cluster; import a simple dashboard.
+  \item Collect and link logs for a failing Pod in \texttt{/labs/ch11/README.md}.
+\end{TasksBox}
+\EndCard
+\clearpage
+
+\section{Scaling}
+\BeginCard{K8S-09}{Autoscale Workloads}{Capacity \& Efficiency}
+{Match resources to demand and control costs}
+{Should}{3}
+{SRE}
+{Metrics Server; optional Cluster Autoscaler}
+{HPA signals noisy; smooth with requests/limits}
+    % --- Auto-generated Acceptance Criteria for K8S-09 ---
+    \textbf{Story:} As a \emph{SRE}, I want to autoscale Workloads so that \emph{Match resources to demand and control costs}.
+
+    \textbf{Acceptance Criteria (BDD)}
+    \begin{lstlisting}
+    Scenario: Set CPU/memory requests and limits; run a small load test
+  Given Metrics Server; optional Cluster Autoscaler
+  When Set CPU/memory requests and limits; run a small load test
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Configure HPA; observe scale-out/back with \texttt{kubectl t
+  Given Metrics Server; optional Cluster Autoscaler
+  When Configure HPA; observe scale-out/back with \texttt{kubectl top}
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: (Cloud) Enable Cluster Autoscaler; capture event timeline
+  Given Metrics Server; optional Cluster Autoscaler
+  When (Cloud) Enable Cluster Autoscaler; capture event timeline
+  Then expected outcome is observable in logs/CLI/UI
+    \end{lstlisting}
+\begin{TasksBox}
+  \item Set CPU/memory requests and limits; run a small load test.
+  \item Configure HPA; observe scale-out/back with \texttt{kubectl top}.
+  \item (Cloud) Enable Cluster Autoscaler; capture event timeline.
+\end{TasksBox}
+\EndCard
+\clearpage
+
+\section{Maintenance and Troubleshooting}
+\BeginCard{K8S-12}{Diagnose \& Repair Fast}{Ops Readiness}
+{Reduce MTTR with systematic debugging and safe maintenance}
+{Must}{5}
+{SRE}
+{kubectl debug / drain}
+{Node drains can disrupt; use PodDisruptionBudgets}
+    % --- Auto-generated Acceptance Criteria for K8S-12 ---
+    \textbf{Story:} As a \emph{SRE}, I want to diagnose \& Repair Fast so that \emph{Reduce MTTR with systematic debugging and safe maintenance}.
+
+    \textbf{Acceptance Criteria (BDD)}
+    \begin{lstlisting}
+    Scenario: Reproduce common failures: CrashLoopBackOff, Pending PVC, Im
+  Given kubectl debug / drain
+  When Reproduce common failures: CrashLoopBackOff, Pending PVC, ImagePullBackOff
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Use \texttt{kubectl debug} or ephemeral containers to inspec
+  Given kubectl debug / drain
+  When Use \texttt{kubectl debug} or ephemeral containers to inspect
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Practice \texttt{cordon/drain/uncordon}; snapshot cluster st
+  Given kubectl debug / drain
+  When Practice \texttt{cordon/drain/uncordon}; snapshot cluster state
+  Then expected outcome is observable in logs/CLI/UI
+    \end{lstlisting}
+\begin{TasksBox}
+  \item Reproduce common failures: CrashLoopBackOff, Pending PVC, ImagePullBackOff.
+  \item Use \texttt{kubectl debug} or ephemeral containers to inspect.
+  \item Practice \texttt{cordon/drain/uncordon}; snapshot cluster state.
+\end{TasksBox}
+\EndCard
+\clearpage
+
+\section{Service Meshes}
+\BeginCard{K8S-13}{Introduce Mesh Traffic Control}{Service Mesh}
+{Gain mTLS, traffic shaping, and better service insights}
+{Could}{5}
+{platform engineer}
+{Istio or Linkerd}
+{Sidecar overhead; start small}
+    % --- Auto-generated Acceptance Criteria for K8S-13 ---
+    \textbf{Story:} As a \emph{platform engineer}, I want to introduce Mesh Traffic Control so that \emph{Gain mTLS, traffic shaping, and better service insights}.
+
+    \textbf{Acceptance Criteria (BDD)}
+    \begin{lstlisting}
+    Scenario: Install Istio or Linkerd; enable automatic sidecar injection
+  Given Istio or Linkerd
+  When Install Istio or Linkerd; enable automatic sidecar injection
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Implement a canary (90/10 \textrightarrow{} 50/50 \textright
+  Given Istio or Linkerd
+  When Implement a canary (90/10 \textrightarrow{} 50/50 \textrightarrow{} 0/100); confirm mTLS
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Capture latency/error-rate before/after in notes
+  Given Istio or Linkerd
+  When Capture latency/error-rate before/after in notes
+  Then expected outcome is observable in logs/CLI/UI
+    \end{lstlisting}
+\begin{TasksBox}
+  \item Install Istio or Linkerd; enable automatic sidecar injection.
+  \item Implement a canary (90/10 \textrightarrow{} 50/50 \textrightarrow{} 0/100); confirm mTLS.
+  \item Capture latency/error-rate before/after in notes.
+\end{TasksBox}
+\EndCard
+\clearpage
+
+\section{Serverless and Event-Driven Applications}
+\BeginCard{K8S-14}{Scale-to-Zero with Knative}{Serverless \& Events}
+{Lower infra costs and simplify event plumbing}
+{Could}{5}
+{app developer}
+{Knative Serving/Eventing; optional TriggerMesh}
+{Cold starts; set expectations}
+    % --- Auto-generated Acceptance Criteria for K8S-14 ---
+    \textbf{Story:} As a \emph{app developer}, I want to scale-to-Zero with Knative so that \emph{Lower infra costs and simplify event plumbing}.
+
+    \textbf{Acceptance Criteria (BDD)}
+    \begin{lstlisting}
+    Scenario: Install Knative; deploy a Knative Service; validate scale-to
+  Given Knative Serving/Eventing; optional TriggerMesh
+  When Install Knative; deploy a Knative Service; validate scale-to-zero
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Wire an event source \textrightarrow{} broker \textrightarro
+  Given Knative Serving/Eventing; optional TriggerMesh
+  When Wire an event source \textrightarrow{} broker \textrightarrow{} trigger \textrightarrow{} consumer
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Diagram the event flow and save with manifests
+  Given Knative Serving/Eventing; optional TriggerMesh
+  When Diagram the event flow and save with manifests
+  Then expected outcome is observable in logs/CLI/UI
+    \end{lstlisting}
+\begin{TasksBox}
+  \item Install Knative; deploy a Knative Service; validate scale-to-zero.
+  \item Wire an event source \textrightarrow{} broker \textrightarrow{} trigger \textrightarrow{} consumer.
+  \item Diagram the event flow and save with manifests.
+\end{TasksBox}
+\EndCard
+\clearpage
+
+\section{Extending Kubernetes}
+\BeginCard{K8S-15}{Build/Extend the Platform}{Platform Extension}
+{Tailor Kubernetes via clients, builds, and CRDs}
+{Should}{5}
+{platform engineer}
+{Go/Python client; CRD scaffolding}
+{API changes; pin versions}
+    % --- Auto-generated Acceptance Criteria for K8S-15 ---
+    \textbf{Story:} As a \emph{platform engineer}, I want to build/Extend the Platform so that \emph{Tailor Kubernetes via clients, builds, and CRDs}.
+
+    \textbf{Acceptance Criteria (BDD)}
+    \begin{lstlisting}
+    Scenario: Compile \texttt{kubectl} locally or build a component from s
+  Given Go/Python client; CRD scaffolding
+  When Compile \texttt{kubectl} locally or build a component from source
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Write a short Python client that watches Pod events
+  Given Go/Python client; CRD scaffolding
+  When Write a short Python client that watches Pod events
+  Then expected outcome is observable in logs/CLI/UI
+
+Scenario: Define a simple CRD; create/list instances via \texttt{kubec
+  Given Go/Python client; CRD scaffolding
+  When Define a simple CRD; create/list instances via \texttt{kubectl}
+  Then expected outcome is observable in logs/CLI/UI
+    \end{lstlisting}
+\begin{TasksBox}
+  \item Compile \texttt{kubectl} locally or build a component from source.
+  \item Write a short Python client that watches Pod events.
+  \item Define a simple CRD; create/list instances via \texttt{kubectl}.
+\end{TasksBox}
+
+\EndCard
+\end{document}

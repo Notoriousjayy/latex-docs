@@ -1,0 +1,251 @@
+% !TEX program = pdflatex
+% Note: If using the minted package, compile with: -shell-escape
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{parskip}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{minted}
+
+\setminted{
+  fontsize=\small,
+  breaklines,
+  autogobble,
+  tabsize=2
+}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue,
+  pdfauthor={Vault Hands-On},
+  pdftitle={Vault Dev Server - Hands-On Cheat Sheet}
+}
+
+\titleformat{\section}{\large\bfseries}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+
+\title{\textbf{Vault Dev Server --- Hands-On Cheat Sheet}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\textbf{Scope.} A concise, practical guide for learning and testing HashiCorp Vault using the \emph{dev server}. This mode is for local exploration only.
+
+\section*{At a Glance}
+\begin{itemize}[nosep]
+  \item \textbf{Dev mode is not production}: runs without TLS, keeps data in memory, starts unsealed, prints a single unseal key and a root token to the console.
+  \item Default API address: \texttt{http://127.0.0.1:8200}.
+  \item Use the \texttt{VAULT\_ADDR} environment variable for the CLI.
+\end{itemize}
+
+\section{Prerequisites}
+\begin{itemize}[itemsep=2pt]
+  \item Install \texttt{vault} CLI and server from HashiCorp.
+  \item (Recommended) Install \texttt{jq} for JSON output filtering.
+  \item If compiling this PDF: \texttt{minted} requires \texttt{-shell-escape}.
+\end{itemize}
+
+\section{Start the Dev Server}
+\subsection{Run Vault (Terminal 1)}
+\begin{minted}[fontsize=\footnotesize]{bash}
+vault server -dev
+\end{minted}
+
+\textit{Notes:}
+\begin{itemize}[nosep]
+  \item The console prints an \textbf{Unseal Key} and a \textbf{Root Token}. In dev mode the server starts unsealed.
+  \item Leave this terminal running; it is the server process.
+\end{itemize}
+
+\subsection{Configure the CLI (Terminal 2)}
+\begin{minted}{bash}
+export VAULT_ADDR="http://127.0.0.1:8200"
+vault status
+\end{minted}
+
+\section{Your First Secret (KV)}
+\subsection{Write and Read (human-friendly)}
+\begin{minted}{bash}
+vault kv put secret/mySecret password=myPassword
+vault kv get secret/mySecret
+\end{minted}
+
+\subsection{Read as JSON (for scripts)}
+\begin{minted}{bash}
+vault kv get -format=json secret/mySecret | jq
+\end{minted}
+
+\section{Secrets Engines Basics}
+\subsection{Discover and Enable}
+\begin{minted}{bash}
+# List current secrets engines
+vault secrets list
+
+# Enable another KV mount at a custom path
+vault secrets enable -path=myapp kv
+
+# Use the new mount
+vault kv put myapp/myOtherSecret key=value
+vault kv get myapp/myOtherSecret
+\end{minted}
+
+\subsection{Explore Paths and Verbs}
+\begin{minted}{bash}
+# Show path patterns and help for an engine
+vault path-help secret
+
+# Example: enable a database engine (demo)
+vault secrets enable database
+vault path-help database
+vault path-help database/roles
+\end{minted}
+
+\section{Authentication: Userpass Demo}
+\subsection{Enable and Inspect Auth Methods}
+\begin{minted}{bash}
+vault auth list
+vault auth enable userpass
+\end{minted}
+
+\subsection{Create a User and Log In}
+\begin{minted}{bash}
+# Create a local user
+vault write auth/userpass/users/vaultuser password=vault
+
+# Login with userpass method (generates a client token)
+vault login -method=userpass username=vaultuser password=vault
+
+# Or login with the dev server's root token from Terminal 1
+vault login <ROOT_TOKEN>
+\end{minted}
+
+\section{Tokens: Create, Inspect, Revoke}
+\begin{minted}{bash}
+# Mint a child token (inherits parent's policies)
+vault token create
+
+# List token accessors (manage tokens without seeing their secrets)
+vault list auth/token/accessors
+
+# Lookup / revoke using an accessor
+vault token lookup -accessor <ACCESSOR>
+vault token revoke -accessor <ACCESSOR>
+
+# Short-lived token
+vault token create --ttl="5m"
+\end{minted}
+
+\section{Policies: Authorization in Vault}
+\textbf{Capabilities:} \texttt{create}, \texttt{read}, \texttt{update}, \texttt{delete}, \texttt{list}, plus \texttt{sudo} and \texttt{deny}. If any attached policy denies an action, \textbf{deny wins}.
+
+\subsection{Inspect and Upload Policies}
+\begin{minted}{bash}
+# What policies exist?
+vault policy list
+vault policy read default
+
+# Upload policies from local files
+vault policy write dev-policy dev-policy.hcl
+vault policy write app-policy app-policy.hcl
+
+# Attach policies to userpass users
+vault write auth/userpass/users/dev  password=dev  policies=dev-policy
+vault write auth/userpass/users/app  password=app  policies=app-policy
+\end{minted}
+
+\subsection{Check Effective Capabilities}
+\begin{minted}{bash}
+# KV v2 data path format is /data/<path>
+vault token capabilities secret/data/dev/
+\end{minted}
+
+\subsection{Exercise the Policies}
+\begin{minted}{bash}
+vault kv put secret/dev/appsecret user=dbuser
+vault kv get secret/dev/appsecret
+\end{minted}
+
+\section{Environment and CLI Tips}
+\begin{minted}{bash}
+# Point CLI to the server
+export VAULT_ADDR="http://127.0.0.1:8200"
+
+# Temporarily use a specific token
+export VAULT_TOKEN="<CLIENT_OR_ROOT_TOKEN>"
+
+# Verify who you are
+vault token lookup
+\end{minted}
+
+\section{Troubleshooting \& Gotchas}
+\begin{itemize}[itemsep=4pt]
+  \item \textbf{Cannot connect}: Ensure the server (Terminal 1) is running and \texttt{VAULT\_ADDR} matches the printed address.
+  \item \textbf{Permission denied}: Check your token and attached policies. Use \texttt{vault token capabilities <path>} to diagnose.
+  \item \textbf{KV v1 vs v2 paths}: KV v2 uses \texttt{/data/} and \texttt{/metadata/} API paths internally; CLI subcommands handle this, but capabilities checks should use \texttt{secret/data/...}.
+  \item \textbf{Dev mode data loss}: All data is in-memory. Restarting clears everything.
+  \item \textbf{Minted compilation}: If building this PDF, compile with \texttt{-shell-escape}.
+\end{itemize}
+
+\section{Production-Oriented Notes (for Later)}
+\begin{itemize}[itemsep=4pt]
+  \item Use TLS, a durable storage backend, and sealed starts; do not use dev mode in production.
+  \item Prefer real identity-backed auth (GitHub, LDAP/AD, AWS, Kubernetes) over \texttt{userpass}.
+  \item Rotate tokens; use short TTLs and renewals where appropriate.
+  \item Practice least privilege; \textbf{deny} should be explicit for sensitive paths.
+\end{itemize}
+
+\section*{One-Page Quick Reference}
+\begin{minted}{bash}
+# Start (T1)
+vault server -dev
+
+# Configure CLI (T2)
+export VAULT_ADDR="http://127.0.0.1:8200"
+vault status
+
+# KV
+vault kv put secret/mySecret password=myPassword
+vault kv get secret/mySecret
+vault kv get -format=json secret/mySecret | jq
+
+# Engines
+vault secrets list
+vault secrets enable -path=myapp kv
+vault kv put myapp/myOtherSecret key=value
+vault kv get myapp/myOtherSecret
+vault path-help secret
+
+# Auth (userpass)
+vault auth list
+vault auth enable userpass
+vault write auth/userpass/users/vaultuser password=vault
+vault login -method=userpass username=vaultuser password=vault
+vault login <ROOT_TOKEN>
+
+# Tokens
+vault token create
+vault list auth/token/accessors
+vault token lookup -accessor <ACCESSOR>
+vault token revoke -accessor <ACCESSOR>
+vault token create --ttl="5m"
+
+# Policies
+vault policy list
+vault policy read default
+vault policy write dev-policy dev-policy.hcl
+vault write auth/userpass/users/dev  password=dev  policies=dev-policy
+vault token capabilities secret/data/dev/
+vault kv put secret/dev/appsecret user=dbuser
+vault kv get secret/dev/appsecret
+\end{minted}
+
+\end{document}
+

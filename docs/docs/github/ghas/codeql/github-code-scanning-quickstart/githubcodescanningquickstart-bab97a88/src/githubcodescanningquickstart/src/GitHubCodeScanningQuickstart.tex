@@ -1,0 +1,190 @@
+% !TEX TS-program = pdflatex
+% Compile with: pdflatex -shell-escape ghas-code-scanning-cheatsheet.tex
+\documentclass[11pt]{article}
+
+% ---------- Page + typography ----------
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{parskip}
+
+% ---------- Color + links ----------
+\usepackage[dvipsnames]{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=MidnightBlue, urlcolor=MidnightBlue, citecolor=MidnightBlue}
+
+% ---------- Structure ----------
+\usepackage{enumitem}
+\setlist{itemsep=3pt, topsep=4pt, leftmargin=1.2em}
+
+% ---------- Layout helpers ----------
+\usepackage{tabularx}
+\usepackage[most]{tcolorbox}
+\tcbset{
+  colback=white,
+  colframe=MidnightBlue,
+  coltitle=white,
+  fonttitle=\bfseries,
+  arc=2mm,
+  boxrule=0.6pt
+}
+
+% ---------- Code highlighting ----------
+\usepackage[cache=false]{minted} % requires -shell-escape
+\setminted{
+  breaklines=true,
+  fontsize=\footnotesize,
+  linenos,
+  tabsize=2
+}
+
+% ---------- Title ----------
+\title{\vspace{-1.0em}GitHub Code Scanning Quickstart\\
+\large CodeQL + Third-Party SAST (SonarCloud, Snyk) Cheat Sheet\vspace{-0.3em}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{tcolorbox}[title=TL;DR, colframe=OliveGreen]
+\begin{itemize}
+  \item Run CodeQL \emph{and} optionally a third-party SAST for broader coverage.
+  \item Prefer tools that emit \textbf{SARIF} so findings appear in the repo Security tab and PR checks.
+  \item Store vendor tokens in \textbf{Actions secrets}; never commit credentials.
+  \item Avoid duplicate CodeQL by not enabling both the Default workflow and a custom CodeQL workflow.
+\end{itemize}
+\end{tcolorbox}
+
+\section*{Quickstart: Third-Party Scanning in GitHub}
+\begin{enumerate}
+  \item Choose a Marketplace Action or App (e.g., SonarCloud, Snyk).
+  \item Add required credentials as \textbf{Actions secrets} at repo or org level.
+  \item Add a workflow that sets env vars and runs the vendor Action.
+  \item Ensure a \textbf{SARIF} file gets uploaded (vendor does it automatically or add an explicit upload step).
+  \item Gate on PRs (required status checks) and schedule weekly scans on the default branch.
+  \item If using custom CodeQL YAML, \emph{disable} the Default CodeQL in repo settings to prevent double runs.
+\end{enumerate}
+
+\section*{CodeQL vs. Third-Party at a Glance}
+\begin{tcolorbox}[title=Comparison, colframe=RoyalBlue]
+\begin{tabularx}{\linewidth}{>{\bfseries}p{0.23\linewidth} X}
+CodeQL & First-class GitHub integration, query packs, customizable queries; config can be dense but deeply integrated.\\[0.25em]
+Third-Party SAST & Often fast to start, rich dashboards/quality metrics; requires Action/App wiring and secrets; ensure SARIF upload for unified PR view.
+\end{tabularx}
+\end{tcolorbox}
+\clearpage
+
+\section*{Drop-In YAML Snippets}
+
+\subsection*{A. CodeQL (basic)}
+\begin{minted}{yaml}
+name: CodeQL
+on:
+  push: { branches: ["main"] }
+  pull_request: { branches: ["main"] }
+  schedule:
+    - cron: "0 3 * * 1"   # weekly
+permissions:
+  contents: read
+  security-events: write
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: 'javascript,python'  # adjust
+      - uses: github/codeql-action/autobuild@v3
+      - uses: github/codeql-action/analyze@v3
+\end{minted}
+
+\begin{tcolorbox}[title=Note, colframe=Gray]
+If you use this custom workflow, disable the \emph{Default} CodeQL configuration in the repo Security settings to avoid duplicate scans.
+\end{tcolorbox}
+
+\subsection*{B. SonarCloud (vendor token in \texttt{SONAR\_TOKEN})}
+\begin{minted}{yaml}
+name: SonarCloud Scan
+on:
+  pull_request:
+  push: { branches: ["main"] }
+permissions:
+  contents: read
+  id-token: write
+  security-events: write
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  SONAR_TOKEN:  ${{ secrets.SONAR_TOKEN }}
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: SonarSource/sonarcloud-github-action@v2
+        with:
+          args: >
+            -Dsonar.projectKey=your_org_your_repo
+            -Dsonar.organization=your_org
+      # If your vendor does not auto-upload SARIF, add:
+      # - uses: github/codeql-action/upload-sarif@v3
+      #   with:
+      #     sarif_file: path/to/report.sarif
+\end{minted}
+
+\subsection*{C. Snyk (example with explicit SARIF upload)}
+\begin{minted}{yaml}
+name: Snyk SAST
+on:
+  pull_request:
+  push: { branches: ["main"] }
+permissions:
+  contents: read
+  security-events: write
+env:
+  SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+jobs:
+  snyk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: snyk/actions/setup@master
+      - run: snyk code test --sarif > snyk.sarif
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk.sarif
+\end{minted}
+
+\section*{Using CodeQL Outside GitHub Actions}
+You can run CodeQL in other CI systems (e.g., Jenkins, Azure DevOps) and still publish results back to GitHub. Expect extra setup for CLI, auth, and SARIF upload, but the unified view in the repo Security tab and PR checks is preserved.
+
+\section*{Gotchas \& Best Practices}
+\begin{tcolorbox}[title=Checklist, colframe=BurntOrange]
+\begin{itemize}
+  \item \textbf{Duplicate scans:} Do not run both Default and custom CodeQL.
+  \item \textbf{Secrets hygiene:} Use \texttt{\$\{\{ secrets.* \}\}}; never hard-code tokens.
+  \item \textbf{PR visibility:} Ensure tools emit SARIF; otherwise findings will not appear in PR checks/Security tab.
+  \item \textbf{Least privilege:} Scope vendor tokens to what the scanner needs.
+  \item \textbf{Schedules:} Add a weekly cron to catch drift on default branches.
+\end{itemize}
+\end{tcolorbox}
+
+\section*{Build Tips}
+\begin{itemize}
+  \item This document uses \texttt{minted}. Compile with \texttt{-shell-escape}.
+  \item If your build system disallows \texttt{-shell-escape}, switch to \texttt{listings} or enable Pygments on your CI runner.
+  \item Keep YAML blocks minimal to avoid unrecognized lexers and Unicode issues. Use ASCII quotes and hyphens when possible.
+\end{itemize}
+
+\vfill
+\begin{center}
+\small\textit{Cheat sheet version: \today{}.}
+\end{center}
+
+\end{document}
+

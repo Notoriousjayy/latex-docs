@@ -1,0 +1,317 @@
+%========================================================
+% Practical Overview of GitHub Advanced Security (GHAS)
+%========================================================
+\documentclass[11pt]{article}
+
+% ---------- Encoding & layout ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}         % Better Latin fonts
+\usepackage[hidelinks]{hyperref}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{microtype}
+\usepackage{parskip}         % Space between paragraphs
+\usepackage{enumitem}
+\setlist{topsep=4pt,itemsep=2pt,parsep=0pt}
+
+% ---------- Colors & boxes ----------
+\usepackage{xcolor}
+\definecolor{ink}{HTML}{111827}      % gray-900
+\definecolor{soft}{HTML}{F9FAFB}     % gray-50
+\definecolor{accent}{HTML}{2563EB}   % blue-600
+\definecolor{ok}{HTML}{059669}       % emerald-600
+\definecolor{warn}{HTML}{D97706}     % amber-600
+\definecolor{bad}{HTML}{DC2626}      % red-600}
+
+\usepackage[most]{tcolorbox}
+\tcbset{
+  enhanced,
+  boxrule=0.6pt,
+  colframe=ink,
+  colback=soft,
+  sharp corners,
+  arc=2pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt
+}
+
+% ---------- Code (requires -shell-escape) ----------
+\usepackage{float}           % For [H] placement option
+\usepackage[newfloat]{minted}
+\setminted{
+  fontsize=\footnotesize,
+  breaklines,
+  autogobble,
+  tabsize=2
+}
+\usepackage{caption}
+\SetupFloatingEnvironment{listing}{name=Listing}
+
+% ---------- Title ----------
+\usepackage{titling}
+\pretitle{\vspace*{-0.5em}\begin{center}\LARGE\bfseries}
+\posttitle{\par\end{center}\vspace{0.5em}}
+\preauthor{\begin{center}\large}
+\postauthor{\par\end{center}}
+\predate{\begin{center}\small}
+\postdate{\par\end{center}}
+\title{A Practical Overview of GitHub Advanced Security (GHAS)}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{tcolorbox}
+\textbf{Build note:} This document uses the \texttt{minted} package. Compile with \emph{shell-escape} enabled, for example:
+\texttt{pdflatex -shell-escape ghas-overview.tex}
+\end{tcolorbox}
+
+\section{What is GHAS?}
+GitHub Advanced Security (GHAS) adds first-party application security features on top of GitHub:
+\begin{itemize}
+  \item \textbf{Dependabot} for Software Composition Analysis (SCA) and automated update PRs.
+  \item \textbf{Secret scanning} to detect exposed credentials, with optional push protection.
+  \item \textbf{Code scanning} powered by \textbf{CodeQL} for static analysis and data-flow security checks.
+\end{itemize}
+GHAS is free for public repositories and typically requires enterprise licensing for private/internal repositories. It integrates natively with pull requests, security alerts, and repository insights.
+
+\section{Enablement checklist}
+\begin{enumerate}
+  \item \textbf{Organization-level:} In \emph{Settings \textrightarrow Code security and analysis}, enable GHAS features for the org and choose default policies (e.g., default enablement for new repos).
+  \item \textbf{Repository-level:} In each repo's \emph{Settings \textrightarrow Code security and analysis}, enable:
+    \begin{itemize}
+      \item Dependabot (\emph{Dependency graph}, \emph{Dependabot alerts}).
+      \item Secret scanning (plus \emph{Push protection} if available).
+      \item Code scanning (add CodeQL or upload SARIF from a third-party scanner).
+    \end{itemize}
+  \item \textbf{Permissions \& branches:} Protect your default branch, require status checks for CodeQL and tests, and restrict who can dismiss alerts.
+\end{enumerate}
+\newpage
+
+\section{Dependabot (SCA + automated updates)}
+Dependabot alerts surface known vulnerabilities in dependencies. Dependabot updates can automatically open pull requests to bump versions.
+
+\subsection{Recommended practices}
+\begin{itemize}
+  \item Centralize configuration in \texttt{.github/dependabot.yml} (case-sensitive).
+  \item Run on a predictable schedule and pin time zone.
+  \item Use \texttt{allow}/\texttt{ignore} rules to control scope.
+  \item Label PRs and auto-assign reviewers to streamline triage.
+  \item Consider \texttt{versioning-strategy} per ecosystem (pin, widen, increase, lockfile-only).
+\end{itemize}
+
+\begin{listing}[H]
+\caption{\texttt{.github/dependabot.yml} (Node.js example)}
+\begin{minted}[linenos]{yaml}
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      time: "09:00"                # HH:MM (UTC unless timezone set)
+      timezone: "America/New_York"
+    allow:
+      - dependency-name: lodash
+      - dependency-name: "react*"
+    ignore:
+      - dependency-name: express
+        versions: ["4.x", "5.x"]
+    reviewers: ["org/sec-team"]
+    assignees: ["octocat"]
+    labels: ["deps", "automated"]
+    versioning-strategy: increase  # pin | widen | increase | lockfile-only
+    rebase-strategy: auto          # auto | disabled
+\end{minted}
+\end{listing}
+\newpage
+
+\section{Secret scanning (detection \& protection)}
+Secret scanning detects credentials (API keys, tokens, etc.) in git history, PRs, and issues. With push protection, contributors are blocked from pushing known secrets unless they explicitly bypass with a justification.
+
+\subsection{Recommended practices}
+\begin{itemize}
+  \item Turn on secret scanning and push protection for all repos (public and private).
+  \item Use repository-level exclusions for documentation paths or test fixtures that may contain false positives.
+  \item Triage new alerts quickly; revoke exposed credentials at the source.
+\end{itemize}
+
+\begin{listing}[H]
+\caption{\texttt{.github/secret\_scanning.yml} (ignore paths)}
+\begin{minted}[linenos]{yaml}
+# File must be on the default branch to take effect
+paths-ignore:
+  - "docs/**"
+  - "examples/**"
+  - "website/static/**"
+\end{minted}
+\end{listing}
+
+\begin{tcolorbox}
+\textbf{Tip:} Keep ignore lists as narrow as possible to avoid blind spots. If you must store fake tokens for demos, mark them clearly and prefer generated test credentials.
+\end{tcolorbox}
+\newpage
+
+\section{Code scanning with CodeQL}
+CodeQL builds a semantic database of your code and evaluates it with security query packs. It supports many languages (e.g., C/C++, C\#, Go, Java/Kotlin, JavaScript/TypeScript, Python, Ruby). Results appear in the repository's \emph{Security} tab and as PR annotations.
+
+\subsection{Quick-start workflow}
+Add a standard CodeQL workflow to \texttt{.github/workflows/codeql.yml}. Use matrix builds for multi-language repos. Require it as a PR check.
+
+\begin{listing}[H]
+\caption{\texttt{.github/workflows/codeql.yml}}
+\begin{minted}[linenos]{yaml}
+name: "CodeQL"
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  schedule:
+    - cron: "0 7 * * 1"   # weekly Monday 07:00 UTC
+
+jobs:
+  analyze:
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        language: [ "javascript-typescript", "python" ]
+        # Other options: "cpp", "csharp", "go", "java-kotlin", "ruby"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+\end{minted}
+\end{listing}
+\newpage
+
+\subsection{Repository CodeQL configuration}
+Use a config file to select query packs, exclude low-signal results, and control path filters.
+
+\begin{listing}[H]
+\caption{\texttt{.github/codeql/codeql-config.yml}}
+\begin{minted}[linenos]{yaml}
+name: "repo codeql config"
+
+# Keep defaults; extend with additional packs as needed.
+disable-default-queries: false
+
+queries:
+  - uses: security-extended
+  # - uses: security-experimental  # Opt-in for bleeding-edge rules
+
+query-filters:
+  - exclude:
+      severity: warning
+
+paths:
+  - src/
+paths-ignore:
+  - node_modules/
+  - "**/*test*"
+\end{minted}
+\end{listing}
+
+\begin{tcolorbox}
+\textbf{Builds matter:} For compiled languages, ensure CodeQL sees a faithful build (consider replacing \texttt{autobuild} with explicit build steps). Mismatched or partial builds reduce findings quality.
+\end{tcolorbox}
+\newpage
+
+\section{Uploading third-party scanner results (SARIF)}
+You can ingest SARIF output from other SAST tools into the GitHub Code Scanning UI.
+
+\begin{listing}[H]
+\caption{Minimal SARIF upload workflow}
+\begin{minted}[linenos]{yaml}
+name: "Upload third-party SARIF"
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+
+jobs:
+  upload-sarif:
+    permissions:
+      security-events: write
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Run your third-party scanner here; produce results.sarif
+      # - name: Run Scanner
+      #   run: ./scanner --format sarif -o results.sarif
+
+      - name: Upload SARIF to Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+\end{minted}
+\end{listing}
+
+\section{Triage workflow \& SLAs}
+\begin{itemize}
+  \item \textbf{Routing:} Use labels (e.g., \texttt{security}, \texttt{deps}), CODEOWNERS, and auto-assigns to direct alerts to service owners.
+  \item \textbf{PR gating:} Require passing CodeQL and tests on protected branches. Consider blocking merges on High/Critical findings or on active secret leaks.
+  \item \textbf{Suggested SLAs:}
+    \begin{itemize}
+      \item Critical: 24--48 hours
+      \item High: 3--5 days
+      \item Medium: 10 business days
+      \item Low/Informational: backlog with periodic review
+    \end{itemize}
+  \item \textbf{Suppressions:} Prefer fixing. When not feasible, document risk acceptance in the PR or project tracker; use \emph{dismiss with reason} so institutional knowledge is preserved.
+\end{itemize}
+\newpage
+
+\section{Operational guardrails}
+\begin{itemize}
+  \item \textbf{Scale with templates:} Keep reusable workflows in a central \texttt{.github} repo and consume via \texttt{workflow\_call}.
+  \item \textbf{Environment parity:} Build and analyze the code paths you run in production; otherwise, you miss issues.
+  \item \textbf{Least privilege:} Grant the minimal \texttt{GITHUB\_TOKEN} permissions needed; set Action job \texttt{permissions} explicitly.
+  \item \textbf{Noise control:} Start with \texttt{security-extended} and tune path filters; review experimental packs in a staging repo first.
+  \item \textbf{Dependency hygiene:} Merge low-risk upgrades quickly; batch PRs when ecosystems are noisy.
+\end{itemize}
+
+\section{Appendix: quick copy-paste}
+\subsection*{Enable Code Scanning (one-liner for new repos)}
+\begin{minted}{bash}
+gh api \
+  -X PUT \
+  -H "Accept: application/vnd.github+json" \
+  /repos/OWNER/REPO/code-scanning/default-setup
+\end{minted}
+
+\subsection*{Query false positives across repos (CodeQL)}
+\begin{minted}{bash}
+gh codeql database analyze --help
+# Use "dismiss with reason" in the UI to capture audit context.
+\end{minted}
+
+\vfill
+\begin{center}
+\small
+This overview is designed as a drop-in, working baseline. Tune schedules, query packs, and branch protections to match your risk appetite and developer workflow.
+\end{center}
+
+\end{document}

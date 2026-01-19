@@ -1,0 +1,531 @@
+%========================================================
+% GitHub Actions & Workflows – Key Patterns and Recipes
+% Drop-in, production-ready workflow examples
+%========================================================
+\documentclass[11pt]{article}
+
+% ---------- Encoding & layout ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{microtype}
+\usepackage{parskip}      % nicer paragraphs
+
+% ---------- Links ----------
+\usepackage[hidelinks]{hyperref}
+
+% ---------- Minted (code highlighting) ----------
+% NOTE: compile with -shell-escape (or --shell-escape)
+\usepackage[newfloat]{minted}
+\usepackage{float}  % for [H] placement
+\usemintedstyle{tango} % e.g., friendly, monokai, tango
+\setminted{
+  fontsize=\small,
+  breaklines=true,
+  breaksymbolleft={}
+}
+\SetupFloatingEnvironment{listing}{name=Listing}
+
+% Convenience environments (no caption option here)
+\newminted[yamlcode]{yaml}{
+  linenos,
+  numbersep=6pt,
+  tabsize=2
+}
+\newminted[bashcode]{bash}{
+  linenos,
+  numbersep=6pt
+}
+\newminted[pscode]{powershell}{
+  linenos,
+  numbersep=6pt
+}
+\newminted[gocode]{go}{
+  linenos,
+  numbersep=6pt
+}
+
+% ---------- Title ----------
+\title{\textbf{GitHub Actions \& Workflows}\\Key Patterns \& Drop-in Recipes}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{How to use this document}
+Copy the snippets into your repository under \texttt{.github/workflows/}. Each recipe is crafted to be production-ready and highlights a specific pattern (matrix builds, path filters, concurrency, reusable workflows, etc.). All code blocks use \texttt{minted}; compile with \texttt{-shell-escape}.
+
+\section{Workflow Anatomy (90-second refresher)}
+\begin{itemize}
+  \item \textbf{\texttt{name}}: Human-readable workflow label (optional).
+  \item \textbf{\texttt{on}}: Triggers (e.g., \texttt{push}, \texttt{pull\_request}, \texttt{workflow\_dispatch}, \texttt{schedule}, \texttt{workflow\_run}).
+  \item \textbf{\texttt{jobs}}: One or more jobs; each runs on a runner (e.g., \texttt{ubuntu-latest}).
+  \item \textbf{\texttt{steps}}: Inside jobs; \texttt{uses} an action or \texttt{run}s shell commands.
+  \item \textbf{\texttt{needs}}: Job dependencies (enforces order).
+  \item \textbf{\texttt{strategy.matrix}}: Expand a job across OS/language versions etc.
+  \item \textbf{\texttt{env}/\texttt{secrets}}: Environment variables and secrets.
+  \item \textbf{\texttt{permissions}}: Token scopes (\emph{least privilege}).
+  \item \textbf{\texttt{concurrency}}: Cancel in-flight runs for a branch/PR.
+\end{itemize}
+
+\newpage
+\section{Recipe 1 – First Workflow: two jobs, multi-OS sanity check}
+\begin{listing}[H]
+\caption{Basic two-job workflow to verify runners, shells, and checkout}
+\begin{yamlcode}
+name: First Workflow
+on: [push]
+
+jobs:
+  linux:
+    name: Linux env
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print env (bash)
+        run: env | sort
+
+  windows:
+    name: Windows env
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print env (PowerShell)
+        run: Get-ChildItem Env: | Sort-Object Name
+\end{yamlcode}
+\end{listing}
+
+\newpage
+\section{Recipe 2 – Matrix Build \& Test (Go example)}
+\begin{listing}[H]
+\caption{Matrix build across Ubuntu/macOS/Windows with Go toolchain cache}
+\begin{yamlcode}
+name: CI (Go matrix)
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    name: Build & Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            bin: main
+            runbin: ./main
+          - os: macos-latest
+            bin: main
+            runbin: ./main
+          - os: windows-latest
+            bin: main.exe
+            runbin: .\main.exe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+      - name: Build
+        run: go build -o ${{ matrix.bin }} ./...
+      - name: Unit tests
+        run: go test ./... -count=1 -race -v
+      - name: Run binary smoke test
+        run: ${{ matrix.runbin }} --help
+\end{yamlcode}
+\end{listing}
+\newpage
+
+\paragraph{Optional \texttt{main.go} for smoke test}
+\begin{gocode}
+package main
+
+import (
+  "flag"
+  "fmt"
+)
+
+func main() {
+  help := flag.Bool("help", false, "show help")
+  flag.Parse()
+  if *help {
+    fmt.Println("demo app: flags: --help")
+    return
+  }
+  fmt.Println("hello from CI")
+}
+\end{gocode}
+
+\newpage
+\section{Recipe 3 – Cross-compile \& Publish Artifacts}
+\begin{listing}[H]
+\caption{Cross-compile after matrix (\texttt{needs: build}) and upload artifacts}
+\begin{yamlcode}
+name: Build + Cross-Compile
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+      - run: go build -o main ./...
+
+  cross:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+      - name: Cross-compile
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          GOOS=linux   GOARCH=amd64 go build -o dist/app-linux-amd64 ./...
+          GOOS=darwin  GOARCH=arm64 go build -o dist/app-macos-arm64 ./...
+          GOOS=windows GOARCH=amd64 go build -o dist/app-windows-amd64.exe ./...
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-${{ github.sha }}
+          path: dist/*
+\end{yamlcode}
+\end{listing}
+
+\newpage
+\section{Recipe 4 – Branch, Tag, and Path Filters}
+\begin{listing}[H]
+\caption{Precise event filters for branches, tags, and paths}
+\begin{yamlcode}
+name: Filtered CI
+on:
+  push:
+    branches: ["main", "release/*"]
+    tags: ["v*"]
+    paths:
+      - "cmd/**"
+      - "internal/**"
+      - "!docs/**"
+  pull_request:
+    branches: ["main"]
+    paths-ignore:
+      - "docs/**"
+\end{yamlcode}
+\end{listing}
+
+\newpage
+\section{Recipe 5 – Concurrency (Cancel In-Progress)}
+\begin{listing}[H]
+\caption{Concurrency to avoid duplicate long-running jobs}
+\begin{yamlcode}
+name: Lint & Test
+on: [push, pull_request]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "do work"
+\end{yamlcode}
+\end{listing}
+
+\newpage
+\section{Recipe 6 – Least-Privilege \texttt{permissions}}
+\begin{listing}[H]
+\caption{Lock down \texttt{GITHUB\_TOKEN} scopes}
+\begin{yamlcode}
+name: Secure Permissions
+on: [pull_request]
+
+permissions:
+  contents: read
+  pull-requests: write   # e.g., workflow needs to comment on PRs
+
+jobs:
+  annotate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add PR comment (example)
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          message: "CI results are in!"
+\end{yamlcode}
+\end{listing}
+
+\newpage
+\section{Recipe 7 – Cache Dependencies (generic)}
+\begin{listing}[H]
+\caption{Generic caching with a robust key and restore keys}
+\begin{yamlcode}
+name: Node CI
+on: [push, pull_request]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+
+      - run: npm ci
+      - run: npm test -- --ci
+\end{yamlcode}
+\end{listing}
+
+\newpage
+\section{Recipe 8 – Artifacts and Build Outputs Between Jobs}
+\begin{listing}[H]
+\caption{Upload in one job, download in a dependent job}
+\begin{yamlcode}
+name: Build → E2E
+on: [pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci && npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: dist/
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: dist/
+      - run: npx playwright install --with-deps
+      - run: npx playwright test
+\end{yamlcode}
+\end{listing}
+
+\newpage
+\section{Recipe 9 – Reusable Workflows (\texttt{workflow\_call})}
+\paragraph{1) Reusable workflow (in same repo)} Save as \texttt{.github/workflows/reusable-ci.yml}.
+\begin{yamlcode}
+name: Reusable CI
+on:
+  workflow_call:
+    inputs:
+      node:
+        required: true
+        type: string
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node }}
+      - run: npm ci && npm test
+\end{yamlcode}
+
+\paragraph{2) Caller workflow}
+\begin{yamlcode}
+name: App CI
+on: [push, pull_request]
+
+jobs:
+  call-shared:
+    uses: ./.github/workflows/reusable-ci.yml
+    with:
+      node: "20"
+\end{yamlcode}
+
+\newpage
+\section{Recipe 10 – Scheduled and Manual Triggers}
+\begin{listing}[H]
+\caption{Nightly maintenance and manual \texttt{workflow\_dispatch}}
+\begin{yamlcode}
+name: Maintenance
+on:
+  schedule:
+    - cron: "17 3 * * *"   # 03:17 UTC daily
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "Choose a task"
+        required: true
+        type: choice
+        options: [vacuum-db, refresh-caches]
+
+jobs:
+  run-task:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Running ${{ github.event.inputs.task }} ..."
+\end{yamlcode}
+\end{listing}
+
+\newpage
+\section{Recipe 11 – Safer PRs from Forks (\texttt{pull\_request\_target})}
+\begin{listing}[H]
+\caption{Guarded use of \texttt{pull\_request\_target}}
+\begin{yamlcode}
+name: PR Labeler (safe)
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Label by title
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: |
+            needs-triage
+\end{yamlcode}
+\end{listing}
+
+\newpage
+\section{Recipe 12 – Monorepo Path Filters (per package)}
+\begin{listing}[H]
+\caption{Monorepo CI per package directory}
+\begin{yamlcode}
+name: Package A CI
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/pkg-a/**"
+  pull_request:
+    paths:
+      - "packages/pkg-a/**"
+
+jobs:
+  test-a:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cd packages/pkg-a && npm ci && npm test
+\end{yamlcode}
+\end{listing}
+
+\newpage
+\section{Recipe 13 – Conditional Steps/Jobs (\texttt{if:})}
+\begin{listing}[H]
+\caption{Conditionally skip when only docs changed}
+\begin{yamlcode}
+name: Conditional Work
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect docs-only
+        id: changed
+        run: |
+          git fetch --depth=2 origin ${{ github.base_ref || 'HEAD~1' }}
+          CHANGED=$(git diff --name-only HEAD^ HEAD | tr -d '\r')
+          echo "changed=$CHANGED" >> $GITHUB_OUTPUT
+
+      - name: Skip if docs-only
+        if: ${{ startsWith(steps.changed.outputs.changed, 'docs/') }}
+        run: echo "Docs-only change; skipping build."
+
+      - name: Build
+        if: ${{ !startsWith(steps.changed.outputs.changed, 'docs/') }}
+        run: echo "Do the real build..."
+\end{yamlcode}
+\end{listing}
+
+\newpage
+\section{Recipe 14 – Self-Hosted Runners (labels and timeouts)}
+\begin{listing}[H]
+\caption{Self-hosted with custom labels and timeout}
+\begin{yamlcode}
+name: Self-Hosted CI
+on: [push]
+
+jobs:
+  heavy:
+    runs-on: [self-hosted, linux, x64, gpu]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - run: nvidia-smi || true
+\end{yamlcode}
+\end{listing}
+
+\newpage
+\section{Common Gotchas (quick checklist)}
+\begin{itemize}
+  \item \textbf{\texttt{needs}} references \emph{job IDs} (the YAML keys), not \texttt{name}.
+  \item Default shells differ: bash on Linux/macOS; PowerShell on Windows.
+  \item Put per-event branch/path filters under each event key inside \texttt{on:}.
+  \item Use \texttt{concurrency} to cancel old runs on the same branch/PR.
+  \item Lock down \texttt{permissions}; grant elevated scopes only where needed.
+  \item For forked PRs, prefer \texttt{pull\_request}; use \texttt{pull\_request\_target} only for trusted, no-checkout workflows.
+  \item Artifact size and log size are limited—upload just what you need.
+\end{itemize}
+
+\section*{Appendix – Local commands you may find handy}
+\begin{bashcode}
+# Validate YAML locally (requires yq or yamllint)
+yamllint .github/workflows
+
+# Render your matrix to see what would run (pseudo; GitHub handles expansion)
+# Tip: keep matrix small and explicit when in doubt.
+\end{bashcode}
+
+\section*{PowerShell snippet (Windows runner tips)}
+\begin{pscode}
+# Show environment variables
+Get-ChildItem Env: | Sort-Object Name
+
+# Fail a step explicitly
+Write-Error "Stopping this step on purpose."
+\end{pscode}
+
+\end{document}

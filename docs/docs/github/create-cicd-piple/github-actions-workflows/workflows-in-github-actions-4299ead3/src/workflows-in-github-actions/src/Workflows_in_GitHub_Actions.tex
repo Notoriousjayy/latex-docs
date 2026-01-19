@@ -1,0 +1,245 @@
+
+%========================================================
+% Workflows in GitHub Actions — Practical Quick Reference
+%========================================================
+\documentclass[11pt]{article}
+
+% ---------- Encoding & layout ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}         % Better Latin fonts
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{microtype}
+\usepackage{setspace}
+\setstretch{1.1}
+
+% ---------- Colors, links, boxes ----------
+\usepackage{xcolor}
+\definecolor{ink}{HTML}{111827}      % gray-900
+\definecolor{soft}{HTML}{F9FAFB}     % gray-50
+\definecolor{accent}{HTML}{2563EB}   % blue-600
+\definecolor{ok}{HTML}{059669}       % emerald-600
+\definecolor{warn}{HTML}{D97706}     % amber-600
+\definecolor{bad}{HTML}{DC2626}      % red-600
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=accent,
+  urlcolor=accent,
+  citecolor=accent
+}
+
+% ---------- Minted (syntax highlighting) ----------
+% NOTE: Compile with: -shell-escape
+\usepackage[newfloat]{minted}
+\setminted{
+  fontsize=\small,
+  breaklines=true,
+  autogobble=true,
+  tabsize=2
+}
+\newmintedfile{yaml}{}
+\newminted{yaml}{}
+\newminted{bash}{}
+\newminted{powershell}{}
+\newminted{text}{}
+
+% ---------- Lists ----------
+\usepackage{enumitem}
+\setlist[itemize]{topsep=4pt,itemsep=2pt,parsep=0pt}
+\setlist[enumerate]{topsep=4pt,itemsep=2pt,parsep=0pt}
+
+% ---------- Title ----------
+\usepackage{titling}
+\pretitle{\vspace*{-1em}\begin{center}\LARGE\bfseries\color{ink}}
+\posttitle{\par\end{center}\vspace{0.5em}}
+\preauthor{\begin{center}\large}
+\postauthor{\par\end{center}\vspace{1em}}
+\title{Workflows in GitHub Actions\\\large Hands-on Cheat Sheet}
+\author{Practical notes distilled into runnable examples}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{How to use this sheet}
+This document focuses on the essentials for writing, understanding, and running GitHub Actions \emph{workflows}: YAML structure, triggers, jobs/steps, and runners. Examples are drop-in and minimal. Compile this \LaTeX{} with \verb|pdflatex -shell-escape| (or \verb|xelatex -shell-escape|) to enable \texttt{minted}.
+
+\section{YAML in 90 seconds}
+YAML is indentation-sensitive and built from \textbf{scalars} (numbers, strings, booleans, null) and \textbf{collections} (lists with \verb|-| and maps/dictionaries as key: value).
+
+\begin{yamlcode}
+number: 42
+pi: 3.14159
+title: "Hello, YAML"
+flag: true
+nothing: null   # or ~
+list:
+  - build
+  - test
+  - deploy
+map:
+  name: "Mirana"
+  traits:
+    color: black
+    friendly: true
+  skills: [jump, play, nap]
+\end{yamlcode}
+\clearpage
+
+\section{Workflow anatomy}
+Workflow files live under \verb|.github/workflows/*.yml| and are made of:
+\begin{itemize}
+  \item \texttt{name}: a human-friendly title.
+  \item \texttt{on}: \emph{triggers} that launch runs.
+  \item \texttt{jobs}: one or more jobs (parallel by default).
+  \item Within each job: \texttt{runs-on} (runner label) and \texttt{steps} (commands or actions).
+\end{itemize}
+
+\begin{yamlcode}
+name: "Workflow Overview"
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: echo "Building..."
+
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        run: echo "Deploying..."
+\end{yamlcode}
+
+\section{Triggers (\texttt{on})}
+You can launch workflows manually, on a schedule, or when repository events occur.
+\subsection*{Manual}
+\begin{yamlcode}
+on:
+  workflow_dispatch: {}
+\end{yamlcode}
+
+\subsection*{Schedule (CRON)}
+\begin{yamlcode}
+on:
+  schedule:
+    - cron: "0 9 * * 1-5"  # Weekdays at 09:00 UTC
+\end{yamlcode}
+
+\subsection*{Repository activity}
+\begin{yamlcode}
+on:
+  push:
+    branches: [main]
+  issues:
+    types: [opened, labeled]
+\end{yamlcode}
+
+\section{Jobs and steps}
+Jobs define the runner and contain \emph{steps}. Steps either \verb|run| shell commands or \verb|uses| a prebuilt action.
+\begin{yamlcode}
+jobs:
+  my_job:
+    name: "Build and Test"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Python step (explicit shell)
+        shell: python
+        run: |
+          print("Hello from Python shell")
+\end{yamlcode}
+\clearpage
+
+\section{A complete minimal workflow}
+\begin{yamlcode}
+name: "Workflow Overview"
+on:
+  workflow_dispatch:
+  push: { branches: [main] }
+
+jobs:
+  a_simple_job:
+    name: "My First Job"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo from bash
+        id: stepId
+        run: echo "This is the first step from the first job"
+
+      - name: Print from Python shell
+        shell: python
+        run: |
+          print("Hello from Python")
+
+  # Example of a second job that could run in parallel
+  another_job:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Another job running in parallel"
+\end{yamlcode}
+\clearpage
+
+\section{Runners: GitHub-hosted vs Self-hosted}
+\textbf{GitHub-hosted} runners are ephemeral VMs (Ubuntu, Windows, macOS) provided by GitHub and preloaded with common tooling. \textbf{Self-hosted} runners are machines you manage (on-prem, VM, or personal) where you install and register the runner. Select a runner with \verb|runs-on|:
+\begin{yamlcode}
+runs-on: ubuntu-latest     # GitHub-hosted
+# runs-on: self-hosted     # Your machine/VM
+\end{yamlcode}
+
+\subsection*{Setup a self-hosted runner (Windows example)}
+Run these in an elevated PowerShell:
+\begin{powershellcode}
+mkdir C:\actions-runner; cd C:\actions-runner
+# Download the runner package (URL provided by GitHub UI)
+Invoke-WebRequest -Uri "<runner-zip-url>" -OutFile actions-runner.zip
+
+# (Optional) Validate integrity (command shown in UI)
+# Expand the archive
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+[IO.Compression.ZipFile]::ExtractToDirectory("actions-runner.zip", ".")
+
+# Configure the runner (token/URL provided by GitHub UI)
+.\config.cmd --url https://github.com/<owner>/<repo> --token <TOKEN>
+
+# Install as a service (optional)
+.\svc install
+.\svc start
+\end{powershellcode}
+
+If you prefer a plain CMD step in a job on Windows, set \verb|shell: cmd| to avoid PowerShell execution policy issues:
+\begin{textcode}
+shell: cmd
+run: |
+  echo This is a multiline command
+  echo Executed on a self-hosted runner
+\end{textcode}
+
+\section{Helpful tips}
+\begin{itemize}
+  \item Keep each workflow focused (build, test, release) for clarity.
+  \item Use explicit \verb|name| for workflows, jobs, and steps for nicer logs.
+  \item Pin actions to major versions (e.g., \verb|actions/checkout@v4|).
+  \item When using Windows self-hosted, \verb|shell: cmd| is a simple default.
+  \item Combine multiple triggers when useful (e.g., \verb|push| and \verb|workflow_dispatch|).
+\end{itemize}
+
+\bigskip
+\noindent\textit{These notes summarize core ideas from lesson material on workflows, YAML, triggers, jobs/steps, and runners, plus pragmatic tips and examples.}
+
+\end{document}

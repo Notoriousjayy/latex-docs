@@ -1,0 +1,268 @@
+% !TEX TS-program = pdflatex
+\documentclass[10pt,a4paper]{article}
+
+% -------------------- Packages --------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[a4paper,margin=0.75in]{geometry}
+\usepackage{parskip}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=MidnightBlue, urlcolor=MidnightBlue, citecolor=MidnightBlue}
+\usepackage{enumitem}
+\setlist{itemsep=2pt, topsep=3pt, leftmargin=1.2em}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage[most]{tcolorbox}
+\usepackage{pifont}
+\usepackage{ragged2e}
+\usepackage{graphicx}
+\usepackage{multicol}
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.5em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.5em}{}
+
+% -------------------- Minted Setup --------------------
+\usepackage[newfloat]{minted}
+\usemintedstyle{friendly}
+\setminted{
+  linenos,
+  breaklines,
+  fontsize=\footnotesize,
+  tabsize=2,
+  frame=single,
+  framerule=0.3pt,
+  rulecolor=\color{Gray},
+  bgcolor=black!2,
+  numbersep=5pt
+}
+
+% -------------------- Tcolorbox Styles --------------------
+\tcbset{
+  colframe=MidnightBlue,
+  colback=blue!2,
+  coltitle=black,
+  arc=2mm,
+  boxrule=0.5pt,
+  left=6pt,right=6pt,top=6pt,bottom=6pt
+}
+\newtcolorbox{callout}[1][]{
+  enhanced, sharp corners=south, rounded corners=southwest,
+  fonttitle=\bfseries, title=#1
+}
+\newtcolorbox{pill}[1][]{
+  enhanced, colback=gray!15, colframe=gray!40, boxrule=0pt, arc=10pt,
+  left=6pt,right=6pt,top=2pt,bottom=2pt
+}
+
+% -------------------- Helpers --------------------
+\newcommand{\checky}{\textcolor{ForestGreen}{\ding{51}}}
+\newcommand{\cross}{\textcolor{BrickRed}{\ding{55}}}
+\newcommand{\kbd}[1]{\colorbox{black!10}{\texttt{#1}}}
+
+% -------------------- Document --------------------
+\begin{document}
+
+\begin{center}
+  {\Large\bfseries GitHub Advanced Security (GHAS) --- Quick Reference}\\[2pt]
+  {\small Version: \today \quad\textbar\quad Scope: Enterprise \textrightarrow{} Org \textrightarrow{} Repo}
+\end{center}
+
+\vspace{0.5em}
+
+\begin{callout}[What GHAS Gives You]
+\begin{multicols}{2}
+\begin{itemize}
+  \item \textbf{Code scanning (CodeQL)} --- SAST with a code-as-data model.
+  \item \textbf{Secret scanning} (+ push protection) --- detect and prevent credential leaks.
+  \item \textbf{Dependency insights} --- advisories, alerts, automated PRs (Dependabot).
+  \item \textbf{Security Overview dashboards} at Enterprise/Org/Repo.
+  \item \textbf{Policy inheritance} to auto-enable for new repositories.
+\end{itemize}
+\columnbreak
+\begin{itemize}
+  \item \textbf{Shift-left integration} in PR checks and GitHub Actions.
+  \item \textbf{Prioritized fix guidance} and audit trail via checks \& reviews.
+  \item \textbf{Container/image scanning} surfaced in Security Overview.
+  \item \textbf{Compliance support}: enforce status checks before merge.
+\end{itemize}
+\end{multicols}
+\end{callout}
+
+% -------------------- Top-level Concepts --------------------
+\section{Key Concepts}
+
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.22\linewidth}X@{}}
+\toprule
+\textbf{Term} & \textbf{Meaning / Notes}\\
+\midrule
+GHAS & Paid add-on; unlocks code scanning, secret scanning (incl.\ push protection), and advanced dashboards.\\
+GHEC & GitHub Enterprise Cloud (github.com).\\
+GHES & GitHub Enterprise Server (self-hosted).\\
+Security Overview & Aggregated dashboards: view risk \& coverage, drill into alerts, track remediation.\\
+\bottomrule
+\end{tabularx}
+
+\section{Enablement Path (Top-down)}
+
+\begin{enumerate}
+  \item \textbf{Enterprise Settings} $\rightarrow$ \texttt{Policies} $\rightarrow$ \texttt{Code security and analysis}: prefer \emph{inheritance} and default-on for new orgs/repos.
+  \item \textbf{Organization Settings} $\rightarrow$ \texttt{Security \& analysis}: enable \emph{Code scanning}, \emph{Secret scanning} (with \emph{Push protection}), and \emph{Dependency alerts}.
+  \item \textbf{Repository Settings} $\rightarrow$ \texttt{Security \& analysis}: confirm features \& configure branch protection rules to \emph{require} passing checks.
+\end{enumerate}
+
+\begin{callout}[Minimum Safe Defaults]
+\begin{itemize}
+  \item Secret scanning \textbf{ON} \& \textbf{Push protection ON} for all repos (including private).
+  \item Code scanning \textbf{ON} with default CodeQL queries for primary languages.
+  \item Dependency alerts \textbf{ON} \& Dependabot security updates \textbf{ON}.
+  \item Protected branches require: \emph{All code scanning checks} and \emph{No secret scanning violations} before merge.
+\end{itemize}
+\end{callout}
+\clearpage
+
+% -------------------- CI/CD Integration --------------------
+\section{CI/CD Integration}
+
+\subsection*{Code scanning (CodeQL) --- GitHub Actions}
+\noindent Create \texttt{.github/workflows/codeql.yml}:
+
+\vspace{0.5em}
+\noindent\textit{CodeQL code scanning for a multi-language repo}
+\begin{minted}{yaml}
+name: CodeQL
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron:  '0 3 * * 0'   # weekly run (Sun @ 03:00 UTC)
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript', 'typescript', 'python', 'java' ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+      - uses: github/codeql-action/autobuild@v3
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+\end{minted}
+
+\subsection*{Dependabot Security Updates}
+\noindent Create \texttt{.github/dependabot.yml}:
+
+\vspace{0.5em}
+\noindent\textit{Dependabot security updates (weekly)}
+\begin{minted}{yaml}
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule: { interval: "weekly" }
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule: { interval: "weekly" }
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule: { interval: "weekly" }
+\end{minted}
+
+\subsection*{Secret Scanning \& Push Protection}
+\begin{itemize}
+  \item Enabled via \texttt{Settings} $\rightarrow$ \texttt{Security \& analysis}. Configure org-wide defaults and \emph{require fixes before merge} using branch protection.
+  \item \textbf{Triage tip}: Verify, revoke, rotate, then remediate. Add dismissals only with justification (false positive, test credential, or mitigated).
+\end{itemize}
+
+% -------------------- Triage and Policy --------------------
+\section{Triage \& Policy}
+
+\subsection*{Alert Handling Flow}
+\begin{enumerate}
+  \item \textbf{Open alert} $\rightarrow$ assess severity, exploitability, and reachability.
+  \item \textbf{Decide}: Fix now (\emph{patch/PR}), mitigate (feature flag, config), or temporarily suppress (with justification \& expiry).
+  \item \textbf{Track}: Link to issue/PR, assign owner, set SLA (e.g., Critical 24--48h, High 5d, Medium 10d, Low 30d).
+  \item \textbf{Verify}: Ensure status checks pass; close alert with reference to commit or PR.
+\end{enumerate}
+
+\subsection*{Dismissal Reasons (Use Sparingly)}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.25\linewidth}X@{}}
+\toprule
+\textbf{Reason} & \textbf{When Appropriate}\\
+\midrule
+False positive & Tool finding demonstrably incorrect for this code path.\\
+Used in tests & Credential/pattern is non-production \& gated to test fixtures.\\
+Mitigated & Compensating control prevents exploitation (documented).\\
+Won't fix (temporary) & Accepted risk with deadline, owner, and business justification.\\
+\bottomrule
+\end{tabularx}
+
+% -------------------- Mapping: AppSec to GHAS --------------------
+\section{AppSec Core Processes $\leftrightarrow$ GHAS Features}
+
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.32\linewidth}X@{}}
+\toprule
+\textbf{AppSec Process} & \textbf{GHAS Tie-in}\\
+\midrule
+Secure SDLC Governance & Enforce branch protections; require checks from CodeQL \& secret scanning before merge.\\
+Threat Detection/Prevention & Secret scanning with push protection; Dependabot advisories.\\
+Static Analysis (SAST) & CodeQL workflows on push, PR, and schedule.\\
+Dependency/Container Risk & Dependabot PRs; surfaced in Security Overview.\\
+Triage \& Remediation & Use alert pages, issues/PR links, and dashboards to track closure \& SLA.\\
+\bottomrule
+\end{tabularx}
+
+% -------------------- Operational Tips --------------------
+\section{Operational Tips}
+
+\begin{itemize}
+  \item \textbf{Auto-on for new repos}: set org policy to inherit security features by default.
+  \item \textbf{Language coverage}: verify CodeQL supports your primary languages; supplement with third-party linters where needed.
+  \item \textbf{Monorepos}: scope CodeQL with \texttt{paths}/\texttt{paths-ignore} to focus on critical dirs.
+  \item \textbf{CI reliability}: pin actions to major versions and use weekly scheduled runs to catch drift.
+  \item \textbf{Reporting}: use Security Overview exports and Issues/Projects for tracking KPIs (MTTR, \% fixed by severity, coverage).
+\end{itemize}
+
+\begin{callout}[Merge Gates Checklist]
+\begin{multicols}{2}
+\begin{itemize}
+  \item Code scanning checks \checky
+  \item Secret scanning (no blocking secrets) \checky
+  \item Dependency alerts addressed \checky
+  \item Required reviewers approved \checky
+  \item Status checks passing \checky
+\end{itemize}
+\columnbreak
+\begin{itemize}
+  \item Protected branch rules enforced \checky
+  \item PR links to issue/ticket \checky
+  \item CI passed (build, test) \checky
+  \item Release notes updated \checky
+  \item Ownership \& SLA assigned \checky
+\end{itemize}
+\end{multicols}
+\end{callout}
+
+\vfill
+\hrule
+\vspace{2pt}
+{\footnotesize
+This one-pager is a concise reference for enabling and operating GHAS across Enterprise $\rightarrow$ Org $\rightarrow$ Repo scopes. Adapt the examples to your repositories and compliance policies.
+}
+
+\end{document}

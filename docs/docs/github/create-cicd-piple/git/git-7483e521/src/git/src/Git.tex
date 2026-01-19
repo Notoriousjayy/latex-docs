@@ -1,0 +1,321 @@
+%========================================================
+% Git — Practical Study Sheet (Hands-On, No-Fluff)
+%========================================================
+\documentclass[11pt]{article}
+
+% ---------- Encoding & layout ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}         % crisper text
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{microtype}
+\usepackage{setspace}
+\setstretch{1.08}
+
+% ---------- Colors, links ----------
+\usepackage{xcolor}
+\definecolor{ink}{HTML}{111827}      % gray-900
+\definecolor{soft}{HTML}{F9FAFB}     % gray-50
+\definecolor{accent}{HTML}{2563EB}   % blue-600
+\definecolor{ok}{HTML}{059669}       % emerald-600
+\definecolor{warn}{HTML}{D97706}     % amber-600
+\definecolor{bad}{HTML}{DC2626}      % red-600
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=accent,
+  urlcolor=accent,
+  citecolor=accent
+}
+
+% ---------- Lists ----------
+\usepackage{enumitem}
+\setlist[itemize]{topsep=4pt,itemsep=2pt,parsep=0pt}
+\setlist[enumerate]{topsep=4pt,itemsep=2pt,parsep=0pt}
+
+% ---------- Code (no external deps) ----------
+\usepackage{listings}
+\lstdefinestyle{terminal}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{soft},
+  frame=single,
+  rulecolor=\color{ink},
+  xleftmargin=0pt,
+  framexleftmargin=6pt,
+  framesep=6pt,
+  breaklines=true,
+  showstringspaces=false,
+  columns=fullflexible
+}
+\lstdefinelanguage{console}{
+  morekeywords={git,ssh,ssh-keygen,clip,code},
+  sensitive=true
+}
+
+% ---------- Title ----------
+\usepackage{titling}
+\pretitle{\vspace*{-1em}\begin{center}\LARGE\bfseries}
+\posttitle{\par\end{center}\vspace{-0.25em}}
+\preauthor{\begin{center}\large}
+\postauthor{\end{center}\vspace{0.5em}}
+\predate{\begin{center}\small}
+\postdate{\end{center}\vspace{0.5em}}
+
+\title{Git — Practical Study Sheet}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{Goal.} A zero-fluff, copy\&paste guide that you can run end-to-end: setup, daily workflow, remote sync, authentication, branching choices, merge strategies, and a hands-on lab.
+
+\section*{1) First-time setup (one-off)}
+\begin{lstlisting}[style=terminal,language=console]
+git --version
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+git config --global init.defaultBranch main
+# Optional quality-of-life
+git config --global pull.rebase false     # or true if you prefer linear history
+git config --global fetch.prune true
+git config --global color.ui auto
+\end{lstlisting}
+
+\noindent Initialize or clone:
+\begin{lstlisting}[style=terminal,language=console]
+git init
+git clone <url>
+\end{lstlisting}
+
+\noindent Remotes:
+\begin{lstlisting}[style=terminal,language=console]
+git remote -v
+git remote add origin <url>
+git remote set-url origin <new-url>
+git remote remove origin
+\end{lstlisting}
+\clearpage
+
+\section*{2) Daily local workflow}
+\begin{lstlisting}[style=terminal,language=console]
+git status
+git add <file>         # or: git add .
+git commit -m "message"
+git log --oneline --graph --decorate
+\end{lstlisting}
+
+\noindent Branch and switch:
+\begin{lstlisting}[style=terminal,language=console]
+git branch <name>      # create branch
+git branch             # list branches
+git checkout <name>    # switch
+# or modern:
+git switch -c <name>   # create+switch
+git switch <name>      # switch
+\end{lstlisting}
+
+\section*{3) Sync with remote}
+\begin{itemize}
+  \item \textbf{Fetch} to preview incoming changes without merging.
+  \item \textbf{Pull} to fetch and integrate into your branch.
+  \item \textbf{Push} to publish your local commits.
+\end{itemize}
+
+\begin{lstlisting}[style=terminal,language=console]
+git fetch
+git pull                # fetch + merge (or rebase if configured)
+git push origin main
+git push -u origin <branch>   # set upstream tracking the first time
+\end{lstlisting}
+
+\section*{4) Authentication (pick one)}
+
+\subsection*{A. HTTPS with PAT (Personal Access Token)}
+\begin{enumerate}
+  \item Create a PAT (fine-grained or classic). Grant minimal scopes (e.g., repo).
+  \item Use a credential helper (recommended) or paste when prompted.
+  \item For demos only, embed PAT in URL (avoid in real projects):
+\end{enumerate}
+
+\begin{lstlisting}[style=terminal,language=console]
+# Demo only
+git clone https://<PAT>@github.com/<user>/<repo>.git
+\end{lstlisting}
+
+\noindent Credential helper examples:
+\begin{lstlisting}[style=terminal,language=console]
+git config --global credential.helper manager-core   # Windows
+git config --global credential.helper osxkeychain    # macOS
+git config --global credential.helper store          # Plaintext file (avoid)
+\end{lstlisting}
+
+\subsection*{B. SSH keys (convenient \& secure)}
+\begin{lstlisting}[style=terminal,language=console]
+# Create key (with passphrase recommended)
+ssh-keygen -t ed25519 -C "you@example.com"
+
+# Copy pubkey to clipboard (Windows example)
+clip < ~/.ssh/id_ed25519.pub
+
+# Add the public key to GitHub: Settings -> SSH and GPG keys
+# Then use the SSH URL:
+git clone git@github.com:<user>/<repo>.git
+\end{lstlisting}
+
+\section*{5) Branching strategies (what \& when)}
+\begin{description}[leftmargin=1.25em,style=nextline]
+  \item[GitHub Flow] Feature branch \textrightarrow{} Pull Request \textrightarrow{} main, deploy continuously. Simple and great for frequent releases.
+  \item[Git Flow / Release branches] Long-lived branches (develop, release, hotfix). Useful for regulated or complex release trains.
+  \item[Trunk-based] Very short-lived branches, frequent merges to main with robust CI.
+\end{description}
+\clearpage
+
+\section*{6) Merge choices (how your history looks)}
+\begin{itemize}
+  \item \textbf{Merge commit} (default): preserves a merge point (commit with two parents).
+  \item \textbf{Rebase}: replay feature commits onto target; linear history; changes commit SHAs.
+  \item \textbf{Squash \& merge}: combine all feature commits into a single commit on target.
+\end{itemize}
+
+\noindent Tiny ASCII previews (left-to-right history):
+\begin{lstlisting}[style=terminal]
+# Merge commit
+*---*---*---M         (main)
+     \-----*---*      (feature)
+
+# Rebase (linear)
+*---*---*---*---*     (main after rebased feature)
+
+# Squash & merge
+*---*---*---S         (main, one squashed commit)
+     \-----*---*      (feature branch history stays on branch)
+\end{lstlisting}
+
+\noindent Common commands:
+\begin{lstlisting}[style=terminal,language=console]
+# Merge commit
+git checkout main
+git pull
+git merge feature/xyz
+
+# Rebase feature onto main (linear history)
+git checkout feature/xyz
+git fetch origin
+git rebase origin/main
+# If conflicts: resolve, then
+git rebase --continue
+
+# Squash locally (interactive)
+git checkout feature/xyz
+git rebase -i origin/main  # mark subsequent commits as "squash" or "fixup"
+\end{lstlisting}
+\clearpage
+
+\section*{7) Hands-on lab (CLI + Desktop + GUI)}
+
+\subsection*{Part A: Create a repository (CLI)}
+\begin{enumerate}
+  \item Initialize and commit:
+\begin{lstlisting}[style=terminal,language=console]
+mkdir demo-git && cd demo-git
+git init
+echo "# Demo" > README.md
+git add README.md
+git commit -m "chore: initial commit"
+\end{lstlisting}
+  \item Inspect history:
+\begin{lstlisting}[style=terminal,language=console]
+git log --oneline --graph --decorate
+\end{lstlisting}
+\end{enumerate}
+
+\subsection*{Part B: Connect a remote \& publish}
+\begin{lstlisting}[style=terminal,language=console]
+git remote add origin <ssh-or-https-url>
+git push -u origin main
+\end{lstlisting}
+
+\subsection*{Part C: Auth drills}
+\begin{itemize}
+  \item \textbf{PAT (HTTPS)}: create PAT, set credential helper, clone via HTTPS.
+  \item \textbf{SSH}: \texttt{ssh-keygen}, add public key, clone via SSH URL.
+\end{itemize}
+
+\subsection*{Part D: Branch \& merge exercises}
+\begin{enumerate}
+  \item Create three branches: \texttt{merge-commit}, \texttt{rebase}, \texttt{squash}.
+\begin{lstlisting}[style=terminal,language=console]
+git switch -c merge-commit
+echo "a" >> notes.txt && git add notes.txt && git commit -m "add a"
+git switch -c rebase main
+echo "b" >> notes.txt && git add notes.txt && git commit -m "add b"
+git switch -c squash main
+echo "c1" >> notes.txt && git add notes.txt && git commit -m "add c1"
+echo "c2" >> notes.txt && git add notes.txt && git commit -m "add c2"
+\end{lstlisting}
+  \item Update \texttt{main} to diverge:
+\begin{lstlisting}[style=terminal,language=console]
+git switch main
+echo "main" >> notes.txt && git add notes.txt && git commit -m "main edit"
+\end{lstlisting}
+  \item Merge commit path:
+\begin{lstlisting}[style=terminal,language=console]
+git merge merge-commit
+\end{lstlisting}
+  \item Rebase path:
+\begin{lstlisting}[style=terminal,language=console]
+git switch rebase
+git rebase main
+git switch main
+git merge --ff-only rebase
+\end{lstlisting}
+  \item Squash path (local):
+\begin{lstlisting}[style=terminal,language=console]
+git switch squash
+git rebase -i main     # mark second commit as "squash" or "fixup"
+git switch main
+git merge --ff-only squash
+\end{lstlisting}
+  \item Inspect results:
+\begin{lstlisting}[style=terminal,language=console]
+git log --oneline --graph --decorate --all
+\end{lstlisting}
+\end{enumerate}
+
+\section*{8) Quick troubleshooting (fast fixes)}
+\begin{description}[leftmargin=1.25em,style=nextline]
+  \item[\texttt{fatal: refusing to merge unrelated histories}] Add \texttt{--allow-unrelated-histories} or re-create remote to match local.
+  \item[Detached HEAD] You checked out a commit, not a branch. Create a branch: \texttt{git switch -c fix/my-branch}.
+  \item[Undo last commit (keep changes staged)] \texttt{git reset --soft HEAD\string~1}
+  \item[Undo last commit (keep changes unstaged)] \texttt{git reset --mixed HEAD\string~1}
+  \item[Discard local changes to a file] \texttt{git checkout -- <file>} (old) or \texttt{git restore <file>} (new).
+  \item[Overwrite local with remote] \texttt{git fetch; git reset --hard origin/main} (destructive).
+  \item[Clean untracked files] \texttt{git clean -fd} (destructive: removes files/dirs not tracked).
+\end{description}
+\clearpage
+
+\section*{9) Mental model (TL;DR)}
+\begin{itemize}
+  \item \textbf{Stage} (\texttt{git add}) picks \emph{exactly} what goes into the next snapshot.
+  \item \textbf{Commit} (\texttt{git commit}) freezes that snapshot with a message.
+  \item \textbf{Branch} is a movable pointer to a sequence of commits.
+  \item \textbf{Fetch/Pull/Push} synchronize your local refs with remotes.
+  \item Pick a merge strategy that matches your team's review and release habits.
+\end{itemize}
+
+\vfill
+\noindent\textit{Tip:} save these dotfiles for consistent behavior across machines:
+\begin{lstlisting}[style=terminal]
+# ~/.gitconfig (excerpt)
+[pull]
+    rebase = false
+[fetch]
+    prune = true
+[color]
+    ui = auto
+\end{lstlisting}
+
+\end{document}
+

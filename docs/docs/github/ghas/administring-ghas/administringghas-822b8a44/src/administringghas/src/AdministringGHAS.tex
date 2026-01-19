@@ -1,0 +1,323 @@
+% Administration of GHAS — Notes, SOP, and Markdown Examples
+% Compile with: xelatex -shell-escape
+\documentclass[11pt,letterpaper]{article}
+
+% --- Encoding & typography ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[stretch=10]{microtype}
+\usepackage[margin=1in]{geometry}
+\usepackage{parskip}
+
+% --- Color & links ---
+\usepackage[dvipsnames]{xcolor}
+\usepackage[
+  colorlinks,
+  linkcolor=MidnightBlue,
+  urlcolor=MidnightBlue,
+  citecolor=MidnightBlue
+]{hyperref}
+
+% --- Structure ---
+\usepackage{enumitem}
+\setlist{itemsep=2pt, topsep=4pt, leftmargin=1.2em}
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{8pt}{4pt}
+\titlespacing*{\subsection}{0pt}{6pt}{3pt}
+\titlespacing*{\subsubsection}{0pt}{5pt}{2pt}
+
+% --- Tables ---
+\usepackage{array}
+\usepackage{tabularx}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+% --- Code (minted) ---
+\usepackage{fvextra}
+\usepackage{upquote}
+\usepackage{minted}
+\setminted{
+  fontsize=\footnotesize,
+  breaklines=true,
+  breaksymbolleft=,
+  tabsize=2
+}
+
+\title{\textbf{Administration of GitHub Advanced Security (GHAS)}\\
+\large Notes, SOP, and Example Markdown Templates}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Learning Objectives}
+After completing this guide, you should be able to:
+\begin{itemize}
+  \item Explain how GHAS features are enabled across enterprise, org, and repo scopes.
+  \item Set org-level defaults and repo overrides with least-privilege RBAC.
+  \item Use APIs and the \texttt{gh} CLI for automation and reporting.
+  \item Standardize community health files and workflow templates via \texttt{.github}.
+\end{itemize}
+
+\section{.github Org Repository}
+\subsection*{Suggested Structure}
+\begin{minted}[linenos]{text}
+.github/
+  CODE_OF_CONDUCT.md
+  CONTRIBUTING.md
+  SECURITY.md
+  FUNDING.yml
+  ISSUE_TEMPLATE/
+    bug_report.md
+    feature_request.md
+  workflow-templates/
+    codeql.yml
+    codeql.properties.json   (template metadata)
+\end{minted}
+\clearpage
+
+\section{Permissions, APIs, and CodeQL (Quick Reference)}
+\subsection*{List Code Scanning Alerts (repo scope)}
+\begin{minted}[linenos]{bash}
+gh api repos/OWNER/REPO/code-scanning/alerts --paginate --jq '.[].rule.id'
+\end{minted}
+
+\subsection*{List Dependabot Alerts (org scope)}
+\begin{minted}[linenos]{bash}
+curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+  -H "Accept: application/vnd.github+json" \
+  "https://api.github.com/orgs/ORG/dependabot/alerts?per_page=100"
+\end{minted}
+
+\subsection*{List Secret Scanning Alerts (repo scope)}
+\begin{minted}[linenos]{bash}
+gh api repos/OWNER/REPO/secret-scanning/alerts --paginate
+\end{minted}
+
+\subsection*{Baseline CodeQL Workflow (Template)}
+\begin{minted}[linenos]{yaml}
+name: CodeQL
+on:
+  push: { branches: ["main"] }
+  pull_request: { branches: ["main"] }
+  schedule: [ { cron: "23 3 * * 1" } ]
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: auto
+          # queries: security-extended,security-and-quality
+      - uses: github/codeql-action/autobuild@v3
+      - uses: github/codeql-action/analyze@v3
+\end{minted}
+\clearpage
+
+\section{Markdown File Examples}
+This section provides copy-pasteable starting points for each Markdown file in the structure above. Replace placeholders like \texttt{ORG}, \texttt{CONTACT\_EMAIL}, and \texttt{SECURITY\_TEAM\_URL}.
+
+\subsection{CODE\_OF\_CONDUCT.md}
+\begin{minted}[linenos]{markdown}
+# Code of Conduct
+
+## Our Pledge
+We as members, contributors, and leaders pledge to make participation in our
+community a harassment-free experience for everyone.
+
+## Our Standards
+Examples of behavior that contributes to a positive environment include:
+- Demonstrating empathy and kindness
+- Being respectful of differing viewpoints and experiences
+- Accepting constructive feedback gracefully
+
+Examples of unacceptable behavior include:
+- Harassment, trolling, or derogatory comments
+- Publishing others' private information without permission
+- Other conduct which could reasonably be considered inappropriate
+
+## Enforcement Responsibilities
+Project maintainers are responsible for clarifying and enforcing our standards.
+They will take appropriate and fair corrective action in response to any behavior
+they deem inappropriate, threatening, offensive, or harmful.
+
+## Scope
+This Code applies within project spaces and in public spaces when an individual
+is representing the project or its community.
+
+## Enforcement
+Instances of abusive, harassing, or otherwise unacceptable behavior may be
+reported to the maintainers at CONTACT_EMAIL. All complaints will be reviewed
+and investigated promptly and fairly.
+
+## Attribution
+This Code of Conduct is adapted from common open-source community guidelines.
+\end{minted}
+\clearpage
+
+\subsection{CONTRIBUTING.md}
+\begin{minted}[linenos]{markdown}
+# Contributing to ORG
+
+Thanks for taking the time to contribute! The following is a set of guidelines
+for contributing to projects under the ORG organization.
+
+## Ground Rules
+- Follow our [Code of Conduct](../CODE_OF_CONDUCT.md).
+- Discuss significant changes via issues before opening a PR.
+- Keep PRs focused and small when possible.
+
+## Development Workflow
+1. Fork the repo and create a feature branch:
+   - `git checkout -b feat/short-description`
+2. Run tests and linters locally.
+3. Commit using conventional commits where possible.
+4. Open a PR against `main` and fill out the PR template.
+
+## Commit Message Guidelines (Conventional Commits)
+- `feat: add new user profile endpoint`
+- `fix: correct null pointer in auth middleware`
+- `docs: update README for setup`
+- `ci: bump CodeQL version to v3`
+
+## Pull Request Checklist
+- [ ] Tests added or updated
+- [ ] Docs updated (README/SECURITY/CHANGELOG as applicable)
+- [ ] CI is green
+- [ ] No secrets or credentials included
+
+## Issue Labels
+- `bug`, `feature`, `documentation`, `security`, `good first issue`
+
+## Licensing
+By contributing, you agree that your contributions will be licensed under the
+project's license.
+\end{minted}
+\clearpage
+
+\subsection{SECURITY.md}
+\begin{minted}[linenos]{markdown}
+# Security Policy
+
+## Supported Versions
+We generally support security fixes for the latest release and the most recent
+minor version line. Older releases may receive fixes at our discretion.
+
+## Reporting a Vulnerability
+Please email CONTACT_EMAIL or use our private intake form:
+SECURITY_TEAM_URL
+
+**Do not** open public issues for suspected vulnerabilities.
+
+Provide as much detail as possible:
+- Affected version(s) and component(s)
+- Reproduction steps and proof of concept
+- Impact assessment (confidentiality, integrity, availability)
+- Any suggested mitigations
+
+We will acknowledge receipt within 2 business days and provide regular updates
+until resolution.
+
+## Disclosure Policy
+We follow coordinated disclosure. After a fix is available and users have had
+a reasonable window to update, we may publish details in release notes.
+
+## Security Hardening Guidance
+- Enable branch protection and required status checks
+- Use GHAS features (secret scanning, Dependabot, CodeQL)
+- Rotate credentials regularly and prefer OIDC for CI
+\end{minted}
+\clearpage
+
+\subsection{ISSUE\_TEMPLATE/bug\_report.md}
+\begin{minted}[linenos]{markdown}
+---
+name: "Bug report"
+about: "Create a report to help us improve"
+title: "[Bug]: short summary"
+labels: ["bug"]
+assignees: []
+---
+
+## Describe the bug
+A clear and concise description of the problem.
+
+## To Reproduce
+Steps to reproduce the behavior:
+1. Go to '...'
+2. Run '...'
+3. Observe '...'
+
+## Expected behavior
+What you expected to happen.
+
+## Screenshots or logs
+If applicable, add screenshots or logs.
+
+## Environment
+- OS: e.g., Ubuntu 22.04
+- Runtime/SDK: e.g., Node.js 20.x
+- Version/Commit: e.g., v1.2.3 / abc123
+
+## Additional context
+Add any other context about the problem here.
+\end{minted}
+\clearpage
+
+\subsection{ISSUE\_TEMPLATE/feature\_request.md}
+\begin{minted}[linenos]{markdown}
+---
+name: "Feature request"
+about: "Suggest an idea for this project"
+title: "[Feature]: short summary"
+labels: ["feature"]
+assignees: []
+---
+
+## Motivation / Problem Statement
+Is your request related to a problem? Please describe it clearly.
+
+## Proposed Solution
+Describe the solution you'd like, including API or UX changes if relevant.
+
+## Alternatives
+Describe any alternative solutions or features you've considered.
+
+## Acceptance Criteria
+- [ ] Clear, testable criteria 1
+- [ ] Clear, testable criteria 2
+- [ ] Docs updated
+
+## Additional context
+Add any other context or mockups here.
+\end{minted}
+
+\section{Policy and Inheritance Cheatsheet}
+\begin{tabularx}{\linewidth}{>{\bfseries}l Y Y}
+\hline
+Level & What to Prefer Centralizing & Typical Overrides \\
+\hline
+Enterprise & Global minimums/guardrails, audit, org defaults & Org-specific constraints \\
+Organization & Default GHAS enablement, templates, required checks & Repo languages, schedules, build steps \\
+Repository & Local exceptions, custom queries/build & N/A (justify exceptions) \\
+\hline
+\end{tabularx}
+
+\section{Operational Playbook}
+\begin{enumerate}
+  \item Establish governance: \texttt{.github} repo, community health files, templates.
+  \item Enable GHAS org-wide: secret scanning, Dependabot, CodeQL.
+  \item RBAC: Security teams with least-privilege permissions.
+  \item Triage and SLAs: severity, dismissal reasons, escalation paths.
+  \item Automate: APIs and \texttt{gh} for alert export, dashboards, tickets.
+  \item Measure: MTTR, reopened rates, coverage, query packs.
+\end{enumerate}
+
+\end{document}

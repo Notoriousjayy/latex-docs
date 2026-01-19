@@ -1,0 +1,190 @@
+
+% !TEX TS-program = pdflatex
+% Compile with: pdflatex -shell-escape codeql-triage-sop.tex
+\documentclass[11pt,letterpaper]{article}
+
+% --- Encoding & fonts ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% --- Page layout ---
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{parskip}      % space between paragraphs
+\usepackage{setspace}
+
+% --- Colors, links, headings ---
+\usepackage[dvipsnames]{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=MidnightBlue,
+  urlcolor=MidnightBlue,
+  citecolor=MidnightBlue
+}
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{10pt plus 2pt}{6pt}
+\titlespacing*{\subsection}{0pt}{8pt plus 2pt}{4pt}
+
+% --- Lists ---
+\usepackage{enumitem}
+\setlist{itemsep=3pt, topsep=6pt, leftmargin=1.2em}
+
+% --- Code (minted) ---
+\usepackage[newfloat]{minted} % requires -shell-escape
+\usepackage{fvextra}
+\fvset{fontsize=\small}
+\setminted{
+  breaklines,
+  autogobble,
+  frame=lines,
+  linenos,
+  tabsize=2,
+  fontsize=\small
+}
+
+% --- Title metadata ---
+\newcommand{\product}{CodeQL}
+\newcommand{\docTitle}{CodeQL Triage Playbook}
+\newcommand{\docVersion}{v1.0}
+\newcommand{\docDate}{\today}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE \docTitle}\\[4pt]
+  {\large Practical SOP for GitHub Advanced Security}\\[6pt]
+  {\small Version \docVersion\ \textbullet\ \docDate}\\[10pt]
+  \fbox{\parbox{0.9\linewidth}{\footnotesize
+  Build note: This document uses the \texttt{minted} package for syntax highlighting.
+  Compile with \texttt{pdflatex -shell-escape} (or \texttt{xelatex -shell-escape}).
+  }}
+\end{center}
+
+\vspace{1em}
+\tableofcontents
+\vspace{1em}
+\hrule
+\vspace{1em}
+
+\section{How to Use This SOP}
+This playbook distills a lightweight, repeatable triage process for \product{} findings in GitHub. It is optimized for speed, auditability, and clear decisions. Use it as a runbook during daily triage or while debugging failed code scanning runs.
+
+\section{Where to Look First}
+\subsection{GitHub Security UI}
+\begin{itemize}
+  \item Navigate to \textbf{Repository} $\rightarrow$ \textbf{Security} $\rightarrow$ \textbf{Code scanning alerts}.
+  \item Open an alert, review the \textbf{rule documentation}, and click \textbf{Show paths} to trace the source-to-sink flow.
+\end{itemize}
+
+\subsection{Actions Run vs. Query Failure}
+When a scan fails, open the failed \textbf{Actions} run and expand the job steps.
+\begin{itemize}
+  \item If the failure is in workflow or YAML (checkout, setup, permissions), fix the pipeline first.
+  \item If the failure originates from the \product{} action or a specific query pack, inspect annotations and logs to isolate the step.
+\end{itemize}
+
+\subsection{SARIF In/Out}
+\begin{itemize}
+  \item You can \textbf{upload} third-party SARIF to \textit{Code scanning alerts}.
+  \item You can \textbf{export} \product{} SARIF for downstream processing and dashboards.
+\end{itemize}
+
+\section{Minimum Triage Flow (10 Minutes)}
+\begin{enumerate}
+  \item \textbf{Confirm failure location:} workflow/YAML vs. \product{} analysis.
+  \item \textbf{Open alert} and use \textbf{Show paths} to identify root cause (source, propagators, sink).
+  \item \textbf{Read the rule doc:} impact, examples, and suggested fixes (often links to the query).
+  \item \textbf{Decide:} fix now, file an issue, or dismiss with justification.
+  \item \textbf{Log evidence:} link to path trace, commit, PR, and any compensating controls.
+\end{enumerate}
+
+\section{Dismissal Reasons (Use Sparingly)}
+If you dismiss, always provide a clear justification and schedule a review.
+\begin{itemize}
+  \item \textbf{False positive / Not exploitable} in our context (explain why the path is unreachable).
+  \item \textbf{Mitigated by design} (e.g., centralized sanitization or enforcement); add references.
+  \item \textbf{Test or sample code} (excluded from build/runtime).
+  \item \textbf{Legacy with compensating control} (ticket opened, control ID listed, timeline set).
+\end{itemize}
+
+\section{Known \product{} Limitations}
+\begin{itemize}
+  \item \textbf{Language coverage varies;} some languages and frameworks have richer modeling than others.
+  \item \textbf{AST/DB modeling is not a full compiler:} framework indirection or meta-programming can obscure flows.
+  \item \textbf{Signal vs. noise:} narrower queries reduce false positives but may increase scan time; broader queries raise noise.
+\end{itemize}
+
+\section{Speed and Cost Tips}
+\begin{itemize}
+  \item \textbf{Scope the code:} analyze only relevant directories using workflow \texttt{paths}/\texttt{paths-ignore}.
+  \item \textbf{Cache:} use \texttt{actions/cache} for databases and dependencies.
+  \item \textbf{Parallelize:} consider matrix builds or larger runners when this meaningfully cuts wall-clock.
+  \item \textbf{Prefer built-in suites/packs;} keep custom queries targeted.
+\end{itemize}
+
+\section{Handy Commands and Snippets}
+\subsection{gh CLI: List and Inspect Alerts}
+\begin{minted}{bash}
+# Set a default repo (once per shell)
+gh repo set-default ORG/REPO
+
+# List CodeQL alerts (IDs, rule, state)
+gh api repos/:owner/:repo/code-scanning/alerts \
+  --jq '.[] | "\(.number)  \(.rule.id)  \(.state)"'
+
+# Get one alert's JSON (replace 123)
+gh api repos/:owner/:repo/code-scanning/alerts/123
+
+# Tip: From the Actions UI you can download a run's log archive when debugging.
+\end{minted}
+
+\subsection{CodeQL CLI: Local Repro and SARIF}
+\begin{minted}{bash}
+# Create a CodeQL database (example: Python)
+codeql database create db-python --language=python --source-root .
+
+# Analyze with a suite; emit SARIF
+codeql database analyze db-python \
+  codeql/python-queries:codeql-suites/python-code-scanning.qls \
+  --format=sarifv2 --output=codeql-results.sarif
+
+# Upgrade the database as code changes
+codeql database upgrade db-python
+\end{minted}
+
+\subsection{GitHub Actions: Add Caching Around CodeQL}
+\begin{minted}{yaml}
+# Excerpt from a CodeQL job
+- name: Cache CodeQL database
+  uses: actions/cache@v4
+  with:
+    path: |
+      ~/.codeql
+      ./.codeql-db
+    key: ${{ runner.os }}-codeql-${{ hashFiles('**/requirements*.txt',
+      '**/package-lock.json', '**/poetry.lock') }}
+
+# Typical CodeQL init/analyze
+- uses: github/codeql-action/init@v3
+  with:
+    languages: python, javascript
+- uses: github/codeql-action/analyze@v3
+\end{minted}
+
+\section{Done-Done Checklist for Each Alert}
+\begin{itemize}
+  \item Root cause identified via \textbf{Show paths}; exploitability assessed.
+  \item Decision recorded (fix/issue/dismiss) with clear justification.
+  \item Evidence captured: rule doc link, query reference if applicable, and commit/PR.
+  \item If dismissed: ticket to re-review later and compensating control noted.
+  \item Any runtime learnings (cache/scope/matrix tweaks) captured in the workflow PR.
+\end{itemize}
+
+\section*{Acknowledgments}
+This SOP is meant to be adapted to your repository conventions and governance. Keep the document close to the code: propose improvements via pull requests as you learn from real alerts.
+
+\end{document}

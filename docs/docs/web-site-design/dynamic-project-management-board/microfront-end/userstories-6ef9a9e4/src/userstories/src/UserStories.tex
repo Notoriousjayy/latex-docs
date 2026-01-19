@@ -1,0 +1,870 @@
+
+\documentclass[11pt,a4paper]{article}
+
+% --- Page + typography ---
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{setspace}
+\setstretch{1.05}
+
+% --- Colors + links ---
+\usepackage[dvipsnames]{xcolor}
+\definecolor{cardframe}{RGB}{33,37,41}
+\definecolor{cardback}{RGB}{248,249,250}
+\definecolor{accent}{named}{MidnightBlue}
+
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=accent,urlcolor=accent,citecolor=accent}
+
+% --- Structure + lists ---
+\usepackage{enumitem}
+\setlist{itemsep=3pt, topsep=4pt, leftmargin=1.3em,labelsep=0.6em}
+
+% --- Boxes + tables ---
+\usepackage[most]{tcolorbox}
+\tcbset{enhanced, breakable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{ragged2e}
+\usepackage{amsmath,amssymb}
+
+% --- Column helpers ---
+\newcolumntype{L}[1]{>{\RaggedLeft\arraybackslash\bfseries}p{#1}}
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+
+% --- Pills / badges ---
+\newtcbox{\pill}{on line, arc=3pt, boxsep=0.7pt, left=4pt,right=4pt,top=1pt,bottom=1pt,
+  colframe=gray!60, colback=gray!15, boxrule=0.3pt}
+\newcommand{\badge}[1]{\pill{\footnotesize #1}}
+
+% --- Checkbox ---
+\newcommand{\cb}{\(\square\)}
+
+% --- Reusable captions ---
+\newcommand{\DoR}{\textbf{Definition of Ready:} Persona clear; AC drafted; Dependencies known; Estimate set.}
+\newcommand{\DoD}{\textbf{Definition of Done:} All ACs pass; Tests green; Security/a11y checks; Docs updated; Deployed/flagged.}
+
+% --- StoryCard environment ---
+\newenvironment{StoryCard}[9]{%
+  \begin{tcolorbox}[
+    colback=white,
+    colframe=gray!60,
+    boxrule=0.6pt,
+    arc=2pt,
+    title={\large \textbf{#1} --- \textbf{#2}},
+    fonttitle=\sffamily,
+    attach boxed title to top left={xshift=6pt,yshift*=-2pt},
+    boxed title style={colback=white, colframe=white, boxrule=0pt, left=2pt, right=2pt},
+    borderline west={2pt}{0pt}{accent},
+    before skip=6pt, after skip=10pt
+  ]
+  \small
+  \begin{tabularx}{\textwidth}{@{}L{3.2cm}Y@{}}
+    Epic / Feature          & #3 \\
+    Business Value          & #4 \\
+    Priority / Estimate     & \badge{Priority: #5}\ \badge{SP: #6} \\
+    Persona                 & #7 \\
+    Dependencies            & #8 \\
+    Assumptions / Risks     & #9 \\
+  \end{tabularx}
+
+  \medskip
+  \textbf{Story}\quad
+  \emph{As a #7, I want to #2 so that #4.}
+
+  \medskip
+}{%
+  \end{tcolorbox}
+}
+
+% --- Non-functional tag line ---
+\newcommand{\NonFunctional}[1]{%
+  \textbf{Non-Functional}\quad #1
+}
+
+% --- Acceptance block ---
+\newenvironment{Acceptance}{%
+  \medskip
+  \textbf{Acceptance Criteria (BDD)}\\
+}{}
+
+% --- Scenario helper ---
+\newcommand{\Scenario}[4]{%
+  \textbf{Scenario}\quad #1\\
+  \textbf{Given}\quad #2\\
+  \textbf{When}\quad #3\\
+  \textbf{Then}\quad #4\\
+}
+
+% --- Tasks box ---
+\newenvironment{TasksBox}{%
+  \begin{tcolorbox}[
+    title={\normalsize \textbf{Tasks}},
+    colback=white,
+    colframe=gray!60,
+    borderline west={1.8pt}{0pt}{accent},
+    arc=2pt, boxrule=0.4pt,
+    left=10pt,right=10pt,top=6pt,bottom=6pt,
+    before skip=6pt, after skip=10pt
+  ]
+  \small
+  \begin{itemize}[label=\cb, leftmargin=*, itemsep=4pt, topsep=2pt, parsep=0pt]
+}{%
+  \end{itemize}
+  \end{tcolorbox}
+}
+
+\title{\textbf{Dynamic Project Management Board — Micro Frontends}\\Tailored User Stories (Card Style)}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+\section*{A. Board View Micro Frontend}\addcontentsline{toc}{section}{A. Board View Micro Frontend}
+
+% --- MFE-BV-001 ---
+\begin{StoryCard}
+{MFE-BV-001}{Create Columns \& Define WIP Limits}
+{Board Configuration}
+{Establish workflow visualization with enforced WIP to reduce overload and cycle time}
+{Must}{3}
+{Board Admin}
+{Build tooling, column schema, policy checks}
+{Duplicate names avoided; risk of initial misconfiguration mitigated with rename/archive}
+  \NonFunctional{\badge{Performance} \badge{Security} \badge{Reliability} \badge{Accessibility}}
+
+  \begin{Acceptance}
+  \Scenario{Happy path}
+    {an empty board is available}
+    {I add a column named \emph{In Progress} and set WIP=3}
+    {the column appears; WIP badge displays; reorder persists after refresh}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Schema: column model (id, name, order, wipLimit, archivedAt).
+  \item UI: header actions (Add, Rename, Reorder via drag, Archive).
+  \item Persist: POST/PUT/PATCH endpoints or federated API contract.
+  \item Validation: prevent duplicates within a board; soft delete columns.
+  \item WIP indicator: visual badge and ARIA announcement on exceed.
+\end{TasksBox}
+
+% --- MFE-BV-002 ---
+\begin{StoryCard}
+{MFE-BV-002}{Drag-and-Drop Cards Across Columns}
+{Card Movement}
+{Fast status changes with optimistic updates to improve collaboration}
+{Must}{5}
+{Team Member}
+{Server PATCH for status; event bus for broadcasts}
+{WIP enforcement is advisory; rollback on failure to avoid inconsistency}
+  \NonFunctional{\badge{Performance} \badge{Reliability} \badge{Accessibility}}
+
+  \begin{Acceptance}
+  \Scenario{Optimistic update}
+    {a card is in \emph{Todo}}
+    {I drop it in \emph{In Progress}}
+    {status updates immediately; on failure the UI rolls back with an error}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Integrate drag library with keyboard support (Space/Enter to pick/place).
+  \item Optimistic mutation and rollback logic.
+  \item PATCH \texttt{/cards/\{id\}} status change.
+  \item Real-time broadcast to other clients.
+\end{TasksBox}
+
+% --- MFE-BV-003 ---
+\begin{StoryCard}
+{MFE-BV-003}{Board Filters \& Saved Views}
+{Discoverability}
+{Quickly surface relevant work for stakeholders; sharable default views}
+{Should}{5}
+{Product Manager}
+{Saved views API; permissions}
+{Links need stability across releases; avoid leaking private filters}
+  \NonFunctional{\badge{Performance} \badge{Security} \badge{Reliability} \badge{Accessibility}}
+
+  \begin{Acceptance}
+  \Scenario{Saved view}
+    {filters are applied}
+    {I click ``Save View'' and share the link}
+    {others opening the link see the same filters if they have access}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Filter builder component; URL-encoded query state.
+  \item Saved views API (create/update/delete, permissions).
+  \item Share links with short IDs and access checks.
+\end{TasksBox}
+
+% --- MFE-BV-004 ---
+\begin{StoryCard}
+{MFE-BV-004}{High-Density Virtualized Card List}
+{Performance}
+{Maintain smooth scrolling on columns with hundreds of cards}
+{Must}{8}
+{Team Member}
+{Virtualization library; measurement utilities}
+{Risk of jank on resize; recycle DOM nodes}
+  \NonFunctional{\badge{Performance} \badge{Reliability}}
+
+  \begin{Acceptance}
+  \Scenario{Virtualized scroll}
+    {1{,}500 cards exist in a column}
+    {I scroll continuously}
+    {frames remain $\ge 50$ FPS; virtualization recalculates on resize}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Windowed list + item measurement; shimmer placeholders for offscreen items.
+  \item Prefetch next viewport page; recycle DOM nodes.
+  \item Performance budget doc and profiler checkpoints.
+\end{TasksBox}
+
+% --- MFE-BV-005 ---
+\begin{StoryCard}
+{MFE-BV-005}{Keyboard Navigation \& A11y}
+{Accessibility}
+{Enable efficient mouseless use and screen reader support}
+{Must}{3}
+{Keyboard/Screen Reader User}
+{Shortcut map; ARIA roles; focus management}
+{Accessibility regressions prevented via automated checks}
+  \NonFunctional{\badge{Accessibility} \badge{Reliability}}
+
+  \begin{Acceptance}
+  \Scenario{Keyboard flow}
+    {focus is on a card}
+    {I use Arrow keys and shortcuts}
+    {focus moves appropriately; quick edit opens with ``E''; actions are announced}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Focus ring management; roving \texttt{tabindex}.
+  \item ARIA roles for lists, items, and drag regions.
+  \item Keyboard help overlay; automated a11y tests.
+\end{TasksBox}
+
+% --- MFE-BV-006 ---
+\begin{StoryCard}
+{MFE-BV-006}{Swimlanes (Group by Assignee/Priority)}
+{Visualization}
+{Scan workload distribution via lane grouping}
+{Could}{3}
+{Scrum Master}
+{Group-by transformer; totals per lane}
+{Consistency maintained under concurrent updates}
+  \NonFunctional{\badge{Performance} \badge{Reliability}}
+
+  \begin{Acceptance}
+  \Scenario{Lane toggle}
+    {a board is open}
+    {I toggle swimlanes by Assignee}
+    {columns render rows per assignee; filters remain respected}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Group-by transformer with virtualization across lanes.
+  \item Lane headers with totals and collapse/expand.
+  \item Update counts on events.
+\end{TasksBox}
+
+\section*{B. Task Details Micro Frontend}\addcontentsline{toc}{section}{B. Task Details Micro Frontend}
+
+% --- MFE-TD-001 ---
+\begin{StoryCard}
+{MFE-TD-001}{Open Task in Modal/Side Panel}
+{Task Viewer}
+{Quick context without leaving the board via modal/side panel}
+{Must}{3}
+{Team Member}
+{Router integration; deep link patterns}
+{Return focus to invoking card; ensure responsive layout}
+  \NonFunctional{\badge{Performance} \badge{Accessibility} \badge{Reliability}}
+
+  \begin{Acceptance}
+  \Scenario{Open panel}
+    {a card exists}
+    {I click the card or navigate to /task/\{id\}}
+    {panel opens with title, status, assignee, tags, due date}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Router state + deep linking.
+  \item Fetch task + relations; skeleton loading.
+  \item Close/escape handling and focus management.
+\end{TasksBox}
+
+% --- MFE-TD-002 ---
+\begin{StoryCard}
+{MFE-TD-002}{Edit Core Fields \& Markdown Description}
+{Task Editing}
+{Keep task details accurate with markdown preview}
+{Must}{5}
+{Team Member}
+{PATCH endpoints; sanitizer}
+{Prevent XSS via markdown; enforce CSP}
+  \NonFunctional{\badge{Security} \badge{Reliability} \badge{Performance}}
+
+  \begin{Acceptance}
+  \Scenario{Inline edit}
+    {edit mode is enabled}
+    {I update title/status and toggle preview}
+    {changes save; markdown renders (headings, code, links)}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Inline editable fields with validation.
+  \item Markdown editor with preview; sanitize HTML.
+  \item Optimistic update and error handling.
+\end{TasksBox}
+
+% --- MFE-TD-003 ---
+\begin{StoryCard}
+{MFE-TD-003}{Checklists \& Subtasks}
+{Task Structure}
+{Track granular work through subtasks and checklists}
+{Should}{5}
+{QA Engineer}
+{Subtask model; progress calc}
+{Concurrent edits must resolve deterministically}
+  \NonFunctional{\badge{Reliability} \badge{Performance}}
+
+  \begin{Acceptance}
+  \Scenario{Progress}
+    {a task exists}
+    {I add subtasks and mark items complete}
+    {parent shows progress \% on card and panel}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Subtask CRUD and ordering.
+  \item Checklist component with keyboard support.
+  \item Progress calculation and display.
+\end{TasksBox}
+
+% --- MFE-TD-004 ---
+\begin{StoryCard}
+{MFE-TD-004}{Comments with @Mentions \& Attachments}
+{Collaboration}
+{Enable in-context collaboration via mentions and uploads}
+{Should}{3}
+{Developer}
+{Mention typeahead; upload pipeline}
+{GDPR/PII controls for images and text}
+  \NonFunctional{\badge{Security} \badge{Reliability} \badge{Performance}}
+
+  \begin{Acceptance}
+  \Scenario{Mention \& upload}
+    {the comment box is focused}
+    {I type @ and select a user; I upload a file}
+    {mention resolves and notifies; file appears with preview/download}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Rich comment input with typeahead.
+  \item Upload component with progress; resumable on blips.
+  \item Webhooks to Notifications for mentions.
+\end{TasksBox}
+
+% --- MFE-TD-005 ---
+\begin{StoryCard}
+{MFE-TD-005}{Relations: Dependencies, Duplicates, Links}
+{Task Relationships}
+{Coordinate sequencing and avoid rework}
+{Could}{3}
+{Project Manager}
+{Relation types \texttt{blocks/blockedBy/duplicateOf/relatesTo}}
+{Integrity checks to prevent circular relations}
+  \NonFunctional{\badge{Reliability}}
+
+  \begin{Acceptance}
+  \Scenario{Relations}
+    {a task is open}
+    {I add a ``blocked by'' relation and a duplicate link}
+    {badges show with tooltips; both tasks cross-link}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Badges with tooltips and click-through.
+  \item Relation CRUD and integrity checks.
+  \item Analytics hook to exclude blocked time (later).
+\end{TasksBox}
+
+\section*{C. Analytics Dashboard Micro Frontend}\addcontentsline{toc}{section}{C. Analytics Dashboard Micro Frontend}
+
+% --- MFE-AD-001 ---
+\begin{StoryCard}
+{MFE-AD-001}{Throughput \& Velocity Charts}
+{Core Charts}
+{Forecast capacity with completed-per-week and sprint velocity}
+{Should}{5}
+{Engineering Manager}
+{Aggregation API; chart components}
+{Timezone/locale aware bucketing; export options}
+  \NonFunctional{\badge{Performance} \badge{Accessibility} \badge{Reliability}}
+
+  \begin{Acceptance}
+  \Scenario{Throughput over 12 weeks}
+    {a date range is selected}
+    {I choose last 12 weeks}
+    {bar chart renders weekly totals; velocity shows points per sprint when enabled}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Completed tasks by week aggregation.
+  \item Chart export (PNG/CSV); data table for screen readers.
+  \item Access control by board.
+\end{TasksBox}
+
+% --- MFE-AD-002 ---
+\begin{StoryCard}
+{MFE-AD-002}{Lead \& Cycle Time Analysis}
+{Flow Metrics}
+{Spot variability and bottlenecks using distributions and percentiles}
+{Must}{8}
+{Process Lead}
+{Event timestamps per status; histogram/scatter charts}
+{Outlier toggles should recompute metrics accurately}
+  \NonFunctional{\badge{Performance} \badge{Reliability}}
+
+  \begin{Acceptance}
+  \Scenario{Cycle time P50/P85/P95}
+    {statuses are selected}
+    {I compute cycle time from ``In Progress'' to ``Done''}
+    {percentiles display; outlier toggle recomputes}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Cycle time computation service.
+  \item Charts for histogram and scatter.
+  \item Validation against sample dataset.
+\end{TasksBox}
+
+% --- MFE-AD-003 ---
+\begin{StoryCard}
+{MFE-AD-003}{Cumulative Flow Diagram (CFD)}
+{Flow Metrics}
+{Monitor WIP stability across statuses over time}
+{Should}{5}
+{Scrum Master}
+{Daily snapshots or backfilled timeseries}
+{Colorblind-safe palette and print-friendly mode}
+  \NonFunctional{\badge{Performance} \badge{Accessibility}}
+
+  \begin{Acceptance}
+  \Scenario{90-day CFD}
+    {a board is selected}
+    {I view CFD for last 90 days}
+    {stacked areas show counts per status; toggling a status updates chart and legend}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Timeseries generation from events.
+  \item Stacked area chart with hover and legend.
+  \item Export and print styles.
+\end{TasksBox}
+
+% --- MFE-AD-004 ---
+\begin{StoryCard}
+{MFE-AD-004}{Bottleneck Detector \& WIP Alerts}
+{Insights}
+{Raise automated flags when thresholds are exceeded}
+{Could}{3}
+{Delivery Lead}
+{Rule engine for WIP\% and stagnation hours}
+{False positives must be $<5\%$ on benchmark}
+  \NonFunctional{\badge{Reliability} \badge{Performance}}
+
+  \begin{Acceptance}
+  \Scenario{WIP threshold}
+    {WIP limit=3}
+    {a column has 5 items for $>24$h}
+    {an alert appears and links to offending items}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Rule engine with thresholds and tuning.
+  \item Alert list and drill-through.
+  \item Push summaries to Notifications.
+\end{TasksBox}
+
+% --- MFE-AD-005 ---
+\begin{StoryCard}
+{MFE-AD-005}{Stakeholder Reports \& Scheduling}
+{Reporting}
+{Deliver scheduled PDFs/CSVs with key metrics securely}
+{Could}{5}
+{Executive}
+{Report templates; scheduler; secure links}
+{Role-restricted; links expire in 7 days}
+  \NonFunctional{\badge{Security} \badge{Reliability}}
+
+  \begin{Acceptance}
+  \Scenario{Weekly delivery}
+    {a saved report exists}
+    {I schedule weekly delivery}
+    {recipients receive the email with attachments; restricted boards are excluded}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Render reports; email via trusted provider.
+  \item DMARC/DKIM alignment; unsub links and GDPR compliance.
+  \item Job logs and failure notifications.
+\end{TasksBox}
+
+\section*{D. User Management Micro Frontend}\addcontentsline{toc}{section}{D. User Management Micro Frontend}
+
+% --- MFE-UM-001 ---
+\begin{StoryCard}
+{MFE-UM-001}{Invite Members \& Assign Roles}
+{Access Control}
+{Control who can see and modify boards via role assignment}
+{Must}{3}
+{Org Admin}
+{Invite flow; tokenized links; role matrix}
+{Audit all grants/revokes with actor and timestamp}
+  \NonFunctional{\badge{Security} \badge{Reliability}}
+
+  \begin{Acceptance}
+  \Scenario{Invitation}
+    {an email address is provided}
+    {I send an invite with a role}
+    {the user receives a link to join; role takes effect immediately on acceptance}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Invite flow with tokenized links and expiry.
+  \item Role definitions and policy checks across MFEs.
+  \item Audit log view.
+\end{TasksBox}
+
+% --- MFE-UM-002 ---
+\begin{StoryCard}
+{MFE-UM-002}{Board-Level Permissions}
+{Access Control}
+{Enforce governance for create/edit/move/delete actions}
+{Must}{5}
+{Board Admin}
+{Policy matrix (role $\times$ action); server enforcement}
+{No client-only enforcement; cache policy checks}
+  \NonFunctional{\badge{Security} \badge{Reliability}}
+
+  \begin{Acceptance}
+  \Scenario{Policy gating}
+    {a Contributor lacks column-edit rights}
+    {they view the board}
+    {column actions are disabled/hidden; attempted move is blocked with rationale}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Policy matrix and conditional rendering.
+  \item Server-side checks; client flags driven by policy.
+  \item E2E tests for blocked actions.
+\end{TasksBox}
+
+% --- MFE-UM-003 ---
+\begin{StoryCard}
+{MFE-UM-003}{SSO Integration (OIDC/SAML)}
+{Identity}
+{Centralize authentication and provisioning}
+{Should}{8}
+{IT Admin}
+{OIDC/SAML config UI; SCIM jobs}
+{Break-glass admin accounts for IdP failures}
+  \NonFunctional{\badge{Security} \badge{Reliability}}
+
+  \begin{Acceptance}
+  \Scenario{SSO login}
+    {OIDC config is enabled}
+    {a user signs in}
+    {authentication occurs via IdP; SCIM deprovision revokes access within 15 minutes}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Metadata upload and validation.
+  \item SCIM sync jobs; deprovision hooks.
+  \item Admin alerts on failures.
+\end{TasksBox}
+
+% --- MFE-UM-004 ---
+\begin{StoryCard}
+{MFE-UM-004}{Field-Level Permissions}
+{Governance}
+{Restrict edits to sensitive fields and record audits}
+{Should}{5}
+{Compliance Lead}
+{Field policy registry; audit trail}
+{PII masking where required}
+  \NonFunctional{\badge{Security} \badge{Reliability}}
+
+  \begin{Acceptance}
+  \Scenario{Restricted field}
+    {a field is restricted}
+    {a user without rights attempts to edit}
+    {field renders read-only; change attempts are rejected and logged}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Field policy registry and UI enforcement.
+  \item Audit emission on changes.
+  \item Summaries available to Analytics.
+\end{TasksBox}
+
+% --- MFE-UM-005 ---
+\begin{StoryCard}
+{MFE-UM-005}{Team \& Board Sharing}
+{Collaboration}
+{Share boards with teams and manage access at scale}
+{Could}{3}
+{Team Lead}
+{Team directory; share dialog; membership listeners}
+{Propagation latency $\le$ 5 minutes across MFEs}
+  \NonFunctional{\badge{Reliability}}
+
+  \begin{Acceptance}
+  \Scenario{Share with team}
+    {a team is selected}
+    {I share a board with role=Viewer}
+    {all members can view; membership changes update access within 5 minutes}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Share dialog with search and team selection.
+  \item Membership listeners to update effective permissions.
+  \item Board view permission enforcement.
+\end{TasksBox}
+
+\section*{E. Notifications Micro Frontend}\addcontentsline{toc}{section}{E. Notifications Micro Frontend}
+
+% --- MFE-NF-001 ---
+\begin{StoryCard}
+{MFE-NF-001}{Real-Time Toasts for Key Events}
+{Realtime UX}
+{Stay aware of changes without losing context}
+{Must}{3}
+{Any User}
+{WebSocket/SSE client; event bus}
+{Rate limit to avoid noise; screen reader announcements}
+  \NonFunctional{\badge{Performance} \badge{Accessibility} \badge{Reliability}}
+
+  \begin{Acceptance}
+  \Scenario{Toast on card move}
+    {another user moves a card while I'm viewing the board}
+    {an event is received}
+    {a toast appears with a deep link to the card}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Event bus integration.
+  \item Toast queue with dedupe and focus management.
+  \item Test end-to-end latency $\le$ 2s p95.
+\end{TasksBox}
+
+% --- MFE-NF-002 ---
+\begin{StoryCard}
+{MFE-NF-002}{Activity Feed with Filters}
+{Audit \& Review}
+{Audit changes and review progress by actor/action/date/board}
+{Should}{5}
+{Project Manager}
+{Feed API with pagination and filters}
+{Immutable event storage once written}
+  \NonFunctional{\badge{Performance} \badge{Reliability}}
+
+  \begin{Acceptance}
+  \Scenario{Filter feed}
+    {filters are set to action=`status-changed'}
+    {I scroll the list}
+    {only matching entries show; older entries load as I scroll}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Endpoint with pagination and indexes.
+  \item UI with saved filters and deep links.
+  \item Access-scoped results.
+\end{TasksBox}
+
+% --- MFE-NF-003 ---
+\begin{StoryCard}
+{MFE-NF-003}{Email \& Digest Notifications}
+{Channels}
+{Immediate emails for mentions and daily digest of changes}
+{Could}{3}
+{Stakeholder}
+{Templates; scheduler; unsubscribe links}
+{Comply with GDPR and CAN-SPAM; DMARC aligned}
+  \NonFunctional{\badge{Security} \badge{Reliability}}
+
+  \begin{Acceptance}
+  \Scenario{Digest}
+    {preference is set to Daily 9am}
+    {the scheduler runs}
+    {a summary email is delivered with links to items}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Localized templates (mention, digest).
+  \item Scheduler for digests; secure downloads with expiry.
+  \item Delivery monitoring and logs.
+\end{TasksBox}
+
+% --- MFE-NF-004 ---
+\begin{StoryCard}
+{MFE-NF-004}{Slack/MS Teams Integrations}
+{Channels}
+{Post board updates to team chat and provide slash commands}
+{Should}{5}
+{Team Member}
+{OAuth install; outgoing webhooks; slash command endpoint}
+{Verify signing secrets; conform to rate limits}
+  \NonFunctional{\badge{Security} \badge{Reliability}}
+
+  \begin{Acceptance}
+  \Scenario{Assignment message}
+    {a channel is connected}
+    {a card is assigned to me}
+    {a message posts with a deep link; /board search returns results}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item App manifest and credentials.
+  \item Webhook handlers and slash commands.
+  \item Retry with backoff and signature verification.
+\end{TasksBox}
+
+% --- MFE-NF-005 ---
+\begin{StoryCard}
+{MFE-NF-005}{Notification Preferences \& Rules}
+{Personalization}
+{Let users configure events and channels to minimize noise}
+{Could}{5}
+{Any User}
+{Preferences storage; rule builder}
+{Prevent rule loops; sync across sessions within 5s}
+  \NonFunctional{\badge{Reliability} \badge{Performance}}
+
+  \begin{Acceptance}
+  \Scenario{Preference toggle}
+    {preferences are open}
+    {I disable ``card moved'' toasts and add a rule ``due date change on my tasks $\to$ email''}
+    {I no longer see those toasts; emails trigger on rule}
+  \end{Acceptance}
+
+  \small \DoR\ \ \textbullet\ \ \DoD
+
+\end{StoryCard}
+
+\begin{TasksBox}
+  \item Per-channel toggles; cached reads, debounced writes.
+  \item Rule builder: conditions (actor, field, board, label) and actions (toast, email, webhook).
+  \item Sandbox rule execution to avoid loops.
+\end{TasksBox}
+
+\end{document}

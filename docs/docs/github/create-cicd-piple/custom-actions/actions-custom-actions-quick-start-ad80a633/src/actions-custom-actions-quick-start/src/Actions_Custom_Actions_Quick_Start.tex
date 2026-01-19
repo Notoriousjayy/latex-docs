@@ -1,0 +1,469 @@
+
+%========================================================
+% GitHub Actions: Using Marketplace & Custom Actions
+% Detailed Quick Start Guide
+%========================================================
+\documentclass[11pt]{article}
+
+% ---------- Encoding & layout ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{microtype}
+\usepackage{setspace}
+\setstretch{1.08}
+
+% ---------- Colors, links, boxes ----------
+\usepackage{xcolor}
+\definecolor{ink}{HTML}{111827}      % gray-900
+\definecolor{soft}{HTML}{F9FAFB}     % gray-50
+\definecolor{accent}{HTML}{2563EB}   % blue-600
+\definecolor{ok}{HTML}{059669}       % emerald-600
+\definecolor{warn}{HTML}{D97706}     % amber-600
+\definecolor{bad}{HTML}{DC2626}      % red-600
+\usepackage[colorlinks=true,linkcolor=accent,urlcolor=accent,citecolor=accent]{hyperref}
+
+% ---------- Headings & lists ----------
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\color{ink}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\bfseries\color{ink}}{\thesubsection}{0.6em}{}
+\usepackage{enumitem}
+\setlist[itemize]{topsep=4pt,itemsep=2pt,parsep=0pt}
+\setlist[enumerate]{topsep=4pt,itemsep=2pt,parsep=0pt}
+
+% ---------- Boxes for tips/notes ----------
+\usepackage{tcolorbox}
+\tcbset{colframe=ink,colback=soft,boxrule=0.5pt,sharp corners,arc=2pt,left=6pt,right=6pt,top=6pt,bottom=6pt}
+
+% ---------- Code (requires -shell-escape to compile) ----------
+\usepackage{minted} % compile with: -shell-escape
+\setminted{
+  fontsize=\footnotesize,
+  breaklines,
+  autogobble,
+  linenos,
+  tabsize=2
+}
+
+% ---------- Title ----------
+\title{\textbf{GitHub Actions Quick Start: Using Marketplace \& Custom Actions}\\\large Detailed, Runnable Examples}
+\author{}
+\date{Updated: \today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\clearpage
+
+\begin{tcolorbox}
+\textbf{How to compile this \LaTeX\ file with code highlighting}:\\
+Install Python + Pygments, then run:
+\begin{minted}{bash}
+latexmk -pdf -shell-escape Actions_Custom_Actions_Quick_Start.tex
+\end{minted}
+If your environment forbids \texttt{-shell-escape}, replace \texttt{minted} with \texttt{verbatim} or use Overleaf with shell-escape enabled.
+\end{tcolorbox}
+
+\section{What You'll Learn}
+This guide gives you a working, step-by-step path to:
+\begin{itemize}
+  \item Use Marketplace actions and Docker images in a workflow.
+  \item Pass data across jobs with \textbf{artifacts}.
+  \item Speed up builds with \textbf{cache}.
+  \item Author three kinds of custom actions: \textbf{Composite}, \textbf{JavaScript}, and \textbf{Docker}.
+  \item Apply version pinning and output handling best practices.
+\end{itemize}
+
+\begin{tcolorbox}
+\textbf{Key conventions used here}
+\begin{itemize}
+  \item Workflows live under \texttt{.github/workflows/*.yml}.
+  \item Local actions are referenced via \texttt{uses: ./}. Pin third-party actions by tag or SHA.
+  \item For action outputs, write \texttt{key=value} lines to \texttt{\$GITHUB\_OUTPUT}.
+  \item Avoid Unicode box-drawing characters in docs; use plain ASCII trees.
+\end{itemize}
+\end{tcolorbox}
+\clearpage
+
+\section{Discover and Use Actions (Marketplace)}
+Create \texttt{.github/workflows/actions.yml}:
+\begin{minted}{yaml}
+# .github/workflows/actions.yml
+name: actions-basics
+on: [push]
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Show files before checkout
+        run: ls -la
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Show files after checkout
+        run: ls -la
+
+      - name: Hello World (JS action example)
+        id: hello
+        uses: actions/hello-world-javascript-action@main
+        with:
+          who-to-greet: "Jordan"
+
+      - name: Print greeting time from previous step
+        run: echo "greeting time: ${{ steps.hello.outputs.time }}"
+
+      - name: Run a Docker action (hello-world image)
+        uses: docker://hello-world:latest
+\end{minted}
+
+\begin{tcolorbox}
+\textbf{Notes}
+\begin{itemize}
+  \item Prefer tags or SHAs for third-party actions to control supply-chain risk.
+  \item \texttt{docker://} lets you run any public image as a step.
+\end{itemize}
+\end{tcolorbox}
+\clearpage
+
+\section{Share Data Between Jobs (Artifacts)}
+Create \texttt{.github/workflows/artifacts.yml}:
+\begin{minted}{yaml}
+# .github/workflows/artifacts.yml
+name: artifacts
+on: [push]
+
+jobs:
+  upload:
+    name: Upload an artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate file
+        run: docker info > myArtifact.txt
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-artifact
+          path: myArtifact.txt
+
+  download:
+    name: Download & use artifact
+    runs-on: ubuntu-latest
+    needs: upload
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: my-artifact
+      - name: List
+        run: ls -la
+      - name: Show contents
+        run: cat myArtifact.txt
+\end{minted}
+
+\begin{tcolorbox}
+\textbf{Tips}
+\begin{itemize}
+  \item Artifacts are for sharing build outputs/logs across jobs and runs. Default retention is often 90 days (can vary).
+  \item Artifacts are not caches. Use \S\ref{sec:cache} for dependency acceleration.
+\end{itemize}
+\end{tcolorbox}
+\clearpage
+
+\section{Speed Up Runs (Cache)}\label{sec:cache}
+Create \texttt{.github/workflows/cache.yml}:
+\begin{minted}{yaml}
+# .github/workflows/cache.yml
+name: cache
+on: workflow_dispatch
+
+jobs:
+  test-cache:
+    name: Cache pip dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip
+        id: pip-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install deps (skips downloads if cache hit)
+        run: pip install -r requirements.txt
+
+      - name: Confirm cache hit
+        if: steps.pip-cache.outputs.cache-hit == 'true'
+        run: echo "Cache entry found"
+\end{minted}
+
+\begin{tcolorbox}
+\textbf{Notes}
+\begin{itemize}
+  \item Use language setup actions (e.g., \texttt{actions/setup-node}) that add first-class caching when available.
+  \item Keep cache keys stable and specific; size limits apply per key.
+\end{itemize}
+\end{tcolorbox}
+\clearpage
+
+\section{Build a Composite Action}
+\subsection*{Repo Layout}
+\begin{minted}{text}
+/action-composite/
+  action.yml
+  .github/workflows/composite.yml
+\end{minted}
+
+\subsection*{Composite action \texttt{action.yml}}
+\begin{minted}{yaml}
+name: "composite-calc"
+description: "Adds two numbers (composite action)"
+inputs:
+  number1:
+    description: "First integer"
+    required: true
+    default: "0"
+  number2:
+    description: "Second integer"
+    required: true
+    default: "0"
+outputs:
+  result:
+    description: "Sum of number1 and number2"
+    value: ${{ steps.sum.outputs.result }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: sum
+      shell: bash
+      run: |
+        n1="${{ inputs.number1 }}"
+        n2="${{ inputs.number2 }}"
+        echo "result=$(( n1 + n2 ))" >> "$GITHUB_OUTPUT"
+\end{minted}
+
+\subsection*{Workflow to use it}
+\begin{minted}{yaml}
+# .github/workflows/composite.yml
+name: composite-demo
+on: [push]
+
+jobs:
+  run-composite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: add
+        uses: ./
+        with:
+          number1: "4"
+          number2: "2"
+      - run: echo "Result = ${{ steps.add.outputs.result }}"
+\end{minted}
+\clearpage
+
+\section{Build a JavaScript Action}
+\subsection*{Repo Layout}
+\begin{minted}{text}
+/action-js/
+  action.yml
+  index.js
+  package.json
+  .github/workflows/js.yml
+\end{minted}
+
+\subsection*{\texttt{action.yml}}
+\begin{minted}{yaml}
+name: "js-calc"
+description: "Adds two numbers (JavaScript action)"
+inputs:
+  number1: { description: "First integer", required: true, default: "0" }
+  number2: { description: "Second integer", required: true, default: "0" }
+outputs:
+  result: { description: "Sum of inputs" }
+runs:
+  using: "node20"
+  main: "dist/index.js"
+\end{minted}
+
+\subsection*{\texttt{index.js} (source)}
+\begin{minted}{javascript}
+const core = require('@actions/core');
+
+async function run() {
+  try {
+    const n1 = parseInt(core.getInput('number1'), 10);
+    const n2 = parseInt(core.getInput('number2'), 10);
+    const result = (n1 || 0) + (n2 || 0);
+    core.setOutput('result', String(result));
+  } catch (err) {
+    core.setFailed(err.message || String(err));
+  }
+}
+
+run();
+\end{minted}
+
+\subsection*{\texttt{package.json}}
+\begin{minted}{json}
+{
+  "name": "js-calc-action",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "npx @vercel/ncc build index.js -o dist"
+  },
+  "dependencies": {
+    "@actions/core": "^1.11.1"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.38.3"
+  }
+}
+\end{minted}
+
+\subsection*{Workflow: build then use (without committing \texttt{dist/})}
+\begin{minted}{yaml}
+# .github/workflows/js.yml
+name: js-action-demo
+on: [push]
+
+jobs:
+  run-js-action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - run: npm run build
+      - id: add
+        uses: ./
+        with:
+          number1: "4"
+          number2: "2"
+      - run: echo "Result = ${{ steps.add.outputs.result }}"
+\end{minted}
+
+\begin{tcolorbox}
+\textbf{Tip} Many JS actions commit compiled \texttt{dist/} to their repos to avoid building at runtime. The example shows a ``build then use'' pattern.
+\end{tcolorbox}
+\clearpage
+
+\section{Build a Docker Container Action}
+\subsection*{Repo Layout}
+\begin{minted}{text}
+/action-docker/
+  action.yml
+  Dockerfile
+  entrypoint.sh
+  .github/workflows/docker.yml
+\end{minted}
+
+\subsection*{\texttt{entrypoint.sh}}
+\begin{minted}{bash}
+#!/usr/bin/env sh
+set -euo pipefail
+
+n1="${1:-0}"
+n2="${2:-0}"
+result=$(( n1 + n2 ))
+
+echo "result=$result" >> "$GITHUB_OUTPUT"
+
+# Also write a file into the workspace to demonstrate sharing
+echo "container output file" > "$GITHUB_WORKSPACE/container_output.txt"
+\end{minted}
+
+\subsection*{\texttt{Dockerfile} (capital ``D'' is required)}
+\begin{minted}{docker}
+FROM alpine:3.20
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+\end{minted}
+
+\subsection*{\texttt{action.yml}}
+\begin{minted}{yaml}
+name: "docker-calc"
+description: "Adds two numbers (Docker action)"
+inputs:
+  number1: { description: "First integer", required: true, default: "0" }
+  number2: { description: "Second integer", required: true, default: "0" }
+outputs:
+  result: { description: "Sum of inputs" }
+runs:
+  using: "docker"
+  image: "Dockerfile"
+  args:
+    - ${{ inputs.number1 }}
+    - ${{ inputs.number2 }}
+\end{minted}
+\clearpage
+
+\subsection*{Workflow to use it}
+\begin{minted}{yaml}
+# .github/workflows/docker.yml
+name: docker-action-demo
+on: [push]
+
+jobs:
+  run-docker-action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: add
+        uses: ./
+        with:
+          number1: "4"
+          number2: "2"
+      - run: echo "Result = ${{ steps.add.outputs.result }}"
+      - name: Show file dropped by container
+        run: cat "$GITHUB_WORKSPACE/container_output.txt"
+\end{minted}
+
+\section{Best Practices \& Troubleshooting}
+\subsection*{Version Pinning}
+Pin third-party actions to a release tag or commit SHA. Maintain a refresh policy (e.g.\ scheduled PRs to bump tags).
+
+\subsection*{Outputs and Files}
+Use \texttt{\$GITHUB\_OUTPUT} for step outputs. Use artifacts to share files across jobs; use cache to speed dep installs.
+
+\subsection*{Common \texttt{minted} Pitfalls}
+\begin{itemize}
+  \item \textbf{Missing Pygments}: install with \texttt{pip install Pygments}.
+  \item \textbf{Frozencache/sty errors}: avoid \texttt{frozencache} unless you manage pygstyles; compile with \texttt{-shell-escape}.
+  \item \textbf{Unicode line-drawing}: replace with ASCII.
+\end{itemize}
+
+\subsection*{Security Considerations}
+\begin{itemize}
+  \item Use fine-grained \texttt{permissions:} in jobs; default to least privilege.
+  \item Avoid untrusted actions; fork and pin, or vendor actions when necessary.
+  \item Sanitize inputs; treat outputs and artifacts as untrusted data.
+\end{itemize}
+
+\section{Checklist}
+\begin{enumerate}
+  \item Create the sample workflows (\S1--\S3) and run them.
+  \item Add the composite, JS, and Docker action folders with files from this guide.
+  \item Trigger the demo workflows and verify outputs.
+  \item Pin versions, set permissions, and add CODEOWNERS/branch protection as needed.
+\end{enumerate}
+\end{document}

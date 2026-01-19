@@ -1,0 +1,298 @@
+% !TeX program = pdflatex
+% If you prefer minted (Pygments) highlighting, see the optional minted setup
+% near the bottom of this preamble.
+
+\documentclass[11pt]{article}
+
+% --------------------------
+% Packages
+% --------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{cleveref}
+
+\usepackage{listings}
+\usepackage{tcolorbox}
+\tcbuselibrary{listings,breakable,skins}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue,
+  pdftitle={A05:2025 — Injection},
+  pdfauthor={},
+  pdfsubject={Application Security},
+  pdfkeywords={OWASP, Injection, SQL Injection, XSS, Command Injection, ORM Injection, CWE, CVE}
+}
+
+% --------------------------
+% Styling
+% --------------------------
+\setlist[itemize]{topsep=4pt, itemsep=2pt, leftmargin=1.25em}
+\setlist[enumerate]{topsep=4pt, itemsep=2pt, leftmargin=1.5em}
+
+\definecolor{CodeBg}{RGB}{247,247,247}
+\definecolor{CodeFrame}{RGB}{220,220,220}
+
+\lstdefinestyle{code}{
+  backgroundcolor=\color{CodeBg},
+  basicstyle=\ttfamily\small,
+  frame=single,
+  rulecolor=\color{CodeFrame},
+  frameround=ffff,
+  breaklines=true,
+  breakatwhitespace=true,
+  columns=fullflexible,
+  showstringspaces=false
+}
+
+\newtcolorbox{infobox}[1][]{
+  breakable,
+  colback=gray!5,
+  colframe=gray!35,
+  arc=2mm,
+  left=3mm,right=3mm,top=2mm,bottom=2mm,
+  title=#1,
+  fonttitle=\bfseries
+}
+
+\newtcolorbox{codebox}[1][]{
+  breakable,
+  colback=CodeBg,
+  colframe=CodeFrame,
+  arc=2mm,
+  left=2mm,right=2mm,top=1mm,bottom=1mm,
+  title=#1,
+  fonttitle=\bfseries
+}
+
+% Optional: minted setup (requires -shell-escape)
+% \usepackage{minted}
+% \setminted{
+%   fontsize=\small,
+%   breaklines=true,
+%   bgcolor=CodeBg,
+%   frame=lines
+% }
+
+% --------------------------
+% Document
+% --------------------------
+\title{\textbf{A05:2025 — Injection}}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{infobox}[Document Summary]
+This document consolidates the provided content for \textit{A05:2025 — Injection} into a structured, print-ready reference, including background context, scoring metrics, vulnerability indicators, prevention guidance (command/data separation, safe APIs, parameterization, validation and escaping), practical attack scenarios (SQL, HQL/ORM, OS command injection), references, and the mapped CWE list.
+\end{infobox}
+
+\tableofcontents
+\newpage
+
+\section{Background}
+Injection falls two spots from \#3 to \#5 in the ranking, maintaining its position relative to A04:2025 --- Cryptographic Failures and A06:2025 --- Insecure Design. Injection is one of the most tested categories, with 100\% of applications tested for some form of injection.
+
+It has the greatest number of CVEs of any category, with 37 CWEs in this category. Injection includes:
+\begin{itemize}
+  \item \textbf{Cross-site Scripting (XSS)} (high frequency / low impact), with more than 30{,}000 CVEs, and
+  \item \textbf{SQL Injection} (low frequency / high impact), with more than 14{,}000 CVEs.
+\end{itemize}
+
+The massive number of reported CVEs for CWE-79 (Improper Neutralization of Input During Web Page Generation, \textit{Cross-site Scripting}) lowers the average weighted impact of this category.
+
+\section{Score Table}
+\begin{table}[h!]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}>{\bfseries}p{4.9cm}p{3.1cm}@{}}
+\toprule
+Metric & Value \\
+\midrule
+CWEs Mapped & 37 \\
+Max Incidence Rate & 13.77\% \\
+Avg Incidence Rate & 3.08\% \\
+Max Coverage & 100.00\% \\
+Avg Coverage & 42.93\% \\
+Avg Weighted Exploit & 7.15 \\
+Avg Weighted Impact & 4.32 \\
+Total Occurrences & 1{,}404{,}249 \\
+Total CVEs & 62{,}445 \\
+\bottomrule
+\end{tabular}
+\caption{Provided scoring summary for Injection.}
+\end{table}
+
+\section{Description}
+An injection vulnerability is an application flaw that allows untrusted user input to be sent to an interpreter (e.g., a browser, database, or the command line) and causes the interpreter to execute parts of that input as commands.
+
+\subsection{Vulnerability Conditions}
+An application is vulnerable to attack when:
+
+\begin{itemize}
+  \item User-supplied data is not validated, filtered, or sanitized by the application.
+  \item Dynamic queries or non-parameterized calls without context-aware escaping are used directly in the interpreter.
+  \item Unsanitized data is used within object-relational mapping (ORM) search parameters to extract additional, sensitive records.
+  \item Potentially hostile data is directly used or concatenated. The SQL or command contains both structure and malicious data in dynamic queries, commands, or stored procedures.
+\end{itemize}
+
+Some of the more common injections are SQL, NoSQL, OS command, ORM, LDAP, and Expression Language (EL) or Object Graph Navigation Library (OGNL) injection. The concept is identical among all interpreters.
+
+Detection is best achieved by a combination of source code review and automated testing (including fuzzing) of all parameters, headers, URL, cookies, JSON, SOAP, and XML inputs. Adding static (SAST), dynamic (DAST), and interactive (IAST) application security testing tools into the CI/CD pipeline can help identify injection flaws before production deployment.
+
+\begin{infobox}[Related Topic: LLM Prompt Injection]
+A related class of injection vulnerabilities has become common in LLMs. These are discussed separately in the OWASP LLM Top 10, specifically LLM01:2025 Prompt Injection.
+\end{infobox}
+
+\section{How to Prevent}
+The best means to prevent injection requires keeping data separate from commands and queries.
+
+\subsection{Primary Controls}
+\begin{enumerate}
+  \item \textbf{Use safe APIs and parameterization:} Prefer safe APIs that avoid the interpreter entirely, provide a parameterized interface, or migrate to ORM tools.
+  \begin{infobox}[Important Note on Stored Procedures]
+  Even when parameterized, stored procedures can still introduce SQL injection if PL/SQL or T-SQL concatenates queries and data or executes hostile data with \texttt{EXECUTE IMMEDIATE} or \texttt{exec()}.
+  \end{infobox}
+  \item \textbf{Apply layered mitigations when separation is not possible:} When you cannot fully separate data from commands, reduce risk using validation and escaping techniques.
+\end{enumerate}
+
+\subsection{Defense-in-Depth Techniques (Residual Risk)}
+\begin{itemize}
+  \item \textbf{Positive server-side input validation:} Use allow-list validation where feasible. This is not a complete defense, as many applications require special characters (e.g., text areas or mobile APIs).
+  \item \textbf{Context-aware escaping:} For residual dynamic queries, escape special characters using the escape syntax appropriate for the interpreter.
+  \begin{infobox}[Warning on Escaping and Dynamic Structure]
+  SQL structures such as table names and column names cannot be escaped. User-supplied \emph{structure names} are therefore dangerous and are a common issue in report-writing software. Techniques that rely on parsing and escaping complex strings are error-prone and not robust in the face of minor system changes.
+  \end{infobox}
+\end{itemize}
+
+\section{Example Attack Scenarios}
+
+\subsection{Scenario \#1: SQL Injection via String Concatenation}
+An application uses untrusted data in the construction of the following vulnerable SQL call:
+
+\begin{codebox}[Vulnerable SQL Construction (Java)]
+\begin{lstlisting}[style=code]
+String query = "SELECT * FROM accounts WHERE custID='"
+  + request.getParameter("id") + "'";
+\end{lstlisting}
+\end{codebox}
+
+An attacker modifies the \texttt{id} parameter in their browser to send:
+\texttt{' OR '1'='1}. For example:
+
+\begin{infobox}[Illustrative Request]
+\url{http://example.com/app/accountView?id=' OR '1'='1}
+\end{infobox}
+
+This changes the meaning of the query to return all records from the \texttt{accounts} table. More dangerous attacks could modify or delete data or even invoke stored procedures.
+
+\subsection{Scenario \#2: ORM/HQL Injection via Concatenation}
+An application's blind trust in frameworks may result in queries that are still vulnerable. For example, Hibernate Query Language (HQL):
+
+\begin{codebox}[Vulnerable HQL Construction]
+\begin{lstlisting}[style=code]
+Query HQLQuery = session.createQuery(
+  "FROM accounts WHERE custID='"
+  + request.getParameter("id") + "'"
+);
+\end{lstlisting}
+\end{codebox}
+
+An attacker supplies: \texttt{' OR custID IS NOT NULL OR custID='}. This bypasses the filter and returns all accounts. While HQL has fewer dangerous functions than raw SQL, it still allows unauthorized data access when user input is concatenated into queries.
+
+\subsection{Scenario \#3: OS Command Injection}
+An application passes user input directly to an OS command:
+
+\begin{codebox}[Vulnerable Command Construction]
+\begin{lstlisting}[style=code]
+String cmd = "nslookup " + request.getParameter("domain");
+Runtime.getRuntime().exec(cmd);
+\end{lstlisting}
+\end{codebox}
+
+An attacker supplies \texttt{example.com; cat /etc/passwd} to execute arbitrary commands on the server.
+
+\section{References}
+\begin{itemize}
+  \item OWASP Proactive Controls: Secure Database Access
+  \item OWASP ASVS: V5 Input Validation and Encoding
+  \item OWASP Testing Guide: SQL Injection, Command Injection, and ORM Injection
+  \item OWASP Cheat Sheet: Injection Prevention
+  \item OWASP Cheat Sheet: SQL Injection Prevention
+  \item OWASP Cheat Sheet: Injection Prevention in Java
+  \item OWASP Cheat Sheet: Query Parameterization
+  \item OWASP Automated Threats to Web Applications --- OAT-014
+  \item PortSwigger: Server-side template injection
+  \item Awesome Fuzzing: a list of fuzzing resources
+\end{itemize}
+
+\newpage
+\section{List of Mapped CWEs}
+\renewcommand{\arraystretch}{1.1}
+\begin{longtable}{@{}p{2.4cm}p{12.0cm}@{}}
+\toprule
+\textbf{CWE} & \textbf{Title} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{CWE} & \textbf{Title} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+CWE-20  & Improper Input Validation \\
+CWE-74  & Improper Neutralization of Special Elements in Output Used by a Downstream Component (\textit{Injection}) \\
+CWE-76  & Improper Neutralization of Equivalent Special Elements \\
+CWE-77  & Improper Neutralization of Special Elements used in a Command (\textit{Command Injection}) \\
+CWE-78  & Improper Neutralization of Special Elements used in an OS Command (\textit{OS Command Injection}) \\
+CWE-79  & Improper Neutralization of Input During Web Page Generation (\textit{Cross-site Scripting}) \\
+CWE-80  & Improper Neutralization of Script-Related HTML Tags in a Web Page (Basic XSS) \\
+CWE-83  & Improper Neutralization of Script in Attributes in a Web Page \\
+CWE-86  & Improper Neutralization of Invalid Characters in Identifiers in Web Pages \\
+CWE-88  & Improper Neutralization of Argument Delimiters in a Command (\textit{Argument Injection}) \\
+CWE-89  & Improper Neutralization of Special Elements used in an SQL Command (\textit{SQL Injection}) \\
+CWE-90  & Improper Neutralization of Special Elements used in an LDAP Query (\textit{LDAP Injection}) \\
+CWE-91  & XML Injection (aka Blind XPath Injection) \\
+CWE-93  & Improper Neutralization of CRLF Sequences (\textit{CRLF Injection}) \\
+CWE-94  & Improper Control of Generation of Code (\textit{Code Injection}) \\
+CWE-95  & Improper Neutralization of Directives in Dynamically Evaluated Code (\textit{Eval Injection}) \\
+CWE-96  & Improper Neutralization of Directives in Statically Saved Code (\textit{Static Code Injection}) \\
+CWE-97  & Improper Neutralization of Server-Side Includes (SSI) Within a Web Page \\
+CWE-98  & Improper Control of Filename for Include/Require Statement in PHP Program (\textit{PHP Remote File Inclusion}) \\
+CWE-99  & Improper Control of Resource Identifiers (\textit{Resource Injection}) \\
+CWE-103 & Struts: Incomplete \texttt{validate()} Method Definition \\
+CWE-104 & Struts: Form Bean Does Not Extend Validation Class \\
+CWE-112 & Missing XML Validation \\
+CWE-113 & Improper Neutralization of CRLF Sequences in HTTP Headers (\textit{HTTP Response Splitting}) \\
+CWE-114 & Process Control \\
+CWE-115 & Misinterpretation of Output \\
+CWE-116 & Improper Encoding or Escaping of Output \\
+CWE-129 & Improper Validation of Array Index \\
+CWE-159 & Improper Handling of Invalid Use of Special Elements \\
+CWE-470 & Use of Externally-Controlled Input to Select Classes or Code (\textit{Unsafe Reflection}) \\
+CWE-493 & Critical Public Variable Without Final Modifier \\
+CWE-500 & Public Static Field Not Marked Final \\
+CWE-564 & SQL Injection: Hibernate \\
+CWE-610 & Externally Controlled Reference to a Resource in Another Sphere \\
+CWE-643 & Improper Neutralization of Data within XPath Expressions (\textit{XPath Injection}) \\
+CWE-644 & Improper Neutralization of HTTP Headers for Scripting Syntax \\
+CWE-917 & Improper Neutralization of Special Elements used in an Expression Language Statement (\textit{Expression Language Injection}) \\
+
+\end{longtable}
+
+\end{document}
+

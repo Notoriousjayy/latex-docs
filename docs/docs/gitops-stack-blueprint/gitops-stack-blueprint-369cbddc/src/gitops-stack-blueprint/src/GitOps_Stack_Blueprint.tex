@@ -1,0 +1,305 @@
+
+\documentclass[11pt]{article}
+
+% Encoding & fonts
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% Layout & links
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{setspace}
+\usepackage{parskip}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  urlcolor=blue!60!black,
+  citecolor=blue!60!black
+}
+
+% Lists & code
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{inconsolata}
+
+% Listings configuration
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.97}
+
+\lstdefinestyle{code}{
+  backgroundcolor=\color{backcolour},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  captionpos=b,
+  commentstyle=\color{codegray},
+  keywordstyle=\bfseries,
+  numbers=left,
+  numbersep=8pt,
+  numberstyle=\tiny\color{codegray},
+  showstringspaces=false,
+  tabsize=2,
+  frame=single,
+  rulecolor=\color{black!15}
+}
+
+% Lightweight YAML language for listings
+\lstdefinelanguage{yaml}{
+  keywords={true,false,null,y,n},
+  keywordstyle=\color{codepurple}\bfseries,
+  basicstyle=\ttfamily\small,
+  sensitive=false,
+  comment=[l]{\#},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]",
+  morestring=[b]'
+}
+
+% Simple HCL (Terraform) language for listings
+\lstdefinelanguage{hcl}{
+  morekeywords={resource,provider,variable,output,module,locals},
+  keywordstyle=\bfseries,
+  sensitive=true,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]",
+  alsoletter={_,-}
+}
+
+\title{\textbf{GitOps Stack Blueprint}\\
+\large Docker, Kubernetes, Ansible, Debian, Terraform, NGINX Ingress, Argo~CD, OPA/Gatekeeper, Cloud Custodian, GitHub Actions \& GitHub Advanced Security}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+\onehalfspacing
+\tableofcontents
+\newpage
+
+\section{Executive Summary}
+This document provides an opinionated, end-to-end blueprint for a modern GitOps platform. It compiles roles, flow, and minimal working snippets for the following stack:
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Provisioning:} Terraform (cloud primitives, cluster), Debian (base OS on nodes where applicable), Ansible (node bootstrap and hardening).
+  \item \textbf{Runtime:} Docker (image build), Kubernetes (orchestrator), NGINX Ingress (L7 entry).
+  \item \textbf{Delivery:} Argo~CD for continuous delivery and drift reconciliation from Git.
+  \item \textbf{Policy \& Governance:} OPA/Gatekeeper (admission control), Cloud Custodian (cloud governance \& remediation).
+  \item \textbf{CI \& Security:} GitHub Actions for CI and GitHub Advanced Security (CodeQL, secrets, dependency review).
+\end{itemize}
+
+\section{System Roles \& Flow}
+\begin{enumerate}[leftmargin=2em,label=\textbf{Step \arabic*.}]
+  \item \textbf{Terraform} provisions cloud networking, registry access, and a managed Kubernetes control plane (or bare metal/VM where desired). Debian may be used for node OS images.
+  \item \textbf{Ansible} bootstraps nodes (Docker/CRI, kube prerequisites) and applies baseline hardening.
+  \item \textbf{Docker} builds application images; images are pushed to a registry (e.g., GHCR/ECR/GCR).
+  \item \textbf{Kubernetes} runs workloads; \textbf{NGINX Ingress} exposes services.
+  \item \textbf{Argo~CD} continuously syncs cluster state from Git; detects and heals drift.
+  \item \textbf{OPA/Gatekeeper} enforces admission-time policies (e.g., disallow privileged pods).
+  \item \textbf{Cloud Custodian} enforces cloud-level governance and can auto-remediate violations.
+  \item \textbf{GitHub Actions \& GHAS} run tests, build/push images, and scan code/secrets/dependencies.
+\end{enumerate}
+
+\section{Repository Layout (Suggested)}
+\begin{lstlisting}[style=code,language=bash,caption={Top-level repository structure}]
+infra/
+  terraform/           # VPC/cluster/IRSA/registries
+  policies/cloudcustodian/
+platform/
+  ansible/             # roles: docker, k8s-prereqs, hardening
+  k8s/                 # base namespaces, rbac, ingress-nginx, argocd/
+  gatekeeper/          # constraints + templates
+apps/
+  sample-web/
+    Dockerfile
+    k8s/               # deployment, service, ingress
+  appset/              # ArgoCD ApplicationSet
+.github/
+  workflows/           # ci.yml, deploy.yml, security.yml
+\end{lstlisting}
+
+\section{Minimal Working Snippets}
+
+\subsection{Terraform: Cluster Provisioning (EKS placeholder)}
+\begin{lstlisting}[style=code,language=hcl,caption={infra/terraform/main.tf}]
+terraform { required_version = ">= 1.6.0" }
+
+provider "aws" { region = var.region }
+
+module "cluster" {
+  source      = "terraform-aws-modules/eks/aws"
+  cluster_name = var.name
+  vpc_id       = var.vpc_id
+  subnet_ids   = var.subnet_ids
+}
+# Optionally: Helm releases for ingress-nginx and argocd via Terraform.
+\end{lstlisting}
+
+\subsection{Ansible: Node Bootstrap}
+\begin{lstlisting}[style=code,language=yaml,caption={platform/ansible/playbooks/bootstrap.yaml}]
+- hosts: workers
+  become: true
+  roles:
+    - docker
+    - k8s_prereqs
+    - hardening
+\end{lstlisting}
+
+\subsection{Argo~CD: ApplicationSet (GitOps Multi-Env)}
+\begin{lstlisting}[style=code,language=yaml,caption={apps/appset/apps.yaml}]
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata: { name: apps }
+spec:
+  generators:
+    - list:
+        elements:
+          - { name: sample-web, namespace: web, path: apps/sample-web/k8s, env: dev }
+  template:
+    metadata: { name: '{{name}}-{{env}}' }
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/your/org.git
+        targetRevision: main
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'
+      syncPolicy: { automated: { prune: true, selfHeal: true } }
+\end{lstlisting}
+
+\subsection{NGINX Ingress for Sample App}
+\begin{lstlisting}[style=code,language=yaml,caption={apps/sample-web/k8s/ingress.yaml}]
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sample-web
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+    - host: sample.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sample-web
+                port:
+                  number: 80
+\end{lstlisting}
+
+\subsection{Gatekeeper: Disallow Privileged Containers}
+\begin{lstlisting}[style=code,language=yaml,caption={platform/gatekeeper/templates/k8spsp-privileged.yaml}]
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata: { name: k8spspprivilegedcontainer }
+spec:
+  crd:
+    spec:
+      names: { kind: K8sPSPPrivilegedContainer }
+  targets:
+  - target: admission.k8s.gatekeeper.sh
+    rego: |
+      package k8spspprivileged
+      violation[{"msg": msg}] {
+        input.review.object.spec.containers[_].securityContext.privileged == true
+        msg := "Privileged containers are not allowed"
+      }
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sPSPPrivilegedContainer
+metadata: { name: disallow-privileged }
+spec: {}
+\end{lstlisting}
+
+\subsection{Cloud Custodian: Require S3 Encryption}
+\begin{lstlisting}[style=code,language=yaml,caption={infra/policies/cloudcustodian/enforce-bucket-encryption.yml}]
+policies:
+  - name: s3-require-encryption
+    resource: s3
+    filters:
+      - type: bucket-encryption
+        state: false
+    actions:
+      - type: set-bucket-encryption
+        crypto: aws:kms
+\end{lstlisting}
+
+\subsection{GitHub Actions: CI Build \& GHAS}
+\begin{lstlisting}[style=code,language=yaml,caption={.github/workflows/ci.yml}]
+name: ci
+on: [push]
+
+jobs:
+  build-test-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+      - run: npm ci && npm test
+
+      - name: Build image
+        run: docker build -t ghcr.io/your/app:${{ github.sha }} apps/sample-web
+
+      - name: Push image
+        run: |
+          echo "${{ secrets.CR_PAT }}" | docker login ghcr.io \
+            -u ${{ github.actor }} --password-stdin
+          docker push ghcr.io/your/app:${{ github.sha }}
+
+      - name: CodeQL
+        uses: github/codeql-action/analyze@v3
+
+      - name: Secret scanning (GHAS native)
+        run: echo "Enable at repo settings"
+
+      - name: Update K8s manifest image
+        run: |
+          sed -i "s#image: .*#image: ghcr.io/your/app:${GITHUB_SHA}#" \
+            apps/sample-web/k8s/deployment.yaml
+          git config user.name bot
+          git config user.email bot@users.noreply.github.com
+          git commit -am "bump image"
+          git push
+\end{lstlisting}
+
+\section{Quickstart (Happy Path)}
+\begin{enumerate}[leftmargin=2em,label=\textbf{Q\arabic*.}]
+  \item \textbf{Bootstrap infra with Terraform.} Create VPC/subnets, registry, and cluster. Optionally manage Helm releases for ingress-nginx and Argo~CD.
+  \item \textbf{Harden nodes with Ansible.} Install CRI/Docker, kube prerequisites, and security baselines.
+  \item \textbf{Install Argo~CD.} Point to the Git repo; commit the base platform manifests (namespaces, RBAC, ingress, Gatekeeper).
+  \item \textbf{Apply policies.} Gatekeeper constraints and Cloud Custodian policies for guardrails and remediation.
+  \item \textbf{Wire CI.} GitHub Actions builds/tests, pushes images, scans with GHAS, and bumps manifest tags so Argo~CD deploys.
+\end{enumerate}
+
+\section{Security \& Governance Notes}
+\begin{itemize}[leftmargin=2em]
+  \item Enforce least-privilege via IRSA (AWS) or workload identity (GCP) and namespace-scoped RBAC.
+  \item Use Gatekeeper libraries for common controls (privileged, hostPath, runAsNonRoot, image provenance).
+  \item Enable GHAS features: CodeQL, secret scanning, Dependabot security updates.
+  \item Apply Cloud Custodian for encryption at rest, public exposure checks, and lifecycle policies.
+\end{itemize}
+
+\section{Operations (Day 2)}
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Drift \& Sync:} Use Argo~CD automated sync and health checks; protect prod with PR + manual sync if desired.
+  \item \textbf{Environments:} Promote via Git branches or ApplicationSet generators (folder-per-env); avoid kubectl-by-hand.
+  \item \textbf{Observability:} Add metrics/logs/traces; gate production with SLOs and rollout strategies (e.g., canary).
+\end{itemize}
+
+\section{Next Steps}
+\begin{itemize}[leftmargin=2em]
+  \item Add Helm/Kustomize overlays per environment.
+  \item Expand Gatekeeper constraints and Custodian policies to your regulatory profile.
+  \item Introduce image signing (Sigstore/cosign) and policy checks (Conftest/OPA) in CI.
+\end{itemize}
+
+\vfill
+\noindent\footnotesize This document is a practical compilation intended as a quick-start blueprint. Adapt module versions, cloud providers, and security baselines to your environment.
+\end{document}

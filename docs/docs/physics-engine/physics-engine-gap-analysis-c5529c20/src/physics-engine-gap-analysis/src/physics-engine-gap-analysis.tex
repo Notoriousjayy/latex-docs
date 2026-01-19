@@ -1,0 +1,350 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{amssymb}
+\usepackage{textcomp}
+\usepackage{microtype}
+
+% Status symbols (portable replacements for ✓ ◐ ✗ ⚡)
+\newcommand{\Impl}{\checkmark}
+\newcommand{\Part}{\textopenbullet}
+\newcommand{\Miss}{\(\times\)}
+\newcommand{\Dup}{\(\star\)}
+
+\setlist[itemize]{noitemsep, topsep=2pt}
+\setlist[description]{style=nextline, leftmargin=3.0cm, labelsep=0.6cm, font=\normalfont\bfseries}
+
+\title{Physics Engine Gap Analysis\\\large Combined Repository Analysis for Production-Grade Physics \textbackslash{}\& Numerical Algorithms Library}
+\author{}
+\date{December 18, 2025}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\clearpage
+\textit{Combined Repository Analysis for Production-Grade Physics \& Numerical Algorithms Library}
+
+\section{Executive Summary}
+\subsection{Repository Overview}
+This analysis examines three repositories intended to form a coherent physics engine and numerical algorithms library:
+
+\begin{description}
+\item[Jet Fluid Engine (doyubkim-fluid-engine-dev)] Production-grade fluid simulation with SPH, FLIP/PIC/APIC, grid-based solvers, level sets, and FDM linear system solvers. Strong in computational physics but lacks rigid body dynamics.
+\end{description}
+\begin{itemize}
+\item \textbf{Game Physics Cookbook (packtpublishing-game-physics-cookbook): }Rigid body physics with SAT collision detection, impulse-based response, cloth simulation, and spatial partitioning. Strong in game physics but lacks advanced numerical methods.
+\end{itemize}
+\begin{description}
+\item[Numerical Recipes (notoriousjayy-delete)] Collection of numerical algorithms including ODE solvers (RK4), integration routines, linear solvers, and statistical functions. Standalone algorithms without physics framework integration.
+\end{description}
+\subsection{Key Findings}
+\begin{description}
+\item[Critical Gap] No unified constraint solver architecture bridges rigid bodies and fluids
+\item[Major Overlap] Duplicate math primitives (vec2/vec3/mat4 vs Vector2/Vector3/Matrix) requiring unification
+\item[Architectural Mismatch] Different coordinate conventions, memory layouts, and integration patterns
+\item[Partial Implementation] Broadphase collision limited to QuadTree/Octree; no sweep-and-prune or dynamic BVH
+\end{description}
+\subsection{Strategic Recommendation}
+Adopt Jet's modular architecture as the foundation, integrate Game Physics Cookbook's rigid body system as a new module, and incorporate Numerical Recipes algorithms into a unified MathPrimitives/Numerics layer. Estimated total effort: 16-24 person-months for full integration.
+
+\section{Capability Coverage Matrix}
+Legend: \Impl = Implemented | \Part = Partial | \Miss = Missing | \Dup = Duplicate
+
+\subsection{Core Math \& Numerics}
+\begin{table}[htbp]
+\centering
+\small
+\caption{Core Math \& Numerics --- Capability Coverage}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.24\textwidth} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Capability} & \textbf{Jet} & \textbf{Cookbook} & \textbf{NumRecipes} \\
+\midrule
+Vector/Matrix/Quaternion & \Impl Vector2/3, Matrix, Quaternion & \Dup vec2/3, mat2/3/4 & \Miss \\
+Transform Types & \Impl Transform2/3 & \Part mat4 functions & \Miss \\
+Dense Linear Algebra & \Part Basic ops & \Impl Inverse, Determinant & \Miss \\
+Sparse Linear Solvers & \Impl CG, ICCG, Jacobi, MG & \Miss & \Part tridag, sor \\
+SVD/Eigendecomp & \Impl svd.h & \Miss & \Miss \\
+ODE Solvers & \Part Semi-implicit Euler & \Part Euler/Verlet & \Impl rk4, stepper \\
+Numerical Integration & \Miss & \Miss & \Impl qgaus, romberg, quad3d \\
+Interpolation/Splines & \Impl Cubic interpolation & \Miss & \Impl interp\_linear, savgol \\
+Random/Sampling & \Miss & \Part Basic Random() & \Impl multinormaldev, ranpt \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Rigid Body Physics}
+\begin{table}[htbp]
+\centering
+\small
+\caption{Rigid Body Physics --- Capability Coverage}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.24\textwidth} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Capability} & \textbf{Jet} & \textbf{Cookbook} & \textbf{NumRecipes} \\
+\midrule
+Rigid Body State & \Part RigidBodyCollider (static) & \Impl RigidbodyVolume & \Miss \\
+Mass Properties/Inertia & \Miss & \Impl InvMass, inertia & \Miss \\
+Broadphase Collision & \Impl PointHashGrid, KdTree & \Impl QuadTree, Octree & \Miss \\
+Narrowphase (GJK/EPA) & \Miss & \Miss & \Miss \\
+Narrowphase (SAT) & \Miss & \Impl SAT for OBB & \Miss \\
+Contact Manifold & \Miss & \Impl CollisionManifold & \Miss \\
+Impulse Resolution & \Miss & \Impl ApplyImpulse() & \Miss \\
+Friction/Restitution & \Miss & \Part bounce param & \Miss \\
+Constraints/Joints & \Miss & \Part DistanceJoint & \Miss \\
+Sequential Impulses/PGS & \Miss & \Part ImpulseIteration loop & \Miss \\
+Sleeping/Islands & \Miss & \Miss & \Miss \\
+CCD (Continuous) & \Miss & \Miss & \Miss \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Soft Body / Cloth / Particles}
+\begin{table}[htbp]
+\centering
+\small
+\caption{Soft Body / Cloth / Particles --- Capability Coverage}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.24\textwidth} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Capability} & \textbf{Jet} & \textbf{Cookbook} & \textbf{NumRecipes} \\
+\midrule
+Particle System Data & \Impl ParticleSystemData2/3 & \Impl Particle class & \Miss \\
+Mass-Spring Cloth & \Miss & \Impl Cloth.h with springs & \Miss \\
+Bending/Shear Springs & \Miss & \Impl SetBendSprings, SetShearSprings & \Miss \\
+Constraint Solving & \Miss & \Impl SolveConstraints() & \Miss \\
+Position-Based Dynamics & \Miss & \Miss & \Miss \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Fluids}
+\begin{table}[htbp]
+\centering
+\small
+\caption{Fluids --- Capability Coverage}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.24\textwidth} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Capability} & \textbf{Jet} & \textbf{Cookbook} & \textbf{NumRecipes} \\
+\midrule
+Grid-Based Eulerian & \Impl GridFluidSolver2/3 & \Miss & \Miss \\
+Advection Solvers & \Impl SemiLagrangian, Cubic & \Miss & \Miss \\
+Pressure Projection & \Impl GridPressureSolver & \Miss & \Miss \\
+Diffusion & \Impl Forward/Backward Euler & \Miss & \Miss \\
+SPH & \Impl SphSolver2/3 & \Miss & \Miss \\
+PCISPH & \Impl PciSphSolver2/3 & \Miss & \Miss \\
+FLIP/PIC/APIC & \Impl FlipSolver, ApicSolver & \Miss & \Miss \\
+Level Sets & \Impl LevelSetSolver, FMM, ENO & \Miss & \Miss \\
+Marching Cubes & \Impl marching\_cubes.h & \Miss & \Miss \\
+Boundary Conditions & \Impl Blocked, Fractional & \Miss & \Miss \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Gap List}
+\subsection{Critical Gaps (High Severity)}
+\subsubsection{Gap 1: GJK/EPA Narrowphase Collision}
+\begin{description}
+\item[Description] No Gilbert-Johnson-Keerthi or Expanding Polytope Algorithm for convex hull collision. SAT implementation only handles box primitives.
+\item[Current State] Missing entirely. Cookbook has SAT for OBB/AABB but not general convex shapes.
+\item[Target Module] Geometry (or new CollisionDetection module)
+\item[Impact] Correctness - Cannot handle arbitrary convex colliders required for realistic rigid body simulation
+\item[Implementation] Implement GJK with Minkowski difference, EPA for penetration depth, warm-starting with cached simplices
+\item[Acceptance] Unit tests for sphere-sphere, box-box, convex-convex; benchmark vs SAT
+\item[Effort] Large (3-4 weeks)
+\end{description}
+\subsubsection{Gap 2: Unified Constraint Solver}
+\begin{description}
+\item[Description] No centralized constraint solver architecture. Cookbook has ad-hoc impulse iteration; Jet has FDM solvers but no rigid body constraint support.
+\item[Current State] Partial - ImpulseIteration loop in PhysicsSystem.cpp but no proper PGS/MLCP formulation
+\item[Target Module] New ConstraintSolver module
+\item[Impact] Correctness/Stability - Joint stacking, complex constraint scenarios fail
+\item[Implementation] Sequential Impulses with warm-starting, constraint graph, bias factors, Baumgarte stabilization
+\item[Acceptance] Stack of 10+ boxes stable; pendulum chain test; joint motor accuracy
+\item[Effort] Large (4-5 weeks)
+\end{description}
+\subsubsection{Gap 3: Continuous Collision Detection (CCD)}
+\begin{description}
+\item[Description] No time-of-impact calculation for fast-moving objects. Tunneling occurs at high velocities.
+\item[Current State] Missing entirely in all repositories
+\item[Target Module] CollisionDetection
+\item[Impact] Correctness - Bullets, fast projectiles pass through thin walls
+\item[Implementation] Conservative advancement with GJK, speculative contacts, TOI root finding
+\item[Acceptance] High-velocity sphere vs thin plane test; frame-rate independent collision
+\item[Effort] Medium (2-3 weeks)
+\end{description}
+\subsubsection{Gap 4: Island Management \& Sleeping}
+\begin{description}
+\item[Description] No grouping of interacting bodies into islands or sleep state management for stationary objects.
+\item[Current State] Missing entirely
+\item[Target Module] PhysicsCore
+\item[Impact] Performance - O(n²) collision checks for all bodies regardless of activity
+\item[Implementation] Union-find for islands, velocity/energy threshold for sleeping, wake propagation
+\item[Acceptance] 100 stacked boxes achieve 60fps; proper wake-on-impact
+\item[Effort] Medium (2 weeks)
+\end{description}
+\subsection{Medium Severity Gaps}
+\subsubsection{Gap 5: Advanced Joint Types}
+\begin{description}
+\item[Description] Only DistanceJoint implemented. Missing hinge, slider, ball-socket, motors, limits.
+\item[Current State] Partial - DistanceJoint.h exists (Evidence: Code/DistanceJoint.h)
+\item[Implementation] Derive from base Constraint class; implement position/velocity constraints with Jacobians
+\item[Effort] Medium (2-3 weeks per joint type)
+\end{description}
+\subsubsection{Gap 6: Position-Based Dynamics (PBD)}
+\begin{description}
+\item[Description] No PBD implementation for unified soft/rigid body simulation.
+\item[Current State] Missing - Cloth uses spring-damper model, not PBD constraints
+\item[Implementation] XPBD with compliant constraints, iterative projection, damping
+\item[Effort] Large (4+ weeks)
+\end{description}
+\subsubsection{Gap 7: Dynamic BVH / Sweep-and-Prune}
+\begin{description}
+\item[Description] Broadphase limited to QuadTree/Octree. No dynamic AABB tree or incremental SAP.
+\item[Current State] Partial - Static BVH in Geometry3D.h (BVHNode struct), QuadTree/Octree in Scene.h
+\item[Implementation] Self-balancing AABB tree with incremental updates, or sorted axis lists with insertion sort
+\item[Effort] Medium (2 weeks)
+\end{description}
+\section{Overlap/Conflict List}
+\subsection{Math Type System Duplication}
+\begin{description}
+\item[Overlap] Jet uses Vector2<T>/Vector3<T>/Matrix3x3<T>/Quaternion<T> (templated). Cookbook uses vec2/vec3/mat2/mat3/mat4 (float-only structs).
+\item[Evidence] Jet: include/jet/vector.h, include/jet/matrix.h. Cookbook: vectors.h, matrices.h
+\item[Risk] Type mismatches at module boundaries, implicit conversions causing bugs, maintenance burden
+\item[Recommendation] Adopt Jet's templated types as canonical. Create thin adapters vec2 → Vector2F, mat4 → Matrix4x4F. Gradually migrate Cookbook code.
+\item[Migration] Phase 1: typedef aliases. Phase 2: Replace usages. Phase 3: Remove Cookbook math headers.
+\end{description}
+\subsection{Particle System Data Structures}
+\begin{description}
+\item[Overlap] Jet's ParticleSystemData2/3 vs Cookbook's Particle class
+\item[Evidence] Jet: include/jet/particle\_system\_data.h. Cookbook: Particle.h
+\item[Risk] Memory layout conflicts, incompatible neighbor search
+\item[Recommendation] Keep both but establish clear boundaries: Jet for fluid particles, Cookbook for rigid/cloth particles. Create common IParticle interface if unified iteration needed.
+\end{description}
+\subsection{Coordinate System / Handedness}
+\begin{description}
+\item[Conflict] Jet does not explicitly define handedness. Cookbook uses left-handed OpenGL conventions with Y-up.
+\item[Evidence] Cookbook matrices.cpp: Projection(), LookAt() assume OpenGL conventions
+\item[Risk] Incorrect physics when mixing modules; inverted normals in collision
+\item[Recommendation] Document and enforce right-handed Y-up convention throughout. Add coordinate transform utilities at module boundaries.
+\end{description}
+\subsection{Neighbor Search Structures}
+\begin{description}
+\item[Overlap] Jet: PointHashGridSearcher, PointKdTreeSearcher. Cookbook: QuadTree, Octree (Scene.h)
+\item[Recommendation] Consolidate into SpatialPartitioning module. Use Jet's parallel hash grid for SPH, Cookbook's Octree for broadphase rigid body.
+\end{description}
+\section{Architectural Misalignment Findings}
+\subsection{Module Boundary Violations}
+\begin{description}
+\item[Issue] Cookbook's Geometry3D.h is a monolithic 4000+ line header containing collision detection, spatial structures, mesh handling
+\item[Decomposition Target] Should be split per module view: primitives → Geometry, BVH → SpatialPartitioning, collision → CollisionDetection
+\item[Refactor] Extract struct definitions to primitives.h, BVH to bvh.h, collision tests to collision.h
+\item[Issue] PhysicsSystem.cpp directly accesses RigidbodyVolume internals (position, orientation)
+\item[Decomposition Target] PhysicsCore should use abstract Rigidbody interface
+\item[Refactor] Introduce IRigidbody interface with GetPosition(), SetPosition(), GetInverseMass() etc.
+\end{description}
+\subsection{Dependency Direction Issues}
+\begin{description}
+\item[Issue] Cookbook's rendering code (FixedFunctionPrimitives) embedded in physics demos, creating circular dependency
+\item[Required] Rendering should depend on Physics, not vice versa
+\item[Refactor] Move all Render() methods to separate visualization module; physics types return geometry data only
+\end{description}
+\subsection{Missing Abstractions}
+\begin{description}
+\item[ISurface Interface] Jet has Surface2/3 base classes; Cookbook lacks equivalent abstraction for collision shapes
+\item[IIntegrator Interface] No common interface for Euler/Verlet/RK4 integration; hardcoded in each system
+\item[IConstraint Interface] DistanceJoint is concrete class; no base Constraint type for solver to iterate
+\end{description}
+\section{Prioritized Roadmap}
+\subsection{Phase 0: Safety \& Baseline (4-6 weeks)}
+\textit{Goal: Establish testing infrastructure, determinism, and documentation baseline}
+
+\begin{description}
+\item[CI/CD Pipeline] GitHub Actions for build/test on Linux/Windows/macOS
+\item[Unit Test Framework] Adopt Google Test; port existing tests; achieve 60\% coverage on math primitives
+\item[Determinism Audit] Fixed-point RNG seeds; verify bitwise reproducibility across platforms
+\item[Module README Files] Document public API, usage examples for each module
+\item[Acceptance] All CI green; same simulation produces identical results on all platforms
+\end{description}
+\subsection{Phase 1: Core Math Unification (3-4 weeks)}
+\textit{Goal: Single source of truth for math types and operations}
+
+\begin{description}
+\item[Math Type Consolidation] Jet templates as base; adapter headers for Cookbook compatibility
+\item[Numeric Utilities Integration] Port relevant NumRecipes algorithms (rk4, romberg) to Jet's namespace
+\item[Coordinate System Documentation] Enforce right-handed Y-up; add transform utilities
+\item[Acceptance] Single math.h header usable by all modules; numerical precision tests pass
+\end{description}
+\subsection{Phase 2: Rigid Body Integration (6-8 weeks)}
+\textit{Goal: Production-quality rigid body module integrated with Jet architecture}
+
+\begin{description}
+\item[Rigid Body Module] Port Cookbook's RigidbodyVolume, adapt to Jet's coding style
+\item[GJK/EPA Implementation] Full convex collision with warm-starting
+\item[Sequential Impulses Solver] Replace ad-hoc iteration with proper SI implementation
+\item[Joint System] Distance, Hinge, Ball-socket with motors and limits
+\item[Acceptance] Box stacking demo stable; ragdoll example working; benchmark vs Box2D/Bullet
+\end{description}
+\subsection{Phase 3: Collision Optimization (4-5 weeks)}
+\textit{Goal: Scalable broadphase and optional CCD}
+
+\begin{description}
+\item[Dynamic BVH] Self-balancing AABB tree with incremental updates
+\item[Island Management] Union-find islands with sleeping
+\item[CCD Implementation] Conservative advancement; speculative contacts
+\item[Acceptance] 1000 body scene at 60fps; no tunneling with fast projectiles
+\end{description}
+\subsection{Phase 4: Advanced Features (8+ weeks)}
+\textit{Goal: Unified soft body, fluid coupling, and production polish}
+
+\begin{description}
+\item[PBD/XPBD System] Unified cloth/soft body with compliant constraints
+\item[Fluid-Rigid Coupling] Two-way interaction between SPH/FLIP and rigid bodies
+\item[GPU Acceleration] CUDA/OpenCL kernels for broadphase and solver
+\item[Profiling Integration] Tracy/Optick markers throughout pipeline
+\item[Acceptance] Cloth-fluid interaction demo; GPU 10x speedup on appropriate workloads
+\end{description}
+\section{Recommended Module Decomposition Updates}
+Based on this analysis, the following updates to the module decomposition are recommended:
+
+\subsection{New Modules to Add}
+\begin{description}
+\item[RigidBody Module] Rigid body state, mass properties, inertia tensor management (from Cookbook)
+\item[CollisionDetection Module] Broadphase (BVH, SAP), narrowphase (GJK/EPA, SAT), contact manifold generation
+\item[ConstraintSolver Module] Sequential impulses, constraints interface, joint implementations, islands
+\item[Numerics Module] ODE integrators, quadrature, root finding (consolidate from NumRecipes)
+\end{description}
+\subsection{Revised Dependency Graph}
+Proposed layer ordering (lower depends on higher):
+
+\paragraph{Layer 0: CoreFoundation}
+\paragraph{Layer 1: MathPrimitives, Numerics}
+\paragraph{Layer 2: Geometry, Fields}
+\paragraph{Layer 3: CollisionDetection, Grids}
+\paragraph{Layer 4: RigidBody, Particles}
+\paragraph{Layer 5: ConstraintSolver, Solvers (Fluid)}
+\paragraph{Layer 6: Animation, PhysicsWorld (unified)}
+\paragraph{Layer 7: Serialization, Bindings, Examples}
+\subsection{Key Interfaces to Define}
+\begin{table}[htbp]
+\centering
+\small
+\caption{Key Interfaces to Define}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.22\textwidth} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Interface} & \textbf{Module} & \textbf{Purpose} \\
+\midrule
+ICollider & CollisionDetection & Abstract collision shape with support mapping \\
+IBroadphase & CollisionDetection & Query interface for spatial acceleration \\
+IConstraint & ConstraintSolver & Base for all constraints and joints \\
+IIntegrator & Numerics & Step function for various ODE methods \\
+IRigidBody & RigidBody & State access for physics world iteration \\
+IPhysicsWorld & Animation & Unified world managing rigid + fluid + soft \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{center}\textit{End of Gap Analysis Report}\end{center}
+\end{document}

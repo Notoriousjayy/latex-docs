@@ -1,0 +1,247 @@
+
+\documentclass[11pt,a4paper]{article}
+
+% --- Encoding & fonts ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% --- Page & typography ---
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{parskip}
+\usepackage{enumitem}
+\setlist{itemsep=3pt, topsep=4pt, leftmargin=1.2em}
+
+% --- Colors & links ---
+\usepackage[dvipsnames]{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=MidnightBlue,
+  urlcolor=PineGreen,
+  citecolor=MidnightBlue
+}
+
+% --- Code (minted) ---
+\usepackage{fvextra}
+\usepackage[newfloat]{minted}
+\setminted{
+  fontsize=\small,
+  breaklines=true,
+  breakanywhere=true,
+  baselinestretch=1.0,
+  autogobble=true
+}
+\usemintedstyle{tango}
+
+% --- Title ---
+\title{\textbf{Applying CodeQL Scanning}\\\large A Practical, Exam-Oriented Guide}
+\author{}
+\date{\vspace{-0.8em}}
+
+\begin{document}
+\maketitle
+\vspace{-1.25em}
+\noindent\textit{How to introduce CodeQL analysis to a repository, source and configure queries, fan out multi-language scans with matrix strategies, and run scans via GitHub Actions vs.\ the CodeQL CLI.}
+
+\section*{Learning Objectives}
+\begin{itemize}
+  \item Introduce a CodeQL analysis workflow to a repository.
+  \item List where CodeQL queries can be specified and referenced.
+  \item Configure a language matrix in a CodeQL workflow.
+  \item Reference queries and configuration from public, private, and local sources.
+  \item Execute scans using the CodeQL CLI and contrast with GitHub Actions.
+\end{itemize}
+\clearpage
+
+\section{Introduce CodeQL Analysis with GitHub Actions}
+Integrating CodeQL into your repository automates security analysis on \texttt{push}, \texttt{pull\_request}, and on schedules. The standard starter workflow is shown below.
+
+\begin{minted}{yaml}
+# .github/workflows/codeql-analysis.yml
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: "0 6 * * 1"   # Mondays at 06:00 UTC
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ "python" ]  # add more languages as needed
+
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # Optional: query suites or config provided later sections
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+\end{minted}
+\clearpage
+
+\section{Where Can CodeQL Queries Be Specified?}
+CodeQL queries are \texttt{.ql} files (often with a \texttt{qlpack.yml} and lock file for dependencies). You can point your workflow at queries from several locations:
+
+\subsection*{1.\ Inline in the Workflow (least common for large queries)}
+\begin{minted}{yaml}
+- name: Initialize CodeQL with inline queries
+  uses: github/codeql-action/init@v3
+  with:
+    languages: ${{ matrix.language }}
+    queries: |
+      query: |
+        import javascript
+        from Expr e
+        where e.toString() = "example"
+        select e
+\end{minted}
+
+\subsection*{2.\ Local Path in the Same Repository}
+\begin{minted}{yaml}
+- name: Initialize CodeQL with local queries
+  uses: github/codeql-action/init@v3
+  with:
+    languages: ${{ matrix.language }}
+    queries: "./codeql/queries"   # directory or specific .ql file
+\end{minted}
+
+\subsection*{3.\ Another Internal (Private) Repository}
+\begin{minted}{yaml}
+- name: Initialize CodeQL (internal repo)
+  uses: github/codeql-action/init@v3
+  with:
+    languages: ${{ matrix.language }}
+    queries: "org-sec/codeql-queries/python@main:queries/special.ql"
+\end{minted}
+
+\subsection*{4.\ Public Repository (e.g., GitHub's CodeQL packs)}
+\begin{minted}{yaml}
+- name: Initialize CodeQL (public repo)
+  uses: github/codeql-action/init@v3
+  with:
+    languages: ${{ matrix.language }}
+    queries: "github/codeql:python/ql/src/codeql-suites/python-security-and-quality.qls"
+\end{minted}
+
+\paragraph{Reliability Tip.} When referencing remote content, prefer pinning to tags or commits (e.g., \texttt{@vX.Y} or a commit SHA) to avoid breakage when the upstream changes.
+\clearpage
+
+\section{Configure a Language Matrix}
+Use \texttt{strategy.matrix} to parallelize analysis across languages (or other axes like OS).
+
+\begin{minted}{yaml}
+strategy:
+  fail-fast: false
+  matrix:
+    language: [ "python", "javascript" ]
+
+# Use the matrix context downstream
+with:
+  languages: ${{ matrix.language }}
+\end{minted}
+
+\section{Reference a CodeQL Configuration File}
+Centralize reusable settings (disabling noisy queries, adding custom packs, selecting suites, etc.).
+
+\subsection*{Config in the Same Repository}
+\begin{minted}{yaml}
+# .github/workflows/codeql-analysis.yml (excerpt)
+- name: Initialize CodeQL (with config)
+  uses: github/codeql-action/init@v3
+  with:
+    languages: ${{ matrix.language }}
+    config-file: ".github/codeql/codeql-config.yml"
+\end{minted}
+
+\begin{minted}{yaml}
+# .github/codeql/codeql-config.yml
+name: "org-defaults"
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
+  - uses: ./queries/custom-sql-injection.ql
+paths-ignore:
+  - "vendor/**"
+  - "third_party/**"
+\end{minted}
+
+\subsection*{Config in a Remote Repository or URL}
+\begin{minted}{yaml}
+- name: Initialize CodeQL (remote config)
+  uses: github/codeql-action/init@v3
+  with:
+    languages: ${{ matrix.language }}
+    config-file: "org-sec/codeql-configs@v1:python/config.yml"
+    # For non-GitHub hosts, use a full URL if supported.
+\end{minted}
+\clearpage
+
+\section{Execute Scans with the CodeQL CLI}
+Great for local research, quick checks, and iterative query development.
+\begin{minted}{bash}
+# 1) Create a database (per language) from source
+codeql database create db-python \
+  --language=python \
+  --source-root=./src
+
+# 2) Run a query or suite
+codeql database analyze db-python \
+  ./codeql/queries/custom.ql \
+  --format=sarifv2.1.0 --output=results-python.sarif
+
+# 3) Use packs / suites
+codeql pack download codeql/python-queries
+codeql database analyze db-python \
+  codeql/python-queries:codeql-suites/python-security-and-quality \
+  --format=sarifv2.1.0 --output=results.sarif
+
+# 4) View results (example: VS Code SARIF viewer) or upload to GitHub code scanning
+\end{minted}
+
+\section{Actions vs.\ CLI --- When to Use Which}
+\begin{itemize}
+  \item \textbf{GitHub Actions:} Continuous, automated scanning on PRs, pushes, and schedules; central results in code scanning alerts; scalable via matrices and runners.
+  \item \textbf{CodeQL CLI:} Local, manual, and exploratory scanning; ideal for developing custom queries and validating hypotheses before baking into CI.
+\end{itemize}
+
+\section{Case Studies \& Practices}
+\begin{itemize}
+  \item \textbf{Public Queries (``Blue Yonder'' example).} Fast access to community expertise. Risk: upstream changes or disappearance. Mitigate by pinning refs.
+  \item \textbf{Private/Internal Packs (``Graphite Industries'').} Strong control and governance. Ensure permissions and auth are configured for runners.
+  \item \textbf{Local Queries in-Repo.} Highest stability and simplest pathing. Versioned with the application code.
+\end{itemize}
+
+\section*{Compilation Notes}
+This document uses \texttt{minted} for code highlighting. Compile with \texttt{--shell-escape}, for example:
+\begin{minted}{bash}
+latexmk -pdf -shell-escape applying-codeql-scanning.tex
+\end{minted}
+
+\vfill
+\noindent\textit{This quick-reference was distilled from course-style notes on applying CodeQL scanning in practice.}
+\end{document}

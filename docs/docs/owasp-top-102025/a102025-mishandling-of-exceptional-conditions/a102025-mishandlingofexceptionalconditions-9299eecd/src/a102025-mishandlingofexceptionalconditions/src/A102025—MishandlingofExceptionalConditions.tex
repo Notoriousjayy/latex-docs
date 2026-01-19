@@ -1,0 +1,284 @@
+% !TeX program = pdflatex
+% If you prefer minted (Pygments) highlighting, see the optional minted setup
+% near the bottom of this preamble.
+
+\documentclass[11pt]{article}
+
+% --------------------------
+% Packages
+% --------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{cleveref}
+
+\usepackage{tcolorbox}
+\tcbuselibrary{breakable,skins}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue,
+  pdftitle={A10:2025 — Mishandling of Exceptional Conditions},
+  pdfauthor={},
+  pdfsubject={Application Security},
+  pdfkeywords={OWASP, Error Handling, Exceptions, Failing Open, Failing Closed, Resilience, CWE, CVE}
+}
+
+% --------------------------
+% Styling
+% --------------------------
+\setlist[itemize]{topsep=4pt, itemsep=2pt, leftmargin=1.25em}
+\setlist[enumerate]{topsep=4pt, itemsep=2pt, leftmargin=1.5em}
+
+\newtcolorbox{infobox}[1][]{
+  breakable,
+  colback=gray!5,
+  colframe=gray!35,
+  arc=2mm,
+  left=3mm,right=3mm,top=2mm,bottom=2mm,
+  title=#1,
+  fonttitle=\bfseries
+}
+
+\newtcolorbox{principlebox}[1][]{
+  breakable,
+  colback=blue!3,
+  colframe=blue!25,
+  arc=2mm,
+  left=3mm,right=3mm,top=2mm,bottom=2mm,
+  title=#1,
+  fonttitle=\bfseries
+}
+
+\newtcolorbox{scenario}[1][]{
+  breakable,
+  colback=green!3,
+  colframe=green!25,
+  arc=2mm,
+  left=3mm,right=3mm,top=2mm,bottom=2mm,
+  title=#1,
+  fonttitle=\bfseries
+}
+
+% Optional: minted setup (requires -shell-escape)
+% \usepackage{minted}
+% \setminted{
+%   fontsize=\small,
+%   breaklines=true,
+%   bgcolor=gray!10,
+%   frame=lines
+% }
+
+% --------------------------
+% Document
+% --------------------------
+\title{\textbf{A10:2025 — Mishandling of Exceptional Conditions}}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{infobox}[Document Summary]
+This document consolidates the provided content for \textit{A10:2025 — Mishandling of Exceptional Conditions} into a structured, print-ready reference, including category background, scoring metrics, a definition of exceptional-condition mishandling and its security implications, prevention guidance emphasizing fail-closed transactional behavior, localized exception handling with global fallback, consistent centralized patterns, rate limiting and resource controls, and integration with logging/monitoring/alerting (A09). It also includes illustrative attack scenarios, references, and the mapped CWE list.
+\end{infobox}
+
+\tableofcontents
+\newpage
+
+\section{Background}
+Mishandling of Exceptional Conditions is a new category for 2025. This category contains 24 CWEs and focuses on improper error handling, logical errors, failing open, and other scenarios stemming from abnormal conditions that systems may encounter.
+
+Some CWEs in this category were previously associated with ``poor code quality,'' which is overly broad. This category is intended to provide more specific guidance.
+
+Notable CWEs include:
+\begin{itemize}
+  \item CWE-209: Generation of Error Message Containing Sensitive Information
+  \item CWE-234: Failure to Handle Missing Parameter
+  \item CWE-274: Improper Handling of Insufficient Privileges
+  \item CWE-476: NULL Pointer Dereference
+  \item CWE-636: Not Failing Securely (``Failing Open'')
+\end{itemize}
+
+\section{Score Table}
+\begin{table}[h!]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}>{\bfseries}p{4.9cm}p{3.1cm}@{}}
+\toprule
+Metric & Value \\
+\midrule
+CWEs Mapped & 24 \\
+Max Incidence Rate & 20.67\% \\
+Avg Incidence Rate & 2.95\% \\
+Max Coverage & 100.00\% \\
+Avg Coverage & 37.95\% \\
+Avg Weighted Exploit & 7.11 \\
+Avg Weighted Impact & 3.81 \\
+Total Occurrences & 769{,}581 \\
+Total CVEs & 3{,}416 \\
+\bottomrule
+\end{tabular}
+\caption{Provided scoring summary for Mishandling of Exceptional Conditions.}
+\end{table}
+
+\section{Description}
+Mishandling exceptional conditions in software occurs when programs fail to prevent, detect, and respond to unusual or unpredictable situations, leading to crashes, unexpected behavior, and sometimes vulnerabilities.
+
+This can involve one or more of the following three failings:
+\begin{enumerate}
+  \item The application does not prevent an unusual situation from happening.
+  \item The application does not identify the situation as it is happening.
+  \item The application responds poorly (or not at all) to the situation afterwards.
+\end{enumerate}
+
+Exceptional conditions can be caused by:
+\begin{itemize}
+  \item Missing, poor, or incomplete input validation
+  \item Late or overly high-level error handling rather than handling at the functions where errors occur
+  \item Unexpected environmental states (e.g., memory exhaustion, privilege issues, network faults)
+  \item Inconsistent exception handling, or exceptions not handled at all
+  \item System entering an unknown, unpredictable state when it is unsure of the next instruction
+\end{itemize}
+
+Hard-to-find errors and exceptions can threaten the security posture of an application for a long time.
+
+\subsection{Security Impact}
+Many security vulnerabilities can arise from mishandled exceptional conditions, such as:
+\begin{itemize}
+  \item Logic bugs and flawed business rules
+  \item Overflows and memory/state/resource issues
+  \item Race conditions and timing issues
+  \item Fraudulent transactions
+  \item Authentication and authorization weaknesses
+\end{itemize}
+
+These can affect the confidentiality, availability, and/or integrity of systems and data. Attackers may manipulate flawed error handling to exploit these weaknesses.
+
+\section{How to Prevent}
+
+\begin{principlebox}[Core Principles]
+To handle exceptional conditions properly, you must plan for abnormal situations and ``expect the worst.'' Catch errors at the point of occurrence, handle them meaningfully, and ensure recovery. Handling should include user-visible errors (understandable messages), logging of the event, and alerting where justified. Use a global exception handler as a final safety net.
+\end{principlebox}
+
+\subsection{Catch and Handle at the Source, with a Global Fallback}
+\begin{itemize}
+  \item Catch every possible system error directly where it occurs and handle it with a meaningful recovery strategy.
+  \item Include consistent user-facing error behavior (avoid leaking sensitive details), logging, and escalation/alerting when warranted.
+  \item Implement a global exception handler as a fallback for unanticipated failures.
+\end{itemize}
+
+\subsection{Fail Closed for Transactions}
+Catching and handling exceptional conditions prevents the underlying infrastructure from dealing with unpredictable states.
+
+\begin{itemize}
+  \item If an error occurs part-way through a transaction, \textbf{roll back the entire transaction} and start again (fail closed).
+  \item Avoid ``partial recovery'' for multi-step transactions, as this commonly creates unrecoverable mistakes.
+\end{itemize}
+
+\subsection{Prevent Exceptional Conditions via Limits and Controls}
+Whenever possible:
+\begin{itemize}
+  \item Add rate limiting, resource quotas, throttling, and other limits to prevent exceptional conditions.
+  \item Avoid ``limitless'' design, which can result in reduced resilience, denial-of-service risk, brute force success, and excessive cloud costs.
+  \item Consider whether identical repeated errors above a threshold should be emitted as aggregated statistics (count and time window), appended to the original message so as not to interfere with automated logging/monitoring (see A09:2025 --- Security Logging \& Alerting Failures).
+\end{itemize}
+
+\subsection{Consistency, Centralization, and Secure Engineering Practices}
+\begin{itemize}
+  \item Implement strict input validation (plus sanitization/escaping for hazardous characters that must be accepted).
+  \item Centralize error handling, logging, monitoring, and alerting, and apply a consistent global exception strategy.
+  \item Avoid multiple divergent error-handling approaches across the same application; handle exceptional conditions in one place, the same way each time.
+  \item Create project security requirements from the guidance in this category; perform threat modeling and/or secure design reviews during design.
+  \item Perform code review and static analysis, and execute stress/performance/penetration testing of the final system.
+  \item Where possible, standardize exceptional-condition handling across the organization to improve reviewability and auditability.
+\end{itemize}
+
+\section{Example Attack Scenarios}
+
+\begin{scenario}[Scenario \#1: Resource Exhaustion via Poor Cleanup (Denial of Service)]
+If an application catches exceptions during file uploads but does not release resources after exceptions occur, each new exception can leave resources locked or otherwise unavailable until resources are exhausted.
+\end{scenario}
+
+\begin{scenario}[Scenario \#2: Sensitive Data Exposure via Error Messages]
+Improper error handling (including database errors) may reveal full system errors to the user. An attacker can force repeated errors to collect sensitive system information, using it as reconnaissance to craft stronger SQL injection or other attacks.
+\end{scenario}
+
+\begin{scenario}[Scenario \#3: State Corruption in Financial Transactions (Failure to Roll Back)]
+An attacker interrupts a multi-step transaction via network disruptions. Example transaction order:
+\begin{enumerate}
+  \item Debit user account
+  \item Credit destination account
+  \item Log transaction
+\end{enumerate}
+If the system does not properly roll back the entire transaction (fail closed) when an error occurs mid-flow, an attacker could potentially drain funds or exploit race conditions that cause multiple credits.
+\end{scenario}
+
+\section{References}
+\begin{itemize}
+  \item OWASP MASVS--RESILIENCE
+  \item OWASP Cheat Sheet: Logging
+  \item OWASP Cheat Sheet: Error Handling
+  \item OWASP Application Security Verification Standard (ASVS): V16.5 Error Handling
+  \item OWASP Testing Guide: 4.8.1 Testing for Error Handling
+  \item Best practices for exceptions (Microsoft, .NET)
+  \item Clean Code and the Art of Exception Handling (Toptal)
+  \item General error handling rules (Google for Developers)
+  \item Example of real-world mishandling of an exceptional condition
+\end{itemize}
+
+\newpage
+\section{List of Mapped CWEs}
+\renewcommand{\arraystretch}{1.1}
+\begin{longtable}{@{}p{2.6cm}p{11.8cm}@{}}
+\toprule
+\textbf{CWE} & \textbf{Title} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{CWE} & \textbf{Title} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+CWE-209 & Generation of Error Message Containing Sensitive Information \\
+CWE-215 & Insertion of Sensitive Information Into Debugging Code \\
+CWE-234 & Failure to Handle Missing Parameter \\
+CWE-235 & Improper Handling of Extra Parameters \\
+CWE-248 & Uncaught Exception \\
+CWE-252 & Unchecked Return Value \\
+CWE-274 & Improper Handling of Insufficient Privileges \\
+CWE-280 & Improper Handling of Insufficient Permissions or Privileges \\
+CWE-369 & Divide By Zero \\
+CWE-390 & Detection of Error Condition Without Action \\
+CWE-391 & Unchecked Error Condition \\
+CWE-394 & Unexpected Status Code or Return Value \\
+CWE-396 & Declaration of Catch for Generic Exception \\
+CWE-397 & Declaration of Throws for Generic Exception \\
+CWE-460 & Improper Cleanup on Thrown Exception \\
+CWE-476 & NULL Pointer Dereference \\
+CWE-478 & Missing Default Case in Multiple Condition Expression \\
+CWE-484 & Omitted Break Statement in Switch \\
+CWE-550 & Server-generated Error Message Containing Sensitive Information \\
+CWE-636 & Not Failing Securely (``Failing Open'') \\
+CWE-703 & Improper Check or Handling of Exceptional Conditions \\
+CWE-754 & Improper Check for Unusual or Exceptional Conditions \\
+CWE-755 & Improper Handling of Exceptional Conditions \\
+CWE-756 & Missing Custom Error Page \\
+
+\end{longtable}
+
+\end{document}
+

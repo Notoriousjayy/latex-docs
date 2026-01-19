@@ -1,0 +1,226 @@
+%========================================================
+% Custom Action Challenge — Drop-In Starter (GitHub Actions)
+%========================================================
+\documentclass[11pt]{article}
+
+% ---------- Encoding & layout ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}         % Better Latin fonts
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{microtype}
+\usepackage{setspace}
+\setstretch{1.1}
+
+% ---------- Colors, links, boxes ----------
+\usepackage{xcolor}
+\definecolor{ink}{HTML}{111827}      % gray-900
+\definecolor{soft}{HTML}{F9FAFB}     % gray-50
+\definecolor{accent}{HTML}{2563EB}   % blue-600
+\definecolor{ok}{HTML}{059669}       % emerald-600
+\definecolor{warn}{HTML}{D97706}     % amber-600
+\definecolor{bad}{HTML}{DC2626}      % red-600
+
+\usepackage[colorlinks=true,linkcolor=accent,urlcolor=accent]{hyperref}
+
+\usepackage[most]{tcolorbox}
+\tcbset{enhanced, boxrule=0.6pt, colframe=ink, colback=soft, sharp corners, arc=2pt}
+
+% ---------- Code highlighting ----------
+% Requires: latexmk -pdf -shell-escape <file>.tex
+\usepackage{minted}
+\setminted{
+  fontsize=\small,
+  breaklines,
+  breakanywhere,
+  autogobble,
+  tabsize=2,
+}
+
+% ---------- Lists ----------
+\usepackage{enumitem}
+\setlist[itemize]{topsep=2pt,itemsep=2pt,parsep=0pt}
+\setlist[enumerate]{topsep=2pt,itemsep=2pt,parsep=0pt}
+
+% ---------- Title ----------
+\title{\textbf{Custom Action Challenge}\\A Drop-In Starter that Actually Runs}
+\author{Your Name}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{tcolorbox}
+\textbf{How to compile this PDF:} This document uses the \texttt{minted} package. Build with:
+\begin{minted}{bash}
+latexmk -pdf -shell-escape custom-action-challenge-starter.tex
+\end{minted}
+\end{tcolorbox}
+
+\section*{Overview}
+This starter turns raw notes into a working Docker-based GitHub Action that prints the
+GitHub actor, commit SHA, event type, and the repository visibility. It also includes a
+self-test workflow so you can run it immediately after pushing to a repository.
+
+\section*{What You Get}
+\begin{itemize}
+  \item A minimal yet production-ready Docker action: \texttt{action.yml} + \texttt{Dockerfile}.
+  \item A safe shell entrypoint with strict mode and JSON parsing via \texttt{jq}.
+  \item A CI workflow to prove it works on \texttt{push} and \texttt{workflow\_dispatch}.
+  \item Clear instructions for local (same-repo) use and publishing to the Marketplace.
+\end{itemize}
+
+\section*{Repository Layout}
+Place these files in a new repository (public preferred for Marketplace later):
+\begin{itemize}
+  \item \texttt{entrypoint.sh}
+  \item \texttt{Dockerfile}
+  \item \texttt{action.yml}
+  \item \texttt{.github/workflows/test-custom-action.yml}
+\end{itemize}
+\clearpage
+
+\section{Files \& Code}
+
+\subsection{\texttt{entrypoint.sh}}
+\begin{tcolorbox}
+\textbf{Purpose:} Prints actor, commit SHA, event type, and repo visibility using the event payload.
+\end{tcolorbox}
+\begin{minted}{bash}
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "Actor      : ${GITHUB_ACTOR:-unknown}"
+echo "Commit SHA : ${GITHUB_SHA:-unknown}"
+echo "Event type : ${GITHUB_EVENT_NAME:-unknown}"
+
+visibility="unknown"
+if [[ -n "${GITHUB_EVENT_PATH:-}" && -f "$GITHUB_EVENT_PATH" ]]; then
+  # Attempt to read .repository.visibility from the event JSON
+  visibility="$(jq -r '.repository.visibility // empty' "$GITHUB_EVENT_PATH" || true)"
+fi
+
+case "$visibility" in
+  private) echo "Visibility : PRIVATE";;
+  public)  echo "Visibility : PUBLIC";;
+  internal) echo "Visibility : INTERNAL";;
+  *)       echo "Visibility : ${visibility}";;
+esac
+\end{minted}
+
+\subsection{\texttt{Dockerfile}}
+\begin{tcolorbox}
+\textbf{Purpose:} Provides a tiny container with \texttt{bash} and \texttt{jq} for JSON parsing.
+\end{tcolorbox}
+\begin{minted}{docker}
+FROM ubuntu:22.04
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends bash jq ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+\end{minted}
+\clearpage
+
+\subsection{\texttt{action.yml}}
+\begin{tcolorbox}
+\textbf{Purpose:} Declares the action metadata and points to the Dockerfile.
+\end{tcolorbox}
+\begin{minted}{yaml}
+name: "Print GitHub Actor and Repo Details"
+description: "Shows who triggered the run, the commit SHA, event type, and repo visibility."
+author: "Your Name"
+runs:
+  using: "docker"
+  image: "Dockerfile"
+branding:
+  icon: info
+  color: blue
+\end{minted}
+
+\subsection{\texttt{.github/workflows/test-custom-action.yml}}
+\begin{tcolorbox}
+\textbf{Purpose:} Validates the action by running it on push and manual dispatch.
+\end{tcolorbox}
+\begin{minted}{yaml}
+name: Test Custom Action
+on: [push, workflow_dispatch]
+
+jobs:
+  run-custom-action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Option A: If testing within the same repository (no release needed)
+      - name: Run custom action from local path
+        uses: ./
+
+      # Option B: If using a published repo (replace with your org/user and branch/tag)
+      # - name: Run custom action from GitHub
+      #   uses: your-username/your-repo@main
+\end{minted}
+\clearpage
+
+\section{Quick Start}
+\begin{enumerate}
+  \item Create a new repository, e.g., \texttt{custom-action-challenge}.
+  \item Add the four files from this document and commit to \texttt{main}.
+  \item Push to GitHub and open the \textbf{Actions} tab.
+  \item Select \textbf{Test Custom Action} and run it (or push another commit).
+  \item Inspect job logs. You should see lines similar to:
+\end{enumerate}
+
+\begin{minted}{text}
+Actor      : your-handle
+Commit SHA : abcdef123456...
+Event type : workflow_dispatch
+Visibility : PUBLIC
+\end{minted}
+
+\section{Using the Action in Other Repos}
+In any workflow where you want to call this action, add a step like:
+\begin{minted}{yaml}
+- name: Who triggered this?
+  uses: your-username/custom-action-challenge@v1
+\end{minted}
+Create a release tag (\texttt{v1}) or pin to a specific commit SHA for reproducibility.
+
+\section{Publish to GitHub Marketplace (Optional)}
+\begin{enumerate}
+  \item Ensure the repository is public and has a clear \texttt{README.md}.
+  \item Create a release: \textbf{Releases} \textrightarrow{} \textbf{Draft a new release} (e.g., \texttt{v1.0.0}).
+  \item Check ``Publish this action to the GitHub Marketplace'' and follow the prompts.
+  \item Consumers can then use \texttt{your-username/custom-action-challenge@v1}.
+\end{enumerate}
+
+\section{Troubleshooting}
+\begin{itemize}
+  \item \textbf{No output or \texttt{jq} not found:} Confirm the Docker image built and \texttt{entrypoint.sh} is executable.
+  \item \textbf{Visibility shows \texttt{unknown}:} Some events may not include \texttt{repository.visibility}. Try on \texttt{push} or \texttt{workflow\_dispatch} in a normal repository, not a fork.
+  \item \textbf{Action fails to run:} If using Option B, ensure \texttt{uses: your-username/your-repo@main} points to a repo that contains \texttt{action.yml} at the repository root.
+  \item \textbf{Marketplace validation errors:} Add fields like \texttt{author}, \texttt{branding}, and ensure your \texttt{README.md} describes usage.
+\end{itemize}
+\clearpage
+
+\section*{Security Notes}
+\begin{itemize}
+  \item Docker actions run in containers you control; keep the base image minimal and up to date.
+  \item Avoid echoing secrets. If you later add inputs/outputs, mark sensitive outputs and respect \texttt{ACTIONS\_STEP\_DEBUG}.
+  \item Pin external actions you consume (\texttt{@vX} or commit SHA) to reduce supply-chain risk.
+\end{itemize}
+
+\section*{Next Steps}
+\begin{itemize}
+  \item Add \texttt{inputs} to accept options (e.g., a custom message) and read them via env vars.
+  \item Add \texttt{outputs} for downstream steps.
+  \item Write unit tests for the entrypoint script (e.g., using \texttt{bats}).
+\end{itemize}
+
+\end{document}
+

@@ -1,0 +1,868 @@
+% !TeX program = pdflatex
+% Compile with:
+%   latexmk -pdf -shell-escape security-policies-github.tex
+% (minted requires -shell-escape)
+
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue,
+  pdftitle={Setting Security Policies in GitHub},
+  pdfauthor={},
+}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes,fit}
+
+\usepackage{minted}
+\setminted{
+  fontsize=\small,
+  breaklines=true,
+  breakanywhere=true,
+  tabsize=2,
+  linenos=true
+}
+
+\usepackage[most]{tcolorbox}
+\tcbset{
+  colback=gray!3,
+  colframe=gray!35,
+  boxrule=0.5pt,
+  arc=2pt,
+  left=10pt,
+  right=10pt,
+  top=8pt,
+  bottom=8pt
+}
+
+\newtcolorbox{notebox}[1][]{breakable,title={Note},#1}
+\newtcolorbox{warningbox}[1][]{breakable,title={Warning},colback=yellow!8,colframe=yellow!40!black,#1}
+\newtcolorbox{examplebox}[1][]{breakable,title={Example},colback=blue!3,colframe=blue!25,#1}
+\newtcolorbox{checklistbox}[1][]{breakable,title={Checklist},colback=green!3,colframe=green!25,#1}
+
+\newcommand{\gh}{\textsf{GitHub}}
+\newcommand{\ghas}{\textsf{GitHub Advanced Security (GHAS)}}
+\newcommand{\ghe}{\textsf{GitHub Enterprise}}
+
+\title{\textbf{Setting Security Policies in GitHub}\\
+\large Preventive Controls, Documentation, Enforcement, Incident Response, and Auditing}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\vspace{-1.0em}
+
+\begin{notebox}
+This document is a practical guide for administrators and security owners onboarding collaborators and scaling secure development on \gh. It focuses on: preventive measures, vulnerability documentation, policy enforcement at repository/organization/enterprise levels, scrubbing sensitive data, publishing security advisories, and auditing security-relevant activity.
+\end{notebox}
+
+\tableofcontents
+\newpage
+
+%===============================================================================
+\section{Unit Objectives and Operating Model}
+
+\subsection{What you will be able to do}
+By the end of this unit, you should be able to:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item Define \textbf{repository, organization, and enterprise} policy boundaries and inheritance rules.
+  \item Establish \textbf{security documentation} standards (e.g., \texttt{SECURITY.md}) and community health baseline files.
+  \item Enable \textbf{security tooling} (Dependabot, advisories, code scanning, secret scanning) and select the correct control profile for your risk posture.
+  \item Execute a \textbf{secret leak response} including rotation, history rewrite, and cache invalidation requests when required.
+  \item Publish \textbf{security advisories} with consistent severity, impact scope, and remediation guidance.
+  \item Audit activity using \textbf{audit logs}, policy change tracking, and automation/webhooks.
+\end{itemize}
+
+\subsection{Mental model: Security policy as ``guardrails'' + ``evidence''}
+A strong \gh security program combines:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Guardrails} (preventive controls): rulesets, branch protection, authentication enforcement, least privilege, and scanning.
+  \item \textbf{Evidence} (detective controls): alerts, audit logs, advisories, and consistent documentation for triage and compliance.
+\end{itemize}
+
+%===============================================================================
+\section{Why Security Policies Matter}
+
+Security policies maintain the integrity of your \gh ecosystem by:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Guiding workflows:} secure, standardized development and release processes.
+  \item \textbf{Reporting clarity:} consistent, actionable steps for vulnerability disclosure and triage.
+  \item \textbf{Access control:} least-privilege permissions to limit blast radius and reduce risk.
+\end{itemize}
+
+\subsection{Where policies apply}
+Policies can apply at multiple scopes:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Repository-level:} fine-grained control for a specific codebase.
+  \item \textbf{Organization-level:} consistent defaults and governance across teams.
+  \item \textbf{Enterprise-level:} uniform, enforceable rules across many organizations; enterprise rules can override and lock organization settings.
+\end{itemize}
+
+\begin{notebox}
+A good operating principle is: \textbf{Enterprise enforces invariants}; \textbf{Organizations tailor within constraints}; \textbf{Repositories implement specifics}.
+\end{notebox}
+
+%-------------------------------------------------------------------------------
+\subsection{Visual placeholder: onboarding/security policy screens (stacked)}
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}
+  % Three stacked screenshots as placeholders
+  \draw[fill=gray!8,draw=gray!50] (0,0) rectangle (12,6);
+  \node[anchor=west] at (0.3,5.6) {\small Placeholder: Screenshot 1 (Repository community health files)};
+  \draw[fill=gray!6,draw=gray!50] (0.4,0.4) rectangle (12.4,6.4);
+  \node[anchor=west] at (0.7,6.0) {\small Placeholder: Screenshot 2 (Org settings / member privileges)};
+  \draw[fill=gray!4,draw=gray!50] (0.8,0.8) rectangle (12.8,6.8);
+  \node[anchor=west] at (1.1,6.4) {\small Placeholder: Screenshot 3 (Enterprise repository policies)};
+\end{tikzpicture}
+\caption{Illustrative ``stacked'' screenshots: repository community health files and organization/enterprise settings.}
+\end{figure}
+
+%===============================================================================
+\section{Documenting Security: Your First Line of Defense}
+
+\subsection{\texttt{SECURITY.md}: required content and conventions}
+\texttt{SECURITY.md} communicates (1) which versions you support, (2) how to report vulnerabilities, (3) what to expect (timelines, response SLAs), and (4) any legal/safe-harbor guidance.
+
+\begin{examplebox}[title={Example: Production-grade \texttt{SECURITY.md}}]
+\begin{minted}{markdown}
+# Security Policy
+
+## Supported Versions
+We provide security fixes for the following versions:
+
+| Version | Supported |
+|--------:|:---------:|
+| 2.x     | ✅ |
+| 1.x     | ✅ (critical fixes only) |
+| 0.x     | ❌ |
+
+## Reporting a Vulnerability
+Please report security issues privately.
+
+**Preferred:** GitHub Security Advisories (Private Vulnerability Report)  
+1. Open a new security advisory in this repository.
+2. Include reproduction steps, impact, and affected versions.
+3. If applicable, include a proposed fix or mitigation.
+
+**Alternative:** Email security@example.com (PGP available upon request)
+
+## What to Include
+- Product/component name and version
+- Clear reproduction steps (PoC if safe)
+- Expected vs. actual behavior
+- Potential impact (data exposure, RCE, privilege escalation, etc.)
+- Any relevant logs, stack traces, screenshots
+
+## Response Timeline
+- Acknowledgement: within 2 business days
+- Triage complete: within 5 business days
+- Fix or mitigation plan: within 10 business days (or communicate constraints)
+
+## Coordinated Disclosure
+We support coordinated disclosure. Please do not publicly disclose details
+until we have confirmed a fix and coordinated a release timeline.
+
+## Safe Harbor
+We will not pursue legal action for good-faith security research that:
+- avoids privacy violations and service disruption,
+- uses test accounts where possible,
+- does not exfiltrate or retain sensitive data.
+\end{minted}
+\end{examplebox}
+
+\subsection{Security documentation beyond \texttt{SECURITY.md}}
+Security documentation should also include:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Triage SOPs:} severity criteria, escalation steps, ownership, and timelines.
+  \item \textbf{Exception handling:} how policy exceptions are requested, reviewed, approved, and time-boxed.
+  \item \textbf{Evidence guides:} how to prove controls are operating (audit logs, scanning configurations, rulesets).
+\end{itemize}
+
+%-------------------------------------------------------------------------------
+\subsection{Visual placeholder: SECURITY.md snippet screenshot}
+\begin{figure}[h!]
+\centering
+\fbox{\parbox{0.92\linewidth}{\vspace{2.5em}\centering
+\textit{Placeholder: Cropped screenshot of \texttt{SECURITY.md} in the repository UI}\vspace{2.5em}}}
+\caption{Example location and visibility of \texttt{SECURITY.md} in a repository.}
+\end{figure}
+
+%===============================================================================
+\section{Community Health Files and Standardization}
+
+\subsection{Recognized community files}
+\gh recognizes key community files that improve transparency and reduce friction:
+
+\begin{longtable}{@{}p{0.28\linewidth}p{0.68\linewidth}@{}}
+\toprule
+\textbf{File} & \textbf{Purpose} \\
+\midrule
+\endhead
+
+\texttt{CODE\_OF\_CONDUCT.md} & Community behavior standards and enforcement steps. \\
+\texttt{CONTRIBUTING.md} & Contribution guidelines: branching, style, tests, review expectations. \\
+Discussion category forms & Templates that standardize discussions and reduce back-and-forth. \\
+\texttt{FUNDING.yml} & Sponsor options and funding metadata (as applicable). \\
+\texttt{GOVERNANCE.md} & Decision-making structure and escalation paths. \\
+Issue/PR templates + \texttt{config.yml} & Standardize contributor input (repro steps, risk, evidence). \\
+\texttt{README.md} & Canonical project overview, build/test instructions, support links. \\
+\texttt{SUPPORT.md} & Help resources and support channels (internal or external). \\
+\bottomrule
+\end{longtable}
+
+\subsection{Examples: templates that reduce security triage time}
+
+\begin{examplebox}[title={Example: Security-focused bug report issue template (Markdown)}]
+\begin{minted}{markdown}
+---
+name: "Security Bug Report"
+about: "Report a security-relevant defect (non-sensitive)."
+title: "[SECURITY] <short summary>"
+labels: ["security", "triage"]
+assignees: []
+---
+
+## Summary
+Describe the security issue at a high level.
+
+## Impact
+- [ ] Confidentiality
+- [ ] Integrity
+- [ ] Availability
+- [ ] Privilege escalation
+- [ ] Other: ____
+
+## Affected Component(s)
+List services, modules, endpoints, workflows, etc.
+
+## Reproduction Steps
+1.
+2.
+3.
+
+## Expected vs. Actual Behavior
+**Expected:**  
+**Actual:**
+
+## Environment
+- Version/commit:
+- OS:
+- Deployment (prod/stage/dev):
+
+## Evidence
+Logs, traces, screenshots (redact sensitive info).
+\end{minted}
+\end{examplebox}
+
+\begin{examplebox}[title={Example: \texttt{CONTRIBUTING.md} security addendum}]
+\begin{minted}{markdown}
+## Security Requirements (Applies to all contributions)
+
+- All changes must include tests for security-relevant logic.
+- Do not commit secrets. Use environment variables and secret managers.
+- Ensure dependencies are updated and vulnerable packages are not introduced.
+- Follow secure coding guidelines (input validation, authz checks, logging hygiene).
+- Pull Requests require review by CODEOWNERS for critical paths.
+\end{minted}
+\end{examplebox}
+
+%===============================================================================
+\section{Security Settings and Enforcement: Trust vs.\ Control}
+
+\subsection{Choosing a control posture}
+Small teams often start with broader permissions and evolve toward stricter controls as the organization scales. Large teams generally require:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item enforced authentication (SSO/2FA),
+  \item standardized branch rules,
+  \item mandatory reviews for sensitive code,
+  \item consistent scanning and alert handling,
+  \item auditable changes to policies and permissions.
+\end{itemize}
+
+\subsection{Configuration levels and inheritance}
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Organization-level:} \textit{Settings} \textrightarrow\ \textit{Member privileges}
+  \item \textbf{Enterprise-level:} \textit{Your enterprises} \textrightarrow\ \textit{Policies} \textrightarrow\ \textit{Repository policies}
+\end{itemize}
+
+\begin{warningbox}
+Enterprise rules may \textbf{override} organization rules. If a setting is locked at the enterprise level, organization owners cannot change it.
+\end{warningbox}
+
+\subsection{Quadrant model: availability vs.\ interaction required}
+The following conceptual model helps categorize security settings by:
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{X-axis:} availability to regular users (limited \(\rightarrow\) broadly available)
+  \item \textbf{Y-axis:} required level of interaction (low \(\rightarrow\) high)
+\end{itemize}
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[x=1cm,y=1cm,>=Latex]
+  % Axes
+  \draw[->] (0,0) -- (12,0) node[below] {\small Availability to users (limited \(\rightarrow\) broad)};
+  \draw[->] (0,0) -- (0,8) node[left,rotate=90] {\small Required interaction (low \(\rightarrow\) high)};
+
+  % Quadrants
+  \draw[gray!50] (6,0) -- (6,8);
+  \draw[gray!50] (0,4) -- (12,4);
+
+  % Labels
+  \node[anchor=west] at (0.2,7.6) {\small High interaction};
+  \node[anchor=west] at (0.2,0.2) {\small Low interaction};
+
+  % Items
+  \node[draw,rounded corners,fill=gray!5,align=left] (sso) at (2.2,6.5) {\small Enforce SSO/2FA\\\small (enterprise)};
+  \node[draw,rounded corners,fill=gray!5,align=left] (rulesets) at (3.0,2.3) {\small Rulesets \&\\\small branch protections};
+  \node[draw,rounded corners,fill=gray!5,align=left] (secmd) at (8.6,1.5) {\small \texttt{SECURITY.md}\\\small guidance};
+  \node[draw,rounded corners,fill=gray!5,align=left] (alerts) at (9.0,3.0) {\small Dependabot alerts\\\small \& updates};
+  \node[draw,rounded corners,fill=gray!5,align=left] (codeql) at (9.2,5.8) {\small Code scanning triage\\\small (GHAS)};
+  \node[draw,rounded corners,fill=gray!5,align=left] (adv) at (7.8,6.7) {\small Security advisories\\\small workflow};
+
+  \node[draw,rounded corners,fill=gray!5,align=left] (audit) at (2.2,1.3) {\small Audit log review\\\small (admin)};
+  \node[draw,rounded corners,fill=gray!5,align=left] (pushprot) at (10.0,7.2) {\small Secret scanning\\\small push protection};
+
+\end{tikzpicture}
+\caption{Quadrant model for thinking about how ``available'' a control is vs.\ how much human interaction it requires.}
+\end{figure}
+
+\begin{notebox}
+Use this model to prioritize adoption: start with \textbf{high-leverage, low-interaction guardrails} (rulesets, baseline scanning, defaults), then expand to \textbf{high-interaction workflows} (advisories, deep triage, exception management).
+\end{notebox}
+
+%===============================================================================
+\section{Available Security Tools and What They Enable}
+
+\subsection{Capabilities by repository tier}
+\begin{table}[h!]
+\centering
+\begin{tabular}{@{}p{0.28\linewidth}p{0.62\linewidth}@{}}
+\toprule
+\textbf{Repo Tier} & \textbf{Typical Security Capabilities} \\
+\midrule
+All repositories & Access controls, \texttt{SECURITY.md}, Dependabot alerts/updates, advisories \\
+With \ghas & Code scanning, secret scanning, dependency review (and broader security reporting) \\
+\bottomrule
+\end{tabular}
+\caption{Security capabilities vary by plan and enabled features.}
+\end{table}
+
+\subsection{Recommended baseline: ``minimum viable security''}
+A practical baseline for most teams:
+
+\begin{checklistbox}
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Documentation:} \texttt{SECURITY.md} + issue/PR templates
+  \item \textbf{Dependencies:} Dependabot alerts + automated update PRs
+  \item \textbf{Branch safety:} rulesets / branch protection with required checks
+  \item \textbf{Secrets:} secret scanning (and push protection if available)
+  \item \textbf{Code:} code scanning with a documented triage process (GHAS)
+  \item \textbf{Auditability:} audit log access + policy change review cadence
+\end{itemize}
+\end{checklistbox}
+
+%===============================================================================
+\section{Enhancing Enterprise Security and Compliance with GitHub}
+
+\subsection{Enterprise security features}
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \ghas: code scanning, secret scanning, dependency review.
+  \item \textbf{Security configurations:} enforce consistent settings across repositories.
+  \item \textbf{Centralized policy enforcement:} enterprise rulesets and locked organization settings.
+\end{itemize}
+
+\subsection{Compliance support (audit readiness)}
+For regulated environments, align policies to evidence:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Compliance reports:} provide standardized attestations useful for audit and regulatory needs.
+  \item \textbf{Controls as evidence:} branch protection + review enforcement, signed commits, SSO/2FA, audit logging, and security scanning configurations.
+\end{itemize}
+
+\begin{examplebox}[title={Example: ``Control-to-evidence'' mapping excerpt}]
+\begin{tabular}{@{}p{0.28\linewidth}p{0.28\linewidth}p{0.34\linewidth}@{}}
+\toprule
+\textbf{Control Objective} & \textbf{GitHub Feature} & \textbf{Evidence Artifact} \\
+\midrule
+Change approval & Required PR reviews & Ruleset config + PR review logs \\
+Identity assurance & SSO + 2FA enforcement & Auth policy + audit events \\
+Secure code & Code scanning & Alert exports + triage records \\
+Secret hygiene & Secret scanning & Alert history + remediation commits \\
+\bottomrule
+\end{tabular}
+\end{examplebox}
+
+%===============================================================================
+\section{Scrubbing Sensitive Data from GitHub Repositories}
+
+When secrets leak, remediation typically has three parallel tracks:
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Containment:} revoke/rotate exposed credentials immediately.
+  \item \textbf{Eradication:} remove sensitive data from repository history if required.
+  \item \textbf{Recovery and prevention:} reissue credentials, strengthen controls (push protection, scanning, training).
+\end{enumerate}
+
+\begin{warningbox}
+Rotating the secret is non-negotiable. Even if you rewrite history, assume the secret was compromised the moment it was committed and pushed.
+\end{warningbox}
+
+\subsection{Option A: Legacy history rewrite using \texttt{git filter-branch}}
+\begin{examplebox}[title={Remove a sensitive file using \texttt{git filter-branch} (legacy)}]
+\begin{minted}{bash}
+git filter-branch --force --index-filter \
+  'git rm --cached --ignore-unmatch path/to/sensitive_file' \
+  --prune-empty --tag-name-filter cat -- --all
+\end{minted}
+\end{examplebox}
+
+\subsection{Option B: BFG Repo-Cleaner (recommended for many history rewrite cases)}
+\begin{examplebox}[title={BFG: delete files or replace secret strings}]
+\begin{minted}{bash}
+# Delete a file across history
+java -jar bfg.jar --delete-files path/to/sensitive_file
+
+# Replace strings using a rules file (passwords.txt contains patterns to replace)
+java -jar bfg.jar --replace-text passwords.txt
+\end{minted}
+\end{examplebox}
+
+\subsection{Option C: \texttt{git filter-repo} (modern, flexible, and scriptable)}
+\begin{examplebox}[title={Example: remove a file from all history using \texttt{git filter-repo}}]
+\begin{minted}{bash}
+# Install (one option): pipx install git-filter-repo
+# Remove the file from history:
+git filter-repo --path path/to/sensitive_file --invert-paths
+\end{minted}
+\end{examplebox}
+
+\subsection{Clean up and force-push}
+After rewriting history, clean and force push to overwrite remote history.
+
+\begin{examplebox}[title={Cleanup and force push}]
+\begin{minted}{bash}
+git reflog expire --expire=now --all
+git gc --prune=now --aggressive
+
+# Force push branches and tags
+git push origin --force --all
+git push origin --force --tags
+\end{minted}
+\end{examplebox}
+
+\subsection{Contact GitHub Support (cache invalidation and persistence considerations)}
+For public repositories (and in some cases mirrors/forks), cached indexes may persist. A typical escalation path:
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item Rewrite history \& force-push.
+  \item Provide \textbf{repository name}, \textbf{commit(s)}, \textbf{file path(s)}, and confirmation of rewrite.
+  \item Request cache/index invalidation where applicable.
+  \item If risk is severe, consider temporarily deleting the repo (only if governance allows) and recreating after containment.
+\end{enumerate}
+
+\subsection{Prevention mechanisms to reduce recurrence}
+\begin{checklistbox}
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item Use \texttt{.gitignore} for local secret files and environment overrides.
+  \item Store secrets in \gh Actions Secrets, organization secrets, or an external secret manager.
+  \item Use secret scanning and (if available) push protection to block secrets before they land.
+  \item Adopt pre-commit hooks to detect high-risk patterns before commit.
+\end{itemize}
+\end{checklistbox}
+
+\begin{examplebox}[title={Example: pre-commit hook for basic secret pattern detection (starter)}]
+\begin{minted}{bash}
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Simple heuristic patterns (extend to your environment)
+PATTERNS=(
+  "AKIA[0-9A-Z]{16}"         # AWS Access Key ID pattern
+  "-----BEGIN PRIVATE KEY-----"
+  "xox[baprs]-"              # Slack tokens (approx)
+)
+
+FILES_CHANGED=$(git diff --cached --name-only)
+
+for f in $FILES_CHANGED; do
+  # Skip binary files
+  if file "$f" | grep -qi "text"; then
+    for p in "${PATTERNS[@]}"; do
+      if grep -nE "$p" "$f" >/dev/null 2>&1; then
+        echo "Potential secret detected in $f (pattern: $p). Commit blocked."
+        exit 1
+      fi
+    done
+  fi
+done
+\end{minted}
+\end{examplebox}
+
+%===============================================================================
+\section{Publishing Security Advisories}
+
+Security advisories help you:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item collaborate privately on fixes,
+  \item communicate vulnerability details clearly,
+  \item document mitigation steps and patch status,
+  \item (optionally) request or reference CVEs where appropriate.
+\end{itemize}
+
+\subsection{Workflow diagram (3-step)}
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[node distance=14mm,>=Latex]
+  \node[draw,rounded corners,fill=gray!5,align=center,minimum width=4.2cm,minimum height=1.0cm] (s1)
+    {Discover \& Triage\\(confirm impact)};
+  \node[draw,rounded corners,fill=gray!5,align=center,minimum width=4.2cm,minimum height=1.0cm,right=of s1] (s2)
+    {Private Advisory\\(coordinate fix)};
+  \node[draw,rounded corners,fill=gray!5,align=center,minimum width=4.2cm,minimum height=1.0cm,right=of s2] (s3)
+    {Publish \& Communicate\\(release notes, CVE)};
+  \draw[->] (s1) -- (s2);
+  \draw[->] (s2) -- (s3);
+\end{tikzpicture}
+\caption{Typical end-to-end security advisory lifecycle.}
+\end{figure}
+
+\subsection{What a ``good advisory'' contains}
+A strong advisory should include:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Affected versions:} exact ranges and deployment contexts.
+  \item \textbf{Severity:} clear rating, with rationale (e.g., CVSS vector if used).
+  \item \textbf{Impact:} confidentiality/integrity/availability and exploit prerequisites.
+  \item \textbf{Patch status:} fixed in version(s) X, mitigation for Y, workaround for Z.
+  \item \textbf{References:} CVE references or linked tracking items (internal IDs if private).
+\end{itemize}
+
+\begin{examplebox}[title={Example: Advisory template (copy/paste starter)}]
+\begin{minted}{markdown}
+## Summary
+A vulnerability in <component> allows <impact> when <condition>.
+
+## Affected Versions
+- Product: <name>
+- Affected: >=1.2.0, <1.4.3
+- Not affected: <1.2.0, >=1.4.3
+
+## Impact
+- CIA: Confidentiality (High), Integrity (Medium), Availability (Low)
+- Exploitability: Remote / Authenticated / Requires user interaction (select as applicable)
+
+## Details
+Technical description, root cause, and how it can be triggered.
+
+## Mitigation
+- Upgrade to 1.4.3 or later.
+- If upgrade is not possible: disable <feature>, apply <config>, restrict <endpoint>.
+
+## Credits
+Thanks to <reporter> for responsible disclosure.
+
+## References
+- CVE: (if assigned)
+- Internal tracking: SEC-1234
+\end{minted}
+\end{examplebox}
+
+%===============================================================================
+\section{Security and Compliance Profiles (Control Levels)}
+
+Each policy balances security and usability. The table below provides a practical control profile model.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{@{}p{0.22\linewidth}p{0.40\linewidth}p{0.30\linewidth}@{}}
+\toprule
+\textbf{Control Level} & \textbf{Recommended Policies \& Features} & \textbf{Use Case} \\
+\midrule
+Low Control (Guidance \& Best Practices)
+& Security advisories \& code scanning; Dependabot alerts; branch protection rules (optional reviews)
+& Teams needing flexibility with best practices \\
+
+Moderate Control (Enforced Rules)
+& Required branch protection; commit signing; org-wide security policies; monitoring webhooks
+& Teams needing governance with developer autonomy \\
+
+High Control (Strict Compliance \& Governance)
+& Enforce SAML SSO \& 2FA; restrict visibility \& forking; mandatory PR approvals; prevent force pushes; CI/CD security checks
+& Strict compliance (e.g., SOC 2, ISO 27001) \\
+\bottomrule
+\end{tabular}
+\caption{Security policies categorized by level of control.}
+\end{table}
+
+\subsection{When to use which profile}
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Startups \& agile teams:} often operate effectively at \textbf{moderate control} (branch protections, Dependabot, secret scanning).
+  \item \textbf{Enterprises \& regulated industries:} typically require \textbf{high control} (SSO/2FA, audit logging, rulesets, strict repo controls).
+  \item \textbf{Open source projects:} commonly \textbf{low to moderate control} with strong guidance, scanning, and clear community files.
+\end{itemize}
+
+%===============================================================================
+\section{Key Security and Compliance Features in GitHub Enterprise}
+
+\subsection{Secure code development}
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Code scanning (GHAS):} detect vulnerabilities via CodeQL and third-party tools.
+  \item \textbf{Secret scanning:} prevent hardcoded secrets and reduce exposure window.
+  \item \textbf{Dependency review \& Dependabot:} identify and update vulnerable dependencies.
+\end{itemize}
+
+\subsection{Enforcing compliance policies}
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Branch protection rules:} require PR reviews, status checks, and signed commits.
+  \item \textbf{Security rulesets:} apply policies across multiple repos consistently.
+  \item \textbf{Audit logs \& API monitoring:} track activity, permission changes, and policy modifications.
+\end{itemize}
+
+\subsection{Controlling access and authentication}
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Enforce SAML SSO \& 2FA:} strong authentication for all users.
+  \item \textbf{Restrict repository visibility:} control who can view, fork, or clone.
+  \item \textbf{Fine-grained access control:} assign roles per team or project; follow least privilege.
+\end{itemize}
+
+%===============================================================================
+\section{Defining Organization and Enterprise Policies}
+
+Organization and enterprise policies set governance, access, and workflow rules to ensure security and compliance.
+
+\subsection{Key policy domains}
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Security \& access control:} SAML SSO, 2FA, RBAC, repository visibility.
+  \item \textbf{Compliance \& governance:} audit logging, branch protection, commit signing.
+  \item \textbf{Development workflow \& automation:} PR approvals, security rulesets, Actions policies.
+  \item \textbf{Code \& dependency security:} code scanning, secret scanning, Dependabot, action restrictions.
+\end{itemize}
+
+\begin{warningbox}
+Any enterprise-level policy configured under \textit{Your enterprises \textrightarrow Policies \textrightarrow Repository policies} can override organization-level settings under \textit{Settings \textrightarrow Member privileges}.
+\end{warningbox}
+
+\subsection{Extensive examples: policy-as-configuration starters}
+
+\subsubsection{Example: \texttt{CODEOWNERS} for sensitive paths}
+\begin{examplebox}[title={Require security review for high-risk code paths using \texttt{CODEOWNERS}}]
+\begin{minted}{text}
+# Default owners
+* @platform-team
+
+# Security-sensitive paths
+/auth/ @security-team
+/infra/ @security-team @sre-team
+/.github/workflows/ @security-team
+\end{minted}
+\end{examplebox}
+
+\subsubsection{Example: Dependabot configuration}
+\begin{examplebox}[title={Example: \texttt{.github/dependabot.yml}}]
+\begin{minted}{yaml}
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "security"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+\end{minted}
+\end{examplebox}
+
+\subsubsection{Example: CodeQL workflow (starter)}
+\begin{examplebox}[title={Example: \texttt{.github/workflows/codeql.yml} (starter)}]
+\begin{minted}{yaml}
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: "0 5 * * 1"
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ "javascript-typescript" ]  # add more languages as needed
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+\end{minted}
+\end{examplebox}
+
+\subsubsection{Example: branch protection ``intent'' (rules you typically enforce)}
+\begin{examplebox}[title={Branch protection intent checklist (translate into rulesets/branch protections)}]
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item Require pull request reviews (1--2 reviewers; require CODEOWNERS for sensitive paths).
+  \item Require status checks (CI build, tests, lint, security scans) before merge.
+  \item Restrict who can push to matching branches.
+  \item Prevent force pushes and deletion on protected branches.
+  \item Require linear history (optional) and signed commits (for higher assurance).
+\end{itemize}
+\end{examplebox}
+
+%===============================================================================
+\section{Auditing and Operational Governance}
+
+\subsection{What you should audit}
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item Changes to authentication policies (SSO/2FA enforcement).
+  \item Repository visibility changes (public/private/internal), forking policy changes.
+  \item Modifications to rulesets/branch protection and required status checks.
+  \item Addition/removal of administrators and elevated roles.
+  \item Security alert lifecycle events (created, triaged, dismissed, fixed) and reasons.
+\end{itemize}
+
+\subsection{Example: audit log queries using \texttt{gh} CLI + API}
+The following examples assume you have \texttt{gh} configured on your workstation.
+
+\begin{examplebox}[title={Example: Retrieve organization audit log (illustrative)}]
+\begin{minted}{bash}
+# Replace ORG with your org name. Adjust include/phrase filters as needed.
+gh api -X GET "/orgs/ORG/audit-log" \
+  -f include=all \
+  -f phrase="action:protected_branch.create OR action:protected_branch.update"
+\end{minted}
+\end{examplebox}
+
+\begin{examplebox}[title={Example: Monitor changes to repository visibility or permissions (illustrative)}]
+\begin{minted}{bash}
+gh api -X GET "/orgs/ORG/audit-log" \
+  -f include=all \
+  -f phrase="action:repo.create OR action:repo.destroy OR action:repo.add_member OR action:repo.remove_member"
+\end{minted}
+\end{examplebox}
+
+\begin{notebox}
+Treat audit review as a recurring control: define a cadence (weekly/monthly), required reviewers, and evidence retention (export to a SIEM or ticketing system when appropriate).
+\end{notebox}
+
+%===============================================================================
+\section{Appendix A: ``Day-1'' Security Policy Pack (Quick Start)}
+
+\subsection{Repository-level ``Day-1'' pack}
+\begin{checklistbox}[title={Repository Baseline}]
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item Add \texttt{SECURITY.md}, \texttt{README.md}, \texttt{CONTRIBUTING.md}, issue/PR templates.
+  \item Enable Dependabot alerts and schedule Dependabot update PRs.
+  \item Configure branch protections / rulesets for \texttt{main}.
+  \item Add \texttt{CODEOWNERS} for sensitive code paths.
+  \item Enable code scanning and secret scanning (if available).
+\end{itemize}
+\end{checklistbox}
+
+\subsection{Organization-level ``Day-1'' pack}
+\begin{checklistbox}[title={Organization Baseline}]
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item Standardize member privileges and default repository permissions.
+  \item Define who can create repositories, manage Actions, and change visibility.
+  \item Require 2FA (and SSO if enterprise-managed).
+  \item Establish security ownership: escalation paths and triage responsibilities.
+\end{itemize}
+\end{checklistbox}
+
+\subsection{Enterprise-level ``Day-1'' pack}
+\begin{checklistbox}[title={Enterprise Baseline}]
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item Enforce SSO/2FA across organizations.
+  \item Lock critical repository policies (visibility, forking, force push protections).
+  \item Roll out security configurations for consistent scanning and alerting.
+  \item Centralize audit logging and alert data retention requirements.
+\end{itemize}
+\end{checklistbox}
+
+%===============================================================================
+\section{Appendix B: Reference File Tree (Suggested)}
+
+\begin{examplebox}[title={Example repository structure for community health + security configs}]
+\begin{minted}{text}
+.
+├── .github
+│   ├── CODEOWNERS
+│   ├── dependabot.yml
+│   ├── ISSUE_TEMPLATE
+│   │   ├── security-bug-report.md
+│   │   └── bug_report.md
+│   ├── PULL_REQUEST_TEMPLATE.md
+│   └── workflows
+│       ├── ci.yml
+│       └── codeql.yml
+├── CONTRIBUTING.md
+├── GOVERNANCE.md
+├── README.md
+├── SECURITY.md
+└── SUPPORT.md
+\end{minted}
+\end{examplebox}
+
+\end{document}
+

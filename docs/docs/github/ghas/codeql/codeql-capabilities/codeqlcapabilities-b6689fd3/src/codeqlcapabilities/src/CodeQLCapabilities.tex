@@ -1,0 +1,157 @@
+\documentclass[11pt,letterpaper]{article}
+
+% ---------- Encoding, fonts, layout ----------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{microtype}
+\usepackage{parskip}
+
+% ---------- Colors, links, headings ----------
+\usepackage[dvipsnames]{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks = true,
+  linkcolor  = MidnightBlue,
+  urlcolor   = MidnightBlue,
+  citecolor  = MidnightBlue
+}
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{8pt}{4pt}
+\titlespacing*{\subsection}{0pt}{6pt}{3pt}
+
+% ---------- Lists ----------
+\usepackage{enumitem}
+\setlist{itemsep=2pt, topsep=4pt, leftmargin=1.2em}
+
+% ---------- Code highlighting ----------
+\usepackage[cache=false]{minted} % compile with -shell-escape
+\setminted{
+  fontsize=\small,
+  breaklines,
+  breakanywhere,
+  autogobble,
+  tabsize=2,
+  frame=single,
+  framesep=2mm
+}
+\newminted[yamlcode]{yaml}{}
+\newminted[bashcode]{bash}{}
+
+% ---------- Title ----------
+\title{\vspace{-1.5em}\textbf{CodeQL Capabilities — Exam-Ready Cheat Sheet}\vspace{-0.5em}}
+\date{}
+\author{}
+
+\begin{document}
+\maketitle
+\vspace{-1.25em}
+\hrule
+\vspace{0.75em}
+
+\section{What is CodeQL?}
+\textbf{CodeQL} is GitHub's semantic static analysis engine for code scanning. It builds a \emph{relational database} of your code and runs declarative \textbf{QL} queries over it to detect complex vulnerabilities that simple pattern matching misses.
+
+\section{Why Use It}
+\begin{itemize}
+  \item Finds data-flow issues (e.g., injection), unsafe crypto, and other vuln classes across many languages.
+  \item Integrates with GitHub Actions, runs locally via the \textbf{CodeQL CLI}, and supports authoring in VS Code.
+  \item Produces precise results with traces and remediation context.
+\end{itemize}
+
+\section{Key Terms}
+\begin{description}[style=unboxed,leftmargin=0cm]
+  \item[QL Pack] A collection of related CodeQL queries for a \emph{specific language} (e.g., Python).
+  \item[Code Query (\texttt{.ql})] A single query to find a specific issue (e.g., SQLi) via CLI/Actions/VS Code.
+  \item[Query / Code Suite] A curated \emph{set} of queries grouped by security theme (e.g., web-app security).
+\end{description}
+
+\section{Default Query Suites}
+GitHub provides prebuilt suites in the public \texttt{github/codeql} repository. Choose suites by \emph{domain} (e.g., security-extended) and pair them with your repo's languages in Actions or the CLI.
+
+\section{End-to-End Flow}
+\begin{enumerate}
+  \item \textbf{Create database} per language (semantic model of your code).
+  \item \textbf{Run queries/suites} over that database.
+  \item \textbf{Review results} with locations, data-flow traces, and guidance (great UX in VS Code).
+\end{enumerate}
+\clearpage
+
+\section{Minimal GitHub Actions Setup (Multi-language)}
+\noindent\emph{Drop into \texttt{.github/workflows/codeql.yml}:}
+\begin{yamlcode}
+name: CodeQL
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+  schedule:
+    - cron: "0 2 * * 1"  # weekly
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript, python]  # add more as needed
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: +security-extended  # or a custom suite
+
+      - uses: github/codeql-action/autobuild@v3
+
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+\end{yamlcode}
+
+\section{Local Workflow (CLI + VS Code)}
+\begin{bashcode}
+# 1) Create the database (per language)
+codeql database create ./db-py \
+  --language=python \
+  --source-root /path/to/repo
+
+# 2) Analyze with a suite or pack
+codeql database analyze ./db-py \
+  github/codeql/python/ql/src/codeql-suites/python-security-extended.qls \
+  --format=sarifv2.1.0 --output=results.sarif
+
+# Tip: Use the VS Code "CodeQL" extension to open DBs,
+# author queries, and inspect results interactively.
+\end{bashcode}
+\clearpage
+
+\section{Authoring Queries (Mental Model)}
+\begin{itemize}
+  \item QL is \emph{declarative}: define types/predicates, then finish with \texttt{from ... where ... select ...}.
+  \item Data-flow pattern: define \textbf{sources} (e.g., user input) and \textbf{sinks} (e.g., SQL exec), then search for flows without sanitization.
+  \item Start from existing queries in \texttt{github/codeql}; customize progressively.
+\end{itemize}
+
+\section{Practical Tips}
+\begin{itemize}
+  \item Begin with GitHub-provided suites; extend with org-specific query packs.
+  \item Cache databases in CI and shard by language for large monorepos.
+  \item Keep CLI invocations scriptable; capture SARIF for artifacting and dashboards.
+  \item Triage in the Code Scanning UI; iterate queries as \emph{guardrails}, not gates, until signal is strong.
+\end{itemize}
+
+\vfill
+\hrule
+\smallskip
+{\footnotesize
+\textbf{Build Note:} Compile with \texttt{latexmk -pdf -shell-escape <file>} (or enable \emph{--shell-escape} in your LaTeX tool) so \texttt{minted} can call Pygments.
+}
+
+\end{document}
+

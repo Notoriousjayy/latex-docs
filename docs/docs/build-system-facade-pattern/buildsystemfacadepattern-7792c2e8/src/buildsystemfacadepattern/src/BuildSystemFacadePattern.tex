@@ -1,0 +1,427 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{graphicx}  % for including images
+\usepackage{float}     % for [H] exact placement of figures
+\usepackage{minted}    % requires -shell-escape
+
+\geometry{margin=1in}
+
+\setminted{
+  fontsize=\small,
+  breaklines=true
+}
+
+\title{Build System Facade Pattern}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Pattern Name and Classification}
+
+\textbf{Pattern Name:} Build System Facade
+
+\medskip
+
+\textbf{Classification:} Structural design pattern applied to build and deployment architecture.
+
+\medskip
+
+The core idea is to introduce a simple, high-level build entry point (the facade) that hides the complexity of an underlying, more powerful build system and related tooling.
+
+In the concrete case considered here:
+\begin{itemize}[noitemsep]
+  \item \textbf{Facade:} A top-level \texttt{Makefile} acting as a task runner and command alias layer.
+  \item \textbf{Subsystems:} \texttt{CMakeLists.txt} (core build system configuration) and Docker (containerized build and runtime environments).
+\end{itemize}
+
+\section{Intent}
+
+Provide a \emph{single, convenient interface} to a \emph{complex build and deployment subsystem}.
+
+\medskip
+
+The Build System Facade pattern aims to:
+\begin{itemize}[noitemsep]
+  \item Offer developers simple, memorable commands (e.g., \texttt{make wasm-debug}, \texttt{make docker-build}).
+  \item Keep the detailed compilation logic, platform detection, dependency management, and optimization flags encapsulated in CMake.
+  \item Centralize container orchestration and workflow automation (e.g., Docker builds and runs) in the Makefile without duplicating build logic.
+\end{itemize}
+
+In short, it addresses the problem:
+\begin{quote}
+  ``Our build, toolchain, and environments are complex, but daily developer workflows should be simple, repeatable, and hard to mess up.''
+\end{quote}
+
+\section{Also Known As}
+
+Common alternative names and closely related labels include:
+\begin{itemize}[noitemsep]
+  \item Wrapper Makefile
+  \item Task Runner over CMake
+  \item Two-Level Build Pattern
+  \item Build Orchestration Facade
+\end{itemize}
+
+\section{Motivation}
+
+Consider a project with:
+\begin{itemize}[noitemsep]
+  \item Multiple target platforms (e.g., WebAssembly, desktop, mobile).
+  \item Containerized build and runtime environments (e.g., Emscripten builder image, Nginx runtime image).
+  \item A rich CMake configuration handling compiler flags, dependencies, and presets.
+\end{itemize}
+
+A new developer joining the project should \emph{not} need to:
+\begin{itemize}[noitemsep]
+  \item Remember exact \texttt{cmake} invocations for each platform and configuration.
+  \item Know all the details of Docker image tags, volume mounts, and port mappings.
+  \item Manually copy long commands from documentation and risk subtle mistakes.
+\end{itemize}
+
+Instead, the project provides a top-level \texttt{Makefile}:
+\begin{itemize}[noitemsep]
+  \item Targets like \texttt{make wasm-debug} or \texttt{make native-release} call into CMake with the appropriate presets.
+  \item Targets like \texttt{make docker-build} or \texttt{make docker-run} encapsulate the Docker workflows.
+\end{itemize}
+
+Behind this facade:
+\begin{description}[style=nextline]
+  \item[CoreBuilder (CMake):] Encodes the full knowledge of sources, include paths, compiler standards, optimization levels, platform-specific options (such as Emscripten or native), and dependencies (e.g., SDL, OpenGL).
+  \item[ContainerRuntime (Docker):] Provides standard images for building and running the artifacts produced by CMake.
+\end{description}
+
+The developer experience becomes:
+\begin{itemize}[noitemsep]
+  \item Use a small set of Make targets.
+  \item Rely on the facade to orchestrate CMake and Docker correctly.
+  \item Benefit from consistency between local development and CI/CD pipelines.
+\end{itemize}
+
+\section{Applicability}
+
+Use the Build System Facade pattern when:
+\begin{itemize}[noitemsep]
+  \item The build is non-trivial:
+    \begin{itemize}[noitemsep]
+      \item Multiple platforms or configurations (debug/release, native/WASM).
+      \item Cross-compilers or specialized toolchains.
+      \item Containerized build or runtime environments.
+    \end{itemize}
+  \item You want:
+    \begin{itemize}[noitemsep]
+      \item New developers to get started with one or two simple commands.
+      \item A single, stable entry point for typical workflows.
+      \item Less risk of diverging build procedures across developers and CI.
+    \end{itemize}
+\end{itemize}
+
+The pattern helps repair or prevent poor designs such as:
+\begin{itemize}[noitemsep]
+  \item Copy-pasted build commands in documentation that quickly drift out of sync.
+  \item Multiple scripts (one per platform or task) that duplicate file lists and flags.
+  \item Direct use of raw \texttt{cmake} and \texttt{docker} commands everywhere, leading to inconsistent configurations.
+\end{itemize}
+
+You recognize the need for this pattern when:
+\begin{itemize}[noitemsep]
+  \item Documentation includes long, fragile command lines for routine tasks.
+  \item Onboarding instructions require manual variation of command arguments depending on OS or configuration.
+  \item Developers frequently break builds because they forget ``magic'' flags or environment details.
+\end{itemize}
+
+\section{Structure}
+
+At a high level, the Build System Facade pattern organizes the build and deployment architecture into clients, a facade, and underlying subsystems.
+
+\begin{figure}[H] % [H] forces placement HERE in the Structure section
+  \centering
+  \includegraphics[width=\textwidth]{build_system_facade_pattern_structure.png}
+  \caption{Structural view of the Build System Facade pattern showing clients, facade, and subsystems.}
+  \label{fig:build-system-facade-structure}
+\end{figure}
+
+Conceptually, the structure consists of:
+\begin{itemize}[noitemsep]
+  \item \textbf{Developer} --- interacts only with the facade.
+  \item \textbf{BuildFacade} --- a Makefile providing high-level targets.
+  \item \textbf{CoreBuilder} --- CMake configuration and presets that perform the actual build.
+  \item \textbf{ContainerRuntime} --- Docker configuration for build and runtime environments.
+  \item \textbf{CI/CD System} (optional) --- may call the same facade targets or directly use CMake presets.
+\end{itemize}
+
+Typical interaction sequence:
+\begin{enumerate}[noitemsep]
+  \item Developer runs a Make target, e.g., \texttt{make wasm-debug}.
+  \item The Makefile (BuildFacade) invokes \texttt{cmake --preset wasm-debug} and then \texttt{cmake --build --preset wasm-debug}.
+  \item For container workflows, the Makefile invokes \texttt{docker build} and \texttt{docker run}, referencing the artifacts produced by CMake.
+\end{enumerate}
+
+\section{Participants}
+
+\begin{description}[style=nextline]
+  \item[Developer]
+    Triggers builds and workflows via simple commands (e.g., \texttt{make wasm-debug}, \texttt{make docker-run}). Does not need to know internal arguments for CMake or Docker.
+  
+  \item[BuildFacade (Makefile)]
+    A thin, high-level interface exposing targets such as:
+    \begin{itemize}[noitemsep]
+      \item \texttt{wasm-debug}, \texttt{wasm-release}
+      \item \texttt{native-debug}, \texttt{native-release}
+      \item \texttt{docker-build}, \texttt{docker-run}
+    \end{itemize}
+    Delegates to CMake for compilation and to Docker for container tasks, and avoids reimplementing build logic.
+
+  \item[CoreBuilder (CMake configuration)]
+    \begin{itemize}[noitemsep]
+      \item Defines source files, include directories, and targets.
+      \item Configures compiler standards and flags (e.g., C23, optimization levels, warnings).
+      \item Encodes platform-specific settings (WASM vs.\ native, debug vs.\ release).
+      \item Manages discovery and configuration of dependencies (e.g., SDL, OpenGL).
+    \end{itemize}
+
+  \item[ContainerRuntime (Docker configuration)]
+    Provides Dockerfiles and associated configuration for:
+    \begin{itemize}[noitemsep]
+      \item Build environments (e.g., an emscripten builder container).
+      \item Runtime containers (e.g., Nginx-based image serving the WebAssembly application).
+    \end{itemize}
+    Assumes CMake has already produced the appropriate artifacts.
+
+  \item[CI/CD System]
+    \begin{itemize}[noitemsep]
+      \item May call the same Make targets, or invoke \texttt{cmake --preset} directly.
+      \item Ensures that CI builds follow the same flows as local development.
+    \end{itemize}
+\end{description}
+
+\section{Collaborations}
+
+\begin{itemize}[noitemsep]
+  \item \textbf{Developer $\rightarrow$ BuildFacade}:
+    \begin{itemize}[noitemsep]
+      \item Developer uses Make targets as the primary interface.
+      \item The Makefile abstracts away CMake and Docker details.
+    \end{itemize}
+
+  \item \textbf{BuildFacade $\rightarrow$ CoreBuilder}:
+    \begin{itemize}[noitemsep]
+      \item For configuration: runs \texttt{cmake --preset <preset>}.
+      \item For compilation: runs \texttt{cmake --build --preset <preset>}.
+    \end{itemize}
+
+  \item \textbf{BuildFacade $\rightarrow$ ContainerRuntime}:
+    \begin{itemize}[noitemsep]
+      \item For container workflows: runs \texttt{docker build} and \texttt{docker run}.
+      \item Uses known output directories (e.g., \texttt{build-wasm/}) defined by CMake.
+    \end{itemize}
+
+  \item \textbf{CI/CD System $\rightarrow$ BuildFacade/CoreBuilder}:
+    \begin{itemize}[noitemsep]
+      \item CI jobs can reuse the same Make targets or CMake presets.
+      \item This maintains consistency between local development and CI builds.
+    \end{itemize}
+\end{itemize}
+
+\section{Consequences}
+
+\subsection*{Benefits}
+
+\begin{itemize}[noitemsep]
+  \item \textbf{Simplified developer experience:}
+    \begin{itemize}[noitemsep]
+      \item Developers interact with a small, stable set of commands.
+      \item Onboarding is faster and less error-prone.
+    \end{itemize}
+  \item \textbf{Single source of truth for compilation:}
+    \begin{itemize}[noitemsep]
+      \item CMake owns source lists, flags, and platform-specific logic.
+      \item The Makefile does not duplicate compile-time configuration.
+    \end{itemize}
+  \item \textbf{Separation of concerns:}
+    \begin{itemize}[noitemsep]
+      \item CMake handles compilation and configuration.
+      \item Makefile handles orchestration and task-level workflows.
+      \item Docker handles environment isolation and deployment/runtime concerns.
+    \end{itemize}
+  \item \textbf{Improved CI/local symmetry:}
+    \begin{itemize}[noitemsep]
+      \item CI pipelines can call the same presets or Make targets.
+      \item Reduces ``works on my machine'' discrepancies.
+    \end{itemize}
+\end{itemize}
+
+\subsection*{Trade-offs}
+
+\begin{itemize}[noitemsep]
+  \item Two layers must be maintained:
+    \begin{itemize}[noitemsep]
+      \item CMake configuration (the core build logic).
+      \item Makefile facade (the user-facing command surface).
+    \end{itemize}
+  \item If not carefully managed, the Makefile can accumulate logic that belongs in CMake:
+    \begin{itemize}[noitemsep]
+      \item Duplicate compiler flags.
+      \item Diverging platform conditionals.
+      \item Repeated file lists or build rules.
+    \end{itemize}
+  \item Requires discipline to keep the facade thin and declarative, mostly delegating to CMake and Docker rather than re-implementing logic.
+\end{itemize}
+
+The pattern enables the project to vary build toolchain specifics and container details independently of the developer interface. CMake presets, Docker images, or target platforms can change without affecting the top-level commands that developers use day-to-day.
+
+\section{Implementation}
+
+Key guidelines for implementing the Build System Facade pattern:
+
+\subsection*{1. Keep the Facade Thin}
+
+\begin{itemize}[noitemsep]
+  \item The Makefile should primarily:
+    \begin{itemize}[noitemsep]
+      \item Call \texttt{cmake --preset} and \texttt{cmake --build --preset}.
+      \item Invoke \texttt{docker build} and \texttt{docker run} as needed.
+    \end{itemize}
+  \item Avoid embedding complex logic, conditionals, or duplicated knowledge that belongs inside CMake.
+\end{itemize}
+
+\subsection*{2. Treat CMake as the Authority}
+
+\begin{itemize}[noitemsep]
+  \item Place all source file lists, include directories, compiler flags, and definitions in \texttt{CMakeLists.txt} or related CMake modules.
+  \item Configure platform-specific options and toolchain files through CMake presets.
+  \item The Makefile should reference only the names of these presets.
+\end{itemize}
+
+\subsection*{3. Use Stable, Intuitive Targets}
+
+\begin{itemize}[noitemsep]
+  \item Define clear targets such as:
+    \begin{itemize}[noitemsep]
+      \item \texttt{setup}, \texttt{build-wasm}, \texttt{build-native}
+      \item \texttt{docker-build}, \texttt{docker-run}
+    \end{itemize}
+  \item Document these commands in the project's \texttt{README.md}.
+\end{itemize}
+
+\subsection*{4. Integrate Docker Carefully}
+
+\begin{itemize}[noitemsep]
+  \item Keep Docker-specific steps in dedicated Make targets.
+  \item Reference the build outputs (e.g., executables or \texttt{.wasm} files) produced by CMake, using known build directories such as \texttt{build-wasm/}.
+\end{itemize}
+
+\subsection*{5. Language- and Toolchain-Specific Considerations}
+
+\begin{itemize}[noitemsep]
+  \item For C/C++ projects:
+    \begin{itemize}[noitemsep]
+      \item Set language standards (e.g., C23 or C++23) in CMake.
+      \item Configure optimization and warning levels centrally.
+    \end{itemize}
+  \item For CI:
+    \begin{itemize}[noitemsep]
+      \item Prefer calling the same presets or Make targets used locally.
+      \item This ensures a unified build pipeline from local machines to CI.
+    \end{itemize}
+\end{itemize}
+
+\section{Sample Code}
+
+\subsection*{Makefile (Facade)}
+
+\begin{minted}{make}
+.PHONY: wasm-debug native-debug docker-build docker-run
+
+wasm-debug:
+	cmake --preset wasm-debug
+	cmake --build --preset wasm-debug
+
+native-debug:
+	cmake --preset native-debug
+	cmake --build --preset native-debug
+
+docker-build:
+	docker build -t wasm-game .
+
+docker-run:
+	docker run --rm -p 8080:80 wasm-game
+\end{minted}
+
+\subsection*{CMake Presets (CoreBuilder)}
+
+\begin{minted}{json}
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "wasm-debug",
+      "generator": "Ninja",
+      "binaryDir": "build-wasm",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": "/path/to/Emscripten.cmake"
+      }
+    },
+    {
+      "name": "native-debug",
+      "generator": "Ninja",
+      "binaryDir": "build-native",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    }
+  ]
+}
+\end{minted}
+
+In practice, developers only interact with the Make targets; the underlying CMake presets and Docker configurations remain encapsulated behind the facade.
+
+\section{Known Uses}
+
+The pattern is common in:
+\begin{itemize}[noitemsep]
+  \item Projects that:
+    \begin{itemize}[noitemsep]
+      \item Standardize on CMake for cross-platform builds.
+      \item Provide a small top-level \texttt{Makefile} for convenience.
+    \end{itemize}
+  \item Game engines and graphics frameworks that:
+    \begin{itemize}[noitemsep]
+      \item Need both WebAssembly and native builds.
+      \item Use containerized toolchains (e.g., an Emscripten Docker image).
+    \end{itemize}
+  \item Infrastructure tools and libraries that:
+    \begin{itemize}[noitemsep]
+      \item Require consistent build and test flows across many environments.
+      \item Want one ``developer command surface'' but multiple internal pipelines.
+    \end{itemize}
+\end{itemize}
+
+Any project using a \texttt{Makefile} layer over CMake and Docker in this manner is effectively applying the Build System Facade pattern.
+
+\section{Related Patterns}
+
+\begin{description}[style=nextline]
+  \item[Facade Pattern (GoF)]
+    The direct conceptual inspiration: the Makefile serves as a facade over the complex subsystems of CMake and Docker, providing a simplified, unified interface.
+
+  \item[Adapter Pattern]
+    When the Makefile translates generic developer-oriented targets into tool-specific commands and arguments, it also behaves as an adapter between developer intent and concrete build tools.
+
+  \item[Builder Pattern]
+    CMake itself acts as a builder that assembles the final build products (executables, libraries, WebAssembly modules) from configuration and inputs.
+
+  \item[Superbuild Pattern]
+    In some ecosystems, a top-level CMake project orchestrates multiple subprojects and external dependencies (a ``superbuild''). Here, the Makefile plays a similar orchestration role, but at a higher level, coordinating CMake and Docker instead of multiple CMake subprojects.
+\end{description}
+
+\end{document}

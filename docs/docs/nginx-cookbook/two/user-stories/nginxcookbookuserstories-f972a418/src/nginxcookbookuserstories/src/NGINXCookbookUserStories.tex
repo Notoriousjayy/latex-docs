@@ -1,0 +1,682 @@
+% =====================================================================
+% UserStories.tex — Standalone (No \renewenvironment, No tabularx)
+% =====================================================================
+\documentclass[11pt,a4paper]{article}
+
+% --- Encoding & layout ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{parskip}
+
+% --- Structure & visuals ---
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!60!black, urlcolor=blue!60!black, citecolor=blue!60!black}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage[most]{tcolorbox}
+\usepackage{amsmath,amssymb}
+\usepackage{pifont}
+
+% --- Color palette ---
+\definecolor{CardFrame}{RGB}{33,37,41}
+\definecolor{CardBack}{RGB}{248,249,250}
+\definecolor{PillBack}{RGB}{235,239,245}
+\definecolor{PillBorder}{RGB}{200,208,220}
+\definecolor{Accent}{RGB}{10,88,202}
+\definecolor{Soft}{RGB}{90,98,104}
+\definecolor{Good}{RGB}{0,118,73}
+\definecolor{Warn}{RGB}{161,98,7}
+\definecolor{Bad}{RGB}{176,0,32}
+
+% =====================================================================
+% Helpers & controls (define only if missing) — NO \renewenvironment, NO tabularx
+% =====================================================================
+\makeatletter
+
+% Pills and marks
+\providecommand\NGXpill[1]{\fcolorbox{PillBorder}{PillBack}{\footnotesize\sffamily\,\textbf{#1}\,}}
+\providecommand\NGXcb{\(\square\)}
+\providecommand\NGXDoR{\emph{Definition of Ready:} Persona clear; AC drafted; Dependencies known; Estimate set.}
+\providecommand\NGXDoD{\emph{Definition of Done:} All ACs pass; tests green; security/accessibility checks; docs updated; deployed or feature-flagged.}
+
+% Global tcolor defaults
+\tcbset{colback=CardBack,colframe=CardFrame,arc=2mm,boxrule=0.4pt,enhanced,breakable}
+
+% Story card box (single argument: title). Define only if not already present.
+\@ifundefined{NGXStoryCard}{%
+  \newtcolorbox{NGXStoryCard}[1]{%
+    enhanced,
+    breakable,
+    colback=CardBack,
+    colframe=CardFrame,
+    arc=2mm,
+    boxrule=0.4pt,
+    fonttitle=\bfseries\sffamily,
+    title={#1},
+    attach boxed title to top left={xshift=2mm,yshift*=-2mm}
+  }%
+}{}
+
+% Callout box
+\@ifundefined{NGXCallout}{%
+  \newtcolorbox{NGXCallout}[1][]{colback=white,borderline west={2pt}{0pt}{Accent},#1}%
+}{}
+
+% -------- Meta as description list (no tabularx) --------
+\newlist{ngxmetalist}{description}{1}
+\setlist[ngxmetalist]{%
+  style=nextline,
+  leftmargin=3.4cm,
+  labelwidth=3.2cm,
+  labelsep=0.2cm,
+  font=\normalfont\bfseries
+}
+
+% Row macro compatible with description list
+\providecommand\NGXMetaRow[2]{\item[\textbf{#1}] #2}
+
+% Meta environment: define only if undefined
+\@ifundefined{NGXMeta}{%
+  \newenvironment{NGXMeta}{%
+    \begin{tcolorbox}[colback=white]% 
+    \begin{ngxmetalist}%
+  }{%
+    \end{ngxmetalist}%
+    \end{tcolorbox}%
+  }%
+}{}
+
+% Acceptance Criteria environment
+\@ifundefined{NGXAC}{%
+  \newenvironment{NGXAC}{%
+    \begin{tcolorbox}[title={Acceptance Criteria (BDD)},colback=white]% 
+  }{%
+    \end{tcolorbox}%
+  }%
+}{}
+
+% Tasks environment
+\@ifundefined{NGXTasks}{%
+  \newenvironment{NGXTasks}{%
+    \begin{tcolorbox}[title={Tasks},colback=white]% 
+    \begin{itemize}[leftmargin=1.2em,itemsep=3pt]% 
+  }{%
+    \end{itemize}%
+    \end{tcolorbox}%
+  }%
+}{}
+
+\makeatother
+
+% --- Friendly aliases (define only if missing) ---
+\makeatletter
+\@ifundefined{StoryCard}{\newenvironment{StoryCard}[1]{\begin{NGXStoryCard}{#1}}{\end{NGXStoryCard}}}{}
+\@ifundefined{Meta}{\newenvironment{Meta}{\begin{NGXMeta}}{\end{NGXMeta}}}{}
+\@ifundefined{AcceptanceCriteria}{\newenvironment{AcceptanceCriteria}{\begin{NGXAC}}{\end{NGXAC}}}{}
+\@ifundefined{Tasks}{\newenvironment{Tasks}{\begin{NGXTasks}}{\end{NGXTasks}}}{}
+\makeatother
+
+% Convenience wrappers (define only if missing)
+\providecommand\pill[1]{\NGXpill{#1}}
+\providecommand\DoR{\NGXDoR}
+\providecommand\DoD{\NGXDoD}
+
+% =====================================================================
+% Document
+% =====================================================================
+\begin{document}
+\title{Study Plan --- \emph{NGINX Cookbook} (Derek DeJonghe)\par\large User Story Template and Examples}
+\author{}
+\date{\today}
+\maketitle
+
+\begingroup
+  \setcounter{tocdepth}{2}%
+  \tableofcontents
+\endgroup
+\bigskip
+\clearpage
+
+\section*{How to Use This Template}
+\begin{NGXCallout}
+This document provides a \textbf{ready-to-use user story system} for mastering the chapters of \emph{NGINX Cookbook}. Each chapter is mapped to a story card including: intent/value, persona, risks, BDD-style acceptance criteria, and a checklist of practical tasks.\par\medskip
+\textbf{Structure.} For every chapter, fill out: Epic/Feature, Business Value, Priority/Estimate, Persona, Dependencies, Assumptions, Risks, the ``As a~\dots I want~\dots so that~\dots'' story, Non-Functional tags, AC (Given/When/Then), and a checklist of tasks.\par\medskip
+\textbf{Files.} Save your lab artifacts under \texttt{~/nginx-labs/<chapter>/}. Commit config snapshots and test notes to keep a traceable learning record.
+\end{NGXCallout}
+
+\section*{Writing Effective User Stories (Quick Guide)}
+\begin{NGXCallout}
+\textbf{Pattern.} \emph{As a <persona>, I want <capability> so that <business value/outcome>.}\par\medskip
+\textbf{Tips.}
+\begin{itemize}[itemsep=2pt]
+  \item Keep capability concrete and demonstrable (one deployable slice).
+  \item State value in terms of risk, speed, reliability, or cost.
+  \item Add BDD Acceptance Criteria that an observer could verify.
+  \item Prefer 15--60 minute tasks; longer goals should be split.
+  \item Capture \emph{Non-Functional} tags (e.g., \NGXpill{Performance}, \NGXpill{Security}).
+\end{itemize}
+\end{NGXCallout}
+
+\clearpage
+
+% ------------------------------
+\section{Basics}
+\begin{NGXStoryCard}{NGX-1 --- Getting Started with NGINX}
+\begin{NGXMeta}
+  \NGXMetaRow{Epic / Feature}{Foundations}
+  \NGXMetaRow{Business Value}{Stand up a reproducible NGINX instance and understand its layout to serve static content safely.}
+  \NGXMetaRow{Priority / Estimate}{\NGXpill{Must}\quad \NGXpill{SP: 3}}
+  \NGXMetaRow{Persona}{Developer on a new host}
+  \NGXMetaRow{Dependencies}{Linux VM; package manager access}
+  \NGXMetaRow{Assumptions}{Ports 80/443 open; DNS optional}
+  \NGXMetaRow{Risks}{Local vs server toolchain drift; firewall surprises}
+\end{NGXMeta}
+\textbf{Story}\; As a developer, I want to install and run NGINX so that I can serve content and understand the configuration layout.\\[2pt]
+\textbf{Non-Functional}\; \NGXpill{Performance} \; \NGXpill{Reliability} \; \NGXpill{Security}
+
+\begin{NGXAC}
+\textbf{Scenario} Happy path\\
+\textbf{Given} a clean Linux VM\\
+\textbf{When} NGINX is installed, enabled, and a minimal server block is configured\\
+\textbf{Then} \texttt{curl -i} returns HTTP~200 for the site, and logs are written as expected.
+\end{NGXAC}
+
+\begin{NGXTasks}
+  \item \NGXcb\; Install via \texttt{apt} or \texttt{yum}; verify \texttt{nginx -V}.
+  \item \NGXcb\; Map the layout: \texttt{nginx.conf}, \texttt{sites-available}, \texttt{sites-enabled}, logs.
+  \item \NGXcb\; Serve \texttt{/var/www/html} with a minimal server block; validate with \texttt{curl -i}.
+  \item \NGXcb\; Split config using \texttt{include}; reload via \texttt{nginx -t} and \texttt{systemctl reload nginx}.
+\end{NGXTasks}
+\DoR\; \quad \DoD
+\end{NGXStoryCard}
+
+\clearpage
+
+% ------------------------------
+\section{High-Performance Load Balancing}
+\begin{NGXStoryCard}{NGX-2 --- Balance HTTP/TCP/UDP Traffic}
+\begin{NGXMeta}
+  \NGXMetaRow{Epic / Feature}{Traffic Distribution}
+  \NGXMetaRow{Business Value}{Increase availability and throughput by spreading load and handling node failures gracefully.}
+  \NGXMetaRow{Priority / Estimate}{\NGXpill{Must}\quad \NGXpill{SP: 5}}
+  \NGXMetaRow{Persona}{Platform engineer}
+  \NGXMetaRow{Dependencies}{Two upstream demo apps}
+  \NGXMetaRow{Assumptions}{Health checks reachable}
+  \NGXMetaRow{Risks}{Uneven distribution; sticky sessions not honored}
+\end{NGXMeta}
+\textbf{Story}\; As a platform engineer, I want to load balance across upstreams so that the service remains responsive during failures.\\[2pt]
+\textbf{Non-Functional}\; \NGXpill{Performance} \; \NGXpill{Reliability}
+
+\begin{NGXAC}
+\textbf{Scenario} Algorithm comparison\\
+\textbf{Given} two upstream backends\\
+\textbf{When} I configure \texttt{least\_conn}, \texttt{ip\_hash}, and \texttt{hash} strategies\\
+\textbf{Then} requests distribute per algorithm and passive/active health checks remove bad nodes.
+\end{NGXAC}
+
+\begin{NGXTasks}
+  \item \NGXcb\; Define an \texttt{upstream} with two containers; add a server block that proxies to it.
+  \item \NGXcb\; Switch algorithms (\texttt{least\_conn}, \texttt{ip\_hash}, \texttt{hash}); observe with repeated \texttt{curl}.
+  \item \NGXcb\; Add passive and active health checks; simulate a failing node and verify removal/recovery.
+  \item \NGXcb\; Enable slow-start and, if relevant, cookie stickiness notes.
+\end{NGXTasks}
+\DoR\; \quad \DoD
+\end{NGXStoryCard}
+
+\clearpage
+
+% ------------------------------
+\section{Traffic Management}
+\begin{NGXStoryCard}{NGX-3 --- Shape and Steer Requests}
+\begin{NGXMeta}
+  \NGXMetaRow{Epic / Feature}{Policy and Control}
+  \NGXMetaRow{Business Value}{Protect origins and experiment safely under load via rate, conn, and geo controls.}
+  \NGXMetaRow{Priority / Estimate}{\NGXpill{Should}\quad \NGXpill{SP: 5}}
+  \NGXMetaRow{Persona}{SRE}
+  \NGXMetaRow{Dependencies}{Ch.~2 config}
+  \NGXMetaRow{Assumptions}{Client IP visibility}
+  \NGXMetaRow{Risks}{Over-throttling legitimate users}
+\end{NGXMeta}
+\textbf{Story}\; As an SRE, I want to manage request rates and routes so that services remain stable during bursts.\\[2pt]
+\textbf{Non-Functional}\; \NGXpill{Reliability} \; \NGXpill{Security}
+
+\begin{NGXAC}
+\textbf{Scenario} Rate limiting\\
+\textbf{Given} \texttt{limit\_req} and \texttt{limit\_conn} zones\\
+\textbf{When} I drive bursts with a load tool\\
+\textbf{Then} 429s occur as configured and backends remain healthy.
+\end{NGXAC}
+
+\begin{NGXTasks}
+  \item \NGXcb\; Add A/B routing by header/path for canaries.
+  \item \NGXcb\; Configure \texttt{limit\_req} and \texttt{limit\_conn}; test with \texttt{ab} or \texttt{wrk}.
+  \item \NGXcb\; Configure \texttt{set\_real\_ip\_from} and \texttt{real\_ip\_header} if behind another proxy.
+  \item \NGXcb\; Add GeoIP-based allow/deny and verify logic.
+\end{NGXTasks}
+\DoR\; \quad \DoD
+\end{NGXStoryCard}
+
+\clearpage
+
+% ------------------------------
+\section{Content Caching}
+\begin{NGXStoryCard}{NGX-4 --- Reverse-Proxy Cache Acceleration}
+\begin{NGXMeta}
+  \NGXMetaRow{Epic / Feature}{Caching}
+  \NGXMetaRow{Business Value}{Reduce latency and origin load with safe cache keys, locking, and stale serving.}
+  \NGXMetaRow{Priority / Estimate}{\NGXpill{Must}\quad \NGXpill{SP: 5}}
+  \NGXMetaRow{Persona}{Backend engineer}
+  \NGXMetaRow{Dependencies}{Ch.~2 upstream}
+  \NGXMetaRow{Assumptions}{Cacheable responses}
+  \NGXMetaRow{Risks}{Stale data exposure; incorrect keys}
+\end{NGXMeta}
+\textbf{Story}\; As a backend engineer, I want a tuned proxy cache so that users see faster responses with consistent behavior.\\[2pt]
+\textbf{Non-Functional}\; \NGXpill{Performance} \; \NGXpill{Reliability}
+
+\begin{NGXAC}
+\textbf{Scenario} Cache hit/miss\\
+\textbf{Given} a configured \texttt{proxy\_cache\_path} and key\\
+\textbf{When} I request the same resource multiple times\\
+\textbf{Then} hit ratios rise and stale-on-error works when backends fail.
+\end{NGXAC}
+
+\begin{NGXTasks}
+  \item \NGXcb\; Define cache path/zone; add cache key and cache lock.
+  \item \NGXcb\; Enable \texttt{proxy\_cache\_revalidate}, \texttt{stale} on errors; expose an \texttt{X-Cache} header.
+  \item \NGXcb\; Demonstrate bypass and, if available, purge.
+\end{NGXTasks}
+\DoR\; \quad \DoD
+\end{NGXStoryCard}
+
+\clearpage
+
+% ------------------------------
+\section{Programmability and Automation}
+\begin{NGXStoryCard}{NGX-5 --- API, njs, and Templating}
+\begin{NGXMeta}
+  \NGXMetaRow{Epic / Feature}{Automation}
+  \NGXMetaRow{Business Value}{Reduce manual config drift and enable dynamic routing via scripts and templates.}
+  \NGXMetaRow{Priority / Estimate}{\NGXpill{Should}\quad \NGXpill{SP: 3}}
+  \NGXMetaRow{Persona}{Automation engineer}
+  \NGXMetaRow{Dependencies}{Ch.~1--4}
+  \NGXMetaRow{Assumptions}{Shell access; optional NGINX Plus features}
+  \NGXMetaRow{Risks}{Script errors affecting prod}
+\end{NGXMeta}
+\textbf{Story}\; As an automation engineer, I want scriptable configuration so that changes are safe and repeatable.\\[2pt]
+\textbf{Non-Functional}\; \NGXpill{Reliability} \; \NGXpill{Security}
+
+\begin{NGXAC}
+\textbf{Scenario} Template render\\
+\textbf{Given} a template with environment variables\\
+\textbf{When} I render and reload NGINX\\
+\textbf{Then} the new upstream endpoints take effect without syntax errors.
+\end{NGXAC}
+
+\begin{NGXTasks}
+  \item \NGXcb\; Create an env-subst or Consul-Template to render upstreams.
+  \item \NGXcb\; Write a tiny njs function to rewrite a header.
+  \item \NGXcb\; (Optional) Explore NGINX Plus key-value store/API.
+\end{NGXTasks}
+\DoR\; \quad \DoD
+\end{NGXStoryCard}
+
+\clearpage
+
+% ------------------------------
+\section{Authentication}
+\begin{NGXStoryCard}{NGX-6 --- Access Control and Tokens}
+\begin{NGXMeta}
+  \NGXMetaRow{Epic / Feature}{Identity}
+  \NGXMetaRow{Business Value}{Protect endpoints and centralize access policies to reduce risk.}
+  \NGXMetaRow{Priority / Estimate}{\NGXpill{Must}\quad \NGXpill{SP: 3}}
+  \NGXMetaRow{Persona}{Security engineer}
+  \NGXMetaRow{Dependencies}{Auth service/JWT if available}
+  \NGXMetaRow{Assumptions}{TLS in place or planned}
+  \NGXMetaRow{Risks}{Locking out legitimate users}
+\end{NGXMeta}
+\textbf{Story}\; As a security engineer, I want to enforce auth at the edge so that only authorized users reach backends.\\[2pt]
+\textbf{Non-Functional}\; \NGXpill{Security} \; \NGXpill{Privacy}
+
+\begin{NGXAC}
+\textbf{Scenario} Basic and subrequest auth\\
+\textbf{Given} a protected location\\
+\textbf{When} I present valid credentials or token\\
+\textbf{Then} the request succeeds; otherwise it fails with the proper code.
+\end{NGXAC}
+
+\begin{NGXTasks}
+  \item \NGXcb\; Enable Basic auth for a path; verify 401/200 behavior.
+  \item \NGXcb\; Configure an auth subrequest to a small demo service.
+  \item \NGXcb\; (Optional) Validate JWTs if features are available.
+\end{NGXTasks}
+\DoR\; \quad \DoD
+\end{NGXStoryCard}
+
+\clearpage
+
+% ------------------------------
+\section{Security Controls}
+\begin{NGXStoryCard}{NGX-7 --- Transport and Origin Security}
+\begin{NGXMeta}
+  \NGXMetaRow{Epic / Feature}{Edge Security}
+  \NGXMetaRow{Business Value}{Enforce encryption and safe origin access to lower exploit and abuse risk.}
+  \NGXMetaRow{Priority / Estimate}{\NGXpill{Must}\quad \NGXpill{SP: 3}}
+  \NGXMetaRow{Persona}{Security engineer}
+  \NGXMetaRow{Dependencies}{Valid certs}
+  \NGXMetaRow{Assumptions}{Browser clients}
+  \NGXMetaRow{Risks}{Misconfigured redirects or HSTS}
+\end{NGXMeta}
+\textbf{Story}\; As a security engineer, I want hardened TLS and strict origin policy so that data in transit is protected.\\[2pt]
+\textbf{Non-Functional}\; \NGXpill{Security} \; \NGXpill{Reliability}
+
+\begin{NGXAC}
+\textbf{Scenario} TLS hygiene\\
+\textbf{Given} a TLS-enabled vhost\\
+\textbf{When} a client connects over HTTPS\\
+\textbf{Then} modern ciphers are used, HSTS is set, and HTTP redirects appropriately.
+\end{NGXAC}
+
+\begin{NGXTasks}
+  \item \NGXcb\; Add IP allow/deny and CORS rules for an API.
+  \item \NGXcb\; Configure HSTS and HTTP to HTTPS redirect.
+  \item \NGXcb\; (Optional) Use secure-link for expiring signed URLs.
+\end{NGXTasks}
+\DoR\; \quad \DoD
+\end{NGXStoryCard}
+
+\clearpage
+
+% ------------------------------
+\section{HTTP/2 and HTTP/3}
+\begin{NGXStoryCard}{NGX-8 --- Modern HTTP and gRPC}
+\begin{NGXMeta}
+  \NGXMetaRow{Epic / Feature}{Protocols}
+  \NGXMetaRow{Business Value}{Lower latency and better multiplexing for modern clients and services.}
+  \NGXMetaRow{Priority / Estimate}{\NGXpill{Should}\quad \NGXpill{SP: 3}}
+  \NGXMetaRow{Persona}{Platform engineer}
+  \NGXMetaRow{Dependencies}{TLS configured}
+  \NGXMetaRow{Assumptions}{gRPC sample available}
+  \NGXMetaRow{Risks}{Client fallback issues}
+\end{NGXMeta}
+\textbf{Story}\; As a platform engineer, I want HTTP/2 and HTTP/3 enabled so that clients benefit from multiplexing and QUIC.\\[2pt]
+\textbf{Non-Functional}\; \NGXpill{Performance}
+
+\begin{NGXAC}
+\textbf{Scenario} Protocol negotiation\\
+\textbf{Given} a TLS site with HTTP/2 and HTTP/3 enabled\\
+\textbf{When} I connect with tools that prefer each protocol\\
+\textbf{Then} negotiation succeeds and responses are valid.
+\end{NGXAC}
+
+\begin{NGXTasks}
+  \item \NGXcb\; Enable HTTP/2 on TLS vhost; verify with \texttt{curl --http2 -I}.
+  \item \NGXcb\; Enable HTTP/3 (QUIC); verify with \texttt{curl --http3 -I}.
+  \item \NGXcb\; Proxy to a gRPC backend and confirm streaming.
+\end{NGXTasks}
+\DoR\; \quad \DoD
+\end{NGXStoryCard}
+
+\clearpage
+
+% ------------------------------
+\section{Media Streaming}
+\begin{NGXStoryCard}{NGX-9 --- Static and Adaptive Streaming}
+\begin{NGXMeta}
+  \NGXMetaRow{Epic / Feature}{Media Delivery}
+  \NGXMetaRow{Business Value}{Deliver video efficiently and fairly under bandwidth constraints.}
+  \NGXMetaRow{Priority / Estimate}{\NGXpill{Could}\quad \NGXpill{SP: 3}}
+  \NGXMetaRow{Persona}{Media engineer}
+  \NGXMetaRow{Dependencies}{Sample media files}
+  \NGXMetaRow{Assumptions}{Players available}
+  \NGXMetaRow{Risks}{Bandwidth exhaustion}
+\end{NGXMeta}
+\textbf{Story}\; As a media engineer, I want to serve MP4/HLS with throttling so that users get smooth playback.\\[2pt]
+\textbf{Non-Functional}\; \NGXpill{Performance}
+
+\begin{NGXAC}
+\textbf{Scenario} Throttled streaming\\
+\textbf{Given} a media location with limits\\
+\textbf{When} clients request content\\
+\textbf{Then} transfers honor bandwidth caps without 5xx errors.
+\end{NGXAC}
+
+\begin{NGXTasks}
+  \item \NGXcb\; Serve MP4; configure byte-range support.
+  \item \NGXcb\; Enable HLS/HDS (as available); test playback.
+  \item \NGXcb\; Apply bandwidth limits and observe client behavior.
+\end{NGXTasks}
+\DoR\; \quad \DoD
+\end{NGXStoryCard}
+
+\clearpage
+
+% ------------------------------
+\section{Cloud Deployments}
+\begin{NGXStoryCard}{NGX-10 --- Images and Instances}
+\begin{NGXMeta}
+  \NGXMetaRow{Epic / Feature}{Cloud Ops}
+  \NGXMetaRow{Business Value}{Enable rapid, consistent provisioning across environments.}
+  \NGXMetaRow{Priority / Estimate}{\NGXpill{Should}\quad \NGXpill{SP: 5}}
+  \NGXMetaRow{Persona}{Cloud engineer}
+  \NGXMetaRow{Dependencies}{Cloud account}
+  \NGXMetaRow{Assumptions}{User-data/bootstrap allowed}
+  \NGXMetaRow{Risks}{Misconfigured security groups}
+\end{NGXMeta}
+\textbf{Story}\; As a cloud engineer, I want a golden image and bootstrap so that I can provision NGINX nodes quickly.\\[2pt]
+\textbf{Non-Functional}\; \NGXpill{Reliability} \; \NGXpill{Security}
+
+\begin{NGXAC}
+\textbf{Scenario} Reproducible node\\
+\textbf{Given} an image and bootstrap script\\
+\textbf{When} I launch a new instance\\
+\textbf{Then} the node serves traffic with the expected config and tags.
+\end{NGXAC}
+
+\begin{NGXTasks}
+  \item \NGXcb\; Bake a cloud image with NGINX preinstalled.
+  \item \NGXcb\; Write user-data to fetch config and register with LB.
+  \item \NGXcb\; Compare LB-in-front vs direct routing (pros/cons).
+\end{NGXTasks}
+\DoR\; \quad \DoD
+\end{NGXStoryCard}
+
+\clearpage
+
+% ------------------------------
+\section{Containers and Microservices}
+\begin{NGXStoryCard}{NGX-11 --- Containerized Edge and Ingress}
+\begin{NGXMeta}
+  \NGXMetaRow{Epic / Feature}{Container Ops}
+  \NGXMetaRow{Business Value}{Ship consistent NGINX builds and route to dynamic services.}
+  \NGXMetaRow{Priority / Estimate}{\NGXpill{Must}\quad \NGXpill{SP: 5}}
+  \NGXMetaRow{Persona}{Platform/SRE}
+  \NGXMetaRow{Dependencies}{Docker; optional Kubernetes}
+  \NGXMetaRow{Assumptions}{Cluster access if testing Ingress}
+  \NGXMetaRow{Risks}{Stale endpoints; DNS caching}
+\end{NGXMeta}
+\textbf{Story}\; As a platform engineer, I want containerized NGINX and ingress patterns so that microservices are exposed safely.\\[2pt]
+\textbf{Non-Functional}\; \NGXpill{Reliability} \; \NGXpill{Security}
+
+\begin{NGXAC}
+\textbf{Scenario} Dynamic backend\\
+\textbf{Given} containerized NGINX\\
+\textbf{When} I deploy a new service with a new endpoint\\
+\textbf{Then} routing updates without downtime.
+\end{NGXAC}
+
+\begin{NGXTasks}
+  \item \NGXcb\; Use the official image; add custom config via Dockerfile.
+  \item \NGXcb\; Template upstreams from env/labels; reload hot.
+  \item \NGXcb\; Explore NGINX Ingress Controller path rules in a cluster.
+\end{NGXTasks}
+\DoR\; \quad \DoD
+\end{NGXStoryCard}
+
+\clearpage
+
+% ------------------------------
+\section{High Availability}
+\begin{NGXStoryCard}{NGX-12 --- Remove Single Points of Failure}
+\begin{NGXMeta}
+  \NGXMetaRow{Epic / Feature}{Resilience}
+  \NGXMetaRow{Business Value}{Maintain service continuity during node failures and maintenance.}
+  \NGXMetaRow{Priority / Estimate}{\NGXpill{Must}\quad \NGXpill{SP: 5}}
+  \NGXMetaRow{Persona}{SRE}
+  \NGXMetaRow{Dependencies}{Multiple nodes}
+  \NGXMetaRow{Assumptions}{Shared network or VIP}
+  \NGXMetaRow{Risks}{Split-brain; config divergence}
+\end{NGXMeta}
+\textbf{Story}\; As an SRE, I want HA deployment modes so that traffic continues during failures.\\[2pt]
+\textbf{Non-Functional}\; \NGXpill{Reliability}
+
+\begin{NGXAC}
+\textbf{Scenario} Failover drill\\
+\textbf{Given} two NGINX nodes\\
+\textbf{When} I simulate a failure\\
+\textbf{Then} traffic continues via VIP/DNS without client-visible outage.
+\end{NGXAC}
+
+\begin{NGXTasks}
+  \item \NGXcb\; Compare VRRP/VIP vs DNS-based HA.
+  \item \NGXcb\; Sync configs/state; test failover.
+  \item \NGXcb\; Document recovery and rollback steps.
+\end{NGXTasks}
+\DoR\; \quad \DoD
+\end{NGXStoryCard}
+
+\clearpage
+
+% ------------------------------
+\section{Monitoring}
+\begin{NGXStoryCard}{NGX-13 --- Observe and Measure}
+\begin{NGXMeta}
+  \NGXMetaRow{Epic / Feature}{Observability}
+  \NGXMetaRow{Business Value}{Spot regressions quickly; prove SLIs/SLOs.}
+  \NGXMetaRow{Priority / Estimate}{\NGXpill{Must}\quad \NGXpill{SP: 3}}
+  \NGXMetaRow{Persona}{SRE}
+  \NGXMetaRow{Dependencies}{Metrics stack}
+  \NGXMetaRow{Assumptions}{Exporter or Plus API}
+  \NGXMetaRow{Risks}{Sampling gaps}
+\end{NGXMeta}
+\textbf{Story}\; As an SRE, I want metrics and dashboards so that I can track errors, latency, and capacity.\\[2pt]
+\textbf{Non-Functional}\; \NGXpill{Reliability}
+
+\begin{NGXAC}
+\textbf{Scenario} Dashboard review\\
+\textbf{Given} scraped metrics\\
+\textbf{When} I deploy a configuration change\\
+\textbf{Then} p95 latency and 4xx/5xx panels reflect the change.
+\end{NGXAC}
+
+\begin{NGXTasks}
+  \item \NGXcb\; Enable \texttt{stub\_status} or Plus metrics; scrape with Prometheus.
+  \item \NGXcb\; Build a Grafana dashboard (QPS, errors, p95).
+  \item \NGXcb\; (Optional) Export traces with OpenTelemetry.
+\end{NGXTasks}
+\DoR\; \quad \DoD
+\end{NGXStoryCard}
+
+\clearpage
+
+% ------------------------------
+\section{Debugging and Troubleshooting}
+\begin{NGXStoryCard}{NGX-14 --- Logs and Request Tracing}
+\begin{NGXMeta}
+  \NGXMetaRow{Epic / Feature}{Diagnostics}
+  \NGXMetaRow{Business Value}{Shorten MTTR by making failures easy to isolate.}
+  \NGXMetaRow{Priority / Estimate}{\NGXpill{Must}\quad \NGXpill{SP: 3}}
+  \NGXMetaRow{Persona}{SRE/Developer}
+  \NGXMetaRow{Dependencies}{Log collection}
+  \NGXMetaRow{Assumptions}{JSON logs acceptable}
+  \NGXMetaRow{Risks}{Excessive debug logging}
+\end{NGXMeta}
+\textbf{Story}\; As an engineer, I want structured logs and correlation IDs so that I can trace requests end to end.\\[2pt]
+\textbf{Non-Functional}\; \NGXpill{Reliability}
+
+\begin{NGXAC}
+\textbf{Scenario} Correlated request\\
+\textbf{Given} a unique request ID header\\
+\textbf{When} a request crosses multiple services\\
+\textbf{Then} the ID appears in all logs for that flow.
+\end{NGXAC}
+
+\begin{NGXTasks}
+  \item \NGXcb\; Configure JSON access logs and structured error logs.
+  \item \NGXcb\; Forward logs to syslog/collector; add request ID propagation.
+  \item \NGXcb\; Perform a bad-deploy drill and roll back guided by logs.
+\end{NGXTasks}
+\DoR\; \quad \DoD
+\end{NGXStoryCard}
+
+\clearpage
+
+% ------------------------------
+\section{Performance Tuning}
+\begin{NGXStoryCard}{NGX-15 --- Tune for Throughput and Latency}
+\begin{NGXMeta}
+  \NGXMetaRow{Epic / Feature}{Optimization}
+  \NGXMetaRow{Business Value}{Meet SLOs under peak load with efficient resources.}
+  \NGXMetaRow{Priority / Estimate}{\NGXpill{Should}\quad \NGXpill{SP: 5}}
+  \NGXMetaRow{Persona}{Performance engineer}
+  \NGXMetaRow{Dependencies}{Load tool}
+  \NGXMetaRow{Assumptions}{Baseline captured}
+  \NGXMetaRow{Risks}{Premature tuning; kernel mis-tuning}
+\end{NGXMeta}
+\textbf{Story}\; As a performance engineer, I want a tuning checklist so that I can improve p95/p99 latencies without regressions.\\[2pt]
+\textbf{Non-Functional}\; \NGXpill{Performance}
+
+\begin{NGXAC}
+\textbf{Scenario} Before/after benchmark\\
+\textbf{Given} a baseline test\\
+\textbf{When} I apply buffer/keepalive/kernel tweaks\\
+\textbf{Then} throughput increases or latency decreases within error bounds.
+\end{NGXAC}
+
+\begin{NGXTasks}
+  \item \NGXcb\; Capture baseline with \texttt{wrk} or \texttt{k6}.
+  \item \NGXcb\; Adjust \texttt{keepalive\_requests}, proxy buffers, log buffering, and gzip; retest.
+  \item \NGXcb\; Evaluate kernel params (\texttt{somaxconn}, ephemeral ports, TCP tuning); retest and record deltas.
+\end{NGXTasks}
+\DoR\; \quad \DoD
+\end{NGXStoryCard}
+
+\clearpage
+
+% =====================================================================
+% Appendix — Blank story card (copy/paste)
+% =====================================================================
+\appendix
+\section{Blank Story Card (Copy/Paste)}
+\begin{NGXStoryCard}{<ID> --- <Short Title>}
+\begin{NGXMeta}
+  \NGXMetaRow{Epic / Feature}{<Epic or feature>}
+  \NGXMetaRow{Business Value}{<Outcome/value statement>}
+  \NGXMetaRow{Priority / Estimate}{\NGXpill{Must/Should/Could}\quad \NGXpill{SP: n}}
+  \NGXMetaRow{Persona}{<Primary user>}
+  \NGXMetaRow{Dependencies}{<Systems/teams>}
+  \NGXMetaRow{Assumptions}{<What must be true>}
+  \NGXMetaRow{Risks}{<What could go wrong>}
+\end{NGXMeta}
+\textbf{Story}\; As a <persona>, I want <capability> so that <value>.\\[2pt]
+\textbf{Non-Functional}\; \NGXpill{Performance} \; \NGXpill{Security} \; \NGXpill{Reliability}
+
+\begin{NGXAC}
+\textbf{Scenario} Happy path\\
+\textbf{Given} <preconditions>\\
+\textbf{When} <action>\\
+\textbf{Then} <observable outcome>.
+\end{NGXAC}
+
+\begin{NGXTasks}
+  \item \NGXcb\; <Task 1 (15--60 min)>
+  \item \NGXcb\; <Task 2>
+  \item \NGXcb\; <Task 3>
+\end{NGXTasks}
+\DoR\; \quad \DoD
+\end{NGXStoryCard}
+
+\end{document}

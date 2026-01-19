@@ -1,0 +1,290 @@
+%========================================================
+% GitHub Releases — Practical Quick-Reference
+%========================================================
+% Compile with: latexmk -pdf -shell-escape releases-quickref.tex
+\documentclass[11pt]{article}
+
+% ---------- Encoding & layout ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}         % Better Latin fonts
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{microtype}
+\usepackage{setspace}
+\setstretch{1.08}
+
+% ---------- Colors, links, boxes ----------
+\usepackage{xcolor}
+\definecolor{ink}{HTML}{111827}      % gray-900
+\definecolor{soft}{HTML}{F9FAFB}     % gray-50
+\definecolor{accent}{HTML}{2563EB}   % blue-600
+\definecolor{ok}{HTML}{059669}       % emerald-600
+\definecolor{warn}{HTML}{B45309}     % amber-700
+\definecolor{bad}{HTML}{DC2626}      % red-600
+\usepackage[colorlinks=true,linkcolor=ink,citecolor=ink,urlcolor=accent]{hyperref}
+
+\usepackage{tcolorbox}
+% Avoid 'enhanced' to support older tcolorbox versions; keep things simple & portable.
+\tcbset{boxrule=0.6pt, colframe=ink, colback=soft, arc=2pt}
+
+\usepackage{enumitem}
+\setlist[itemize]{topsep=2pt,itemsep=2pt,parsep=0pt}
+\setlist[enumerate]{topsep=2pt,itemsep=2pt,parsep=0pt}
+
+% ---------- Code (minted) ----------
+% Requires: Python + Pygments. Compile with -shell-escape.
+\usepackage{minted}
+\setminted{
+  fontsize=\small,
+  breaklines,
+  breakanywhere,
+  autogobble,
+  frame=lines,
+  framesep=2mm
+}
+\newminted{bash}{}
+\newminted{yaml}{}
+\newminted{text}{}
+
+% ---------- Helpers ----------
+\newcommand{\key}[1]{\texttt{#1}}
+\newcommand{\file}[1]{\texttt{#1}}
+\newcommand{\ghendpoint}[1]{\texttt{#1}} % renamed from \endpoint to avoid clashes
+
+\title{\vspace{-1em}\textbf{GitHub Releases — Practical Quick-Reference}\vspace{-0.5em}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\vspace{-2em}
+
+\begin{tcolorbox}
+\textbf{Scope.} This is a hands-on, copy-and-paste quick-reference for creating, templating, automating, and consuming GitHub Releases. Works for public and private repositories (private requires authentication where noted).
+\end{tcolorbox}
+
+\section{What is a Release?}
+A GitHub Release ties a repository state (a Git tag) to human-readable notes and downloadable assets (binaries, installers, SBOMs, signatures). GitHub also auto-attaches source archives (\file{.zip} and \file{.tar.gz}) for the tagged commit.
+
+\section{Latest Release: One-Liners}
+\subsection*{Open the latest release page}
+\begin{bashcode}
+xdg-open "https://github.com/<OWNER>/<REPO>/releases/latest"
+# macOS: open "https://github.com/<OWNER>/<REPO>/releases/latest"
+\end{bashcode}
+
+\subsection*{Download a known asset from the latest release}
+\begin{bashcode}
+curl -L -o sbom.spdx.json \
+  "https://github.com/<OWNER>/<REPO>/releases/latest/download/sbom.spdx.json"
+\end{bashcode}
+
+\begin{tcolorbox}
+\textbf{Note.} The \ghendpoint{/releases/latest} route resolves to the most recent \emph{non-draft, non-prerelease} release.
+\end{tcolorbox}
+
+\subsection*{Atom/RSS feed for releases}
+\begin{textcode}
+https://github.com/<OWNER>/<REPO>/releases.atom
+\end{textcode}
+\clearpage
+
+\section{Auto-Generated Notes with \file{.github/release.yml}}
+GitHub can generate release notes from merged PRs since the previous tag and categorize them with a template.
+
+\subsection*{Minimal template}
+\begin{yamlcode}
+changelog:
+  exclude:
+    labels: [skip-changelog, ci]
+    authors: [dependabot]
+  categories:
+    - title: Breaking Changes
+      labels: [breaking-change, Semver-Minor]
+    - title: Features
+      labels: [feature, enhancement]
+    - title: Fixes
+      labels: [bug, fix]
+    - title: Other Changes
+      labels: ["*"]
+\end{yamlcode}
+
+\begin{itemize}
+  \item Place this at \file{.github/release.yml} on the default branch.
+  \item In the ``Draft a new release'' UI, click \emph{Generate release notes}; the template drives grouping.
+\end{itemize}
+
+\section{Prefill the ``New Release'' Form via URL}
+Craft a link that opens the \emph{New release} page with fields pre-populated.
+
+\subsection*{Pattern}
+\begin{textcode}
+https://github.com/<OWNER>/<REPO>/releases/new?
+  tag=<TAG>&
+  target=<BRANCH_OR_SHA>&
+  title=<TITLE>&
+  body=<URL_ENCODED_TEXT>&
+  prerelease=true|false
+\end{textcode}
+
+\subsection*{Example}
+\begin{textcode}
+https://github.com/acme/widgets/releases/new?
+tag=v1.2.3&
+target=main&
+title=Release%201.2.3&
+body=Highlights%3A%0A-%20New%20renderer%0A-%20Faster%20startup&
+prerelease=false
+\end{textcode}
+
+\section{Automate Releases in CI (GitHub Actions)}
+Create and upload a release whenever a SemVer tag is pushed.
+
+\subsection*{Workflow: create on tag push}
+\begin{yamlcode}
+name: Release on tag
+on:
+  push:
+    tags:
+      - "v*"
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # required to create releases
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build artifacts
+        run: |
+          ./scripts/build.sh
+          # produce files under dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/sbom.spdx.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+\end{yamlcode}
+
+\subsection*{Alternative: CLI-driven (gh)}
+\begin{bashcode}
+# Create a release with notes auto-generated from commits/PRs
+gh release create v1.2.3 \
+  --generate-notes \
+  dist/*.zip dist/*.tar.gz dist/sbom.spdx.json
+# View details (assets, URLs)
+gh release view v1.2.3 --json url,tagName,assets --jq '.'
+\end{bashcode}
+
+\section{REST API Essentials}
+\subsection*{Get latest release (REST)}
+\begin{bashcode}
+curl -s -H "Accept: application/vnd.github+json" \
+  https://api.github.com/repos/<OWNER>/<REPO>/releases/latest
+\end{bashcode}
+
+\subsection*{List all releases (paginated)}
+\begin{bashcode}
+curl -s -H "Accept: application/vnd.github+json" \
+  "https://api.github.com/repos/<OWNER>/<REPO>/releases?per_page=50&page=1"
+\end{bashcode}
+
+\subsection*{Upload an asset (REST)}
+\begin{bashcode}
+# After creating a release, use the upload_url returned by the API:
+# "upload_url": "https://uploads.github.com/repos/<OWNER>/<REPO>/releases/<id>/assets{?name,label}"
+
+UPLOAD_URL="https://uploads.github.com/repos/<OWNER>/<REPO>/releases/<id>/assets?name=sbom.spdx.json"
+curl -X POST \
+  -H "Authorization: Bearer $GITHUB_TOKEN" \
+  -H "Content-Type: application/json" \
+  --data-binary @sbom.spdx.json \
+  "$UPLOAD_URL"
+\end{bashcode}
+
+\section{Consumers: Download Patterns}
+\subsection*{Pinned asset name (preferred)}
+\begin{bashcode}
+# Stable URL when asset filename is consistent across releases
+curl -L -o tool-linux-amd64.tgz \
+  "https://github.com/<OWNER>/<REPO>/releases/latest/download/tool-linux-amd64.tgz"
+\end{bashcode}
+
+\subsection*{Private repositories}
+\begin{bashcode}
+# Use a token; either a classic token or a fine-grained PAT with repo contents scope
+curl -L -H "Authorization: Bearer $GITHUB_TOKEN" \
+  -o tool.tgz \
+  "https://api.github.com/repos/<OWNER>/<REPO>/releases/assets/<ASSET_ID>"
+\end{bashcode}
+
+\section{Release Hygiene Checklist}
+\begin{itemize}
+  \item \textbf{Tags}: Use signed tags (\file{git tag -s vX.Y.Z -m "..."}) for provenance.
+  \item \textbf{SemVer}: Reserve \file{vX.Y.Z} for stable; mark prereleases as \key{prerelease=true}.
+  \item \textbf{Assets}: Include platform-specific binaries, SBOMs (\file{.spdx.json}), checksums (\file{.sha256}), and signatures (\file{.sig}).
+  \item \textbf{Notes}: Use \file{.github/release.yml} and labels for clean, auto-generated sections.
+  \item \textbf{Verification}: Add a \file{README} section showing how to verify checksums and signatures.
+\end{itemize}
+
+\section{Troubleshooting}
+\begin{itemize}
+  \item \textbf{404 on \file{/releases/latest/download/<FILENAME>}}: The asset name does not exist in the latest release. Confirm with: \\
+  \file{gh release view --json assets --jq '.assets[].name'}
+  \item \textbf{Prerelease not resolved by ``latest''}: The \file{/latest} route skips prereleases. Use the explicit tag URL \file{/tag/<TAG>} instead.
+  \item \textbf{Private repo downloads fail}: Use authenticated API endpoints or \file{gh release download}; pass a token with the correct scopes.
+  \item \textbf{Auto-notes empty or mis-grouped}: Ensure PRs are merged (not squash without PR metadata), labels match your template, and the previous tag exists.
+\end{itemize}
+
+\section{Quick Copy-Paste Snippets}
+\subsection*{Verify checksum}
+\begin{bashcode}
+curl -L -o tool.tgz \
+  "https://github.com/<OWNER>/<REPO>/releases/latest/download/tool-linux-amd64.tgz"
+curl -L -o tool.tgz.sha256 \
+  "https://github.com/<OWNER>/<REPO>/releases/latest/download/tool-linux-amd64.tgz.sha256"
+
+sha256sum -c tool.tgz.sha256   # OK if sum matches
+\end{bashcode}
+
+\subsection*{Generate checksums during build}
+\begin{bashcode}
+for f in dist/*; do
+  sha256sum "$f" > "$f.sha256"
+done
+\end{bashcode}
+
+\subsection*{Sign artifacts (example: minisign)}
+\begin{bashcode}
+minisign -Sm dist/tool-linux-amd64.tgz
+# publish dist/tool-linux-amd64.tgz.minisig and your public key
+\end{bashcode}
+
+\section{Release Notes Template Hints}
+\begin{itemize}
+  \item Label PRs consistently: \key{feature}, \key{enhancement}, \key{bug}, \key{breaking-change}.
+  \item Exclude noise labels (\key{ci}, \key{skip-changelog}) via \file{.github/release.yml}.
+  \item Add a \textbf{Highlights} section at the top for top-3 changes and upgrade notes.
+\end{itemize}
+
+\section{Link References}
+\begin{itemize}
+  \item Latest page: \url{https://github.com/<OWNER>/<REPO>/releases/latest}
+  \item Tag page: \url{https://github.com/<OWNER>/<REPO>/releases/tag/<TAG>}
+  \item Atom feed: \url{https://github.com/<OWNER>/<REPO>/releases.atom}
+  \item REST: \url{https://api.github.com/repos/<OWNER>/<REPO>/releases}
+\end{itemize}
+
+\vfill
+\begin{tcolorbox}
+\textbf{Build tip.} If you see minted errors about Pygments output, compile with \file{latexmk -pdf -shell-escape}. Avoid using \key{frozencache} unless the cache has been generated on the same machine.
+\end{tcolorbox}
+
+\end{document}

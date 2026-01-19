@@ -1,0 +1,199 @@
+
+% Compile with: pdflatex -shell-escape code-scanning-cheatsheet.tex
+\documentclass[11pt]{article}
+
+% --- Page + typography ---
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{parskip}
+
+% --- Color + links ---
+\usepackage[dvipsnames]{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=MidnightBlue,
+  urlcolor=RoyalBlue,
+  citecolor=Purple
+}
+
+% --- Lists + titles ---
+\usepackage{enumitem}
+\setlist{itemsep=2pt, topsep=4pt, leftmargin=1.2em}
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{8pt}{4pt}
+\titlespacing*{\subsection}{0pt}{6pt}{3pt}
+
+% --- Code highlighting ---
+\usepackage[newfloat]{minted} % requires -shell-escape
+\setminted{
+  fontsize=\footnotesize,
+  breaklines=true,
+  breakanywhere=true,
+  tabsize=2,
+  frame=single
+}
+
+% --- Nice callouts ---
+\usepackage[most]{tcolorbox}
+\tcbset{
+  colback=white, colframe=Gray, arc=1.5mm, boxrule=0.6pt
+}
+
+% --- Tables ---
+\usepackage{tabularx}
+\usepackage{booktabs}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE \textbf{GitHub Code Scanning Quick Reference}}\\[2pt]
+  {\large CodeQL and Workflow Triggers Cheat Sheet}
+\end{center}
+
+\vspace{0.5em}
+
+\begin{tcolorbox}[colframe=RoyalBlue!50!black,title=Learning Objectives]
+\begin{itemize}
+  \item Understand how code scanning fits into the SDLC and shift-left security.
+  \item Choose an appropriate scan \emph{frequency} (continuous, scheduled, on-demand).
+  \item Select \emph{triggering events} that match your development model.
+  \item Edit the default CodeQL Actions workflow for production-grade repos.
+\end{itemize}
+\end{tcolorbox}
+
+\section*{1. Code Scanning in the SDLC (Shift Left)}
+Early, automated detection reduces remediation cost and prevents reputational impact. Integrate scanning from planning/requirements through pull requests and CI to encourage a proactive security culture and higher code quality.
+
+\section*{2. Frequency: Trade-offs}
+\begin{tabularx}{\linewidth}{@{}l X X X@{}}
+\toprule
+\textbf{Mode} & \textbf{When to use} & \textbf{Pros} & \textbf{Cons} \\
+\midrule
+Continuous (on push/PR) & Fast-paced repos; short feedback loops & Earliest detection; tight PR gating & Higher runner cost; alert fatigue if uncurated \\
+Scheduled (cron) & Slower-moving repos; baseline monitoring & Predictable cost; steady coverage & Delayed detection between runs \\
+On-demand (workflow\_dispatch) & Pre-release checks; governance workflows & Flexible; ad hoc before deploy & Manual step; can be forgotten \\
+\bottomrule
+\end{tabularx}
+
+\section*{3. Recommended Triggers}
+Combine triggers to balance cost and coverage:
+\begin{itemize}
+  \item \textbf{push}: Immediate feedback on protected branches.
+  \item \textbf{pull\_request}: Enforce PR checks before merge.
+  \item \textbf{schedule}: Nightly or hourly baselines for drift.
+  \item \textbf{workflow\_dispatch}: Manual scans for releases/hotfixes.
+\end{itemize}
+\clearpage
+
+\section*{4. Production-Ready CodeQL Workflow Skeleton}
+\begin{minted}[fontsize=\scriptsize]{yaml}
+name: CodeQL scan
+
+on:
+  push:
+    branches: [ "main", "release/**" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: "0 3 * * *"   # nightly at 03:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ "javascript-typescript", "python" ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Optional: prune paths to save time/cost
+      - name: Filter paths (optional)
+        run: |
+          echo "Excluding large generated/vendor dirs via CodeQL config"
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          config-file: .github/codeql/codeql-config.yml
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+\end{minted}
+
+\paragraph{Optional \texttt{codeql-config.yml}} to exclude noisy paths or tune queries:
+\begin{minted}[fontsize=\scriptsize]{yaml}
+name: org-defaults
+paths-ignore:
+  - "dist/**"
+  - "build/**"
+  - "**/vendor/**"
+  - "**/*.min.js"
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
+\end{minted}
+
+\section*{5. Cost and Signal Tuning}
+\begin{itemize}
+  \item Use \texttt{paths}/\texttt{paths-ignore} on triggers to scope scans.
+  \item Maintain a \texttt{codeql-config.yml} to exclude generated/vendor code.
+  \item Prefer \texttt{matrix} languages to one job per language (parallelism).
+  \item Curate queries: start with \texttt{security-extended}; add selectively.
+  \item Triage rigorously: severity filters, labels, and periodic ``fix-a-thon'' sprints.
+\end{itemize}
+
+\section*{6. Notifications and Integrations}
+\begin{itemize}
+  \item Route alert summaries to Teams/Slack via workflow steps or the API.
+  \item Create tracking issues automatically from alerts for ownership.
+  \item Cache dependencies to speed runs; consider self-hosted runners for heavy scans.
+\end{itemize}
+
+\section*{7. Dependabot Baseline (Example)}
+\begin{minted}[fontsize=\scriptsize]{yaml}
+# .github/dependabot.yml
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    labels: [ "dependencies" ]
+\end{minted}
+
+\section*{8. Practical Cases}
+\textbf{Contoso}: integrates scanning early to cut remediation cost and improve maintainability.\\
+\textbf{Wingtip Toys}: push-triggered scans for instant feedback plus scheduled scans pre-release.
+
+\section*{9. Setup Checklist}
+\begin{itemize}
+  \item Enable GHAS features at org/repo level as needed.
+  \item Add CodeQL workflow with push, PR, schedule, and manual triggers.
+  \item Create \texttt{codeql-config.yml} to exclude noise and select queries.
+  \item Establish triage SOP (labels, SLAs, ownership, dismissal reasons).
+  \item Wire notifications and create tracking issues from alerts.
+  \item Review runner usage and adjust schedules/paths to control cost.
+\end{itemize}
+
+\end{document}

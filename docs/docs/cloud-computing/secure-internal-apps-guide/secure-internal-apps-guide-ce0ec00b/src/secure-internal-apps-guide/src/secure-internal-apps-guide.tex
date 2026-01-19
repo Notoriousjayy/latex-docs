@@ -1,0 +1,2257 @@
+\documentclass[11pt,letterpaper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\usepackage{booktabs}
+\usepackage{longtable}
+
+% Page setup
+\geometry{
+    letterpaper,
+    left=1in,
+    right=1in,
+    top=1in,
+    bottom=1in
+}
+
+% Hyperlink setup
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+    citecolor=blue
+}
+
+% Headers and footers
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Secure Internal Application Hosting}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Title formatting
+\titleformat{\section}{\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+% Code listings
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10}
+}
+
+% Custom boxes
+\newtcolorbox{warningbox}{
+    colback=red!5!white,
+    colframe=red!75!black,
+    title=Critical Security Requirement
+}
+
+\newtcolorbox{infobox}{
+    colback=blue!5!white,
+    colframe=blue!75!black,
+    title=Implementation Note
+}
+
+\newtcolorbox{checklistbox}{
+    colback=green!5!white,
+    colframe=green!75!black,
+    title=Go/No-Go Checkpoint
+}
+
+% Document
+\begin{document}
+
+% Title page
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    
+    {\Huge\bfseries Secure Internal Application\\[0.3cm]Hosting Guide\par}
+    
+    \vspace{1cm}
+    
+    {\Large Kubernetes Implementation Framework\\[0.2cm]
+    for Internal-Only Deployments\par}
+    
+    \vspace{1.5cm}
+    
+    {\large\itshape Companion to Comprehensive Cloud-Native\\
+    Architecture Implementation Guide\par}
+    
+    \vspace{2cm}
+    
+    {\large Zero-Trust Security Controls\\[0.2cm]
+    Network Isolation • Identity Management\\[0.2cm]
+    Workload Hardening • Audit \& Compliance\par}
+    
+    \vfill
+    
+    {\large\bfseries Technical Reference Guide\par}
+    
+    \vspace{0.5cm}
+    
+    {\large On-Premises and Private Network Deployments\par}
+    
+    \vspace{1cm}
+    
+    {\large\today\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Executive Summary}
+
+This guide provides a comprehensive implementation framework for securely hosting internal applications on Kubernetes in on-premises or private network environments. It serves as a companion to the \textit{Comprehensive Cloud-Native Architecture Implementation Guide}, focusing specifically on the security controls, hardening measures, and operational practices required to achieve production-ready internal application hosting.
+
+\subsection{Document Purpose}
+
+This implementation guide serves as:
+
+\begin{enumerate}
+    \item \textbf{Security Maturity Roadmap}: Clear progression from pilot to production-ready internal hosting
+    \item \textbf{Zero-Trust Implementation Framework}: Practical controls for internal environments that reject ``trusted network'' assumptions
+    \item \textbf{Go/No-Go Decision Guide}: Concrete validation criteria for each security maturity phase
+    \item \textbf{Hardening Playbook}: Step-by-step implementation of Kubernetes security controls
+    \item \textbf{Compliance Accelerator}: Audit-ready configurations for internal hosting requirements
+\end{enumerate}
+
+\subsection{Key Insight: ``Internal'' Does Not Mean ``Trusted''}
+
+\begin{warningbox}
+\textbf{Critical Security Principle:}
+
+Your main cloud-native guide explicitly warns against the ``Trusting Internal Network'' pitfall (Section 10.6). This guide operationalizes that warning: \textbf{internal hosting requires the same zero-trust controls as external-facing systems}.
+
+Lateral movement after a breach is a primary attack vector. Network location (``internal'') is not a security boundary.
+\end{warningbox}
+
+\subsection{Scope and Target Audience}
+
+\textbf{In Scope:}
+\begin{itemize}
+    \item Internal-only applications on Kubernetes (on-premises or private cloud)
+    \item Stateful applications requiring persistent storage and databases
+    \item Zero-trust security implementation for internal networks
+    \item Production-grade security controls for non-internet-facing workloads
+    \item Compliance and audit requirements for internal hosting
+\end{itemize}
+
+\textbf{Out of Scope:}
+\begin{itemize}
+    \item Internet-facing applications with public ingress
+    \item Multi-cloud or hybrid cloud deployments (covered in main guide)
+    \item Specific application configurations (GLPI, osTicket, etc.)
+    \item Development or testing environments without production security requirements
+\end{itemize}
+
+\textbf{Target Audience:}
+\begin{itemize}
+    \item Platform engineers deploying internal Kubernetes clusters
+    \item DevOps teams hosting internal applications
+    \item Security engineers implementing zero-trust controls
+    \item IT teams migrating legacy internal applications to Kubernetes
+    \item Compliance officers validating internal hosting security
+\end{itemize}
+
+\subsection{Security Maturity Phases}
+
+This guide defines two security maturity phases aligned with the main implementation roadmap:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Phase} & \textbf{Timeframe} & \textbf{Readiness Level} \\
+\midrule
+Phase 2 & Weeks 5-8 & \textbf{Internal Pilot Readiness} \\
+ & & Minimum viable security for limited internal users \\
+ & & Basic RBAC, NetworkPolicies, secrets management \\
+\midrule
+Phase 3 & Weeks 9-12 & \textbf{Secure Production Readiness} \\
+ & & Zero-trust controls, mTLS, hardened workloads \\
+ & & Full compliance and audit capabilities \\
+\bottomrule
+\end{tabular}
+\caption{Security Maturity Phases}
+\end{table}
+
+\textbf{Critical Distinction:} Phase 2 allows you to \textit{start} internal hosting with basic controls. Phase 3 is where you \textit{harden} to production-grade security that defends against lateral movement and privilege escalation.
+
+\section{Official Documentation Resources}
+
+The following official documentation should be used alongside this guide for implementation details. These resources provide authoritative references for security controls and hardening measures.
+
+\subsection{Core Security Documentation}
+
+\textbf{Kubernetes Security:}
+\begin{itemize}
+    \item Main Security Concepts: \url{https://kubernetes.io/docs/concepts/security/}
+    \item Pod Security Standards: \url{https://kubernetes.io/docs/concepts/security/pod-security-standards/}
+    \item RBAC Authorization: \url{https://kubernetes.io/docs/reference/access-authn-authz/rbac/}
+    \item Network Policies: \url{https://kubernetes.io/docs/concepts/services-networking/network-policies/}
+    \item Secrets Management: \url{https://kubernetes.io/docs/concepts/configuration/secret/}
+    \item Audit Logging: \url{https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/}
+    \item Encrypting Data at Rest: \url{https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/}
+    \item Authentication: \url{https://kubernetes.io/docs/reference/access-authn-authz/authentication/}
+    \item Multi-Tenancy: \url{https://kubernetes.io/docs/concepts/security/multi-tenancy/}
+\end{itemize}
+
+\subsection{Service Mesh Security}
+
+\textbf{Istio:}
+\begin{itemize}
+    \item Security Concepts: \url{https://istio.io/latest/docs/concepts/security/}
+    \item Mutual TLS: \url{https://istio.io/latest/docs/tasks/security/authentication/mtls-migration/}
+    \item Authorization Policies: \url{https://istio.io/latest/docs/tasks/security/authorization/}
+    \item Certificate Management: \url{https://istio.io/latest/docs/tasks/security/cert-management/}
+\end{itemize}
+
+\textbf{Linkerd:}
+\begin{itemize}
+    \item Automatic mTLS: \url{https://linkerd.io/2/features/automatic-mtls/}
+    \item Policy Documentation: \url{https://linkerd.io/2/features/server-policy/}
+\end{itemize}
+
+\subsection{Secrets Management}
+
+\textbf{External Secrets Operator:}
+\begin{itemize}
+    \item Main Documentation: \url{https://external-secrets.io/}
+    \item Getting Started: \url{https://external-secrets.io/latest/introduction/getting-started/}
+    \item Vault Provider: \url{https://external-secrets.io/latest/provider/hashicorp-vault/}
+\end{itemize}
+
+\textbf{HashiCorp Vault:}
+\begin{itemize}
+    \item Vault Documentation: \url{https://www.vaultproject.io/docs}
+    \item Kubernetes Auth: \url{https://www.vaultproject.io/docs/auth/kubernetes}
+    \item Kubernetes Secrets Engine: \url{https://www.vaultproject.io/docs/secrets/kv}
+\end{itemize}
+
+\textbf{Sealed Secrets:}
+\begin{itemize}
+    \item GitHub Repository: \url{https://github.com/bitnami-labs/sealed-secrets}
+\end{itemize}
+
+\subsection{Policy and Compliance}
+
+\textbf{Open Policy Agent (OPA):}
+\begin{itemize}
+    \item OPA Documentation: \url{https://www.openpolicyagent.org/docs/latest/}
+    \item Kubernetes Integration: \url{https://www.openpolicyagent.org/docs/latest/kubernetes-introduction/}
+\end{itemize}
+
+\textbf{Gatekeeper:}
+\begin{itemize}
+    \item Gatekeeper Documentation: \url{https://open-policy-agent.github.io/gatekeeper/}
+    \item Policy Library: \url{https://github.com/open-policy-agent/gatekeeper-library}
+\end{itemize}
+
+\textbf{Kyverno:}
+\begin{itemize}
+    \item Kyverno Documentation: \url{https://kyverno.io/docs/}
+    \item Policy Samples: \url{https://kyverno.io/policies/}
+\end{itemize}
+
+\subsection{Monitoring and Audit}
+
+\textbf{Falco (Runtime Security):}
+\begin{itemize}
+    \item Falco Documentation: \url{https://falco.org/docs/}
+    \item Kubernetes Rules: \url{https://github.com/falcosecurity/rules}
+\end{itemize}
+
+\textbf{Prometheus:}
+\begin{itemize}
+    \item Security Best Practices: \url{https://prometheus.io/docs/operating/security/}
+\end{itemize}
+
+\subsection{Container Security}
+
+\textbf{Image Scanning:}
+\begin{itemize}
+    \item Trivy: \url{https://github.com/aquasecurity/trivy}
+    \item Grype: \url{https://github.com/anchore/grype}
+    \item Clair: \url{https://github.com/quay/clair}
+\end{itemize}
+
+\textbf{Image Signing:}
+\begin{itemize}
+    \item Cosign: \url{https://docs.sigstore.dev/cosign/overview/}
+    \item Notary: \url{https://github.com/notaryproject/notary}
+\end{itemize}
+
+\subsection{Backup and Disaster Recovery}
+
+\textbf{Velero:}
+\begin{itemize}
+    \item Main Documentation: \url{https://velero.io/docs/}
+    \item How Velero Works: \url{https://velero.io/docs/main/how-velero-works/}
+\end{itemize}
+
+\section{Security Maturity Model}
+
+This section defines the two security maturity phases for internal application hosting, aligned with the main implementation roadmap.
+
+\subsection{Phase 2: Internal Pilot Readiness (Weeks 5-8)}
+
+\textbf{Security Posture:} Minimum viable security controls for limited internal pilot deployment.
+
+\textbf{Acceptable Risk Profile:}
+\begin{itemize}
+    \item Limited user base (¡50 users)
+    \item Non-critical applications or pilot deployments
+    \item Controlled network environment with monitoring
+    \item Ability to rapidly patch or take offline if issues discovered
+\end{itemize}
+
+\textbf{Core Controls Implemented:}
+
+\begin{enumerate}
+    \item \textbf{Basic Identity \& Access Control}
+    \begin{itemize}
+        \item Namespace isolation per application
+        \item Kubernetes RBAC with least-privilege service accounts
+        \item User authentication via OIDC or LDAP
+    \end{itemize}
+    
+    \item \textbf{Network Segmentation}
+    \begin{itemize}
+        \item CNI with NetworkPolicy support (Calico, Cilium, or equivalent)
+        \item Basic NetworkPolicies (not yet default-deny)
+        \item Ingress controller with TLS termination
+    \end{itemize}
+    
+    \item \textbf{Workload Security Baseline}
+    \begin{itemize}
+        \item Pod Security Standards enforced at \texttt{baseline} level
+        \item Basic security contexts (non-root where feasible)
+        \item Resource requests and limits defined
+    \end{itemize}
+    
+    \item \textbf{Secrets Management}
+    \begin{itemize}
+        \item Kubernetes Secrets (base64 encoded)
+        \item No secrets in Git repositories
+        \item Manual secret rotation procedures
+    \end{itemize}
+    
+    \item \textbf{Basic Observability}
+    \begin{itemize}
+        \item Kubernetes audit logging enabled
+        \item Basic metrics collection (Prometheus)
+        \item Centralized logging (Loki or equivalent)
+    \end{itemize}
+    
+    \item \textbf{Persistent Storage}
+    \begin{itemize}
+        \item PersistentVolumes with appropriate access modes
+        \item StorageClass with volume expansion enabled
+        \item Manual backup procedures documented
+    \end{itemize}
+\end{enumerate}
+
+\begin{checklistbox}
+\textbf{Phase 2 Go/No-Go Criteria:}
+
+Before deploying pilot applications, verify:
+\begin{itemize}
+    \item[$\square$] Namespace created with ResourceQuotas
+    \item[$\square$] RBAC roles defined with least privilege
+    \item[$\square$] NetworkPolicies allow only required ingress/egress
+    \item[$\square$] Pod Security Standards enforced (minimum: baseline)
+    \item[$\square$] All Secrets created (no hardcoded credentials)
+    \item[$\square$] Audit logging enabled and tested
+    \item[$\square$] Backup procedure documented and tested
+    \item[$\square$] Incident response contacts defined
+\end{itemize}
+\end{checklistbox}
+
+\subsection{Phase 3: Secure Production Readiness (Weeks 9-12)}
+
+\textbf{Security Posture:} Zero-trust hardened deployment suitable for production internal applications.
+
+\textbf{Acceptable Risk Profile:}
+\begin{itemize}
+    \item Full production deployment (any number of users)
+    \item Critical internal applications
+    \item Compliance and audit requirements
+    \item Protection against lateral movement and privilege escalation
+\end{itemize}
+
+\textbf{Additional Controls Beyond Phase 2:}
+
+\begin{enumerate}
+    \item \textbf{Zero-Trust Network Security}
+    \begin{itemize}
+        \item Service mesh deployed (Istio or Linkerd)
+        \item Automatic mTLS for all service-to-service communication
+        \item Default-deny NetworkPolicies with explicit allow rules
+        \item Authorization policies at Layer 7
+    \end{itemize}
+    
+    \item \textbf{Hardened Workload Security}
+    \begin{itemize}
+        \item Pod Security Standards enforced at \texttt{restricted} level
+        \item Comprehensive security contexts (read-only root filesystem, drop all capabilities)
+        \item AppArmor or SELinux profiles where supported
+        \item Admission controllers enforcing security policies (OPA Gatekeeper or Kyverno)
+    \end{itemize}
+    
+    \item \textbf{Advanced Secrets Management}
+    \begin{itemize}
+        \item External Secrets Operator integrated with Vault
+        \item Automatic secret rotation
+        \item Encryption at rest for etcd
+        \item Secrets encryption in transit via service mesh
+    \end{itemize}
+    
+    \item \textbf{Comprehensive Audit \& Compliance}
+    \begin{itemize}
+        \item Full Kubernetes audit logging with policy
+        \item Centralized log retention (minimum 90 days)
+        \item Runtime security monitoring (Falco)
+        \item Regular compliance scanning
+    \end{itemize}
+    
+    \item \textbf{Container Supply Chain Security}
+    \begin{itemize}
+        \item Image scanning in CI/CD pipeline
+        \item Vulnerability blocking policies
+        \item Image signing and verification
+        \item Software Bill of Materials (SBOM) generation
+    \end{itemize}
+    
+    \item \textbf{Production Backup \& Recovery}
+    \begin{itemize}
+        \item Automated backup with Velero
+        \item Regular disaster recovery testing
+        \item Multi-zone deployment for availability
+        \item Documented RTO/RPO objectives
+    \end{itemize}
+\end{enumerate}
+
+\begin{checklistbox}
+\textbf{Phase 3 Go/No-Go Criteria:}
+
+Before declaring production-ready, verify:
+\begin{itemize}
+    \item[$\square$] Service mesh deployed with mTLS enabled
+    \item[$\square$] Default-deny NetworkPolicies in place
+    \item[$\square$] Pod Security Standards enforced at \texttt{restricted}
+    \item[$\square$] External Secrets Operator operational
+    \item[$\square$] Vault integration tested and documented
+    \item[$\square$] Admission controller policies enforced
+    \item[$\square$] Runtime security monitoring active (Falco)
+    \item[$\square$] Image scanning integrated in CI/CD
+    \item[$\square$] Automated backup tested and verified
+    \item[$\square$] Disaster recovery procedure tested
+    \item[$\square$] Security incident response plan documented
+    \item[$\square$] Compliance audit documentation complete
+\end{itemize}
+\end{checklistbox}
+
+\section{Core Security Controls Implementation}
+
+This section provides detailed implementation guidance for the seven core security control areas required for secure internal application hosting.
+
+\subsection{Identity \& Access Control}
+
+\subsubsection{Namespace Isolation Strategy}
+
+\textbf{Principle:} Each application or service group should have its own namespace to provide logical isolation and RBAC boundaries.
+
+\textbf{Implementation Pattern:}
+
+\begin{lstlisting}[language=bash]
+# Create namespace for application
+kubectl create namespace app-production
+
+# Apply ResourceQuota to prevent resource exhaustion
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: app-production-quota
+  namespace: app-production
+spec:
+  hard:
+    requests.cpu: "10"
+    requests.memory: 20Gi
+    persistentvolumeclaims: "5"
+    services.loadbalancers: "0"  # No external LBs for internal apps
+EOF
+
+# Apply LimitRange for default resource constraints
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: app-production-limits
+  namespace: app-production
+spec:
+  limits:
+  - default:
+      cpu: "500m"
+      memory: "512Mi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "128Mi"
+    type: Container
+EOF
+\end{lstlisting}
+
+\textbf{Reference:}
+\begin{itemize}
+    \item Namespaces: \url{https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/}
+    \item ResourceQuotas: \url{https://kubernetes.io/docs/concepts/policy/resource-quotas/}
+    \item LimitRanges: \url{https://kubernetes.io/docs/concepts/policy/limit-range/}
+\end{itemize}
+
+\subsubsection{RBAC Configuration}
+
+\textbf{Principle:} Apply least-privilege access using Role-Based Access Control. Separate human user access from service account access.
+
+\textbf{Service Account Pattern:}
+
+\begin{lstlisting}[language=bash]
+# Create dedicated ServiceAccount for application
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: app-service-account
+  namespace: app-production
+automountServiceAccountToken: false  # Explicit mounting only
+EOF
+
+# Create Role with minimal permissions
+kubectl apply -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: app-role
+  namespace: app-production
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get"]
+  resourceNames: ["app-database-secret"]  # Specific secret only
+EOF
+
+# Bind Role to ServiceAccount
+kubectl apply -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: app-rolebinding
+  namespace: app-production
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: app-role
+subjects:
+- kind: ServiceAccount
+  name: app-service-account
+  namespace: app-production
+EOF
+\end{lstlisting}
+
+\textbf{Human User Access Pattern (Cluster Admin):}
+
+\begin{lstlisting}[language=bash]
+# ClusterRole for cluster administrators
+kubectl apply -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-admin-role
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["*"]
+EOF
+
+# ClusterRoleBinding for admin group (via OIDC)
+kubectl apply -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-admin-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin-role
+subjects:
+- kind: Group
+  name: "system:masters"  # OIDC group
+  apiGroup: rbac.authorization.k8s.io
+EOF
+\end{lstlisting}
+
+\textbf{Human User Access Pattern (Developer):}
+
+\begin{lstlisting}[language=bash]
+# Role for developers (namespace-scoped)
+kubectl apply -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: developer-role
+  namespace: app-production
+rules:
+- apiGroups: ["", "apps", "batch"]
+  resources: ["pods", "pods/log", "deployments", "jobs"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["create"]  # Allow kubectl exec for debugging
+EOF
+
+# RoleBinding for developer group
+kubectl apply -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: developer-binding
+  namespace: app-production
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: developer-role
+subjects:
+- kind: Group
+  name: "developers"  # OIDC group
+  apiGroup: rbac.authorization.k8s.io
+EOF
+\end{lstlisting}
+
+\textbf{Reference:}
+\begin{itemize}
+    \item RBAC Overview: \url{https://kubernetes.io/docs/reference/access-authn-authz/rbac/}
+    \item Service Accounts: \url{https://kubernetes.io/docs/concepts/security/service-accounts/}
+    \item OIDC Authentication: \url{https://kubernetes.io/docs/reference/access-authn-authz/authentication/\#openid-connect-tokens}
+\end{itemize}
+
+\subsubsection{Authentication Integration}
+
+\textbf{OIDC Configuration (Recommended):}
+
+Configure the Kubernetes API server to use OIDC for user authentication:
+
+\begin{lstlisting}[language=bash]
+# API server flags for OIDC (add to kube-apiserver manifest)
+--oidc-issuer-url=https://your-identity-provider.com
+--oidc-client-id=kubernetes
+--oidc-username-claim=email
+--oidc-groups-claim=groups
+--oidc-ca-file=/etc/kubernetes/pki/oidc-ca.crt
+\end{lstlisting}
+
+\textbf{Reference:}
+\begin{itemize}
+    \item Authenticating: \url{https://kubernetes.io/docs/reference/access-authn-authz/authentication/}
+    \item OIDC Authenticator: \url{https://kubernetes.io/docs/reference/access-authn-authz/authentication/\#openid-connect-tokens}
+\end{itemize}
+
+\subsection{Network Isolation}
+
+\subsubsection{CNI Selection and Configuration}
+
+\textbf{Principle:} Use a CNI that supports NetworkPolicy enforcement. Calico and Cilium are recommended for their security features.
+
+\textbf{Calico Installation (Recommended for Internal Networks):}
+
+\begin{lstlisting}[language=bash]
+# Install Calico CNI
+kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+
+# Verify Calico is running
+kubectl get pods -n kube-system | grep calico
+
+# Enable NetworkPolicy support
+kubectl apply -f - <<EOF
+apiVersion: crd.projectcalico.org/v1
+kind: FelixConfiguration
+metadata:
+  name: default
+spec:
+  defaultEndpointToHostAction: ACCEPT
+  failsafeInboundHostPorts:
+  - protocol: tcp
+    port: 22
+  - protocol: tcp
+    port: 6443  # API server
+EOF
+\end{lstlisting}
+
+\textbf{Reference:}
+\begin{itemize}
+    \item Calico Documentation: \url{https://docs.tigera.io/calico/latest/about/}
+    \item Cilium Documentation: \url{https://docs.cilium.io/}
+    \item Network Plugins: \url{https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/}
+\end{itemize}
+
+\subsubsection{Default-Deny NetworkPolicies (Phase 3)}
+
+\textbf{Principle:} Start with default-deny and explicitly allow only required traffic.
+
+\begin{warningbox}
+\textbf{Implementation Warning:}
+
+Implementing default-deny NetworkPolicies requires careful planning. Test in a non-production namespace first. Document all required network flows before applying.
+\end{warningbox}
+
+\textbf{Default-Deny Policy:}
+
+\begin{lstlisting}[language=bash]
+# Deny all ingress and egress by default
+kubectl apply -f - <<EOF
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: app-production
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+EOF
+\end{lstlisting}
+
+\textbf{Allow Ingress from Ingress Controller:}
+
+\begin{lstlisting}[language=bash]
+kubectl apply -f - <<EOF
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-ingress
+  namespace: app-production
+spec:
+  podSelector:
+    matchLabels:
+      app: web-app
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8080
+EOF
+\end{lstlisting}
+
+\textbf{Allow Egress to Database:}
+
+\begin{lstlisting}[language=bash]
+kubectl apply -f - <<EOF
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-database
+  namespace: app-production
+spec:
+  podSelector:
+    matchLabels:
+      app: web-app
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: database
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow DNS resolution
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    - podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+EOF
+\end{lstlisting}
+
+\textbf{Reference:}
+\begin{itemize}
+    \item NetworkPolicy: \url{https://kubernetes.io/docs/concepts/services-networking/network-policies/}
+    \item Calico NetworkPolicy: \url{https://docs.tigera.io/calico/latest/network-policy/}
+\end{itemize}
+
+\subsubsection{Ingress Controller with TLS}
+
+\textbf{NGINX Ingress Controller Installation:}
+
+\begin{lstlisting}[language=bash]
+# Install NGINX Ingress Controller
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/baremetal/deploy.yaml
+
+# Create TLS Secret (use cert-manager for automation)
+kubectl create secret tls app-tls-cert \
+  --cert=path/to/tls.crt \
+  --key=path/to/tls.key \
+  -n app-production
+\end{lstlisting}
+
+\textbf{Ingress Resource with TLS:}
+
+\begin{lstlisting}[language=bash]
+kubectl apply -f - <<EOF
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  namespace: app-production
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - app.internal.example.com
+    secretName: app-tls-cert
+  rules:
+  - host: app.internal.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: app-service
+            port:
+              number: 80
+EOF
+\end{lstlisting}
+
+\textbf{Reference:}
+\begin{itemize}
+    \item NGINX Ingress: \url{https://kubernetes.github.io/ingress-nginx/}
+    \item Ingress TLS: \url{https://kubernetes.io/docs/concepts/services-networking/ingress/\#tls}
+    \item cert-manager: \url{https://cert-manager.io/docs/}
+\end{itemize}
+
+\subsection{Workload Security Baseline}
+
+\subsubsection{Pod Security Standards}
+
+\textbf{Principle:} Enforce Pod Security Standards to restrict pod privileges.
+
+\textbf{Phase 2: Baseline Policy}
+
+\begin{lstlisting}[language=bash]
+# Apply baseline policy to namespace
+kubectl label namespace app-production \
+  pod-security.kubernetes.io/enforce=baseline \
+  pod-security.kubernetes.io/audit=restricted \
+  pod-security.kubernetes.io/warn=restricted
+\end{lstlisting}
+
+\textbf{Phase 3: Restricted Policy}
+
+\begin{lstlisting}[language=bash]
+# Enforce restricted policy
+kubectl label namespace app-production \
+  pod-security.kubernetes.io/enforce=restricted \
+  pod-security.kubernetes.io/audit=restricted \
+  pod-security.kubernetes.io/warn=restricted --overwrite
+\end{lstlisting}
+
+\textbf{Reference:}
+\begin{itemize}
+    \item Pod Security Standards: \url{https://kubernetes.io/docs/concepts/security/pod-security-standards/}
+    \item Pod Security Admission: \url{https://kubernetes.io/docs/concepts/security/pod-security-admission/}
+\end{itemize}
+
+\subsubsection{Security Context Configuration}
+
+\textbf{Restricted SecurityContext Pattern:}
+
+\begin{lstlisting}[language=bash]
+kubectl apply -f - <<EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secure-app
+  namespace: app-production
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: secure-app
+  template:
+    metadata:
+      labels:
+        app: secure-app
+    spec:
+      serviceAccountName: app-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: app
+        image: your-registry/app:v1.0.0
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 10001
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: cache
+          mountPath: /app/cache
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: cache
+        emptyDir: {}
+EOF
+\end{lstlisting}
+
+\textbf{Reference:}
+\begin{itemize}
+    \item Configure Security Context: \url{https://kubernetes.io/docs/tasks/configure-pod-container/security-context/}
+    \item Seccomp: \url{https://kubernetes.io/docs/tutorials/security/seccomp/}
+\end{itemize}
+
+\subsubsection{Admission Controllers (Phase 3)}
+
+\textbf{OPA Gatekeeper Installation:}
+
+\begin{lstlisting}[language=bash]
+# Install Gatekeeper
+kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/master/deploy/gatekeeper.yaml
+
+# Create ConstraintTemplate for required labels
+kubectl apply -f - <<EOF
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredlabels
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredLabels
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            labels:
+              type: array
+              items:
+                type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequiredlabels
+        
+        violation[{"msg": msg, "details": {"missing_labels": missing}}] {
+          provided := {label | input.review.object.metadata.labels[label]}
+          required := {label | label := input.parameters.labels[_]}
+          missing := required - provided
+          count(missing) > 0
+          msg := sprintf("Missing required labels: %v", [missing])
+        }
+EOF
+
+# Create Constraint requiring app and version labels
+kubectl apply -f - <<EOF
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredLabels
+metadata:
+  name: require-app-version-labels
+spec:
+  match:
+    kinds:
+    - apiGroups: ["apps"]
+      kinds: ["Deployment"]
+  parameters:
+    labels: ["app", "version"]
+EOF
+\end{lstlisting}
+
+\textbf{Reference:}
+\begin{itemize}
+    \item Gatekeeper: \url{https://open-policy-agent.github.io/gatekeeper/}
+    \item OPA: \url{https://www.openpolicyagent.org/docs/latest/kubernetes-introduction/}
+    \item Kyverno: \url{https://kyverno.io/docs/}
+\end{itemize}
+
+\subsection{Secrets Management}
+
+\subsubsection{Phase 2: Kubernetes Secrets}
+
+\textbf{Basic Secrets Creation (Non-Production):}
+
+\begin{lstlisting}[language=bash]
+# Create secret from literal values
+kubectl create secret generic app-database-secret \
+  --from-literal=username=appuser \
+  --from-literal=password='SecureP@ssw0rd!' \
+  -n app-production
+
+# Create secret from file
+kubectl create secret generic app-tls-cert \
+  --from-file=tls.crt=path/to/tls.crt \
+  --from-file=tls.key=path/to/tls.key \
+  -n app-production
+\end{lstlisting}
+
+\begin{warningbox}
+\textbf{Critical Security Warning:}
+
+Kubernetes Secrets are only base64-encoded by default, NOT encrypted. For production deployments (Phase 3), you MUST use encryption at rest for etcd AND external secrets management (Vault).
+\end{warningbox}
+
+\textbf{Enable Encryption at Rest (Required for Phase 3):}
+
+\begin{lstlisting}[language=bash]
+# Create EncryptionConfiguration
+cat > /etc/kubernetes/encryption-config.yaml <<EOF
+apiVersion: apiserver.config.k8s.io/v1
+kind: EncryptionConfiguration
+resources:
+  - resources:
+    - secrets
+    providers:
+    - aescbc:
+        keys:
+        - name: key1
+          secret: $(head -c 32 /dev/urandom | base64)
+    - identity: {}
+EOF
+
+# Add to kube-apiserver manifest
+--encryption-provider-config=/etc/kubernetes/encryption-config.yaml
+\end{lstlisting}
+
+\textbf{Reference:}
+\begin{itemize}
+    \item Secrets: \url{https://kubernetes.io/docs/concepts/configuration/secret/}
+    \item Encrypting Data at Rest: \url{https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/}
+\end{itemize}
+
+\subsubsection{Phase 3: External Secrets with Vault}
+
+\textbf{HashiCorp Vault Installation:}
+
+\begin{lstlisting}[language=bash]
+# Install Vault using Helm
+helm repo add hashicorp https://helm.releases.hashicorp.com
+helm install vault hashicorp/vault \
+  --namespace vault \
+  --create-namespace \
+  --set server.dev.enabled=false \
+  --set server.ha.enabled=true \
+  --set server.ha.replicas=3
+
+# Initialize Vault (save unseal keys and root token securely!)
+kubectl exec -n vault vault-0 -- vault operator init
+
+# Unseal Vault (repeat for all replicas)
+kubectl exec -n vault vault-0 -- vault operator unseal <key1>
+kubectl exec -n vault vault-0 -- vault operator unseal <key2>
+kubectl exec -n vault vault-0 -- vault operator unseal <key3>
+\end{lstlisting}
+
+\textbf{Configure Vault for Kubernetes:}
+
+\begin{lstlisting}[language=bash]
+# Enable Kubernetes auth
+kubectl exec -n vault vault-0 -- vault auth enable kubernetes
+
+# Configure Kubernetes auth
+kubectl exec -n vault vault-0 -- vault write auth/kubernetes/config \
+  kubernetes_host="https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT"
+
+# Create policy for application
+kubectl exec -n vault vault-0 -- vault policy write app-policy - <<EOF
+path "secret/data/app-production/*" {
+  capabilities = ["read"]
+}
+EOF
+
+# Create role binding ServiceAccount to policy
+kubectl exec -n vault vault-0 -- vault write auth/kubernetes/role/app-role \
+  bound_service_account_names=app-service-account \
+  bound_service_account_namespaces=app-production \
+  policies=app-policy \
+  ttl=24h
+\end{lstlisting}
+
+\textbf{External Secrets Operator Installation:}
+
+\begin{lstlisting}[language=bash]
+# Install External Secrets Operator
+helm repo add external-secrets https://charts.external-secrets.io
+helm install external-secrets \
+  external-secrets/external-secrets \
+  -n external-secrets-system \
+  --create-namespace
+
+# Create SecretStore for Vault
+kubectl apply -f - <<EOF
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: vault-backend
+  namespace: app-production
+spec:
+  provider:
+    vault:
+      server: "http://vault.vault:8200"
+      path: "secret"
+      version: "v2"
+      auth:
+        kubernetes:
+          mountPath: "kubernetes"
+          role: "app-role"
+          serviceAccountRef:
+            name: "app-service-account"
+EOF
+
+# Create ExternalSecret
+kubectl apply -f - <<EOF
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: app-database-external
+  namespace: app-production
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: vault-backend
+    kind: SecretStore
+  target:
+    name: app-database-secret
+    creationPolicy: Owner
+  data:
+  - secretKey: username
+    remoteRef:
+      key: app-production/database
+      property: username
+  - secretKey: password
+    remoteRef:
+      key: app-production/database
+      property: password
+EOF
+\end{lstlisting}
+
+\textbf{Store Secret in Vault:}
+
+\begin{lstlisting}[language=bash]
+# Write secret to Vault
+kubectl exec -n vault vault-0 -- vault kv put \
+  secret/app-production/database \
+  username=appuser \
+  password='SecureP@ssw0rd!'
+\end{lstlisting}
+
+\textbf{Reference:}
+\begin{itemize}
+    \item Vault Documentation: \url{https://www.vaultproject.io/docs}
+    \item Vault on Kubernetes: \url{https://developer.hashicorp.com/vault/docs/platform/k8s}
+    \item External Secrets: \url{https://external-secrets.io/latest/}
+    \item Vault Provider: \url{https://external-secrets.io/latest/provider/hashicorp-vault/}
+\end{itemize}
+
+\subsection{Transport Security}
+
+\subsubsection{Service Mesh Deployment (Phase 3)}
+
+\textbf{Istio Installation:}
+
+\begin{lstlisting}[language=bash]
+# Download Istio
+curl -L https://istio.io/downloadIstio | sh -
+cd istio-*
+export PATH=$PWD/bin:$PATH
+
+# Install Istio with default profile
+istioctl install --set profile=default -y
+
+# Enable sidecar injection for namespace
+kubectl label namespace app-production istio-injection=enabled
+
+# Verify installation
+istioctl verify-install
+\end{lstlisting}
+
+\textbf{Enable Strict mTLS:}
+
+\begin{lstlisting}[language=bash]
+# Require mTLS for all services in namespace
+kubectl apply -f - <<EOF
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: app-production
+spec:
+  mtls:
+    mode: STRICT
+EOF
+\end{lstlisting}
+
+\textbf{Authorization Policies:}
+
+\begin{lstlisting}[language=bash]
+# Deny all traffic by default
+kubectl apply -f - <<EOF
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-all
+  namespace: app-production
+spec:
+  {}
+EOF
+
+# Allow ingress-gateway to web-app
+kubectl apply -f - <<EOF
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-ingress-to-web
+  namespace: app-production
+spec:
+  selector:
+    matchLabels:
+      app: web-app
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+EOF
+
+# Allow web-app to database
+kubectl apply -f - <<EOF
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-web-to-db
+  namespace: app-production
+spec:
+  selector:
+    matchLabels:
+      app: database
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/app-production/sa/app-service-account"]
+    to:
+    - operation:
+        ports: ["5432"]
+EOF
+\end{lstlisting}
+
+\textbf{Reference:}
+\begin{itemize}
+    \item Istio Installation: \url{https://istio.io/latest/docs/setup/getting-started/}
+    \item Istio Security: \url{https://istio.io/latest/docs/concepts/security/}
+    \item PeerAuthentication: \url{https://istio.io/latest/docs/reference/config/security/peer_authentication/}
+    \item AuthorizationPolicy: \url{https://istio.io/latest/docs/reference/config/security/authorization-policy/}
+\end{itemize}
+
+\textbf{Linkerd Alternative (Lightweight):}
+
+\begin{lstlisting}[language=bash]
+# Install Linkerd CLI
+curl --proto '=https' --tlsv1.2 -sSfL https://run.linkerd.io/install | sh
+
+# Install Linkerd control plane
+linkerd install --crds | kubectl apply -f -
+linkerd install | kubectl apply -f -
+
+# Verify installation
+linkerd check
+
+# Enable sidecar injection
+kubectl annotate namespace app-production linkerd.io/inject=enabled
+
+# Linkerd automatically enables mTLS between meshed pods
+\end{lstlisting}
+
+\textbf{Reference:}
+\begin{itemize}
+    \item Linkerd Getting Started: \url{https://linkerd.io/2/getting-started/}
+    \item Automatic mTLS: \url{https://linkerd.io/2/features/automatic-mtls/}
+\end{itemize}
+
+\subsection{Audit \& Compliance}
+
+\subsubsection{Kubernetes Audit Logging}
+
+\textbf{Audit Policy Configuration:}
+
+\begin{lstlisting}[language=bash]
+# Create audit policy file
+cat > /etc/kubernetes/audit-policy.yaml <<EOF
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+# Log all requests at RequestResponse level
+- level: RequestResponse
+  verbs: ["create", "update", "patch", "delete"]
+  resources:
+  - group: ""
+    resources: ["secrets", "configmaps"]
+  - group: "rbac.authorization.k8s.io"
+    resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings"]
+
+# Log pod exec/attach at Metadata level
+- level: Metadata
+  verbs: ["create"]
+  resources:
+  - group: ""
+    resources: ["pods/exec", "pods/attach", "pods/portforward"]
+
+# Log authentication decisions
+- level: Metadata
+  omitStages:
+  - RequestReceived
+  resources:
+  - group: "authentication.k8s.io"
+    resources: ["tokenreviews"]
+  - group: "authorization.k8s.io"
+    resources: ["subjectaccessreviews"]
+
+# Log all other requests at Metadata level
+- level: Metadata
+  omitStages:
+  - RequestReceived
+EOF
+
+# Add to kube-apiserver manifest
+--audit-policy-file=/etc/kubernetes/audit-policy.yaml
+--audit-log-path=/var/log/kubernetes/audit.log
+--audit-log-maxage=30
+--audit-log-maxbackup=10
+--audit-log-maxsize=100
+\end{lstlisting}
+
+\textbf{Forward Audit Logs to Centralized System:}
+
+\begin{lstlisting}[language=bash]
+# Use audit webhook for real-time forwarding
+--audit-webhook-config-file=/etc/kubernetes/audit-webhook.yaml
+--audit-webhook-batch-max-wait=5s
+\end{lstlisting}
+
+\textbf{Reference:}
+\begin{itemize}
+    \item Audit Logging: \url{https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/}
+    \item Audit Policy: \url{https://kubernetes.io/docs/reference/config-api/apiserver-audit.v1/}
+\end{itemize}
+
+\subsubsection{Runtime Security Monitoring (Falco)}
+
+\textbf{Falco Installation:}
+
+\begin{lstlisting}[language=bash]
+# Install Falco using Helm
+helm repo add falcosecurity https://falcosecurity.github.io/charts
+helm install falco falcosecurity/falco \
+  --namespace falco \
+  --create-namespace \
+  --set falco.grpc.enabled=true \
+  --set falco.grpcOutput.enabled=true
+
+# View Falco alerts
+kubectl logs -n falco -l app.kubernetes.io/name=falco -f
+\end{lstlisting}
+
+\textbf{Custom Falco Rules for Internal Apps:}
+
+\begin{lstlisting}[language=bash]
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: falco-custom-rules
+  namespace: falco
+data:
+  custom-rules.yaml: |
+    - rule: Unexpected Network Connection
+      desc: Detect unexpected outbound connections
+      condition: >
+        outbound and not fd.sip in (allowed_ips)
+        and container.ns = "app-production"
+      output: >
+        Unexpected network connection
+        (connection=%fd.name user=%user.name container=%container.name)
+      priority: WARNING
+
+    - rule: Terminal Shell in Container
+      desc: Detect shell spawned in container
+      condition: >
+        spawned_process and container
+        and shell_procs and proc.tty != 0
+        and container.ns = "app-production"
+      output: >
+        Shell spawned in container
+        (user=%user.name container=%container.name shell=%proc.name)
+      priority: WARNING
+EOF
+\end{lstlisting}
+
+\textbf{Reference:}
+\begin{itemize}
+    \item Falco Documentation: \url{https://falco.org/docs/}
+    \item Falco Rules: \url{https://github.com/falcosecurity/rules}
+\end{itemize}
+
+\subsection{Backup \& Disaster Recovery}
+
+\subsubsection{Velero Installation and Configuration}
+
+\textbf{Install Velero:}
+
+\begin{lstlisting}[language=bash]
+# Download Velero CLI
+wget https://github.com/vmware-tanzu/velero/releases/download/v1.12.0/velero-v1.12.0-linux-amd64.tar.gz
+tar -xvf velero-v1.12.0-linux-amd64.tar.gz
+sudo mv velero-v1.12.0-linux-amd64/velero /usr/local/bin/
+
+# Install Velero server (on-premises with MinIO)
+velero install \
+  --provider aws \
+  --plugins velero/velero-plugin-for-aws:v1.8.0 \
+  --bucket velero-backups \
+  --secret-file ./credentials-velero \
+  --use-volume-snapshots=false \
+  --backup-location-config region=minio,s3ForcePathStyle="true",s3Url=http://minio.minio:9000
+\end{lstlisting}
+
+\textbf{Create Backup Schedule:}
+
+\begin{lstlisting}[language=bash]
+# Daily backup of app-production namespace
+velero schedule create daily-app-backup \
+  --schedule="0 2 * * *" \
+  --include-namespaces app-production \
+  --ttl 720h0m0s  # 30 days retention
+
+# Manual backup
+velero backup create app-production-manual \
+  --include-namespaces app-production \
+  --wait
+\end{lstlisting}
+
+\textbf{Test Disaster Recovery:}
+
+\begin{lstlisting}[language=bash]
+# List backups
+velero backup get
+
+# Restore from backup
+velero restore create --from-backup daily-app-backup-20240119020000
+
+# Monitor restore
+velero restore describe <restore-name>
+\end{lstlisting}
+
+\textbf{Reference:}
+\begin{itemize}
+    \item Velero Documentation: \url{https://velero.io/docs/}
+    \item Velero on-premises: \url{https://velero.io/docs/main/on-premises/}
+\end{itemize}
+
+\subsubsection{Database Backup Strategy}
+
+\textbf{PostgreSQL Backup with CronJob:}
+
+\begin{lstlisting}[language=bash]
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-backup-script
+  namespace: app-production
+data:
+  backup.sh: |
+    #!/bin/bash
+    set -e
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    BACKUP_FILE="/backups/db_backup_\${TIMESTAMP}.sql.gz"
+    
+    pg_dump -h database-service -U \$POSTGRES_USER \$POSTGRES_DB | gzip > \$BACKUP_FILE
+    
+    # Keep only last 7 days
+    find /backups -name "db_backup_*.sql.gz" -mtime +7 -delete
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: app-production
+spec:
+  schedule: "0 1 * * *"  # Daily at 1 AM
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: backup
+            image: postgres:15
+            command: ["/bin/bash", "/scripts/backup.sh"]
+            env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-database-secret
+                  key: username
+            - name: POSTGRES_DB
+              value: appdb
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-database-secret
+                  key: password
+            volumeMounts:
+            - name: backup-script
+              mountPath: /scripts
+            - name: backup-storage
+              mountPath: /backups
+          restartPolicy: OnFailure
+          volumes:
+          - name: backup-script
+            configMap:
+              name: postgres-backup-script
+              defaultMode: 0755
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: database-backup-pvc
+EOF
+\end{lstlisting}
+
+\textbf{Reference:}
+\begin{itemize}
+    \item CronJob: \url{https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/}
+    \item pg\_dump: \url{https://www.postgresql.org/docs/current/app-pgdump.html}
+\end{itemize}
+
+\section{Implementation Roadmap}
+
+This section provides a phased implementation timeline aligned with the main cloud-native architecture guide.
+
+\subsection{Phase 2: Internal Pilot Readiness (Weeks 5-8)}
+
+\subsubsection{Week 5: Namespace and RBAC Setup}
+
+\textbf{Deliverables:}
+\begin{itemize}
+    \item Create namespaces with ResourceQuotas and LimitRanges
+    \item Configure RBAC roles and bindings for human users
+    \item Create ServiceAccounts with least-privilege roles
+    \item Document RBAC design decisions
+\end{itemize}
+
+\textbf{Validation:}
+\begin{itemize}
+    \item Verify users can only access permitted namespaces
+    \item Test ServiceAccount permissions are minimal
+    \item Audit RBAC configuration for overly broad permissions
+\end{itemize}
+
+\subsubsection{Week 6: Network Policies and Ingress}
+
+\textbf{Deliverables:}
+\begin{itemize}
+    \item Deploy CNI with NetworkPolicy support (Calico or Cilium)
+    \item Create application-specific NetworkPolicies
+    \item Deploy NGINX Ingress Controller
+    \item Configure TLS certificates for internal domains
+\end{itemize}
+
+\textbf{Validation:}
+\begin{itemize}
+    \item Verify NetworkPolicies block unauthorized traffic
+    \item Test TLS termination at ingress
+    \item Validate internal DNS resolution
+\end{itemize}
+
+\subsubsection{Week 7: Workload Security and Secrets}
+
+\textbf{Deliverables:}
+\begin{itemize}
+    \item Apply Pod Security Standards (\texttt{baseline}) to namespaces
+    \item Configure security contexts for all deployments
+    \item Create Kubernetes Secrets for applications
+    \item Enable etcd encryption at rest
+\end{itemize}
+
+\textbf{Validation:}
+\begin{itemize}
+    \item Test pod deployment fails without compliant security context
+    \item Verify secrets are encrypted in etcd
+    \item Audit container images for root user usage
+\end{itemize}
+
+\subsubsection{Week 8: Observability and Backup}
+
+\textbf{Deliverables:}
+\begin{itemize}
+    \item Enable Kubernetes audit logging
+    \item Deploy Prometheus and Grafana
+    \item Configure centralized logging (Loki)
+    \item Install Velero for cluster backup
+    \item Create database backup CronJob
+    \item Document backup and restore procedures
+\end{itemize}
+
+\textbf{Validation:}
+\begin{itemize}
+    \item Review audit logs for create/update/delete events
+    \item Test backup creation and restoration
+    \item Verify metrics collection from all pods
+\end{itemize}
+
+\begin{checklistbox}
+\textbf{Phase 2 Completion Criteria:}
+
+Before proceeding to production deployment:
+\begin{itemize}
+    \item[$\square$] All namespaces have ResourceQuotas and LimitRanges
+    \item[$\square$] RBAC configured with least privilege
+    \item[$\square$] NetworkPolicies limit traffic to required flows
+    \item[$\square$] TLS enabled for all ingress traffic
+    \item[$\square$] Pod Security Standards enforced at \texttt{baseline}
+    \item[$\square$] All secrets stored in Kubernetes Secrets (not Git)
+    \item[$\square$] etcd encryption at rest enabled
+    \item[$\square$] Audit logging enabled and tested
+    \item[$\square$] Backup tested and documented
+    \item[$\square$] Incident response contacts defined
+\end{itemize}
+\end{checklistbox}
+
+\subsection{Phase 3: Secure Production Readiness (Weeks 9-12)}
+
+\subsubsection{Week 9: Service Mesh Deployment}
+
+\textbf{Deliverables:}
+\begin{itemize}
+    \item Deploy Istio or Linkerd service mesh
+    \item Enable sidecar injection for application namespaces
+    \item Configure strict mTLS for all service-to-service traffic
+    \item Verify mTLS with traffic analysis
+\end{itemize}
+
+\textbf{Validation:}
+\begin{itemize}
+    \item Verify all pods have sidecar proxies injected
+    \item Capture network traffic showing TLS encryption
+    \item Test service-to-service communication requires valid mTLS certificates
+\end{itemize}
+
+\subsubsection{Week 10: Zero-Trust Network Policies}
+
+\textbf{Deliverables:}
+\begin{itemize}
+    \item Document all required network flows
+    \item Implement default-deny NetworkPolicies
+    \item Create explicit allow rules for required traffic
+    \item Deploy Layer 7 authorization policies (service mesh)
+\end{itemize}
+
+\textbf{Validation:}
+\begin{itemize}
+    \item Test unauthorized traffic is blocked
+    \item Verify application functionality with restrictive policies
+    \item Audit for NetworkPolicy gaps
+\end{itemize}
+
+\subsubsection{Week 11: Workload Hardening and Policy Enforcement}
+
+\textbf{Deliverables:}
+\begin{itemize}
+    \item Upgrade Pod Security Standards to \texttt{restricted}
+    \item Deploy admission controller (OPA Gatekeeper or Kyverno)
+    \item Create and enforce security policies
+    \item Configure read-only root filesystems where possible
+\end{itemize}
+
+\textbf{Validation:}
+\begin{itemize}
+    \item Test policy violations are rejected
+    \item Verify all containers run as non-root
+    \item Audit for containers with unnecessary privileges
+\end{itemize}
+
+\subsubsection{Week 12: External Secrets and Runtime Security}
+
+\textbf{Deliverables:}
+\begin{itemize}
+    \item Deploy HashiCorp Vault
+    \item Install External Secrets Operator
+    \item Migrate secrets from Kubernetes to Vault
+    \item Deploy Falco for runtime security monitoring
+    \item Configure automated backup with Velero
+    \item Test disaster recovery procedures
+\end{itemize}
+
+\textbf{Validation:}
+\begin{itemize}
+    \item Verify secrets are dynamically fetched from Vault
+    \item Test secret rotation
+    \item Review Falco alerts for suspicious activity
+    \item Perform full disaster recovery test
+\end{itemize}
+
+\begin{checklistbox}
+\textbf{Phase 3 Production Readiness Criteria:}
+
+Before declaring production-ready:
+\begin{itemize}
+    \item[$\square$] Service mesh deployed with strict mTLS
+    \item[$\square$] Default-deny NetworkPolicies enforced
+    \item[$\square$] Layer 7 authorization policies configured
+    \item[$\square$] Pod Security Standards enforced at \texttt{restricted}
+    \item[$\square$] Admission controller blocking policy violations
+    \item[$\square$] All containers run as non-root with minimal capabilities
+    \item[$\square$] Read-only root filesystems where applicable
+    \item[$\square$] External Secrets Operator integrated with Vault
+    \item[$\square$] Secret rotation automated and tested
+    \item[$\square$] Falco monitoring active with alert routing
+    \item[$\square$] Image scanning integrated in CI/CD
+    \item[$\square$] Automated backup tested and verified
+    \item[$\square$] Disaster recovery runbook documented and tested
+    \item[$\square$] Security incident response plan documented
+    \item[$\square$] Compliance audit evidence collected
+\end{itemize}
+\end{checklistbox}
+
+\section{Validation and Testing}
+
+\subsection{Security Control Validation}
+
+\subsubsection{RBAC Validation}
+
+\textbf{Test Least Privilege:}
+
+\begin{lstlisting}[language=bash]
+# Test ServiceAccount cannot list secrets in other namespaces
+kubectl auth can-i list secrets \
+  --as=system:serviceaccount:app-production:app-service-account \
+  --namespace=default
+# Expected: no
+
+# Test user can only access permitted namespace
+kubectl auth can-i get pods \
+  --as=developer@example.com \
+  --namespace=app-production
+# Expected: yes
+
+kubectl auth can-i get pods \
+  --as=developer@example.com \
+  --namespace=kube-system
+# Expected: no
+\end{lstlisting}
+
+\subsubsection{NetworkPolicy Validation}
+
+\textbf{Test Default-Deny:}
+
+\begin{lstlisting}[language=bash]
+# Deploy test pod
+kubectl run -n app-production test-pod \
+  --image=nicolaka/netshoot \
+  --rm -it -- /bin/bash
+
+# Inside test pod, try unauthorized connection
+curl http://database-service.other-namespace:5432
+# Expected: timeout or connection refused
+
+# Try authorized connection
+curl http://database-service.app-production:5432
+# Expected: connection successful (based on NetworkPolicy)
+\end{lstlisting}
+
+\subsubsection{Pod Security Standards Validation}
+
+\textbf{Test Restricted Policy:}
+
+\begin{lstlisting}[language=bash]
+# Try to deploy privileged pod (should fail)
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: privileged-test
+  namespace: app-production
+spec:
+  containers:
+  - name: test
+    image: nginx
+    securityContext:
+      privileged: true
+EOF
+# Expected: Error - violates Pod Security Standards
+\end{lstlisting}
+
+\subsubsection{mTLS Validation}
+
+\textbf{Verify Mutual TLS:}
+
+\begin{lstlisting}[language=bash]
+# Istio: Check mTLS status
+istioctl x describe pod <pod-name> -n app-production
+
+# Capture traffic to verify encryption
+kubectl exec -n app-production <pod-name> -c istio-proxy -- \
+  tcpdump -i eth0 -w /tmp/capture.pcap
+
+# Linkerd: Check mTLS status
+linkerd viz -n app-production stat deploy --from deploy/<source-deploy>
+# Look for "secured" connections
+\end{lstlisting}
+
+\subsection{Disaster Recovery Testing}
+
+\subsubsection{Namespace Restore Test}
+
+\begin{lstlisting}[language=bash]
+# 1. Create backup
+velero backup create test-backup \
+  --include-namespaces app-production \
+  --wait
+
+# 2. Delete namespace
+kubectl delete namespace app-production
+
+# 3. Restore from backup
+velero restore create --from-backup test-backup
+
+# 4. Verify restoration
+kubectl get all -n app-production
+kubectl get pvc -n app-production
+\end{lstlisting}
+
+\subsubsection{Database Restore Test}
+
+\begin{lstlisting}[language=bash]
+# 1. List available backups
+kubectl exec -n app-production postgres-backup-<pod> -- ls /backups
+
+# 2. Restore database
+kubectl exec -n app-production database-0 -- \
+  bash -c "gunzip < /backups/db_backup_20240119_010000.sql.gz | psql -U appuser appdb"
+
+# 3. Verify data integrity
+kubectl exec -n app-production database-0 -- \
+  psql -U appuser -d appdb -c "SELECT COUNT(*) FROM <table>;"
+\end{lstlisting}
+
+\subsection{Compliance Audit Validation}
+
+\subsubsection{Generate Compliance Report}
+
+\textbf{Audit Checklist:}
+
+\begin{lstlisting}[language=bash]
+# Check Pod Security Standards enforcement
+kubectl get ns -L pod-security.kubernetes.io/enforce
+
+# List RBAC bindings
+kubectl get rolebindings,clusterrolebindings --all-namespaces
+
+# Verify NetworkPolicies exist
+kubectl get networkpolicies --all-namespaces
+
+# Check audit logging is enabled
+kubectl get pods -n kube-system | grep kube-apiserver
+kubectl exec -n kube-system kube-apiserver-<node> -- \
+  cat /etc/kubernetes/manifests/kube-apiserver.yaml | grep audit
+
+# List all secrets (verify none are in Git)
+kubectl get secrets --all-namespaces
+
+# Verify backup schedule
+velero schedule get
+\end{lstlisting}
+
+\section{Common Pitfalls and Solutions}
+
+\subsection{Identity \& Access Pitfalls}
+
+\begin{longtable}{|p{0.25\textwidth}|p{0.3\textwidth}|p{0.35\textwidth}|}
+\hline
+\textbf{Pitfall} & \textbf{Problem} & \textbf{Solution} \\
+\hline
+\endhead
+
+Overly Broad RBAC & Users or ServiceAccounts with cluster-admin or excessive permissions & Apply least privilege. Create specific Roles per application. Audit bindings regularly. Reference: \url{https://kubernetes.io/docs/reference/access-authn-authz/rbac/} \\
+\hline
+
+Default ServiceAccount Usage & Using default ServiceAccount grants unnecessary permissions & Create dedicated ServiceAccounts per application. Set \texttt{automountServiceAccountToken: false} unless required. \\
+\hline
+
+No User Authentication & Relying on certificate-based auth without identity provider & Integrate OIDC or LDAP for user authentication. Map OIDC groups to Kubernetes RBAC. Reference: \url{https://kubernetes.io/docs/reference/access-authn-authz/authentication/} \\
+\hline
+
+Shared ServiceAccounts & Multiple applications sharing ServiceAccount & Create separate ServiceAccount per application. Bind specific permissions to each. \\
+\hline
+\end{longtable}
+
+\subsection{Network Isolation Pitfalls}
+
+\begin{longtable}{|p{0.25\textwidth}|p{0.3\textwidth}|p{0.35\textwidth}|}
+\hline
+\textbf{Pitfall} & \textbf{Problem} & \textbf{Solution} \\
+\hline
+\endhead
+
+No NetworkPolicies & All pods can communicate freely & Implement default-deny NetworkPolicies. Explicitly allow required traffic. Reference: \url{https://kubernetes.io/docs/concepts/services-networking/network-policies/} \\
+\hline
+
+CNI Without Policy Support & NetworkPolicies defined but not enforced & Use Calico, Cilium, or other CNI with NetworkPolicy support. Verify enforcement. \\
+\hline
+
+Allowing All Egress & Pods can reach external networks unrestricted & Define egress rules limiting external access. Block internet access for internal-only apps. \\
+\hline
+
+Ingress Without TLS & Unencrypted traffic to applications & Require TLS at ingress. Use cert-manager for automated certificate management. Reference: \url{https://cert-manager.io/docs/} \\
+\hline
+\end{longtable}
+
+\subsection{Workload Security Pitfalls}
+
+\begin{longtable}{|p{0.25\textwidth}|p{0.3\textwidth}|p{0.35\textwidth}|}
+\hline
+\textbf{Pitfall} & \textbf{Problem} & \textbf{Solution} \\
+\hline
+\endhead
+
+Running as Root & Containers run as root user & Configure \texttt{runAsNonRoot: true} and \texttt{runAsUser: ¡uid¿}. Enforce with Pod Security Standards. Reference: \url{https://kubernetes.io/docs/concepts/security/pod-security-standards/} \\
+\hline
+
+Privileged Containers & Containers with \texttt{privileged: true} & Remove privileged flag. Drop all capabilities with \texttt{capabilities.drop: [ALL]}. \\
+\hline
+
+Writable Root Filesystem & Containers can modify filesystem & Set \texttt{readOnlyRootFilesystem: true}. Mount \texttt{emptyDir} for temp storage. \\
+\hline
+
+No Resource Limits & Containers can consume unlimited resources & Set \texttt{requests} and \texttt{limits} for CPU and memory. Enforce with LimitRanges. Reference: \url{https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/} \\
+\hline
+
+Missing Probes & No health checks for containers & Configure liveness and readiness probes. Reference: \url{https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/} \\
+\hline
+\end{longtable}
+
+\subsection{Secrets Management Pitfalls}
+
+\begin{longtable}{|p{0.25\textwidth}|p{0.3\textwidth}|p{0.35\textwidth}|}
+\hline
+\textbf{Pitfall} & \textbf{Problem} & \textbf{Solution} \\
+\hline
+\endhead
+
+Secrets in Git & Hardcoded credentials in repositories & Use Sealed Secrets or External Secrets Operator. Never commit secrets. Reference: \url{https://external-secrets.io/} \\
+\hline
+
+Unencrypted etcd & Secrets stored as base64 in etcd & Enable encryption at rest for etcd. Reference: \url{https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/} \\
+\hline
+
+No Secret Rotation & Static secrets never rotated & Implement automated rotation with Vault. Define rotation schedule. Reference: \url{https://www.vaultproject.io/docs} \\
+\hline
+
+Secrets in Environment Variables & Secrets visible in pod spec and logs & Use volume mounts for secrets. Avoid environment variables for sensitive data. \\
+\hline
+\end{longtable}
+
+\subsection{Observability Pitfalls}
+
+\begin{longtable}{|p{0.25\textwidth}|p{0.3\textwidth}|p{0.35\textwidth}|}
+\hline
+\textbf{Pitfall} & \textbf{Problem} & \textbf{Solution} \\
+\hline
+\endhead
+
+No Audit Logging & No forensic trail after incident & Enable Kubernetes audit logging. Retain logs for 90+ days. Reference: \url{https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/} \\
+\hline
+
+Insufficient Log Retention & Logs deleted before investigation & Centralize logs with retention policy. Use Loki or ELK stack. Reference: \url{https://grafana.com/docs/loki/} \\
+\hline
+
+No Runtime Monitoring & Malicious activity undetected & Deploy Falco for runtime security monitoring. Alert on suspicious behavior. Reference: \url{https://falco.org/docs/} \\
+\hline
+
+Missing SLOs & No definition of service health & Define SLIs and SLOs for critical services. Track error budgets. Reference: \url{https://sre.google/sre-book/service-level-objectives/} \\
+\hline
+\end{longtable}
+
+\section{Production Readiness Checklist}
+
+This comprehensive checklist validates all security controls before production deployment.
+
+\subsection{Identity \& Access Control}
+
+\begin{itemize}
+    \item[$\square$] Namespaces created with ResourceQuotas and LimitRanges
+    \item[$\square$] Dedicated ServiceAccount per application with least-privilege RBAC
+    \item[$\square$] \texttt{automountServiceAccountToken: false} where not required
+    \item[$\square$] OIDC or LDAP integration for user authentication
+    \item[$\square$] RBAC roles follow least-privilege principle
+    \item[$\square$] No cluster-admin bindings except for administrators
+    \item[$\square$] Regular RBAC audit conducted
+\end{itemize}
+
+\subsection{Network Isolation}
+
+\begin{itemize}
+    \item[$\square$] CNI with NetworkPolicy support deployed (Calico/Cilium)
+    \item[$\square$] Default-deny NetworkPolicies in place
+    \item[$\square$] Explicit allow rules for all required traffic
+    \item[$\square$] NetworkPolicies tested and verified
+    \item[$\square$] Ingress controller with TLS termination
+    \item[$\square$] Internal DNS resolution tested
+    \item[$\square$] No unnecessary external network access
+\end{itemize}
+
+\subsection{Workload Security}
+
+\begin{itemize}
+    \item[$\square$] Pod Security Standards enforced at \texttt{restricted} level
+    \item[$\square$] All containers run as non-root (\texttt{runAsNonRoot: true})
+    \item[$\square$] Read-only root filesystem where applicable
+    \item[$\square$] All capabilities dropped (\texttt{capabilities.drop: [ALL]})
+    \item[$\square$] Resource requests and limits defined
+    \item[$\square$] Liveness and readiness probes configured
+    \item[$\square$] Admission controller enforcing policies (OPA/Kyverno)
+    \item[$\square$] No privileged containers
+\end{itemize}
+
+\subsection{Secrets Management}
+
+\begin{itemize}
+    \item[$\square$] No secrets in Git repositories
+    \item[$\square$] etcd encryption at rest enabled
+    \item[$\square$] External Secrets Operator deployed (Phase 3)
+    \item[$\square$] HashiCorp Vault integrated (Phase 3)
+    \item[$\square$] Secret rotation automated and tested (Phase 3)
+    \item[$\square$] Secrets mounted as volumes (not environment variables)
+    \item[$\square$] Access to Vault restricted via RBAC
+\end{itemize}
+
+\subsection{Transport Security}
+
+\begin{itemize}
+    \item[$\square$] Service mesh deployed (Istio/Linkerd) (Phase 3)
+    \item[$\square$] Strict mTLS enabled for all service-to-service traffic (Phase 3)
+    \item[$\square$] Layer 7 authorization policies configured (Phase 3)
+    \item[$\square$] TLS certificates valid and trusted
+    \item[$\square$] Certificate rotation automated (cert-manager)
+    \item[$\square$] mTLS verified with traffic analysis (Phase 3)
+\end{itemize}
+
+\subsection{Audit \& Compliance}
+
+\begin{itemize}
+    \item[$\square$] Kubernetes audit logging enabled
+    \item[$\square$] Audit logs forwarded to centralized system
+    \item[$\square$] Log retention policy (90+ days)
+    \item[$\square$] Falco runtime security monitoring active (Phase 3)
+    \item[$\square$] Prometheus metrics collection configured
+    \item[$\square$] Grafana dashboards for security metrics
+    \item[$\square$] SLOs defined and monitored
+    \item[$\square$] Compliance evidence documented
+\end{itemize}
+
+\subsection{Container Supply Chain}
+
+\begin{itemize}
+    \item[$\square$] Image scanning in CI/CD pipeline (Phase 3)
+    \item[$\square$] Vulnerability blocking policy (Critical/High) (Phase 3)
+    \item[$\square$] Image signing implemented (Cosign) (Phase 3)
+    \item[$\square$] Image verification in admission controller (Phase 3)
+    \item[$\square$] SBOM generation automated (Phase 3)
+    \item[$\square$] Base images updated regularly
+    \item[$\square$] Private registry with access controls
+\end{itemize}
+
+\subsection{Backup \& Disaster Recovery}
+
+\begin{itemize}
+    \item[$\square$] Velero installed and configured
+    \item[$\square$] Automated backup schedule created
+    \item[$\square$] Database backup CronJob configured
+    \item[$\square$] Backup restoration tested successfully
+    \item[$\square$] RTO/RPO objectives defined
+    \item[$\square$] Disaster recovery runbook documented
+    \item[$\square$] Multi-zone deployment for availability
+    \item[$\square$] PodDisruptionBudgets configured
+\end{itemize}
+
+\subsection{Operational Readiness}
+
+\begin{itemize}
+    \item[$\square$] Security incident response plan documented
+    \item[$\square$] On-call rotation defined
+    \item[$\square$] Escalation procedures documented
+    \item[$\square$] Runbooks for common incidents
+    \item[$\square$] Regular security reviews scheduled
+    \item[$\square$] Chaos engineering tests performed (optional)
+    \item[$\square$] User training completed
+    \item[$\square$] Change management process established
+\end{itemize}
+
+\section{Continuous Security Improvement}
+
+\subsection{Regular Security Reviews}
+
+\textbf{Monthly Reviews:}
+\begin{itemize}
+    \item Audit RBAC bindings for excessive permissions
+    \item Review NetworkPolicies for coverage gaps
+    \item Check for unencrypted secrets
+    \item Analyze Falco alerts for trends
+    \item Review container images for vulnerabilities
+\end{itemize}
+
+\textbf{Quarterly Reviews:}
+\begin{itemize}
+    \item Update Pod Security Standards to latest version
+    \item Review and update admission controller policies
+    \item Test disaster recovery procedures
+    \item Conduct security training for teams
+    \item External security assessment or penetration test
+\end{itemize}
+
+\subsection{Metrics and KPIs}
+
+\textbf{Security Metrics to Track:}
+\begin{itemize}
+    \item Time to patch critical vulnerabilities
+    \item Number of policy violations per month
+    \item Mean time to detect (MTTD) security incidents
+    \item Mean time to respond (MTTR) security incidents
+    \item Percentage of workloads with restricted security context
+    \item Secret rotation frequency
+    \item Backup success rate
+    \item Disaster recovery test success rate
+\end{itemize}
+
+\subsection{Technology Evolution}
+
+Stay current with security best practices:
+
+\begin{itemize}
+    \item Monitor Kubernetes security advisories: \url{https://kubernetes.io/docs/reference/issues-security/security/}
+    \item Follow CNCF security projects: \url{https://www.cncf.io/projects/}
+    \item Track CVEs for container images
+    \item Participate in Kubernetes security SIG: \url{https://github.com/kubernetes/community/tree/master/sig-security}
+    \item Review CIS Kubernetes Benchmark updates: \url{https://www.cisecurity.org/benchmark/kubernetes}
+\end{itemize}
+
+\section{Conclusion}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+    \item \textbf{Internal $\neq$ Trusted}: Internal networks require the same zero-trust controls as external-facing systems. Lateral movement is a primary attack vector.
+    
+    \item \textbf{Phased Approach}: Start with Phase 2 (pilot readiness) for limited deployments, then harden to Phase 3 (production readiness) with zero-trust controls before full production rollout.
+    
+    \item \textbf{Defense in Depth}: Security is achieved through layered controls: identity, network, workload, secrets, transport, and audit.
+    
+    \item \textbf{Automation is Critical}: Manual security processes don't scale. Automate secrets rotation, backup, vulnerability scanning, and policy enforcement.
+    
+    \item \textbf{Continuous Validation}: Security is not a one-time implementation. Regular testing, auditing, and improvement are essential.
+\end{enumerate}
+
+\subsection{Next Steps}
+
+After completing this implementation guide:
+
+\begin{enumerate}
+    \item Deploy pilot applications in Phase 2 environment
+    \item Collect feedback and refine security controls
+    \item Harden to Phase 3 before production rollout
+    \item Establish operational processes (incident response, backup testing)
+    \item Plan for continuous security improvement
+\end{enumerate}
+
+\subsection{Additional Resources}
+
+\textbf{Security Standards:}
+\begin{itemize}
+    \item CIS Kubernetes Benchmark: \url{https://www.cisecurity.org/benchmark/kubernetes}
+    \item NSA/CISA Kubernetes Hardening Guide: \url{https://www.nsa.gov/Press-Room/News-Highlights/Article/Article/2716980/}
+    \item OWASP Kubernetes Security Cheat Sheet: \url{https://cheatsheetseries.owasp.org/cheatsheets/Kubernetes_Security_Cheat_Sheet.html}
+\end{itemize}
+
+\textbf{Community Resources:}
+\begin{itemize}
+    \item Kubernetes Security SIG: \url{https://github.com/kubernetes/community/tree/master/sig-security}
+    \item Cloud Native Security Whitepaper: \url{https://www.cncf.io/blog/2022/06/07/introduction-to-the-cloud-native-security-whitepaper/}
+    \item CNCF Security TAG: \url{https://tag-security.cncf.io/}
+\end{itemize}
+
+\textbf{Tools and Utilities:}
+\begin{itemize}
+    \item kube-bench (CIS compliance): \url{https://github.com/aquasecurity/kube-bench}
+    \item kube-hunter (penetration testing): \url{https://github.com/aquasecurity/kube-hunter}
+    \item kubescape (security posture): \url{https://github.com/kubescape/kubescape}
+    \item kubectl-who-can (RBAC analysis): \url{https://github.com/aquasecurity/kubectl-who-can}
+\end{itemize}
+
+\vspace{1cm}
+
+\begin{center}
+\rule{0.8\textwidth}{0.4pt}
+
+\textit{End of Secure Internal Application Hosting Guide}
+
+This guide is a companion to the \textit{Comprehensive Cloud-Native Architecture Implementation Guide}. Together, they provide a complete framework for building and securing internal applications on Kubernetes.
+
+\rule{0.8\textwidth}{0.4pt}
+\end{center}
+
+\end{document}

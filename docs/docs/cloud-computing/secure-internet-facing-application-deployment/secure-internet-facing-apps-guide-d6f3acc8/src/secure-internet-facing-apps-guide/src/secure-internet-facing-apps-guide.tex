@@ -1,0 +1,2590 @@
+\documentclass[11pt,letterpaper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{xurl}
+
+% Page setup
+\geometry{
+    letterpaper,
+    left=1in,
+    right=1in,
+    top=1in,
+    bottom=1in
+}
+
+% Hyperlink setup
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+    citecolor=blue,
+    pdftitle={Secure Internet-Facing Application Deployment Guide},
+    pdfauthor={},
+    bookmarks=true,
+    bookmarksopen=true,
+}
+
+% Headers and footers
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Secure Internet-Facing Application Deployment}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Title formatting
+\titleformat{\section}{\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+% Code listings
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10}
+}
+
+% Custom boxes
+\newtcolorbox{criticalbox}{
+    colback=red!5!white,
+    colframe=red!75!black,
+    title=Critical Security Requirement
+}
+
+\newtcolorbox{warningbox}{
+    colback=orange!5!white,
+    colframe=orange!75!black,
+    title=Security Warning
+}
+
+\newtcolorbox{infobox}{
+    colback=blue!5!white,
+    colframe=blue!75!black,
+    title=Implementation Note
+}
+
+\newtcolorbox{checklistbox}{
+    colback=green!5!white,
+    colframe=green!75!black,
+    title=Go/No-Go Checkpoint
+}
+
+\newtcolorbox{compliancebox}{
+    colback=purple!5!white,
+    colframe=purple!75!black,
+    title=Compliance Consideration
+}
+
+% Document
+\begin{document}
+
+% Title page
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    
+    {\Huge\bfseries Secure Internet-Facing\\[0.3cm]Application Deployment Guide\par}
+    
+    \vspace{1cm}
+    
+    {\Large High-Assurance Security Implementation\\[0.2cm]
+    for Public Production Workloads\par}
+    
+    \vspace{1.5cm}
+    
+    {\large\itshape Companion to Comprehensive Cloud-Native\\
+    Architecture Implementation Guide\par}
+    
+    \vspace{2cm}
+    
+    {\large Defense-in-Depth Security Controls\\[0.2cm]
+    Edge Security • API Protection • DDoS Mitigation\\[0.2cm]
+    WAF • Rate Limiting • Zero-Trust Architecture\\[0.2cm]
+    Threat Detection • Incident Response\par}
+    
+    \vfill
+    
+    {\large\bfseries Technical Reference Guide\par}
+    
+    \vspace{0.5cm}
+    
+    {\large Production-Ready Internet-Facing Deployments\par}
+    
+    \vspace{1cm}
+    
+    {\large\today\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Executive Summary}
+
+This guide provides a comprehensive security implementation framework for deploying internet-facing applications with high assurance requirements. It serves as a companion to the \textit{Comprehensive Cloud-Native Architecture Implementation Guide} and the \textit{Secure Internal Application Hosting Guide}, focusing specifically on the additional security controls, threat mitigations, and operational practices required for public-facing production workloads.
+
+\subsection{Document Purpose}
+
+This implementation guide serves as:
+
+\begin{enumerate}
+    \item \textbf{Security Hardening Roadmap}: Progressive maturity from protected pilot to production-ready internet deployment
+    \item \textbf{Defense-in-Depth Framework}: Layered security controls from edge to application to data
+    \item \textbf{Threat Mitigation Playbook}: Specific countermeasures for internet-facing attack vectors
+    \item \textbf{Compliance Accelerator}: Controls aligned with SOC 2, PCI-DSS, HIPAA, and GDPR requirements
+    \item \textbf{Operational Security Guide}: Monitoring, incident response, and continuous validation procedures
+\end{enumerate}
+
+\subsection{Key Insight: Public Internet Changes Everything}
+
+\begin{criticalbox}
+\textbf{Critical Security Principle:}
+
+Internet-facing applications face fundamentally different threat models than internal deployments:
+\begin{itemize}
+    \item \textbf{Constant Attack Surface}: Automated scanning, credential stuffing, exploit attempts 24/7
+    \item \textbf{Anonymized Attackers}: No authentication required for reconnaissance and initial attacks
+    \item \textbf{DDoS Vulnerability}: Application and infrastructure overwhelm attacks
+    \item \textbf{Zero Trust Required}: Every request must be validated; assume breach at every layer
+    \item \textbf{Regulatory Scrutiny}: Compliance frameworks mandate specific controls for public systems
+\end{itemize}
+
+\textbf{Internet-facing deployments require defense-in-depth at edge, application, and data layers simultaneously.}
+\end{criticalbox}
+
+\subsection{Relationship to Companion Guides}
+
+This guide builds upon:
+\begin{itemize}
+    \item \textbf{Cloud-Native Architecture Guide}: Assumes Kubernetes, service mesh, and cloud platform knowledge
+    \item \textbf{Internal Application Hosting Guide}: Inherits all zero-trust controls and adds internet-specific protections
+\end{itemize}
+
+\textbf{Critical Distinction}: This guide focuses on \textit{additional} security controls required when applications face the public internet. All internal security controls remain mandatory; internet-facing requires layered defenses beyond those baselines.
+
+\subsection{Scope and Target Audience}
+
+\textbf{In Scope:}
+\begin{itemize}
+    \item Internet-facing web applications and APIs
+    \item Public-facing microservices architectures
+    \item SaaS and customer-facing platforms
+    \item High-assurance production deployments
+    \item Compliance-regulated internet services
+    \item Multi-tenant internet applications
+\end{itemize}
+
+\textbf{Out of Scope:}
+\begin{itemize}
+    \item Internal-only applications (see Internal Application Hosting Guide)
+    \item Development or staging environments without production data
+    \item Mobile app backends (covered partially; requires additional mobile-specific controls)
+    \item IoT device management (requires specialized IoT security controls)
+\end{itemize}
+
+\textbf{Target Audience:}
+\begin{itemize}
+    \item Security engineers implementing internet-facing defenses
+    \item Platform engineers deploying public production workloads
+    \item DevSecOps teams integrating security into CI/CD pipelines
+    \item Compliance officers validating regulatory requirements
+    \item SRE teams responsible for internet service availability and resilience
+\end{itemize}
+
+\subsection{Security Maturity Phases}
+
+This guide defines three security maturity phases for internet-facing deployments:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Phase} & \textbf{Timeframe} & \textbf{Readiness Level} \\
+\midrule
+Phase 1 & Weeks 1-4 & \textbf{Protected Pilot} \\
+ & & IP whitelisting, basic WAF, limited user base \\
+ & & Controlled internet exposure for testing \\
+\midrule
+Phase 2 & Weeks 5-8 & \textbf{Controlled Public Access} \\
+ & & Full WAF, DDoS protection, rate limiting \\
+ & & Beta/limited production with monitoring \\
+\midrule
+Phase 3 & Weeks 9-12 & \textbf{Production Internet Deployment} \\
+ & & Complete defense-in-depth, threat detection \\
+ & & Full compliance, incident response capabilities \\
+\bottomrule
+\end{tabular}
+\caption{Internet-Facing Security Maturity Phases}
+\end{table}
+
+\textbf{Critical Note}: Each phase builds cumulatively. Phase 3 includes all Phase 1 and Phase 2 controls plus additional hardening. Never skip phases for internet-facing deployments.
+
+\section{Official Documentation Resources}
+
+The following official documentation provides authoritative references for implementing internet-facing security controls. These resources should be used alongside this guide for detailed implementation guidance.
+
+\subsection{Edge and Ingress Security}
+
+\subsubsection{Kubernetes Ingress Controllers}
+
+\textbf{NGINX Ingress Controller}:
+\begin{itemize}
+    \item Main Documentation: \url{https://kubernetes.github.io/ingress-nginx/}
+    \item User Guide: \url{https://kubernetes.github.io/ingress-nginx/user-guide/}
+    \item Rate Limiting: \url{https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#rate-limiting}
+    \item ModSecurity WAF: \url{https://kubernetes.github.io/ingress-nginx/user-guide/third-party-addons/modsecurity/}
+    \item TLS Configuration: \url{https://kubernetes.github.io/ingress-nginx/user-guide/tls/}
+    \item Security Best Practices: \url{https://kubernetes.github.io/ingress-nginx/deploy/#security-considerations}
+\end{itemize}
+
+\textbf{Traefik}:
+\begin{itemize}
+    \item Main Documentation: \url{https://doc.traefik.io/traefik/}
+    \item Middlewares: \url{https://doc.traefik.io/traefik/middlewares/overview/}
+    \item Rate Limiting: \url{https://doc.traefik.io/traefik/middlewares/http/ratelimit/}
+    \item IP Whitelisting: \url{https://doc.traefik.io/traefik/middlewares/http/ipwhitelist/}
+    \item HTTPS Configuration: \url{https://doc.traefik.io/traefik/https/overview/}
+\end{itemize}
+
+\textbf{Contour}:
+\begin{itemize}
+    \item Main Documentation: \url{https://projectcontour.io/docs/}
+    \item TLS Configuration: \url{https://projectcontour.io/docs/main/config/tls-termination/}
+    \item Rate Limiting: \url{https://projectcontour.io/docs/main/config/rate-limiting/}
+\end{itemize}
+
+\subsubsection{Web Application Firewalls}
+
+\textbf{ModSecurity}:
+\begin{itemize}
+    \item Main Documentation: \url{https://github.com/SpiderLabs/ModSecurity}
+    \item OWASP Core Rule Set: \url{https://owasp.org/www-project-modsecurity-core-rule-set/}
+    \item CRS Documentation: \url{https://coreruleset.org/docs/}
+    \item Rule Customization: \url{https://coreruleset.org/docs/configuring/}
+\end{itemize}
+
+\textbf{Coraza WAF}:
+\begin{itemize}
+    \item Main Documentation: \url{https://coraza.io/docs/}
+    \item Kubernetes Integration: \url{https://github.com/corazawaf/coraza-proxy-wasm}
+\end{itemize}
+
+\subsubsection{Cloud Provider Edge Services}
+
+\textbf{AWS}:
+\begin{itemize}
+    \item CloudFront: \url{https://docs.aws.amazon.com/cloudfront/}
+    \item AWS WAF: \url{https://docs.aws.amazon.com/waf/}
+    \item WAF Rules: \url{https://docs.aws.amazon.com/waf/latest/developerguide/waf-rules.html}
+    \item Shield (DDoS): \url{https://docs.aws.amazon.com/shield/}
+    \item Shield Advanced: \url{https://docs.aws.amazon.com/waf/latest/developerguide/shield-chapter.html}
+    \item Application Load Balancer: \url{https://docs.aws.amazon.com/elasticloadbalancing/latest/application/}
+\end{itemize}
+
+\textbf{Google Cloud}:
+\begin{itemize}
+    \item Cloud CDN: \url{https://cloud.google.com/cdn/docs}
+    \item Cloud Armor: \url{https://cloud.google.com/armor/docs}
+    \item Cloud Load Balancing: \url{https://cloud.google.com/load-balancing/docs}
+    \item Security Policies: \url{https://cloud.google.com/armor/docs/security-policy-overview}
+\end{itemize}
+
+\textbf{Azure}:
+\begin{itemize}
+    \item Front Door: \url{https://docs.microsoft.com/azure/frontdoor/}
+    \item Application Gateway: \url{https://docs.microsoft.com/azure/application-gateway/}
+    \item WAF Overview: \url{https://docs.microsoft.com/azure/web-application-firewall/}
+    \item DDoS Protection: \url{https://docs.microsoft.com/azure/ddos-protection/}
+\end{itemize}
+
+\subsection{TLS and Certificate Management}
+
+\textbf{cert-manager}:
+\begin{itemize}
+    \item Main Documentation: \url{https://cert-manager.io/docs/}
+    \item Installation: \url{https://cert-manager.io/docs/installation/}
+    \item ACME (Let's Encrypt): \url{https://cert-manager.io/docs/configuration/acme/}
+    \item Certificate Resources: \url{https://cert-manager.io/docs/usage/certificate/}
+    \item Securing Ingress: \url{https://cert-manager.io/docs/usage/ingress/}
+\end{itemize}
+
+\textbf{Let's Encrypt}:
+\begin{itemize}
+    \item Main Documentation: \url{https://letsencrypt.org/docs/}
+    \item Rate Limits: \url{https://letsencrypt.org/docs/rate-limits/}
+    \item Best Practices: \url{https://letsencrypt.org/docs/best-practice/}
+\end{itemize}
+
+\subsection{API Security}
+
+\textbf{API Gateway Solutions}:
+\begin{itemize}
+    \item Kong Gateway: \url{https://docs.konghq.com/gateway/}
+    \item Kong Rate Limiting: \url{https://docs.konghq.com/hub/kong-inc/rate-limiting/}
+    \item Kong Security Plugins: \url{https://docs.konghq.com/hub/?category=security}
+    \item Tyk API Gateway: \url{https://tyk.io/docs/}
+    \item KrakenD: \url{https://www.krakend.io/docs/}
+\end{itemize}
+
+\textbf{OAuth 2.0 and OIDC}:
+\begin{itemize}
+    \item OAuth 2.0 Specification: \url{https://oauth.net/2/}
+    \item OpenID Connect: \url{https://openid.net/connect/}
+    \item OAuth 2.0 Security Best Practices: \url{https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics}
+    \item Keycloak Documentation: \url{https://www.keycloak.org/documentation}
+    \item Dex (OIDC Provider): \url{https://dexidp.io/docs/}
+\end{itemize}
+
+\subsection{DDoS Protection and Rate Limiting}
+
+\textbf{Rate Limiting Tools}:
+\begin{itemize}
+    \item Envoy Rate Limiting: \url{https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/rate_limit_filter}
+    \item Redis Rate Limiter: \url{https://redis.io/docs/manual/patterns/rate-limiter/}
+    \item Nginx Rate Limiting: \url{https://www.nginx.com/blog/rate-limiting-nginx/}
+\end{itemize}
+
+\subsection{Service Mesh Security}
+
+\textbf{Istio}:
+\begin{itemize}
+    \item Security Concepts: \url{https://istio.io/latest/docs/concepts/security/}
+    \item Authorization Policies: \url{https://istio.io/latest/docs/tasks/security/authorization/}
+    \item Request Authentication: \url{https://istio.io/latest/docs/tasks/security/authentication/authn-policy/}
+    \item Mutual TLS: \url{https://istio.io/latest/docs/tasks/security/authentication/mtls-migration/}
+    \item Ingress Gateway: \url{https://istio.io/latest/docs/tasks/traffic-management/ingress/}
+    \item Security Best Practices: \url{https://istio.io/latest/docs/ops/best-practices/security/}
+\end{itemize}
+
+\textbf{Linkerd}:
+\begin{itemize}
+    \item Automatic mTLS: \url{https://linkerd.io/2/features/automatic-mtls/}
+    \item Server Policies: \url{https://linkerd.io/2/features/server-policy/}
+    \item Authorization Policy: \url{https://linkerd.io/2/reference/authorization-policy/}
+\end{itemize}
+
+\subsection{Secrets Management}
+
+\textbf{HashiCorp Vault}:
+\begin{itemize}
+    \item Main Documentation: \url{https://www.vaultproject.io/docs}
+    \item Kubernetes Auth: \url{https://www.vaultproject.io/docs/auth/kubernetes}
+    \item Dynamic Secrets: \url{https://www.vaultproject.io/docs/secrets}
+    \item Transit Secrets Engine: \url{https://www.vaultproject.io/docs/secrets/transit}
+    \item PKI Secrets Engine: \url{https://www.vaultproject.io/docs/secrets/pki}
+\end{itemize}
+
+\textbf{External Secrets Operator}:
+\begin{itemize}
+    \item Main Documentation: \url{https://external-secrets.io/}
+    \item Cloud Provider Backends: \url{https://external-secrets.io/latest/provider/aws-secrets-manager/}
+\end{itemize}
+
+\subsection{Security Scanning and Vulnerability Management}
+
+\textbf{Container Scanning}:
+\begin{itemize}
+    \item Trivy: \url{https://aquasecurity.github.io/trivy/}
+    \item Grype: \url{https://github.com/anchore/grype}
+    \item Clair: \url{https://quay.github.io/clair/}
+    \item Snyk Container: \url{https://snyk.io/product/container-vulnerability-management/}
+\end{itemize}
+
+\textbf{Image Signing and Verification}:
+\begin{itemize}
+    \item Sigstore Cosign: \url{https://docs.sigstore.dev/cosign/overview/}
+    \item Notary Project: \url{https://notaryproject.dev/}
+    \item Kyverno Image Verification: \url{https://kyverno.io/docs/writing-policies/verify-images/}
+\end{itemize}
+
+\textbf{Runtime Security}:
+\begin{itemize}
+    \item Falco: \url{https://falco.org/docs/}
+    \item Falco Rules: \url{https://github.com/falcosecurity/rules}
+    \item Tetragon (eBPF): \url{https://tetragon.io/docs/}
+\end{itemize}
+
+\subsection{Monitoring, Logging, and Observability}
+
+\textbf{Prometheus and Alerting}:
+\begin{itemize}
+    \item Prometheus Documentation: \url{https://prometheus.io/docs/}
+    \item Security Best Practices: \url{https://prometheus.io/docs/operating/security/}
+    \item Alertmanager: \url{https://prometheus.io/docs/alerting/latest/alertmanager/}
+\end{itemize}
+
+\textbf{Log Aggregation}:
+\begin{itemize}
+    \item Loki: \url{https://grafana.com/docs/loki/latest/}
+    \item Fluentd: \url{https://docs.fluentd.org/}
+    \item Fluent Bit: \url{https://docs.fluentbit.io/manual/}
+\end{itemize}
+
+\textbf{Distributed Tracing}:
+\begin{itemize}
+    \item Jaeger: \url{https://www.jaegertracing.io/docs/}
+    \item Tempo: \url{https://grafana.com/docs/tempo/latest/}
+\end{itemize}
+
+\subsection{Policy and Compliance}
+
+\textbf{Policy Enforcement}:
+\begin{itemize}
+    \item OPA/Gatekeeper: \url{https://open-policy-agent.github.io/gatekeeper/}
+    \item Kyverno: \url{https://kyverno.io/docs/}
+    \item Kyverno Policy Library: \url{https://kyverno.io/policies/}
+\end{itemize}
+
+\textbf{Compliance Frameworks}:
+\begin{itemize}
+    \item CIS Kubernetes Benchmark: \url{https://www.cisecurity.org/benchmark/kubernetes}
+    \item NSA Kubernetes Hardening Guide: \url{https://media.defense.gov/2022/Aug/29/2003066362/-1/-1/0/CTR_KUBERNETES_HARDENING_GUIDANCE_1.2_20220829.PDF}
+    \item NIST SP 800-190: \url{https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-190.pdf}
+\end{itemize}
+
+\subsection{Incident Response}
+
+\textbf{Security Incident Management}:
+\begin{itemize}
+    \item NIST Incident Response Guide: \url{https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-61r2.pdf}
+    \item OWASP Incident Response: \url{https://owasp.org/www-community/Incident_Response}
+\end{itemize}
+
+\section{Phase 1: Protected Pilot (Weeks 1-4)}
+
+\subsection{Overview}
+
+\textbf{Security Posture}: Controlled internet exposure with IP whitelisting and basic protections for pilot testing.
+
+\textbf{Acceptable Risk Profile}:
+\begin{itemize}
+    \item Limited known IP addresses (corporate network, test users)
+    \item Non-production or pilot data only
+    \item Ability to immediately block all external traffic if needed
+    \item Extensive monitoring and alerting on all access
+\end{itemize}
+
+\begin{warningbox}
+\textbf{Phase 1 Limitation}:
+
+This phase is NOT suitable for unrestricted public access. IP whitelisting is the primary control. Any expansion beyond known IPs requires advancing to Phase 2.
+\end{warningbox}
+
+\subsection{Core Security Controls}
+
+\subsubsection{Network Perimeter Protection}
+
+\textbf{IP Whitelisting}:
+\begin{itemize}
+    \item Implement strict IP allowlists at ingress controller level
+    \item Document all whitelisted IP ranges and their business justification
+    \item Establish change control process for IP list modifications
+    \item Monitor for connection attempts from non-whitelisted IPs
+\end{itemize}
+
+\textbf{Example: NGINX Ingress IP Whitelist}:
+\begin{lstlisting}[language=yaml]
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: protected-app-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/whitelist-source-range: |
+      203.0.113.0/24,
+      198.51.100.0/24
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - pilot.example.com
+    secretName: pilot-tls
+  rules:
+  - host: pilot.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: app-service
+            port:
+              number: 80
+\end{lstlisting}
+
+Official documentation: \url{https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#whitelist-source-range}
+
+\subsubsection{TLS/SSL Configuration}
+
+\textbf{Certificate Management with cert-manager}:
+\begin{itemize}
+    \item Deploy cert-manager with ACME (Let's Encrypt) or internal CA
+    \item Automate certificate issuance and renewal
+    \item Enforce TLS 1.2 minimum, prefer TLS 1.3
+    \item Configure strong cipher suites only
+\end{itemize}
+
+\textbf{Example: cert-manager Let's Encrypt Configuration}:
+\begin{lstlisting}[language=yaml]
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: security@example.com
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pilot-tls
+  namespace: pilot-app
+spec:
+  secretName: pilot-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+  - pilot.example.com
+\end{lstlisting}
+
+Official documentation: \url{https://cert-manager.io/docs/configuration/acme/}
+
+\textbf{TLS Configuration Best Practices}:
+\begin{itemize}
+    \item Minimum TLS 1.2, prefer TLS 1.3
+    \item Disable weak ciphers (RC4, 3DES, MD5)
+    \item Enable HSTS (HTTP Strict Transport Security)
+    \item Configure secure cipher suites
+\end{itemize}
+
+\textbf{Example: NGINX Ingress TLS Hardening}:
+\begin{lstlisting}[language=yaml]
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-configuration
+  namespace: ingress-nginx
+data:
+  ssl-protocols: "TLSv1.2 TLSv1.3"
+  ssl-ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384"
+  ssl-prefer-server-ciphers: "true"
+  hsts: "true"
+  hsts-max-age: "31536000"
+  hsts-include-subdomains: "true"
+  hsts-preload: "true"
+\end{lstlisting}
+
+Official documentation: \url{https://kubernetes.github.io/ingress-nginx/user-guide/tls/}
+
+\subsubsection{Basic Web Application Firewall}
+
+\textbf{ModSecurity with OWASP Core Rule Set}:
+\begin{itemize}
+    \item Deploy ModSecurity with NGINX Ingress Controller
+    \item Enable OWASP Core Rule Set (CRS) in detection mode initially
+    \item Monitor for false positives before enforcing blocking mode
+    \item Tune rules based on application behavior
+\end{itemize}
+
+\textbf{Example: ModSecurity Configuration}:
+\begin{lstlisting}[language=yaml]
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-configuration
+  namespace: ingress-nginx
+data:
+  enable-modsecurity: "true"
+  enable-owasp-modsecurity-crs: "true"
+  modsecurity-snippet: |
+    SecRuleEngine DetectionOnly
+    SecAuditLog /var/log/modsec_audit.log
+    SecAuditLogFormat JSON
+\end{lstlisting}
+
+Official documentation: \url{https://kubernetes.github.io/ingress-nginx/user-guide/third-party-addons/modsecurity/}
+
+\subsubsection{Kubernetes Security Baseline}
+
+\textbf{Pod Security Standards}:
+\begin{itemize}
+    \item Enforce \texttt{restricted} Pod Security Standard for application namespaces
+    \item Document any exemptions with security review
+    \item Use security contexts to drop capabilities and run as non-root
+\end{itemize}
+
+\textbf{Example: Pod Security Standard Enforcement}:
+\begin{lstlisting}[language=yaml]
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pilot-app
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+\end{lstlisting}
+
+Official documentation: \url{https://kubernetes.io/docs/concepts/security/pod-security-standards/}
+
+\textbf{Network Policies}:
+\begin{itemize}
+    \item Implement default-deny network policies
+    \item Allow only required ingress from ingress controller
+    \item Allow only required egress (DNS, external APIs)
+    \item Deny all other traffic by default
+\end{itemize}
+
+\textbf{Example: Default Deny Network Policy}:
+\begin{lstlisting}[language=yaml]
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: pilot-app
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-controller
+  namespace: pilot-app
+spec:
+  podSelector:
+    matchLabels:
+      app: web-app
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8080
+\end{lstlisting}
+
+Official documentation: \url{https://kubernetes.io/docs/concepts/services-networking/network-policies/}
+
+\subsubsection{Secrets Management}
+
+\textbf{External Secrets Operator with Cloud Provider}:
+\begin{itemize}
+    \item Never store secrets in Git or Kubernetes Secrets directly
+    \item Use External Secrets Operator with AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault
+    \item Implement secret rotation policies (30-90 days)
+    \item Audit all secret access
+\end{itemize}
+
+\textbf{Example: External Secrets Operator Configuration}:
+\begin{lstlisting}[language=yaml]
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: aws-secretsmanager
+  namespace: pilot-app
+spec:
+  provider:
+    aws:
+      service: SecretsManager
+      region: us-east-1
+      auth:
+        jwt:
+          serviceAccountRef:
+            name: external-secrets-sa
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: database-credentials
+  namespace: pilot-app
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: aws-secretsmanager
+    kind: SecretStore
+  target:
+    name: db-credentials
+    creationPolicy: Owner
+  data:
+  - secretKey: password
+    remoteRef:
+      key: pilot-app/database
+      property: password
+\end{lstlisting}
+
+Official documentation: \url{https://external-secrets.io/latest/introduction/getting-started/}
+
+\subsubsection{Authentication and Authorization}
+
+\textbf{OAuth 2.0 / OIDC Integration}:
+\begin{itemize}
+    \item Implement OAuth 2.0 for API authentication
+    \item Use OIDC for web application authentication
+    \item Integrate with corporate identity provider (Okta, Auth0, Keycloak)
+    \item Enforce MFA for all user access
+\end{itemize}
+
+\textbf{Example: OAuth2 Proxy with OIDC}:
+\begin{lstlisting}[language=yaml]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth2-proxy
+  namespace: pilot-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app: oauth2-proxy
+    spec:
+      containers:
+      - name: oauth2-proxy
+        image: quay.io/oauth2-proxy/oauth2-proxy:v7.5.1
+        args:
+        - --provider=oidc
+        - --oidc-issuer-url=https://auth.example.com
+        - --upstream=http://app-service:80
+        - --http-address=0.0.0.0:4180
+        - --email-domain=example.com
+        - --cookie-secure=true
+        - --cookie-samesite=lax
+        env:
+        - name: OAUTH2_PROXY_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-proxy-secrets
+              key: client-id
+        - name: OAUTH2_PROXY_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-proxy-secrets
+              key: client-secret
+        - name: OAUTH2_PROXY_COOKIE_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-proxy-secrets
+              key: cookie-secret
+\end{lstlisting}
+
+Official documentation: \url{https://oauth2-proxy.github.io/oauth2-proxy/}
+
+\subsubsection{Logging and Monitoring}
+
+\textbf{Security Event Logging}:
+\begin{itemize}
+    \item Enable Kubernetes audit logging for all API requests
+    \item Centralize logs with Loki or cloud provider logging service
+    \item Retain logs for minimum 90 days
+    \item Configure alerts for security events
+\end{itemize}
+
+\textbf{Monitoring and Alerting}:
+\begin{itemize}
+    \item Deploy Prometheus and Grafana
+    \item Configure alerts for:
+    \begin{itemize}
+        \item Non-whitelisted IP connection attempts
+        \item Failed authentication attempts (>5 per minute)
+        \item WAF rule violations
+        \item Certificate expiration warnings (30 days)
+        \item Anomalous traffic patterns
+    \end{itemize}
+    \item Establish on-call rotation for security alerts
+\end{itemize}
+
+\textbf{Example: Prometheus Alert Rules}:
+\begin{lstlisting}[language=yaml]
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-alerts
+  namespace: monitoring
+data:
+  security-alerts.yaml: |
+    groups:
+    - name: security
+      interval: 30s
+      rules:
+      - alert: UnauthorizedAccess
+        expr: rate(nginx_ingress_controller_requests{status="403"}[5m]) > 10
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High rate of 403 responses"
+          description: "Potential unauthorized access attempts detected"
+      
+      - alert: CertificateExpiringSoon
+        expr: (certmanager_certificate_expiration_timestamp_seconds - time()) / 86400 < 30
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Certificate expiring in less than 30 days"
+\end{lstlisting}
+
+Official documentation: \url{https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/}
+
+\subsection{Phase 1 Go/No-Go Checklist}
+
+\begin{checklistbox}
+\textbf{Before enabling internet access in Phase 1, verify:}
+
+\textbf{Network Security:}
+\begin{itemize}
+    \item[$\square$] IP whitelist configured and tested
+    \item[$\square$] TLS certificates issued and auto-renewing
+    \item[$\square$] TLS 1.2+ enforced, weak ciphers disabled
+    \item[$\square$] HSTS headers configured
+\end{itemize}
+
+\textbf{Application Security:}
+\begin{itemize}
+    \item[$\square$] ModSecurity with OWASP CRS enabled (detection mode)
+    \item[$\square$] Pod Security Standards enforced (restricted level)
+    \item[$\square$] Network policies: default-deny implemented
+    \item[$\square$] OAuth2/OIDC authentication configured
+\end{itemize}
+
+\textbf{Secrets and Credentials:}
+\begin{itemize}
+    \item[$\square$] External Secrets Operator configured
+    \item[$\square$] No secrets in Git repositories
+    \item[$\square$] Secret rotation policy documented
+\end{itemize}
+
+\textbf{Monitoring and Response:}
+\begin{itemize}
+    \item[$\square$] Kubernetes audit logging enabled
+    \item[$\square$] Centralized logging configured (90-day retention)
+    \item[$\square$] Security alerts configured and tested
+    \item[$\square$] On-call rotation established
+    \item[$\square$] Incident response runbook created
+\end{itemize}
+
+\textbf{Documentation:}
+\begin{itemize}
+    \item[$\square$] Whitelisted IPs documented with justification
+    \item[$\square$] Architecture diagram created
+    \item[$\square$] Runbook for adding/removing IPs from whitelist
+    \item[$\square$] Emergency shutdown procedure documented
+\end{itemize}
+\end{checklistbox}
+
+\section{Phase 2: Controlled Public Access (Weeks 5-8)}
+
+\subsection{Overview}
+
+\textbf{Security Posture}: Full WAF protection, DDoS mitigation, and rate limiting for controlled public access (beta/limited production).
+
+\textbf{Acceptable Risk Profile}:
+\begin{itemize}
+    \item Limited public user base (beta users, limited launch)
+    \item Production-like data with comprehensive monitoring
+    \item Ability to implement emergency rate limiting or blocking
+    \item 24/7 security monitoring and incident response
+\end{itemize}
+
+\begin{criticalbox}
+\textbf{Phase 2 Transition}:
+
+Removing IP whitelisting exposes application to internet-wide attacks. All Phase 2 controls must be implemented BEFORE removing IP restrictions. Never partially deploy Phase 2 controls.
+\end{criticalbox}
+
+\subsection{Enhanced Security Controls}
+
+\subsubsection{Cloud-Native DDoS Protection}
+
+\textbf{Cloud Provider DDoS Services}:
+\begin{itemize}
+    \item Enable AWS Shield Standard (automatic for all AWS customers)
+    \item Consider AWS Shield Advanced for Layer 7 protection
+    \item Alternatively: Google Cloud Armor or Azure DDoS Protection
+    \item Configure automatic scaling for DDoS absorption
+\end{itemize}
+
+\textbf{AWS Shield Standard Configuration}:
+\begin{itemize}
+    \item Automatically enabled for CloudFront and Route 53
+    \item Protects against common Layer 3/4 DDoS attacks
+    \item No additional configuration required
+    \item Monitor via CloudWatch metrics
+\end{itemize}
+
+Official documentation: \url{https://docs.aws.amazon.com/shield/latest/developerguide/what-is-aws-shield.html}
+
+\textbf{Google Cloud Armor}:
+\begin{lstlisting}[language=bash]
+# Create security policy
+gcloud compute security-policies create internet-app-policy \
+    --description "DDoS and WAF protection for internet-facing app"
+
+# Add rate limiting rule
+gcloud compute security-policies rules create 1000 \
+    --security-policy internet-app-policy \
+    --expression "true" \
+    --action "rate-based-ban" \
+    --rate-limit-threshold-count 100 \
+    --rate-limit-threshold-interval-sec 60 \
+    --ban-duration-sec 600 \
+    --conform-action allow \
+    --exceed-action deny-403
+\end{lstlisting}
+
+Official documentation: \url{https://cloud.google.com/armor/docs/security-policy-overview}
+
+\subsubsection{Production-Grade WAF Configuration}
+
+\textbf{ModSecurity Transition to Blocking Mode}:
+\begin{itemize}
+    \item Review detection mode logs for false positives
+    \item Create exception rules for legitimate traffic patterns
+    \item Enable blocking mode for OWASP CRS rules
+    \item Implement graduated response (log, rate-limit, block)
+\end{itemize}
+
+\textbf{Example: ModSecurity Blocking Mode}:
+\begin{lstlisting}[language=yaml]
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-configuration
+  namespace: ingress-nginx
+data:
+  enable-modsecurity: "true"
+  enable-owasp-modsecurity-crs: "true"
+  modsecurity-snippet: |
+    SecRuleEngine On
+    SecAuditEngine RelevantOnly
+    SecAuditLog /var/log/modsec_audit.log
+    SecAuditLogFormat JSON
+    
+    # Custom rule to allow legitimate traffic
+    SecRule REQUEST_URI "@streq /healthz" \
+        "id:1000,phase:1,pass,nolog,ctl:ruleEngine=Off"
+    
+    # Set paranoia level (1-4, higher = stricter)
+    SecAction "id:900000,phase:1,nolog,pass,\
+        t:none,setvar:tx.paranoia_level=2"
+\end{lstlisting}
+
+\textbf{OWASP CRS Protection Coverage}:
+\begin{itemize}
+    \item SQL Injection (SQLi) protection
+    \item Cross-Site Scripting (XSS) prevention
+    \item Local/Remote File Inclusion detection
+    \item Command Injection blocking
+    \item Protocol attack prevention
+    \item Malicious automation detection
+\end{itemize}
+
+Official documentation: \url{https://coreruleset.org/docs/}
+
+\subsubsection{Comprehensive Rate Limiting}
+
+\textbf{Multi-Layer Rate Limiting Strategy}:
+\begin{enumerate}
+    \item \textbf{Edge/CDN Layer}: Coarse-grained rate limiting (1000s req/min)
+    \item \textbf{Ingress Layer}: Per-path rate limiting (100s req/min)
+    \item \textbf{Application Layer}: Per-user/API key rate limiting (10s req/min)
+\end{enumerate}
+
+\textbf{Example: NGINX Ingress Rate Limiting}:
+\begin{lstlisting}[language=yaml]
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rate-limited-ingress
+  annotations:
+    # Global rate limit: 100 requests per second from same IP
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    
+    # Burst allowance
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "5"
+    
+    # Rate limit by client IP
+    nginx.ingress.kubernetes.io/limit-rate-after: "100"
+    nginx.ingress.kubernetes.io/limit-rate: "500"
+    
+    # Connection limits
+    nginx.ingress.kubernetes.io/limit-connections: "10"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: app.example.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 80
+\end{lstlisting}
+
+Official documentation: \url{https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#rate-limiting}
+
+\textbf{API-Specific Rate Limiting with Kong}:
+\begin{lstlisting}[language=yaml]
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: api-rate-limit
+  namespace: production
+plugin: rate-limiting
+config:
+  minute: 100
+  hour: 5000
+  policy: redis
+  redis_host: redis.default.svc.cluster.local
+  redis_port: 6379
+  fault_tolerant: true
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-ingress
+  annotations:
+    konghq.com/plugins: api-rate-limit
+spec:
+  ingressClassName: kong
+  rules:
+  - host: api.example.com
+    http:
+      paths:
+      - path: /v1
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 80
+\end{lstlisting}
+
+Official documentation: \url{https://docs.konghq.com/hub/kong-inc/rate-limiting/}
+
+\subsubsection{Advanced Authentication and Authorization}
+
+\textbf{API Key Management}:
+\begin{itemize}
+    \item Implement API key rotation (90-day lifecycle)
+    \item Hash API keys in storage (never store plaintext)
+    \item Rate limit per API key
+    \item Monitor for compromised keys (unusual geographic access, rate spikes)
+\end{itemize}
+
+\textbf{JWT Token Validation}:
+\begin{itemize}
+    \item Validate JWT signatures at ingress layer
+    \item Enforce short token expiration (15 minutes access, 7 days refresh)
+    \item Implement token revocation list for compromised tokens
+    \item Use RS256 or ES256 (not HS256 for production)
+\end{itemize}
+
+\textbf{Example: Istio JWT Validation}:
+\begin{lstlisting}[language=yaml]
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: jwt-validation
+  namespace: production
+spec:
+  selector:
+    matchLabels:
+      app: api-service
+  jwtRules:
+  - issuer: "https://auth.example.com"
+    jwksUri: "https://auth.example.com/.well-known/jwks.json"
+    audiences:
+    - "api.example.com"
+    forwardOriginalToken: true
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: require-jwt
+  namespace: production
+spec:
+  selector:
+    matchLabels:
+      app: api-service
+  action: DENY
+  rules:
+  - from:
+    - source:
+        notRequestPrincipals: ["*"]
+\end{lstlisting}
+
+Official documentation: \url{https://istio.io/latest/docs/tasks/security/authentication/authn-policy/}
+
+\subsubsection{Container Image Security}
+
+\textbf{Image Scanning in CI/CD}:
+\begin{itemize}
+    \item Scan all images for vulnerabilities before deployment
+    \item Fail builds with HIGH or CRITICAL vulnerabilities
+    \item Generate SBOM (Software Bill of Materials)
+    \item Block images without valid signatures
+\end{itemize}
+
+\textbf{Example: Trivy Scanning in CI/CD}:
+\begin{lstlisting}[language=bash]
+# Scan image for vulnerabilities
+trivy image --severity HIGH,CRITICAL \
+    --exit-code 1 \
+    myapp:latest
+
+# Generate SBOM
+trivy image --format cyclonedx \
+    --output sbom.json \
+    myapp:latest
+\end{lstlisting}
+
+Official documentation: \url{https://aquasecurity.github.io/trivy/}
+
+\textbf{Image Signing and Verification}:
+\begin{itemize}
+    \item Sign all production images with Cosign
+    \item Verify signatures at admission time with Kyverno
+    \item Store signatures in OCI registry
+    \item Reject unsigned images in production namespaces
+\end{itemize}
+
+\textbf{Example: Cosign Image Signing}:
+\begin{lstlisting}[language=bash]
+# Generate keypair (one-time)
+cosign generate-key-pair
+
+# Sign image
+cosign sign --key cosign.key \
+    myregistry.io/myapp:v1.2.3
+
+# Verify signature
+cosign verify --key cosign.pub \
+    myregistry.io/myapp:v1.2.3
+\end{lstlisting}
+
+\textbf{Example: Kyverno Image Verification Policy}:
+\begin{lstlisting}[language=yaml]
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-image-signatures
+spec:
+  validationFailureAction: enforce
+  background: false
+  rules:
+  - name: verify-signature
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - production
+    verifyImages:
+    - imageReferences:
+      - "myregistry.io/*"
+      attestors:
+      - count: 1
+        entries:
+        - keys:
+            publicKeys: |-
+              -----BEGIN PUBLIC KEY-----
+              ...
+              -----END PUBLIC KEY-----
+\end{lstlisting}
+
+Official documentation: \url{https://kyverno.io/docs/writing-policies/verify-images/}
+
+\subsubsection{Service Mesh Security}
+
+\textbf{Mutual TLS Between Services}:
+\begin{itemize}
+    \item Deploy service mesh (Istio or Linkerd)
+    \item Enable automatic mTLS for all inter-service communication
+    \item Enforce STRICT mTLS mode (reject plaintext)
+    \item Monitor certificate rotation
+\end{itemize}
+
+\textbf{Example: Istio Strict mTLS}:
+\begin{lstlisting}[language=yaml]
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: production
+spec:
+  mtls:
+    mode: STRICT
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: mtls-for-all
+  namespace: production
+spec:
+  host: "*.production.svc.cluster.local"
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+\end{lstlisting}
+
+Official documentation: \url{https://istio.io/latest/docs/tasks/security/authentication/mtls-migration/}
+
+\textbf{Fine-Grained Authorization Policies}:
+\begin{itemize}
+    \item Implement least-privilege service-to-service authorization
+    \item Deny all traffic by default, explicitly allow required paths
+    \item Use namespaces and service accounts for authorization
+\end{itemize}
+
+\textbf{Example: Istio Authorization Policy}:
+\begin{lstlisting}[language=yaml]
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: frontend-to-backend
+  namespace: production
+spec:
+  selector:
+    matchLabels:
+      app: backend-api
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/production/sa/frontend"]
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+        paths: ["/api/v1/*"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-all-default
+  namespace: production
+spec:
+  {}  # Empty spec = deny all
+\end{lstlisting}
+
+Official documentation: \url{https://istio.io/latest/docs/tasks/security/authorization/}
+
+\subsection{Phase 2 Go/No-Go Checklist}
+
+\begin{checklistbox}
+\textbf{Before removing IP whitelist and enabling public access:}
+
+\textbf{DDoS and Rate Limiting:}
+\begin{itemize}
+    \item[$\square$] Cloud DDoS protection enabled (Shield/Armor/DDoS Protection)
+    \item[$\square$] CDN/edge caching configured
+    \item[$\square$] Ingress rate limiting implemented and tested
+    \item[$\square$] Application-layer rate limiting configured
+    \item[$\square$] Auto-scaling policies configured
+\end{itemize}
+
+\textbf{WAF and Attack Prevention:}
+\begin{itemize}
+    \item[$\square$] ModSecurity in blocking mode with tuned rules
+    \item[$\square$] OWASP CRS false positives resolved
+    \item[$\square$] Custom WAF rules for application-specific attacks
+    \item[$\square$] WAF alerts configured and tested
+\end{itemize}
+
+\textbf{Authentication and Authorization:}
+\begin{itemize}
+    \item[$\square$] OAuth2/OIDC fully implemented and tested
+    \item[$\square$] API key management system deployed
+    \item[$\square$] JWT validation at ingress layer
+    \item[$\square$] MFA enforced for administrative access
+    \item[$\square$] Service mesh mTLS enabled (STRICT mode)
+\end{itemize}
+
+\textbf{Image and Container Security:}
+\begin{itemize}
+    \item[$\square$] Image scanning in CI/CD pipeline
+    \item[$\square$] Image signing implemented
+    \item[$\square$] Signature verification enforced
+    \item[$\square$] No HIGH/CRITICAL vulnerabilities in production images
+\end{itemize}
+
+\textbf{Monitoring and Response:}
+\begin{itemize}
+    \item[$\square$] Security monitoring dashboard deployed
+    \item[$\square$] DDoS attack alerts configured
+    \item[$\square$] WAF violation alerts configured
+    \item[$\square$] Failed authentication alerts configured
+    \item[$\square$] 24/7 on-call coverage established
+    \item[$\square$] Incident response playbooks created
+\end{itemize}
+
+\textbf{Testing:}
+\begin{itemize}
+    \item[$\square$] Load testing completed (2x expected peak traffic)
+    \item[$\square$] WAF testing with OWASP ZAP or similar
+    \item[$\square$] Rate limiting tested under load
+    \item[$\square$] Failover and disaster recovery tested
+\end{itemize}
+\end{checklistbox}
+
+\section{Phase 3: Production Internet Deployment (Weeks 9-12)}
+
+\subsection{Overview}
+
+\textbf{Security Posture}: Complete defense-in-depth with advanced threat detection, compliance controls, and mature incident response for unrestricted public production deployment.
+
+\textbf{Acceptable Risk Profile}:
+\begin{itemize}
+    \item Full production deployment with unrestricted public access
+    \item Compliance requirements (SOC 2, PCI-DSS, HIPAA, GDPR)
+    \item High-assurance security with continuous monitoring
+    \item Mature incident response and disaster recovery capabilities
+\end{itemize}
+
+\subsection{Advanced Security Controls}
+
+\subsubsection{Runtime Security and Threat Detection}
+
+\textbf{Falco for Runtime Anomaly Detection}:
+\begin{itemize}
+    \item Deploy Falco to detect runtime anomalies
+    \item Configure rules for:
+    \begin{itemize}
+        \item Unauthorized file access
+        \item Unexpected network connections
+        \item Container escape attempts
+        \item Privilege escalation
+        \item Crypto-mining activity
+    \end{itemize}
+    \item Integrate with SIEM or incident response platform
+\end{itemize}
+
+\textbf{Example: Falco Custom Rules}:
+\begin{lstlisting}[language=yaml]
+# Detect reverse shells
+- rule: Reverse Shell
+  desc: Detect reverse shell connection attempts
+  condition: >
+    spawned_process and
+    (proc.name in (netcat, nc, ncat) or
+     (proc.name = bash and proc.args contains "-i"))
+  output: >
+    Reverse shell detected (user=%user.name command=%proc.cmdline
+    container=%container.id image=%container.image.repository)
+  priority: CRITICAL
+  tags: [network, shell]
+
+# Detect unauthorized file access
+- rule: Read Sensitive File
+  desc: Detect reads to sensitive files
+  condition: >
+    open_read and
+    fd.name in (/etc/shadow, /etc/sudoers, ~/.ssh/id_rsa)
+    and not proc.name in (sshd, sudo)
+  output: >
+    Sensitive file accessed (user=%user.name file=%fd.name
+    command=%proc.cmdline container=%container.id)
+  priority: WARNING
+  tags: [filesystem, security]
+\end{lstlisting}
+
+Official documentation: \url{https://falco.org/docs/rules/}
+
+\textbf{Tetragon for eBPF-based Security Observability}:
+\begin{itemize}
+    \item Deploy Tetragon for deep kernel-level observability
+    \item Monitor system calls, network activity, file access
+    \item Create security policies based on observed behavior
+    \item Generate real-time security events
+\end{itemize}
+
+Official documentation: \url{https://tetragon.io/docs/}
+
+\subsubsection{Advanced Secrets Management}
+
+\textbf{HashiCorp Vault for Dynamic Secrets}:
+\begin{itemize}
+    \item Deploy Vault in HA mode with auto-unsealing
+    \item Use dynamic database credentials (short-lived)
+    \item Implement PKI as a Service for certificate management
+    \item Enable secret versioning and rollback
+    \item Configure audit logging for all secret access
+\end{itemize}
+
+\textbf{Example: Vault Dynamic Database Secrets}:
+\begin{lstlisting}[language=bash]
+# Configure database secrets engine
+vault write database/config/production-db \
+    plugin_name=postgresql-database-plugin \
+    allowed_roles="application-role" \
+    connection_url="postgresql://{{username}}:{{password}}@postgres:5432/app" \
+    username="vault" \
+    password="vault-password"
+
+# Create role with dynamic credentials
+vault write database/roles/application-role \
+    db_name=production-db \
+    creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; \
+        GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO \"{{name}}\";" \
+    default_ttl="1h" \
+    max_ttl="24h"
+
+# Application retrieves dynamic credentials
+vault read database/creds/application-role
+# Returns:
+# lease_id: database/creds/application-role/abc123
+# username: v-token-applicati-abc123def456
+# password: A1a-randompassword123
+\end{lstlisting}
+
+Official documentation: \url{https://www.vaultproject.io/docs/secrets/databases}
+
+\textbf{Vault Kubernetes Integration}:
+\begin{lstlisting}[language=yaml]
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: app-service-account
+  namespace: production
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secure-app
+  namespace: production
+spec:
+  template:
+    metadata:
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "application-role"
+        vault.hashicorp.com/agent-inject-secret-db: "database/creds/application-role"
+        vault.hashicorp.com/agent-inject-template-db: |
+          {{- with secret "database/creds/application-role" -}}
+          export DB_USER="{{ .Data.username }}"
+          export DB_PASS="{{ .Data.password }}"
+          {{- end }}
+    spec:
+      serviceAccountName: app-service-account
+      containers:
+      - name: app
+        image: myapp:v1.2.3
+        command: ["/bin/sh", "-c"]
+        args: ["source /vault/secrets/db && ./app"]
+\end{lstlisting}
+
+Official documentation: \url{https://www.vaultproject.io/docs/platform/k8s}
+
+\subsubsection{Comprehensive Security Monitoring}
+
+\textbf{Security Information and Event Management (SIEM)}:
+\begin{itemize}
+    \item Aggregate logs from all security controls (WAF, Falco, Kubernetes audit, application)
+    \item Correlate events across multiple sources
+    \item Create detection rules for attack patterns
+    \item Implement automated response workflows
+\end{itemize}
+
+\textbf{Key Security Metrics to Monitor}:
+\begin{enumerate}
+    \item \textbf{Authentication Metrics}:
+    \begin{itemize}
+        \item Failed login attempts per IP/user
+        \item Successful logins from new geographic locations
+        \item API key usage patterns
+        \item Token refresh rates
+    \end{itemize}
+    
+    \item \textbf{Traffic Anomalies}:
+    \begin{itemize}
+        \item Request rate deviations from baseline
+        \item Unusual user agent patterns
+        \item Geographic access anomalies
+        \item HTTP method distribution changes
+    \end{itemize}
+    
+    \item \textbf{WAF and Attack Detection}:
+    \begin{itemize}
+        \item WAF rule violations by type
+        \item Blocked request sources (IP, ASN)
+        \item SQL injection/XSS attempt patterns
+        \item File upload anomalies
+    \end{itemize}
+    
+    \item \textbf{Runtime Security}:
+    \begin{itemize}
+        \item Falco alerts by severity
+        \item Container escape attempts
+        \item Privilege escalation events
+        \item Unexpected network connections
+    \end{itemize}
+    
+    \item \textbf{Infrastructure}:
+    \begin{itemize}
+        \item Certificate expiration status
+        \item Security policy violations
+        \item Image vulnerability trends
+        \item Secret access patterns
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Example: Comprehensive Security Dashboard (Grafana)}:
+\begin{lstlisting}[language=json]
+{
+  "dashboard": {
+    "title": "Security Monitoring Dashboard",
+    "panels": [
+      {
+        "title": "Failed Authentication Attempts",
+        "targets": [
+          {
+            "expr": "rate(authentication_failures_total[5m])"
+          }
+        ]
+      },
+      {
+        "title": "WAF Blocks by Rule",
+        "targets": [
+          {
+            "expr": "sum by (rule_id) (waf_blocks_total)"
+          }
+        ]
+      },
+      {
+        "title": "Falco Critical Alerts",
+        "targets": [
+          {
+            "expr": "falco_alerts{priority=\"Critical\"}"
+          }
+        ]
+      }
+    ]
+  }
+}
+\end{lstlisting}
+
+\subsubsection{Security Policy Enforcement}
+
+\textbf{OPA/Gatekeeper for Admission Control}:
+\begin{itemize}
+    \item Enforce security policies at cluster admission
+    \item Validate container images are signed
+    \item Require security contexts on all pods
+    \item Block privileged containers
+    \item Enforce resource limits
+    \item Validate network policy definitions
+\end{itemize}
+
+\textbf{Example: Gatekeeper Constraint Templates}:
+\begin{lstlisting}[language=yaml]
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredsecuritycontrols
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredSecurityControls
+  targets:
+  - target: admission.k8s.gatekeeper.sh
+    rego: |
+      package k8srequiredsecuritycontrols
+      
+      violation[{"msg": msg}] {
+        container := input.review.object.spec.containers[_]
+        not container.securityContext.runAsNonRoot
+        msg := sprintf("Container %v must run as non-root", [container.name])
+      }
+      
+      violation[{"msg": msg}] {
+        container := input.review.object.spec.containers[_]
+        not container.securityContext.readOnlyRootFilesystem
+        msg := sprintf("Container %v must have read-only root filesystem", [container.name])
+      }
+      
+      violation[{"msg": msg}] {
+        container := input.review.object.spec.containers[_]
+        container.securityContext.allowPrivilegeEscalation
+        msg := sprintf("Container %v must not allow privilege escalation", [container.name])
+      }
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredSecurityControls
+metadata:
+  name: security-controls-required
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+    - apiGroups: [""]
+      kinds: ["Pod"]
+    namespaces:
+    - production
+\end{lstlisting}
+
+Official documentation: \url{https://open-policy-agent.github.io/gatekeeper/website/docs/}
+
+\textbf{Kyverno Policy Examples}:
+\begin{lstlisting}[language=yaml]
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: production-security-standards
+spec:
+  validationFailureAction: enforce
+  background: true
+  rules:
+  - name: require-image-signature
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - production
+    verifyImages:
+    - imageReferences:
+      - "*"
+      attestors:
+      - count: 1
+        entries:
+        - keys:
+            publicKeys: |-
+              -----BEGIN PUBLIC KEY-----
+              ...
+              -----END PUBLIC KEY-----
+  
+  - name: require-resource-limits
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - production
+    validate:
+      message: "All containers must have CPU and memory limits"
+      pattern:
+        spec:
+          containers:
+          - resources:
+              limits:
+                memory: "?*"
+                cpu: "?*"
+  
+  - name: block-latest-tag
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - production
+    validate:
+      message: "Using 'latest' tag is not allowed in production"
+      pattern:
+        spec:
+          containers:
+          - image: "!*:latest"
+\end{lstlisting}
+
+Official documentation: \url{https://kyverno.io/policies/}
+
+\subsubsection{Compliance and Audit Controls}
+
+\textbf{SOC 2 Type II Controls}:
+\begin{itemize}
+    \item Implement continuous audit logging (all API access, data access, admin actions)
+    \item Enable log immutability (write-once storage)
+    \item Maintain audit trail retention (minimum 1 year)
+    \item Implement change management process with approval workflows
+    \item Document and test disaster recovery procedures quarterly
+    \item Conduct penetration testing annually
+\end{itemize}
+
+\textbf{PCI-DSS Compliance (if applicable)}:
+\begin{itemize}
+    \item Network segmentation for cardholder data environment (CDE)
+    \item Encrypt cardholder data at rest and in transit
+    \item Implement strong access control measures (MFA, least privilege)
+    \item Regularly monitor and test networks
+    \item Maintain vulnerability management program
+    \item Implement and maintain firewall configurations
+\end{itemize}
+
+\textbf{GDPR Compliance (if applicable)}:
+\begin{itemize}
+    \item Implement data encryption at rest and in transit
+    \item Enable data portability mechanisms
+    \item Support right to erasure (data deletion)
+    \item Maintain data processing records
+    \item Implement breach notification procedures (72-hour requirement)
+    \item Conduct Data Protection Impact Assessments (DPIAs)
+\end{itemize}
+
+\textbf{Example: Audit Log Policy}:
+\begin{lstlisting}[language=yaml]
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+# Log all requests at metadata level
+- level: Metadata
+  omitStages:
+  - RequestReceived
+
+# Log request and response bodies for secret access
+- level: RequestResponse
+  resources:
+  - group: ""
+    resources: ["secrets"]
+
+# Log request and response for authentication
+- level: RequestResponse
+  verbs: ["create", "update", "patch", "delete"]
+  resources:
+  - group: ""
+    resources: ["serviceaccounts", "tokenreviews"]
+
+# Log all API access in production namespaces
+- level: Request
+  namespaces: ["production", "production-data"]
+  verbs: ["create", "update", "patch", "delete"]
+
+# Don't log certain high-volume, low-value resources
+- level: None
+  resources:
+  - group: ""
+    resources: ["events"]
+\end{lstlisting}
+
+Official documentation: \url{https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/}
+
+\subsubsection{Incident Response Capabilities}
+
+\textbf{Automated Incident Response}:
+\begin{itemize}
+    \item Automated blocking of malicious IPs (based on WAF violations, Falco alerts)
+    \item Automatic scaling during DDoS attacks
+    \item Auto-rotation of compromised secrets
+    \item Automated pod quarantine for suspicious behavior
+\end{itemize}
+
+\textbf{Example: Automated IP Blocking}:
+\begin{lstlisting}[language=bash]
+#!/bin/bash
+# Prometheus Alertmanager webhook receiver
+# Automatically blocks IPs with excessive WAF violations
+
+while read -r alert; do
+    ip=$(echo "$alert" | jq -r '.labels.client_ip')
+    violation_count=$(echo "$alert" | jq -r '.annotations.violation_count')
+    
+    if [ "$violation_count" -gt 100 ]; then
+        # Add IP to blocklist
+        kubectl annotate ingress production-ingress \
+            nginx.ingress.kubernetes.io/blacklist-source-range+="$ip/32"
+        
+        # Log to SIEM
+        logger -t incident-response "Blocked IP $ip due to $violation_count WAF violations"
+        
+        # Create incident ticket
+        create_incident_ticket "IP $ip auto-blocked" "$ip" "$violation_count"
+    fi
+done
+\end{lstlisting}
+
+\textbf{Incident Response Playbooks}:
+\begin{enumerate}
+    \item \textbf{DDoS Attack Response}:
+    \begin{itemize}
+        \item Activate emergency auto-scaling
+        \item Enable aggressive rate limiting
+        \item Contact cloud provider for additional DDoS mitigation
+        \item Notify stakeholders and establish incident bridge
+    \end{itemize}
+    
+    \item \textbf{Data Breach Response}:
+    \begin{itemize}
+        \item Isolate affected systems (network policies)
+        \item Preserve evidence (pod logs, network captures)
+        \item Rotate all credentials
+        \item Activate breach notification procedures
+        \item Conduct post-incident review
+    \end{itemize}
+    
+    \item \textbf{Compromised Credentials}:
+    \begin{itemize}
+        \item Immediately revoke compromised credentials
+        \item Audit access logs for unauthorized activity
+        \item Rotate all related secrets
+        \item Force re-authentication for affected users
+        \item Review and strengthen authentication controls
+    \end{itemize}
+    
+    \item \textbf{Zero-Day Vulnerability}:
+    \begin{itemize}
+        \item Assess impact and exposure
+        \item Implement temporary mitigations (WAF rules, network isolation)
+        \item Fast-track patching process
+        \item Monitor for exploitation attempts
+        \item Communicate with stakeholders
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Incident Documentation Requirements}:
+\begin{itemize}
+    \item Timeline of events
+    \item Root cause analysis
+    \item Impact assessment
+    \item Remediation actions taken
+    \item Lessons learned and improvements
+    \item Compliance notifications (if required)
+\end{itemize}
+
+\subsection{Disaster Recovery and Business Continuity}
+
+\textbf{Backup Strategy}:
+\begin{itemize}
+    \item Automated daily backups with Velero
+    \item Off-site backup storage (different region/provider)
+    \item Backup encryption at rest
+    \item Regular restore testing (quarterly)
+    \item Document RTO (Recovery Time Objective) and RPO (Recovery Point Objective)
+\end{itemize}
+
+\textbf{Example: Velero Backup Configuration}:
+\begin{lstlisting}[language=yaml]
+apiVersion: velero.io/v1
+kind: BackupStorageLocation
+metadata:
+  name: default
+  namespace: velero
+spec:
+  provider: aws
+  objectStorage:
+    bucket: production-backups-encrypted
+    prefix: kubernetes
+  config:
+    region: us-west-2
+    s3ForcePathStyle: "true"
+    serverSideEncryption: AES256
+---
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: production-daily-backup
+  namespace: velero
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  template:
+    includedNamespaces:
+    - production
+    - production-data
+    ttl: 720h  # 30 days retention
+    snapshotVolumes: true
+    volumeSnapshotLocations:
+    - default
+\end{lstlisting}
+
+Official documentation: \url{https://velero.io/docs/}
+
+\textbf{Multi-Region Deployment}:
+\begin{itemize}
+    \item Deploy to multiple geographic regions
+    \item Implement global load balancing with health checks
+    \item Synchronize data across regions (with appropriate consistency model)
+    \item Test regional failover procedures
+\end{itemize}
+
+\subsection{Phase 3 Go/No-Go Checklist}
+
+\begin{checklistbox}
+\textbf{Before full production deployment with unrestricted access:}
+
+\textbf{Advanced Threat Detection:}
+\begin{itemize}
+    \item[$\square$] Falco deployed with custom rules
+    \item[$\square$] Runtime security alerts integrated with incident response
+    \item[$\square$] SIEM correlation rules configured
+    \item[$\square$] Automated threat response workflows tested
+\end{itemize}
+
+\textbf{Secrets and Credential Management:}
+\begin{itemize}
+    \item[$\square$] Vault deployed in HA mode
+    \item[$\square$] Dynamic secrets implemented for databases
+    \item[$\square$] Secret rotation automated (30-90 day lifecycle)
+    \item[$\square$] Vault audit logging enabled
+\end{itemize}
+
+\textbf{Policy and Compliance:}
+\begin{itemize}
+    \item[$\square$] OPA/Gatekeeper policies enforced
+    \item[$\square$] Image signature verification required
+    \item[$\square$] Security contexts enforced on all pods
+    \item[$\square$] CIS Kubernetes Benchmark compliance validated
+    \item[$\square$] Compliance audit logging enabled (SOC 2/PCI/HIPAA/GDPR)
+\end{itemize}
+
+\textbf{Monitoring and Observability:}
+\begin{itemize}
+    \item[$\square$] Security dashboard deployed
+    \item[$\square$] All critical security metrics monitored
+    \item[$\square$] Alert fatigue minimized (tuned thresholds)
+    \item[$\square$] Distributed tracing implemented
+    \item[$\square$] Log retention meets compliance requirements (1+ years)
+\end{itemize}
+
+\textbf{Incident Response:}
+\begin{itemize}
+    \item[$\square$] Incident response playbooks documented
+    \item[$\square$] Automated response workflows tested
+    \item[$\square$] 24/7 security operations coverage
+    \item[$\square$] Incident communication plan established
+    \item[$\square$] Post-incident review process defined
+    \item[$\square$] Breach notification procedures documented
+\end{itemize}
+
+\textbf{Disaster Recovery:}
+\begin{itemize}
+    \item[$\square$] Backup automation with Velero configured
+    \item[$\square$] Off-site encrypted backups verified
+    \item[$\square$] Restore procedures tested successfully
+    \item[$\square$] RTO/RPO documented and validated
+    \item[$\square$] Multi-region deployment operational (if required)
+    \item[$\square$] Failover procedures tested
+\end{itemize}
+
+\textbf{Security Testing:}
+\begin{itemize}
+    \item[$\square$] Penetration testing completed (annually)
+    \item[$\square$] Security code review completed
+    \item[$\square$] Vulnerability scan shows no HIGH/CRITICAL issues
+    \item[$\square$] Load testing at 3x peak capacity
+    \item[$\square$] Chaos engineering tests passed
+\end{itemize}
+\end{checklistbox}
+
+\section{Defense-in-Depth Architecture}
+
+This section provides the conceptual framework for layered security controls across the entire application stack.
+
+\subsection{Security Layer Model}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}p{3cm}p{5cm}p{5cm}@{}}
+\toprule
+\textbf{Layer} & \textbf{Controls} & \textbf{Technologies} \\
+\midrule
+\textbf{Edge/Perimeter} & DDoS protection, WAF, rate limiting, geo-blocking & CloudFront, Shield, Cloud Armor, ModSecurity \\
+\midrule
+\textbf{Ingress} & TLS termination, authentication, path-based routing & NGINX, Traefik, Istio Ingress Gateway \\
+\midrule
+\textbf{Service Mesh} & mTLS, service-to-service authz, observability & Istio, Linkerd \\
+\midrule
+\textbf{Application} & Input validation, output encoding, session management & Application code, API gateway \\
+\midrule
+\textbf{Platform} & RBAC, network policies, pod security, admission control & Kubernetes, OPA/Gatekeeper \\
+\midrule
+\textbf{Runtime} & Anomaly detection, syscall monitoring, container isolation & Falco, Tetragon, seccomp \\
+\midrule
+\textbf{Data} & Encryption at rest, encryption in transit, access logging & Vault, database TLS, audit logs \\
+\midrule
+\textbf{Infrastructure} & Network segmentation, host hardening, patch management & VPC, security groups, CIS benchmarks \\
+\bottomrule
+\end{tabular}
+\caption{Defense-in-Depth Security Layers}
+\end{table}
+
+\subsection{Zero-Trust Principles}
+
+\textbf{Core Tenets}:
+\begin{enumerate}
+    \item \textbf{Verify Explicitly}: Always authenticate and authorize based on all available data points
+    \item \textbf{Least Privilege Access}: Limit user and service access with just-in-time and just-enough-access
+    \item \textbf{Assume Breach}: Minimize blast radius and segment access; verify end-to-end encryption
+\end{enumerate}
+
+\textbf{Implementation in Kubernetes}:
+\begin{itemize}
+    \item No implicit trust based on network location
+    \item Every service-to-service call authenticated (mTLS)
+    \item Every service-to-service call authorized (Istio AuthorizationPolicy)
+    \item Minimal pod permissions (restrictive security contexts)
+    \item Network segmentation (NetworkPolicies with default deny)
+    \item Continuous verification (Falco runtime monitoring)
+\end{itemize}
+
+\subsection{Attack Surface Reduction}
+
+\textbf{Minimize Exposure}:
+\begin{itemize}
+    \item Expose only required ports and services
+    \item Disable unnecessary Kubernetes APIs
+    \item Use distroless or minimal base images
+    \item Remove debugging tools from production images
+    \item Implement read-only root filesystems
+    \item Drop all unnecessary Linux capabilities
+\end{itemize}
+
+\textbf{Example: Minimal Security Context}:
+\begin{lstlisting}[language=yaml]
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secure-app
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 10000
+    fsGroup: 10000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+  - name: app
+    image: myapp:v1.2.3
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+        - ALL
+    volumeMounts:
+    - name: tmp
+      mountPath: /tmp
+  volumes:
+  - name: tmp
+    emptyDir: {}
+\end{lstlisting}
+
+\section{API Security Best Practices}
+
+\subsection{API Authentication Methods}
+
+\textbf{Comparison of Authentication Approaches}:
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}p{2.5cm}p{3.5cm}p{3cm}p{3.5cm}@{}}
+\toprule
+\textbf{Method} & \textbf{Use Case} & \textbf{Pros} & \textbf{Cons} \\
+\midrule
+API Keys & Server-to-server, public APIs & Simple, fast & Not suitable for user auth, difficult rotation \\
+\midrule
+OAuth 2.0 & Third-party integrations & Standard, delegated access & Complex, requires token management \\
+\midrule
+JWT & Microservices, SPAs & Stateless, self-contained & Token size, revocation challenges \\
+\midrule
+Mutual TLS & Service mesh, high security & Strong authentication & Certificate management complexity \\
+\bottomrule
+\end{tabular}
+\caption{API Authentication Methods}
+\end{table}
+
+\subsection{API Rate Limiting Strategies}
+
+\textbf{Rate Limit Tiers}:
+\begin{enumerate}
+    \item \textbf{Anonymous/Unauthenticated}: 10 requests/minute (strict)
+    \item \textbf{Authenticated User}: 100 requests/minute
+    \item \textbf{Premium/Paid Tier}: 1000 requests/minute
+    \item \textbf{Trusted Partners}: 10000 requests/minute
+\end{enumerate}
+
+\textbf{Rate Limiting Algorithms}:
+\begin{itemize}
+    \item \textbf{Token Bucket}: Allows bursts, smooths traffic over time
+    \item \textbf{Leaky Bucket}: Enforces constant rate, no bursts
+    \item \textbf{Fixed Window}: Simple but allows double traffic at window boundaries
+    \item \textbf{Sliding Window}: More accurate but more complex
+\end{itemize}
+
+\textbf{Recommended}: Token bucket for most use cases, sliding window for strict enforcement.
+
+\subsection{API Security Headers}
+
+\textbf{Essential Security Headers}:
+\begin{lstlisting}[language=yaml]
+# NGINX Ingress security headers
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-configuration
+  namespace: ingress-nginx
+data:
+  # Prevent clickjacking
+  add-headers: "X-Frame-Options: DENY"
+  
+  # Prevent MIME sniffing
+  add-headers: "X-Content-Type-Options: nosniff"
+  
+  # Enable XSS protection
+  add-headers: "X-XSS-Protection: 1; mode=block"
+  
+  # Content Security Policy
+  add-headers: "Content-Security-Policy: default-src 'self'"
+  
+  # Referrer Policy
+  add-headers: "Referrer-Policy: strict-origin-when-cross-origin"
+  
+  # HSTS
+  hsts: "true"
+  hsts-max-age: "31536000"
+  hsts-include-subdomains: "true"
+\end{lstlisting}
+
+\subsection{Input Validation and Sanitization}
+
+\textbf{Validation Principles}:
+\begin{itemize}
+    \item Validate on server side (never trust client)
+    \item Whitelist allowed characters/patterns (reject by default)
+    \item Enforce maximum lengths
+    \item Validate data types and formats
+    \item Reject unexpected input immediately
+\end{itemize}
+
+\textbf{Common Injection Prevention}:
+\begin{itemize}
+    \item \textbf{SQL Injection}: Use parameterized queries, never string concatenation
+    \item \textbf{XSS}: Encode output, use Content Security Policy
+    \item \textbf{Command Injection}: Avoid shell execution, validate inputs strictly
+    \item \textbf{Path Traversal}: Validate file paths, use chroot/jails
+\end{itemize}
+
+\section{Security Testing and Validation}
+
+\subsection{Automated Security Testing in CI/CD}
+
+\textbf{Pipeline Security Gates}:
+\begin{enumerate}
+    \item \textbf{SAST (Static Application Security Testing)}: Source code analysis for vulnerabilities
+    \item \textbf{Dependency Scanning}: Check for known vulnerabilities in dependencies
+    \item \textbf{Container Scanning}: Scan images for CVEs, malware, misconfigurations
+    \item \textbf{Infrastructure as Code Scanning}: Validate Terraform/Kubernetes manifests
+    \item \textbf{Secret Scanning}: Detect accidentally committed secrets
+\end{enumerate}
+
+\textbf{Example: GitHub Actions Security Pipeline}:
+\begin{lstlisting}[language=yaml]
+name: Security Scanning
+on: [push, pull_request]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    # SAST with Semgrep
+    - name: Semgrep Security Scan
+      uses: returntocorp/semgrep-action@v1
+      with:
+        config: p/security-audit
+    
+    # Dependency scanning
+    - name: Dependency Check
+      run: |
+        npm audit --audit-level=high
+        pip-audit
+    
+    # Container image scanning
+    - name: Build and scan image
+      run: |
+        docker build -t myapp:${{ github.sha }} .
+        trivy image --severity HIGH,CRITICAL \
+          --exit-code 1 myapp:${{ github.sha }}
+    
+    # IaC scanning
+    - name: Terraform security scan
+      run: |
+        tfsec ./terraform/
+        checkov -d ./terraform/ --framework terraform
+    
+    # Secret scanning
+    - name: Secret scanning
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: ${{ github.event.repository.default_branch }}
+        head: HEAD
+\end{lstlisting}
+
+\subsection{Penetration Testing}
+
+\textbf{Annual Penetration Test Scope}:
+\begin{itemize}
+    \item External network penetration testing
+    \item Web application security assessment (OWASP Top 10)
+    \item API security testing
+    \item Authentication and authorization bypass attempts
+    \item Business logic testing
+    \item Social engineering (phishing simulations)
+\end{itemize}
+
+\textbf{Bug Bounty Program}:
+\begin{itemize}
+    \item Establish responsible disclosure policy
+    \item Define scope (in-scope vs out-of-scope targets)
+    \item Set bounty rewards based on severity
+    \item Provide clear communication channels
+    \item Respond to submissions within 48 hours
+\end{itemize}
+
+\subsection{Security Chaos Engineering}
+
+\textbf{Attack Simulation Scenarios}:
+\begin{itemize}
+    \item Simulate credential compromise and test auto-rotation
+    \item Inject malicious traffic and validate WAF blocking
+    \item Test DDoS response with synthetic traffic spike
+    \item Simulate certificate expiration and validate auto-renewal
+    \item Test incident response procedures with tabletop exercises
+\end{itemize}
+
+\section{Compliance and Regulatory Requirements}
+
+\subsection{Compliance Framework Mapping}
+
+\begin{longtable}{@{}p{3cm}p{5.5cm}p{5cm}@{}}
+\toprule
+\textbf{Framework} & \textbf{Key Requirements} & \textbf{Implementation} \\
+\midrule
+\endhead
+
+\textbf{SOC 2 Type II} & 
+\begin{itemize}
+    \item Access controls
+    \item Change management
+    \item Risk assessment
+    \item Vendor management
+    \item Incident response
+\end{itemize} &
+\begin{itemize}
+    \item RBAC + MFA
+    \item GitOps with approval workflows
+    \item Annual risk assessments
+    \item Vendor security reviews
+    \item Documented IR playbooks
+\end{itemize} \\
+\midrule
+
+\textbf{PCI-DSS} & 
+\begin{itemize}
+    \item Network segmentation
+    \item Encryption in transit/at rest
+    \item Access controls (MFA)
+    \item Logging and monitoring
+    \item Vulnerability management
+\end{itemize} &
+\begin{itemize}
+    \item Dedicated CDE namespace
+    \item TLS 1.2+ and AES-256
+    \item OAuth2 + MFA enforced
+    \item 1-year audit log retention
+    \item Monthly vulnerability scans
+\end{itemize} \\
+\midrule
+
+\textbf{HIPAA} & 
+\begin{itemize}
+    \item PHI encryption
+    \item Access controls
+    \item Audit controls
+    \item Transmission security
+    \item Integrity controls
+\end{itemize} &
+\begin{itemize}
+    \item Encryption at rest/transit
+    \item Least-privilege RBAC
+    \item Comprehensive audit logging
+    \item mTLS for all services
+    \item Digital signatures (Cosign)
+\end{itemize} \\
+\midrule
+
+\textbf{GDPR} & 
+\begin{itemize}
+    \item Data protection by design
+    \item Right to erasure
+    \item Data portability
+    \item Breach notification (72hr)
+    \item DPIAs for high-risk processing
+\end{itemize} &
+\begin{itemize}
+    \item Encryption, pseudonymization
+    \item Data deletion APIs
+    \item Export functionality
+    \item Automated alerting system
+    \item DPIA templates and process
+\end{itemize} \\
+\midrule
+
+\textbf{ISO 27001} & 
+\begin{itemize}
+    \item ISMS framework
+    \item Risk assessment
+    \item Asset management
+    \item Incident management
+    \item Business continuity
+\end{itemize} &
+\begin{itemize}
+    \item Documented ISMS policies
+    \item Annual risk assessments
+    \item Asset inventory (CMDB)
+    \item IR procedures and drills
+    \item DR testing (quarterly)
+\end{itemize} \\
+\bottomrule
+\caption{Compliance Framework Implementation}
+\end{longtable}
+
+\subsection{Audit Trail Requirements}
+
+\textbf{Minimum Audit Logging}:
+\begin{itemize}
+    \item User authentication events (success and failure)
+    \item Authorization decisions (access granted/denied)
+    \item Resource creation, modification, deletion
+    \item Administrative actions
+    \item Security policy changes
+    \item Secret access
+    \item Data access (especially PII/PHI)
+\end{itemize}
+
+\textbf{Log Retention}:
+\begin{itemize}
+    \item SOC 2: Minimum 1 year
+    \item PCI-DSS: Minimum 1 year, online for 3 months
+    \item HIPAA: Minimum 6 years
+    \item GDPR: Varies by data type and legal basis
+\end{itemize}
+
+\section{Continuous Security Improvement}
+
+\subsection{Security Metrics and KPIs}
+
+\textbf{Track and Report Monthly}:
+\begin{enumerate}
+    \item \textbf{Vulnerability Metrics}:
+    \begin{itemize}
+        \item Mean Time to Detect (MTTD) vulnerabilities
+        \item Mean Time to Remediate (MTTR) vulnerabilities
+        \item Number of HIGH/CRITICAL vulnerabilities in production
+        \item Percentage of images with known vulnerabilities
+    \end{itemize}
+    
+    \item \textbf{Attack Metrics}:
+    \begin{itemize}
+        \item WAF block rate (blocked requests / total requests)
+        \item DDoS attack frequency and duration
+        \item Failed authentication attempts
+        \item API rate limit violations
+    \end{itemize}
+    
+    \item \textbf{Compliance Metrics}:
+    \begin{itemize}
+        \item Audit findings (open vs closed)
+        \item Policy violations detected
+        \item Time to compliance for new services
+        \item Percentage of resources meeting security standards
+    \end{itemize}
+    
+    \item \textbf{Incident Response Metrics}:
+    \begin{itemize}
+        \item Mean Time to Detect (MTTD) incidents
+        \item Mean Time to Respond (MTTR) incidents
+        \item Number of security incidents by severity
+        \item Percentage of incidents with complete post-mortems
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Security Review Cadence}
+
+\textbf{Quarterly Activities}:
+\begin{itemize}
+    \item Review and update security policies
+    \item Conduct tabletop incident response exercises
+    \item Review access control lists (user and service accounts)
+    \item Test disaster recovery procedures
+    \item Update threat model
+\end{itemize}
+
+\textbf{Annual Activities}:
+\begin{itemize}
+    \item Third-party penetration testing
+    \item Security awareness training for all staff
+    \item Comprehensive security architecture review
+    \item Compliance audit preparation and execution
+    \item Risk assessment update
+\end{itemize}
+
+\subsection{Threat Intelligence Integration}
+
+\textbf{Integrate Threat Feeds}:
+\begin{itemize}
+    \item Subscribe to CVE databases (NVD, vendor advisories)
+    \item Monitor CISA Known Exploited Vulnerabilities catalog
+    \item Track Kubernetes security advisories
+    \item Join cloud provider security bulletins
+    \item Participate in industry-specific ISACs (Information Sharing and Analysis Centers)
+\end{itemize}
+
+\textbf{Actionable Threat Intelligence}:
+\begin{itemize}
+    \item Automatically update WAF rules based on threat intelligence
+    \item Prioritize patching based on active exploitation
+    \item Update IP blocklists with known malicious sources
+    \item Adjust monitoring rules for emerging attack patterns
+\end{itemize}
+
+\section{Conclusion}
+
+\subsection{Critical Success Factors}
+
+Successful internet-facing application security requires:
+
+\begin{enumerate}
+    \item \textbf{Defense-in-Depth}: Multiple layers of security controls, no single point of failure
+    \item \textbf{Zero-Trust Architecture}: Continuous verification at every layer
+    \item \textbf{Automation}: Security controls integrated into CI/CD, not bolt-on
+    \item \textbf{Continuous Monitoring}: Real-time visibility and alerting
+    \item \textbf{Incident Response Readiness}: Documented procedures, tested regularly
+    \item \textbf{Security Culture}: Security is everyone's responsibility, not just security team
+\end{enumerate}
+
+\subsection{Common Pitfalls to Avoid}
+
+\begin{warningbox}
+\textbf{Avoid These Common Mistakes}:
+\begin{itemize}
+    \item Skipping security phases to accelerate deployment
+    \item Deploying internet-facing before Phase 2 controls complete
+    \item Relying solely on perimeter security (no defense-in-depth)
+    \item Neglecting log monitoring and alerting
+    \item Using default credentials or weak passwords
+    \item Failing to patch vulnerabilities promptly
+    \item Ignoring security alerts due to alert fatigue
+    \item Not testing incident response procedures
+\end{itemize}
+\end{warningbox}
+
+\subsection{Roadmap Beyond Phase 3}
+
+\textbf{Continuous Improvement}:
+\begin{itemize}
+    \item Implement machine learning for anomaly detection
+    \item Adopt eBPF-based security tools (Tetragon, Cilium)
+    \item Expand to multi-region active-active deployment
+    \item Implement automated threat hunting
+    \item Achieve additional compliance certifications
+    \item Establish bug bounty program
+    \item Develop security chaos engineering practice
+\end{itemize}
+
+\subsection{Final Checklist}
+
+\begin{checklistbox}
+\textbf{Production Readiness Final Verification}:
+
+\textbf{Security Controls (All Phases)}:
+\begin{itemize}
+    \item[$\square$] All Phase 1, 2, and 3 controls implemented
+    \item[$\square$] Defense-in-depth at all layers verified
+    \item[$\square$] Zero-trust principles enforced
+\end{itemize}
+
+\textbf{Testing and Validation}:
+\begin{itemize}
+    \item[$\square$] Penetration testing completed with findings remediated
+    \item[$\square$] Load testing at 3x expected capacity
+    \item[$\square$] Disaster recovery procedures tested successfully
+    \item[$\square$] Incident response drills conducted
+\end{itemize}
+
+\textbf{Operational Readiness}:
+\begin{itemize}
+    \item[$\square$] 24/7 security monitoring operational
+    \item[$\square$] On-call rotation established
+    \item[$\square$] Runbooks documented and accessible
+    \item[$\square$] Escalation procedures defined
+\end{itemize}
+
+\textbf{Compliance}:
+\begin{itemize}
+    \item[$\square$] All required compliance controls implemented
+    \item[$\square$] Audit logging meets retention requirements
+    \item[$\square$] Compliance documentation complete
+    \item[$\square$] Privacy policies updated
+\end{itemize}
+
+\textbf{Documentation}:
+\begin{itemize}
+    \item[$\square$] Architecture diagrams current
+    \item[$\square$] Security policies documented
+    \item[$\square$] Incident response playbooks complete
+    \item[$\square$] Disaster recovery procedures documented
+\end{itemize}
+\end{checklistbox}
+
+\subsection{Resources and Community}
+
+\textbf{Kubernetes Security Resources}:
+\begin{itemize}
+    \item Kubernetes Security SIG: \url{https://github.com/kubernetes/community/tree/master/sig-security}
+    \item CNCF Security Technical Advisory Group: \url{https://github.com/cncf/tag-security}
+    \item Kubernetes Security Checklist: \url{https://kubernetes.io/docs/concepts/security/security-checklist/}
+\end{itemize}
+
+\textbf{Security Training and Certifications}:
+\begin{itemize}
+    \item Certified Kubernetes Security Specialist (CKS)
+    \item Certified Information Systems Security Professional (CISSP)
+    \item GIAC Cloud Security Automation (GCSA)
+    \item Cloud Security Alliance (CSA) Certifications
+\end{itemize}
+
+\textbf{Security Communities}:
+\begin{itemize}
+    \item OWASP Foundation: \url{https://owasp.org/}
+    \item Cloud Native Security Con: \url{https://events.linuxfoundation.org/cloudnativesecuritycon-north-america/}
+    \item r/kubernetes (Reddit)
+    \item Kubernetes Slack \#sig-security channel
+\end{itemize}
+
+\end{document}

@@ -1,0 +1,170 @@
+% codeql-cheatsheet.tex
+% Compile with: pdflatex -shell-escape codeql-cheatsheet.tex
+\documentclass[11pt]{article}
+
+% ---------- Fonts & page ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=0.9in]{geometry}
+\usepackage{microtype}
+\usepackage{parskip}
+
+% ---------- Color & links ----------
+\usepackage[dvipsnames]{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+% ---------- Headings ----------
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{6pt plus 2pt}{4pt}
+\titlespacing*{\subsection}{0pt}{5pt plus 2pt}{3pt}
+
+% ---------- Lists (fixes your error) ----------
+\usepackage{enumitem}
+
+% ---------- Boxes ----------
+\usepackage[most]{tcolorbox}
+\tcbset{
+  sharp corners,
+  colback=white,
+  colframe=MidnightBlue,
+  boxsep=4pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt
+}
+
+% ---------- Code highlighting (minted) ----------
+\usepackage[newfloat=true]{minted} % requires -shell-escape
+\usemintedstyle{friendly}
+\setminted{
+  breaklines=true,
+  breaksymbolleft=,
+  breaksymbolright=,
+  fontsize=\footnotesize,
+  tabsize=2
+}
+
+% ---------- Title ----------
+\makeatletter
+\def\maketitle{
+  \begin{center}
+    {\LARGE \bfseries Code Scanning (CodeQL) — One-Page Cheat-Sheet\par}
+    \vspace{2pt}
+    {\small GitHub Actions + CodeQL quick setup, tips, and ready-to-use YAML\par}
+  \end{center}\vspace{6pt}
+}
+\makeatother
+
+\begin{document}
+\maketitle
+
+\begin{tcolorbox}
+\textbf{What it is.} Code scanning (CodeQL) runs static analysis in CI to detect security issues and code quality problems. It builds or analyzes your code, creates a relational DB, and executes query packs. Supports common languages: C/C++, C\#, Go, Java, JavaScript/TypeScript, Python, Ruby.
+
+\smallskip
+\textbf{When to use.} Every PR and protected branch; schedule a weekly sweep. Triage alerts in PRs; fix or dismiss with a reason.
+
+\smallskip
+\textbf{Licensing.} Public repos: free. Private/internal: requires GHAS.
+\end{tcolorbox}
+
+\section*{Drop-in workflow: \texttt{.github/workflows/codeql.yml}}
+\begin{minted}{yaml}
+name: CodeQL
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: "0 8 * * 1"   # weekly, Mon 08:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ "cpp", "csharp", "go", "java", "javascript", "python", "ruby" ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # If not using a config file, you can select a suite here:
+          # queries: security-extended
+
+      # For compiled languages, try autobuild first.
+      - name: Autobuild
+        if: contains('cpp csharp go java', matrix.language)
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+\end{minted}
+
+\section*{Optional advanced config: \texttt{.github/codeql/codeql-config.yml}}
+\begin{minted}{yaml}
+name: "CodeQL Advanced Config"
+
+# Choose broader suites for depth:
+# - security-extended
+# - security-and-quality
+queries:
+  - uses: security-extended
+
+packs:
+  - github/codeql/cpp-queries@latest
+  - github/codeql/javascript-queries@latest
+  - github/codeql/python-queries@latest
+
+paths:
+  - src/
+  - services/
+
+paths-ignore:
+  - "**/test/**"
+  - "docs/**"
+  - "**/*.md"
+\end{minted}
+
+\section*{10-step setup checklist}
+\begin{enumerate}[leftmargin=1.1em,itemsep=2pt,topsep=2pt]
+  \item Confirm GHAS for private/internal or use public repos.
+  \item Add the workflow file above; commit on a feature branch and open a PR.
+  \item (Optional) Add the advanced config and set your query suite.
+  \item Scope triggers to protected branches; keep PR checks required.
+  \item Ensure runners have resources; consider larger or self-hosted runners for heavy builds.
+  \item Keep the \texttt{autobuild} step for compiled languages, or insert a custom build.
+  \item Triage PR alerts: fix to auto-close, or dismiss with a reason.
+  \item Pin actions to maintained major versions (e.g., \texttt{@v3}); use Dependabot to update.
+  \item Control cost with schedules, manual dispatch, and \texttt{concurrency}.
+  \item Monitor results in \textit{Security $\rightarrow$ Code scanning alerts}.
+\end{enumerate}
+
+\section*{Tips \& gotchas}
+\begin{itemize}[leftmargin=1.1em,itemsep=2pt,topsep=2pt]
+  \item \textbf{Compilation matters.} If your build needs env vars, services, or build tools, add those steps before \texttt{init/analyze}.
+  \item \textbf{Language matrix.} Remove unused languages to speed up and lower cost.
+  \item \textbf{Stable output.} Use consistent \texttt{paths} and \texttt{paths-ignore} to avoid noisy diffs.
+  \item \textbf{Custom queries.} Host your own packs or add \texttt{queries:} entries for targeted checks.
+  \item \textbf{Minted compile.} Compile with \texttt{-shell-escape} and have Python Pygments installed.
+\end{itemize}
+
+\end{document}

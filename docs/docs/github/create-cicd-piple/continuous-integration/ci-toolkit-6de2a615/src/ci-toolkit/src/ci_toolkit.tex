@@ -1,0 +1,755 @@
+
+%========================================================
+% Continuous Integration Toolkit (GitHub-first, Minted Edition + C/C++)
+%========================================================
+\documentclass[11pt]{article}
+
+% ---------- Encoding & layout ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{microtype}
+\usepackage{setspace}
+\setstretch{1.12}
+
+% ---------- Colors, links, boxes ----------
+\usepackage{xcolor}
+\definecolor{ink}{HTML}{111827}      % gray-900
+\definecolor{soft}{HTML}{F9FAFB}     % gray-50
+\definecolor{accent}{HTML}{2563EB}   % blue-600
+\definecolor{ok}{HTML}{059669}       % emerald-600
+\definecolor{warn}{HTML}{D97706}     % amber-600
+\definecolor{bad}{HTML}{DC2626}      % red-600
+\definecolor{muted}{HTML}{6B7280}    % gray-500
+
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=accent,
+  urlcolor=accent,
+  citecolor=accent
+}
+
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\color{ink}}{\thesection}{0.5em}{}
+\titleformat{\subsection}{\bfseries\color{ink}}{\thesubsection}{0.5em}{}
+\titleformat{\subsubsection}{\itshape\color{ink}}{\thesubsubsection}{0.5em}{}
+
+\usepackage{tcolorbox}
+\tcbset{colframe=ink, colback=soft, boxrule=0.6pt, sharp corners, arc=2pt}
+
+% ---------- Minted (requires -shell-escape) ----------
+\usepackage[cache=false]{minted} % no frozencache; avoid style file errors
+\usemintedstyle{friendly}
+\setminted{
+  breaklines=true,
+  fontsize=\small,
+  linenos=true,
+  frame=single,
+  framesep=6pt
+}
+
+% ---------- Title ----------
+\title{\textbf{Continuous Integration Toolkit}\\\large GitHub-first (Minted Edition) with C and C++}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\begin{tcolorbox}
+\textbf{How to build.} This document uses \texttt{minted}, which calls \texttt{pygmentize}. Compile with:
+\begin{minted}[breaklines=false,linenos=false]{bash}
+latexmk -pdf -shell-escape ci_toolkit_minted_ccpp.tex
+\end{minted}
+If you cannot enable \texttt{-shell-escape}, I can ship a \textit{frozencache} variant with pre-generated styles.
+\end{tcolorbox}
+
+\section{Philosophy \& Goals}
+\begin{itemize}
+  \item \textbf{Fast feedback:} run on every push/PR; show coverage and lint results in the PR.
+  \item \textbf{Quality gates:} enforce coverage thresholds and required checks before merge.
+  \item \textbf{Secure by default:} enable CodeQL and Secret Scanning; keep dependencies healthy.
+  \item \textbf{Simple to adopt:} copy-paste scaffolds for Node, Python, Java, C, and C\texttt{++}.
+  \item \textbf{Maintainable:} reusable workflows, caching, and matrices.
+\end{itemize}
+
+% =============================
+% Node + Jest
+% =============================
+\section{Scaffold: Node + Jest}
+\paragraph{Init project}
+\begin{minted}{bash}
+npm init -y
+npm i -D jest
+mkdir -p src __tests__
+\end{minted}
+
+\paragraph{src/appOperations.js}
+\begin{minted}{javascript}
+function multiply(a, b) { return a * b; }
+function add(a, b) { return a + b; }
+function subtract(a, b) { return a - b; }
+module.exports = { multiply, add, subtract };
+\end{minted}
+\clearpage
+
+\paragraph{\texttt{\_\_tests\_\_/appOperations.test.js}}
+\begin{minted}{javascript}
+const { multiply, add, subtract } = require('../src/appOperations');
+
+test('multiply 5 x 0 = 0', () => {
+  expect(multiply(5, 0)).toBe(0);
+});
+
+test('add 5 + 5 = 10', () => {
+  expect(add(5, 5)).toBe(10);
+});
+
+test('subtract 15 - 5 = 10', () => {
+  expect(subtract(15, 5)).toBe(10);
+});
+\end{minted}
+
+\paragraph{package.json (scripts)}
+\begin{minted}{json}
+{
+  "scripts": {
+    "test": "jest --coverage"
+  }
+}
+\end{minted}
+
+\paragraph{jest.config.js}
+\begin{minted}{javascript}
+module.exports = {
+  testEnvironment: 'node',
+  collectCoverage: true,
+  coverageThreshold: {
+    global: { lines: 80, branches: 80, functions: 80, statements: 80 }
+  }
+};
+\end{minted}
+\clearpage
+
+\section{CI Workflow: Tests \& Coverage on PRs}
+\paragraph{.github/workflows/ci.yml}
+\begin{minted}{yaml}
+name: Unit tests & coverage
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      checks: write
+      pull-requests: write
+    concurrency:
+      group: ci-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test -- --coverage
+      - name: Publish Jest coverage to PR
+        uses: ArtiomTr/jest-coverage-report-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ github.sha }}
+          path: coverage
+          retention-days: 7
+\end{minted}
+
+\begin{tcolorbox}
+\textbf{Why this matters.} The coverage thresholds in \texttt{jest.config.js} enforce a minimum quality gate. The action posts a coverage summary on the PR so reviewers can spot regressions quickly.
+\end{tcolorbox}
+
+% =============================
+% Python + pytest
+% =============================
+\section{Python Variant (pytest)}
+\paragraph{requirements.txt}
+\begin{minted}{text}
+pytest
+pytest-cov
+\end{minted}
+
+\paragraph{app.py}
+\begin{minted}{python}
+def multiply(a, b):
+    return a * b
+
+def add(a, b):
+    return a + b
+
+def subtract(a, b):
+    return a - b
+\end{minted}
+
+\paragraph{tests/test\_app.py}
+\begin{minted}{python}
+from app import multiply, add, subtract
+
+def test_multiply():
+    assert multiply(5, 0) == 0
+
+def test_add():
+    assert add(5, 5) == 10
+
+def test_subtract():
+    assert subtract(15, 5) == 10
+\end{minted}
+
+\paragraph{pytest.ini}
+\begin{minted}{ini}
+[pytest]
+addopts = -q --cov=. --cov-report=term-missing
+\end{minted}
+\clearpage
+
+\paragraph{.github/workflows/ci-python.yml}
+\begin{minted}{yaml}
+name: Pytests
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - run: pip install -r requirements.txt
+      - run: pytest
+      - name: Upload coverage XML (optional)
+        run: pytest --cov=. --cov-report=xml:coverage.xml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+\end{minted}
+\clearpage
+
+% =============================
+% Java + Maven
+% =============================
+\section{Java Variant (Maven + JaCoCo)}
+\paragraph{pom.xml (snippets)}
+\begin{minted}{xml}
+<project>
+  <properties>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+  </properties>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.11</version>
+        <executions>
+          <execution>
+            <goals><goal>prepare-agent</goal></goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals><goal>report</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+\end{minted}
+\clearpage
+
+\paragraph{.github/workflows/ci-java.yml}
+\begin{minted}{yaml}
+name: Maven tests
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - run: mvn -B -DskipTests=false test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jacoco
+          path: target/site/jacoco
+\end{minted}
+\clearpage
+
+% =============================
+% C Variant (CMake + CTest + gcovr)
+% =============================
+\section{C Variant (CMake + CTest + gcovr)}
+\paragraph{Directory layout}
+\begin{minted}{text}
+include/mathops.h
+src/mathops.c
+tests/test_mathops.c
+CMakeLists.txt
+\end{minted}
+
+\paragraph{include/mathops.h}
+\begin{minted}{c}
+#ifndef MATHOPS_H
+#define MATHOPS_H
+
+int add(int a, int b);
+int subtract(int a, int b);
+int multiply(int a, int b);
+
+#endif
+\end{minted}
+
+\paragraph{src/mathops.c}
+\begin{minted}{c}
+#include "mathops.h"
+
+int add(int a, int b)      { return a + b; }
+int subtract(int a, int b) { return a - b; }
+int multiply(int a, int b) { return a * b; }
+\end{minted}
+
+\paragraph{tests/test\_mathops.c}
+\begin{minted}{c}
+#include <stdio.h>
+#include "mathops.h"
+
+int main(void) {
+    if (multiply(5, 0) != 0) return 1;
+    if (add(5, 5) != 10) return 1;
+    if (subtract(15, 5) != 10) return 1;
+    printf("All C tests passed\n");
+    return 0;
+}
+\end{minted}
+\clearpage
+
+\paragraph{CMakeLists.txt}
+\begin{minted}{cmake}
+cmake_minimum_required(VERSION 3.20)
+project(ci_c C)
+
+set(CMAKE_C_STANDARD 11)
+
+option(ENABLE_COVERAGE "Enable coverage flags" ON)
+
+if (ENABLE_COVERAGE AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+  add_compile_options(--coverage -O0 -g)
+  add_link_options(--coverage)
+endif()
+
+add_library(mathops src/mathops.c)
+target_include_directories(mathops PUBLIC include)
+
+add_executable(test_math tests/test_mathops.c)
+target_link_libraries(test_math PRIVATE mathops)
+
+include(CTest)
+add_test(NAME mathops_tests COMMAND test_math)
+\end{minted}
+\clearpage
+
+\paragraph{.github/workflows/ci-c.yml (with coverage gate)}
+\begin{minted}{yaml}
+name: C (CMake + CTest + gcovr)
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake gcc gcovr lcov
+      - name: Configure
+        run: cmake -S . -B build -DENABLE_COVERAGE=ON
+      - name: Build
+        run: cmake --build build --config Debug -- -j2
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+      - name: Coverage (gcovr, fail under 80%)
+        run: |
+          gcovr -r . --filter 'src/' --xml -o build/coverage.xml \
+                --html --html-details -o build/coverage.html \
+                --fail-under-lines 80
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c-coverage
+          path: build/coverage.*
+\end{minted}
+
+\begin{tcolorbox}
+\textbf{Notes (C).} \texttt{gcovr} \emph{fails the job} if line coverage drops below 80\% (adjust as needed). Keep optimization off (\texttt{-O0}) for accurate coverage.
+\end{tcolorbox}
+\clearpage
+
+% =============================
+% C++ Variant (CMake + GoogleTest + gcovr)
+% =============================
+\section{C\texttt{++} Variant (CMake + GoogleTest + gcovr)}
+\paragraph{Directory layout}
+\begin{minted}{text}
+include/mathops.hpp
+src/mathops.cpp
+tests/mathops_test.cpp
+CMakeLists.txt
+\end{minted}
+
+\paragraph{include/mathops.hpp}
+\begin{minted}{cpp}
+#pragma once
+namespace mathops {
+  inline int add(int a, int b)      { return a + b; }
+  inline int subtract(int a, int b) { return a - b; }
+  inline int multiply(int a, int b) { return a * b; }
+}
+\end{minted}
+
+\paragraph{src/mathops.cpp}
+\begin{minted}{cpp}
+#include "mathops.hpp"
+// All functions are inline in the header for brevity; translation unit kept for structure.
+\end{minted}
+
+\paragraph{tests/mathops\_test.cpp}
+\begin{minted}{cpp}
+#include <gtest/gtest.h>
+#include "mathops.hpp"
+
+TEST(MathOps, Multiply) { EXPECT_EQ(mathops::multiply(5, 0), 0); }
+TEST(MathOps, Add)      { EXPECT_EQ(mathops::add(5, 5), 10); }
+TEST(MathOps, Subtract) { EXPECT_EQ(mathops::subtract(15, 5), 10); }
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
+\end{minted}
+\clearpage
+
+\paragraph{CMakeLists.txt (FetchContent + coverage flags)}
+\begin{minted}{cmake}
+cmake_minimum_required(VERSION 3.20)
+project(ci_cpp CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+option(ENABLE_COVERAGE "Enable coverage flags" ON)
+
+if (ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  add_compile_options(--coverage -O0 -g)
+  add_link_options(--coverage)
+endif()
+
+add_library(mathops_cpp src/mathops.cpp)
+target_include_directories(mathops_cpp PUBLIC include)
+
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+)
+FetchContent_MakeAvailable(googletest)
+
+add_executable(mathops_test tests/mathops_test.cpp)
+target_link_libraries(mathops_test PRIVATE mathops_cpp GTest::gtest GTest::gtest_main)
+
+include(GoogleTest)
+gtest_discover_tests(mathops_test)
+\end{minted}
+\clearpage
+
+\paragraph{.github/workflows/ci-cpp.yml (matrix + coverage gate)}
+\begin{minted}{yaml}
+name: C++ (CMake + GTest + gcovr)
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ clang gcovr lcov
+      - name: Select compiler
+        run: |
+          if [ "${{ matrix.compiler }}" = "clang" ]; then
+            export CC=clang
+            export CXX=clang++
+          else
+            export CC=gcc
+            export CXX=g++
+          fi
+          echo "CC=$CC"  >> $GITHUB_ENV
+          echo "CXX=$CXX" >> $GITHUB_ENV
+      - name: Configure
+        run: cmake -S . -B build -DENABLE_COVERAGE=ON
+      - name: Build
+        run: cmake --build build --config Debug -- -j2
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+      - name: Coverage (gcovr, fail under 80%)
+        run: |
+          gcovr -r . --filter 'src/' --xml -o build/coverage.xml \
+                --html --html-details -o build/coverage.html \
+                --fail-under-lines 80
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cpp-coverage-${{ matrix.compiler }}
+          path: build/coverage.*
+\end{minted}
+
+\begin{tcolorbox}
+\textbf{Notes (C\texttt{++}).} The matrix validates both \texttt{gcc} and \texttt{clang}. GoogleTest is pulled with CMake \texttt{FetchContent}. Coverage is enforced via \texttt{gcovr} with an 80\% line gate.
+\end{tcolorbox}
+
+% =============================
+% Security and Quality Gates (shared)
+% =============================
+\section{Security and Quality Gates (Shared Patterns)}
+\subsection{CodeQL (Code Scanning)}
+\paragraph{.github/workflows/codeql.yml}
+\begin{minted}{yaml}
+name: CodeQL
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 2 * * 1'
+
+jobs:
+  analyze:
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript, cpp
+      - uses: github/codeql-action/autobuild@v3
+      - uses: github/codeql-action/analyze@v3
+\end{minted}
+
+\subsection{Secret Scanning and Push Protection}
+\paragraph{.github/secret\_scanning.yml (custom patterns \& ignores)}
+\begin{minted}{yaml}
+custom-patterns:
+  - name: Internal API token
+    pattern: 'sbm_[A-Za-z0-9]{24,}'
+    secret-group: internal
+
+paths-ignore:
+  - "docs/**"
+  - "*.md"
+\end{minted}
+
+\subsection{Dependency Hygiene (Dependabot)}
+\paragraph{.github/dependabot.yml}
+\begin{minted}{yaml}
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+  - package-ecosystem: pip
+    directory: "/"
+    schedule: { interval: weekly }
+  - package-ecosystem: maven
+    directory: "/"
+    schedule: { interval: weekly }
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule: { interval: monthly }
+\end{minted}
+
+% =============================
+% Linting / Formatting
+% =============================
+\section{Linting \& Formatting (Optional but Recommended)}
+\subsection{Node (ESLint)}
+\paragraph{Install}
+\begin{minted}{bash}
+npm i -D eslint
+npx eslint --init
+\end{minted}
+
+\paragraph{CI step}
+\begin{minted}{yaml}
+- run: npm run lint
+\end{minted}
+
+\subsection{Python (flake8 + black)}
+\paragraph{Install}
+\begin{minted}{bash}
+pip install flake8 black
+\end{minted}
+
+\paragraph{CI steps}
+\begin{minted}{yaml}
+- run: flake8 .
+- run: black --check .
+\end{minted}
+
+\subsection{C/C\texttt{++} (clang-tidy / clang-format)}
+\paragraph{Minimal config files}
+\begin{minted}{yaml}
+# .clang-tidy (example)
+Checks: '-*,bugprone-*,performance-*,readability-*'
+WarningsAsErrors: 'bugprone-*,performance-*'
+\end{minted}
+
+\begin{minted}{yaml}
+# .clang-format (example)
+BasedOnStyle: LLVM
+IndentWidth: 2
+ColumnLimit: 100
+\end{minted}
+
+\paragraph{CI snippets}
+\begin{minted}{yaml}
+- name: clang-tidy
+  run: clang-tidy **/*.cpp -- -std=c++20
+
+- name: clang-format (diff check)
+  run: |
+    if ! clang-format --dry-run --Werror $(git ls-files '*.c' '*.cpp' '*.hpp'); then
+      echo "Formatting issues found"; exit 1; fi
+\end{minted}
+
+% =============================
+% Reuse, Performance, and Badges
+% =============================
+\section{Monorepos \& Reuse}
+\subsection{Reusable Workflows}
+\paragraph{.github/workflows/reuse-node.yml}
+\begin{minted}{yaml}
+name: Reusable Node CI
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        required: true
+        type: string
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+      - run: npm ci && npm test -- --coverage
+\end{minted}
+
+\paragraph{Consumer}
+\begin{minted}{yaml}
+jobs:
+  use-reusable:
+    uses: ./.github/workflows/reuse-node.yml
+    with:
+      node-version: "20"
+\end{minted}
+
+\section{Matrices, Caching, and Speed}
+\subsection{Selective runs (paths filters)}
+\begin{minted}{yaml}
+on:
+  pull_request:
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/ci.yml"
+\end{minted}
+
+\subsection{General caching tips}
+\begin{itemize}
+  \item Node: use \texttt{setup-node} with \texttt{cache: npm}; prefer \texttt{npm ci}.
+  \item Python: \texttt{setup-python} with \texttt{cache: pip}.
+  \item Java: \texttt{setup-java} with \texttt{cache: maven}.
+  \item C/C\texttt{++}: enable ccache if needed; keep \texttt{fetch-depth: 1} for speed.
+\end{itemize}
+
+\section{Badges (Optional)}
+\begin{minted}{text}
+![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)
+[![CodeQL](https://github.com/OWNER/REPO/actions/workflows/codeql.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/codeql.yml)
+\end{minted}
+
+\section{Troubleshooting (Minted)}
+\begin{itemize}
+  \item \textbf{Missing \$ inserted / caption issues:} avoid fragile macros in captions. Use paragraph labels instead.
+  \item \textbf{``Missing Pygments output'' or ``Cannot find style'':} ensure \texttt{pygmentize} is installed and build with \texttt{-shell-escape}. We select the \texttt{friendly} style to avoid custom style files.
+  \item \textbf{``Missing \textbackslash end\{minted\}'':} verify each \texttt{minted} block is properly closed.
+  \item \textbf{Coverage gates for C/C\texttt{++}:} adjust \texttt{gcovr} thresholds with \texttt{--fail-under-lines} and optionally \texttt{--fail-under-branches}.
+\end{itemize}
+\end{document}

@@ -1,0 +1,327 @@
+%========================================================
+% GitHub Actions: Workflow & Action Attributes — Quick Reference
+%========================================================
+\documentclass[11pt]{article}
+
+% ---------- Encoding & layout ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{microtype}
+\usepackage{enumitem}
+\setlist[itemize]{topsep=2pt,itemsep=2pt,parsep=0pt}
+\setlist[enumerate]{topsep=2pt,itemsep=2pt,parsep=0pt}
+
+% ---------- Color & links ----------
+\usepackage{xcolor}
+\definecolor{ink}{HTML}{111827}   % neutral-900
+\definecolor{soft}{HTML}{F9FAFB}  % neutral-50
+\definecolor{accent}{HTML}{2563EB}% blue-600
+\usepackage[colorlinks=true,linkcolor=accent,urlcolor=accent,citecolor=accent]{hyperref}
+
+% ---------- Code (minted) ----------
+% Compile with: lualatex -shell-escape file.tex  (or) xelatex -shell-escape file.tex
+\usepackage[newfloat]{minted}
+\usemintedstyle{tango} % avoid "default" style cache issues
+\setminted{fontsize=\footnotesize,breaklines,autogobble,tabsize=2}
+
+\newminted[yamlcode]{yaml}{}
+\newminted[bashcode]{bash}{}
+\newminted[jsoncode]{json}{}
+
+% ---------- Title ----------
+\title{\textbf{GitHub Actions Quick Reference: Workflow \& Action Attributes}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Purpose}
+A zero-fluff reference for the core attributes you will use when designing GitHub Actions \texttt{workflows} and \texttt{actions}. Each snippet is production-friendly and highlights required vs optional bits.
+
+\section{Workflow Skeleton}
+\textbf{File:} \texttt{.github/workflows/ci.yml}
+\begin{yamlcode}
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore: [ "docs/**" ]
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Target environment"
+        required: true
+        type: choice
+        options: [dev, staging, prod]
+  schedule:
+    - cron: "0 9 * * 1"   # Runs 09:00 UTC every Monday
+
+jobs:
+  build:                   # job ID (starts with letter or underscore)
+    runs-on: ubuntu-latest # runner image
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      NODE_ENV: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Run tests
+        run: npm test -- --ci
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit
+          path: reports/junit.xml
+\end{yamlcode}
+
+\paragraph{Key attributes}
+\begin{itemize}
+  \item \texttt{name} (optional): Human-friendly workflow name; if omitted, GitHub derives one from the file path.
+  \item \texttt{on} (required): Events that trigger the workflow. Common: \texttt{push}, \texttt{pull\_request}, \texttt{workflow\_dispatch}, \texttt{schedule}. Cron is \textbf{UTC}.
+  \item \texttt{jobs} (required): Map of job identifiers to job definitions. Each workflow needs at least one job.
+\end{itemize}
+
+\section{Jobs}
+\begin{itemize}
+  \item \textbf{Identifier rules}: start with letter or underscore; only letters, numbers, dashes, underscores.
+  \item \texttt{runs-on}: Virtual environment for the job. Hosted: \texttt{ubuntu-latest}, \texttt{windows-latest}, \texttt{macos-latest}. You can also use \texttt{self-hosted}.
+  \item \texttt{needs}: Express job dependencies (fan-in/fan-out).
+  \item \texttt{strategy.matrix}: Run a job across a cartesian set of parameters.
+  \item \texttt{concurrency}: Prevent overlapping runs for a given key.
+\end{itemize}
+
+\noindent Example with dependencies, matrix, and concurrency:
+\begin{yamlcode}
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci && npm run lint
+
+  test:
+    needs: [lint]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [18, 20, 22]
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    concurrency:
+      group: tests-${{ github.ref }}-${{ matrix.os }}-node${{ matrix.node }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: ${{ matrix.node }} }
+      - run: npm ci
+      - run: npm test -- --ci
+\end{yamlcode}
+\clearpage
+
+\section{Steps}
+\begin{itemize}
+  \item Each \texttt{step} runs in its own process but shares the job's workspace.
+  \item \texttt{name} (optional): Label for the step.
+  \item \texttt{uses}: Reference to an \emph{action} (prebuilt logic).
+  \item \texttt{run}: Shell commands executed on the runner.
+  \item \texttt{shell}, \texttt{working-directory}, \texttt{env}: Per-step customizations.
+\end{itemize}
+
+\noindent Example mixing \texttt{uses} and \texttt{run}:
+\begin{yamlcode}
+steps:
+  - name: Checkout
+    uses: actions/checkout@v4
+
+  - name: Use a Docker action
+    uses: docker://alpine:3.20
+    with:
+      args: sh -lc 'echo "Hello from Docker"'
+
+  - name: Build
+    run: |
+      make clean
+      make -j"$(nproc)"
+
+  - name: Conditional step
+    if: ${{ success() && github.event_name == 'push' }}
+    run: echo "Ran on push and previous steps passed"
+\end{yamlcode}
+
+\section{Referencing Actions with \texttt{uses}}
+\begin{itemize}
+  \item Public repo action: \texttt{owner/repo@ref} where \texttt{ref} is a tag, branch, or \emph{preferably} a commit SHA.
+  \item Local action: path relative to workflow file, e.g., \texttt{./.github/actions/my-action}.
+  \item Container registry action: \texttt{docker://image:tag}.
+  \item \textbf{Pin versions}: For supply chain safety, pin to a full commit SHA when possible.
+\end{itemize}
+
+\noindent Examples:
+\begin{yamlcode}
+- uses: actions/checkout@3df4f2a...   # pinned to commit
+- uses: my-org/my-action@v2           # pinned to tag
+- uses: ./.github/actions/lint        # local action
+- uses: docker://ghcr.io/org/tool:1.2 # container action
+\end{yamlcode}
+\clearpage
+
+\section{Triggers via \texttt{on}}
+Common patterns:
+\begin{yamlcode}
+on:
+  push:            # most common, fires on new commits
+    branches: [ main, release/** ]
+    paths: [ "src/**", "!**/*.md" ]
+
+  pull_request:    # PR lifecycle
+    types: [opened, synchronize, reopened, ready_for_review]
+
+  workflow_dispatch:  # manual with inputs
+    inputs:
+      ref:
+        description: "Git ref (branch or tag)"
+        required: false
+        default: main
+
+  schedule:
+    - cron: "30 2 * * *" # 02:30 UTC daily
+\end{yamlcode}
+
+\paragraph{Notes}
+\begin{itemize}
+  \item \textbf{Cron timezone is UTC}. Convert carefully if you expect local time.
+  \item \texttt{repository\_dispatch} and webhooks can kick off workflows from external systems.
+\end{itemize}
+
+\section{Permissions \& Security Basics}
+\begin{itemize}
+  \item Use least privilege via top-level or job-level \texttt{permissions}.
+  \item Prefer \textbf{OIDC} (\texttt{id-token: write}) to cloud secrets where supported.
+  \item Never echo secrets; use \texttt{secrets.MY\_SECRET} and mask output if needed.
+\end{itemize}
+
+\begin{yamlcode}
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write   # for OIDC federation
+\end{yamlcode}
+\clearpage
+
+\section{Reusable Workflows vs Actions}
+\subsection*{Reusable workflow (workflow\_call)}
+Wrap a whole workflow and call it from others.
+\begin{yamlcode}
+# .github/workflows/reusable-build.yml
+name: Reusable Build
+on:
+  workflow_call:
+    inputs:
+      node:
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: ${{ inputs.node }} }
+      - run: npm ci && npm test
+\end{yamlcode}
+
+\begin{yamlcode}
+# caller workflow
+on: [push]
+jobs:
+  call-build:
+    uses: org/repo/.github/workflows/reusable-build.yml@v1
+    with:
+      node: "22"
+\end{yamlcode}
+
+\subsection*{Action (composite) basics}
+Great for bundling repeatable step logic.
+\textbf{File:} \texttt{.github/actions/hello/action.yml}
+\begin{yamlcode}
+name: "Hello"
+description: "Say hello"
+inputs:
+  who:
+    description: "Name"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - run: echo "Hello, ${{ inputs.who }}!"
+      shell: bash
+\end{yamlcode}
+\clearpage
+
+\section{Job Outputs \& Conditionals}
+\begin{yamlcode}
+jobs:
+  gather:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.pick.outputs.sha }}
+    steps:
+      - id: pick
+        run: echo "sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+  use:
+    needs: [gather]
+    runs-on: ubuntu-latest
+    if: ${{ needs.gather.outputs.sha != '' }}
+    steps:
+      - run: echo "Downstream got ${{ needs.gather.outputs.sha }}"
+\end{yamlcode}
+
+\section{Self-Hosted Runners (Heads-Up)}
+\begin{itemize}
+  \item Use when you need special software or hardware.
+  \item Lock down network egress, harden the host, and rotate runner tokens.
+  \item Tag runners and target with \texttt{runs-on: [self-hosted, linux, gpu]} etc.
+\end{itemize}
+
+\section{Common Pitfalls}
+\begin{itemize}
+  \item \textbf{Missing \texttt{on}}: Workflow will never trigger.
+  \item \textbf{Wrong job IDs}: Must match identifier rules; avoid spaces and special chars.
+  \item \textbf{Cron surprises}: Cron uses \textbf{UTC}, not local time.
+  \item \textbf{Unpinned actions}: Prefer commit SHAs for security and reproducibility.
+  \item \textbf{Secrets in logs}: Use \texttt{secrets.*} and avoid printing them.
+\end{itemize}
+
+\section*{Build Notes}
+Ensure Pygments is installed. Example compile:
+\begin{bashcode}
+# One of the following:
+xelatex -shell-escape file.tex
+lualatex -shell-escape file.tex
+\end{bashcode}
+
+\end{document}
+

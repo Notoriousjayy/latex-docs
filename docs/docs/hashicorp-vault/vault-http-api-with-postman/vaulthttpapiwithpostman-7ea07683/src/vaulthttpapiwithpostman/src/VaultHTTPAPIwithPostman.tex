@@ -1,0 +1,375 @@
+\documentclass[11pt]{article}
+
+% ---------- Encoding & layout ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{setspace}
+\setstretch{1.1}
+
+% ---------- Colors, boxes, lists ----------
+\usepackage{xcolor}
+\definecolor{ink}{HTML}{1F2937}      % neutral-800
+\definecolor{soft}{HTML}{F3F4F6}     % neutral-100
+\definecolor{accent}{HTML}{2563EB}   % blue-600
+\definecolor{warn}{HTML}{B45309}     % amber-700
+\definecolor{ok}{HTML}{047857}       % emerald-700
+
+% NOTE: load tcolorbox with skins so 'enhanced' works
+\usepackage[most]{tcolorbox}
+
+\tcbset{enhanced, boxrule=0.6pt, colframe=ink, colback=soft, sharp corners, arc=2pt}
+
+\usepackage{enumitem}
+\setlist[itemize]{topsep=2pt,itemsep=2pt,parsep=0pt}
+\setlist[enumerate]{topsep=4pt,itemsep=4pt,parsep=0pt}
+
+% ---------- Links ----------
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=accent,
+  urlcolor=accent,
+  citecolor=accent
+}
+
+% ---------- Code (minted) ----------
+\usepackage{minted}
+\setminted{
+  autogobble=true,
+  breaklines=true,
+  fontsize=\small,
+  tabsize=2
+}
+
+% ---------- Title ----------
+\title{\textbf{Vault HTTP API with Postman --- Quickstart}}
+\author{Compiled for local demos and learning}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\clearpage
+
+\vspace{0.5em}
+\begin{tcolorbox}[colframe=warn]
+\textbf{Security heads-up:} Postman is great for demos, but it can sync environments and request history. For anything beyond local learning, prefer CLI or code. If you do use Postman, disable sync for the environment, avoid storing production tokens, and clear history when done.
+\end{tcolorbox}
+
+\section{Overview}
+You will exercise core Vault flows through HTTP using Postman:
+\begin{enumerate}
+  \item Status check
+  \item Initialize (Shamir shares)
+  \item Unseal (repeat threshold times)
+  \item Write, update, and read a KV secret
+  \item List mounts
+  \item Enable \texttt{userpass}
+  \item Create a user and log in to get a client token
+\end{enumerate}
+
+\section{Prerequisites}
+\begin{itemize}
+  \item A Vault server reachable at \texttt{http://localhost:8200}
+  \item Postman installed
+  \item A Postman \emph{Environment} with these variables:
+        \begin{itemize}
+          \item \texttt{BASE\_URL} = \texttt{http://localhost:8200}
+          \item \texttt{ROOT\_TOKEN} (populate after init)
+          \item \texttt{UNSEAL\_1}, \texttt{UNSEAL\_2}, \texttt{UNSEAL\_3} (during init)
+        \end{itemize}
+  \item For safety: turn \emph{Sync Off} for this environment and uncheck ``Save responses'' in Postman preferences.
+\end{itemize}
+
+\section{KV Engine Version (v1 vs v2)}
+The v2 engine mounts at \texttt{/secret/} but uses the \texttt{/data} and \texttt{/metadata} subpaths and nests fields under \texttt{"data"}.
+Confirm your mount and version:
+\subsection*{Request (curl)}
+\begin{minted}{bash}
+curl -s \
+  -H "X-Vault-Token: ${ROOT_TOKEN}" \
+  ${BASE_URL}/v1/sys/mounts | jq .
+\end{minted}
+
+\subsection*{Expected shape (excerpt)}
+\begin{minted}{json}
+{
+  "secret/": {
+    "type": "kv",
+    "options": { "version": "2" },
+    "config": { "default_lease_ttl": 0, "max_lease_ttl": 0 }
+  },
+  "...": { }
+}
+\end{minted}
+
+If \texttt{"options":{"version":"2"}} is present, use the v2 paths shown below. If you are on v1, adjust paths accordingly (noted where relevant).
+
+\section{Workflow Steps}
+
+\subsection{1) Status: uninitialized vs sealed}
+\textbf{Method:} GET \quad \textbf{URL:} \texttt{\{\{BASE\_URL\}\}/v1/sys/seal-status} \\
+\textbf{Headers:} none
+
+\subsubsection*{curl}
+\begin{minted}{bash}
+curl -i {{BASE_URL}}/v1/sys/seal-status
+\end{minted}
+
+\subsubsection*{Notes}
+On a fresh server, you may get \texttt{400 Bad Request} with \texttt{"initialized": false}.
+
+\subsection{2) Initialize Vault}
+\textbf{Method:} PUT \quad \textbf{URL:} \texttt{\{\{BASE\_URL\}\}/v1/sys/init}
+
+\subsubsection*{Body (JSON)}
+\begin{minted}{json}
+{
+  "secret_shares": 5,
+  "secret_threshold": 3
+}
+\end{minted}
+
+\subsubsection*{curl}
+\begin{minted}{bash}
+curl -s -X PUT {{BASE_URL}}/v1/sys/init \
+  -d '{"secret_shares":5,"secret_threshold":3}'
+\end{minted}
+
+\subsubsection*{Result}
+You receive \texttt{unseal\_keys\_b64} (5 values) and a \texttt{root\_token}. Store three keys into \texttt{UNSEAL\_1..3} and keep \texttt{ROOT\_TOKEN} for admin calls.
+
+\subsection{3) Unseal (repeat threshold times)}
+\textbf{Method:} PUT \quad \textbf{URL:} \texttt{\{\{BASE\_URL\}\}/v1/sys/unseal}
+
+\subsubsection*{Body (JSON)}
+\begin{minted}{json}
+{ "key": "{{UNSEAL_1}}" }
+\end{minted}
+
+\subsubsection*{curl}
+\begin{minted}{bash}
+curl -s -X PUT {{BASE_URL}}/v1/sys/unseal \
+  -d "{\"key\":\"${UNSEAL_1}\"}"
+curl -s -X PUT {{BASE_URL}}/v1/sys/unseal \
+  -d "{\"key\":\"${UNSEAL_2}\"}"
+curl -s -X PUT {{BASE_URL}}/v1/sys/unseal \
+  -d "{\"key\":\"${UNSEAL_3}\"}"
+\end{minted}
+
+\subsubsection*{Result}
+After the final call, \texttt{"sealed": false}.
+
+\subsection{4) Write a KV secret (v2)}
+\textbf{Method:} POST \quad \textbf{URL:} \texttt{\{\{BASE\_URL\}\}/v1/secret/data/mySecret} \\
+\textbf{Headers:} \texttt{X-Vault-Token: \{\{ROOT\_TOKEN\}\}}
+
+\subsubsection*{Body (JSON)}
+\begin{minted}{json}
+{ "data": { "dbUser": "dbUser1" } }
+\end{minted}
+
+\subsubsection*{curl}
+\begin{minted}{bash}
+curl -i -X POST {{BASE_URL}}/v1/secret/data/mySecret \
+  -H "X-Vault-Token: ${ROOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"data":{"dbUser":"dbUser1"}}'
+\end{minted}
+
+\subsubsection*{Notes}
+Depending on Vault version, you may see \texttt{204 No Content} or \texttt{200 OK}.
+
+\paragraph{KV v1 path (if applicable):}
+\begin{minted}{bash}
+# v1 uses /v1/secret/mySecret and raw fields, no "data" envelope
+curl -i -X POST {{BASE_URL}}/v1/secret/mySecret \
+  -H "X-Vault-Token: ${ROOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"dbUser":"dbUser1"}'
+\end{minted}
+
+\subsection{5) Update the secret (overwrite)}
+\textbf{Method:} PUT \quad \textbf{URL:} \texttt{\{\{BASE\_URL\}\}/v1/secret/data/mySecret}
+
+\subsubsection*{Body (JSON)}
+\begin{minted}{json}
+{ "data": { "dbUser": "dbUser2" } }
+\end{minted}
+
+\subsubsection*{curl}
+\begin{minted}{bash}
+curl -i -X PUT {{BASE_URL}}/v1/secret/data/mySecret \
+  -H "X-Vault-Token: ${ROOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"data":{"dbUser":"dbUser2"}}'
+\end{minted}
+
+\subsection{6) Read the secret}
+\textbf{Method:} GET \quad \textbf{URL:} \texttt{\{\{BASE\_URL\}\}/v1/secret/data/mySecret}
+
+\subsubsection*{curl}
+\begin{minted}{bash}
+curl -s {{BASE_URL}}/v1/secret/data/mySecret \
+  -H "X-Vault-Token: ${ROOT_TOKEN}" | jq .
+\end{minted}
+
+\subsubsection*{Expected shape}
+\begin{minted}{json}
+{
+  "data": {
+    "data": { "dbUser": "dbUser2" },
+    "metadata": { "version": 2, "...": "..." }
+  }
+}
+\end{minted}
+
+\subsection{7) List mounts}
+\textbf{Method:} GET \quad \textbf{URL:} \texttt{\{\{BASE\_URL\}\}/v1/sys/mounts}
+
+\subsubsection*{curl}
+\begin{minted}{bash}
+curl -s {{BASE_URL}}/v1/sys/mounts \
+  -H "X-Vault-Token: ${ROOT_TOKEN}" | jq .
+\end{minted}
+
+\subsection{8) Enable \texttt{userpass} auth method}
+\textbf{Method:} POST \quad \textbf{URL:} \texttt{\{\{BASE\_URL\}\}/v1/sys/auth/userpass}
+
+\subsubsection*{Body (JSON)}
+\begin{minted}{json}
+{ "type": "userpass" }
+\end{minted}
+
+\subsubsection*{curl}
+\begin{minted}{bash}
+curl -i -X POST {{BASE_URL}}/v1/sys/auth/userpass \
+  -H "X-Vault-Token: ${ROOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"type":"userpass"}'
+\end{minted}
+
+\subsection{9) Create a user}
+\textbf{Method:} POST \quad \textbf{URL:} \texttt{\{\{BASE\_URL\}\}/v1/auth/userpass/users/vaultuser}
+
+\subsubsection*{Body (JSON)}
+\begin{minted}{json}
+{ "password": "s3cret-P@ss!", "policies": "default" }
+\end{minted}
+
+\subsubsection*{curl}
+\begin{minted}{bash}
+curl -i -X POST {{BASE_URL}}/v1/auth/userpass/users/vaultuser \
+  -H "X-Vault-Token: ${ROOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"password":"s3cret-P@ss!","policies":"default"}'
+\end{minted}
+
+\subsection{10) Login as that user}
+\textbf{Method:} POST \quad \textbf{URL:} \texttt{\{\{BASE\_URL\}\}/v1/auth/userpass/login/vaultuser}
+
+\subsubsection*{Body (JSON)}
+\begin{minted}{json}
+{ "password": "s3cret-P@ss!" }
+\end{minted}
+
+\subsubsection*{curl}
+\begin{minted}{bash}
+curl -s -X POST {{BASE_URL}}/v1/auth/userpass/login/vaultuser \
+  -H "Content-Type: application/json" \
+  -d '{"password":"s3cret-P@ss!"}' | jq .
+\end{minted}
+
+\subsubsection*{Result}
+The response contains \texttt{auth.client\_token}. Use this token for subsequent, user-scoped requests.
+
+\section{Troubleshooting}
+\begin{itemize}
+  \item \textbf{400 on \texttt{/sys/seal-status}}: Vault not initialized yet. Run init (Section 2).
+  \item \textbf{503 Service Unavailable}: Vault is sealed. Unseal until \texttt{"sealed": false}.
+  \item \textbf{403 permission denied}: Missing or invalid token. Ensure \texttt{X-Vault-Token} header is set.
+  \item \textbf{KV v1 vs v2 mismatch}: v2 uses \texttt{/secret/data/<path>} and nests under \texttt{"data"}. v1 writes to \texttt{/secret/<path>} with raw fields.
+  \item \textbf{Postman history leakage}: Disable sync for the environment and clear history after the session.
+\end{itemize}
+
+\section{Optional: Postman Environment Template}
+You can import a minimal environment JSON and then populate values interactively.
+\begin{minted}{json}
+{
+  "id": "vault-local-demo",
+  "name": "Vault Local Demo",
+  "values": [
+    { "key": "BASE_URL", "value": "http://localhost:8200", "enabled": true },
+    { "key": "ROOT_TOKEN", "value": "", "enabled": true },
+    { "key": "UNSEAL_1", "value": "", "enabled": true },
+    { "key": "UNSEAL_2", "value": "", "enabled": true },
+    { "key": "UNSEAL_3", "value": "", "enabled": true }
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2025-11-01T00:00:00.000Z",
+  "_postman_exported_using": "Postman/CI"
+}
+\end{minted}
+\clearpage
+
+\section{Appendix: End-to-end cURL Script (for reference)}
+This script roughly mirrors the Postman flow for a local dev server.
+\begin{minted}{bash}
+#!/usr/bin/env bash
+set -euo pipefail
+
+BASE_URL="${BASE_URL:-http://localhost:8200}"
+
+echo "==> Seal status"
+curl -s -i ${BASE_URL}/v1/sys/seal-status || true
+
+echo "==> Initialize (5 shares, threshold 3)"
+INIT=$(curl -s -X PUT ${BASE_URL}/v1/sys/init \
+  -d '{"secret_shares":5,"secret_threshold":3}')
+ROOT_TOKEN=$(echo "$INIT" | jq -r '.root_token')
+UNSEAL_KEYS=($(echo "$INIT" | jq -r '.unseal_keys_b64[]'))
+echo "ROOT_TOKEN=${ROOT_TOKEN}"
+
+echo "==> Unseal x3"
+for i in 0 1 2; do
+  curl -s -X PUT ${BASE_URL}/v1/sys/unseal \
+    -d "{\"key\":\"${UNSEAL_KEYS[$i]}\"}" >/dev/null
+done
+
+echo "==> Write KV v2 secret"
+curl -s -X POST ${BASE_URL}/v1/secret/data/mySecret \
+  -H "X-Vault-Token: ${ROOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"data":{"dbUser":"dbUser1"}}' >/dev/null
+
+echo "==> Update secret"
+curl -s -X PUT ${BASE_URL}/v1/secret/data/mySecret \
+  -H "X-Vault-Token: ${ROOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"data":{"dbUser":"dbUser2"}}' >/dev/null
+
+echo "==> Read secret"
+curl -s ${BASE_URL}/v1/secret/data/mySecret \
+  -H "X-Vault-Token: ${ROOT_TOKEN}" | jq .
+
+echo "==> Enable userpass"
+curl -s -X POST ${BASE_URL}/v1/sys/auth/userpass \
+  -H "X-Vault-Token: ${ROOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"type":"userpass"}' >/dev/null
+
+echo "==> Create user vaultuser"
+curl -s -X POST ${BASE_URL}/v1/auth/userpass/users/vaultuser \
+  -H "X-Vault-Token: ${ROOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"password":"s3cret-P@ss!","policies":"default"}' >/dev/null
+
+echo "==> Login as vaultuser"
+curl -s -X POST ${BASE_URL}/v1/auth/userpass/login/vaultuser \
+  -H "Content-Type: application/json" \
+  -d '{"password":"s3cret-P@ss!"}' | jq '.auth.client_token'
+\end{minted}
+
+\end{document}

@@ -1,0 +1,288 @@
+%========================================================
+% CI/CD Starter – GitHub Actions + GHCR
+% A minimal, production-lean pipeline you can paste into a new repo.
+%========================================================
+\documentclass[11pt]{article}
+
+% ---------- Encoding & layout ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{microtype}
+\usepackage{setspace}
+\setstretch{1.12}
+
+% ---------- Colors, links, headings ----------
+\usepackage{xcolor}
+\definecolor{ink}{HTML}{111827}      % gray-900
+\definecolor{soft}{HTML}{F9FAFB}     % gray-50
+\definecolor{accent}{HTML}{2563EB}   % blue-600
+\definecolor{ok}{HTML}{059669}       % emerald-600
+\definecolor{warn}{HTML}{D97706}     % amber-600
+\definecolor{bad}{HTML}{DC2626}      % red-600
+
+\usepackage[colorlinks=true,linkcolor=accent,citecolor=accent,urlcolor=accent]{hyperref}
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\color{ink}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries\color{ink}}{\thesubsection}{0.6em}{}
+
+% ---------- Code blocks (no external pygments required) ----------
+\usepackage{listings}
+\lstdefinestyle{boxed}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{soft},
+  columns=flexible,
+  keepspaces=true,
+  showstringspaces=false,
+  breaklines=true,
+  breakatwhitespace=false,
+  postbreak=\mbox{\textcolor{accent}{$\hookrightarrow$}\space},
+  tabsize=2,
+  numbers=none,
+  frame=none
+}
+% YAML (simple)
+\lstdefinelanguage{yaml}{
+  keywords={true,false,null},
+  sensitive=false,
+  comment=[l]{\#},
+  moredelim=[l][\color{accent}]{:},
+  morestring=[b]',
+  morestring=[b]"
+}
+% Dockerfile (simple)
+\lstdefinelanguage{Docker}{
+  keywords={FROM,RUN,COPY,ADD,WORKDIR,CMD,ENTRYPOINT,ENV,EXPOSE,USER,ARG,LABEL,SHELL,STOPSIGNAL,VOLUME,ONBUILD,HEALTHCHECK},
+  sensitive=true,
+  comment=[l]{\#}
+}
+% Markdown (for the README badge example)
+\lstdefinelanguage{md}{
+  morecomment=[l]{\#}
+}
+
+\lstset{style=boxed}
+
+% ---------- Framed boxes ----------
+\usepackage{mdframed}
+\mdfdefinestyle{codebox}{
+  linecolor=ink,
+  linewidth=0.5pt,
+  backgroundcolor=soft,
+  innerleftmargin=5pt,
+  innerrightmargin=5pt,
+  innertopmargin=5pt,
+  innerbottommargin=5pt,
+  skipabove=0pt,
+  skipbelow=0pt,
+  leftmargin=0pt,
+  rightmargin=0pt
+}
+
+% ---------- Title ----------
+\title{\textbf{CI/CD Starter: GitHub Actions \& GHCR}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\paragraph{What you get}
+A clean, drop-in pipeline that mirrors standard stages (lint \textrightarrow{} build/push \textrightarrow{} pull/test), publishes multi-arch images to GitHub Container Registry (GHCR), and uses safe defaults (concurrency, least-privileged permissions, pinned action versions by major).
+
+\section{Quick Start}
+\subsection*{Repository layout}
+\begin{mdframed}[style=codebox]
+\begin{lstlisting}[language=bash]
+.
+|- hello.py
+|- Dockerfile
+|- .dockerignore
+`- .github/
+   `- workflows/
+      `- python-pipeline.yml
+\end{lstlisting}
+\end{mdframed}
+
+\subsection*{Files to copy}
+
+\paragraph{hello.py}
+\begin{mdframed}[style=codebox]
+\begin{lstlisting}[language=Python]
+print("Hello, world!")
+\end{lstlisting}
+\end{mdframed}
+
+\paragraph{Dockerfile}
+\begin{mdframed}[style=codebox]
+\begin{lstlisting}[language=Docker]
+FROM python:3.13-slim
+
+WORKDIR /app
+COPY hello.py .
+
+CMD ["python", "hello.py"]
+\end{lstlisting}
+\end{mdframed}
+
+\paragraph{.dockerignore}
+\begin{mdframed}[style=codebox]
+\begin{lstlisting}[language=bash]
+.github
+.git
+.gitignore
+README.md
+\end{lstlisting}
+\end{mdframed}
+
+\paragraph{.github/workflows/python-pipeline.yml}
+\begin{mdframed}[style=codebox]
+\begin{lstlisting}[language=yaml]
+name: Python CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+# Prevent overlapping runs on the same ref
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-test:
+    name: Lint and Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install linters
+        run: pip install flake8 pylint
+
+      - name: Lint hello.py
+        run: |
+          flake8 hello.py
+          pylint --disable=R,C hello.py
+
+      - name: Run quick test
+        shell: bash
+        run: |
+          set -euo pipefail
+          python hello.py | grep -i 'hello'
+
+  build-and-push:
+    name: Build and Push Container
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write     # push to GHCR
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=sha,format=short
+            type=sha,format=long
+            type=ref,event=branch
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  test-image:
+    name: Pull and Test Container
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read       # pull from GHCR
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull image by commit SHA
+        run: docker pull ghcr.io/${{ github.repository }}:${{ github.sha }}
+
+      - name: Run image and assert output
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm ghcr.io/${{ github.repository }}:${{ github.sha }} | grep -i 'hello'
+\end{lstlisting}
+\end{mdframed}
+
+\section{Why this pipeline}
+\subsection{Stages}
+\textbf{Lint \& Test} ensure code quality early with fast feedback (flake8, pylint, smoke test). \textbf{Build \& Push} creates a portable artifact (container image) and publishes it to GHCR with metadata tags (short SHA, long SHA, branch ref). \textbf{Pull \& Test} validates the published artifact in a clean runner to guarantee deployable integrity.
+
+\subsection{Design choices}
+\begin{itemize}
+  \item \textbf{Concurrency} cancels overlapping runs on the same ref to reduce wasted compute.
+  \item \textbf{Least-privilege permissions}: jobs only request what they need (e.g., \texttt{packages: write} only where pushing).
+  \item \textbf{Multi-arch images}: \texttt{linux/amd64,linux/arm64} broadens runtime targets.
+  \item \textbf{Deterministic tagging}: tag by commit SHA and branch for traceability.
+\end{itemize}
+
+\section{How to use}
+\begin{enumerate}
+  \item Create a new repository (optionally include the Python \texttt{.gitignore} template).
+  \item Add the four files exactly as shown and commit to \texttt{main}.
+  \item Open the \textbf{Actions} tab: confirm the three jobs run and complete successfully.
+  \item Open the repo homepage sidebar \textbf{Packages} to see your GHCR image and tags.
+\end{enumerate}
+
+\section{Security notes}
+\begin{itemize}
+  \item The \texttt{GITHUB\_TOKEN} is scoped to the repository and permits pushing to GHCR under \texttt{ghcr.io/\{owner\}/\{repo\}} by default.
+  \item Avoid broad \texttt{permissions}; do not grant \texttt{packages: write} in jobs that don't push.
+  \item Prefer pinning actions to immutable commit SHAs for stricter supply-chain control when you leave the prototype phase.
+\end{itemize}
+
+\section{Optional: README badge}
+\begin{mdframed}[style=codebox]
+\begin{lstlisting}[language=md]
+![CI](https://github.com/OWNER/REPO/actions/workflows/python-pipeline.yml/badge.svg?branch=main)
+\end{lstlisting}
+\end{mdframed}
+
+\section{Troubleshooting}
+\begin{itemize}
+  \item \textbf{403 pushing to GHCR}: ensure job has \texttt{packages: write} and you use \texttt{ghcr.io} as the registry.
+  \item \textbf{Image not found in test step}: confirm the tag uses \texttt{\$\{\{ github.sha \}\}} and the build job succeeded.
+  \item \textbf{Docker buildx fails on arm64}: runners provide QEMU; transient errors usually resolve on rerun. Ensure \texttt{setup-buildx-action} ran.
+\end{itemize}
+
+\end{document}
