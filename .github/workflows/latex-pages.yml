@@ -1,0 +1,104 @@
+name: LaTeX Pages (Publish PDFs)
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install TeX toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            latexmk \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            texlive-pictures \
+            texlive-bibtex-extra \
+            biber \
+            python3-pygments
+
+      - name: Build all documents (docs/**/src/main.tex)
+        run: make build-all
+
+      - name: Stage site (PDF library + index)
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf site
+          mkdir -p site/pdfs
+
+          while IFS= read -r -d '' f; do
+            pdf="${f%.tex}.pdf"
+            if [[ ! -f "$pdf" ]]; then
+              echo "WARNING: expected PDF not found for root: $f (missing: $pdf)"
+              continue
+            fi
+
+            doc_root="$(dirname "$(dirname "$f")")"
+            rel="${doc_root#docs/}"            # e.g. food/recipes/shrimp-po-boys
+            out="site/pdfs/${rel}.pdf"
+
+            mkdir -p "$(dirname "$out")"
+            cp -v "$pdf" "$out"
+          done < <(find docs -type f -path "*/src/main.tex" -print0)
+
+          count="$(find site/pdfs -type f -name '*.pdf' | wc -l | tr -d ' ')"
+          echo "Staged PDFs: $count"
+          test "$count" -gt 0
+
+          # Generate a simple index.html
+          {
+            echo '<!doctype html>'
+            echo '<html><head><meta charset="utf-8">'
+            echo '<meta name="viewport" content="width=device-width,initial-scale=1">'
+            echo '<title>LaTeX PDFs</title>'
+            echo '<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:960px;margin:2rem auto;padding:0 1rem} code{background:#f3f4f6;padding:.1rem .3rem;border-radius:.25rem}</style>'
+            echo '</head><body>'
+            echo '<h1>LaTeX PDFs</h1>'
+            echo '<p>Published from <code>docs/**/src/main.tex</code> on the <code>main</code> branch.</p>'
+            echo '<ul>'
+            find site/pdfs -type f -name '*.pdf' | sort | sed 's|^site/||' | while read -r p; do
+              label="${p#pdfs/}"
+              echo "<li><a href=\"${p}\">${label}</a></li>"
+            done
+            echo '</ul>'
+            echo '</body></html>'
+          } > site/index.html
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

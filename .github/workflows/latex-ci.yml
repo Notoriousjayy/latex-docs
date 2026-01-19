@@ -1,0 +1,68 @@
+name: LaTeX CI (Build PDFs)
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install TeX toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            latexmk \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            texlive-pictures \
+            texlive-bibtex-extra \
+            biber \
+            python3-pygments
+
+      - name: Build all documents (docs/**/src/main.tex)
+        run: make build-all
+
+      - name: Collect built PDFs (preserve doc paths)
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf artifacts
+          mkdir -p artifacts/pdfs
+
+          while IFS= read -r -d '' f; do
+            pdf="${f%.tex}.pdf"
+            if [[ ! -f "$pdf" ]]; then
+              echo "WARNING: expected PDF not found for root: $f (missing: $pdf)"
+              continue
+            fi
+
+            doc_root="$(dirname "$(dirname "$f")")"   # docs/<...>/<doc>/src/main.tex -> docs/<...>/<doc>
+            rel="${doc_root#docs/}"                  # strip leading docs/
+            out="artifacts/pdfs/${rel}.pdf"
+
+            mkdir -p "$(dirname "$out")"
+            cp -v "$pdf" "$out"
+          done < <(find docs -type f -path "*/src/main.tex" -print0)
+
+          count="$(find artifacts/pdfs -type f -name '*.pdf' | wc -l | tr -d ' ')"
+          echo "Collected PDFs: $count"
+          test "$count" -gt 0
+
+      - name: Upload PDFs as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: latex-pdfs
+          path: artifacts/pdfs
+          if-no-files-found: error
+          retention-days: 14
