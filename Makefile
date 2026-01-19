@@ -1,31 +1,64 @@
-# LaTeX Docs Makefile
-# ===================
+SHELL := /usr/bin/env bash
+.ONESHELL:
+.SHELLFLAGS := -euo pipefail -c
 
-LATEX      ?= pdflatex
-LATEXFLAGS ?= -interaction=nonstopmode -halt-on-error
-SRC_DIR    ?= src
-BUILD_DIR  ?= build
+LATEXMK ?= latexmk
+LATEXMK_OPTS ?= -pdf -interaction=nonstopmode -halt-on-error -file-line-error
 
-TEX_FILES := $(shell find $(SRC_DIR) -name '*.tex' -type f)
-PDF_FILES := $(patsubst $(SRC_DIR)/%.tex,$(BUILD_DIR)/%.pdf,$(TEX_FILES))
+# Treat any .tex with \documentclass as a standalone build root.
+ROOT_TEX := $(shell grep -rl --include='*.tex' '^[[:space:]]*\\documentclass' src || true)
+ROOT_PDF := $(patsubst %.tex,%.pdf,$(ROOT_TEX))
 
-.PHONY: all clean list
+.PHONY: help list-roots build-all clean distclean
 
-all: $(PDF_FILES)
+help:
+	@echo "Targets:"
+	@echo "  make build-all     Build all standalone LaTeX roots under src/ (\\documentclass...)"
+	@echo "  make list-roots    Print detected build roots"
+	@echo "  make clean         Clean aux files for all roots (keeps PDFs)"
+	@echo "  make distclean     Clean aux files and PDFs for all roots"
 
-$(BUILD_DIR)/%.pdf: $(SRC_DIR)/%.tex
-	@mkdir -p $(dir $@)
-	@echo "Building: $<"
-	@cd $(dir $<) && $(LATEX) $(LATEXFLAGS) -output-directory=$(abspath $(dir $@)) $(notdir $<) > /dev/null 2>&1 || (echo "Error building $<"; exit 1)
-	@cd $(dir $<) && $(LATEX) $(LATEXFLAGS) -output-directory=$(abspath $(dir $@)) $(notdir $<) > /dev/null 2>&1
+list-roots:
+	@echo "Detected LaTeX roots:"
+	@if [[ -z "$(ROOT_TEX)" ]]; then \
+	  echo "  (none found under src/)"; \
+	else \
+	  printf "  %s\n" $(ROOT_TEX); \
+	fi
+
+build-all:
+	@if [[ -z "$(ROOT_TEX)" ]]; then \
+	  echo "ERROR: No LaTeX roots found (no src/**/*.tex with \\documentclass)."; \
+	  exit 2; \
+	fi
+	@echo "Building $$(echo $(ROOT_TEX) | wc -w | tr -d ' ') documents..."
+	@for f in $(ROOT_TEX); do \
+	  echo "==> $$f"; \
+	  d="$$(dirname "$$f")"; \
+	  b="$$(basename "$$f")"; \
+	  (cd "$$d" && $(LATEXMK) $(LATEXMK_OPTS) "$$b"); \
+	done
+	@echo "Build complete."
 
 clean:
-	rm -rf $(BUILD_DIR)
-	find . -name '*.aux' -delete
-	find . -name '*.log' -delete
-	find . -name '*.out' -delete
-	find . -name '*.toc' -delete
+	@if [[ -z "$(ROOT_TEX)" ]]; then \
+	  echo "Nothing to clean."; \
+	  exit 0; \
+	fi
+	@for f in $(ROOT_TEX); do \
+	  d="$$(dirname "$$f")"; \
+	  b="$$(basename "$$f")"; \
+	  (cd "$$d" && $(LATEXMK) -c "$$b"); \
+	done
 
-list:
-	@echo "Source files:"
-	@find $(SRC_DIR) -name '*.tex' -type f | sort
+distclean:
+	@if [[ -z "$(ROOT_TEX)" ]]; then \
+	  echo "Nothing to distclean."; \
+	  exit 0; \
+	fi
+	@for f in $(ROOT_TEX); do \
+	  d="$$(dirname "$$f")"; \
+	  b="$$(basename "$$f")"; \
+	  (cd "$$d" && $(LATEXMK) -C "$$b"); \
+	done
+	@rm -f $(ROOT_PDF)
