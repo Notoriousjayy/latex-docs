@@ -1,22 +1,31 @@
-SHELL := /bin/bash
+# LaTeX Docs Makefile
+# ===================
 
-# Build a single document:
-# make build DOC=docs/<category>/<document>
-build:
-	@test -n "$(DOC)" || (echo "Set DOC=docs/<category>/<document>"; exit 1)
-	latexmk -pdf -cd "$(DOC)/src/main.tex"
+LATEX      ?= pdflatex
+LATEXFLAGS ?= -interaction=nonstopmode -halt-on-error
+SRC_DIR    ?= src
+BUILD_DIR  ?= build
 
-# Clean a single document:
-# make clean DOC=docs/<category>/<document>
+TEX_FILES := $(shell find $(SRC_DIR) -name '*.tex' -type f)
+PDF_FILES := $(patsubst $(SRC_DIR)/%.tex,$(BUILD_DIR)/%.pdf,$(TEX_FILES))
+
+.PHONY: all clean list
+
+all: $(PDF_FILES)
+
+$(BUILD_DIR)/%.pdf: $(SRC_DIR)/%.tex
+	@mkdir -p $(dir $@)
+	@echo "Building: $<"
+	@cd $(dir $<) && $(LATEX) $(LATEXFLAGS) -output-directory=$(abspath $(dir $@)) $(notdir $<) > /dev/null 2>&1 || (echo "Error building $<"; exit 1)
+	@cd $(dir $<) && $(LATEX) $(LATEXFLAGS) -output-directory=$(abspath $(dir $@)) $(notdir $<) > /dev/null 2>&1
+
 clean:
-	@test -n "$(DOC)" || (echo "Set DOC=docs/<category>/<document>"; exit 1)
-	latexmk -C -cd "$(DOC)/src/main.tex"
-	rm -rf "$(DOC)"/_minted* 2>/dev/null || true
+	rm -rf $(BUILD_DIR)
+	find . -name '*.aux' -delete
+	find . -name '*.log' -delete
+	find . -name '*.out' -delete
+	find . -name '*.toc' -delete
 
-# Build all documents in docs/**/src/main.tex
-build-all:
-	@set -euo pipefail; \
-	while IFS= read -r -d "" f; do \
-	  echo "==> Building $$f"; \
-	  latexmk -pdf -cd "$$f"; \
-	done < <(find docs -type f -path "*/src/main.tex" -print0)
+list:
+	@echo "Source files:"
+	@find $(SRC_DIR) -name '*.tex' -type f | sort
