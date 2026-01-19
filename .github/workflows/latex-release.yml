@@ -34,33 +34,26 @@ jobs:
       - name: Build all documents (docs/**/src/main.tex)
         run: make build-all
 
-      - name: Package PDFs for release
+            - name: Package PDFs for release
         shell: bash
         run: |
           set -euo pipefail
           rm -rf artifacts release
           mkdir -p artifacts/pdfs release
 
-          while IFS= read -r -d '' f; do
-            pdf="${f%.tex}.pdf"
-            if [[ ! -f "$pdf" ]]; then
-              echo "WARNING: expected PDF not found for root: $f (missing: $pdf)"
-              continue
-            fi
-
-            doc_root="$(dirname "$(dirname "$f")")"
-            rel="${doc_root#docs/}"
-            out="artifacts/pdfs/${rel}.pdf"
-
+          while IFS= read -r -d '' pdf; do
+            rel="${pdf#src/}"
+            out="artifacts/pdfs/${rel}"
             mkdir -p "$(dirname "$out")"
             cp -v "$pdf" "$out"
-          done < <(find docs -type f -path "*/src/main.tex" -print0)
+          done < <(find src -type f -name '*.pdf' -print0)
 
           count="$(find artifacts/pdfs -type f -name '*.pdf' | wc -l | tr -d ' ')"
           echo "Packaged PDFs: $count"
           test "$count" -gt 0
 
           (cd artifacts/pdfs && zip -r ../../release/latex-pdfs.zip .)
+
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
