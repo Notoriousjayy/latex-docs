@@ -17,7 +17,6 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
 
     steps:
       - name: Checkout
@@ -58,113 +57,112 @@ jobs:
           rm -rf site
           mkdir -p site/pdfs
 
-          # Function to extract and clean title from a .tex file
-          extract_title() {
-            local tex_file="$1"
-            local title=""
-
-            # Extract title - handle multi-line titles (title may span lines after \title{)
-            # First try to get a simple single-line title
-            title=$(grep -oP '\\title\{[^}]*\}' "$tex_file" 2>/dev/null | head -1 | sed 's/\\title{//;s/}$//' || true)
-
-            # If empty or just whitespace, try multi-line extraction
-            if [[ -z "${title// /}" ]]; then
-              title=$(sed -n '/\\title{/,/}/{ s/.*\\title{//; s/}.*//; p; }' "$tex_file" 2>/dev/null | tr '\n' ' ' | head -c 500 || true)
-            fi
-
-            # Clean up LaTeX formatting
-            title=$(echo "$title" \
-              | sed 's/\\textbf{//g' \
-              | sed 's/\\textit{//g' \
-              | sed 's/\\emph{//g' \
-              | sed 's/\\large//g' \
-              | sed 's/\\Large//g' \
-              | sed 's/\\LARGE//g' \
-              | sed 's/\\huge//g' \
-              | sed 's/\\Huge//g' \
-              | sed 's/\\normalsize//g' \
-              | sed 's/\\\\//g' \
-              | sed 's/\[[^]]*\]//g' \
-              | sed 's/{//g' \
-              | sed 's/}//g' \
-              | sed 's/%//g' \
-              | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' \
-              | sed 's/[[:space:]]\+/ /g' \
-              | tr -d '\n' \
-              | head -c 200)
-
-            echo "$title"
-          }
-
-          # Copy PDFs and build title mapping
-          declare -A pdf_titles
-
           while IFS= read -r -d '' pdf; do
             rel="${pdf#src/}"
             out="site/pdfs/${rel}"
             mkdir -p "$(dirname "$out")"
             cp -v "$pdf" "$out"
-
-            # Find corresponding .tex file
-            tex_file="${pdf%.pdf}.tex"
-            if [[ -f "$tex_file" ]]; then
-              title=$(extract_title "$tex_file")
-              if [[ -n "$title" && "$title" != " " ]]; then
-                pdf_titles["$rel"]="$title"
-              fi
-            fi
           done < <(find src -type f -name '*.pdf' -print0)
 
           count="$(find site/pdfs -type f -name '*.pdf' | wc -l | tr -d ' ')"
           echo "Staged PDFs: $count"
           test "$count" -gt 0
 
-          # Generate index.html with document titles as link text
-          {
-            echo '<!doctype html>'
-            echo '<html><head><meta charset="utf-8">'
-            echo '<meta name="viewport" content="width=device-width,initial-scale=1">'
-            echo '<title>LaTeX PDFs</title>'
-            echo '<style>'
-            echo 'body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:960px;margin:2rem auto;padding:0 1rem;line-height:1.6}'
-            echo 'code{background:#f3f4f6;padding:.1rem .3rem;border-radius:.25rem;font-size:0.9em}'
-            echo 'ul{list-style:none;padding:0}'
-            echo 'li{margin:0.5rem 0;padding:0.5rem;border-radius:0.25rem;transition:background 0.2s}'
-            echo 'li:hover{background:#f3f4f6}'
-            echo 'a{color:#2563eb;text-decoration:none}'
-            echo 'a:hover{text-decoration:underline}'
-            echo '.path{color:#6b7280;font-size:0.85em;display:block;margin-top:0.25rem}'
-            echo '</style>'
-            echo '</head><body>'
-            echo '<h1>LaTeX PDFs</h1>'
-            echo '<p>Published from <code>src/**/*.tex</code> roots on the <code>main</code> branch.</p>'
-            echo '<ul>'
+          python3 - <<'PY'
+          from __future__ import annotations
 
-            find site/pdfs -type f -name '*.pdf' | sort | sed 's|^site/||' | while read -r p; do
-              rel_path="${p#pdfs/}"
-              tex_file="src/${rel_path%.pdf}.tex"
+          import html
+          import re
+          from pathlib import Path
 
-              # Extract title from .tex file
-              if [[ -f "$tex_file" ]]; then
-                label=$(extract_title "$tex_file")
-              else
-                label=""
-              fi
+          ROOT = Path("site/pdfs")
+          OUT  = Path("site/index.html")
 
-              # Fallback to filename if no title found
-              if [[ -z "${label// /}" ]]; then
-                label=$(basename "$rel_path" .pdf | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
-              fi
+          def slug(parts: list[str]) -> str:
+              s = "-".join(parts).lower()
+              s = re.sub(r"[^a-z0-9_-]+", "-", s)
+              s = re.sub(r"-{2,}", "-", s).strip("-")
+              return s or "section"
 
-              # Escape HTML entities in label
-              label=$(echo "$label" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/"/\&quot;/g')
+          lines: list[str] = []
 
-              echo "<li><a href=\"${p}\">${label}</a><span class=\"path\"><code>${rel_path}</code></span></li>"
-            done
+          def render_dir(dir_path: Path, rel_parts: list[str]) -> None:
+              # Top-level dirs -> H1, next -> H2, etc (cap at H6)
+              level = min(6, len(rel_parts))
+              heading_id = slug(rel_parts)
+              dir_name = rel_parts[-1]
 
-            echo '</ul>'
-            echo '</body></html>'
-          } > site/index.html
+              lines.append(f'<h{level} id="{html.escape(heading_id)}">{html.escape(dir_name)}</h{level}>')
+
+              pdfs = sorted(
+                  [p for p in dir_path.iterdir() if p.is_file() and p.suffix.lower() == ".pdf"],
+                  key=lambda p: p.name.lower(),
+              )
+              if pdfs:
+                  lines.append('<ul class="files">')
+                  for p in pdfs:
+                      rel = p.relative_to(ROOT)
+                      href = "pdfs/" + "/".join(rel.parts)
+                      label = p.name                 # filename only (requested)
+                      title = "/".join(rel.parts)    # full path on hover
+                      lines.append(
+                          f'<li><a href="{html.escape(href)}" title="{html.escape(title)}">{html.escape(label)}</a></li>'
+                      )
+                  lines.append("</ul>")
+
+              subdirs = sorted([d for d in dir_path.iterdir() if d.is_dir()], key=lambda d: d.name.lower())
+              for d in subdirs:
+                  render_dir(d, rel_parts + [d.name])
+
+          top_dirs = sorted([d for d in ROOT.iterdir() if d.is_dir()], key=lambda d: d.name.lower())
+          root_pdfs = sorted([p for p in ROOT.iterdir() if p.is_file() and p.suffix.lower() == ".pdf"], key=lambda p: p.name.lower())
+
+          html_prefix = """<!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>LaTeX PDFs</title>
+            <style>
+              body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:1100px;margin:2rem auto;padding:0 1rem;line-height:1.45}
+              header{margin-bottom:1.5rem}
+              .title{font-size:1.6rem;font-weight:700;margin:0}
+              .sub{margin:.25rem 0 0 0;color:#444}
+              code{background:#f3f4f6;padding:.1rem .3rem;border-radius:.25rem}
+              h1,h2,h3,h4,h5,h6{margin:1.2rem 0 .5rem 0}
+              ul.files{margin:.25rem 0 1rem 1.25rem}
+              ul.files li{margin:.15rem 0}
+              a{text-decoration:none}
+              a:hover{text-decoration:underline}
+            </style>
+          </head>
+          <body>
+            <header>
+              <p class="title">LaTeX PDFs</p>
+              <p class="sub">Published from <code>src/**/*.tex</code> roots on the <code>main</code> branch.</p>
+            </header>
+          """
+
+          html_suffix = """
+          </body>
+          </html>
+          """
+
+          if root_pdfs:
+              lines.append('<h1 id="root">root</h1>')
+              lines.append('<ul class="files">')
+              for p in root_pdfs:
+                  rel = p.relative_to(ROOT)
+                  href = "pdfs/" + "/".join(rel.parts)
+                  lines.append(f'<li><a href="{html.escape(href)}">{html.escape(p.name)}</a></li>')
+              lines.append("</ul>")
+
+          for d in top_dirs:
+              render_dir(d, [d.name])
+
+          OUT.write_text(html_prefix + "\n".join(lines) + html_suffix, encoding="utf-8")
+          print(f"Wrote {OUT} with {len(lines)} structural lines.")
+          PY
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -175,11 +173,12 @@ jobs:
           path: site
 
   deploy:
-    needs: build
-    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    needs: build
 
     steps:
       - id: deployment
