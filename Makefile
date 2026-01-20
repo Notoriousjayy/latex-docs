@@ -3,7 +3,7 @@ SHELL := /usr/bin/bash
 .SHELLFLAGS := -euo pipefail -c
 
 LATEXMK ?= latexmk
-LATEXMK_OPTS ?= -pdf -interaction=nonstopmode -halt-on-error -file-line-error
+LATEXMK_OPTS ?= -pdf -shell-escape -interaction=nonstopmode -halt-on-error -file-line-error
 
 # Standalone build roots = any .tex containing \documentclass under src/
 ROOT_TEX := $(shell grep -rl --include='*.tex' '^[[:space:]]*\\documentclass' src || true)
