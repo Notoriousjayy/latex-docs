@@ -17,7 +17,6 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
 
     steps:
       - name: Checkout
@@ -32,7 +31,17 @@ jobs:
           sudo rm -f /etc/apt/sources.list.d/azure-cli.list /etc/apt/sources.list.d/microsoft-prod.list || true
 
           sudo apt-get update
-          sudo apt-get install -y             latexmk             texlive-latex-recommended             texlive-latex-extra             texlive-fonts-recommended             texlive-fonts-extra             texlive-pictures             texlive-science             texlive-bibtex-extra             biber             python3-pygments
+          sudo apt-get install -y \
+            latexmk \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            texlive-fonts-extra \
+            texlive-pictures \
+            texlive-science \
+            texlive-bibtex-extra \
+            biber \
+            python3-pygments
 
           # Fail fast if common dependencies are missing
           kpsewhich inconsolata.sty >/dev/null
@@ -59,23 +68,101 @@ jobs:
           echo "Staged PDFs: $count"
           test "$count" -gt 0
 
-          {
-            echo '<!doctype html>'
-            echo '<html><head><meta charset="utf-8">'
-            echo '<meta name="viewport" content="width=device-width,initial-scale=1">'
-            echo '<title>LaTeX PDFs</title>'
-            echo '<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:960px;margin:2rem auto;padding:0 1rem} code{background:#f3f4f6;padding:.1rem .3rem;border-radius:.25rem}</style>'
-            echo '</head><body>'
-            echo '<h1>LaTeX PDFs</h1>'
-            echo '<p>Published from <code>src/**/*.tex</code> roots on the <code>main</code> branch.</p>'
-            echo '<ul>'
-            find site/pdfs -type f -name '*.pdf' | sort | sed 's|^site/||' | while read -r p; do
-              label="${p#pdfs/}"
-              echo "<li><a href=\"${p}\">${label}</a></li>"
-            done
-            echo '</ul>'
-            echo '</body></html>'
-          } > site/index.html
+          python3 - <<'PY'
+          from __future__ import annotations
+
+          import html
+          import re
+          from pathlib import Path
+
+          ROOT = Path("site/pdfs")
+          OUT  = Path("site/index.html")
+
+          def slug(parts: list[str]) -> str:
+              s = "-".join(parts).lower()
+              s = re.sub(r"[^a-z0-9_-]+", "-", s)
+              s = re.sub(r"-{2,}", "-", s).strip("-")
+              return s or "section"
+
+          lines: list[str] = []
+
+          def render_dir(dir_path: Path, rel_parts: list[str]) -> None:
+              # Top-level dirs -> H1, next -> H2, etc (cap at H6)
+              level = min(6, len(rel_parts))
+              heading_id = slug(rel_parts)
+              dir_name = rel_parts[-1]
+
+              lines.append(f'<h{level} id="{html.escape(heading_id)}">{html.escape(dir_name)}</h{level}>')
+
+              pdfs = sorted(
+                  [p for p in dir_path.iterdir() if p.is_file() and p.suffix.lower() == ".pdf"],
+                  key=lambda p: p.name.lower(),
+              )
+              if pdfs:
+                  lines.append('<ul class="files">')
+                  for p in pdfs:
+                      rel = p.relative_to(ROOT)
+                      href = "pdfs/" + "/".join(rel.parts)
+                      label = p.name                 # filename only (requested)
+                      title = "/".join(rel.parts)    # full path on hover
+                      lines.append(
+                          f'<li><a href="{html.escape(href)}" title="{html.escape(title)}">{html.escape(label)}</a></li>'
+                      )
+                  lines.append("</ul>")
+
+              subdirs = sorted([d for d in dir_path.iterdir() if d.is_dir()], key=lambda d: d.name.lower())
+              for d in subdirs:
+                  render_dir(d, rel_parts + [d.name])
+
+          top_dirs = sorted([d for d in ROOT.iterdir() if d.is_dir()], key=lambda d: d.name.lower())
+          root_pdfs = sorted([p for p in ROOT.iterdir() if p.is_file() and p.suffix.lower() == ".pdf"], key=lambda p: p.name.lower())
+
+          html_prefix = """<!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>LaTeX PDFs</title>
+            <style>
+              body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:1100px;margin:2rem auto;padding:0 1rem;line-height:1.45}
+              header{margin-bottom:1.5rem}
+              .title{font-size:1.6rem;font-weight:700;margin:0}
+              .sub{margin:.25rem 0 0 0;color:#444}
+              code{background:#f3f4f6;padding:.1rem .3rem;border-radius:.25rem}
+              h1,h2,h3,h4,h5,h6{margin:1.2rem 0 .5rem 0}
+              ul.files{margin:.25rem 0 1rem 1.25rem}
+              ul.files li{margin:.15rem 0}
+              a{text-decoration:none}
+              a:hover{text-decoration:underline}
+            </style>
+          </head>
+          <body>
+            <header>
+              <p class="title">LaTeX PDFs</p>
+              <p class="sub">Published from <code>src/**/*.tex</code> roots on the <code>main</code> branch.</p>
+            </header>
+          """
+
+          html_suffix = """
+          </body>
+          </html>
+          """
+
+          if root_pdfs:
+              lines.append('<h1 id="root">root</h1>')
+              lines.append('<ul class="files">')
+              for p in root_pdfs:
+                  rel = p.relative_to(ROOT)
+                  href = "pdfs/" + "/".join(rel.parts)
+                  lines.append(f'<li><a href="{html.escape(href)}">{html.escape(p.name)}</a></li>')
+              lines.append("</ul>")
+
+          for d in top_dirs:
+              render_dir(d, [d.name])
+
+          OUT.write_text(html_prefix + "\n".join(lines) + html_suffix, encoding="utf-8")
+          print(f"Wrote {OUT} with {len(lines)} structural lines.")
+          PY
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -86,11 +173,12 @@ jobs:
           path: site
 
   deploy:
-    needs: build
-    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    needs: build
 
     steps:
       - id: deployment
