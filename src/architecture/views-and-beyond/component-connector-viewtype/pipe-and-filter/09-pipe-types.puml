@@ -1,46 +1,74 @@
 @startuml pipe-types
-' Pipe Connector Types
-' Shows different pipe implementations and their characteristics
+title Pipe Types (Pipe-and-Filter)
+left to right direction
 
-title Pipe Connector Types
+' ----------------------------
+' Untyped Pipe
+' ----------------------------
+rectangle "Untyped Pipe" {
+  component "Producer" as UP1 <<source>>
+  component "Consumer" as UC1 <<sink>>
 
-rectangle "Synchronous Pipe" {
-    [Producer] <<source>> as SP1
-    [Consumer] <<sink>> as SC1
-    SP1 -right-> SC1 : "direct transfer\n(blocking)"
-    note bottom
-        Tight coupling
-        Simple but limiting
-    end note
+  UP1 -right-> UC1 : data
+
+  note bottom
+    Implicit contract (no schema)
+    Higher coupling via assumptions
+  end note
 }
 
-rectangle "Buffered Pipe" {
-    [Producer] <<source>> as BP1
-    queue "Buffer" as Buf
-    [Consumer] <<sink>> as BC1
-    BP1 -right-> Buf : "write"
-    Buf -right-> BC1 : "read"
-    note bottom
-        Decouples timing
-        Enables async processing
-    end note
-}
-
+' ----------------------------
+' Typed Pipe
+' ----------------------------
 rectangle "Typed Pipe" {
-    [Producer] <<source>> as TP1
-    rectangle "Schema\nValidation" #E1BEE7 as Schema
-    [Consumer] <<sink>> as TC1
-    TP1 -right-> Schema : "data"
-    Schema -right-> TC1 : "validated"
-    note bottom
-        Enforces data contracts
-        Catches errors early
-    end note
+  component "Producer" as TP1 <<source>>
+  rectangle "Schema\\nValidation" as Schema #E1BEE7
+  component "Consumer" as TC1 <<sink>>
+
+  TP1 -right-> Schema : data
+  Schema -right-> TC1 : validated
+
+  note bottom
+    Enforces data contracts
+    Catches errors early
+  end note
 }
 
-legend bottom
-    Buffer sizing affects throughput and memory usage.
-    Backpressure mechanisms prevent buffer overflow.
-endlegend
+' ----------------------------
+' Buffered Pipe
+' ----------------------------
+rectangle "Buffered Pipe" {
+  component "Producer" as BP1 <<source>>
+  rectangle "Buffer\\n(Queue)" as Buf #C8E6C9
+  component "Consumer" as BC1 <<sink>>
+
+  BP1 -right-> Buf : events
+  Buf -right-> BC1 : dequeued
+
+  note bottom
+    Absorbs bursts
+    Decouples producer/consumer rates
+  end note
+}
+
+' ----------------------------
+' Reliable Pipe
+' ----------------------------
+rectangle "Reliable Pipe" {
+  component "Producer" as RP1 <<source>>
+  rectangle "Durable\\nQueue" as DQ #BBDEFB
+  component "Consumer" as RC1 <<sink>>
+  rectangle "Dead-Letter\\nQueue" as DLQ #FFCDD2
+
+  RP1 -right-> DQ : publish
+  DQ -right-> RC1 : deliver
+  RC1 -down-> DQ : ack
+  DQ -down-> DLQ : poison msg
+
+  note bottom
+    Durability + acknowledgements
+    Supports retries / DLQ handling
+  end note
+}
 
 @enduml
