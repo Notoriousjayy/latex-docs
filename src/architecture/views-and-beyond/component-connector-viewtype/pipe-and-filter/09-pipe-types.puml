@@ -1,73 +1,69 @@
-@startuml pipe-types
+@startuml
 title Pipe Types (Pipe-and-Filter)
+
 left to right direction
+skinparam componentStyle rectangle
 
-' ----------------------------
-' Untyped Pipe
-' ----------------------------
-rectangle "Untyped Pipe" {
-  component "Producer" as UP1 <<source>>
-  component "Consumer" as UC1 <<sink>>
+' --- Unbuffered / Direct Pipe -------------------------------------------------
+rectangle "Unbuffered Pipe" as R1 {
+  component "Producer" as UP_PROD <<source>>
+  component "Transform" as UP_XFORM <<transformer>>
+  component "Consumer" as UP_CONS <<sink>>
 
-  UP1 -right-> UC1 : data
+  UP_PROD -right-> UP_XFORM : data stream
+  UP_XFORM -right-> UP_CONS : data stream
 
-  note bottom
-    Implicit contract (no schema)
-    Higher coupling via assumptions
+  note bottom of UP_XFORM
+    Minimal buffering
+    Backpressure couples stages
   end note
 }
 
-' ----------------------------
-' Typed Pipe
-' ----------------------------
-rectangle "Typed Pipe" {
-  component "Producer" as TP1 <<source>>
-  rectangle "Schema\\nValidation" as Schema #E1BEE7
-  component "Consumer" as TC1 <<sink>>
+' --- Buffered Pipe ------------------------------------------------------------
+rectangle "Buffered Pipe" as R2 {
+  component "Producer" as BP_PROD <<source>>
+  queue "Buffer" as BP_BUF
+  component "Consumer" as BP_CONS <<sink>>
 
-  TP1 -right-> Schema : data
-  Schema -right-> TC1 : validated
+  BP_PROD -right-> BP_BUF : enqueue
+  BP_BUF -right-> BP_CONS : dequeue
 
-  note bottom
+  note bottom of BP_BUF
+    Decouples producer/consumer rates
+    Adds latency + memory footprint
+  end note
+}
+
+' --- Typed Pipe ---------------------------------------------------------------
+rectangle "Typed Pipe" as R3 {
+  component "Producer" as TP_PROD <<source>>
+  component "Schema\nValidation" as TP_SCHEMA <<transformer>>
+  component "Consumer" as TP_CONS <<sink>>
+
+  TP_PROD -right-> TP_SCHEMA : data
+  TP_SCHEMA -right-> TP_CONS : validated
+
+  note bottom of TP_SCHEMA
     Enforces data contracts
     Catches errors early
   end note
 }
 
-' ----------------------------
-' Buffered Pipe
-' ----------------------------
-rectangle "Buffered Pipe" {
-  component "Producer" as BP1 <<source>>
-  rectangle "Buffer\\n(Queue)" as Buf #C8E6C9
-  component "Consumer" as BC1 <<sink>>
+' --- Error Channel ------------------------------------------------------------
+rectangle "Error Channel Pipe" as R4 {
+  component "Producer" as EP_PROD <<source>>
+  component "Transform" as EP_XFORM <<transformer>>
+  component "Consumer" as EP_CONS <<sink>>
+  component "Error Handler" as EP_ERR <<transformer>>
 
-  BP1 -right-> Buf : events
-  Buf -right-> BC1 : dequeued
+  EP_PROD -right-> EP_XFORM : data
+  EP_XFORM -right-> EP_CONS : ok
 
-  note bottom
-    Absorbs bursts
-    Decouples producer/consumer rates
-  end note
-}
+  EP_XFORM -down-> EP_ERR : errors
 
-' ----------------------------
-' Reliable Pipe
-' ----------------------------
-rectangle "Reliable Pipe" {
-  component "Producer" as RP1 <<source>>
-  rectangle "Durable\\nQueue" as DQ #BBDEFB
-  component "Consumer" as RC1 <<sink>>
-  rectangle "Dead-Letter\\nQueue" as DLQ #FFCDD2
-
-  RP1 -right-> DQ : publish
-  DQ -right-> RC1 : deliver
-  RC1 -down-> DQ : ack
-  DQ -down-> DLQ : poison msg
-
-  note bottom
-    Durability + acknowledgements
-    Supports retries / DLQ handling
+  note bottom of EP_ERR
+    Separates happy-path vs failures
+    Enables retries / dead-lettering
   end note
 }
 

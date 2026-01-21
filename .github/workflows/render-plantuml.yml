@@ -5,6 +5,8 @@ on:
   push:
     paths:
       - "src/**/*.puml"
+      - "src/**/plantuml-config.puml"
+      - "src/**/config.puml"
       - ".github/workflows/render-plantuml.yml"
 
 permissions:
@@ -33,6 +35,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
+          fetch-depth: 0
 
       - name: Install PlantUML + Graphviz
         run: |
@@ -40,128 +43,111 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y plantuml graphviz
 
-      - name: Render PlantUML diagrams (outputs next to each .puml)
+      - name: Render PlantUML diagrams (png/svg/jpg in sibling format folders)
         id: render
         shell: bash
         run: |
           set -euo pipefail
 
-          ROOT="${SRC_ROOT:-src}"
+          ROOT_REL="${SRC_ROOT:-src}"
+          ROOT_ABS="$(cd "${ROOT_REL}" && pwd)"
           SUMMARY="${GITHUB_WORKSPACE}/plantuml-render-summary.md"
 
           # Parse env vars (space-delimited).
           read -r -a CONFIG_NAMES <<< "${PLANTUML_CONFIG_NAMES:-plantuml-config.puml config.puml}"
           read -r -a FORMATS <<< "${PLANTUML_FORMATS:-png svg jpg}"
 
-          # Canonicalize ROOT for safe prefix checks.
-          ROOT_ABS="$(cd "$ROOT" && pwd)"
-
-          # Discover PlantUML sources under ROOT.
-          mapfile -t PUMLS < <(find "$ROOT" -type f -name '*.puml' | sort)
-
-          if (( ${#PUMLS[@]} == 0 )); then
-            echo "No .puml files found under: $ROOT"
-            echo "failures=0" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          failures=0
-
-          {
-            echo "# PlantUML render summary"
-            echo
-            echo "- Source root: \`$ROOT\`"
-            echo "- Total diagrams discovered: ${#PUMLS[@]}"
-            echo "- Output formats: ${FORMATS[*]}"
-            echo "- Config filenames searched (nearest-first): ${CONFIG_NAMES[*]}"
-            echo
-          } > "$SUMMARY"
-
-          # Find the nearest config file (if any) by walking upward from a diagram's directory to ROOT.
-          find_nearest_config() {
-            local start_dir="$1"
-            local dir="$start_dir"
-            while true; do
-              for cn in "${CONFIG_NAMES[@]}"; do
-                if [[ -f "$dir/$cn" ]]; then
-                  echo "$dir/$cn"
-                  return 0
-                fi
-              done
-
-              # Stop if we've reached the root boundary.
-              if [[ "$(cd "$dir" && pwd)" == "$ROOT_ABS" ]]; then
-                break
-              fi
-
-              local parent
-              parent="$(dirname "$dir")"
-              if [[ "$parent" == "$dir" ]]; then
-                break
-              fi
-              dir="$parent"
-            done
-            return 1
-          }
-
-          # Skip config files themselves (so we don't try to render them).
           is_config_file() {
-            local base="$1"
-            for cn in "${CONFIG_NAMES[@]}"; do
-              if [[ "$base" == "$cn" ]]; then
+            local b="$1"
+            for n in "${CONFIG_NAMES[@]}"; do
+              if [[ "$b" == "$n" ]]; then
                 return 0
               fi
             done
             return 1
           }
 
-          for puml in "${PUMLS[@]}"; do
-            base="$(basename "$puml")"
+          # Find the nearest config file (if any) by walking upward from a diagram's directory to ROOT_ABS.
+          find_nearest_config() {
+            local start_dir="$1"
+            local d="$start_dir"
+
+            while true; do
+              for n in "${CONFIG_NAMES[@]}"; do
+                if [[ -f "${d}/${n}" ]]; then
+                  realpath "${d}/${n}"
+                  return 0
+                fi
+              done
+
+              [[ "${d}" == "${ROOT_ABS}" ]] && break
+              local parent
+              parent="$(dirname "${d}")"
+              [[ "${parent}" == "${d}" ]] && break
+              d="${parent}"
+            done
+
+            return 1
+          }
+
+          # Discover all .puml under ROOT_ABS.
+          mapfile -d '' PUMLS < <(find "${ROOT_ABS}" -type f -name '*.puml' -print0 | sort -z)
+
+          failures=0
+
+          {
+            echo "# PlantUML render summary"
+            echo
+            echo "- Source root: \`${ROOT_REL}\`"
+            echo "- Total diagrams discovered: ${#PUMLS[@]}"
+            echo "- Output formats: ${FORMATS[*]}"
+            echo "- Config filenames searched (nearest-first): ${CONFIG_NAMES[*]}"
+            echo
+          } > "$SUMMARY"
+
+          for puml_abs in "${PUMLS[@]}"; do
+            base="$(basename "$puml_abs")"
+            dir_abs="$(dirname "$puml_abs")"
+            rel="${puml_abs#${GITHUB_WORKSPACE}/}"
+
             if is_config_file "$base"; then
-              echo "Skipping config: $puml"
-              echo "- ⏭️ $puml (config file)" >> "$SUMMARY"
+              echo "Skipping config: $rel"
+              echo "- ⏭️ $rel (config file)" >> "$SUMMARY"
               continue
             fi
-
-            echo "Processing: $puml"
-            dir="$(dirname "$puml")"
 
             cfg=""
-            if cfg="$(find_nearest_config "$dir")"; then
-              echo "  -> Using config: $cfg"
+            CFG_ARG=()
+            if cfg="$(find_nearest_config "$dir_abs")"; then
               CFG_ARG=(-config "$cfg")
-            else
-              echo "  -> No config found for this diagram (continuing)."
-              CFG_ARG=()
             fi
 
-            # Syntax check first for clearer errors. If it fails, log verbose output and continue.
-            if ! plantuml "${CFG_ARG[@]}" -checkonly "$puml" >/dev/null; then
+            # Syntax check first for clearer errors.
+            if ! (cd "$dir_abs" && plantuml "${CFG_ARG[@]}" -checkonly "$base" >/dev/null); then
               failures=$((failures+1))
-              echo "  -> ERROR (syntax): $puml"
-              echo "- ❌ $puml (syntax error)  \`config=${cfg:-none}\`" >> "$SUMMARY"
-              echo "  -> Re-running with -v for details..."
-              plantuml "${CFG_ARG[@]}" -v "$puml" || true
+              echo "- ❌ $rel (syntax error)  \`config=${cfg:-none}\`" >> "$SUMMARY"
+              echo "Syntax error in: $rel"
+              echo "Re-running with -v for details..."
+              (cd "$dir_abs" && plantuml "${CFG_ARG[@]}" -v "$base") || true
               continue
             fi
 
-            # Render requested formats next to the .puml file (same directory).
             ok=true
             for fmt in "${FORMATS[@]}"; do
-              if ! plantuml "${CFG_ARG[@]}" "-t${fmt}" "$puml" >/dev/null; then
+              mkdir -p "${dir_abs}/${fmt}"
+              if ! (cd "$dir_abs" && plantuml "${CFG_ARG[@]}" "-t${fmt}" -o "${fmt}" "$base" >/dev/null); then
                 ok=false
-                echo "  -> ERROR (render ${fmt}): $puml"
+                echo "  -> ERROR (render ${fmt}): $rel"
               fi
             done
 
             if [[ "$ok" == "true" ]]; then
-              echo "  -> OK"
-              echo "- ✅ $puml  \`config=${cfg:-none}\`" >> "$SUMMARY"
+              echo "- ✅ $rel  \`config=${cfg:-none}\`" >> "$SUMMARY"
             else
               failures=$((failures+1))
-              echo "- ❌ $puml (render failed)  \`config=${cfg:-none}\`" >> "$SUMMARY"
-              echo "  -> Re-running with -v for details..."
-              plantuml "${CFG_ARG[@]}" -v "$puml" || true
+              echo "- ❌ $rel (render failed)  \`config=${cfg:-none}\`" >> "$SUMMARY"
+              echo "Re-running with -v for details..."
+              (cd "$dir_abs" && plantuml "${CFG_ARG[@]}" -v "$base") || true
             fi
           done
 
@@ -174,7 +160,11 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v6
         with:
           commit_message: "chore(diagrams): render PlantUML images"
-          file_pattern: "src/**/*.png src/**/*.svg src/**/*.jpg plantuml-render-summary.md"
+          file_pattern: |
+            plantuml-render-summary.md
+            src/**/png/*.png
+            src/**/svg/*.svg
+            src/**/jpg/*.jpg
 
       - name: Fail job if any diagrams failed
         if: ${{ steps.render.outputs.failures != '0' }}
