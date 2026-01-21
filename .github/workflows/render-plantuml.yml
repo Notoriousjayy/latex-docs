@@ -3,11 +3,16 @@ name: Render PlantUML diagrams
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
     paths:
       - "src/**/*.puml"
-      - "src/common/plantuml-config.puml"
       - ".github/workflows/render-plantuml.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: plantuml-render-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   render:
@@ -16,98 +21,163 @@ jobs:
     # Avoid infinite loops when the workflow auto-commits generated images.
     if: github.actor != 'github-actions[bot]'
 
-    permissions:
-      contents: write
+    env:
+      SRC_ROOT: "src"
+      # Space-delimited list of config filenames to search for, nearest-first up the directory tree.
+      PLANTUML_CONFIG_NAMES: "plantuml-config.puml config.puml"
+      # Space-delimited output formats to generate for each diagram.
+      PLANTUML_FORMATS: "png svg jpg"
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-          fetch-depth: 0
 
-      - name: Install dependencies
+      - name: Install PlantUML + Graphviz
         run: |
+          set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y default-jre graphviz imagemagick
+          sudo apt-get install -y plantuml graphviz
 
-      - name: Download PlantUML
-        run: |
-          mkdir -p ~/.local/bin
-          curl -fsSL -o ~/.local/bin/plantuml.jar \
-            https://github.com/plantuml/plantuml/releases/download/v1.2024.7/plantuml-1.2024.7.jar
-
-      - name: Render PlantUML diagrams
+      - name: Render PlantUML diagrams (outputs next to each .puml)
+        id: render
         shell: bash
         run: |
           set -euo pipefail
 
-          CONFIG_FILE="src/common/plantuml-config.puml"
-          CONFIG_ARG=()
-          if [[ -f "$CONFIG_FILE" ]]; then
-            CONFIG_ARG=(-config "$CONFIG_FILE")
-          else
-            echo "WARN: PlantUML config not found at: $CONFIG_FILE (continuing without -config)"
+          ROOT="${SRC_ROOT:-src}"
+          SUMMARY="${GITHUB_WORKSPACE}/plantuml-render-summary.md"
+
+          # Parse env vars (space-delimited).
+          read -r -a CONFIG_NAMES <<< "${PLANTUML_CONFIG_NAMES:-plantuml-config.puml config.puml}"
+          read -r -a FORMATS <<< "${PLANTUML_FORMATS:-png svg jpg}"
+
+          # Canonicalize ROOT for safe prefix checks.
+          ROOT_ABS="$(cd "$ROOT" && pwd)"
+
+          # Discover PlantUML sources under ROOT.
+          mapfile -t PUMLS < <(find "$ROOT" -type f -name '*.puml' | sort)
+
+          if (( ${#PUMLS[@]} == 0 )); then
+            echo "No .puml files found under: $ROOT"
+            echo "failures=0" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
-          # Find all .puml files in src/ (excluding the config file itself)
-          while IFS= read -r -d '' puml_file; do
-            if [[ "$puml_file" == "$CONFIG_FILE" ]]; then
+          failures=0
+
+          {
+            echo "# PlantUML render summary"
+            echo
+            echo "- Source root: \`$ROOT\`"
+            echo "- Total diagrams discovered: ${#PUMLS[@]}"
+            echo "- Output formats: ${FORMATS[*]}"
+            echo "- Config filenames searched (nearest-first): ${CONFIG_NAMES[*]}"
+            echo
+          } > "$SUMMARY"
+
+          # Find the nearest config file (if any) by walking upward from a diagram's directory to ROOT.
+          find_nearest_config() {
+            local start_dir="$1"
+            local dir="$start_dir"
+            while true; do
+              for cn in "${CONFIG_NAMES[@]}"; do
+                if [[ -f "$dir/$cn" ]]; then
+                  echo "$dir/$cn"
+                  return 0
+                fi
+              done
+
+              # Stop if we've reached the root boundary.
+              if [[ "$(cd "$dir" && pwd)" == "$ROOT_ABS" ]]; then
+                break
+              fi
+
+              local parent
+              parent="$(dirname "$dir")"
+              if [[ "$parent" == "$dir" ]]; then
+                break
+              fi
+              dir="$parent"
+            done
+            return 1
+          }
+
+          # Skip config files themselves (so we don't try to render them).
+          is_config_file() {
+            local base="$1"
+            for cn in "${CONFIG_NAMES[@]}"; do
+              if [[ "$base" == "$cn" ]]; then
+                return 0
+              fi
+            done
+            return 1
+          }
+
+          for puml in "${PUMLS[@]}"; do
+            base="$(basename "$puml")"
+            if is_config_file "$base"; then
+              echo "Skipping config: $puml"
+              echo "- ⏭️ $puml (config file)" >> "$SUMMARY"
               continue
             fi
 
-            dir="$(dirname "$puml_file")"
-            base="$(basename "$puml_file")"
-            name="${base%.puml}"
+            echo "Processing: $puml"
+            dir="$(dirname "$puml")"
 
-            echo "Processing: $puml_file"
-
-            mkdir -p "$dir/png" "$dir/svg" "$dir/jpg"
-
-            # Run from the diagram directory so output paths are predictable
-            ( cd "$dir" && \
-              java -jar "$HOME/.local/bin/plantuml.jar" \
-                "${CONFIG_ARG[@]}" \
-                -tpng -o png \
-                "$base" )
-
-            ( cd "$dir" && \
-              java -jar "$HOME/.local/bin/plantuml.jar" \
-                "${CONFIG_ARG[@]}" \
-                -tsvg -o svg \
-                "$base" )
-
-            # Convert PNG to JPG (if produced)
-            if [[ -f "$dir/png/$name.png" ]]; then
-              convert "$dir/png/$name.png" -quality 92 "$dir/jpg/$name.jpg"
+            cfg=""
+            if cfg="$(find_nearest_config "$dir")"; then
+              echo "  -> Using config: $cfg"
+              CFG_ARG=(-config "$cfg")
+            else
+              echo "  -> No config found for this diagram (continuing)."
+              CFG_ARG=()
             fi
 
-            echo "  -> Generated: $dir/{png,svg,jpg}/$name.*"
-          done < <(find src -type f -name '*.puml' -print0)
+            # Syntax check first for clearer errors. If it fails, log verbose output and continue.
+            if ! plantuml "${CFG_ARG[@]}" -checkonly "$puml" >/dev/null; then
+              failures=$((failures+1))
+              echo "  -> ERROR (syntax): $puml"
+              echo "- ❌ $puml (syntax error)  \`config=${cfg:-none}\`" >> "$SUMMARY"
+              echo "  -> Re-running with -v for details..."
+              plantuml "${CFG_ARG[@]}" -v "$puml" || true
+              continue
+            fi
 
-          echo ""
-          echo "=== Render Summary ==="
-          echo "PNG files: $(find src -path '*/png/*.png' -type f | wc -l)"
-          echo "SVG files: $(find src -path '*/svg/*.svg' -type f | wc -l)"
-          echo "JPG files: $(find src -path '*/jpg/*.jpg' -type f | wc -l)"
+            # Render requested formats next to the .puml file (same directory).
+            ok=true
+            for fmt in "${FORMATS[@]}"; do
+              if ! plantuml "${CFG_ARG[@]}" "-t${fmt}" "$puml" >/dev/null; then
+                ok=false
+                echo "  -> ERROR (render ${fmt}): $puml"
+              fi
+            done
 
-          echo ""
-          echo "=== Git Status (debug) ==="
-          git status --porcelain || true
+            if [[ "$ok" == "true" ]]; then
+              echo "  -> OK"
+              echo "- ✅ $puml  \`config=${cfg:-none}\`" >> "$SUMMARY"
+            else
+              failures=$((failures+1))
+              echo "- ❌ $puml (render failed)  \`config=${cfg:-none}\`" >> "$SUMMARY"
+              echo "  -> Re-running with -v for details..."
+              plantuml "${CFG_ARG[@]}" -v "$puml" || true
+            fi
+          done
 
-          # If files are being ignored, this will explain why (limit to first 50)
-          mapfile -t CANDIDATES < <(
-            find src -type f \( -path '*/png/*.png' -o -path '*/svg/*.svg' -o -path '*/jpg/*.jpg' \) \
-              2>/dev/null | head -n 50
-          )
-          if (( ${#CANDIDATES[@]} > 0 )); then
-            git check-ignore -v "${CANDIDATES[@]}" || true
-          fi
+          echo >> "$SUMMARY"
+          echo "- Failures: $failures" >> "$SUMMARY"
+          echo "failures=$failures" >> "$GITHUB_OUTPUT"
 
-      # Auto-commit rendered outputs back to repo
-      - name: Commit rendered diagrams
+      - name: Commit rendered images
+        if: always()
         uses: stefanzweifel/git-auto-commit-action@v6
         with:
-          commit_message: "chore(diagrams): render PlantUML diagrams"
-          # Use Git pathspec glob-magic so recursive patterns reliably match
-          file_pattern: ":(glob)src/**/png/*.png :(glob)src/**/svg/*.svg :(glob)src/**/jpg/*.jpg"
+          commit_message: "chore(diagrams): render PlantUML images"
+          file_pattern: "src/**/*.png src/**/*.svg src/**/*.jpg plantuml-render-summary.md"
+
+      - name: Fail job if any diagrams failed
+        if: ${{ steps.render.outputs.failures != '0' }}
+        run: |
+          echo "One or more PlantUML diagrams failed to render. See plantuml-render-summary.md."
+          exit 1
