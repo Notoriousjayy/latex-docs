@@ -94,13 +94,20 @@ jobs:
           echo ""
           echo "=== Git Status (debug) ==="
           git status --porcelain || true
-          # If files are being ignored, this will explain why
-          git check-ignore -v $(find src -path '*/png/*.png' -o -path '*/svg/*.svg' -o -path '*/jpg/*.jpg' 2>/dev/null | head -n 50) || true
+
+          # If files are being ignored, this will explain why (limit to first 50)
+          mapfile -t CANDIDATES < <(
+            find src -type f \( -path '*/png/*.png' -o -path '*/svg/*.svg' -o -path '*/jpg/*.jpg' \) \
+              2>/dev/null | head -n 50
+          )
+          if (( ${#CANDIDATES[@]} > 0 )); then
+            git check-ignore -v "${CANDIDATES[@]}" || true
+          fi
 
       # Auto-commit rendered outputs back to repo
       - name: Commit rendered diagrams
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v6
         with:
           commit_message: "chore(diagrams): render PlantUML diagrams"
-          # Commit only the actual rendered image files
-          file_pattern: "src/**/png/*.png src/**/svg/*.svg src/**/jpg/*.jpg"
+          # Use Git pathspec glob-magic so recursive patterns reliably match
+          file_pattern: ":(glob)src/**/png/*.png :(glob)src/**/svg/*.svg :(glob)src/**/jpg/*.jpg"
