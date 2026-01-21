@@ -24,6 +24,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
+          fetch-depth: 0
 
       - name: Install dependencies
         run: |
@@ -33,67 +34,73 @@ jobs:
       - name: Download PlantUML
         run: |
           mkdir -p ~/.local/bin
-          curl -L -o ~/.local/bin/plantuml.jar \
+          curl -fsSL -o ~/.local/bin/plantuml.jar \
             https://github.com/plantuml/plantuml/releases/download/v1.2024.7/plantuml-1.2024.7.jar
 
       - name: Render PlantUML diagrams
+        shell: bash
         run: |
           set -euo pipefail
 
           CONFIG_FILE="src/common/plantuml-config.puml"
-          CONFIG_ARG=""
+          CONFIG_ARG=()
           if [[ -f "$CONFIG_FILE" ]]; then
-            CONFIG_ARG="-config $CONFIG_FILE"
+            CONFIG_ARG=(-config "$CONFIG_FILE")
+          else
+            echo "WARN: PlantUML config not found at: $CONFIG_FILE (continuing without -config)"
           fi
 
-          # Find all .puml files in src/ (excluding the config file)
+          # Find all .puml files in src/ (excluding the config file itself)
           while IFS= read -r -d '' puml_file; do
-            # Skip the config file itself
             if [[ "$puml_file" == "$CONFIG_FILE" ]]; then
               continue
             fi
 
             dir="$(dirname "$puml_file")"
-            filename="$(basename "$puml_file" .puml)"
+            base="$(basename "$puml_file")"
+            name="${base%.puml}"
 
             echo "Processing: $puml_file"
 
-            # Create format-specific output directories
             mkdir -p "$dir/png" "$dir/svg" "$dir/jpg"
 
-            # Render PNG
-            java -jar ~/.local/bin/plantuml.jar \
-              $CONFIG_ARG \
-              -tpng \
-              -o "$(pwd)/$dir/png" \
-              "$puml_file"
+            # Run from the diagram directory so output paths are predictable
+            ( cd "$dir" && \
+              java -jar "$HOME/.local/bin/plantuml.jar" \
+                "${CONFIG_ARG[@]}" \
+                -tpng -o png \
+                "$base" )
 
-            # Render SVG
-            java -jar ~/.local/bin/plantuml.jar \
-              $CONFIG_ARG \
-              -tsvg \
-              -o "$(pwd)/$dir/svg" \
-              "$puml_file"
+            ( cd "$dir" && \
+              java -jar "$HOME/.local/bin/plantuml.jar" \
+                "${CONFIG_ARG[@]}" \
+                -tsvg -o svg \
+                "$base" )
 
-            # Convert PNG to JPG
-            if [[ -f "$dir/png/$filename.png" ]]; then
-              convert "$dir/png/$filename.png" -quality 92 "$dir/jpg/$filename.jpg"
+            # Convert PNG to JPG (if produced)
+            if [[ -f "$dir/png/$name.png" ]]; then
+              convert "$dir/png/$name.png" -quality 92 "$dir/jpg/$name.jpg"
             fi
 
-            echo "  -> Generated: $dir/{png,svg,jpg}/$filename.*"
-
+            echo "  -> Generated: $dir/{png,svg,jpg}/$name.*"
           done < <(find src -type f -name '*.puml' -print0)
 
-          # Summary
           echo ""
           echo "=== Render Summary ==="
           echo "PNG files: $(find src -path '*/png/*.png' -type f | wc -l)"
           echo "SVG files: $(find src -path '*/svg/*.svg' -type f | wc -l)"
           echo "JPG files: $(find src -path '*/jpg/*.jpg' -type f | wc -l)"
 
+          echo ""
+          echo "=== Git Status (debug) ==="
+          git status --porcelain || true
+          # If files are being ignored, this will explain why
+          git check-ignore -v $(find src -path '*/png/*.png' -o -path '*/svg/*.svg' -o -path '*/jpg/*.jpg' 2>/dev/null | head -n 50) || true
+
       # Auto-commit rendered outputs back to repo
       - name: Commit rendered diagrams
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(diagrams): render PlantUML diagrams"
-          file_pattern: "src/**/png/* src/**/svg/* src/**/jpg/*"
+          # Commit only the actual rendered image files
+          file_pattern: "src/**/png/*.png src/**/svg/*.svg src/**/jpg/*.jpg"
