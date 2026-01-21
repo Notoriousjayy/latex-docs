@@ -5,7 +5,8 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - "diagrams/**/*.puml"
+      - "src/**/*.puml"
+      - "src/common/plantuml-config.puml"
       - ".github/workflows/render-plantuml.yml"
 
 jobs:
@@ -24,52 +25,75 @@ jobs:
         with:
           persist-credentials: true
 
-      - name: Create output directories
-        run: |
-          mkdir -p diagrams/out/png
-          mkdir -p diagrams/out/svg
-
-      # Render PlantUML diagrams to PNG
-      - name: Render PNG diagrams
-        uses: dreamsinbits/export-plantuml-action@v1
-        with:
-          args: >
-            -v
-            -tpng
-            -o ${{ github.workspace }}/diagrams/out/png
-            -config diagrams/config/config.puml
-            diagrams/src
-
-      # Render PlantUML diagrams to SVG (useful for LaTeX inclusion)
-      - name: Render SVG diagrams
-        uses: dreamsinbits/export-plantuml-action@v1
-        with:
-          args: >
-            -v
-            -tsvg
-            -o ${{ github.workspace }}/diagrams/out/svg
-            -config diagrams/config/config.puml
-            diagrams/src
-
-      # Optional: Convert PNG to JPG for broader compatibility
-      - name: Convert PNG -> JPG (optional)
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y imagemagick
+          sudo apt-get install -y default-jre graphviz imagemagick
 
-          mkdir -p diagrams/out/jpg
+      - name: Download PlantUML
+        run: |
+          mkdir -p ~/.local/bin
+          curl -L -o ~/.local/bin/plantuml.jar \
+            https://github.com/plantuml/plantuml/releases/download/v1.2024.7/plantuml-1.2024.7.jar
 
-          # Preserve folder structure under diagrams/out/png
-          while IFS= read -r -d '' f; do
-            rel="${f#diagrams/out/png/}"
-            out="diagrams/out/jpg/${rel%.png}.jpg"
-            mkdir -p "$(dirname "$out")"
-            convert "$f" -quality 92 "$out"
-          done < <(find diagrams/out/png -type f -name '*.png' -print0 2>/dev/null || true)
+      - name: Render PlantUML diagrams
+        run: |
+          set -euo pipefail
+
+          CONFIG_FILE="src/common/plantuml-config.puml"
+          CONFIG_ARG=""
+          if [[ -f "$CONFIG_FILE" ]]; then
+            CONFIG_ARG="-config $CONFIG_FILE"
+          fi
+
+          # Find all .puml files in src/ (excluding the config file)
+          while IFS= read -r -d '' puml_file; do
+            # Skip the config file itself
+            if [[ "$puml_file" == "$CONFIG_FILE" ]]; then
+              continue
+            fi
+
+            dir="$(dirname "$puml_file")"
+            filename="$(basename "$puml_file" .puml)"
+
+            echo "Processing: $puml_file"
+
+            # Create format-specific output directories
+            mkdir -p "$dir/png" "$dir/svg" "$dir/jpg"
+
+            # Render PNG
+            java -jar ~/.local/bin/plantuml.jar \
+              $CONFIG_ARG \
+              -tpng \
+              -o "$(pwd)/$dir/png" \
+              "$puml_file"
+
+            # Render SVG
+            java -jar ~/.local/bin/plantuml.jar \
+              $CONFIG_ARG \
+              -tsvg \
+              -o "$(pwd)/$dir/svg" \
+              "$puml_file"
+
+            # Convert PNG to JPG
+            if [[ -f "$dir/png/$filename.png" ]]; then
+              convert "$dir/png/$filename.png" -quality 92 "$dir/jpg/$filename.jpg"
+            fi
+
+            echo "  -> Generated: $dir/{png,svg,jpg}/$filename.*"
+
+          done < <(find src -type f -name '*.puml' -print0)
+
+          # Summary
+          echo ""
+          echo "=== Render Summary ==="
+          echo "PNG files: $(find src -path '*/png/*.png' -type f | wc -l)"
+          echo "SVG files: $(find src -path '*/svg/*.svg' -type f | wc -l)"
+          echo "JPG files: $(find src -path '*/jpg/*.jpg' -type f | wc -l)"
 
       # Auto-commit rendered outputs back to repo
       - name: Commit rendered diagrams
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(diagrams): render PlantUML diagrams"
-          file_pattern: "diagrams/out"
+          file_pattern: "src/**/png/* src/**/svg/* src/**/jpg/*"
