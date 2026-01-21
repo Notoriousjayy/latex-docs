@@ -1,6 +1,7 @@
 \documentclass[11pt]{article}
 
 \usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
 \usepackage{enumitem}
 \usepackage[hidelinks]{hyperref}
 \usepackage{booktabs}
@@ -10,6 +11,10 @@
 \usepackage{fancyhdr}
 \usepackage{titlesec}
 \usepackage{parskip}
+\usepackage{graphicx}
+\usepackage{svg}
+\usepackage{float}
+\usepackage[font=small,labelfont=bf]{caption}
 
 \setlist[itemize]{leftmargin=1.5em}
 \setlist[enumerate]{leftmargin=1.5em}
@@ -28,6 +33,9 @@
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
+% SVG path configuration - matches workflow output structure
+\svgpath{{src/pipe-and-filter/svg/}}
+
 \begin{document}
 
 \title{\textbf{The Pipe-and-Filter Architectural Style}\\[0.5em]
@@ -44,6 +52,13 @@
 %==============================================================================
 
 The pipe-and-filter style is a component-and-connector architectural style that structures a system as a series of transformations on successive pieces of input data. Data flows through a network of independent processing components called filters, connected by conduits called pipes that transmit data from one filter to the next.
+
+\begin{figure}[H]
+\centering
+\includesvg[width=0.95\textwidth]{01-basic-architecture}
+\caption{Basic pipe-and-filter architecture showing the flow from source through transformers to sink. Each component operates independently, communicating only through pipes.}
+\label{fig:basic-architecture}
+\end{figure}
 
 This architectural style embodies the principle of separation of concerns by decomposing complex data transformations into a sequence of simpler, independent steps. Each filter performs a specific transformation, reading data from its input ports, processing it, and writing results to its output ports. Filters operate without knowledge of which filters precede or follow them, enabling remarkable flexibility in system composition.
 
@@ -81,7 +96,14 @@ A filter is a component that transforms data read on its input ports to data wri
 
 \subsubsection{Types of Filter Components}
 
-Filter components can be classified by their data consumption and production patterns.
+Filter components can be classified by their data consumption and production patterns. Figure~\ref{fig:filter-types} illustrates the six primary categories.
+
+\begin{figure}[H]
+\centering
+\includesvg[width=0.85\textwidth]{02-filter-types}
+\caption{Classification of filter types by their input/output characteristics. Each type serves a distinct role in the data processing pipeline.}
+\label{fig:filter-types}
+\end{figure}
 
 Producers (sources) generate data without consuming input. They have no input ports and one or more output ports. Examples include data readers, sensors, generators, and event sources.
 
@@ -119,7 +141,14 @@ A pipe is a connector that conveys data from a filter's output port to another f
 
 \subsubsection{Types of Pipe Connectors}
 
-Pipe connectors vary in their implementation and properties.
+Pipe connectors vary in their implementation and properties. Figure~\ref{fig:pipe-types} illustrates the three primary categories.
+
+\begin{figure}[H]
+\centering
+\includesvg[width=0.9\textwidth]{09-pipe-types}
+\caption{Pipe connector types showing synchronous, buffered, and typed implementations. Each type offers different trade-offs between coupling, performance, and safety.}
+\label{fig:pipe-types}
+\end{figure}
 
 Synchronous pipes transfer data directly from producer to consumer, with the producer blocking if the consumer is not ready. This is the simplest form but can create tight coupling between processing rates.
 
@@ -209,7 +238,14 @@ Not all filters can be fully incremental. Some transformations, like sorting, re
 
 \subsection{Execution Models}
 
-Pipe-and-filter systems can execute under different models.
+Pipe-and-filter systems can execute under different models. Figure~\ref{fig:execution-models} contrasts the two primary approaches.
+
+\begin{figure}[H]
+\centering
+\includesvg[width=0.9\textwidth]{06-execution-models}
+\caption{Push-based vs.\ pull-based execution models. Push is natural for streaming sources while pull suits demand-driven processing.}
+\label{fig:execution-models}
+\end{figure}
 
 Push-based execution has upstream filters actively pushing data to downstream filters. Producers control the rate; consumers must keep up or data is buffered or lost. This model is natural for streaming data sources.
 
@@ -453,6 +489,13 @@ Several recurring patterns address common pipe-and-filter challenges.
 
 The simplest pattern connects filters in a linear sequence. Data flows through each filter in order. Each filter has one predecessor and one successor.
 
+\begin{figure}[H]
+\centering
+\includesvg[width=0.95\textwidth]{03-linear-pipeline-compiler}
+\caption{Linear pipeline pattern illustrated by compiler phases. Each filter transforms its input into a form suitable for the next phase.}
+\label{fig:linear-pipeline}
+\end{figure}
+
 This pattern is appropriate when transformations naturally sequence, when order matters, and when each step depends on the previous step's complete output.
 
 Examples include compiler phases (lexer, parser, optimizer, code generator), image processing chains (resize, crop, filter, compress), and ETL workflows (extract, validate, transform, load).
@@ -461,6 +504,13 @@ Examples include compiler phases (lexer, parser, optimizer, code generator), ima
 
 This pattern replicates a pipeline or filter for parallel processing. Data is partitioned across parallel instances. Results are merged after parallel processing.
 
+\begin{figure}[H]
+\centering
+\includesvg[width=0.75\textwidth]{07-parallel-pipeline-pattern}
+\caption{Parallel pipeline pattern showing data partitioning across replicated filter instances for increased throughput.}
+\label{fig:parallel-pipeline}
+\end{figure}
+
 This pattern is appropriate when individual items can be processed independently, when throughput requirements exceed single-instance capacity, and when data can be partitioned effectively.
 
 Considerations include partitioning strategy (round-robin, hash-based, or range-based), load balancing across instances, and result ordering if order matters.
@@ -468,6 +518,13 @@ Considerations include partitioning strategy (round-robin, hash-based, or range-
 \subsection{Fork-Join Pattern}
 
 This pattern splits data to multiple pipelines and joins results. A splitter filter divides input to multiple paths. Parallel paths process data concurrently. A joiner filter combines results.
+
+\begin{figure}[H]
+\centering
+\includesvg[width=0.65\textwidth]{04-fork-join-pattern}
+\caption{Fork-join pattern showing data split to parallel processing paths and merged results.}
+\label{fig:fork-join}
+\end{figure}
 
 This pattern is appropriate when different processing is needed for different data, when parallel processing of the same data is beneficial, and when results must be combined.
 
@@ -484,6 +541,13 @@ The basic pipe-and-filter style prohibits cycles, but some applications require 
 \subsection{Error Channel Pattern}
 
 This pattern provides a separate path for error handling. Normal data flows through the main pipeline. Errors are routed to an error channel. Error handlers process errors separately.
+
+\begin{figure}[H]
+\centering
+\includesvg[width=0.9\textwidth]{05-error-channel-pattern}
+\caption{Error channel pattern separating normal data flow from error handling paths.}
+\label{fig:error-channel}
+\end{figure}
 
 This pattern is appropriate when errors require different processing, when errors should not block normal processing, and when error aggregation or reporting is needed.
 
@@ -504,6 +568,13 @@ This pattern is appropriate when processing varies by data type or value, when o
 \subsection{Tee Pattern}
 
 This pattern duplicates data to multiple outputs. A tee filter copies input to multiple output ports. Each output goes to a different downstream path. Paths process the same data independently.
+
+\begin{figure}[H]
+\centering
+\includesvg[width=0.75\textwidth]{08-tee-pattern}
+\caption{Tee pattern duplicating data to multiple independent processing paths.}
+\label{fig:tee-pattern}
+\end{figure}
 
 This pattern is appropriate when the same data needs multiple independent processings, when audit or logging copies are needed, and when parallel analysis paths are required.
 
@@ -588,6 +659,13 @@ Concrete examples illustrate pipe-and-filter concepts.
 The classic Unix pipeline demonstrates the style. Consider finding the ten most common words in a file:
 
 \texttt{cat file.txt | tr -cs 'A-Za-z' '\textbackslash n' | tr 'A-Z' 'a-z' | sort | uniq -c | sort -rn | head -10}
+
+\begin{figure}[H]
+\centering
+\includesvg[width=0.95\textwidth]{10-unix-pipeline-example}
+\caption{Unix word frequency pipeline showing seven filters connected by pipes. Each filter performs a single transformation, and the composition produces the desired result.}
+\label{fig:unix-pipeline}
+\end{figure}
 
 Each command is a filter. The \texttt{cat} command is a source reading the file. The first \texttt{tr} tokenizes into words. The second \texttt{tr} lowercases. The first \texttt{sort} orders alphabetically for \texttt{uniq}. The \texttt{uniq -c} counts occurrences. The second \texttt{sort -rn} orders by count. The \texttt{head} is a sink taking the top ten.
 
@@ -750,5 +828,9 @@ Understanding pipe-and-filter architecture equips architects to design effective
   \item Akidau, T., Chernyak, S., \& Lax, R. (2018). \textit{Streaming Systems: The What, Where, When, and How of Large-Scale Data Processing}. O'Reilly Media.
   \item Raymond, E. S. (2003). \textit{The Art of Unix Programming}. Addison-Wesley Professional.
 \end{itemize}
+
+%==============================================================================
+\listoffigures
+%==============================================================================
 
 \end{document}
