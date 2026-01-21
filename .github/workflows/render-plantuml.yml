@@ -3,7 +3,7 @@ name: Render PlantUML diagrams
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
     paths:
       - "src/**/*.puml"
       - ".github/workflows/render-plantuml.yml"
@@ -18,144 +18,187 @@ jobs:
     permissions:
       contents: write
 
+    env:
+      SRC_ROOT: src
+      # Config file names to search for (nearest directory wins).
+      CONFIG_FILENAMES: "plantuml-config.puml config.puml"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           persist-credentials: true
+          fetch-depth: 0
 
       - name: Install PlantUML + Graphviz
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update -y
-          sudo apt-get install -y --no-install-recommends             plantuml graphviz default-jre-headless
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends plantuml graphviz
+          plantuml -version || true
+          dot -V || true
 
-      - name: Render all .puml files to png/svg/jpg (per-directory)
+      - name: Render diagrams into per-directory format folders
+        id: render
         shell: bash
         run: |
           set -euo pipefail
 
-          ROOT="src"
-          CONFIG_NAMES=("plantuml-config.puml" "config.puml")
-          FORMATS=("png" "svg" "jpg")
+          WORKSPACE="${GITHUB_WORKSPACE}"
+          SRC_ROOT="${SRC_ROOT}"
 
-          find_config() {
-            local start_dir="$1"
-            local d="$start_dir"
-            while true; do
-              for n in "${CONFIG_NAMES[@]}"; do
-                if [[ -f "${d}/${n}" ]]; then
-                  echo "${d}/${n}"
-                  return 0
-                fi
-              done
-              [[ "$d" == "$ROOT" ]] && break
-              d="$(dirname "$d")"
-            done
-            echo ""
-          }
+          summary="plantuml-render-summary.md"
+          tmp_summary="$(mktemp)"
 
-          # Collect .puml files (excluding config files).
-          mapfile -d '' PUMLS < <(
-            find "$ROOT" -type f -name "*.puml"               ! -name "plantuml-config.puml"               ! -name "config.puml"               -print0
-          )
+          echo "# PlantUML Render Summary" > "$tmp_summary"
+          echo "" >> "$tmp_summary"
+          echo "- Run: ${GITHUB_RUN_ID}" >> "$tmp_summary"
+          echo "- Commit: ${GITHUB_SHA}" >> "$tmp_summary"
+          echo "- Timestamp (UTC): $(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$tmp_summary"
+          echo "" >> "$tmp_summary"
 
-          if [[ ${#PUMLS[@]} -eq 0 ]]; then
-            echo "No PlantUML files found under ${ROOT}/"
+          failures=0
+          rendered=0
+          skipped=0
+
+          # Find all .puml recursively under SRC_ROOT.
+          mapfile -d '' puml_files < <(find "$SRC_ROOT" -type f -name "*.puml" -print0 | sort -z)
+
+          if [[ "${#puml_files[@]}" -eq 0 ]]; then
+            echo "No .puml files found under '$SRC_ROOT'."
+            echo "failures=0" >> "$GITHUB_OUTPUT"
+            cp "$tmp_summary" "$summary"
             exit 0
           fi
 
-          SUMMARY="plantuml-render-summary.md"
-          {
-            echo "# PlantUML Render Summary"
-            echo
-            echo "- Render time (UTC): $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-            echo "- Files discovered: ${#PUMLS[@]}"
-            echo
-          } > "$SUMMARY"
+          echo "Found ${#puml_files[@]} .puml file(s) under '$SRC_ROOT'."
+          echo "" >> "$tmp_summary"
+          echo "## Files processed" >> "$tmp_summary"
+          echo "" >> "$tmp_summary"
 
-          for puml in "${PUMLS[@]}"; do
-            dir="$(dirname "$puml")"
-            base="$(basename "$puml" .puml)"
-            cfg="$(find_config "$dir")"
+          find_nearest_config() {
+            local start_dir="$1"
+            local cur="$start_dir"
 
-            mkdir -p "${dir}/png" "${dir}/svg" "${dir}/jpg"
-            echo "Rendering: ${puml}"
-
-            {
-              echo "## \`${puml}\`"
-              if [[ -n "$cfg" ]]; then
-                echo "- Config: \`${cfg}\`"
-              else
-                echo "- Config: _(none)_"
-              fi
-              echo "- Outputs:"
-            } >> "$SUMMARY"
-
-            for fmt in "${FORMATS[@]}"; do
-              # Render into a per-diagram temp directory to avoid name collisions, then rename to match the .puml filename.
-              tmp=".plantuml-tmp/${base}/${fmt}"
-              mkdir -p "${dir}/${tmp}"
-
-              # Absolute path for config to avoid path issues when we cd into the diagram directory.
-              if [[ -n "$cfg" ]]; then
-                cfg_abs="$(python3 - <<'PY'
-import os, sys
-print(os.path.abspath(sys.argv[1]))
-PY
-"$cfg")"
-              else
-                cfg_abs=""
-              fi
-
-              pushd "$dir" >/dev/null
-              if [[ -n "$cfg_abs" ]]; then
-                plantuml "-t${fmt}" -o "${tmp}" -config "${cfg_abs}" "$(basename "$puml")"
-              else
-                plantuml "-t${fmt}" -o "${tmp}" "$(basename "$puml")"
-              fi
-              popd >/dev/null
-
-              dest_dir="${dir}/${fmt}"
-              ext="${fmt}"
-
-              produced=""
-              if [[ "$fmt" == "jpg" ]]; then
-                if compgen -G "${dir}/${tmp}/*.jpg" > /dev/null; then
-                  produced="$(ls -1 "${dir}/${tmp}/"*.jpg | head -n 1)"
-                elif compgen -G "${dir}/${tmp}/*.jpeg" > /dev/null; then
-                  produced="$(ls -1 "${dir}/${tmp}/"*.jpeg | head -n 1)"
-                  ext="jpg"
+            # Walk up to the repo root.
+            while [[ -n "$cur" && "$cur" != "/" ]]; do
+              for cfg_name in ${CONFIG_FILENAMES}; do
+                if [[ -f "$cur/$cfg_name" ]]; then
+                  (cd "$WORKSPACE" && realpath "$cur/$cfg_name")
+                  return 0
                 fi
-              else
-                if compgen -G "${dir}/${tmp}/*.${ext}" > /dev/null; then
-                  produced="$(ls -1 "${dir}/${tmp}/"*.${ext} | head -n 1)"
-                fi
+              done
+
+              # Stop if we've reached the repo root.
+              if [[ "$cur" == "$WORKSPACE" ]]; then
+                break
               fi
-
-              if [[ -z "$produced" ]]; then
-                echo "ERROR: No output produced for ${puml} (format=${fmt})"
-                exit 1
-              fi
-
-              dest="${dest_dir}/${base}.${ext}"
-              mv -f "$produced" "$dest"
-              rm -rf "${dir}/.plantuml-tmp/${base}/${fmt}"
-
-              echo "  - ${fmt}: \`${dest}\`" >> "$SUMMARY"
+              cur="$(dirname "$cur")"
             done
 
-            echo >> "$SUMMARY"
+            return 1
+          }
+
+          for f in "${puml_files[@]}"; do
+            base="$(basename "$f")"
+
+            # Skip config .puml files (they are not diagrams).
+            if [[ "$base" == "plantuml-config.puml" || "$base" == "config.puml" ]]; then
+              echo "Skipping config: $f"
+              echo "- ⏭️  $f (config)" >> "$tmp_summary"
+              skipped=$((skipped+1))
+              continue
+            fi
+
+            dir="$(dirname "$f")"
+            abs_dir="$(cd "$WORKSPACE" && realpath "$dir")"
+            abs_file="$(cd "$WORKSPACE" && realpath "$f")"
+
+            cfg_path=""
+            if cfg_path="$(find_nearest_config "$abs_dir" 2>/dev/null)"; then
+              :
+            else
+              cfg_path=""
+            fi
+
+            # Ensure output directories exist next to the diagram file.
+            mkdir -p "$dir/png" "$dir/svg" "$dir/jpg"
+
+            echo "Rendering: $f"
+            if [[ -n "$cfg_path" ]]; then
+              echo "  Using config: ${cfg_path#$WORKSPACE/}"
+            else
+              echo "  Using config: (none)"
+            fi
+
+            # Render from the diagram's directory so -o is relative to it.
+            pushd "$dir" >/dev/null
+
+            # Use basename for input to avoid double path confusion after cd.
+            in_file="$(basename "$f")"
+
+            # Render formats (continue on error so we can produce a summary and still commit successful renders).
+            set +e
+
+            if [[ -n "$cfg_path" ]]; then
+              plantuml -v -config "$cfg_path" -tpng -o "png" "$in_file"
+              rc_png=$?
+              plantuml -v -config "$cfg_path" -tsvg -o "svg" "$in_file"
+              rc_svg=$?
+              plantuml -v -config "$cfg_path" -tjpg -o "jpg" "$in_file"
+              rc_jpg=$?
+            else
+              plantuml -v -tpng -o "png" "$in_file"
+              rc_png=$?
+              plantuml -v -tsvg -o "svg" "$in_file"
+              rc_svg=$?
+              plantuml -v -tjpg -o "jpg" "$in_file"
+              rc_jpg=$?
+            fi
+
+            set -e
+            popd >/dev/null
+
+            if [[ "$rc_png" -ne 0 || "$rc_svg" -ne 0 || "$rc_jpg" -ne 0 ]]; then
+              failures=$((failures+1))
+              echo "- ❌  $f (png=$rc_png, svg=$rc_svg, jpg=$rc_jpg)" >> "$tmp_summary"
+              echo "  ERROR: Render failed for $f (png=$rc_png, svg=$rc_svg, jpg=$rc_jpg)" >&2
+            else
+              rendered=$((rendered+1))
+              echo "- ✅  $f" >> "$tmp_summary"
+            fi
           done
 
-      - name: Auto-commit rendered images
+          echo "" >> "$tmp_summary"
+          echo "## Totals" >> "$tmp_summary"
+          echo "" >> "$tmp_summary"
+          echo "- Rendered: $rendered" >> "$tmp_summary"
+          echo "- Skipped:  $skipped" >> "$tmp_summary"
+          echo "- Failed:   $failures" >> "$tmp_summary"
+
+          mv "$tmp_summary" "$summary"
+          echo "failures=$failures" >> "$GITHUB_OUTPUT"
+
+      - name: Commit rendered images
         uses: stefanzweifel/git-auto-commit-action@v6
         with:
           commit_message: "chore(diagrams): render PlantUML images"
+          # Ensure we commit only the rendered images + summary.
           file_pattern: |
             plantuml-render-summary.md
             src/**/png/*.png
             src/**/svg/*.svg
             src/**/jpg/*.jpg
+
+      - name: Fail workflow if any diagram failed to render
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          failures="${{ steps.render.outputs.failures }}"
+          echo "Render failures: $failures"
+          if [[ "$failures" -gt 0 ]]; then
+            echo "One or more diagrams failed to render. See plantuml-render-summary.md for details." >&2
+            exit 1
+          fi
