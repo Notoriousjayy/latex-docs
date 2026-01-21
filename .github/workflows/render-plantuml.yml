@@ -1,0 +1,75 @@
+name: Render PlantUML diagrams
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "diagrams/**/*.puml"
+      - ".github/workflows/render-plantuml.yml"
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+
+    # Avoid infinite loops when the workflow auto-commits generated images.
+    if: github.actor != 'github-actions[bot]'
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Create output directories
+        run: |
+          mkdir -p diagrams/out/png
+          mkdir -p diagrams/out/svg
+
+      # Render PlantUML diagrams to PNG
+      - name: Render PNG diagrams
+        uses: dreamsinbits/export-plantuml-action@v1
+        with:
+          args: >
+            -v
+            -tpng
+            -o ${{ github.workspace }}/diagrams/out/png
+            -config diagrams/config/config.puml
+            diagrams/src
+
+      # Render PlantUML diagrams to SVG (useful for LaTeX inclusion)
+      - name: Render SVG diagrams
+        uses: dreamsinbits/export-plantuml-action@v1
+        with:
+          args: >
+            -v
+            -tsvg
+            -o ${{ github.workspace }}/diagrams/out/svg
+            -config diagrams/config/config.puml
+            diagrams/src
+
+      # Optional: Convert PNG to JPG for broader compatibility
+      - name: Convert PNG -> JPG (optional)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+
+          mkdir -p diagrams/out/jpg
+
+          # Preserve folder structure under diagrams/out/png
+          while IFS= read -r -d '' f; do
+            rel="${f#diagrams/out/png/}"
+            out="diagrams/out/jpg/${rel%.png}.jpg"
+            mkdir -p "$(dirname "$out")"
+            convert "$f" -quality 92 "$out"
+          done < <(find diagrams/out/png -type f -name '*.png' -print0 2>/dev/null || true)
+
+      # Auto-commit rendered outputs back to repo
+      - name: Commit rendered diagrams
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(diagrams): render PlantUML diagrams"
+          file_pattern: "diagrams/out"
