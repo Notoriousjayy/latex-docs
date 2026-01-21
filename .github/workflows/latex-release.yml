@@ -1,4 +1,4 @@
-name: LaTeX Release (Build PDFs + Attach ZIP)
+name: Release LaTeX PDFs (build artifacts)
 
 on:
   workflow_dispatch:
@@ -6,179 +6,61 @@ on:
     tags:
       - "v*"
 
-permissions:
-  contents: write
-
-concurrency:
-  group: latex-release-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-
-    env:
-      SRC_ROOT: "src"
-      PLANTUML_CONFIG_NAMES: "plantuml-config.puml config.puml"
-      PLANTUML_FORMATS: "png svg jpg"
+    container:
+      image: ghcr.io/xu-cheng/texlive-full:latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Install build dependencies (TeX + SVG tooling + PlantUML)
-        run: |
-          set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y \
-            latexmk \
-            texlive-latex-base \
-            texlive-latex-recommended \
-            texlive-latex-extra \
-            texlive-fonts-recommended \
-            texlive-fonts-extra \
-            texlive-luatex \
-            texlive-pictures \
-            inkscape \
-            python3-pygments \
-            plantuml \
-            graphviz
-
-      - name: Render PlantUML diagrams (png/svg/jpg in sibling format folders)
+      - name: Install Inkscape (for \includesvg)
         shell: bash
         run: |
           set -euo pipefail
+          apt-get update -y
+          apt-get install -y --no-install-recommends inkscape zip
 
-          ROOT_REL="${SRC_ROOT:-src}"
-          ROOT_ABS="$(cd "${ROOT_REL}" && pwd)"
-
-          read -r -a CONFIG_NAMES <<< "${PLANTUML_CONFIG_NAMES:-plantuml-config.puml config.puml}"
-          read -r -a FORMATS <<< "${PLANTUML_FORMATS:-png svg jpg}"
-
-          is_config_file() {
-            local b="$1"
-            for n in "${CONFIG_NAMES[@]}"; do
-              [[ "$b" == "$n" ]] && return 0
-            done
-            return 1
-          }
-
-          find_nearest_config() {
-            local start_dir="$1"
-            local d="$start_dir"
-
-            while true; do
-              for n in "${CONFIG_NAMES[@]}"; do
-                if [[ -f "${d}/${n}" ]]; then
-                  realpath "${d}/${n}"
-                  return 0
-                fi
-              done
-
-              [[ "${d}" == "${ROOT_ABS}" ]] && break
-              local parent
-              parent="$(dirname "${d}")"
-              [[ "${parent}" == "${d}" ]] && break
-              d="${parent}"
-            done
-
-            return 1
-          }
-
-          mapfile -d '' PUMLS < <(find "${ROOT_ABS}" -type f -name '*.puml' -print0 | sort -z)
-
-          failures=0
-          for puml_abs in "${PUMLS[@]}"; do
-            base="$(basename "$puml_abs")"
-            dir_abs="$(dirname "$puml_abs")"
-            rel="${puml_abs#${GITHUB_WORKSPACE}/}"
-
-            if is_config_file "$base"; then
-              continue
-            fi
-
-            cfg=""
-            CFG_ARG=()
-            if cfg="$(find_nearest_config "$dir_abs")"; then
-              CFG_ARG=(-config "$cfg")
-            fi
-
-            if ! (cd "$dir_abs" && plantuml "${CFG_ARG[@]}" -checkonly "$base" >/dev/null); then
-              failures=$((failures+1))
-              echo "PlantUML syntax error: $rel"
-              (cd "$dir_abs" && plantuml "${CFG_ARG[@]}" -v "$base") || true
-              continue
-            fi
-
-            ok=true
-            for fmt in "${FORMATS[@]}"; do
-              mkdir -p "${dir_abs}/${fmt}"
-              if ! (cd "$dir_abs" && plantuml "${CFG_ARG[@]}" "-t${fmt}" -o "${fmt}" "$base" >/dev/null); then
-                ok=false
-                echo "PlantUML render failed (${fmt}): $rel"
-              fi
-            done
-
-            [[ "$ok" == "true" ]] || failures=$((failures+1))
-          done
-
-          [[ "$failures" -eq 0 ]]
-
-      - name: Build PDFs (compile each .tex from its own directory)
+      - name: Build all PDFs under src/
         shell: bash
         run: |
           set -euo pipefail
-          ROOT="$(pwd)"
-          SRC="${SRC_ROOT:-src}"
+          ROOT="src"
+          mapfile -d '' TEX_FILES < <(find "$ROOT" -type f -name "*.tex" -print0)
 
-          mapfile -d '' TEX_FILES < <(find "${SRC}" -type f -name '*.tex' -print0 | sort -z)
-          echo "Discovered ${#TEX_FILES[@]} .tex files under ${SRC}"
-
-          failures=()
-          for tex in "${TEX_FILES[@]}"; do
-            tex_dir="$(dirname "${tex}")"
-            tex_base="$(basename "${tex}")"
-
-            echo "::group::latexmk ${tex}"
-
-            if ! ( cd "${tex_dir}" && latexmk -r "${ROOT}/latexmkrc" -pdf -shell-escape -interaction=nonstopmode -halt-on-error -file-line-error "${tex_base}" ); then
-              failures+=("${tex}")
-            fi
-
-            echo "::endgroup::"
-          done
-
-          if (( ${#failures[@]} > 0 )); then
-            echo "LaTeX build failures:"
-            printf ' - %s\n' "${failures[@]}"
-            exit 1
+          if [[ ${#TEX_FILES[@]} -eq 0 ]]; then
+            echo "No .tex files found under ${ROOT}/"
+            exit 0
           fi
+
+          for tex in "${TEX_FILES[@]}"; do
+            dir="$(dirname "$tex")"
+            file="$(basename "$tex")"
+            echo "Building: ${tex}"
+
+            pushd "$dir" >/dev/null
+            latexmk -lualatex -pdf -interaction=nonstopmode -halt-on-error -shell-escape "$file"
+            popd >/dev/null
+          done
 
       - name: Package PDFs
         shell: bash
         run: |
           set -euo pipefail
-
-          rm -rf artifacts release
-          mkdir -p artifacts/pdfs release
-
+          mkdir -p dist
           while IFS= read -r -d '' pdf; do
-            out="artifacts/pdfs/${pdf#src/}"
-            mkdir -p "$(dirname "$out")"
-            cp -v "$pdf" "$out"
-          done < <(find src -type f -name '*.pdf' -print0)
+            rel="${pdf#src/}"
+            out_dir="dist/$(dirname "$rel")"
+            mkdir -p "$out_dir"
+            cp -f "$pdf" "$out_dir/"
+          done < <(find src -type f -name "*.pdf" -print0)
 
-          count="$(find artifacts/pdfs -type f -name '*.pdf' | wc -l | tr -d ' ')"
-          echo "Packaged PDFs: $count"
-          test "$count" -gt 0
+          (cd dist && zip -r ../latex-pdfs.zip .)
 
-          (cd artifacts/pdfs && zip -r ../../release/latex-pdfs.zip .)
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
         with:
-          files: release/latex-pdfs.zip
-          generate_release_notes: true
+          name: latex-pdfs-zip
+          path: latex-pdfs.zip

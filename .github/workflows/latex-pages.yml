@@ -1,185 +1,146 @@
-name: LaTeX Pages (Publish PDFs)
+name: Build LaTeX PDFs and publish to Pages
 
 on:
+  workflow_dispatch:
   push:
     branches: ["main"]
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+    paths:
+      - "src/**/*.tex"
+      - "src/**/png/*.png"
+      - "src/**/svg/*.svg"
+      - "src/**/jpg/*.jpg"
+      - ".github/workflows/latex-pages.yml"
 
 jobs:
-  build:
+  build-and-publish:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/xu-cheng/texlive-full:latest
+
+    # Avoid infinite loops when the workflow auto-commits generated PDFs / index page.
+    if: github.actor != 'github-actions[bot]'
+
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
 
-      - name: Install TeX toolchain
+      - name: Install Inkscape (for \includesvg)
         shell: bash
         run: |
           set -euo pipefail
+          apt-get update -y
+          apt-get install -y --no-install-recommends inkscape
 
-          # Workaround: disable Microsoft/Azure apt repos that can 403 on hosted runners
-          sudo rm -f /etc/apt/sources.list.d/azure-cli.list /etc/apt/sources.list.d/microsoft-prod.list || true
-
-          sudo apt-get update
-          sudo apt-get install -y \
-            latexmk \
-            texlive-latex-recommended \
-            texlive-latex-extra \
-            texlive-fonts-recommended \
-            texlive-fonts-extra \
-            texlive-pictures \
-            texlive-science \
-            texlive-bibtex-extra \
-            biber \
-            python3-pygments
-
-          # Fail fast if common dependencies are missing
-          kpsewhich inconsolata.sty >/dev/null
-          kpsewhich siunitx.sty >/dev/null
-
-      - name: Build all documents (src LaTeX roots)
-        run: make build-all
-
-      - name: Stage site (PDF library + index)
+      - name: Build all PDFs under src/
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf site
-          mkdir -p site/pdfs
+          ROOT="src"
+          mapfile -d '' TEX_FILES < <(find "$ROOT" -type f -name "*.tex" -print0)
+
+          if [[ ${#TEX_FILES[@]} -eq 0 ]]; then
+            echo "No .tex files found under ${ROOT}/"
+            exit 0
+          fi
+
+          for tex in "${TEX_FILES[@]}"; do
+            dir="$(dirname "$tex")"
+            file="$(basename "$tex")"
+            echo "Building: ${tex}"
+
+            pushd "$dir" >/dev/null
+            latexmk -lualatex -pdf -interaction=nonstopmode -halt-on-error -shell-escape "$file"
+            popd >/dev/null
+          done
+
+      - name: Copy PDFs into docs/pdfs/ (preserve src/ directory structure)
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT_ROOT="docs/pdfs"
+          rm -rf "$OUT_ROOT"
+          mkdir -p "$OUT_ROOT"
 
           while IFS= read -r -d '' pdf; do
             rel="${pdf#src/}"
-            out="site/pdfs/${rel}"
-            mkdir -p "$(dirname "$out")"
-            cp -v "$pdf" "$out"
-          done < <(find src -type f -name '*.pdf' -print0)
+            out_dir="${OUT_ROOT}/$(dirname "$rel")"
+            mkdir -p "$out_dir"
+            cp -f "$pdf" "${out_dir}/$(basename "$pdf")"
+          done < <(find src -type f -name "*.pdf" -print0)
 
-          count="$(find site/pdfs -type f -name '*.pdf' | wc -l | tr -d ' ')"
-          echo "Staged PDFs: $count"
-          test "$count" -gt 0
-
+      - name: Generate docs/index.html (hierarchical directory listing)
+        shell: bash
+        run: |
+          set -euo pipefail
           python3 - <<'PY'
-          from __future__ import annotations
+from pathlib import Path
+import html
 
-          import html
-          import re
-          from pathlib import Path
+root = Path("docs/pdfs")
+out = Path("docs/index.html")
 
-          ROOT = Path("site/pdfs")
-          OUT  = Path("site/index.html")
+def render_dir(d: Path, depth: int) -> str:
+    parts = []
+    if depth > 0:
+        level = min(depth, 6)
+        parts.append(f"<h{level}>{html.escape(d.name)}</h{level}>")
 
-          def slug(parts: list[str]) -> str:
-              s = "-".join(parts).lower()
-              s = re.sub(r"[^a-z0-9_-]+", "-", s)
-              s = re.sub(r"-{2,}", "-", s).strip("-")
-              return s or "section"
+    pdfs = sorted(d.glob("*.pdf"))
+    if pdfs:
+        parts.append("<ul class='files'>")
+        for p in pdfs:
+            href = p.as_posix()
+            parts.append(f"<li><a href='{html.escape(href)}'>{html.escape(p.name)}</a></li>")
+        parts.append("</ul>")
 
-          lines: list[str] = []
+    for sub in sorted([p for p in d.iterdir() if p.is_dir()]):
+        parts.append(render_dir(sub, depth + 1))
 
-          def render_dir(dir_path: Path, rel_parts: list[str]) -> None:
-              # Top-level dirs -> H1, next -> H2, etc (cap at H6)
-              level = min(6, len(rel_parts))
-              heading_id = slug(rel_parts)
-              dir_name = rel_parts[-1]
+    return "\n".join(parts)
 
-              lines.append(f'<h{level} id="{html.escape(heading_id)}">{html.escape(dir_name)}</h{level}>')
+body = render_dir(root, 0) if root.exists() else "<p>No PDFs found.</p>"
 
-              pdfs = sorted(
-                  [p for p in dir_path.iterdir() if p.is_file() and p.suffix.lower() == ".pdf"],
-                  key=lambda p: p.name.lower(),
-              )
-              if pdfs:
-                  lines.append('<ul class="files">')
-                  for p in pdfs:
-                      rel = p.relative_to(ROOT)
-                      href = "pdfs/" + "/".join(rel.parts)
-                      label = p.name                 # filename only (requested)
-                      title = "/".join(rel.parts)    # full path on hover
-                      lines.append(
-                          f'<li><a href="{html.escape(href)}" title="{html.escape(title)}">{html.escape(label)}</a></li>'
-                      )
-                  lines.append("</ul>")
+out.parent.mkdir(parents=True, exist_ok=True)
+html_content = f'''<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>LaTeX PDFs</title>
+  <style>
+    body{{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:1100px;margin:2rem auto;padding:0 1rem;line-height:1.45}}
+    header{{margin-bottom:1.5rem}}
+    .title{{font-size:1.6rem;font-weight:700;margin:0}}
+    .sub{{margin:.25rem 0 0 0;color:#444}}
+    ul.files{{margin:.25rem 0 1rem 1.25rem}}
+    ul.files li{{margin:.15rem 0}}
+    a{{text-decoration:none}}
+    a:hover{{text-decoration:underline}}
+    h1,h2,h3,h4,h5,h6{{margin:1.2rem 0 .5rem 0}}
+  </style>
+</head>
+<body>
+  <header>
+    <p class="title">LaTeX PDFs</p>
+    <p class="sub">Generated from <code>src/</code>; browse by directory.</p>
+  </header>
+  {body}
+</body>
+</html>
+'''
+out.write_text(html_content, encoding="utf-8")
+PY
 
-              subdirs = sorted([d for d in dir_path.iterdir() if d.is_dir()], key=lambda d: d.name.lower())
-              for d in subdirs:
-                  render_dir(d, rel_parts + [d.name])
-
-          top_dirs = sorted([d for d in ROOT.iterdir() if d.is_dir()], key=lambda d: d.name.lower())
-          root_pdfs = sorted([p for p in ROOT.iterdir() if p.is_file() and p.suffix.lower() == ".pdf"], key=lambda p: p.name.lower())
-
-          html_prefix = """<!doctype html>
-          <html lang="en">
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width,initial-scale=1">
-            <title>LaTeX PDFs</title>
-            <style>
-              body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:1100px;margin:2rem auto;padding:0 1rem;line-height:1.45}
-              header{margin-bottom:1.5rem}
-              .title{font-size:1.6rem;font-weight:700;margin:0}
-              .sub{margin:.25rem 0 0 0;color:#444}
-              code{background:#f3f4f6;padding:.1rem .3rem;border-radius:.25rem}
-              h1,h2,h3,h4,h5,h6{margin:1.2rem 0 .5rem 0}
-              ul.files{margin:.25rem 0 1rem 1.25rem}
-              ul.files li{margin:.15rem 0}
-              a{text-decoration:none}
-              a:hover{text-decoration:underline}
-            </style>
-          </head>
-          <body>
-            <header>
-              <p class="title">LaTeX PDFs</p>
-              <p class="sub">Published from <code>src/**/*.tex</code> roots on the <code>main</code> branch.</p>
-            </header>
-          """
-
-          html_suffix = """
-          </body>
-          </html>
-          """
-
-          if root_pdfs:
-              lines.append('<h1 id="root">root</h1>')
-              lines.append('<ul class="files">')
-              for p in root_pdfs:
-                  rel = p.relative_to(ROOT)
-                  href = "pdfs/" + "/".join(rel.parts)
-                  lines.append(f'<li><a href="{html.escape(href)}">{html.escape(p.name)}</a></li>')
-              lines.append("</ul>")
-
-          for d in top_dirs:
-              render_dir(d, [d.name])
-
-          OUT.write_text(html_prefix + "\n".join(lines) + html_suffix, encoding="utf-8")
-          print(f"Wrote {OUT} with {len(lines)} structural lines.")
-          PY
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Auto-commit PDFs and Pages index
+        uses: stefanzweifel/git-auto-commit-action@v6
         with:
-          path: site
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          commit_message: "chore(pdfs): build LaTeX PDFs for Pages"
+          file_pattern: |
+            docs/index.html
+            docs/pdfs/**/*.pdf

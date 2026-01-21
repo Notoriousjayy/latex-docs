@@ -1,74 +1,58 @@
-name: LaTeX CI (Build PDFs)
+name: LaTeX CI (build check)
 
 on:
-  push:
-    branches: ["main"]
+  workflow_dispatch:
   pull_request:
-
-permissions:
-  contents: read
+    paths:
+      - "src/**/*.tex"
+      - ".github/workflows/latex-ci.yml"
+      - "src/**/png/*.png"
+      - "src/**/svg/*.svg"
+      - "src/**/jpg/*.jpg"
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    container:
+      image: ghcr.io/xu-cheng/texlive-full:latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install TeX toolchain
+      - name: Install Inkscape (for \includesvg)
+        shell: bash
+        run: |
+          set -euo pipefail
+          apt-get update -y
+          apt-get install -y --no-install-recommends inkscape
+
+      - name: Build all PDFs under src/
         shell: bash
         run: |
           set -euo pipefail
 
-          # Workaround: disable Microsoft/Azure apt repos that can 403 on hosted runners
-          sudo rm -f /etc/apt/sources.list.d/azure-cli.list /etc/apt/sources.list.d/microsoft-prod.list || true
+          ROOT="src"
+          mapfile -d '' TEX_FILES < <(find "$ROOT" -type f -name "*.tex" -print0)
 
-          sudo apt-get update
-          sudo apt-get install -y \
-            latexmk \
-            texlive-latex-recommended \
-            texlive-latex-extra \
-            texlive-fonts-recommended \
-            texlive-fonts-extra \
-            texlive-pictures \
-            texlive-science \
-            texlive-bibtex-extra \
-            biber \
-            python3-pygments
+          if [[ ${#TEX_FILES[@]} -eq 0 ]]; then
+            echo "No .tex files found under ${ROOT}/"
+            exit 0
+          fi
 
-          # Sanity checks (fail fast if packages are still missing)
-          echo "pdflatex: $(command -v pdflatex)"
-          pdflatex --version | head -n 2
-          kpsewhich inconsolata.sty
-          kpsewhich siunitx.sty
+          for tex in "${TEX_FILES[@]}"; do
+            dir="$(dirname "$tex")"
+            file="$(basename "$tex")"
+            echo "Building: ${tex}"
 
-      - name: Build all documents (src LaTeX roots)
-        run: make build-all
+            pushd "$dir" >/dev/null
+            latexmk -lualatex -pdf -interaction=nonstopmode -halt-on-error -shell-escape "$file"
+            popd >/dev/null
+          done
 
-      - name: Collect built PDFs (preserve src paths)
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf artifacts
-          mkdir -p artifacts/pdfs
-
-          while IFS= read -r -d '' pdf; do
-            rel="${pdf#src/}"            # strip leading src/
-            out="artifacts/pdfs/${rel}"  # keep folders + filename.pdf
-            mkdir -p "$(dirname "$out")"
-            cp -v "$pdf" "$out"
-          done < <(find src -type f -name '*.pdf' -print0)
-
-          count="$(find artifacts/pdfs -type f -name '*.pdf' | wc -l | tr -d ' ')"
-          echo "Collected PDFs: $count"
-          test "$count" -gt 0
-
-      - name: Upload PDFs as workflow artifact
+      - name: Upload PDFs as build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: latex-pdfs
-          path: artifacts/pdfs
-          if-no-files-found: error
-          retention-days: 14
+          path: |
+            src/**/*.pdf
