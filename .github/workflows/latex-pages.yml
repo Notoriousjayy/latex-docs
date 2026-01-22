@@ -7,11 +7,11 @@ on:
   push:
     branches: [main]
     paths:
-      - "src/**/*.tex"
-      - "src/**/*.puml"
-      - "tooling/**"
-      - ".github/workflows/*.yml"
-      - ".github/actions/**"
+      - 'src/**/*.tex'
+      - 'src/**/*.puml'
+      - 'tooling/**'
+      - '.github/workflows/*.yml'
+      - '.github/actions/**'
 
 concurrency:
   group: pages
@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   # ============================================================================
-  # Build all documents (reusable workflow)
+  # Build all documents (delegated to the reusable build workflow)
   # ============================================================================
   build:
     uses: ./.github/workflows/_build-latex.yml
@@ -35,69 +35,33 @@ jobs:
 
   # ============================================================================
   # Stage PDFs for GitHub Pages
-  #   - downloads all "pdfs-*" artifacts (one per category)
-  #   - merges into a single "site/pdfs" tree while preserving subdirectories
-  #   - (optional) rehydrates structure if any PDFs were flattened upstream
-  #   - generates site/index.html from the staged tree
   # ============================================================================
   stage:
     needs: build
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download all PDF artifacts (pdfs-*)
+      - name: Download built PDFs
         uses: actions/download-artifact@v4
         with:
-          pattern: "pdfs-*"
-          path: all-pdfs
-          merge-multiple: false
+          name: latex-pdfs
+          path: site/pdfs
 
-      - name: Merge all category artifacts (preserve full structure)
+      # ------------------------------------------------------------------------
+      # Rehydrate PDF directory structure from src/
+      #
+      # If any upstream step flattened PDFs into a parent directory, rebuild the
+      # directory structure by mapping each PDF back to its TeX root in src/
+      # using basename equivalence (foo.pdf -> foo.tex) and root detection
+      # (TeX file contains \documentclass).
+      # ------------------------------------------------------------------------
+      - name: Rehydrate PDF directory structure from src/
         run: |
           set -euo pipefail
 
-          echo "=== Downloaded artifact structure ==="
-          # Avoid failing the step due to SIGPIPE when piping into head under pipefail
-          set +o pipefail
-          find all-pdfs -type d | head -30 || true
-          set -o pipefail
-          echo ""
-
-          mkdir -p site/pdfs
-
-          # Merge all category artifacts preserving the embedded structure inside each artifact
-          for artifact_dir in all-pdfs/pdfs-*/; do
-            if [[ -d "${artifact_dir}" ]]; then
-              echo "Merging from: ${artifact_dir}"
-              # rsync preserves directory structure and does not flatten
-              rsync -a "${artifact_dir}/" "site/pdfs/"
-            fi
-          done
-
-          echo ""
-          echo "=== Merged PDF structure (showing directories) ==="
-          set +o pipefail
-          find site/pdfs -type d | sort | head -60 || true
-          set -o pipefail
-          echo ""
-
-          total="$(find site/pdfs -name "*.pdf" -type f 2>/dev/null | wc -l | tr -d ' ')"
-          echo "Total PDFs: ${total}"
-
-          echo ""
-          echo "=== PDF listing (first 60) ==="
-          set +o pipefail
-          find site/pdfs -name "*.pdf" -type f | sort | head -60 || true
-          set -o pipefail
-
-      # Best-effort: if any upstream stage flattened PDFs into a parent directory,
-      # restore correct structure by mapping <name>.pdf -> src/**/<name>.tex root that has \documentclass.
-      - name: Rehydrate PDF directory structure from src (best-effort)
-        run: |
-          set -euo pipefail
+          echo "=== Rehydrating PDF directory structure (if needed) ==="
 
           moved=0
           skipped=0
@@ -106,12 +70,13 @@ jobs:
 
           while IFS= read -r -d '' pdf; do
             base="$(basename "$pdf" .pdf)"
+            tex_matches=()
 
-            # Find TeX roots by basename; keep only real roots (\documentclass)
-            mapfile -d '' tex_matches < <(
-              find src -type f -name "${base}.tex" -print0 2>/dev/null | \
-              xargs -0 -I{} bash -lc 'grep -qE "^[[:space:]]*\\documentclass" "{}" && printf "%s\0" "{}" || true'
-            )
+            while IFS= read -r -d '' tex; do
+              if grep -qE '^[[:space:]]*\documentclass' "$tex"; then
+                tex_matches+=("$tex")
+              fi
+            done < <(find src -type f -name "${base}.tex" -print0 2>/dev/null || true)
 
             if [[ ${#tex_matches[@]} -eq 0 ]]; then
               missing=$((missing + 1))
@@ -119,40 +84,67 @@ jobs:
             fi
 
             if [[ ${#tex_matches[@]} -gt 1 ]]; then
-              echo "::warning::Ambiguous mapping for $(basename "$pdf") (multiple TeX roots). Leaving as-is."
+              echo "::warning::Ambiguous mapping for $(basename "$pdf"): multiple TeX roots found:"
+              for t in "${tex_matches[@]}"; do
+                echo "  - $t"
+              done
               ambiguous=$((ambiguous + 1))
               continue
             fi
 
             tex="${tex_matches[0]}"
+
             rel_tex="${tex#src/}"
             rel_dir="$(dirname "$rel_tex")"
-            desired="site/pdfs/${rel_dir}/${base}.pdf"
+            desired_dir="site/pdfs/${rel_dir}"
+            desired_pdf="${desired_dir}/${base}.pdf"
 
-            # Already correct
-            if [[ "$pdf" == "$desired" ]]; then
+            if [[ "$pdf" == "$desired_pdf" ]]; then
               skipped=$((skipped + 1))
               continue
             fi
 
-            # Do not clobber
-            if [[ -e "$desired" ]]; then
-              echo "::warning::Destination exists; skipping move: $desired"
+            if [[ -e "$desired_pdf" ]]; then
+              echo "::warning::Destination already exists, skipping move: $desired_pdf"
               skipped=$((skipped + 1))
               continue
             fi
 
-            mkdir -p "$(dirname "$desired")"
-            mv "$pdf" "$desired"
+            mkdir -p "$desired_dir"
+            mv "$pdf" "$desired_pdf"
             moved=$((moved + 1))
           done < <(find site/pdfs -type f -name "*.pdf" -print0 2>/dev/null)
 
-          echo "rehydrate: moved=$moved skipped=$skipped ambiguous=$ambiguous missing=$missing"
+          echo ""
+          echo "Rehydration results:"
+          echo "  moved=$moved"
+          echo "  skipped=$skipped"
+          echo "  ambiguous=$ambiguous"
+          echo "  missing=$missing"
+          echo ""
+
+      - name: Display PDF structure
+        run: |
+          set -euo pipefail
+          echo "=== PDF directory tree (showing all levels) ==="
+          find site/pdfs -type d | sort
+          echo ""
+          echo "=== All PDFs with full paths ==="
+          find site/pdfs -name "*.pdf" -type f | sort
+          echo ""
+          echo "Total PDFs: $(find site/pdfs -name "*.pdf" -type f | wc -l)"
 
       - name: Generate index.html
         run: |
           set -euo pipefail
 
+          # -------- helpers ----------------------------------------------------
+          slugify() {
+            # Lowercase; replace non-alnum with dashes; collapse dashes; trim.
+            echo "$1"               | tr '[:upper:]' '[:lower:]'               | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//; s/-+/-/g'
+          }
+
+          # -------- page shell -------------------------------------------------
           cat > site/index.html << 'HTMLEOF'
           <!DOCTYPE html>
           <html lang="en">
@@ -161,77 +153,245 @@ jobs:
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>LaTeX PDFs</title>
             <style>
-              :root { --bg:#fafafa; --text:#333; --accent:#0066cc; --border:#ddd; --hover:#f0f0f0; }
-              @media (prefers-color-scheme: dark) {
-                :root { --bg:#1a1a1a; --text:#e0e0e0; --accent:#4da6ff; --border:#444; --hover:#2a2a2a; }
+              :root {
+                --bg: #fafafa;
+                --text: #222;
+                --muted: #666;
+                --accent: #0066cc;
+                --border: #ddd;
+                --hover: #f0f0f0;
+                --panel: #ffffff;
               }
-              *{box-sizing:border-box}
-              body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:1000px;margin:0 auto;padding:2rem 1rem;background:var(--bg);color:var(--text);line-height:1.6}
-              header{border-bottom:2px solid var(--border);padding-bottom:1rem;margin-bottom:2rem}
-              .title{font-size:2rem;margin:0}
-              .sub{color:#666;margin:.5rem 0 0 0}
-              .sub code{background:var(--hover);padding:.2em .4em;border-radius:3px;font-size:.9em}
-              h1{font-size:1.5rem;margin:2rem 0 .5rem 0;padding-top:1rem;border-top:1px solid var(--border)}
-              h1:first-of-type{border-top:none;margin-top:0}
-              h2{font-size:1.2rem;margin:1.5rem 0 .5rem 0;color:#555}
-              h3{font-size:1rem;margin:1rem 0 .3rem 0;color:#666}
-              h4{font-size:.95rem;margin:.8rem 0 .3rem 1rem;color:#777}
-              h5{font-size:.9rem;margin:.6rem 0 .2rem 1.5rem;color:#888}
-              h6{font-size:.85rem;margin:.5rem 0 .2rem 2rem;color:#999}
-              ul.files{list-style:none;padding:0;margin:.5rem 0}
-              ul.files li{padding:.4rem .6rem;border-radius:4px}
-              ul.files li:hover{background:var(--hover)}
-              ul.files a{color:var(--accent);text-decoration:none}
-              ul.files a:hover{text-decoration:underline}
-              .updated{color:#888;font-size:.85rem;margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border)}
-              .stats{display:flex;gap:2rem;margin:1rem 0;flex-wrap:wrap}
-              .stat{background:var(--hover);padding:1rem;border-radius:8px;min-width:160px}
-              .stat-value{font-size:1.5rem;font-weight:700}
-              .stat-label{font-size:.85rem;color:#666}
+              @media (prefers-color-scheme: dark) {
+                :root {
+                  --bg: #121212;
+                  --text: #e8e8e8;
+                  --muted: #b0b0b0;
+                  --accent: #4da6ff;
+                  --border: #3a3a3a;
+                  --hover: #1f1f1f;
+                  --panel: #161616;
+                }
+              }
+              * { box-sizing: border-box; }
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                margin: 0;
+                background: var(--bg);
+                color: var(--text);
+                line-height: 1.55;
+              }
+              .wrap {
+                max-width: 1120px;
+                margin: 0 auto;
+                padding: 2rem 1rem 3rem 1rem;
+              }
+              header {
+                border-bottom: 2px solid var(--border);
+                padding-bottom: 1rem;
+                margin-bottom: 1.25rem;
+              }
+              .title { font-size: 2rem; margin: 0; font-weight: 650; }
+              .sub { color: var(--muted); margin: 0.5rem 0 0 0; }
+              .sub code {
+                background: var(--hover);
+                padding: 0.2em 0.4em;
+                border-radius: 4px;
+                font-size: 0.9em;
+              }
+
+              .topbar {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.75rem 1rem;
+                align-items: center;
+                justify-content: space-between;
+                margin: 1rem 0 1.25rem 0;
+              }
+
+              .stats {
+                display: flex;
+                gap: 0.75rem;
+                flex-wrap: wrap;
+              }
+              .stat {
+                background: var(--panel);
+                border: 1px solid var(--border);
+                padding: 0.75rem 0.9rem;
+                border-radius: 10px;
+                min-width: 150px;
+              }
+              .stat-value { font-size: 1.35rem; font-weight: 700; }
+              .stat-label { font-size: 0.85rem; color: var(--muted); }
+
+              .search {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+              }
+              .search input {
+                width: min(520px, 100%);
+                padding: 0.65rem 0.75rem;
+                border-radius: 10px;
+                border: 1px solid var(--border);
+                background: var(--panel);
+                color: var(--text);
+                outline: none;
+              }
+              .search input:focus {
+                border-color: var(--accent);
+                box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+              }
+              .hint {
+                color: var(--muted);
+                font-size: 0.85rem;
+              }
+
+              nav.jump {
+                background: var(--panel);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 0.75rem 0.9rem;
+                margin: 0 0 1.5rem 0;
+              }
+              nav.jump .label {
+                font-weight: 600;
+                margin: 0 0 0.5rem 0;
+              }
+              nav.jump a {
+                color: var(--accent);
+                text-decoration: none;
+                margin-right: 0.9rem;
+                white-space: nowrap;
+              }
+              nav.jump a:hover { text-decoration: underline; }
+
+              h1 {
+                font-size: 1.35rem;
+                margin: 2rem 0 0.5rem 0;
+                padding-top: 1rem;
+                border-top: 1px solid var(--border);
+              }
+              h1:first-of-type { border-top: none; margin-top: 1rem; padding-top: 0; }
+              h2 { font-size: 1.15rem; margin: 1.25rem 0 0.45rem 0; color: var(--muted); }
+              h3 { font-size: 1rem; margin: 0.95rem 0 0.35rem 0; color: var(--muted); }
+              h4 { font-size: 0.95rem; margin: 0.8rem 0 0.3rem 0; color: var(--muted); }
+              h5 { font-size: 0.9rem; margin: 0.7rem 0 0.25rem 0; color: var(--muted); }
+              h6 { font-size: 0.85rem; margin: 0.6rem 0 0.2rem 0; color: var(--muted); }
+
+              ul.files {
+                list-style: none;
+                padding: 0;
+                margin: 0.4rem 0 0.9rem 0;
+              }
+              ul.files li {
+                padding: 0.45rem 0.65rem;
+                border-radius: 8px;
+                border: 1px solid transparent;
+              }
+              ul.files li:hover {
+                background: var(--hover);
+                border-color: var(--border);
+              }
+              ul.files a {
+                color: var(--accent);
+                text-decoration: none;
+              }
+              ul.files a:hover { text-decoration: underline; }
+              .path {
+                color: var(--muted);
+                font-size: 0.82rem;
+                margin-left: 0.5rem;
+              }
+
+              .updated {
+                color: var(--muted);
+                font-size: 0.85rem;
+                margin-top: 2.5rem;
+                padding-top: 1rem;
+                border-top: 1px solid var(--border);
+              }
+              .hidden { display: none !important; }
             </style>
           </head>
           <body>
-            <header>
-              <p class="title">LaTeX PDFs</p>
-              <p class="sub">Published from <code>src/**/*.tex</code> roots on the <code>main</code> branch.</p>
-            </header>
+            <div class="wrap">
+              <header>
+                <p class="title">LaTeX PDFs</p>
+                <p class="sub">Published from <code>src/**/*.tex</code> roots on the <code>main</code> branch.</p>
+              </header>
+
+              <div class="topbar">
+                <div class="stats">
+                  <!-- stats inserted by workflow -->
+                </div>
+                <div class="search">
+                  <input id="q" type="search" placeholder="Filter by filename or path (e.g., ghas, finops, diagrams)..." autocomplete="off" />
+                  <span class="hint" id="count"></span>
+                </div>
+              </div>
+
+              <!-- quick jump inserted by workflow -->
+
+              <main id="content">
           HTMLEOF
 
-          total="$(find site/pdfs -name "*.pdf" -type f 2>/dev/null | wc -l | tr -d ' ')"
-          categories="$(find site/pdfs -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')"
+          # -------- computed stats --------------------------------------------
+          total=$(find site/pdfs -name "*.pdf" -type f 2>/dev/null | wc -l | tr -d ' ')
+          categories=$(find site/pdfs -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
 
-          cat >> site/index.html << STATSEOF
-            <div class="stats">
-              <div class="stat">
-                <div class="stat-value">${total}</div>
-                <div class="stat-label">Documents</div>
-              </div>
-              <div class="stat">
-                <div class="stat-value">${categories}</div>
-                <div class="stat-label">Top-level categories</div>
-              </div>
-            </div>
-          STATSEOF
+          # Insert stats block (replace placeholder comment)
+          perl -0777 -i -pe "s/\Q<div class=\"stats\">\n                  <!-- stats inserted by workflow -->\n                <\/div>\E/<div class=\"stats\">\n                  <div class=\"stat\">\n                    <div class=\"stat-value\">${total}<\/div>\n                    <div class=\"stat-label\">Documents<\/div>\n                  <\/div>\n                  <div class=\"stat\">\n                    <div class=\"stat-value\">${categories}<\/div>\n                    <div class=\"stat-label\">Categories<\/div>\n                  <\/div>\n                <\/div>/s" site/index.html
 
+          # Build quick-jump list for top-level categories that have PDFs
+          tmp_jump="$(mktemp)"
+          echo '<nav class="jump"><div class="label">Jump to:</div><div>' > "$tmp_jump"
+          while IFS= read -r cat; do
+            # only include categories with at least one PDF (defensive)
+            if find "site/pdfs/$cat" -name "*.pdf" -type f | grep -q .; then
+              cid="$(slugify "$cat")"
+              echo "<a href="#${cid}">${cat}</a>" >> "$tmp_jump"
+            fi
+          done < <(find site/pdfs -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort)
+          echo '</div></nav>' >> "$tmp_jump"
+
+          # Insert jump nav (replace placeholder comment)
+          perl -0777 -i -pe "s/\Q              <!-- quick jump inserted by workflow -->\E/$(perl -pe 's/[\r\n]+/\\n/g; s/"/\\\"/g' "$tmp_jump")/s" site/index.html
+          rm -f "$tmp_jump"
+
+          # -------- content generator -----------------------------------------
           generate_section() {
             local dir="$1"
             local depth="$2"
             local prefix="$3"
 
+            # Skip hidden dirs (e.g., .gitkeep), defensively
+            local dname
+            dname="$(basename "$dir")"
+            if [[ "$dname" == .* ]]; then
+              return
+            fi
+
+            # Any PDFs at/under this directory?
             local total_pdfs
             total_pdfs=$(find "$dir" -name "*.pdf" -type f 2>/dev/null | wc -l | tr -d ' ')
-            [[ "$total_pdfs" -eq 0 ]] && return
+            if [[ "${total_pdfs}" == "0" ]]; then
+              return
+            fi
 
+            # PDFs directly in current directory (not subdirs)
             local pdfs=()
-            while IFS= read -r -d '' f; do pdfs+=("$f"); done < <(
-              find "$dir" -maxdepth 1 -name "*.pdf" -type f -print0 2>/dev/null | sort -z
-            )
+            while IFS= read -r -d '' f; do
+              pdfs+=("$f")
+            done < <(find "$dir" -maxdepth 1 -name "*.pdf" -type f -print0 2>/dev/null | sort -z)
 
+            # Immediate subdirectories
             local subdirs=()
-            while IFS= read -r -d '' d; do subdirs+=("$d"); done < <(
-              find "$dir" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null | sort -z
-            )
+            while IFS= read -r -d '' d; do
+              subdirs+=("$d")
+            done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null | sort -z)
 
+            # Heading level (h1..h6; clamp at h6)
             local htag="h1"
             case $depth in
               1) htag="h1" ;;
@@ -242,49 +402,100 @@ jobs:
               *) htag="h6" ;;
             esac
 
-            local name id
-            name="$(basename "$dir")"
-            if [[ -n "$prefix" ]]; then
-              id="${prefix}-${name}"
-            else
-              id="${name}"
+            local id
+            id="$(slugify "${prefix}-${dname}")"
+            # For top-level categories, make the anchor simpler: just the category
+            if [[ $depth -eq 1 ]]; then
+              id="$(slugify "$dname")"
             fi
 
-            echo "<${htag} id=\"${id}\">${name}</${htag}>"
+            echo "<${htag} id=\"${id}\">${dname}</${htag}>"
 
             if [[ ${#pdfs[@]} -gt 0 ]]; then
               echo '<ul class="files">'
               for pdf in "${pdfs[@]}"; do
                 local fname rel
                 fname="$(basename "$pdf")"
-                rel="${pdf#site/}"   # => pdfs/...
-                echo "<li><a href=\"${rel}\" title=\"${rel}\">${fname}</a></li>"
+                rel="${pdf#site/}"  # -> pdfs/...
+                echo "<li><a class=\"pdf\" href=\"${rel}\" title=\"${rel}\">${fname}</a><span class=\"path\">${rel}</span></li>"
               done
               echo '</ul>'
             fi
 
             for subdir in "${subdirs[@]}"; do
-              generate_section "$subdir" $((depth + 1)) "$id"
+              generate_section "$subdir" $((depth + 1)) "${prefix}-${dname}"
             done
           }
 
-          while IFS= read -r -d '' topdir; do
-            generate_section "$topdir" 1 ""
-          done < <(find site/pdfs -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null | sort -z) >> site/index.html
+          # Top-level categories (deterministic order)
+          while IFS= read -r category; do
+            generate_section "site/pdfs/$category" 1 "$category" >> site/index.html
+          done < <(find site/pdfs -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort)
 
-          cat >> site/index.html << FOOTEREOF
-            <p class="updated">Last updated: $(date -u +'%Y-%m-%d %H:%M UTC')</p>
+          # -------- footer + search script ------------------------------------
+          cat >> site/index.html << 'FOOTEREOF'
+              </main>
+
+              <p class="updated">Last updated: __LAST_UPDATED__</p>
+            </div>
+
+            <script>
+              (function () {
+                const input = document.getElementById('q');
+                const count = document.getElementById('count');
+
+                function normalize(s) {
+                  return (s || '').toLowerCase();
+                }
+
+                function update() {
+                  const q = normalize(input.value).trim();
+                  const items = document.querySelectorAll('ul.files li');
+                  let visible = 0;
+
+                  items.forEach(li => {
+                    const text = normalize(li.textContent);
+                    const ok = !q || text.includes(q);
+                    li.classList.toggle('hidden', !ok);
+                    if (ok) visible++;
+                  });
+
+                  count.textContent = q ? `${visible} match(es)` : `${items.length} document(s)`;
+                }
+
+                input.addEventListener('input', update);
+                update();
+              })();
+            </script>
           </body>
           </html>
           FOOTEREOF
 
-          echo "Generated site/index.html (total PDFs: ${total})"
+          # Replace last updated placeholder (UTC)
+          sed -i "s/__LAST_UPDATED__/$(date -u +'%Y-%m-%d %H:%M UTC')/" site/index.html
+
+          echo "Generated index.html with ${total} documents in ${categories} categories"
+
+      - name: Copy build logs (optional)
+        run: |
+          set -euo pipefail
+          mkdir -p site/logs
+          find site/pdfs -name "*.log.txt" -o -name "*.stderr.txt" -o -name "*.stdout.txt" | while read -r f; do
+            rel="${f#site/pdfs/}"
+            dest="site/logs/$rel"
+            mkdir -p "$(dirname "$dest")"
+            cp "$f" "$dest" 2>/dev/null || true
+          done
+        continue-on-error: true
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
+  # ============================================================================
+  # Deploy to GitHub Pages
+  # ============================================================================
   deploy:
     needs: stage
     runs-on: ubuntu-latest
