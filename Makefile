@@ -2,6 +2,9 @@ SHELL := /usr/bin/bash
 .ONESHELL:
 .SHELLFLAGS := -euo pipefail -c
 
+# Ensure common binary locations are available to TeX shell-escape (e.g., inkscape)
+export PATH := /usr/local/bin:/usr/bin:/bin:$(PATH)
+
 LATEXMK ?= latexmk
 
 # Force LuaLaTeX for native Unicode support (required by fontspec).
