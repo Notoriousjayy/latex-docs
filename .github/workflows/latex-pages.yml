@@ -51,8 +51,11 @@ jobs:
 
       - name: Display PDF structure
         run: |
-          echo "PDF directory structure:"
-          find site/pdfs -name "*.pdf" -type f | head -30
+          echo "=== PDF directory tree (showing all levels) ==="
+          find site/pdfs -type d | sort
+          echo ""
+          echo "=== All PDFs with full paths ==="
+          find site/pdfs -name "*.pdf" -type f | sort
           echo ""
           echo "Total PDFs: $(find site/pdfs -name "*.pdf" -type f | wc -l)"
 
@@ -122,6 +125,21 @@ jobs:
                 margin: 1rem 0 0.3rem 0;
                 color: #666;
               }
+              h4 {
+                font-size: 0.95rem;
+                margin: 0.8rem 0 0.3rem 1rem;
+                color: #777;
+              }
+              h5 {
+                font-size: 0.9rem;
+                margin: 0.6rem 0 0.2rem 1.5rem;
+                color: #888;
+              }
+              h6 {
+                font-size: 0.85rem;
+                margin: 0.5rem 0 0.2rem 2rem;
+                color: #999;
+              }
               ul.files {
                 list-style: none;
                 padding: 0;
@@ -186,53 +204,54 @@ jobs:
             </div>
           STATSEOF
 
-          # Generate category sections with recursive structure
+          # Generate category sections with recursive structure (supports arbitrary depth)
           generate_section() {
             local dir="$1"
             local depth="$2"
             local prefix="$3"
             
-            # Get PDFs in current directory
+            # Get PDFs in current directory only (not subdirs)
             local pdfs=()
             while IFS= read -r -d '' f; do
               pdfs+=("$f")
             done < <(find "$dir" -maxdepth 1 -name "*.pdf" -type f -print0 2>/dev/null | sort -z)
             
-            # Get subdirectories
+            # Get immediate subdirectories
             local subdirs=()
             while IFS= read -r -d '' d; do
               subdirs+=("$d")
             done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null | sort -z)
             
-            # Skip if empty
-            if [[ ${#pdfs[@]} -eq 0 && ${#subdirs[@]} -eq 0 ]]; then
+            # Check if this directory or any descendant has PDFs
+            local total_pdfs=$(find "$dir" -name "*.pdf" -type f 2>/dev/null | wc -l)
+            if [[ $total_pdfs -eq 0 ]]; then
               return
             fi
             
-            # Determine heading level
+            # Determine heading level (h1, h2, h3, h4, h5, h6 then stay at h6)
             local htag="h1"
             local id_prefix=""
-            if [[ $depth -eq 2 ]]; then
-              htag="h2"
-              id_prefix="${prefix}-"
-            elif [[ $depth -ge 3 ]]; then
-              htag="h3"
-              id_prefix="${prefix}-"
-            fi
+            case $depth in
+              1) htag="h1"; id_prefix="" ;;
+              2) htag="h2"; id_prefix="${prefix}-" ;;
+              3) htag="h3"; id_prefix="${prefix}-" ;;
+              4) htag="h4"; id_prefix="${prefix}-" ;;
+              5) htag="h5"; id_prefix="${prefix}-" ;;
+              *) htag="h6"; id_prefix="${prefix}-" ;;
+            esac
             
             local name=$(basename "$dir")
-            local display_name=$(echo "$name" | sed 's/-/ /g')
             local id="${id_prefix}${name}"
             
-            echo "<${htag} id=\"${id}\">${display_name}</${htag}>"
+            echo "<${htag} id=\"${id}\">${name}</${htag}>"
             
-            # List PDFs
+            # List PDFs in this directory
             if [[ ${#pdfs[@]} -gt 0 ]]; then
               echo '<ul class="files">'
               for pdf in "${pdfs[@]}"; do
-                local fname=$(basename "$pdf" .pdf)
+                local fname=$(basename "$pdf")
                 local rel_path="${pdf#site/}"
-                echo "<li><a href=\"${rel_path}\" title=\"${rel_path}\">${fname}.pdf</a></li>"
+                echo "<li><a href=\"${rel_path}\" title=\"${rel_path}\">${fname}</a></li>"
               done
               echo '</ul>'
             fi

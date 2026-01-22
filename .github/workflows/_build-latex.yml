@@ -203,18 +203,36 @@ jobs:
 
       - name: Collect PDFs for upload
         run: |
-          mkdir -p collected-pdfs/${{ matrix.category }}
-          find src/${{ matrix.category }} -name "*.pdf" -type f | while read pdf; do
-            # Preserve directory structure
+          set -euo pipefail
+          
+          echo "=== Collecting PDFs from src/${{ matrix.category }} ==="
+          echo ""
+          
+          # List all PDFs that will be collected (for debugging)
+          echo "Found PDFs:"
+          find "src/${{ matrix.category }}" -name "*.pdf" -type f | sort
+          echo ""
+          
+          # Use print0/read -d '' for safe handling of paths with spaces or special chars
+          while IFS= read -r -d '' pdf; do
+            # Get path relative to src/
             rel_path="${pdf#src/}"
-            dest_dir="collected-pdfs/$(dirname "$rel_path")"
+            # Get the full directory path
+            rel_dir="$(dirname "$rel_path")"
+            dest_dir="collected-pdfs/${rel_dir}"
+            
+            echo "Copying: $pdf"
+            echo "  -> $dest_dir/$(basename "$pdf")"
+            
             mkdir -p "$dest_dir"
             cp "$pdf" "$dest_dir/"
-          done
+          done < <(find "src/${{ matrix.category }}" -name "*.pdf" -type f -print0)
           
-          echo "Collected PDFs:"
-          find collected-pdfs -name "*.pdf" -type f | head -20
-          echo "Total: $(find collected-pdfs -name "*.pdf" -type f | wc -l)"
+          echo ""
+          echo "=== Final collected structure ==="
+          find collected-pdfs -type f -name "*.pdf" | sort
+          echo ""
+          echo "Total: $(find collected-pdfs -name "*.pdf" -type f | wc -l) PDFs"
 
       - name: Upload category PDFs
         if: inputs.upload-artifacts == true
@@ -245,21 +263,34 @@ jobs:
       - name: Organize and count PDFs
         id: count
         run: |
+          set -euo pipefail
+          
+          echo "=== Downloaded artifact structure ==="
+          find all-pdfs -type d | head -30
+          echo ""
+          
           mkdir -p merged-pdfs
           
-          # Merge all category artifacts
+          # Merge all category artifacts preserving full structure
           for artifact_dir in all-pdfs/pdfs-*/; do
             if [[ -d "$artifact_dir" ]]; then
+              echo "Merging from: $artifact_dir"
+              # Use rsync-like behavior: -r for recursive, preserve structure
               cp -r "$artifact_dir"/* merged-pdfs/ 2>/dev/null || true
             fi
           done
+          
+          echo ""
+          echo "=== Merged PDF structure (showing directories) ==="
+          find merged-pdfs -type d | sort | head -50
+          echo ""
           
           total=$(find merged-pdfs -name "*.pdf" -type f 2>/dev/null | wc -l || echo 0)
           echo "total=$total" >> "$GITHUB_OUTPUT"
           echo "Total PDFs: $total"
           
           echo ""
-          echo "PDF listing (first 50):"
+          echo "=== PDF listing (first 50) ==="
           find merged-pdfs -name "*.pdf" -type f | sort | head -50
           if [[ $total -gt 50 ]]; then
             echo "... and $((total - 50)) more"
