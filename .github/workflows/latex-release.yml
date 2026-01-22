@@ -20,47 +20,39 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Inkscape + zip (required for SVG conversion and packaging)
-        shell: bash
+      - name: Install dependencies (bash, Inkscape, zip)
+        shell: sh
         run: |
-          set -euo pipefail
+          set -eu
 
-          install_pkgs_apk() {
-            apk update
-            apk add --no-cache inkscape zip
-          }
-
-          install_pkgs_apt() {
-            apt-get update
-            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends inkscape zip
-            rm -rf /var/lib/apt/lists/*
-          }
-
-          if command -v inkscape >/dev/null 2>&1 && command -v zip >/dev/null 2>&1; then
-            echo "Inkscape already installed:"
-            inkscape -V || true
-            echo "zip already installed:"
-            zip -v | head -n 2 || true
-            exit 0
-          fi
-
-          echo "Installing tooling inside job container..."
+          echo "Installing dependencies inside job container..."
           if command -v apk >/dev/null 2>&1; then
-            install_pkgs_apk
+            apk update
+            apk add --no-cache bash inkscape zip
           elif command -v apt-get >/dev/null 2>&1; then
-            install_pkgs_apt
+            apt-get update
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends bash inkscape zip
+            rm -rf /var/lib/apt/lists/*
           elif command -v dnf >/dev/null 2>&1; then
-            dnf install -y inkscape zip
+            dnf install -y bash inkscape zip
           elif command -v yum >/dev/null 2>&1; then
-            yum install -y inkscape zip
+            yum install -y bash inkscape zip
           else
             echo "ERROR: No supported package manager found in container."
             cat /etc/os-release || true
             exit 1
           fi
 
+          # Create symlink for /usr/bin/bash if bash is at /bin/bash
+          if [ -x /bin/bash ] && [ ! -e /usr/bin/bash ]; then
+            ln -s /bin/bash /usr/bin/bash
+            echo "Created symlink: /usr/bin/bash -> /bin/bash"
+          fi
+
+          echo "Installed bash:"
+          bash --version | head -n 1
           echo "Installed Inkscape:"
-          inkscape -V
+          inkscape -V || true
           echo "Installed zip:"
           zip -v | head -n 2 || true
 

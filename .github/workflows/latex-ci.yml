@@ -31,37 +31,39 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Inkscape (required for LaTeX SVG conversion)
-        shell: bash
+      - name: Install dependencies (bash, Inkscape)
+        shell: sh
         run: |
-          set -euo pipefail
+          set -eu
 
-          if command -v inkscape >/dev/null 2>&1; then
-            echo "Inkscape already installed:"
-            inkscape -V || true
-            exit 0
-          fi
-
-          echo "Installing Inkscape inside job container..."
+          echo "Installing dependencies inside job container..."
           if command -v apk >/dev/null 2>&1; then
             apk update
-            apk add --no-cache inkscape
+            apk add --no-cache bash inkscape
           elif command -v apt-get >/dev/null 2>&1; then
             apt-get update
-            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends inkscape
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends bash inkscape
             rm -rf /var/lib/apt/lists/*
           elif command -v dnf >/dev/null 2>&1; then
-            dnf install -y inkscape
+            dnf install -y bash inkscape
           elif command -v yum >/dev/null 2>&1; then
-            yum install -y inkscape
+            yum install -y bash inkscape
           else
             echo "ERROR: No supported package manager found in container."
             cat /etc/os-release || true
             exit 1
           fi
 
+          # Create symlink for /usr/bin/bash if bash is at /bin/bash
+          if [ -x /bin/bash ] && [ ! -e /usr/bin/bash ]; then
+            ln -s /bin/bash /usr/bin/bash
+            echo "Created symlink: /usr/bin/bash -> /bin/bash"
+          fi
+
+          echo "Installed bash:"
+          bash --version | head -n 1
           echo "Installed Inkscape:"
-          inkscape -V
+          inkscape -V || true
 
       - name: Build all LaTeX documents
         shell: bash
