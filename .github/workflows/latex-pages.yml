@@ -49,8 +49,87 @@ jobs:
           name: latex-pdfs
           path: site/pdfs
 
+      # ------------------------------------------------------------------------
+      # IMPORTANT:
+      # If any upstream step flattened PDFs into a parent directory, rebuild the
+      # correct directory structure by mapping each PDF back to its .tex root in
+      # src/ using the basename (foo.pdf -> foo.tex).
+      # ------------------------------------------------------------------------
+      - name: Rehydrate PDF directory structure from src/
+        run: |
+          set -euo pipefail
+
+          echo "=== Rehydrating PDF directory structure (if needed) ==="
+
+          moved=0
+          skipped=0
+          ambiguous=0
+          missing=0
+
+          # Iterate all PDFs currently staged for Pages
+          while IFS= read -r -d '' pdf; do
+            base="$(basename "$pdf" .pdf)"
+            tex_matches=()
+
+            # Find matching TeX roots by basename; include only roots with \documentclass
+            while IFS= read -r -d '' tex; do
+              if grep -qE '^[[:space:]]*\\documentclass' "$tex"; then
+                tex_matches+=("$tex")
+              fi
+            done < <(find src -type f -name "${base}.tex" -print0 2>/dev/null || true)
+
+            if [[ ${#tex_matches[@]} -eq 0 ]]; then
+              # No matching root found; leave it where it is
+              missing=$((missing + 1))
+              continue
+            fi
+
+            if [[ ${#tex_matches[@]} -gt 1 ]]; then
+              echo "::warning::Ambiguous mapping for $(basename "$pdf"): multiple TeX roots found:"
+              for t in "${tex_matches[@]}"; do
+                echo "  - $t"
+              done
+              ambiguous=$((ambiguous + 1))
+              continue
+            fi
+
+            tex="${tex_matches[0]}"
+
+            # Desired destination is site/pdfs/<path relative to src/> with .pdf extension
+            rel_tex="${tex#src/}"
+            rel_dir="$(dirname "$rel_tex")"
+            desired_dir="site/pdfs/${rel_dir}"
+            desired_pdf="${desired_dir}/${base}.pdf"
+
+            # If already in correct place, do nothing
+            if [[ "$pdf" == "$desired_pdf" ]]; then
+              skipped=$((skipped + 1))
+              continue
+            fi
+
+            # Only move if the desired path doesn't already exist; otherwise warn and skip
+            if [[ -e "$desired_pdf" ]]; then
+              echo "::warning::Destination already exists, skipping move: $desired_pdf"
+              skipped=$((skipped + 1))
+              continue
+            fi
+
+            mkdir -p "$desired_dir"
+            mv "$pdf" "$desired_pdf"
+            moved=$((moved + 1))
+          done < <(find site/pdfs -type f -name "*.pdf" -print0 2>/dev/null)
+
+          echo ""
+          echo "Rehydration results:"
+          echo "  moved=$moved"
+          echo "  skipped=$skipped"
+          echo "  ambiguous=$ambiguous"
+          echo "  missing=$missing"
+          echo ""
+
       - name: Display PDF structure
         run: |
+          set -euo pipefail
           echo "=== PDF directory tree (showing all levels) ==="
           find site/pdfs -type d | sort
           echo ""
@@ -61,6 +140,8 @@ jobs:
 
       - name: Generate index.html
         run: |
+          set -euo pipefail
+
           cat > site/index.html << 'HTMLEOF'
           <!DOCTYPE html>
           <html lang="en">
@@ -190,7 +271,7 @@ jobs:
           # Count total PDFs
           total=$(find site/pdfs -name "*.pdf" -type f 2>/dev/null | wc -l)
           categories=$(find site/pdfs -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
-          
+
           cat >> site/index.html << STATSEOF
             <div class="stats">
               <div class="stat">
@@ -209,26 +290,27 @@ jobs:
             local dir="$1"
             local depth="$2"
             local prefix="$3"
-            
+
             # Get PDFs in current directory only (not subdirs)
             local pdfs=()
             while IFS= read -r -d '' f; do
               pdfs+=("$f")
             done < <(find "$dir" -maxdepth 1 -name "*.pdf" -type f -print0 2>/dev/null | sort -z)
-            
+
             # Get immediate subdirectories
             local subdirs=()
             while IFS= read -r -d '' d; do
               subdirs+=("$d")
             done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null | sort -z)
-            
+
             # Check if this directory or any descendant has PDFs
-            local total_pdfs=$(find "$dir" -name "*.pdf" -type f 2>/dev/null | wc -l)
+            local total_pdfs
+            total_pdfs=$(find "$dir" -name "*.pdf" -type f 2>/dev/null | wc -l)
             if [[ $total_pdfs -eq 0 ]]; then
               return
             fi
-            
-            # Determine heading level (h1, h2, h3, h4, h5, h6 then stay at h6)
+
+            # Determine heading level (h1..h6 then stay at h6)
             local htag="h1"
             local id_prefix=""
             case $depth in
@@ -239,23 +321,25 @@ jobs:
               5) htag="h5"; id_prefix="${prefix}-" ;;
               *) htag="h6"; id_prefix="${prefix}-" ;;
             esac
-            
-            local name=$(basename "$dir")
+
+            local name
+            name=$(basename "$dir")
             local id="${id_prefix}${name}"
-            
+
             echo "<${htag} id=\"${id}\">${name}</${htag}>"
-            
+
             # List PDFs in this directory
             if [[ ${#pdfs[@]} -gt 0 ]]; then
               echo '<ul class="files">'
               for pdf in "${pdfs[@]}"; do
-                local fname=$(basename "$pdf")
+                local fname
+                fname=$(basename "$pdf")
                 local rel_path="${pdf#site/}"
                 echo "<li><a href=\"${rel_path}\" title=\"${rel_path}\">${fname}</a></li>"
               done
               echo '</ul>'
             fi
-            
+
             # Recurse into subdirectories
             for subdir in "${subdirs[@]}"; do
               generate_section "$subdir" $((depth + 1)) "$id"
@@ -278,9 +362,9 @@ jobs:
 
       - name: Copy build logs (optional)
         run: |
-          # Copy log files for debugging if they exist
+          set -euo pipefail
           mkdir -p site/logs
-          find site/pdfs -name "*.log.txt" -o -name "*.stderr.txt" -o -name "*.stdout.txt" | while read f; do
+          find site/pdfs -name "*.log.txt" -o -name "*.stderr.txt" -o -name "*.stdout.txt" | while read -r f; do
             rel="${f#site/pdfs/}"
             dest="site/logs/$rel"
             mkdir -p "$(dirname "$dest")"
