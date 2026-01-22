@@ -1,6 +1,5 @@
 # .github/workflows/_build-latex.yml
 # Reusable workflow for building LaTeX documents
-# Called by latex-ci.yml, latex-pages.yml, latex-release.yml
 name: _Build LaTeX (Reusable)
 
 on:
@@ -104,13 +103,40 @@ jobs:
           
           CATEGORY="${{ inputs.document-category }}"
           
+          # Directories to exclude (not LaTeX document categories)
+          EXCLUDE_DIRS="common|jpg|png|svg|puml"
+          
           if [[ -n "$CATEGORY" ]]; then
             echo "matrix={\"category\":[\"$CATEGORY\"]}" >> "$GITHUB_OUTPUT"
           else
-            # Auto-discover categories from src/
-            CATEGORIES=$(find src -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort | jq -R . | jq -sc .)
-            echo "Discovered categories: $CATEGORIES"
-            echo "matrix={\"category\":$CATEGORIES}" >> "$GITHUB_OUTPUT"
+            # Auto-discover categories, excluding non-document directories
+            # Only include directories that contain .tex files with \documentclass
+            CATEGORIES=()
+            for dir in src/*/; do
+              dirname=$(basename "$dir")
+              # Skip excluded directories
+              if echo "$dirname" | grep -qE "^($EXCLUDE_DIRS)$"; then
+                echo "Skipping non-document directory: $dirname"
+                continue
+              fi
+              # Check if directory contains any root .tex files
+              if find "$dir" -name '*.tex' -type f -exec grep -l '^\s*\\documentclass' {} \; 2>/dev/null | head -1 | grep -q .; then
+                CATEGORIES+=("$dirname")
+                echo "Found document category: $dirname"
+              else
+                echo "Skipping directory with no documents: $dirname"
+              fi
+            done
+            
+            if [[ ${#CATEGORIES[@]} -eq 0 ]]; then
+              echo "::error::No document categories found in src/"
+              exit 1
+            fi
+            
+            # Convert to JSON array
+            MATRIX_JSON=$(printf '%s\n' "${CATEGORIES[@]}" | jq -R . | jq -sc .)
+            echo "Discovered categories: $MATRIX_JSON"
+            echo "matrix={\"category\":$MATRIX_JSON}" >> "$GITHUB_OUTPUT"
           fi
 
   # ============================================================================
@@ -149,7 +175,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      max-parallel: 6  # Limit concurrent jobs to avoid resource contention
+      max-parallel: 6
       matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
     steps:
       - name: Checkout
@@ -171,25 +197,31 @@ jobs:
         uses: ./.github/actions/build-documents
         with:
           source-dir: src
-          document-filter: 'src/${{ matrix.category }}/**/*.tex'
+          document-filter: 'src/${{ matrix.category }}'
           build-all: ${{ inputs.build-all }}
           cache-aux-files: 'true'
 
       - name: Collect PDFs for upload
         run: |
           mkdir -p collected-pdfs/${{ matrix.category }}
-          find src/${{ matrix.category }} -name "*.pdf" -type f -exec cp --parents {} collected-pdfs/ \; 2>/dev/null || true
+          find src/${{ matrix.category }} -name "*.pdf" -type f | while read pdf; do
+            # Preserve directory structure
+            rel_path="${pdf#src/}"
+            dest_dir="collected-pdfs/$(dirname "$rel_path")"
+            mkdir -p "$dest_dir"
+            cp "$pdf" "$dest_dir/"
+          done
           
-          # Show what we collected
           echo "Collected PDFs:"
           find collected-pdfs -name "*.pdf" -type f | head -20
+          echo "Total: $(find collected-pdfs -name "*.pdf" -type f | wc -l)"
 
       - name: Upload category PDFs
         if: inputs.upload-artifacts == true
         uses: actions/upload-artifact@v4
         with:
           name: pdfs-${{ matrix.category }}
-          path: collected-pdfs/src/${{ matrix.category }}
+          path: collected-pdfs
           retention-days: 14
           if-no-files-found: ignore
 
@@ -213,13 +245,12 @@ jobs:
       - name: Organize and count PDFs
         id: count
         run: |
-          # Flatten the category structure for easier access
           mkdir -p merged-pdfs
           
-          # Each pdfs-* artifact has a category folder inside
-          for category_dir in all-pdfs/pdfs-*/; do
-            if [[ -d "$category_dir" ]]; then
-              cp -r "$category_dir"/* merged-pdfs/ 2>/dev/null || true
+          # Merge all category artifacts
+          for artifact_dir in all-pdfs/pdfs-*/; do
+            if [[ -d "$artifact_dir" ]]; then
+              cp -r "$artifact_dir"/* merged-pdfs/ 2>/dev/null || true
             fi
           done
           
@@ -227,9 +258,8 @@ jobs:
           echo "total=$total" >> "$GITHUB_OUTPUT"
           echo "Total PDFs: $total"
           
-          # List all PDFs
           echo ""
-          echo "PDF listing:"
+          echo "PDF listing (first 50):"
           find merged-pdfs -name "*.pdf" -type f | sort | head -50
           if [[ $total -gt 50 ]]; then
             echo "... and $((total - 50)) more"
@@ -253,10 +283,10 @@ jobs:
             echo ""
             echo "### By Category"
             echo ""
-            for category_dir in all-pdfs/pdfs-*/; do
-              if [[ -d "$category_dir" ]]; then
-                category=$(basename "$category_dir" | sed 's/pdfs-//')
-                count=$(find "$category_dir" -name "*.pdf" -type f 2>/dev/null | wc -l || echo 0)
+            for artifact_dir in all-pdfs/pdfs-*/; do
+              if [[ -d "$artifact_dir" ]]; then
+                category=$(basename "$artifact_dir" | sed 's/pdfs-//')
+                count=$(find "$artifact_dir" -name "*.pdf" -type f 2>/dev/null | wc -l || echo 0)
                 echo "- **$category**: $count PDFs"
               fi
             done

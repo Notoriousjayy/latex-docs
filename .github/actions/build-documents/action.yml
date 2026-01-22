@@ -1,7 +1,7 @@
 # .github/actions/build-documents/action.yml
 # Reusable composite action for building LaTeX documents
 name: 'Build LaTeX Documents'
-description: 'Build LaTeX documents with caching and selective compilation'
+description: 'Build LaTeX documents with selective compilation'
 
 inputs:
   source-dir:
@@ -9,11 +9,7 @@ inputs:
     required: false
     default: 'src'
   document-filter:
-    description: 'Glob pattern to filter documents (e.g., "src/security/**/*.tex")'
-    required: false
-    default: ''
-  changed-files:
-    description: 'Newline-separated list of changed files (for selective builds)'
+    description: 'Directory path to filter documents (e.g., "src/security")'
     required: false
     default: ''
   build-all:
@@ -24,10 +20,6 @@ inputs:
     description: 'Cache LaTeX auxiliary files between runs'
     required: false
     default: 'true'
-  output-dir:
-    description: 'Directory to copy built PDFs (empty = leave in place)'
-    required: false
-    default: ''
 
 outputs:
   pdf-count:
@@ -43,111 +35,40 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Verify build prerequisites
-      shell: bash
-      run: |
-        # Verify pygments is available for minted
-        if ! command -v pygmentize &> /dev/null; then
-          echo "::error::pygmentize not found - minted package will fail"
-          exit 1
-        fi
-        echo "✓ pygmentize: $(which pygmentize)"
-        
-        # Verify latexmk
-        if ! command -v latexmk &> /dev/null; then
-          echo "::error::latexmk not found"
-          exit 1
-        fi
-        echo "✓ latexmk: $(which latexmk)"
-
     - name: Cache LaTeX auxiliary files
       if: inputs.cache-aux-files == 'true'
       uses: actions/cache@v4
       with:
         path: |
-          ${{ inputs.source-dir }}/**/*.aux
-          ${{ inputs.source-dir }}/**/*.fdb_latexmk
-          ${{ inputs.source-dir }}/**/*.fls
-          ${{ inputs.source-dir }}/**/*.toc
-          ${{ inputs.source-dir }}/**/*.out
-          ${{ inputs.source-dir }}/**/*.bbl
-          ${{ inputs.source-dir }}/**/*.bcf
-          ${{ inputs.source-dir }}/**/*.run.xml
-          ${{ inputs.source-dir }}/**/_minted-*
-        key: latex-aux-${{ inputs.document-filter || 'all' }}-${{ hashFiles(format('{0}/**/*.tex', inputs.source-dir)) }}
+          ${{ inputs.document-filter || inputs.source-dir }}/**/*.aux
+          ${{ inputs.document-filter || inputs.source-dir }}/**/*.fdb_latexmk
+          ${{ inputs.document-filter || inputs.source-dir }}/**/*.fls
+          ${{ inputs.document-filter || inputs.source-dir }}/**/*.toc
+          ${{ inputs.document-filter || inputs.source-dir }}/**/*.out
+          ${{ inputs.document-filter || inputs.source-dir }}/**/_minted-*
+        key: latex-aux-${{ inputs.document-filter || 'all' }}-${{ github.sha }}
         restore-keys: |
           latex-aux-${{ inputs.document-filter || 'all' }}-
-          latex-aux-
 
-    - name: Discover documents to build
-      id: discover
-      shell: bash
-      run: |
-        set -euo pipefail
-        
-        SOURCE_DIR="${{ inputs.source-dir }}"
-        FILTER="${{ inputs.document-filter }}"
-        BUILD_ALL="${{ inputs.build-all }}"
-        CHANGED_FILES="${{ inputs.changed-files }}"
-        
-        echo "::group::Document Discovery"
-        
-        # Find all root documents (files with \documentclass)
-        if [[ -n "$FILTER" ]]; then
-          # Use the filter pattern directly with find + grep
-          filter_dir="${FILTER%%/**}"
-          mapfile -t ALL_ROOTS < <(find "$filter_dir" -name '*.tex' -type f -exec grep -l '^\s*\\documentclass' {} \; 2>/dev/null || true)
-        else
-          mapfile -t ALL_ROOTS < <(find "$SOURCE_DIR" -name '*.tex' -type f -exec grep -l '^\s*\\documentclass' {} \; 2>/dev/null || true)
-        fi
-        
-        echo "Total document roots found: ${#ALL_ROOTS[@]}"
-        
-        # Determine which documents to build
-        if [[ "$BUILD_ALL" == "true" || -z "$CHANGED_FILES" ]]; then
-          DOCS_TO_BUILD=("${ALL_ROOTS[@]}")
-        else
-          DOCS_TO_BUILD=()
-          for root in "${ALL_ROOTS[@]}"; do
-            root_dir="$(dirname "$root")"
-            
-            # Check if the root file itself changed
-            if echo "$CHANGED_FILES" | grep -qF "$root"; then
-              DOCS_TO_BUILD+=("$root")
-              continue
-            fi
-            
-            # Check if any file in the same directory changed
-            if echo "$CHANGED_FILES" | grep -qF "$root_dir/"; then
-              DOCS_TO_BUILD+=("$root")
-              continue
-            fi
-            
-            # Check if common/tooling changed
-            if echo "$CHANGED_FILES" | grep -qE "(common|tooling)/.*\.tex$"; then
-              DOCS_TO_BUILD+=("$root")
-              continue
-            fi
-          done
-        fi
-        
-        echo "Documents to build: ${#DOCS_TO_BUILD[@]}"
-        echo "::endgroup::"
-        
-        # Output as newline-separated list
-        printf 'roots<<EOF\n%s\nEOF\n' "$(printf '%s\n' "${DOCS_TO_BUILD[@]}")" >> "$GITHUB_OUTPUT"
-        echo "count=${#DOCS_TO_BUILD[@]}" >> "$GITHUB_OUTPUT"
-
-    - name: Build documents
+    - name: Discover and build documents
       id: build
       shell: bash
       run: |
         set -euo pipefail
         
-        ROOTS="${{ steps.discover.outputs.roots }}"
-        OUTPUT_DIR="${{ inputs.output-dir }}"
+        SEARCH_DIR="${{ inputs.document-filter }}"
+        if [[ -z "$SEARCH_DIR" ]]; then
+          SEARCH_DIR="${{ inputs.source-dir }}"
+        fi
         
-        if [[ -z "$ROOTS" ]]; then
+        echo "Searching for documents in: $SEARCH_DIR"
+        
+        # Find all root documents (files with \documentclass)
+        mapfile -t ROOTS < <(find "$SEARCH_DIR" -name '*.tex' -type f -exec grep -l '^\s*\\documentclass' {} \; 2>/dev/null | sort)
+        
+        echo "Found ${#ROOTS[@]} document roots"
+        
+        if [[ ${#ROOTS[@]} -eq 0 ]]; then
           echo "No documents to build"
           echo "count=0" >> "$GITHUB_OUTPUT"
           echo "failed=0" >> "$GITHUB_OUTPUT"
@@ -155,17 +76,11 @@ runs:
           exit 0
         fi
         
-        # Ensure pygmentize is in PATH
-        export PATH="$PATH:/usr/bin"
-        
         built_pdfs=()
         failed=0
         failed_files=()
         
-        # Process each document
-        while IFS= read -r tex_file; do
-          [[ -z "$tex_file" ]] && continue
-          
+        for tex_file in "${ROOTS[@]}"; do
           dir="$(dirname "$tex_file")"
           base="$(basename "$tex_file")"
           name="${base%.tex}"
@@ -180,39 +95,27 @@ runs:
           mkdir -p "${dir}/_minted-${name}"
           
           # Build with latexmk
-          # -cd changes to directory (required for \input paths)
-          # -pdf uses pdflatex (most compatible)
-          # -shell-escape required for minted
-          if latexmk -cd -pdf \
+          pushd "$dir" > /dev/null
+          if latexmk -pdf \
                -interaction=nonstopmode \
                -halt-on-error \
                -file-line-error \
                -shell-escape \
-               "$tex_file" 2>&1 | tail -50; then
+               "$base" 2>&1 | tail -100; then
             
-            pdf_path="${dir}/${pdf_name}"
-            if [[ -f "$pdf_path" ]]; then
-              echo "✓ SUCCESS: ${pdf_path}"
-              built_pdfs+=("$pdf_path")
-              
-              # Copy to output directory if specified
-              if [[ -n "$OUTPUT_DIR" ]]; then
-                # Preserve directory structure relative to src/
-                rel_path="${pdf_path#src/}"
-                dest_dir="${OUTPUT_DIR}/$(dirname "$rel_path")"
-                mkdir -p "$dest_dir"
-                cp "$pdf_path" "$dest_dir/"
-                echo "  → Copied to: ${dest_dir}/${pdf_name}"
-              fi
+            if [[ -f "$pdf_name" ]]; then
+              echo "✓ SUCCESS: ${dir}/${pdf_name}"
+              built_pdfs+=("${dir}/${pdf_name}")
             else
-              echo "⚠ WARNING: Build completed but PDF not found at ${pdf_path}"
+              echo "⚠ WARNING: Build completed but PDF not found"
             fi
           else
             echo "✗ FAILED: $tex_file"
             failed_files+=("$tex_file")
             ((failed++)) || true
           fi
-        done <<< "$ROOTS"
+          popd > /dev/null
+        done
         
         echo ""
         echo "================================================================"
@@ -239,7 +142,7 @@ runs:
           echo 'files=[]' >> "$GITHUB_OUTPUT"
         fi
         
-        # Fail if ALL builds failed
+        # Only fail if ALL builds failed
         if [[ $failed -gt 0 && ${#built_pdfs[@]} -eq 0 ]]; then
           echo "::error::All document builds failed!"
           exit 1
