@@ -7,7 +7,7 @@ inputs:
   cache-key-prefix:
     description: 'Prefix for cache key (allows cache busting)'
     required: false
-    default: 'texlive-v1'
+    default: 'texlive-v2'
 
 outputs:
   cache-hit:
@@ -28,31 +28,49 @@ runs:
         restore-keys: |
           ${{ inputs.cache-key-prefix }}-${{ runner.os }}-texlive
 
-    - name: Install TeX Live (if not cached)
-      if: steps.cache-texlive.outputs.cache-hit != 'true'
+    - name: Install TeX Live and Pygments
       shell: bash
       run: |
+        # Always install pygments (it's small and critical for minted)
         sudo apt-get update
-        sudo apt-get install -y --no-install-recommends \
-          texlive-latex-recommended \
-          texlive-latex-extra \
-          texlive-fonts-recommended \
-          texlive-fonts-extra \
-          texlive-pictures \
-          texlive-science \
-          texlive-bibtex-extra \
-          texlive-luatex \
-          latexmk \
-          biber \
-          python3-pygments \
-          ghostscript \
-          imagemagick
+        sudo apt-get install -y --no-install-recommends python3-pygments
+        
+        # Verify pygmentize is available
+        which pygmentize || { echo "ERROR: pygmentize not found"; exit 1; }
+        pygmentize -V
+        
+        # Install TeX Live if not cached
+        if [[ "${{ steps.cache-texlive.outputs.cache-hit }}" != "true" ]]; then
+          echo "Installing TeX Live packages..."
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            texlive-fonts-extra \
+            texlive-pictures \
+            texlive-science \
+            texlive-bibtex-extra \
+            texlive-luatex \
+            latexmk \
+            biber \
+            ghostscript \
+            imagemagick
+        fi
+        
         sudo rm -rf /var/lib/apt/lists/* || true
 
     - name: Verify LaTeX installation
       shell: bash
       run: |
-        echo "LaTeX version:"
+        echo "=== LaTeX Environment ==="
+        echo "LuaLaTeX version:"
         lualatex --version | head -3
+        echo ""
         echo "latexmk version:"
         latexmk --version | head -1
+        echo ""
+        echo "Pygments version:"
+        pygmentize -V
+        echo ""
+        echo "Pygmentize location:"
+        which pygmentize

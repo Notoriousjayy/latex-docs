@@ -6,7 +6,7 @@ SHELL := /bin/bash
 
 # Configuration
 LATEXMK ?= latexmk
-LATEX_ENGINE ?= lualatex
+LATEX_ENGINE ?= pdf
 LATEXMK_OPTS ?= -$(LATEX_ENGINE) -interaction=nonstopmode -halt-on-error -file-line-error -shell-escape -synctex=1
 
 # Parallelism: Use available cores minus 1 (or 4 if nproc not available)

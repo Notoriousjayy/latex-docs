@@ -36,19 +36,31 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Verify pygments is available
+      shell: bash
+      run: |
+        if ! command -v pygmentize &> /dev/null; then
+          echo "ERROR: pygmentize not found - minted will fail"
+          echo "Installing pygments..."
+          sudo apt-get update && sudo apt-get install -y python3-pygments
+        fi
+        echo "Pygmentize location: $(which pygmentize)"
+        echo "Pygmentize version: $(pygmentize -V)"
+
     - name: Cache LaTeX auxiliary files
       if: inputs.cache-aux-files == 'true'
       uses: actions/cache@v4
       with:
         path: |
-          **/*.aux
-          **/*.fdb_latexmk
-          **/*.fls
-          **/*.toc
-          **/*.out
-          **/*.bbl
-          **/*.bcf
-          **/*.run.xml
+          src/**/*.aux
+          src/**/*.fdb_latexmk
+          src/**/*.fls
+          src/**/*.toc
+          src/**/*.out
+          src/**/*.bbl
+          src/**/*.bcf
+          src/**/*.run.xml
+          src/**/_minted-*
         key: latex-aux-${{ hashFiles('src/**/*.tex') }}
         restore-keys: |
           latex-aux-
@@ -124,8 +136,12 @@ runs:
           exit 0
         fi
         
+        # Ensure pygmentize is in PATH for minted
+        export PATH="$PATH:/usr/bin"
+        
         built_pdfs=()
         failed=0
+        failed_files=()
         
         while IFS= read -r tex_file; do
           [[ -z "$tex_file" ]] && continue
@@ -134,24 +150,56 @@ runs:
           base="$(basename "$tex_file")"
           pdf_name="${base%.tex}.pdf"
           
+          echo ""
+          echo "================================================================"
           echo "==> Building: $tex_file"
+          echo "================================================================"
           
-          if (cd "$dir" && latexmk -lualatex -interaction=nonstopmode -halt-on-error -file-line-error -shell-escape "$base" 2>&1); then
+          # Create minted cache directory to avoid permission issues
+          mkdir -p "${dir}/_minted-${base%.tex}"
+          
+          # Build with latexmk
+          # Using -cd to change to directory (handles minted paths correctly)
+          # Using -pdflatex for better minted compatibility (lualatex can have issues)
+          if latexmk -cd -pdf -interaction=nonstopmode -halt-on-error -file-line-error -shell-escape "$tex_file" 2>&1; then
             pdf_path="${dir}/${pdf_name}"
             if [[ -f "$pdf_path" ]]; then
-              echo "    ✓ ${pdf_path}"
+              echo "    ✓ SUCCESS: ${pdf_path}"
               built_pdfs+=("$pdf_path")
+            else
+              echo "    ⚠ WARNING: Build completed but PDF not found at ${pdf_path}"
             fi
           else
-            echo "    ✗ Build failed (continuing)"
+            echo "    ✗ FAILED: $tex_file"
+            failed_files+=("$tex_file")
             ((failed++)) || true
           fi
         done <<< "$ROOTS"
         
-        echo "Built ${#built_pdfs[@]} PDFs ($failed failures)"
-        echo "count=${#built_pdfs[@]}" >> "$GITHUB_OUTPUT"
-        printf 'files=%s\n' "$(printf '%s\n' "${built_pdfs[@]}" | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+        echo ""
+        echo "================================================================"
+        echo "BUILD SUMMARY"
+        echo "================================================================"
+        echo "Successful: ${#built_pdfs[@]}"
+        echo "Failed: $failed"
         
+        if [[ $failed -gt 0 ]]; then
+          echo ""
+          echo "Failed files:"
+          for f in "${failed_files[@]}"; do
+            echo "  - $f"
+          done
+        fi
+        
+        echo "count=${#built_pdfs[@]}" >> "$GITHUB_OUTPUT"
+        if [[ ${#built_pdfs[@]} -gt 0 ]]; then
+          printf 'files=%s\n' "$(printf '%s\n' "${built_pdfs[@]}" | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+        else
+          echo 'files=[]' >> "$GITHUB_OUTPUT"
+        fi
+        
+        # Don't fail the entire job if some docs failed - just report
         if [[ $failed -gt 0 && ${#built_pdfs[@]} -eq 0 ]]; then
+          echo "::error::All document builds failed!"
           exit 1
         fi
