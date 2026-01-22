@@ -6,6 +6,7 @@ on:
     branches: ["main"]
     paths:
       - "src/**/*.tex"
+      - "src/**/*.puml"
       - ".github/workflows/latex-pages.yml"
       - "src/**/png/*.png"
       - "src/**/svg/*.svg"
@@ -35,7 +36,7 @@ jobs:
         with:
           persist-credentials: true
 
-      - name: Install dependencies (bash, GNU coreutils, Inkscape)
+      - name: Install dependencies (bash, GNU coreutils, Inkscape, PlantUML)
         shell: sh
         run: |
           set -eu
@@ -43,16 +44,19 @@ jobs:
           echo "Installing dependencies inside job container..."
           if command -v apk >/dev/null 2>&1; then
             apk update
-            # Install GNU coreutils, grep, findutils, and make to replace BusyBox variants
-            apk add --no-cache bash coreutils grep findutils make inkscape
+            # Install GNU coreutils, grep, findutils, make to replace BusyBox variants
+            # Install Inkscape for SVG conversion, PlantUML + Graphviz + Java for diagrams
+            apk add --no-cache bash coreutils grep findutils make inkscape \
+              plantuml graphviz openjdk17-jre-headless
           elif command -v apt-get >/dev/null 2>&1; then
             apt-get update
-            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends bash inkscape
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+              bash inkscape plantuml graphviz default-jre-headless
             rm -rf /var/lib/apt/lists/*
           elif command -v dnf >/dev/null 2>&1; then
-            dnf install -y bash inkscape
+            dnf install -y bash inkscape plantuml graphviz java-17-openjdk-headless
           elif command -v yum >/dev/null 2>&1; then
-            yum install -y bash inkscape
+            yum install -y bash inkscape plantuml graphviz java-17-openjdk-headless
           else
             echo "ERROR: No supported package manager found in container."
             cat /etc/os-release || true
@@ -71,6 +75,87 @@ jobs:
           grep --version | head -n 1
           echo "Installed Inkscape:"
           inkscape -V || true
+          echo "Installed PlantUML:"
+          plantuml -version 2>&1 | head -n 1 || true
+
+      - name: Render PlantUML diagrams
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ROOT="src"
+          CONFIG_NAMES=("plantuml-config.puml" "config.puml")
+          FORMATS=("png" "svg")
+
+          find_config() {
+            local start_dir="$1"
+            local d="$start_dir"
+            while true; do
+              for n in "${CONFIG_NAMES[@]}"; do
+                if [[ -f "${d}/${n}" ]]; then
+                  echo "${d}/${n}"
+                  return 0
+                fi
+              done
+              [[ "$d" == "$ROOT" ]] && break
+              d="$(dirname "$d")"
+            done
+            echo ""
+          }
+
+          # Collect .puml files (excluding config files)
+          mapfile -d '' PUMLS < <(
+            find "$ROOT" -type f -name "*.puml" \
+              ! -name "plantuml-config.puml" \
+              ! -name "config.puml" \
+              -print0 2>/dev/null || true
+          )
+
+          echo "Total diagrams discovered: ${#PUMLS[@]}"
+
+          if [[ ${#PUMLS[@]} -eq 0 ]]; then
+            echo "No PlantUML files found under ${ROOT}/"
+            exit 0
+          fi
+
+          for puml in "${PUMLS[@]}"; do
+            dir="$(dirname "$puml")"
+            base="$(basename "$puml" .puml)"
+            cfg="$(find_config "$dir")"
+
+            mkdir -p "${dir}/png" "${dir}/svg"
+            echo "Rendering: ${puml}"
+
+            for fmt in "${FORMATS[@]}"; do
+              tmp="${dir}/.plantuml-tmp/${base}/${fmt}"
+              mkdir -p "$tmp"
+
+              cfg_abs=""
+              if [[ -n "$cfg" ]]; then
+                cfg_abs="$(realpath "$cfg")"
+              fi
+
+              pushd "$dir" >/dev/null
+              if [[ -n "$cfg_abs" ]]; then
+                plantuml "-t${fmt}" -o ".plantuml-tmp/${base}/${fmt}" -config "$cfg_abs" "$(basename "$puml")"
+              else
+                plantuml "-t${fmt}" -o ".plantuml-tmp/${base}/${fmt}" "$(basename "$puml")"
+              fi
+              popd >/dev/null
+
+              produced="$(ls -1 "$tmp"/*.${fmt} 2>/dev/null | head -n 1 || true)"
+
+              if [[ -z "$produced" ]]; then
+                echo "ERROR: No output produced for ${puml} (format=${fmt})"
+                exit 1
+              fi
+
+              dest="${dir}/${fmt}/${base}.${fmt}"
+              mv -f "$produced" "$dest"
+              rm -rf "${dir}/.plantuml-tmp/${base}/${fmt}"
+              echo "  Created: ${dest}"
+            done
+          done
 
       - name: Build PDFs (via Makefile)
         shell: bash
