@@ -1,66 +1,83 @@
-name: Release LaTeX PDFs (build artifacts)
+name: LaTeX Release
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - "v*"
+  release:
+    types: [published]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     container:
       image: ghcr.io/xu-cheng/texlive-full:latest
+      options: --user 0
+
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Inkscape (for \includesvg)
+      - name: Install Inkscape + zip (required for SVG conversion and packaging)
         shell: bash
         run: |
           set -euo pipefail
-          apt-get update -y
-          apt-get install -y --no-install-recommends inkscape zip
 
-      - name: Build all PDFs under src/
-        shell: bash
-        run: |
-          set -euo pipefail
-          ROOT="src"
-          mapfile -d '' TEX_FILES < <(find "$ROOT" -type f -name "*.tex" -print0)
+          install_pkgs_apk() {
+            apk update
+            apk add --no-cache inkscape zip
+          }
 
-          if [[ ${#TEX_FILES[@]} -eq 0 ]]; then
-            echo "No .tex files found under ${ROOT}/"
+          install_pkgs_apt() {
+            apt-get update
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends inkscape zip
+            rm -rf /var/lib/apt/lists/*
+          }
+
+          if command -v inkscape >/dev/null 2>&1 && command -v zip >/dev/null 2>&1; then
+            echo "Inkscape already installed:"
+            inkscape -V || true
+            echo "zip already installed:"
+            zip -v | head -n 2 || true
             exit 0
           fi
 
-          for tex in "${TEX_FILES[@]}"; do
-            dir="$(dirname "$tex")"
-            file="$(basename "$tex")"
-            echo "Building: ${tex}"
+          echo "Installing tooling inside job container..."
+          if command -v apk >/dev/null 2>&1; then
+            install_pkgs_apk
+          elif command -v apt-get >/dev/null 2>&1; then
+            install_pkgs_apt
+          elif command -v dnf >/dev/null 2>&1; then
+            dnf install -y inkscape zip
+          elif command -v yum >/dev/null 2>&1; then
+            yum install -y inkscape zip
+          else
+            echo "ERROR: No supported package manager found in container."
+            cat /etc/os-release || true
+            exit 1
+          fi
 
-            pushd "$dir" >/dev/null
-            latexmk -lualatex -pdf -interaction=nonstopmode -halt-on-error -shell-escape "$file"
-            popd >/dev/null
-          done
+          echo "Installed Inkscape:"
+          inkscape -V
+          echo "Installed zip:"
+          zip -v | head -n 2 || true
+
+      - name: Build PDFs (via Makefile)
+        shell: bash
+        run: |
+          set -euo pipefail
+          make render-pdfs
 
       - name: Package PDFs
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p dist
-          while IFS= read -r -d '' pdf; do
-            rel="${pdf#src/}"
-            out_dir="dist/$(dirname "$rel")"
-            mkdir -p "$out_dir"
-            cp -f "$pdf" "$out_dir/"
-          done < <(find src -type f -name "*.pdf" -print0)
+          zip -r dist/pdfs.zip build/pdfs
 
-          (cd dist && zip -r ../latex-pdfs.zip .)
-
-      - name: Upload release artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload Release Asset (pdfs.zip)
+        uses: softprops/action-gh-release@v2
         with:
-          name: latex-pdfs-zip
-          path: latex-pdfs.zip
+          files: dist/pdfs.zip

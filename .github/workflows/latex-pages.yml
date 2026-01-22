@@ -1,4 +1,4 @@
-name: Build LaTeX PDFs and publish to Pages
+name: Build & Publish LaTeX PDFs to GitHub Pages
 
 on:
   workflow_dispatch:
@@ -6,20 +6,26 @@ on:
     branches: ["main"]
     paths:
       - "src/**/*.tex"
+      - ".github/workflows/latex-pages.yml"
       - "src/**/png/*.png"
       - "src/**/svg/*.svg"
       - "src/**/jpg/*.jpg"
-      - ".github/workflows/latex-pages.yml"
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
-  build-and-publish:
+  build:
     runs-on: ubuntu-latest
+
+    # Use a TeX Live image for reproducible builds.
+    # Note: this image may not include apt-get; install tools via the container's package manager.
     container:
       image: ghcr.io/xu-cheng/texlive-full:latest
+      options: --user 0
 
-    # Avoid infinite loops when the workflow auto-commits generated PDFs / index page.
-    if: github.actor != 'github-actions[bot]'
-
+    # Required for committing back to the repo using GITHUB_TOKEN
     permissions:
       contents: write
 
@@ -27,120 +33,81 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           persist-credentials: true
 
-      - name: Install Inkscape (for \includesvg)
+      - name: Install Inkscape (required for LaTeX SVG conversion)
         shell: bash
         run: |
           set -euo pipefail
-          apt-get update -y
-          apt-get install -y --no-install-recommends inkscape
 
-      - name: Build all PDFs under src/
-        shell: bash
-        run: |
-          set -euo pipefail
-          ROOT="src"
-          mapfile -d '' TEX_FILES < <(find "$ROOT" -type f -name "*.tex" -print0)
-
-          if [[ ${#TEX_FILES[@]} -eq 0 ]]; then
-            echo "No .tex files found under ${ROOT}/"
+          if command -v inkscape >/dev/null 2>&1; then
+            echo "Inkscape already installed:"
+            inkscape -V || true
             exit 0
           fi
 
-          for tex in "${TEX_FILES[@]}"; do
-            dir="$(dirname "$tex")"
-            file="$(basename "$tex")"
-            echo "Building: ${tex}"
+          echo "Installing Inkscape inside job container..."
+          if command -v apk >/dev/null 2>&1; then
+            apk update
+            apk add --no-cache inkscape
+          elif command -v apt-get >/dev/null 2>&1; then
+            apt-get update
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends inkscape
+            rm -rf /var/lib/apt/lists/*
+          elif command -v dnf >/dev/null 2>&1; then
+            dnf install -y inkscape
+          elif command -v yum >/dev/null 2>&1; then
+            yum install -y inkscape
+          else
+            echo "ERROR: No supported package manager found in container."
+            cat /etc/os-release || true
+            exit 1
+          fi
 
-            pushd "$dir" >/dev/null
-            latexmk -lualatex -pdf -interaction=nonstopmode -halt-on-error -shell-escape "$file"
-            popd >/dev/null
-          done
+          echo "Installed Inkscape:"
+          inkscape -V
 
-      - name: Copy PDFs into docs/pdfs/ (preserve src/ directory structure)
+      - name: Build PDFs (via Makefile)
         shell: bash
         run: |
           set -euo pipefail
-          OUT_ROOT="docs/pdfs"
-          rm -rf "$OUT_ROOT"
-          mkdir -p "$OUT_ROOT"
+          make render-pdfs
 
-          while IFS= read -r -d '' pdf; do
-            rel="${pdf#src/}"
-            out_dir="${OUT_ROOT}/$(dirname "$rel")"
-            mkdir -p "$out_dir"
-            cp -f "$pdf" "${out_dir}/$(basename "$pdf")"
-          done < <(find src -type f -name "*.pdf" -print0)
-
-      - name: Generate docs/index.html (hierarchical directory listing)
+      - name: Update docs/ with latest PDFs
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          import html
-          
-          root = Path("docs/pdfs")
-          out = Path("docs/index.html")
-          
-          def render_dir(d: Path, depth: int) -> str:
-              parts = []
-              if depth > 0:
-                  level = min(depth, 6)
-                  parts.append(f"<h{level}>{html.escape(d.name)}</h{level}>")
-          
-              pdfs = sorted(d.glob("*.pdf"))
-              if pdfs:
-                  parts.append("<ul class='files'>")
-                  for p in pdfs:
-                      href = p.as_posix()
-                      parts.append(f"<li><a href='{html.escape(href)}'>{html.escape(p.name)}</a></li>")
-                  parts.append("</ul>")
-          
-              for sub in sorted([p for p in d.iterdir() if p.is_dir()]):
-                  parts.append(render_dir(sub, depth + 1))
-          
-              return "\n".join(parts)
-          
-          body = render_dir(root, 0) if root.exists() else "<p>No PDFs found.</p>"
-          
-          out.parent.mkdir(parents=True, exist_ok=True)
-          html_content = f'''<!doctype html>
-          <html lang="en">
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width,initial-scale=1">
-            <title>LaTeX PDFs</title>
-            <style>
-              body{{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:1100px;margin:2rem auto;padding:0 1rem;line-height:1.45}}
-              header{{margin-bottom:1.5rem}}
-              .title{{font-size:1.6rem;font-weight:700;margin:0}}
-              .sub{{margin:.25rem 0 0 0;color:#444}}
-              ul.files{{margin:.25rem 0 1rem 1.25rem}}
-              ul.files li{{margin:.15rem 0}}
-              a{{text-decoration:none}}
-              a:hover{{text-decoration:underline}}
-              h1,h2,h3,h4,h5,h6{{margin:1.2rem 0 .5rem 0}}
-            </style>
-          </head>
-          <body>
-            <header>
-              <p class="title">LaTeX PDFs</p>
-              <p class="sub">Generated from <code>src/</code>; browse by directory.</p>
-            </header>
-            {body}
-          </body>
-          </html>
-          '''
-          out.write_text(html_content, encoding="utf-8")
-          PY
+          mkdir -p docs/pdfs
+          # Copy build outputs into docs/ for GitHub Pages publishing
+          cp -v build/pdfs/*.pdf docs/pdfs/ || true
 
-      - name: Auto-commit PDFs and Pages index
-        uses: stefanzweifel/git-auto-commit-action@v6
+      - name: Commit updated PDFs and index
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore(pdfs): build LaTeX PDFs for Pages"
-          file_pattern: |
-            docs/index.html
-            docs/pdfs/**/*.pdf
+          commit_message: "docs(pdfs): refresh rendered PDFs"
+          file_pattern: docs/**
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

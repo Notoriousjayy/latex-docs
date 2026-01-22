@@ -1,4 +1,4 @@
-name: LaTeX CI (build check)
+name: LaTeX CI
 
 on:
   workflow_dispatch:
@@ -9,50 +9,62 @@ on:
       - "src/**/png/*.png"
       - "src/**/svg/*.svg"
       - "src/**/jpg/*.jpg"
+  push:
+    branches: ["main"]
+    paths:
+      - "src/**/*.tex"
+      - ".github/workflows/latex-ci.yml"
+      - "src/**/png/*.png"
+      - "src/**/svg/*.svg"
+      - "src/**/jpg/*.jpg"
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    # Use a TeX Live image for reproducible builds. Note: this image is not Debian-based, so apt-get may not exist.
     container:
       image: ghcr.io/xu-cheng/texlive-full:latest
+      options: --user 0
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Inkscape (for \includesvg)
-        shell: bash
-        run: |
-          set -euo pipefail
-          apt-get update -y
-          apt-get install -y --no-install-recommends inkscape
-
-      - name: Build all PDFs under src/
+      - name: Install Inkscape (required for LaTeX SVG conversion)
         shell: bash
         run: |
           set -euo pipefail
 
-          ROOT="src"
-          mapfile -d '' TEX_FILES < <(find "$ROOT" -type f -name "*.tex" -print0)
-
-          if [[ ${#TEX_FILES[@]} -eq 0 ]]; then
-            echo "No .tex files found under ${ROOT}/"
+          if command -v inkscape >/dev/null 2>&1; then
+            echo "Inkscape already installed:"
+            inkscape -V || true
             exit 0
           fi
 
-          for tex in "${TEX_FILES[@]}"; do
-            dir="$(dirname "$tex")"
-            file="$(basename "$tex")"
-            echo "Building: ${tex}"
+          echo "Installing Inkscape inside job container..."
+          if command -v apk >/dev/null 2>&1; then
+            apk update
+            apk add --no-cache inkscape
+          elif command -v apt-get >/dev/null 2>&1; then
+            apt-get update
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends inkscape
+            rm -rf /var/lib/apt/lists/*
+          elif command -v dnf >/dev/null 2>&1; then
+            dnf install -y inkscape
+          elif command -v yum >/dev/null 2>&1; then
+            yum install -y inkscape
+          else
+            echo "ERROR: No supported package manager found in container."
+            cat /etc/os-release || true
+            exit 1
+          fi
 
-            pushd "$dir" >/dev/null
-            latexmk -lualatex -pdf -interaction=nonstopmode -halt-on-error -shell-escape "$file"
-            popd >/dev/null
-          done
+          echo "Installed Inkscape:"
+          inkscape -V
 
-      - name: Upload PDFs as build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: latex-pdfs
-          path: |
-            src/**/*.pdf
+      - name: Build all LaTeX documents
+        shell: bash
+        run: |
+          set -euo pipefail
+          make build-all
