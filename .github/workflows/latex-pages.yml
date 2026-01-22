@@ -30,7 +30,6 @@ jobs:
     uses: ./.github/workflows/_build-latex.yml
     with:
       build-all: true
-      render-plantuml: true
       upload-artifacts: true
 
   # ============================================================================
@@ -51,337 +50,226 @@ jobs:
 
       - name: Display PDF structure
         run: |
-          echo "=== PDF directory tree (showing all levels) ==="
+          echo "=== PDF directory tree ==="
           find site/pdfs -type d | sort
           echo ""
-          echo "=== All PDFs with full paths ==="
+          echo "=== All PDFs ==="
           find site/pdfs -name "*.pdf" -type f | sort
           echo ""
-          echo "Total PDFs: $(find site/pdfs -name "*.pdf" -type f | wc -l)"
+          echo "Total PDFs: $(find site/pdfs -name '*.pdf' -type f | wc -l)"
 
       - name: Generate index.html
         run: |
-                    set -euo pipefail
+          set -euo pipefail
 
-                    slugify() {
-                      # Lowercase; replace non-alnum with dashes; collapse dashes; trim.
-                      echo "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//; s/-+/-/g'
-                    }
+          slugify() {
+            echo "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//; s/-+/-/g'
+          }
 
-                    mkdir -p site
+          mkdir -p site
 
-                    total=$(find site/pdfs -name "*.pdf" -type f 2>/dev/null | wc -l | tr -d ' ')
-                    categories=$(find site/pdfs -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
-                    last_updated="$(date -u +'%Y-%m-%d %H:%M UTC')"
+          total=$(find site/pdfs -name "*.pdf" -type f 2>/dev/null | wc -l | tr -d ' ')
+          categories=$(find site/pdfs -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+          last_updated="$(date -u +'%Y-%m-%d %H:%M UTC')"
 
-                    # ---------------- header (write fresh; no in-place templating) ----------------
-                    cat > site/index.html <<HTMLEOF
-                    <!DOCTYPE html>
-                    <html lang="en">
-                    <head>
-                      <meta charset="UTF-8">
-                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                      <title>LaTeX PDFs</title>
-                      <style>
-                        :root {
-                          --bg: #fafafa;
-                          --text: #222;
-                          --muted: #666;
-                          --accent: #0066cc;
-                          --border: #ddd;
-                          --hover: #f0f0f0;
-                          --panel: #ffffff;
-                        }
-                        @media (prefers-color-scheme: dark) {
-                          :root {
-                            --bg: #121212;
-                            --text: #e8e8e8;
-                            --muted: #b0b0b0;
-                            --accent: #4da6ff;
-                            --border: #3a3a3a;
-                            --hover: #1f1f1f;
-                            --panel: #161616;
-                          }
-                        }
-                        * { box-sizing: border-box; }
-                        body {
-                          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                          margin: 0;
-                          background: var(--bg);
-                          color: var(--text);
-                          line-height: 1.55;
-                        }
-                        .wrap {
-                          max-width: 1120px;
-                          margin: 0 auto;
-                          padding: 2rem 1rem 3rem 1rem;
-                        }
-                        header {
-                          border-bottom: 2px solid var(--border);
-                          padding-bottom: 1rem;
-                          margin-bottom: 1.25rem;
-                        }
-                        .title { font-size: 2rem; margin: 0; font-weight: 650; }
-                        .sub { color: var(--muted); margin: 0.5rem 0 0 0; }
-                        .sub code {
-                          background: var(--hover);
-                          padding: 0.2em 0.4em;
-                          border-radius: 4px;
-                          font-size: 0.9em;
-                        }
+          cat > site/index.html <<'HTMLEOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>LaTeX PDFs</title>
+            <style>
+              :root {
+                --bg: #fafafa;
+                --text: #222;
+                --muted: #666;
+                --accent: #0066cc;
+                --border: #ddd;
+                --hover: #f0f0f0;
+                --panel: #ffffff;
+              }
+              @media (prefers-color-scheme: dark) {
+                :root {
+                  --bg: #121212;
+                  --text: #e8e8e8;
+                  --muted: #b0b0b0;
+                  --accent: #4da6ff;
+                  --border: #3a3a3a;
+                  --hover: #1f1f1f;
+                  --panel: #161616;
+                }
+              }
+              * { box-sizing: border-box; }
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                margin: 0;
+                background: var(--bg);
+                color: var(--text);
+                line-height: 1.55;
+              }
+              .wrap { max-width: 1120px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+              header { border-bottom: 2px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.25rem; }
+              .title { font-size: 2rem; margin: 0; font-weight: 650; }
+              .sub { color: var(--muted); margin: 0.5rem 0 0; }
+              .sub code { background: var(--hover); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
+              .topbar { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; align-items: center; justify-content: space-between; margin: 1rem 0 1.25rem; }
+              .stats { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+              .stat { background: var(--panel); border: 1px solid var(--border); padding: 0.75rem 0.9rem; border-radius: 10px; min-width: 150px; }
+              .stat-value { font-size: 1.35rem; font-weight: 700; }
+              .stat-label { font-size: 0.85rem; color: var(--muted); }
+              .search input { width: min(520px, 100%); padding: 0.65rem 0.75rem; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); color: var(--text); outline: none; }
+              .search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+              nav.jump { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem 0.9rem; margin: 0 0 1.5rem; }
+              nav.jump .label { font-weight: 600; margin: 0 0 0.5rem; }
+              nav.jump a { color: var(--accent); text-decoration: none; margin-right: 0.9rem; white-space: nowrap; }
+              h1, h2, h3, h4, h5, h6 { margin: 1.5rem 0 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+              ul.files { list-style: none; padding: 0; margin: 0.5rem 0 1.5rem; }
+              ul.files li { padding: 0.45rem 0.6rem; border-radius: 6px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; }
+              ul.files li:hover { background: var(--hover); }
+              ul.files li.hidden { display: none; }
+              a.pdf { color: var(--accent); text-decoration: none; font-weight: 500; }
+              a.pdf:hover { text-decoration: underline; }
+              .path { color: var(--muted); font-size: 0.8rem; word-break: break-all; }
+              .updated { margin-top: 2.5rem; color: var(--muted); font-size: 0.85rem; text-align: center; }
+              .hint { color: var(--muted); font-size: 0.85rem; }
+            </style>
+          </head>
+          <body>
+            <div class="wrap">
+              <header>
+                <h1 class="title">📄 LaTeX PDFs</h1>
+                <p class="sub">Published from <code>src/**/*.tex</code> roots on the <code>main</code> branch.</p>
+              </header>
+              <div class="topbar">
+                <div class="stats">
+                  <div class="stat">
+                    <div class="stat-value" id="total-count">0</div>
+                    <div class="stat-label">Documents</div>
+                  </div>
+                  <div class="stat">
+                    <div class="stat-value" id="cat-count">0</div>
+                    <div class="stat-label">Categories</div>
+                  </div>
+                </div>
+                <div class="search">
+                  <input id="q" type="search" placeholder="Filter by filename or path..." autocomplete="off" />
+                  <span class="hint" id="count"></span>
+                </div>
+              </div>
+          HTMLEOF
 
-                        .topbar {
-                          display: flex;
-                          flex-wrap: wrap;
-                          gap: 0.75rem 1rem;
-                          align-items: center;
-                          justify-content: space-between;
-                          margin: 1rem 0 1.25rem 0;
-                        }
+          # Add jump navigation
+          echo '<nav class="jump"><div class="label">Jump to:</div><div>' >> site/index.html
+          while IFS= read -r cat; do
+            if find "site/pdfs/$cat" -name "*.pdf" -type f 2>/dev/null | grep -q .; then
+              cid="$(slugify "$cat")"
+              echo "<a href=\"#${cid}\">${cat}</a>" >> site/index.html
+            fi
+          done < <(find site/pdfs -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort)
+          echo '</div></nav>' >> site/index.html
 
-                        .stats {
-                          display: flex;
-                          gap: 0.75rem;
-                          flex-wrap: wrap;
-                        }
-                        .stat {
-                          background: var(--panel);
-                          border: 1px solid var(--border);
-                          padding: 0.75rem 0.9rem;
-                          border-radius: 10px;
-                          min-width: 150px;
-                        }
-                        .stat-value { font-size: 1.35rem; font-weight: 700; }
-                        .stat-label { font-size: 0.85rem; color: var(--muted); }
+          echo '<main id="content">' >> site/index.html
 
-                        .search {
-                          display: flex;
-                          align-items: center;
-                          gap: 0.5rem;
-                        }
-                        .search input {
-                          width: min(520px, 100%);
-                          padding: 0.65rem 0.75rem;
-                          border-radius: 10px;
-                          border: 1px solid var(--border);
-                          background: var(--panel);
-                          color: var(--text);
-                          outline: none;
-                        }
-                        .search input:focus {
-                          border-color: var(--accent);
-                          box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
-                        }
-                        .hint {
-                          color: var(--muted);
-                          font-size: 0.85rem;
-                        }
+          # Generate content sections
+          generate_section() {
+            local dir="$1"
+            local depth="$2"
+            local prefix="$3"
 
-                        nav.jump {
-                          background: var(--panel);
-                          border: 1px solid var(--border);
-                          border-radius: 12px;
-                          padding: 0.75rem 0.9rem;
-                          margin: 0 0 1.5rem 0;
-                        }
-                        nav.jump .label {
-                          font-weight: 600;
-                          margin: 0 0 0.5rem 0;
-                        }
-                        nav.jump a {
-                          color: var(--accent);
-                          text-decoration: none;
-                          margin-right: 0.9rem;
-                          white-space: nowrap;
-                        }
-                        nav.jump a:hover { text-decoration: underline; }
+            local dname
+            dname="$(basename "$dir")"
+            [[ "$dname" == .* ]] && return
 
-                        h1, h2, h3, h4, h5, h6 {
-                          margin: 1.75rem 0 0.5rem 0;
-                          font-weight: 600;
-                        }
-                        h1 { font-size: 1.35rem; border-bottom: 1px solid var(--border); padding-bottom: 0.35rem; }
-                        h2 { font-size: 1.15rem; }
-                        h3, h4, h5, h6 { font-size: 1rem; color: var(--muted); }
+            local total_pdfs
+            total_pdfs=$(find "$dir" -name "*.pdf" -type f 2>/dev/null | wc -l | tr -d ' ')
+            [[ "$total_pdfs" == "0" ]] && return
 
-                        ul.files {
-                          list-style: none;
-                          padding: 0;
-                          margin: 0.5rem 0 0 0;
-                        }
-                        ul.files li {
-                          padding: 0.5rem 0.6rem;
-                          border-radius: 8px;
-                          display: flex;
-                          flex-wrap: wrap;
-                          align-items: baseline;
-                          gap: 0.5rem;
-                        }
-                        ul.files li:hover { background: var(--hover); }
-                        ul.files li.hidden { display: none; }
-                        a.pdf {
-                          color: var(--accent);
-                          text-decoration: none;
-                          font-weight: 500;
-                        }
-                        a.pdf:hover { text-decoration: underline; }
-                        .path {
-                          color: var(--muted);
-                          font-size: 0.8rem;
-                          word-break: break-all;
-                        }
+            local pdfs=()
+            while IFS= read -r -d '' f; do
+              pdfs+=("$f")
+            done < <(find "$dir" -maxdepth 1 -name "*.pdf" -type f -print0 2>/dev/null | sort -z)
 
-                        .updated {
-                          margin-top: 2.5rem;
-                          color: var(--muted);
-                          font-size: 0.85rem;
-                          text-align: center;
-                        }
-                      </style>
-                    </head>
-                    <body>
-                      <div class="wrap">
-                        <header>
-                          <h1 class="title">📄 LaTeX PDFs</h1>
-                          <p class="sub">Published from <code>src/**/*.tex</code> roots on the <code>main</code> branch.</p>
-                        </header>
+            local subdirs=()
+            while IFS= read -r -d '' d; do
+              subdirs+=("$d")
+            done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null | sort -z)
 
-                        <div class="topbar">
-                          <div class="stats">
-                            <div class="stat">
-                              <div class="stat-value">${total}</div>
-                              <div class="stat-label">Documents</div>
-                            </div>
-                            <div class="stat">
-                              <div class="stat-value">${categories}</div>
-                              <div class="stat-label">Categories</div>
-                            </div>
-                          </div>
-                          <div class="search">
-                            <input id="q" type="search" placeholder="Filter by filename or path (e.g., ghas, finops, diagrams)..." autocomplete="off" />
-                            <span class="hint" id="count"></span>
-                          </div>
-                        </div>
-                    HTMLEOF
+            local htag="h$((depth > 6 ? 6 : depth))"
+            local id
+            if [[ $depth -eq 1 ]]; then
+              id="$(slugify "$dname")"
+            else
+              id="$(slugify "${prefix}-${dname}")"
+            fi
 
-                    # ---------------- quick jump nav ----------------
-                    echo '<nav class="jump"><div class="label">Jump to:</div><div>' >> site/index.html
-                    while IFS= read -r cat; do
-                      if find "site/pdfs/$cat" -name "*.pdf" -type f 2>/dev/null | grep -q .; then
-                        cid="$(slugify "$cat")"
-                        echo "<a href=\"#${cid}\">${cat}</a>" >> site/index.html
-                      fi
-                    done < <(find site/pdfs -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort)
-                    echo '</div></nav>' >> site/index.html
+            echo "<${htag} id=\"${id}\">${dname}</${htag}>" >> site/index.html
 
-                    echo '<main id="content">' >> site/index.html
+            if [[ ${#pdfs[@]} -gt 0 ]]; then
+              echo '<ul class="files">' >> site/index.html
+              for pdf in "${pdfs[@]}"; do
+                local fname rel
+                fname="$(basename "$pdf")"
+                rel="${pdf#site/}"
+                echo "<li><a class=\"pdf\" href=\"${rel}\" title=\"${rel}\">${fname}</a><span class=\"path\">${rel}</span></li>" >> site/index.html
+              done
+              echo '</ul>' >> site/index.html
+            fi
 
-                    # ---------------- content generator ----------------
-                    generate_section() {
-                      local dir="$1"
-                      local depth="$2"
-                      local prefix="$3"
+            for subdir in "${subdirs[@]}"; do
+              generate_section "$subdir" $((depth + 1)) "${prefix}-${dname}"
+            done
+          }
 
-                      local dname
-                      dname="$(basename "$dir")"
-                      [[ "$dname" == .* ]] && return
+          while IFS= read -r category; do
+            generate_section "site/pdfs/$category" 1 "$category"
+          done < <(find site/pdfs -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort)
 
-                      local total_pdfs
-                      total_pdfs=$(find "$dir" -name "*.pdf" -type f 2>/dev/null | wc -l | tr -d ' ')
-                      [[ "$total_pdfs" == "0" ]] && return
+          # Footer and script
+          cat >> site/index.html <<FOOTEREOF
+          </main>
+              <p class="updated">Last updated: ${last_updated}</p>
+            </div>
+            <script>
+              (function () {
+                const input = document.getElementById('q');
+                const count = document.getElementById('count');
+                const totalEl = document.getElementById('total-count');
+                const catEl = document.getElementById('cat-count');
 
-                      local pdfs=()
-                      while IFS= read -r -d '' f; do
-                        pdfs+=("$f")
-                      done < <(find "$dir" -maxdepth 1 -name "*.pdf" -type f -print0 2>/dev/null | sort -z)
+                function normalize(s) { return (s || '').toLowerCase(); }
 
-                      local subdirs=()
-                      while IFS= read -r -d '' d; do
-                        subdirs+=("$d")
-                      done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null | sort -z)
+                function update() {
+                  const q = normalize(input.value).trim();
+                  const items = document.querySelectorAll('ul.files li');
+                  let visible = 0;
 
-                      local htag="h1"
-                      case $depth in
-                        1) htag="h1" ;;
-                        2) htag="h2" ;;
-                        3) htag="h3" ;;
-                        4) htag="h4" ;;
-                        5) htag="h5" ;;
-                        *) htag="h6" ;;
-                      esac
+                  items.forEach(li => {
+                    const text = normalize(li.textContent);
+                    const ok = !q || text.includes(q);
+                    li.classList.toggle('hidden', !ok);
+                    if (ok) visible++;
+                  });
 
-                      local id
-                      if [[ $depth -eq 1 ]]; then
-                        id="$(slugify "$dname")"
-                      else
-                        id="$(slugify "${prefix}-${dname}")"
-                      fi
+                  count.textContent = q ? visible + ' match(es)' : items.length + ' document(s)';
+                }
 
-                      echo "<${htag} id=\"${id}\">${dname}</${htag}>" >> site/index.html
+                totalEl.textContent = '${total}';
+                catEl.textContent = '${categories}';
+                input.addEventListener('input', update);
+                update();
+              })();
+            </script>
+          </body>
+          </html>
+          FOOTEREOF
 
-                      if [[ ${#pdfs[@]} -gt 0 ]]; then
-                        echo '<ul class="files">' >> site/index.html
-                        for pdf in "${pdfs[@]}"; do
-                          local fname rel
-                          fname="$(basename "$pdf")"
-                          rel="${pdf#site/}"  # -> pdfs/...
-                          echo "<li><a class=\"pdf\" href=\"${rel}\" title=\"${rel}\">${fname}</a><span class=\"path\">${rel}</span></li>" >> site/index.html
-                        done
-                        echo '</ul>' >> site/index.html
-                      fi
+          echo "Generated index.html with ${total} documents in ${categories} categories"
 
-                      for subdir in "${subdirs[@]}"; do
-                        generate_section "$subdir" $((depth + 1)) "${prefix}-${dname}"
-                      done
-                    }
-
-                    while IFS= read -r category; do
-                      generate_section "site/pdfs/$category" 1 "$category"
-                    done < <(find site/pdfs -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort)
-
-                    # ---------------- footer + search ----------------
-                    cat >> site/index.html <<FOOTEREOF
-                    </main>
-
-                        <p class="updated">Last updated: ${last_updated}</p>
-                      </div>
-
-                      <script>
-                        (function () {
-                          const input = document.getElementById('q');
-                          const count = document.getElementById('count');
-
-                          function normalize(s) { return (s || '').toLowerCase(); }
-
-                          function update() {
-                            const q = normalize(input.value).trim();
-                            const items = document.querySelectorAll('ul.files li');
-                            let visible = 0;
-
-                            items.forEach(li => {
-                              const text = normalize(li.textContent);
-                              const ok = !q || text.includes(q);
-                              li.classList.toggle('hidden', !ok);
-                              if (ok) visible++;
-                            });
-
-                            count.textContent = q ? `${visible} match(es)` : `${items.length} document(s)`;
-                          }
-
-                          input.addEventListener('input', update);
-                          update();
-                        })();
-                      </script>
-                    </body>
-                    </html>
-                    FOOTEREOF
-
-                    echo "Generated index.html with ${total} documents in ${categories} categories"
-      - name: Copy build logs (optional)
+      - name: Copy build logs
         run: |
-          # Copy log files for debugging if they exist
           mkdir -p site/logs
-          find site/pdfs -name "*.log.txt" -o -name "*.stderr.txt" -o -name "*.stdout.txt" | while read f; do
+          find site/pdfs -name "*.log.txt" -o -name "*.stderr.txt" -o -name "*.stdout.txt" 2>/dev/null | while read -r f; do
             rel="${f#site/pdfs/}"
             dest="site/logs/$rel"
             mkdir -p "$(dirname "$dest")"

@@ -1,5 +1,6 @@
 # .github/workflows/_build-latex.yml
 # Reusable workflow for building LaTeX documents
+# Renders PlantUML diagrams inline before compilation (no external dependencies)
 name: _Build LaTeX (Reusable)
 
 on:
@@ -13,10 +14,6 @@ on:
         description: 'Category filter (architecture, devops, security, etc.) or empty for all'
         type: string
         default: ''
-      render-plantuml:
-        description: 'Render PlantUML diagrams before building'
-        type: boolean
-        default: true
       upload-artifacts:
         description: 'Upload built PDFs as artifacts'
         type: boolean
@@ -38,7 +35,6 @@ jobs:
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
       has-changes: ${{ steps.changes.outputs.has-changes }}
-      plantuml-changed: ${{ steps.changes.outputs.plantuml }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -50,24 +46,18 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Force build-all if explicitly requested or workflow_dispatch
           if [[ "${{ inputs.build-all }}" == "true" ]]; then
             echo "Build-all requested"
             echo "has-changes=true" >> "$GITHUB_OUTPUT"
-            echo "plantuml=true" >> "$GITHUB_OUTPUT"
-            echo "changed-files=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "Manual trigger - building everything"
             echo "has-changes=true" >> "$GITHUB_OUTPUT"
-            echo "plantuml=true" >> "$GITHUB_OUTPUT"
-            echo "changed-files=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          # Get changed files
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD 2>/dev/null || echo "")
           else
@@ -88,43 +78,26 @@ jobs:
             echo "has-changes=false" >> "$GITHUB_OUTPUT"
           fi
 
-          if [[ -n "$PUML_CHANGES" || -n "$WORKFLOW_CHANGES" || -z "$CHANGED" ]]; then
-            echo "plantuml=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "plantuml=false" >> "$GITHUB_OUTPUT"
-          fi
-
-          printf 'changed-files<<EOF\n%s\nEOF\n' "$CHANGED" >> "$GITHUB_OUTPUT"
-
       - name: Build matrix of document categories
         id: matrix
         run: |
           set -euo pipefail
 
           CATEGORY="${{ inputs.document-category }}"
-
-          # Directories to exclude (not LaTeX document categories)
           EXCLUDE_DIRS="common|jpg|png|svg|puml"
 
           if [[ -n "$CATEGORY" ]]; then
             echo "matrix={\"category\":[\"$CATEGORY\"]}" >> "$GITHUB_OUTPUT"
           else
-            # Auto-discover categories, excluding non-document directories
-            # Only include directories that contain .tex files with \documentclass
             CATEGORIES=()
             for dir in src/*/; do
               dirname=$(basename "$dir")
-              # Skip excluded directories
               if echo "$dirname" | grep -qE "^($EXCLUDE_DIRS)$"; then
-                echo "Skipping non-document directory: $dirname"
                 continue
               fi
-              # Check if directory contains any root .tex files (use -quit to avoid broken pipe)
               if find "$dir" -name '*.tex' -type f -exec grep -l '^\s*\\documentclass' {} \; -quit 2>/dev/null | grep -q .; then
                 CATEGORIES+=("$dirname")
                 echo "Found document category: $dirname"
-              else
-                echo "Skipping directory with no documents: $dirname"
               fi
             done
 
@@ -133,59 +106,16 @@ jobs:
               exit 1
             fi
 
-            # Convert to JSON array
             MATRIX_JSON=$(printf '%s\n' "${CATEGORIES[@]}" | jq -R . | jq -sc .)
-            echo "Discovered categories: $MATRIX_JSON"
             echo "matrix={\"category\":$MATRIX_JSON}" >> "$GITHUB_OUTPUT"
           fi
 
   # ============================================================================
-  # Stage 2: Render PlantUML diagrams (if needed)
-  # ============================================================================
-  plantuml:
-    needs: prepare
-    if: needs.prepare.outputs.has-changes == 'true' && inputs.render-plantuml == true
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Render PlantUML
-        uses: ./.github/actions/render-plantuml
-        with:
-          source-dir: src
-          formats: 'png svg'
-
-      - name: Verify rendered diagrams
-        run: |
-          echo "=== Checking for rendered PlantUML outputs ==="
-          echo ""
-          echo "SVG files:"
-          find src -type f -name "*.svg" | head -50 || echo "  (none found)"
-          echo ""
-          echo "PNG files:"
-          find src -type f -name "*.png" | head -50 || echo "  (none found)"
-          echo ""
-          echo "Looking specifically in pipe-and-filter directory:"
-          ls -la src/architecture/views-and-beyond/component-connector-viewtype/pipe-and-filter/ 2>/dev/null || echo "  Directory not found"
-          ls -la src/architecture/views-and-beyond/component-connector-viewtype/pipe-and-filter/svg/ 2>/dev/null || echo "  svg/ subdirectory not found"
-
-      - name: Upload rendered diagrams
-        uses: actions/upload-artifact@v4
-        with:
-          name: plantuml-diagrams
-          path: |
-            src/**/png/*.png
-            src/**/svg/*.svg
-          retention-days: 1
-          if-no-files-found: warn
-
-  # ============================================================================
-  # Stage 3: Build documents in parallel by category
+  # Stage 2: Build documents (with inline PlantUML rendering)
   # ============================================================================
   build:
-    needs: [prepare, plantuml]
-    if: always() && needs.prepare.outputs.has-changes == 'true' && (needs.plantuml.result == 'success' || needs.plantuml.result == 'skipped')
+    needs: prepare
+    if: needs.prepare.outputs.has-changes == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -195,33 +125,124 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download PlantUML artifacts
-        if: inputs.render-plantuml == true && needs.plantuml.result == 'success'
-        uses: actions/download-artifact@v4
-        with:
-          name: plantuml-diagrams
-          path: .
-        continue-on-error: true
-
-      - name: Verify PlantUML artifacts downloaded
+      # ----------------------------------------------------------------------
+      # PlantUML Rendering (inline, no external action dependency)
+      # ----------------------------------------------------------------------
+      - name: Install PlantUML
         run: |
-          echo "=== Verifying PlantUML artifacts in workspace ==="
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends plantuml graphviz default-jre-headless
+
+      - name: Render PlantUML diagrams for ${{ matrix.category }}
+        run: |
+          set -euo pipefail
+          
+          CATEGORY_DIR="src/${{ matrix.category }}"
+          CONFIG_NAMES=("plantuml-config.puml" "config.puml")
+          FORMATS=(png svg)
+          
+          echo "=== Rendering PlantUML diagrams in $CATEGORY_DIR ==="
+          
+          # Function to find nearest config file
+          find_config() {
+            local start_dir="$1"
+            local d="$start_dir"
+            while true; do
+              for n in "${CONFIG_NAMES[@]}"; do
+                if [[ -f "${d}/${n}" ]]; then
+                  readlink -f "${d}/${n}"
+                  return 0
+                fi
+              done
+              [[ "$d" == "src" || "$d" == "." ]] && break
+              d="$(dirname "$d")"
+            done
+            echo ""
+          }
+          
+          # Find all .puml files (excluding configs)
+          mapfile -d '' PUMLS < <(
+            find "$CATEGORY_DIR" -type f -name "*.puml" \
+              ! -name "plantuml-config.puml" \
+              ! -name "config.puml" \
+              -print0 2>/dev/null || true
+          )
+          
+          if [[ ${#PUMLS[@]} -eq 0 ]]; then
+            echo "No PlantUML diagrams found in $CATEGORY_DIR"
+            exit 0
+          fi
+          
+          echo "Found ${#PUMLS[@]} PlantUML diagrams"
+          
+          rendered=0
+          failed=0
+          
+          for puml in "${PUMLS[@]}"; do
+            [[ -z "$puml" ]] && continue
+            
+            dir="$(dirname "$puml")"
+            base="$(basename "$puml" .puml)"
+            cfg="$(find_config "$dir")"
+            
+            echo ""
+            echo "Rendering: $puml"
+            
+            for fmt in "${FORMATS[@]}"; do
+              mkdir -p "${dir}/${fmt}"
+              dest="${dir}/${fmt}/${base}.${fmt}"
+              
+              pushd "$dir" >/dev/null
+              if [[ -n "$cfg" ]]; then
+                plantuml "-t${fmt}" -o "${fmt}" -config "$cfg" "$(basename "$puml")" 2>&1 || true
+              else
+                plantuml "-t${fmt}" -o "${fmt}" "$(basename "$puml")" 2>&1 || true
+              fi
+              popd >/dev/null
+              
+              if [[ -f "$dest" ]]; then
+                echo "  ✓ ${fmt}/${base}.${fmt}"
+                ((rendered++))
+              else
+                echo "  ✗ Failed: ${fmt}/${base}.${fmt}"
+                ((failed++))
+              fi
+            done
+          done
+          
           echo ""
-          echo "SVG files found:"
-          find . -type f -name "*.svg" -path "*/svg/*" | head -30 || echo "  (none)"
+          echo "=== PlantUML Summary ==="
+          echo "Rendered: $rendered files"
+          echo "Failed: $failed files"
+
+      - name: Verify PlantUML outputs
+        run: |
+          echo "=== Verifying PlantUML outputs for ${{ matrix.category }} ==="
+          CATEGORY_DIR="src/${{ matrix.category }}"
+          
           echo ""
-          echo "PNG files found:"
-          find . -type f -name "*.png" -path "*/png/*" | head -30 || echo "  (none)"
+          echo "SVG files:"
+          find "$CATEGORY_DIR" -type f -name "*.svg" -path "*/svg/*" 2>/dev/null | head -20 || echo "  (none)"
+          
           echo ""
-          echo "Checking pipe-and-filter specifically:"
-          if [[ -d "src/architecture/views-and-beyond/component-connector-viewtype/pipe-and-filter/svg" ]]; then
-            ls -la src/architecture/views-and-beyond/component-connector-viewtype/pipe-and-filter/svg/
-          else
-            echo "  WARNING: svg/ directory does not exist!"
-            echo "  Contents of pipe-and-filter/:"
-            ls -la src/architecture/views-and-beyond/component-connector-viewtype/pipe-and-filter/ 2>/dev/null || echo "    (directory not found)"
+          echo "PNG files:"
+          find "$CATEGORY_DIR" -type f -name "*.png" -path "*/png/*" 2>/dev/null | head -20 || echo "  (none)"
+          
+          # Specific check for pipe-and-filter if in architecture category
+          if [[ "${{ matrix.category }}" == "architecture" ]]; then
+            echo ""
+            echo "Checking pipe-and-filter directory:"
+            pf_dir="src/architecture/views-and-beyond/component-connector-viewtype/pipe-and-filter"
+            if [[ -d "$pf_dir/svg" ]]; then
+              ls -la "$pf_dir/svg/" | head -15
+            else
+              echo "  WARNING: $pf_dir/svg/ does not exist"
+            fi
           fi
 
+      # ----------------------------------------------------------------------
+      # LaTeX Setup and Compilation
+      # ----------------------------------------------------------------------
       - name: Setup LaTeX
         uses: ./.github/actions/setup-latex
 
@@ -235,49 +256,47 @@ jobs:
           cache-aux-files: 'true'
 
       - name: Collect PDFs for upload
+        id: collect
         run: |
           set -euo pipefail
-
-          echo "=== Collecting PDFs from src/${{ matrix.category }} ==="
-          echo ""
-
-          # List all PDFs that will be collected (for debugging)
-          echo "Found PDFs:"
-          find "src/${{ matrix.category }}" -name "*.pdf" -type f | sort
-          echo ""
-
-          # Use print0/read -d '' for safe handling of paths with spaces or special chars
+          
+          CATEGORY="${{ matrix.category }}"
+          echo "Collecting PDFs for category: $CATEGORY"
+          
+          mkdir -p "collected-pdfs/${CATEGORY}"
+          
+          # Find all PDFs and preserve directory structure
           while IFS= read -r -d '' pdf; do
-            # Get path relative to src/
+            # Get relative path from src/
             rel_path="${pdf#src/}"
-            # Get the full directory path
-            rel_dir="$(dirname "$rel_path")"
-            dest_dir="collected-pdfs/${rel_dir}"
-
-            echo "Copying: $pdf"
-            echo "  -> $dest_dir/$(basename "$pdf")"
-
+            dest_dir="collected-pdfs/$(dirname "$rel_path")"
             mkdir -p "$dest_dir"
             cp "$pdf" "$dest_dir/"
-          done < <(find "src/${{ matrix.category }}" -name "*.pdf" -type f -print0)
-
-          echo ""
-          echo "=== Final collected structure ==="
-          find collected-pdfs -type f -name "*.pdf" | sort
-          echo ""
-          echo "Total: $(find collected-pdfs -name "*.pdf" -type f | wc -l) PDFs"
+            echo "Collected: $rel_path"
+          done < <(find "src/${CATEGORY}" -name "*.pdf" -type f -print0 2>/dev/null)
+          
+          # Also collect build logs
+          while IFS= read -r -d '' log; do
+            rel_path="${log#src/}"
+            dest_dir="collected-pdfs/$(dirname "$rel_path")"
+            mkdir -p "$dest_dir"
+            cp "$log" "$dest_dir/"
+          done < <(find "src/${CATEGORY}" \( -name "*.log.txt" -o -name "*.build.stdout.txt" -o -name "*.build.stderr.txt" \) -type f -print0 2>/dev/null)
+          
+          count=$(find "collected-pdfs" -name "*.pdf" -type f 2>/dev/null | wc -l)
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "Collected $count PDFs"
 
       - name: Upload category PDFs
-        if: inputs.upload-artifacts == true
         uses: actions/upload-artifact@v4
         with:
           name: pdfs-${{ matrix.category }}
           path: collected-pdfs
-          retention-days: 14
-          if-no-files-found: ignore
+          retention-days: 7
+          if-no-files-found: warn
 
   # ============================================================================
-  # Stage 4: Aggregate results
+  # Stage 3: Aggregate all PDFs into single artifact
   # ============================================================================
   aggregate:
     needs: build
@@ -293,45 +312,37 @@ jobs:
           path: all-pdfs
           merge-multiple: false
 
-      - name: Organize and count PDFs
+      - name: Merge PDFs
         id: count
         run: |
           set -euo pipefail
-
-          echo "=== Downloaded artifact structure ==="
-          # NOTE: with 'set -o pipefail', find|head can fail due to SIGPIPE when head exits early.
-          # Wrap the pipeline so it's non-fatal and we keep strict error handling for everything else.
-          ( find all-pdfs -type d | head -30 ) || true
-          echo ""
-
+          
+          echo "=== Downloaded artifacts ==="
+          find all-pdfs -type d | head -30 || true
+          
           mkdir -p merged-pdfs
-
-          # Merge all category artifacts preserving full structure
+          
           for artifact_dir in all-pdfs/pdfs-*/; do
             if [[ -d "$artifact_dir" ]]; then
               echo "Merging from: $artifact_dir"
-              # Use rsync-like behavior: -r for recursive, preserve structure
               cp -r "$artifact_dir"/* merged-pdfs/ 2>/dev/null || true
             fi
           done
-
+          
           echo ""
-          echo "=== Merged PDF structure (showing directories) ==="
-          ( find merged-pdfs -type d | sort | head -50 ) || true
-          echo ""
-
+          echo "=== Merged structure ==="
+          find merged-pdfs -type d | sort | head -50 || true
+          
           total=$(find merged-pdfs -name "*.pdf" -type f 2>/dev/null | wc -l || echo 0)
           echo "total=$total" >> "$GITHUB_OUTPUT"
-          echo "Total PDFs: $total"
-
           echo ""
-          echo "=== PDF listing (first 50) ==="
-          ( find merged-pdfs -name "*.pdf" -type f | sort | head -50 ) || true
-          if [[ $total -gt 50 ]]; then
-            echo "... and $((total - 50)) more"
-          fi
+          echo "Total PDFs: $total"
+          
+          echo ""
+          echo "=== All PDFs ==="
+          find merged-pdfs -name "*.pdf" -type f | sort | head -100
 
-      - name: Merge into single artifact
+      - name: Upload merged artifact
         if: inputs.upload-artifacts == true
         uses: actions/upload-artifact@v4
         with:
@@ -357,150 +368,3 @@ jobs:
               fi
             done
           } >> "$GITHUB_STEP_SUMMARY"
-
-
-      - name: Build missing standalone LaTeX roots (recursive)
-        run: |
-          set -euo pipefail
-          category_dir="src/${{ matrix.category }}"
-          echo "=== Ensuring standalone roots under $category_dir have PDFs ==="
-
-          mapfile -t roots < <(grep -RIl --include='*.tex' '^[[:space:]]*\\documentclass' "$category_dir" || true)
-
-          if [[ "${#roots[@]}" -eq 0 ]]; then
-            echo "No standalone roots found under $category_dir"
-            exit 0
-          fi
-
-          compile_root() {
-            local tex="$1"
-            local dir base engine pdf stdout stderr log
-            dir="$(dirname "$tex")"
-            base="$(basename "$tex" .tex)"
-            pdf="$dir/$base.pdf"
-
-            if [[ -f "$pdf" ]]; then
-              return 0
-            fi
-
-            echo ""
-            echo "Missing PDF for: $tex"
-            echo "Compiling to: $pdf"
-
-            # Detect engine via TeX directive; default pdflatex
-            engine="pdflatex"
-            if grep -q -i -m1 '^% *!TeX program *= *lualatex' "$tex"; then engine="lualatex"; fi
-            if grep -q -i -m1 '^% *!TeX program *= *xelatex' "$tex"; then engine="xelatex"; fi
-
-            stdout="$dir/$base.build.stdout.txt"
-            stderr="$dir/$base.build.stderr.txt"
-            log="$dir/$base.log.txt"
-
-            rm -f "$stdout" "$stderr" "$log" || true
-
-            if command -v latexmk >/dev/null 2>&1; then
-              if [[ "$engine" == "lualatex" ]]; then
-                (cd "$dir" && latexmk -lualatex -interaction=nonstopmode -halt-on-error "$base.tex") >"$stdout" 2>"$stderr" || true
-              elif [[ "$engine" == "xelatex" ]]; then
-                (cd "$dir" && latexmk -xelatex -interaction=nonstopmode -halt-on-error "$base.tex") >"$stdout" 2>"$stderr" || true
-              else
-                (cd "$dir" && latexmk -pdf -interaction=nonstopmode -halt-on-error "$base.tex") >"$stdout" 2>"$stderr" || true
-              fi
-            else
-              (cd "$dir" && "$engine" -interaction=nonstopmode -halt-on-error "$base.tex") >"$stdout" 2>"$stderr" || true
-              (cd "$dir" && "$engine" -interaction=nonstopmode -halt-on-error "$base.tex") >>"$stdout" 2>>"$stderr" || true
-            fi
-
-            if [[ -f "$dir/$base.log" ]]; then
-              cp -f "$dir/$base.log" "$log" || true
-            fi
-
-            if [[ ! -f "$pdf" ]]; then
-              echo "ERROR: Build failed for $tex (no PDF produced)."
-              echo ""
-              echo "---- stderr (first 200 lines) ----"
-              sed -n '1,200p' "$stderr" || true
-              echo ""
-              echo "---- log (first 200 lines) ----"
-              sed -n '1,200p' "$log" || true
-              exit 1
-            fi
-          }
-
-          for tex in "${roots[@]}"; do
-            compile_root "$tex"
-          done
-
-      - name: Enforce canonical path for pipe-and-filter PDF (src)
-        if: ${{ matrix.category == 'architecture' }}
-        run: |
-          set -euo pipefail
-          base="src/architecture/views-and-beyond/component-connector-viewtype"
-          tex="$base/pipe-and-filter/pipe-and-filter-style.tex"
-          expected="$base/pipe-and-filter/pipe-and-filter-style.pdf"
-          flat="$base/pipe-and-filter-style.pdf"
-
-          mkdir -p "$(dirname "$expected")"
-
-          # Always enforce canonical location: move a flat PDF into the subsection folder (overwrites canonical)
-          if [[ -f "$flat" ]]; then
-            mv -f "$flat" "$expected"
-          fi
-
-          # If canonical is missing but the TeX root exists, try to build it directly (captures logs next to the root).
-          if [[ ! -f "$expected" && -f "$tex" ]]; then
-            dir="$(dirname "$tex")"
-            name="$(basename "$tex" .tex)"
-
-            engine="pdflatex"
-            if grep -q -i -m1 '^% *!TeX program *= *lualatex' "$tex"; then engine="lualatex"; fi
-            if grep -q -i -m1 '^% *!TeX program *= *xelatex' "$tex"; then engine="xelatex"; fi
-
-            stdout="$dir/$name.build.stdout.txt"
-            stderr="$dir/$name.build.stderr.txt"
-            logtxt="$dir/$name.log.txt"
-
-            rm -f "$stdout" "$stderr" "$logtxt" || true
-
-            echo "Canonical PDF missing; compiling $tex (engine=$engine)"
-            if command -v latexmk >/dev/null 2>&1; then
-              if [[ "$engine" == "lualatex" ]]; then
-                (cd "$dir" && latexmk -lualatex -interaction=nonstopmode -halt-on-error "$name.tex") >"$stdout" 2>"$stderr" || true
-              elif [[ "$engine" == "xelatex" ]]; then
-                (cd "$dir" && latexmk -xelatex -interaction=nonstopmode -halt-on-error "$name.tex") >"$stdout" 2>"$stderr" || true
-              else
-                (cd "$dir" && latexmk -pdf -interaction=nonstopmode -halt-on-error "$name.tex") >"$stdout" 2>"$stderr" || true
-              fi
-            else
-              (cd "$dir" && "$engine" -interaction=nonstopmode -halt-on-error "$name.tex") >"$stdout" 2>"$stderr" || true
-              (cd "$dir" && "$engine" -interaction=nonstopmode -halt-on-error "$name.tex") >>"$stdout" 2>>"$stderr" || true
-            fi
-
-            if [[ -f "$dir/$name.log" ]]; then
-              cp -f "$dir/$name.log" "$logtxt" || true
-            fi
-          fi
-
-          # If canonical is still missing, try to locate any other matching PDF under the base folder
-          if [[ ! -f "$expected" ]]; then
-            found="$(find "$base" -maxdepth 6 -name 'pipe-and-filter-style.pdf' -type f | grep -v -F "$expected" | head -n 1 || true)"
-            if [[ -n "$found" ]]; then
-              mv -f "$found" "$expected"
-            fi
-          fi
-
-          # Remove any remaining duplicates (prevents the index from listing both flat + canonical)
-          find "$base" -maxdepth 6 -name 'pipe-and-filter-style.pdf' -type f ! -path "$expected" -print -delete || true
-
-          # Warn if still missing (non-fatal - other PDFs can still be published)
-          if [[ ! -f "$expected" ]]; then
-            echo "::warning::Missing canonical PDF: $expected"
-            echo "Candidates under $base:"
-            find "$base" -maxdepth 6 -name 'pipe-and-filter-style.pdf' -type f -print || true
-            echo ""
-            echo "If this is a build failure, check:"
-            echo "  - $base/pipe-and-filter/pipe-and-filter-style.build.stderr.txt"
-            echo "  - $base/pipe-and-filter/pipe-and-filter-style.log.txt"
-          else
-            echo "✓ Canonical PDF verified: $expected"
-          fi

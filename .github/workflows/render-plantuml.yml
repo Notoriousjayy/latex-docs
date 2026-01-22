@@ -1,23 +1,27 @@
 # .github/workflows/render-plantuml.yml
-# Standalone workflow to render PlantUML diagrams and commit back
-name: Render PlantUML Diagrams
+# OPTIONAL: Standalone workflow to render PlantUML diagrams
+#
+# Purpose: Pre-render diagrams for GitHub preview and IDE integration
+# Note: The main _build-latex.yml workflow renders diagrams inline during build,
+#       so this workflow is NOT required for PDF generation.
+#
+# Use cases:
+#   - Preview SVG diagrams directly in GitHub UI
+#   - IDE integration that benefits from pre-rendered files
+#   - Local development without PlantUML installed
+#
+# The rendered images are committed back to the repo for convenience,
+# but they are NOT the source of truth - the .puml files are.
+
+name: Render PlantUML Diagrams (Optional)
 
 on:
   workflow_dispatch:
-  workflow_call:
     inputs:
       commit-changes:
         description: 'Commit rendered images back to repo'
         type: boolean
         default: true
-  push:
-    branches: [main]
-    paths:
-      - 'src/**/*.puml'
-      - '!src/**/png/*'
-      - '!src/**/svg/*'
-      - '.github/workflows/render-plantuml.yml'
-      - '.github/actions/render-plantuml/**'
 
 concurrency:
   group: plantuml-${{ github.ref }}
@@ -26,9 +30,8 @@ concurrency:
 jobs:
   render:
     runs-on: ubuntu-latest
-    # Prevent infinite loops from auto-commits
     if: github.actor != 'github-actions[bot]'
-    
+
     permissions:
       contents: write
 
@@ -39,12 +42,82 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
+      - name: Install PlantUML
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends plantuml graphviz default-jre-headless
+
       - name: Render PlantUML diagrams
-        id: render
-        uses: ./.github/actions/render-plantuml
-        with:
-          source-dir: src
-          formats: 'png svg'
+        run: |
+          set -euo pipefail
+
+          CONFIG_NAMES=("plantuml-config.puml" "config.puml")
+          FORMATS=(png svg)
+
+          find_config() {
+            local start_dir="$1"
+            local d="$start_dir"
+            while true; do
+              for n in "${CONFIG_NAMES[@]}"; do
+                if [[ -f "${d}/${n}" ]]; then
+                  readlink -f "${d}/${n}"
+                  return 0
+                fi
+              done
+              [[ "$d" == "src" || "$d" == "." ]] && break
+              d="$(dirname "$d")"
+            done
+            echo ""
+          }
+
+          mapfile -d '' PUMLS < <(
+            find src -type f -name "*.puml" \
+              ! -name "plantuml-config.puml" \
+              ! -name "config.puml" \
+              -print0 2>/dev/null || true
+          )
+
+          echo "Found ${#PUMLS[@]} PlantUML diagrams"
+
+          rendered=0
+          failed=0
+
+          for puml in "${PUMLS[@]}"; do
+            [[ -z "$puml" ]] && continue
+
+            dir="$(dirname "$puml")"
+            base="$(basename "$puml" .puml)"
+            cfg="$(find_config "$dir")"
+
+            echo ""
+            echo "Rendering: $puml"
+
+            for fmt in "${FORMATS[@]}"; do
+              mkdir -p "${dir}/${fmt}"
+              dest="${dir}/${fmt}/${base}.${fmt}"
+
+              pushd "$dir" >/dev/null
+              if [[ -n "$cfg" ]]; then
+                plantuml "-t${fmt}" -o "${fmt}" -config "$cfg" "$(basename "$puml")" 2>&1 || true
+              else
+                plantuml "-t${fmt}" -o "${fmt}" "$(basename "$puml")" 2>&1 || true
+              fi
+              popd >/dev/null
+
+              if [[ -f "$dest" ]]; then
+                echo "  ✓ ${fmt}/${base}.${fmt}"
+                ((rendered++))
+              else
+                echo "  ✗ Failed: ${fmt}/${base}.${fmt}"
+                ((failed++))
+              fi
+            done
+          done
+
+          echo ""
+          echo "=== Render Summary ==="
+          echo "Rendered: $rendered files"
+          echo "Failed: $failed files"
 
       - name: Generate render summary
         run: |
@@ -55,29 +128,25 @@ jobs:
             echo "- **Commit:** \`${{ github.sha }}\`"
             echo "- **Timestamp:** $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
             echo ""
-            echo "## Files Processed"
+            echo "## Files Rendered"
             echo ""
-            
-            find src -type f -name "*.puml" | sort | while read -r puml; do
-              base=$(basename "$puml" .puml)
-              if [[ "$base" == "plantuml-config" || "$base" == "config" ]]; then
-                echo "- ⭐ \`$puml\` (config file)"
-              else
-                echo "- ✅ \`$puml\`"
-              fi
+
+            find src -type f -name "*.puml" ! -name "*config*.puml" | sort | while read -r puml; do
+              echo "- ✅ \`$puml\`"
             done
-            
+
             echo ""
-            echo "## Summary"
+            echo "## Output Locations"
             echo ""
-            rendered=$(find src -type f -name "*.puml" ! -name "*config*.puml" | wc -l)
-            skipped=$(find src -type f -name "*config*.puml" | wc -l)
-            echo "- Diagrams rendered: **$rendered**"
-            echo "- Config files skipped: **$skipped**"
+            echo "PNG files:"
+            find src -path "*/png/*.png" -type f | wc -l
+            echo ""
+            echo "SVG files:"
+            find src -path "*/svg/*.svg" -type f | wc -l
           } > plantuml-render-summary.md
 
       - name: Auto-commit rendered images
-        if: inputs.commit-changes != false
+        if: inputs.commit-changes == true
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: 'chore(diagrams): render PlantUML images [skip ci]'
