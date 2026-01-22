@@ -3,7 +3,12 @@ SHELL := /usr/bin/bash
 .SHELLFLAGS := -euo pipefail -c
 
 LATEXMK ?= latexmk
-LATEXMK_OPTS ?= -pdf -shell-escape -interaction=nonstopmode -halt-on-error -file-line-error
+
+# Force LuaLaTeX for native Unicode support (required by fontspec).
+# Use 'override' to prevent CI/container environment variables from
+# unintentionally switching latexmk back to pdflatex.
+override LATEX_ENGINE := lualatex
+override LATEXMK_OPTS := -lualatex -shell-escape -interaction=nonstopmode -halt-on-error -file-line-error
 
 # Standalone build roots = any .tex containing \documentclass under src/
 ROOT_TEX := $(shell grep -rl --include='*.tex' '^[[:space:]]*\\documentclass' src || true)
@@ -36,6 +41,7 @@ build-all:
 	  echo "==> $$f"; \
 	  d="$$(dirname "$$f")"; \
 	  b="$$(basename "$$f")"; \
+	  echo "    $$d: $(LATEXMK) $(LATEXMK_OPTS) $$b"; \
 	  (cd "$$d" && $(LATEXMK) $(LATEXMK_OPTS) "$$b"); \
 	done
 	@echo "Build complete."

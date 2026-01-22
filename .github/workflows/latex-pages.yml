@@ -35,8 +35,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-
-      - name: Install dependencies (bash, GNU coreutils, Inkscape, PlantUML)
+      - name: Install dependencies (bash, GNU coreutils, PlantUML, Graphviz, Java, zip)
         shell: sh
         run: |
           set -eu
@@ -44,19 +43,18 @@ jobs:
           echo "Installing dependencies inside job container..."
           if command -v apk >/dev/null 2>&1; then
             apk update
-            # Install GNU coreutils, grep, findutils, make to replace BusyBox variants
-            # Install Inkscape for SVG conversion, PlantUML + Graphviz + Java for diagrams
-            apk add --no-cache bash coreutils grep findutils make inkscape \
+            # Install GNU userland tools (reliable find/grep/cp) + PlantUML toolchain.
+            apk add --no-cache bash coreutils grep findutils zip \
               plantuml graphviz openjdk17-jre-headless
           elif command -v apt-get >/dev/null 2>&1; then
             apt-get update
             DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-              bash inkscape plantuml graphviz default-jre-headless
+              bash coreutils findutils grep zip plantuml graphviz default-jre-headless
             rm -rf /var/lib/apt/lists/*
           elif command -v dnf >/dev/null 2>&1; then
-            dnf install -y bash inkscape plantuml graphviz java-17-openjdk-headless
+            dnf install -y bash coreutils findutils grep zip plantuml graphviz java-17-openjdk-headless
           elif command -v yum >/dev/null 2>&1; then
-            yum install -y bash inkscape plantuml graphviz java-17-openjdk-headless
+            yum install -y bash coreutils findutils grep zip plantuml graphviz java-17-openjdk-headless
           else
             echo "ERROR: No supported package manager found in container."
             cat /etc/os-release || true
@@ -71,21 +69,22 @@ jobs:
 
           echo "Installed bash:"
           bash --version | head -n 1
-          echo "Installed grep:"
-          grep --version | head -n 1
-          echo "Installed Inkscape:"
-          inkscape -V || true
           echo "Installed PlantUML:"
           plantuml -version 2>&1 | head -n 1 || true
-
-      - name: Render PlantUML diagrams
+          echo "Installed latexmk:"
+          latexmk -v 2>&1 | head -n 1 || true
+      - name: Render PlantUML diagrams (SVG + PNG)
         shell: bash
         run: |
           set -euo pipefail
 
           ROOT="src"
           CONFIG_NAMES=("plantuml-config.puml" "config.puml")
-          FORMATS=("png" "svg")
+          FORMATS=("svg" "png")
+
+          echo "=== Searching for PlantUML files under ${ROOT}/ ==="
+          find "$ROOT" -type f -name "*.puml" 2>/dev/null || true
+          echo ""
 
           find_config() {
             local start_dir="$1"
@@ -97,19 +96,20 @@ jobs:
                   return 0
                 fi
               done
-              [[ "$d" == "$ROOT" ]] && break
+              [[ "$d" == "$ROOT" || "$d" == "." ]] && break
               d="$(dirname "$d")"
             done
             echo ""
           }
 
           # Collect .puml files (excluding config files)
-          mapfile -d '' PUMLS < <(
-            find "$ROOT" -type f -name "*.puml" \
-              ! -name "plantuml-config.puml" \
-              ! -name "config.puml" \
-              -print0 2>/dev/null || true
-          )
+          PUMLS=()
+          while IFS= read -r -d '' file; do
+            PUMLS+=("$file")
+          done < <(find "$ROOT" -type f -name "*.puml" \
+            ! -name "plantuml-config.puml" \
+            ! -name "config.puml" \
+            -print0 2>/dev/null || true)
 
           echo "Total diagrams discovered: ${#PUMLS[@]}"
 
@@ -123,8 +123,7 @@ jobs:
             base="$(basename "$puml" .puml)"
             cfg="$(find_config "$dir")"
 
-            mkdir -p "${dir}/png" "${dir}/svg"
-            echo "Rendering: ${puml}"
+            mkdir -p "${dir}/svg" "${dir}/png"
 
             for fmt in "${FORMATS[@]}"; do
               tmp="${dir}/.plantuml-tmp/${base}/${fmt}"
@@ -132,9 +131,10 @@ jobs:
 
               cfg_abs=""
               if [[ -n "$cfg" ]]; then
-                cfg_abs="$(realpath "$cfg")"
+                cfg_abs="$(readlink -f "$cfg" 2>/dev/null || echo "$cfg")"
               fi
 
+              echo "Rendering: ${puml} -> ${fmt}"
               pushd "$dir" >/dev/null
               if [[ -n "$cfg_abs" ]]; then
                 plantuml "-t${fmt}" -o ".plantuml-tmp/${base}/${fmt}" -config "$cfg_abs" "$(basename "$puml")"
@@ -143,10 +143,10 @@ jobs:
               fi
               popd >/dev/null
 
-              produced="$(ls -1 "$tmp"/*.${fmt} 2>/dev/null | head -n 1 || true)"
-
+              produced="$(find "$tmp" -type f -name "*.${fmt}" 2>/dev/null | head -n 1 || true)"
               if [[ -z "$produced" ]]; then
-                echo "ERROR: No output produced for ${puml} (format=${fmt})"
+                echo "ERROR: No ${fmt} produced for ${puml}"
+                ls -la "$tmp" 2>/dev/null || true
                 exit 1
               fi
 
@@ -155,21 +155,65 @@ jobs:
               rm -rf "${dir}/.plantuml-tmp/${base}/${fmt}"
               echo "  Created: ${dest}"
             done
+
+            rm -rf "${dir}/.plantuml-tmp/${base}" 2>/dev/null || true
           done
 
-      - name: Build PDFs (via Makefile)
+          echo ""
+          echo "=== PlantUML rendering complete ==="
+          echo "Generated SVG files:"
+          find "$ROOT" -path "*/svg/*.svg" -type f 2>/dev/null || echo "(none)"
+      - name: Build PDFs (LuaLaTeX)
         shell: bash
         run: |
           set -euo pipefail
-          make build-all
+
+          ROOT="src"
+          OUT="build/pdfs"
+          mkdir -p "$OUT"
+
+          mapfile -d '' TEXFILES < <(find "$ROOT" -type f -name "*.tex" -print0)
+          echo "Total TeX files discovered: ${#TEXFILES[@]}"
+
+          if [[ ${#TEXFILES[@]} -eq 0 ]]; then
+            echo "No .tex files found under ${ROOT}/"
+            exit 0
+          fi
+
+          for tex in "${TEXFILES[@]}"; do
+            dir="$(dirname "$tex")"
+            file="$(basename "$tex")"
+            base="${file%.tex}"
+
+            rel="${tex#${ROOT}/}"
+            rel_dir="$(dirname "$rel")"
+            outdir="${OUT}/${rel_dir}"
+            mkdir -p "$outdir"
+
+            echo "=== Building ${tex} ==="
+            pushd "$dir" >/dev/null
+            latexmk -lualatex -shell-escape -interaction=nonstopmode -halt-on-error -file-line-error "$file"
+            popd >/dev/null
+
+            if [[ ! -f "${dir}/${base}.pdf" ]]; then
+              echo "ERROR: Expected PDF not found: ${dir}/${base}.pdf"
+              exit 1
+            fi
+
+            cp -f "${dir}/${base}.pdf" "${outdir}/${base}.pdf"
+          done
+
+          echo "=== PDFs written to ${OUT}/ ==="
+          find "$OUT" -type f -name "*.pdf" -print
 
       - name: Update docs/ with latest PDFs
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p docs/pdfs
-          # Copy build outputs into docs/ for GitHub Pages publishing
-          cp -v build/pdfs/*.pdf docs/pdfs/ || true
+          # Mirror the build/pdfs tree into docs/pdfs (preserve subdirectories)
+          rm -rf docs/pdfs/*
+          cp -a build/pdfs/. docs/pdfs/
 
       - name: Commit updated PDFs and index
         uses: stefanzweifel/git-auto-commit-action@v5
