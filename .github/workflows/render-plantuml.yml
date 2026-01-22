@@ -1,6 +1,5 @@
 # .github/workflows/render-plantuml.yml
 # Standalone workflow to render PlantUML diagrams and commit back
-# Also usable as a reusable workflow
 name: Render PlantUML Diagrams
 
 on:
@@ -17,10 +16,9 @@ on:
       - 'src/**/*.puml'
       - '!src/**/png/*'
       - '!src/**/svg/*'
-      - '!src/**/jpg/*'
       - '.github/workflows/render-plantuml.yml'
+      - '.github/actions/render-plantuml/**'
 
-# Prevent infinite loops from auto-commits
 concurrency:
   group: plantuml-${{ github.ref }}
   cancel-in-progress: true
@@ -28,6 +26,7 @@ concurrency:
 jobs:
   render:
     runs-on: ubuntu-latest
+    # Prevent infinite loops from auto-commits
     if: github.actor != 'github-actions[bot]'
     
     permissions:
@@ -41,6 +40,7 @@ jobs:
           persist-credentials: true
 
       - name: Render PlantUML diagrams
+        id: render
         uses: ./.github/actions/render-plantuml
         with:
           source-dir: src
@@ -48,43 +48,39 @@ jobs:
 
       - name: Generate render summary
         run: |
-          SUMMARY="plantuml-render-summary.md"
-          
           {
             echo "# PlantUML Render Summary"
             echo ""
-            echo "- Run: ${{ github.run_id }}"
-            echo "- Commit: ${{ github.sha }}"
-            echo "- Timestamp (UTC): $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            echo "- **Run:** ${{ github.run_id }}"
+            echo "- **Commit:** \`${{ github.sha }}\`"
+            echo "- **Timestamp:** $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
             echo ""
-            echo ""
-            echo "## Files processed"
+            echo "## Files Processed"
             echo ""
             
-            find src -type f -name "*.puml" | while read -r puml; do
+            find src -type f -name "*.puml" | sort | while read -r puml; do
               base=$(basename "$puml" .puml)
               if [[ "$base" == "plantuml-config" || "$base" == "config" ]]; then
-                echo "- ⏭️  $puml (config)"
+                echo "- ⭐ \`$puml\` (config file)"
               else
-                echo "- ✅  $puml"
+                echo "- ✅ \`$puml\`"
               fi
             done
             
             echo ""
-            echo "## Totals"
+            echo "## Summary"
             echo ""
             rendered=$(find src -type f -name "*.puml" ! -name "*config*.puml" | wc -l)
             skipped=$(find src -type f -name "*config*.puml" | wc -l)
-            echo "- Rendered: $rendered"
-            echo "- Skipped:  $skipped"
-            echo "- Failed:   0"
-          } > "$SUMMARY"
+            echo "- Diagrams rendered: **$rendered**"
+            echo "- Config files skipped: **$skipped**"
+          } > plantuml-render-summary.md
 
       - name: Auto-commit rendered images
         if: inputs.commit-changes != false
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: 'chore(diagrams): render PlantUML images'
+          commit_message: 'chore(diagrams): render PlantUML images [skip ci]'
           file_pattern: |
             plantuml-render-summary.md
             src/**/png/*.png

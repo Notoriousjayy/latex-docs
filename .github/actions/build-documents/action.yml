@@ -24,6 +24,10 @@ inputs:
     description: 'Cache LaTeX auxiliary files between runs'
     required: false
     default: 'true'
+  output-dir:
+    description: 'Directory to copy built PDFs (empty = leave in place)'
+    required: false
+    default: ''
 
 outputs:
   pdf-count:
@@ -32,40 +36,50 @@ outputs:
   pdf-files:
     description: 'JSON array of built PDF paths'
     value: ${{ steps.build.outputs.files }}
+  failed-count:
+    description: 'Number of failed builds'
+    value: ${{ steps.build.outputs.failed }}
 
 runs:
   using: 'composite'
   steps:
-    - name: Verify pygments is available
+    - name: Verify build prerequisites
       shell: bash
       run: |
+        # Verify pygments is available for minted
         if ! command -v pygmentize &> /dev/null; then
-          echo "ERROR: pygmentize not found - minted will fail"
-          echo "Installing pygments..."
-          sudo apt-get update && sudo apt-get install -y python3-pygments
+          echo "::error::pygmentize not found - minted package will fail"
+          exit 1
         fi
-        echo "Pygmentize location: $(which pygmentize)"
-        echo "Pygmentize version: $(pygmentize -V)"
+        echo "✓ pygmentize: $(which pygmentize)"
+        
+        # Verify latexmk
+        if ! command -v latexmk &> /dev/null; then
+          echo "::error::latexmk not found"
+          exit 1
+        fi
+        echo "✓ latexmk: $(which latexmk)"
 
     - name: Cache LaTeX auxiliary files
       if: inputs.cache-aux-files == 'true'
       uses: actions/cache@v4
       with:
         path: |
-          src/**/*.aux
-          src/**/*.fdb_latexmk
-          src/**/*.fls
-          src/**/*.toc
-          src/**/*.out
-          src/**/*.bbl
-          src/**/*.bcf
-          src/**/*.run.xml
-          src/**/_minted-*
-        key: latex-aux-${{ hashFiles('src/**/*.tex') }}
+          ${{ inputs.source-dir }}/**/*.aux
+          ${{ inputs.source-dir }}/**/*.fdb_latexmk
+          ${{ inputs.source-dir }}/**/*.fls
+          ${{ inputs.source-dir }}/**/*.toc
+          ${{ inputs.source-dir }}/**/*.out
+          ${{ inputs.source-dir }}/**/*.bbl
+          ${{ inputs.source-dir }}/**/*.bcf
+          ${{ inputs.source-dir }}/**/*.run.xml
+          ${{ inputs.source-dir }}/**/_minted-*
+        key: latex-aux-${{ inputs.document-filter || 'all' }}-${{ hashFiles(format('{0}/**/*.tex', inputs.source-dir)) }}
         restore-keys: |
+          latex-aux-${{ inputs.document-filter || 'all' }}-
           latex-aux-
 
-    - name: Determine documents to build
+    - name: Discover documents to build
       id: discover
       shell: bash
       run: |
@@ -76,21 +90,23 @@ runs:
         BUILD_ALL="${{ inputs.build-all }}"
         CHANGED_FILES="${{ inputs.changed-files }}"
         
+        echo "::group::Document Discovery"
+        
         # Find all root documents (files with \documentclass)
         if [[ -n "$FILTER" ]]; then
-          mapfile -t ALL_ROOTS < <(grep -rl --include='*.tex' '^\s*\\documentclass' $FILTER 2>/dev/null || true)
+          # Use the filter pattern directly with find + grep
+          filter_dir="${FILTER%%/**}"
+          mapfile -t ALL_ROOTS < <(find "$filter_dir" -name '*.tex' -type f -exec grep -l '^\s*\\documentclass' {} \; 2>/dev/null || true)
         else
-          mapfile -t ALL_ROOTS < <(grep -rl --include='*.tex' '^\s*\\documentclass' "$SOURCE_DIR" 2>/dev/null || true)
+          mapfile -t ALL_ROOTS < <(find "$SOURCE_DIR" -name '*.tex' -type f -exec grep -l '^\s*\\documentclass' {} \; 2>/dev/null || true)
         fi
         
         echo "Total document roots found: ${#ALL_ROOTS[@]}"
         
         # Determine which documents to build
         if [[ "$BUILD_ALL" == "true" || -z "$CHANGED_FILES" ]]; then
-          # Build all documents
           DOCS_TO_BUILD=("${ALL_ROOTS[@]}")
         else
-          # Selective build: only documents where the file or its dependencies changed
           DOCS_TO_BUILD=()
           for root in "${ALL_ROOTS[@]}"; do
             root_dir="$(dirname "$root")"
@@ -101,13 +117,13 @@ runs:
               continue
             fi
             
-            # Check if any file in the same directory changed (covers \input, \include)
+            # Check if any file in the same directory changed
             if echo "$CHANGED_FILES" | grep -qF "$root_dir/"; then
               DOCS_TO_BUILD+=("$root")
               continue
             fi
             
-            # Check if common preamble changed
+            # Check if common/tooling changed
             if echo "$CHANGED_FILES" | grep -qE "(common|tooling)/.*\.tex$"; then
               DOCS_TO_BUILD+=("$root")
               continue
@@ -116,8 +132,9 @@ runs:
         fi
         
         echo "Documents to build: ${#DOCS_TO_BUILD[@]}"
+        echo "::endgroup::"
         
-        # Output as JSON for matrix consumption
+        # Output as newline-separated list
         printf 'roots<<EOF\n%s\nEOF\n' "$(printf '%s\n' "${DOCS_TO_BUILD[@]}")" >> "$GITHUB_OUTPUT"
         echo "count=${#DOCS_TO_BUILD[@]}" >> "$GITHUB_OUTPUT"
 
@@ -128,49 +145,70 @@ runs:
         set -euo pipefail
         
         ROOTS="${{ steps.discover.outputs.roots }}"
+        OUTPUT_DIR="${{ inputs.output-dir }}"
         
         if [[ -z "$ROOTS" ]]; then
           echo "No documents to build"
           echo "count=0" >> "$GITHUB_OUTPUT"
+          echo "failed=0" >> "$GITHUB_OUTPUT"
           echo 'files=[]' >> "$GITHUB_OUTPUT"
           exit 0
         fi
         
-        # Ensure pygmentize is in PATH for minted
+        # Ensure pygmentize is in PATH
         export PATH="$PATH:/usr/bin"
         
         built_pdfs=()
         failed=0
         failed_files=()
         
+        # Process each document
         while IFS= read -r tex_file; do
           [[ -z "$tex_file" ]] && continue
           
           dir="$(dirname "$tex_file")"
           base="$(basename "$tex_file")"
-          pdf_name="${base%.tex}.pdf"
+          name="${base%.tex}"
+          pdf_name="${name}.pdf"
           
           echo ""
           echo "================================================================"
-          echo "==> Building: $tex_file"
+          echo "Building: $tex_file"
           echo "================================================================"
           
-          # Create minted cache directory to avoid permission issues
-          mkdir -p "${dir}/_minted-${base%.tex}"
+          # Create minted cache directory
+          mkdir -p "${dir}/_minted-${name}"
           
           # Build with latexmk
-          # Using -cd to change to directory (handles minted paths correctly)
-          # Using -pdflatex for better minted compatibility (lualatex can have issues)
-          if latexmk -cd -pdf -interaction=nonstopmode -halt-on-error -file-line-error -shell-escape "$tex_file" 2>&1; then
+          # -cd changes to directory (required for \input paths)
+          # -pdf uses pdflatex (most compatible)
+          # -shell-escape required for minted
+          if latexmk -cd -pdf \
+               -interaction=nonstopmode \
+               -halt-on-error \
+               -file-line-error \
+               -shell-escape \
+               "$tex_file" 2>&1 | tail -50; then
+            
             pdf_path="${dir}/${pdf_name}"
             if [[ -f "$pdf_path" ]]; then
-              echo "    ✓ SUCCESS: ${pdf_path}"
+              echo "✓ SUCCESS: ${pdf_path}"
               built_pdfs+=("$pdf_path")
+              
+              # Copy to output directory if specified
+              if [[ -n "$OUTPUT_DIR" ]]; then
+                # Preserve directory structure relative to src/
+                rel_path="${pdf_path#src/}"
+                dest_dir="${OUTPUT_DIR}/$(dirname "$rel_path")"
+                mkdir -p "$dest_dir"
+                cp "$pdf_path" "$dest_dir/"
+                echo "  → Copied to: ${dest_dir}/${pdf_name}"
+              fi
             else
-              echo "    ⚠ WARNING: Build completed but PDF not found at ${pdf_path}"
+              echo "⚠ WARNING: Build completed but PDF not found at ${pdf_path}"
             fi
           else
-            echo "    ✗ FAILED: $tex_file"
+            echo "✗ FAILED: $tex_file"
             failed_files+=("$tex_file")
             ((failed++)) || true
           fi
@@ -191,14 +229,17 @@ runs:
           done
         fi
         
+        # Set outputs
         echo "count=${#built_pdfs[@]}" >> "$GITHUB_OUTPUT"
+        echo "failed=$failed" >> "$GITHUB_OUTPUT"
+        
         if [[ ${#built_pdfs[@]} -gt 0 ]]; then
           printf 'files=%s\n' "$(printf '%s\n' "${built_pdfs[@]}" | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
         else
           echo 'files=[]' >> "$GITHUB_OUTPUT"
         fi
         
-        # Don't fail the entire job if some docs failed - just report
+        # Fail if ALL builds failed
         if [[ $failed -gt 0 && ${#built_pdfs[@]} -eq 0 ]]; then
           echo "::error::All document builds failed!"
           exit 1

@@ -28,7 +28,7 @@ on:
         value: ${{ jobs.aggregate.outputs.total }}
       artifact-name:
         description: 'Name of uploaded artifact'
-        value: ${{ jobs.aggregate.outputs.artifact-name }}
+        value: 'latex-pdfs'
 
 jobs:
   # ============================================================================
@@ -51,18 +51,17 @@ jobs:
         run: |
           set -euo pipefail
           
-          # Force build-all if explicitly requested
+          # Force build-all if explicitly requested or workflow_dispatch
           if [[ "${{ inputs.build-all }}" == "true" ]]; then
-            echo "Build-all requested, will build everything"
+            echo "Build-all requested"
             echo "has-changes=true" >> "$GITHUB_OUTPUT"
             echo "plantuml=true" >> "$GITHUB_OUTPUT"
             echo "changed-files=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           
-          # For workflow_dispatch without build-all, still build everything
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "Manual trigger detected, will build everything"
+            echo "Manual trigger - building everything"
             echo "has-changes=true" >> "$GITHUB_OUTPUT"
             echo "plantuml=true" >> "$GITHUB_OUTPUT"
             echo "changed-files=" >> "$GITHUB_OUTPUT"
@@ -79,28 +78,17 @@ jobs:
           echo "Changed files:"
           echo "$CHANGED"
           
-          # Check for different types of changes
           TEX_CHANGES=$(echo "$CHANGED" | grep -E '\.tex$' || echo "")
           PUML_CHANGES=$(echo "$CHANGED" | grep -E '\.puml$' || echo "")
-          WORKFLOW_CHANGES=$(echo "$CHANGED" | grep -E '\.github/(workflows|actions)/' || echo "")
+          WORKFLOW_CHANGES=$(echo "$CHANGED" | grep -E '\.github/' || echo "")
           TOOLING_CHANGES=$(echo "$CHANGED" | grep -E '^tooling/' || echo "")
           
-          # Determine if we should build
-          if [[ -n "$TEX_CHANGES" || -n "$PUML_CHANGES" ]]; then
-            echo "Content changes detected"
-            echo "has-changes=true" >> "$GITHUB_OUTPUT"
-          elif [[ -n "$WORKFLOW_CHANGES" || -n "$TOOLING_CHANGES" ]]; then
-            echo "CI/tooling changes detected - building to verify workflows work"
-            echo "has-changes=true" >> "$GITHUB_OUTPUT"
-          elif [[ -z "$CHANGED" ]]; then
-            echo "No changes detected (possibly initial run) - building everything"
+          if [[ -n "$TEX_CHANGES" || -n "$PUML_CHANGES" || -n "$WORKFLOW_CHANGES" || -n "$TOOLING_CHANGES" || -z "$CHANGED" ]]; then
             echo "has-changes=true" >> "$GITHUB_OUTPUT"
           else
-            echo "No relevant changes detected"
             echo "has-changes=false" >> "$GITHUB_OUTPUT"
           fi
           
-          # Check if PlantUML needs rendering
           if [[ -n "$PUML_CHANGES" || -n "$WORKFLOW_CHANGES" || -z "$CHANGED" ]]; then
             echo "plantuml=true" >> "$GITHUB_OUTPUT"
           else
@@ -117,14 +105,13 @@ jobs:
           CATEGORY="${{ inputs.document-category }}"
           
           if [[ -n "$CATEGORY" ]]; then
-            echo 'matrix={"category":["'"$CATEGORY"'"]}' >> "$GITHUB_OUTPUT"
+            echo "matrix={\"category\":[\"$CATEGORY\"]}" >> "$GITHUB_OUTPUT"
           else
-            # Auto-discover categories from directory structure
-            CATEGORIES=$(find src -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | jq -R . | jq -sc .)
+            # Auto-discover categories from src/
+            CATEGORIES=$(find src -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort | jq -R . | jq -sc .)
+            echo "Discovered categories: $CATEGORIES"
             echo "matrix={\"category\":$CATEGORIES}" >> "$GITHUB_OUTPUT"
           fi
-          
-          cat "$GITHUB_OUTPUT"
 
   # ============================================================================
   # Stage 2: Render PlantUML diagrams (if needed)
@@ -162,13 +149,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      max-parallel: 6  # Limit concurrent jobs to avoid resource contention
       matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Download PlantUML artifacts
-        if: inputs.render-plantuml == true
+        if: inputs.render-plantuml == true && needs.plantuml.result == 'success'
         uses: actions/download-artifact@v4
         with:
           name: plantuml-diagrams
@@ -179,6 +167,7 @@ jobs:
         uses: ./.github/actions/setup-latex
 
       - name: Build ${{ matrix.category }} documents
+        id: build
         uses: ./.github/actions/build-documents
         with:
           source-dir: src
@@ -186,12 +175,21 @@ jobs:
           build-all: ${{ inputs.build-all }}
           cache-aux-files: 'true'
 
+      - name: Collect PDFs for upload
+        run: |
+          mkdir -p collected-pdfs/${{ matrix.category }}
+          find src/${{ matrix.category }} -name "*.pdf" -type f -exec cp --parents {} collected-pdfs/ \; 2>/dev/null || true
+          
+          # Show what we collected
+          echo "Collected PDFs:"
+          find collected-pdfs -name "*.pdf" -type f | head -20
+
       - name: Upload category PDFs
         if: inputs.upload-artifacts == true
         uses: actions/upload-artifact@v4
         with:
           name: pdfs-${{ matrix.category }}
-          path: src/${{ matrix.category }}/**/*.pdf
+          path: collected-pdfs/src/${{ matrix.category }}
           retention-days: 14
           if-no-files-found: ignore
 
@@ -204,30 +202,47 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       total: ${{ steps.count.outputs.total }}
-      artifact-name: ${{ steps.merge.outputs.name }}
     steps:
       - name: Download all PDF artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: pdfs-*
           path: all-pdfs
-          merge-multiple: true
+          merge-multiple: false
 
-      - name: Count total PDFs
+      - name: Organize and count PDFs
         id: count
         run: |
-          total=$(find all-pdfs -name "*.pdf" -type f 2>/dev/null | wc -l || echo 0)
+          # Flatten the category structure for easier access
+          mkdir -p merged-pdfs
+          
+          # Each pdfs-* artifact has a category folder inside
+          for category_dir in all-pdfs/pdfs-*/; do
+            if [[ -d "$category_dir" ]]; then
+              cp -r "$category_dir"/* merged-pdfs/ 2>/dev/null || true
+            fi
+          done
+          
+          total=$(find merged-pdfs -name "*.pdf" -type f 2>/dev/null | wc -l || echo 0)
           echo "total=$total" >> "$GITHUB_OUTPUT"
-          echo "Total PDFs built: $total"
+          echo "Total PDFs: $total"
+          
+          # List all PDFs
+          echo ""
+          echo "PDF listing:"
+          find merged-pdfs -name "*.pdf" -type f | sort | head -50
+          if [[ $total -gt 50 ]]; then
+            echo "... and $((total - 50)) more"
+          fi
 
       - name: Merge into single artifact
-        id: merge
         if: inputs.upload-artifacts == true
         uses: actions/upload-artifact@v4
         with:
           name: latex-pdfs
-          path: all-pdfs
+          path: merged-pdfs
           retention-days: 30
+          if-no-files-found: warn
 
       - name: Generate build summary
         run: |
@@ -236,9 +251,13 @@ jobs:
             echo ""
             echo "**Total PDFs:** ${{ steps.count.outputs.total }}"
             echo ""
-            echo "### Built PDFs"
+            echo "### By Category"
             echo ""
-            find all-pdfs -name "*.pdf" -type f | sort | while read -r pdf; do
-              echo "- \`${pdf#all-pdfs/}\`"
+            for category_dir in all-pdfs/pdfs-*/; do
+              if [[ -d "$category_dir" ]]; then
+                category=$(basename "$category_dir" | sed 's/pdfs-//')
+                count=$(find "$category_dir" -name "*.pdf" -type f 2>/dev/null | wc -l || echo 0)
+                echo "- **$category**: $count PDFs"
+              fi
             done
           } >> "$GITHUB_STEP_SUMMARY"

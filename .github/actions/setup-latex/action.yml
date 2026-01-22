@@ -7,7 +7,7 @@ inputs:
   cache-key-prefix:
     description: 'Prefix for cache key (allows cache busting)'
     required: false
-    default: 'texlive-v2'
+    default: 'texlive-v3'
 
 outputs:
   cache-hit:
@@ -17,31 +17,33 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Cache TeX Live packages
+    - name: Cache TeX Live installation
       id: cache-texlive
       uses: actions/cache@v4
       with:
         path: |
           /usr/local/texlive
-          ~/.texlive
-        key: ${{ inputs.cache-key-prefix }}-${{ runner.os }}-texlive
+          ~/.texlive*
+        key: ${{ inputs.cache-key-prefix }}-${{ runner.os }}-full
         restore-keys: |
-          ${{ inputs.cache-key-prefix }}-${{ runner.os }}-texlive
+          ${{ inputs.cache-key-prefix }}-${{ runner.os }}-
 
-    - name: Install TeX Live and Pygments
+    - name: Install TeX Live and dependencies
       shell: bash
       run: |
-        # Always install pygments (it's small and critical for minted)
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends python3-pygments
+        set -euo pipefail
         
-        # Verify pygmentize is available
-        which pygmentize || { echo "ERROR: pygmentize not found"; exit 1; }
-        pygmentize -V
+        echo "::group::Installing system dependencies"
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          python3-pygments \
+          ghostscript \
+          imagemagick
+        echo "::endgroup::"
         
         # Install TeX Live if not cached
         if [[ "${{ steps.cache-texlive.outputs.cache-hit }}" != "true" ]]; then
-          echo "Installing TeX Live packages..."
+          echo "::group::Installing TeX Live packages"
           sudo apt-get install -y --no-install-recommends \
             texlive-latex-recommended \
             texlive-latex-extra \
@@ -51,10 +53,12 @@ runs:
             texlive-science \
             texlive-bibtex-extra \
             texlive-luatex \
+            texlive-xetex \
             latexmk \
-            biber \
-            ghostscript \
-            imagemagick
+            biber
+          echo "::endgroup::"
+        else
+          echo "TeX Live restored from cache"
         fi
         
         sudo rm -rf /var/lib/apt/lists/* || true
@@ -62,15 +66,14 @@ runs:
     - name: Verify LaTeX installation
       shell: bash
       run: |
-        echo "=== LaTeX Environment ==="
-        echo "LuaLaTeX version:"
-        lualatex --version | head -3
-        echo ""
-        echo "latexmk version:"
-        latexmk --version | head -1
-        echo ""
-        echo "Pygments version:"
-        pygmentize -V
-        echo ""
-        echo "Pygmentize location:"
-        which pygmentize
+        echo "=== LaTeX Environment Verification ==="
+        echo "pdflatex: $(pdflatex --version | head -1)"
+        echo "lualatex: $(lualatex --version | head -1)"
+        echo "latexmk:  $(latexmk --version | head -1)"
+        echo "pygmentize: $(pygmentize -V)"
+        echo "pygmentize path: $(which pygmentize)"
+        
+        # Ensure pygmentize is in a standard location for minted
+        if [[ ! -f /usr/bin/pygmentize ]]; then
+          sudo ln -sf "$(which pygmentize)" /usr/bin/pygmentize 2>/dev/null || true
+        fi

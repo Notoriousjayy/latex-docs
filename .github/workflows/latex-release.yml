@@ -17,7 +17,7 @@ jobs:
   build:
     uses: ./.github/workflows/_build-latex.yml
     with:
-      build-all: true  # Releases need complete builds
+      build-all: true
       render-plantuml: true
       upload-artifacts: true
 
@@ -34,30 +34,32 @@ jobs:
           name: latex-pdfs
           path: pdfs
 
-      - name: Create release archive
+      - name: Create release archives
         run: |
           mkdir -p dist
           
-          # Create a single zip with all PDFs
+          # Create main archive with all PDFs
           cd pdfs
-          zip -r ../dist/latex-pdfs.zip . -i '*.pdf'
+          zip -r ../dist/latex-pdfs-all.zip . -i '*.pdf'
           cd ..
           
-          # Also create category-specific zips for selective downloads
+          # Create per-category archives
           for category in $(find pdfs -mindepth 1 -maxdepth 1 -type d -exec basename {} \;); do
-            if find "pdfs/$category" -name "*.pdf" -type f | head -1 | grep -q .; then
+            pdf_count=$(find "pdfs/$category" -name "*.pdf" -type f | wc -l)
+            if [[ $pdf_count -gt 0 ]]; then
               cd pdfs
               zip -r "../dist/${category}-pdfs.zip" "$category" -i '*.pdf'
               cd ..
+              echo "Created ${category}-pdfs.zip with $pdf_count PDFs"
             fi
           done
           
-          echo "Release archives created:"
+          echo ""
+          echo "Release archives:"
           ls -lh dist/
 
       - name: Attach to release
+        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.zip
-
-
