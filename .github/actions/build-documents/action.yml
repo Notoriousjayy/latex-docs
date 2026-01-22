@@ -1,0 +1,157 @@
+# .github/actions/build-documents/action.yml
+# Reusable composite action for building LaTeX documents
+name: 'Build LaTeX Documents'
+description: 'Build LaTeX documents with caching and selective compilation'
+
+inputs:
+  source-dir:
+    description: 'Root directory containing .tex files'
+    required: false
+    default: 'src'
+  document-filter:
+    description: 'Glob pattern to filter documents (e.g., "src/security/**/*.tex")'
+    required: false
+    default: ''
+  changed-files:
+    description: 'Newline-separated list of changed files (for selective builds)'
+    required: false
+    default: ''
+  build-all:
+    description: 'Force build of all documents regardless of changes'
+    required: false
+    default: 'false'
+  cache-aux-files:
+    description: 'Cache LaTeX auxiliary files between runs'
+    required: false
+    default: 'true'
+
+outputs:
+  pdf-count:
+    description: 'Number of PDFs built'
+    value: ${{ steps.build.outputs.count }}
+  pdf-files:
+    description: 'JSON array of built PDF paths'
+    value: ${{ steps.build.outputs.files }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Cache LaTeX auxiliary files
+      if: inputs.cache-aux-files == 'true'
+      uses: actions/cache@v4
+      with:
+        path: |
+          **/*.aux
+          **/*.fdb_latexmk
+          **/*.fls
+          **/*.toc
+          **/*.out
+          **/*.bbl
+          **/*.bcf
+          **/*.run.xml
+        key: latex-aux-${{ hashFiles('src/**/*.tex') }}
+        restore-keys: |
+          latex-aux-
+
+    - name: Determine documents to build
+      id: discover
+      shell: bash
+      run: |
+        set -euo pipefail
+        
+        SOURCE_DIR="${{ inputs.source-dir }}"
+        FILTER="${{ inputs.document-filter }}"
+        BUILD_ALL="${{ inputs.build-all }}"
+        CHANGED_FILES="${{ inputs.changed-files }}"
+        
+        # Find all root documents (files with \documentclass)
+        if [[ -n "$FILTER" ]]; then
+          mapfile -t ALL_ROOTS < <(grep -rl --include='*.tex' '^\s*\\documentclass' $FILTER 2>/dev/null || true)
+        else
+          mapfile -t ALL_ROOTS < <(grep -rl --include='*.tex' '^\s*\\documentclass' "$SOURCE_DIR" 2>/dev/null || true)
+        fi
+        
+        echo "Total document roots found: ${#ALL_ROOTS[@]}"
+        
+        # Determine which documents to build
+        if [[ "$BUILD_ALL" == "true" || -z "$CHANGED_FILES" ]]; then
+          # Build all documents
+          DOCS_TO_BUILD=("${ALL_ROOTS[@]}")
+        else
+          # Selective build: only documents where the file or its dependencies changed
+          DOCS_TO_BUILD=()
+          for root in "${ALL_ROOTS[@]}"; do
+            root_dir="$(dirname "$root")"
+            
+            # Check if the root file itself changed
+            if echo "$CHANGED_FILES" | grep -qF "$root"; then
+              DOCS_TO_BUILD+=("$root")
+              continue
+            fi
+            
+            # Check if any file in the same directory changed (covers \input, \include)
+            if echo "$CHANGED_FILES" | grep -qF "$root_dir/"; then
+              DOCS_TO_BUILD+=("$root")
+              continue
+            fi
+            
+            # Check if common preamble changed
+            if echo "$CHANGED_FILES" | grep -qE "(common|tooling)/.*\.tex$"; then
+              DOCS_TO_BUILD+=("$root")
+              continue
+            fi
+          done
+        fi
+        
+        echo "Documents to build: ${#DOCS_TO_BUILD[@]}"
+        
+        # Output as JSON for matrix consumption
+        printf 'roots<<EOF\n%s\nEOF\n' "$(printf '%s\n' "${DOCS_TO_BUILD[@]}")" >> "$GITHUB_OUTPUT"
+        echo "count=${#DOCS_TO_BUILD[@]}" >> "$GITHUB_OUTPUT"
+
+    - name: Build documents
+      id: build
+      shell: bash
+      run: |
+        set -euo pipefail
+        
+        ROOTS="${{ steps.discover.outputs.roots }}"
+        
+        if [[ -z "$ROOTS" ]]; then
+          echo "No documents to build"
+          echo "count=0" >> "$GITHUB_OUTPUT"
+          echo 'files=[]' >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        
+        built_pdfs=()
+        failed=0
+        
+        while IFS= read -r tex_file; do
+          [[ -z "$tex_file" ]] && continue
+          
+          dir="$(dirname "$tex_file")"
+          base="$(basename "$tex_file")"
+          pdf_name="${base%.tex}.pdf"
+          
+          echo "==> Building: $tex_file"
+          
+          if (cd "$dir" && latexmk -lualatex -interaction=nonstopmode -halt-on-error -file-line-error -shell-escape "$base" 2>&1); then
+            pdf_path="${dir}/${pdf_name}"
+            if [[ -f "$pdf_path" ]]; then
+              echo "    ✓ ${pdf_path}"
+              built_pdfs+=("$pdf_path")
+            fi
+          else
+            echo "    ✗ Build failed (continuing)"
+            ((failed++)) || true
+          fi
+        done <<< "$ROOTS"
+        
+        echo "Built ${#built_pdfs[@]} PDFs ($failed failures)"
+        echo "count=${#built_pdfs[@]}" >> "$GITHUB_OUTPUT"
+        printf 'files=%s\n' "$(printf '%s\n' "${built_pdfs[@]}" | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+        
+        if [[ $failed -gt 0 && ${#built_pdfs[@]} -eq 0 ]]; then
+          exit 1
+        fi

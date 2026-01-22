@@ -1,222 +1,112 @@
-name: Build & Publish LaTeX PDFs to GitHub Pages
+# .github/workflows/latex-pages.yml
+# Build and publish LaTeX PDFs to GitHub Pages
+name: Deploy PDFs to GitHub Pages
 
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
+    branches: [main]
     paths:
-      - "src/**/*.tex"
-      - "src/**/*.puml"
-      - ".github/workflows/latex-pages.yml"
-      - "src/**/png/*.png"
-      - "src/**/svg/*.svg"
-      - "src/**/jpg/*.jpg"
+      - 'src/**/*.tex'
+      - 'src/**/*.puml'
+      - '.github/workflows/latex-pages.yml'
+      - '.github/workflows/_build-latex.yml'
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
+  # ============================================================================
+  # Build all documents
+  # ============================================================================
   build:
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/_build-latex.yml
+    with:
+      build-all: true  # Pages always needs full build
+      render-plantuml: true
+      upload-artifacts: true
 
-    # Use a TeX Live image for reproducible builds.
-    # Note: this image may not include apt-get; install tools via the container's package manager.
-    container:
-      image: ghcr.io/xu-cheng/texlive-full:latest
-      options: --user 0
-
-    # Required for committing back to the repo using GITHUB_TOKEN
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-
-      - name: Install dependencies (bash, GNU coreutils, Inkscape, PlantUML)
-        shell: sh
-        run: |
-          set -eu
-
-          echo "Installing dependencies inside job container..."
-          if command -v apk >/dev/null 2>&1; then
-            apk update
-            # Install GNU coreutils, grep, findutils, make to replace BusyBox variants
-            # Install Inkscape for SVG conversion, PlantUML + Graphviz + Java for diagrams
-            apk add --no-cache bash coreutils grep findutils make inkscape fontconfig ttf-dejavu dbus \
-              plantuml graphviz openjdk17-jre-headless
-          elif command -v apt-get >/dev/null 2>&1; then
-            apt-get update
-            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-              bash inkscape plantuml graphviz default-jre-headless
-            rm -rf /var/lib/apt/lists/*
-          elif command -v dnf >/dev/null 2>&1; then
-            dnf install -y bash inkscape plantuml graphviz java-17-openjdk-headless
-          elif command -v yum >/dev/null 2>&1; then
-            yum install -y bash inkscape plantuml graphviz java-17-openjdk-headless
-          else
-            echo "ERROR: No supported package manager found in container."
-            cat /etc/os-release || true
-            exit 1
-          fi
-
-          # Create symlink for /usr/bin/bash if bash is at /bin/bash
-          if [ -x /bin/bash ] && [ ! -e /usr/bin/bash ]; then
-            ln -s /bin/bash /usr/bin/bash
-            echo "Created symlink: /usr/bin/bash -> /bin/bash"
-          fi
-
-          echo "Installed bash:"
-          bash --version | head -n 1
-          echo "Installed grep:"
-          grep --version | head -n 1
-          echo "Installed Inkscape:"
-          inkscape -V || true
-          echo "Installed PlantUML:"
-          plantuml -version 2>&1 | head -n 1 || true
-
-      - name: Render PlantUML diagrams
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          ROOT="src"
-          CONFIG_NAMES=("plantuml-config.puml" "config.puml")
-          FORMATS=("png" "svg")
-
-          echo "=== Searching for PlantUML files under ${ROOT}/ ==="
-          echo "Current directory: $(pwd)"
-          echo "Directory listing of ${ROOT}/:"
-          find "$ROOT" -type f -name "*.puml" 2>/dev/null || echo "No .puml files found or src/ doesn't exist"
-          echo ""
-
-          find_config() {
-            local start_dir="$1"
-            local d="$start_dir"
-            while true; do
-              for n in "${CONFIG_NAMES[@]}"; do
-                if [[ -f "${d}/${n}" ]]; then
-                  echo "${d}/${n}"
-                  return 0
-                fi
-              done
-              [[ "$d" == "$ROOT" || "$d" == "." ]] && break
-              d="$(dirname "$d")"
-            done
-            echo ""
-          }
-
-          # Collect .puml files (excluding config files)
-          PUMLS=()
-          while IFS= read -r -d '' file; do
-            PUMLS+=("$file")
-          done < <(find "$ROOT" -type f -name "*.puml" \
-            ! -name "plantuml-config.puml" \
-            ! -name "config.puml" \
-            -print0 2>/dev/null || true)
-
-          echo "Total diagrams discovered: ${#PUMLS[@]}"
-
-          if [[ ${#PUMLS[@]} -eq 0 ]]; then
-            echo "WARNING: No PlantUML files found under ${ROOT}/"
-            echo "LaTeX build may fail if it expects SVG files from PlantUML."
-            exit 0
-          fi
-
-          for puml in "${PUMLS[@]}"; do
-            dir="$(dirname "$puml")"
-            base="$(basename "$puml" .puml)"
-            cfg="$(find_config "$dir")"
-
-            mkdir -p "${dir}/png" "${dir}/svg"
-            echo "Rendering: ${puml}"
-            echo "  Output dir: ${dir}/svg/"
-
-            for fmt in "${FORMATS[@]}"; do
-              tmp="${dir}/.plantuml-tmp/${base}/${fmt}"
-              mkdir -p "$tmp"
-
-              cfg_abs=""
-              if [[ -n "$cfg" ]]; then
-                cfg_abs="$(readlink -f "$cfg" 2>/dev/null || echo "$cfg")"
-              fi
-
-              pushd "$dir" >/dev/null
-              if [[ -n "$cfg_abs" ]]; then
-                echo "  Using config: $cfg_abs"
-                plantuml "-t${fmt}" -o ".plantuml-tmp/${base}/${fmt}" -config "$cfg_abs" "$(basename "$puml")"
-              else
-                plantuml "-t${fmt}" -o ".plantuml-tmp/${base}/${fmt}" "$(basename "$puml")"
-              fi
-              popd >/dev/null
-
-              produced="$(find "$tmp" -type f -name "*.${fmt}" 2>/dev/null | head -n 1 || true)"
-
-              if [[ -z "$produced" ]]; then
-                echo "ERROR: No output produced for ${puml} (format=${fmt})"
-                echo "  Temp dir contents:"
-                ls -la "$tmp" 2>/dev/null || echo "  (empty or missing)"
-                exit 1
-              fi
-
-              dest="${dir}/${fmt}/${base}.${fmt}"
-              mv -f "$produced" "$dest"
-              rm -rf "${dir}/.plantuml-tmp/${base}/${fmt}"
-              echo "  Created: ${dest}"
-            done
-          done
-
-          echo ""
-          echo "=== PlantUML rendering complete ==="
-          echo "Generated SVG files:"
-          find "$ROOT" -path "*/svg/*.svg" -type f 2>/dev/null || echo "(none)"
-
-      - name: Build PDFs (via Makefile)
-        shell: bash
-        run: |
-          set -euo pipefail
-          make build-all
-
-      - name: Update docs/ with latest PDFs
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p docs/pdfs
-          # Copy build outputs into docs/ for GitHub Pages publishing
-          cd build/pdfs
-          find . -type f -name "*.pdf" -print0 | xargs -0 -I{} sh -c 'mkdir -p "../../docs/pdfs/$(dirname "{}")"; cp -f "{}" "../../docs/pdfs/{}"'
-          cd - >/dev/null
-
-      - name: Commit updated PDFs and index
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "docs(pdfs): refresh rendered PDFs"
-          file_pattern: docs/**
-
-  deploy:
+  # ============================================================================
+  # Stage PDFs for GitHub Pages
+  # ============================================================================
+  stage:
     needs: build
     runs-on: ubuntu-latest
-
-    permissions:
-      pages: write
-      id-token: write
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Download built PDFs
+        uses: actions/download-artifact@v4
+        with:
+          name: latex-pdfs
+          path: site/pdfs
+
+      - name: Generate index.html
+        run: |
+          cat > site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>LaTeX Documents</title>
+            <style>
+              body { font-family: system-ui, -apple-system, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+              h1 { border-bottom: 2px solid #333; padding-bottom: 0.5rem; }
+              .category { margin: 1.5rem 0; }
+              .category h2 { color: #444; font-size: 1.2rem; margin-bottom: 0.5rem; }
+              .category ul { list-style: none; padding: 0; }
+              .category li { padding: 0.3rem 0; }
+              .category a { color: #0066cc; text-decoration: none; }
+              .category a:hover { text-decoration: underline; }
+              .updated { color: #666; font-size: 0.85rem; margin-top: 2rem; }
+            </style>
+          </head>
+          <body>
+            <h1>📄 LaTeX Documents</h1>
+            <p>Built PDFs organized by category.</p>
+          EOF
+
+          # Generate category sections
+          for category in $(find site/pdfs -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort); do
+            echo "<div class=\"category\">" >> site/index.html
+            echo "<h2>$(echo $category | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')</h2>" >> site/index.html
+            echo "<ul>" >> site/index.html
+            
+            find "site/pdfs/$category" -name "*.pdf" -type f | sort | while read -r pdf; do
+              name=$(basename "$pdf" .pdf)
+              path="${pdf#site/}"
+              echo "<li><a href=\"$path\">$name</a></li>" >> site/index.html
+            done
+            
+            echo "</ul></div>" >> site/index.html
+          done
+
+          echo "<p class=\"updated\">Last updated: $(date -u +'%Y-%m-%d %H:%M UTC')</p>" >> site/index.html
+          echo "</body></html>" >> site/index.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs
+          path: site
 
+  # ============================================================================
+  # Deploy to GitHub Pages
+  # ============================================================================
+  deploy:
+    needs: stage
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

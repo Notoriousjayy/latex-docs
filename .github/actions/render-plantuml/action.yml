@@ -1,0 +1,110 @@
+# .github/actions/render-plantuml/action.yml
+# Reusable composite action for rendering PlantUML diagrams
+name: 'Render PlantUML Diagrams'
+description: 'Discover and render all PlantUML files to SVG/PNG'
+
+inputs:
+  source-dir:
+    description: 'Root directory to search for .puml files'
+    required: false
+    default: 'src'
+  formats:
+    description: 'Space-separated output formats (png svg jpg)'
+    required: false
+    default: 'png svg'
+
+outputs:
+  diagram-count:
+    description: 'Number of diagrams rendered'
+    value: ${{ steps.render.outputs.count }}
+  rendered-files:
+    description: 'JSON array of rendered file paths'
+    value: ${{ steps.render.outputs.files }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install PlantUML and dependencies
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          plantuml graphviz default-jre-headless
+        rm -rf /var/lib/apt/lists/*
+
+    - name: Render PlantUML diagrams
+      id: render
+      shell: bash
+      run: |
+        set -euo pipefail
+        
+        ROOT="${{ inputs.source-dir }}"
+        CONFIG_NAMES=("plantuml-config.puml" "config.puml")
+        read -ra FORMATS <<< "${{ inputs.formats }}"
+        
+        # Function to find nearest config file
+        find_config() {
+          local start_dir="$1"
+          local d="$start_dir"
+          while true; do
+            for n in "${CONFIG_NAMES[@]}"; do
+              if [[ -f "${d}/${n}" ]]; then
+                echo "${d}/${n}"
+                return 0
+              fi
+            done
+            [[ "$d" == "$ROOT" || "$d" == "." ]] && break
+            d="$(dirname "$d")"
+          done
+          echo ""
+        }
+        
+        # Collect .puml files (excluding configs)
+        mapfile -d '' PUMLS < <(
+          find "$ROOT" -type f -name "*.puml" \
+            ! -name "plantuml-config.puml" \
+            ! -name "config.puml" \
+            -print0 2>/dev/null || true
+        )
+        
+        echo "Discovered ${#PUMLS[@]} PlantUML diagrams"
+        
+        if [[ ${#PUMLS[@]} -eq 0 ]]; then
+          echo "count=0" >> "$GITHUB_OUTPUT"
+          echo 'files=[]' >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        
+        rendered_files=()
+        
+        for puml in "${PUMLS[@]}"; do
+          dir="$(dirname "$puml")"
+          base="$(basename "$puml" .puml)"
+          cfg="$(find_config "$dir")"
+          
+          echo "Rendering: ${puml}"
+          
+          for fmt in "${FORMATS[@]}"; do
+            mkdir -p "${dir}/${fmt}"
+            dest="${dir}/${fmt}/${base}.${fmt}"
+            
+            pushd "$dir" >/dev/null
+            if [[ -n "$cfg" ]]; then
+              cfg_abs="$(readlink -f "$cfg")"
+              plantuml "-t${fmt}" -o "${fmt}" -config "$cfg_abs" "$(basename "$puml")" 2>/dev/null || true
+            else
+              plantuml "-t${fmt}" -o "${fmt}" "$(basename "$puml")" 2>/dev/null || true
+            fi
+            popd >/dev/null
+            
+            if [[ -f "$dest" ]]; then
+              echo "  ✓ ${dest}"
+              rendered_files+=("$dest")
+            else
+              echo "  ⚠ Failed: ${dest}"
+            fi
+          done
+        done
+        
+        echo "count=${#PUMLS[@]}" >> "$GITHUB_OUTPUT"
+        printf 'files=%s\n' "$(printf '%s\n' "${rendered_files[@]}" | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"

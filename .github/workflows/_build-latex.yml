@@ -1,0 +1,222 @@
+# .github/workflows/_build-latex.yml
+# Reusable workflow for building LaTeX documents
+# Called by latex-ci.yml, latex-pages.yml, latex-release.yml
+name: _Build LaTeX (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      build-all:
+        description: 'Build all documents (ignore change detection)'
+        type: boolean
+        default: false
+      document-category:
+        description: 'Category filter (architecture, devops, security, etc.) or empty for all'
+        type: string
+        default: ''
+      render-plantuml:
+        description: 'Render PlantUML diagrams before building'
+        type: boolean
+        default: true
+      upload-artifacts:
+        description: 'Upload built PDFs as artifacts'
+        type: boolean
+        default: true
+    outputs:
+      pdf-count:
+        description: 'Total PDFs built'
+        value: ${{ jobs.aggregate.outputs.total }}
+      artifact-name:
+        description: 'Name of uploaded artifact'
+        value: ${{ jobs.aggregate.outputs.artifact-name }}
+
+jobs:
+  # ============================================================================
+  # Stage 1: Determine what changed and prepare build matrix
+  # ============================================================================
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      has-changes: ${{ steps.changes.outputs.has-changes }}
+      plantuml-changed: ${{ steps.changes.outputs.plantuml }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Need history for diff
+
+      - name: Detect changed files
+        id: changes
+        run: |
+          set -euo pipefail
+          
+          if [[ "${{ inputs.build-all }}" == "true" ]]; then
+            echo "has-changes=true" >> "$GITHUB_OUTPUT"
+            echo "plantuml=true" >> "$GITHUB_OUTPUT"
+            echo "changed-files=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          
+          # Get changed files
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          else
+            CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+          fi
+          
+          echo "Changed files:"
+          echo "$CHANGED"
+          
+          # Check for .tex changes
+          TEX_CHANGES=$(echo "$CHANGED" | grep -E '\.tex$' || echo "")
+          PUML_CHANGES=$(echo "$CHANGED" | grep -E '\.puml$' || echo "")
+          
+          if [[ -n "$TEX_CHANGES" || -n "$PUML_CHANGES" ]]; then
+            echo "has-changes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-changes=false" >> "$GITHUB_OUTPUT"
+          fi
+          
+          if [[ -n "$PUML_CHANGES" ]]; then
+            echo "plantuml=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "plantuml=false" >> "$GITHUB_OUTPUT"
+          fi
+          
+          printf 'changed-files<<EOF\n%s\nEOF\n' "$CHANGED" >> "$GITHUB_OUTPUT"
+
+      - name: Build matrix of document categories
+        id: matrix
+        run: |
+          set -euo pipefail
+          
+          CATEGORY="${{ inputs.document-category }}"
+          
+          if [[ -n "$CATEGORY" ]]; then
+            # Single category specified
+            echo 'matrix={"category":["'"$CATEGORY"'"]}' >> "$GITHUB_OUTPUT"
+          else
+            # Auto-discover categories from directory structure
+            CATEGORIES=$(find src -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | jq -R . | jq -sc .)
+            echo "matrix={\"category\":$CATEGORIES}" >> "$GITHUB_OUTPUT"
+          fi
+          
+          cat "$GITHUB_OUTPUT"
+
+  # ============================================================================
+  # Stage 2: Render PlantUML diagrams (if needed)
+  # ============================================================================
+  plantuml:
+    needs: prepare
+    if: needs.prepare.outputs.has-changes == 'true' && inputs.render-plantuml == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Render PlantUML
+        uses: ./.github/actions/render-plantuml
+        with:
+          source-dir: src
+          formats: 'png svg'
+
+      - name: Upload rendered diagrams
+        uses: actions/upload-artifact@v4
+        with:
+          name: plantuml-diagrams
+          path: |
+            src/**/png/*.png
+            src/**/svg/*.svg
+          retention-days: 1
+          if-no-files-found: ignore
+
+  # ============================================================================
+  # Stage 3: Build documents in parallel by category
+  # ============================================================================
+  build:
+    needs: [prepare, plantuml]
+    if: always() && needs.prepare.outputs.has-changes == 'true' && (needs.plantuml.result == 'success' || needs.plantuml.result == 'skipped')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download PlantUML artifacts
+        if: inputs.render-plantuml == true
+        uses: actions/download-artifact@v4
+        with:
+          name: plantuml-diagrams
+          path: src
+        continue-on-error: true
+
+      - name: Setup LaTeX
+        uses: ./.github/actions/setup-latex
+
+      - name: Build ${{ matrix.category }} documents
+        uses: ./.github/actions/build-documents
+        with:
+          source-dir: src
+          document-filter: 'src/${{ matrix.category }}/**/*.tex'
+          build-all: ${{ inputs.build-all }}
+          cache-aux-files: 'true'
+
+      - name: Upload category PDFs
+        if: inputs.upload-artifacts == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdfs-${{ matrix.category }}
+          path: src/${{ matrix.category }}/**/*.pdf
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # ============================================================================
+  # Stage 4: Aggregate results
+  # ============================================================================
+  aggregate:
+    needs: build
+    if: always() && needs.build.result != 'cancelled'
+    runs-on: ubuntu-latest
+    outputs:
+      total: ${{ steps.count.outputs.total }}
+      artifact-name: ${{ steps.merge.outputs.name }}
+    steps:
+      - name: Download all PDF artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: pdfs-*
+          path: all-pdfs
+          merge-multiple: true
+
+      - name: Count total PDFs
+        id: count
+        run: |
+          total=$(find all-pdfs -name "*.pdf" -type f 2>/dev/null | wc -l || echo 0)
+          echo "total=$total" >> "$GITHUB_OUTPUT"
+          echo "Total PDFs built: $total"
+
+      - name: Merge into single artifact
+        id: merge
+        if: inputs.upload-artifacts == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: latex-pdfs
+          path: all-pdfs
+          retention-days: 30
+
+      - name: Generate build summary
+        run: |
+          {
+            echo "## LaTeX Build Summary"
+            echo ""
+            echo "**Total PDFs:** ${{ steps.count.outputs.total }}"
+            echo ""
+            echo "### Built PDFs"
+            echo ""
+            find all-pdfs -name "*.pdf" -type f | sort | while read -r pdf; do
+              echo "- \`${pdf#all-pdfs/}\`"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"

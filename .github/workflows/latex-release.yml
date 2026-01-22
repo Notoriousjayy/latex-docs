@@ -1,3 +1,5 @@
+# .github/workflows/latex-release.yml
+# Build and attach PDFs to GitHub releases
 name: LaTeX Release
 
 on:
@@ -5,175 +7,55 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: write
+
 jobs:
+  # ============================================================================
+  # Build all documents for release
+  # ============================================================================
   build:
+    uses: ./.github/workflows/_build-latex.yml
+    with:
+      build-all: true  # Releases need complete builds
+      render-plantuml: true
+      upload-artifacts: true
+
+  # ============================================================================
+  # Package and attach to release
+  # ============================================================================
+  release:
+    needs: build
     runs-on: ubuntu-latest
-
-    container:
-      image: ghcr.io/xu-cheng/texlive-full:latest
-      options: --user 0
-
-    permissions:
-      contents: write
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Download built PDFs
+        uses: actions/download-artifact@v4
+        with:
+          name: latex-pdfs
+          path: pdfs
 
-      - name: Install dependencies (bash, GNU coreutils, Inkscape, PlantUML, zip)
-        shell: sh
+      - name: Create release archive
         run: |
-          set -eu
-
-          echo "Installing dependencies inside job container..."
-          if command -v apk >/dev/null 2>&1; then
-            apk update
-            # Install GNU coreutils, grep, findutils, make to replace BusyBox variants
-            # Install Inkscape for SVG conversion, PlantUML + Graphviz + Java for diagrams
-            apk add --no-cache bash coreutils grep findutils make inkscape fontconfig ttf-dejavu dbus zip \
-              plantuml graphviz openjdk17-jre-headless
-          elif command -v apt-get >/dev/null 2>&1; then
-            apt-get update
-            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-              bash inkscape zip plantuml graphviz default-jre-headless
-            rm -rf /var/lib/apt/lists/*
-          elif command -v dnf >/dev/null 2>&1; then
-            dnf install -y bash inkscape zip plantuml graphviz java-17-openjdk-headless
-          elif command -v yum >/dev/null 2>&1; then
-            yum install -y bash inkscape zip plantuml graphviz java-17-openjdk-headless
-          else
-            echo "ERROR: No supported package manager found in container."
-            cat /etc/os-release || true
-            exit 1
-          fi
-
-          # Create symlink for /usr/bin/bash if bash is at /bin/bash
-          if [ -x /bin/bash ] && [ ! -e /usr/bin/bash ]; then
-            ln -s /bin/bash /usr/bin/bash
-            echo "Created symlink: /usr/bin/bash -> /bin/bash"
-          fi
-
-          echo "Installed bash:"
-          bash --version | head -n 1
-          echo "Installed grep:"
-          grep --version | head -n 1
-          echo "Installed Inkscape:"
-          inkscape -V || true
-          echo "Installed PlantUML:"
-          plantuml -version 2>&1 | head -n 1 || true
-          echo "Installed zip:"
-          zip -v | head -n 2 || true
-
-      - name: Render PlantUML diagrams
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          ROOT="src"
-          CONFIG_NAMES=("plantuml-config.puml" "config.puml")
-          FORMATS=("png" "svg")
-
-          echo "=== Searching for PlantUML files under ${ROOT}/ ==="
-          echo "Current directory: $(pwd)"
-          echo "Directory listing of ${ROOT}/:"
-          find "$ROOT" -type f -name "*.puml" 2>/dev/null || echo "No .puml files found or src/ doesn't exist"
-          echo ""
-
-          find_config() {
-            local start_dir="$1"
-            local d="$start_dir"
-            while true; do
-              for n in "${CONFIG_NAMES[@]}"; do
-                if [[ -f "${d}/${n}" ]]; then
-                  echo "${d}/${n}"
-                  return 0
-                fi
-              done
-              [[ "$d" == "$ROOT" || "$d" == "." ]] && break
-              d="$(dirname "$d")"
-            done
-            echo ""
-          }
-
-          # Collect .puml files (excluding config files)
-          PUMLS=()
-          while IFS= read -r -d '' file; do
-            PUMLS+=("$file")
-          done < <(find "$ROOT" -type f -name "*.puml" \
-            ! -name "plantuml-config.puml" \
-            ! -name "config.puml" \
-            -print0 2>/dev/null || true)
-
-          echo "Total diagrams discovered: ${#PUMLS[@]}"
-
-          if [[ ${#PUMLS[@]} -eq 0 ]]; then
-            echo "WARNING: No PlantUML files found under ${ROOT}/"
-            echo "LaTeX build may fail if it expects SVG files from PlantUML."
-            exit 0
-          fi
-
-          for puml in "${PUMLS[@]}"; do
-            dir="$(dirname "$puml")"
-            base="$(basename "$puml" .puml)"
-            cfg="$(find_config "$dir")"
-
-            mkdir -p "${dir}/png" "${dir}/svg"
-            echo "Rendering: ${puml}"
-            echo "  Output dir: ${dir}/svg/"
-
-            for fmt in "${FORMATS[@]}"; do
-              tmp="${dir}/.plantuml-tmp/${base}/${fmt}"
-              mkdir -p "$tmp"
-
-              cfg_abs=""
-              if [[ -n "$cfg" ]]; then
-                cfg_abs="$(readlink -f "$cfg" 2>/dev/null || echo "$cfg")"
-              fi
-
-              pushd "$dir" >/dev/null
-              if [[ -n "$cfg_abs" ]]; then
-                echo "  Using config: $cfg_abs"
-                plantuml "-t${fmt}" -o ".plantuml-tmp/${base}/${fmt}" -config "$cfg_abs" "$(basename "$puml")"
-              else
-                plantuml "-t${fmt}" -o ".plantuml-tmp/${base}/${fmt}" "$(basename "$puml")"
-              fi
-              popd >/dev/null
-
-              produced="$(find "$tmp" -type f -name "*.${fmt}" 2>/dev/null | head -n 1 || true)"
-
-              if [[ -z "$produced" ]]; then
-                echo "ERROR: No output produced for ${puml} (format=${fmt})"
-                echo "  Temp dir contents:"
-                ls -la "$tmp" 2>/dev/null || echo "  (empty or missing)"
-                exit 1
-              fi
-
-              dest="${dir}/${fmt}/${base}.${fmt}"
-              mv -f "$produced" "$dest"
-              rm -rf "${dir}/.plantuml-tmp/${base}/${fmt}"
-              echo "  Created: ${dest}"
-            done
-          done
-
-          echo ""
-          echo "=== PlantUML rendering complete ==="
-          echo "Generated SVG files:"
-          find "$ROOT" -path "*/svg/*.svg" -type f 2>/dev/null || echo "(none)"
-
-      - name: Build PDFs (via Makefile)
-        shell: bash
-        run: |
-          set -euo pipefail
-          make build-all
-
-      - name: Package PDFs
-        shell: bash
-        run: |
-          set -euo pipefail
           mkdir -p dist
-          zip -r dist/pdfs.zip build/pdfs
+          
+          # Create a single zip with all PDFs
+          cd pdfs
+          zip -r ../dist/latex-pdfs.zip . -i '*.pdf'
+          cd ..
+          
+          # Also create category-specific zips for selective downloads
+          for category in $(find pdfs -mindepth 1 -maxdepth 1 -type d -exec basename {} \;); do
+            if find "pdfs/$category" -name "*.pdf" -type f | head -1 | grep -q .; then
+              cd pdfs
+              zip -r "../dist/${category}-pdfs.zip" "$category" -i '*.pdf'
+              cd ..
+            fi
+          done
+          
+          echo "Release archives created:"
+          ls -lh dist/
 
-      - name: Upload Release Asset (pdfs.zip)
+      - name: Attach to release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/pdfs.zip
+          files: dist/*.zip

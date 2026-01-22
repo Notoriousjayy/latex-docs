@@ -1,0 +1,58 @@
+# .github/actions/setup-latex/action.yml
+# Reusable composite action for setting up LaTeX environment with caching
+name: 'Setup LaTeX Environment'
+description: 'Install TeX Live with intelligent caching for fast builds'
+
+inputs:
+  cache-key-prefix:
+    description: 'Prefix for cache key (allows cache busting)'
+    required: false
+    default: 'texlive-v1'
+
+outputs:
+  cache-hit:
+    description: 'Whether the cache was hit'
+    value: ${{ steps.cache-texlive.outputs.cache-hit }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Cache TeX Live packages
+      id: cache-texlive
+      uses: actions/cache@v4
+      with:
+        path: |
+          /usr/local/texlive
+          ~/.texlive
+        key: ${{ inputs.cache-key-prefix }}-${{ runner.os }}-texlive
+        restore-keys: |
+          ${{ inputs.cache-key-prefix }}-${{ runner.os }}-texlive
+
+    - name: Install TeX Live (if not cached)
+      if: steps.cache-texlive.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          texlive-latex-recommended \
+          texlive-latex-extra \
+          texlive-fonts-recommended \
+          texlive-fonts-extra \
+          texlive-pictures \
+          texlive-science \
+          texlive-bibtex-extra \
+          texlive-luatex \
+          latexmk \
+          biber \
+          python3-pygments \
+          ghostscript \
+          imagemagick
+        rm -rf /var/lib/apt/lists/*
+
+    - name: Verify LaTeX installation
+      shell: bash
+      run: |
+        echo "LaTeX version:"
+        lualatex --version | head -3
+        echo "latexmk version:"
+        latexmk --version | head -1

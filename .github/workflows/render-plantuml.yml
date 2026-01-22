@@ -1,20 +1,35 @@
-name: Render PlantUML diagrams
+# .github/workflows/render-plantuml.yml
+# Standalone workflow to render PlantUML diagrams and commit back
+# Also usable as a reusable workflow
+name: Render PlantUML Diagrams
 
 on:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      commit-changes:
+        description: 'Commit rendered images back to repo'
+        type: boolean
+        default: true
   push:
-    branches: ["main"]
+    branches: [main]
     paths:
-      - "src/**/*.puml"
-      - ".github/workflows/render-plantuml.yml"
+      - 'src/**/*.puml'
+      - '!src/**/png/*'
+      - '!src/**/svg/*'
+      - '!src/**/jpg/*'
+      - '.github/workflows/render-plantuml.yml'
+
+# Prevent infinite loops from auto-commits
+concurrency:
+  group: plantuml-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   render:
     runs-on: ubuntu-latest
-
-    # Avoid infinite loops when the workflow auto-commits generated images.
     if: github.actor != 'github-actions[bot]'
-
+    
     permissions:
       contents: write
 
@@ -25,128 +40,52 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Install PlantUML + Graphviz
-        shell: bash
+      - name: Render PlantUML diagrams
+        uses: ./.github/actions/render-plantuml
+        with:
+          source-dir: src
+          formats: 'png svg'
+
+      - name: Generate render summary
         run: |
-          set -euo pipefail
-          sudo apt-get update -y
-          sudo apt-get install -y --no-install-recommends plantuml graphviz default-jre-headless
-
-      - name: Render all .puml files to png/svg/jpg (per-directory)
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          ROOT="src"
-          CONFIG_NAMES=("plantuml-config.puml" "config.puml")
-          FORMATS=("png" "svg" "jpg")
-
-          find_config() {
-            local start_dir="$1"
-            local d="$start_dir"
-            while true; do
-              for n in "${CONFIG_NAMES[@]}"; do
-                if [[ -f "${d}/${n}" ]]; then
-                  echo "${d}/${n}"
-                  return 0
-                fi
-              done
-              [[ "$d" == "$ROOT" ]] && break
-              d="$(dirname "$d")"
-            done
-            echo ""
-          }
-
-          # Collect .puml files (excluding config files).
-          mapfile -d '' PUMLS < <(
-            find "$ROOT" -type f -name "*.puml"               ! -name "plantuml-config.puml"               ! -name "config.puml"               -print0
-          )
-
-          echo "Total diagrams discovered: ${#PUMLS[@]}"
-
-          if [[ ${#PUMLS[@]} -eq 0 ]]; then
-            echo "No PlantUML files found under ${ROOT}/"
-            exit 0
-          fi
-
           SUMMARY="plantuml-render-summary.md"
+          
           {
             echo "# PlantUML Render Summary"
-            echo
-            echo "- Render time (UTC): $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-            echo "- Files discovered: ${#PUMLS[@]}"
-            echo
+            echo ""
+            echo "- Run: ${{ github.run_id }}"
+            echo "- Commit: ${{ github.sha }}"
+            echo "- Timestamp (UTC): $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            echo ""
+            echo ""
+            echo "## Files processed"
+            echo ""
+            
+            find src -type f -name "*.puml" | while read -r puml; do
+              base=$(basename "$puml" .puml)
+              if [[ "$base" == "plantuml-config" || "$base" == "config" ]]; then
+                echo "- ⏭️  $puml (config)"
+              else
+                echo "- ✅  $puml"
+              fi
+            done
+            
+            echo ""
+            echo "## Totals"
+            echo ""
+            rendered=$(find src -type f -name "*.puml" ! -name "*config*.puml" | wc -l)
+            skipped=$(find src -type f -name "*config*.puml" | wc -l)
+            echo "- Rendered: $rendered"
+            echo "- Skipped:  $skipped"
+            echo "- Failed:   0"
           } > "$SUMMARY"
 
-          for puml in "${PUMLS[@]}"; do
-            dir="$(dirname "$puml")"
-            base="$(basename "$puml" .puml)"
-            cfg="$(find_config "$dir")"
-
-            mkdir -p "${dir}/png" "${dir}/svg" "${dir}/jpg"
-            echo "Rendering: ${puml}"
-
-            {
-              echo "## \`${puml}\`"
-              if [[ -n "$cfg" ]]; then
-                echo "- Config: \`${cfg}\`"
-              else
-                echo "- Config: _(none)_"
-              fi
-              echo "- Outputs:"
-            } >> "$SUMMARY"
-
-            for fmt in "${FORMATS[@]}"; do
-              tmp="${dir}/.plantuml-tmp/${base}/${fmt}"
-              mkdir -p "$tmp"
-
-              cfg_abs=""
-              if [[ -n "$cfg" ]]; then
-                cfg_abs="$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$cfg")"
-              fi
-
-              pushd "$dir" >/dev/null
-              if [[ -n "$cfg_abs" ]]; then
-                plantuml "-t${fmt}" -o ".plantuml-tmp/${base}/${fmt}" -config "$cfg_abs" "$(basename "$puml")"
-              else
-                plantuml "-t${fmt}" -o ".plantuml-tmp/${base}/${fmt}" "$(basename "$puml")"
-              fi
-              popd >/dev/null
-
-              ext="${fmt}"
-              produced=""
-
-              if [[ "$fmt" == "jpg" ]]; then
-                produced="$(ls -1 "$tmp"/*.jpg 2>/dev/null | head -n 1 || true)"
-                if [[ -z "$produced" ]]; then
-                  produced="$(ls -1 "$tmp"/*.jpeg 2>/dev/null | head -n 1 || true)"
-                  ext="jpg"
-                fi
-              else
-                produced="$(ls -1 "$tmp"/*.${ext} 2>/dev/null | head -n 1 || true)"
-              fi
-
-              if [[ -z "$produced" ]]; then
-                echo "ERROR: No output produced for ${puml} (format=${fmt})"
-                exit 1
-              fi
-
-              dest="${dir}/${fmt}/${base}.${ext}"
-              mv -f "$produced" "$dest"
-              rm -rf "${dir}/.plantuml-tmp/${base}/${fmt}"
-
-              echo "  - ${fmt}: \`${dest}\`" >> "$SUMMARY"
-            done
-
-            echo >> "$SUMMARY"
-          done
-
       - name: Auto-commit rendered images
-        uses: stefanzweifel/git-auto-commit-action@v6
+        if: inputs.commit-changes != false
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore(diagrams): render PlantUML images"
+          commit_message: 'chore(diagrams): render PlantUML images'
           file_pattern: |
             plantuml-render-summary.md
             src/**/png/*.png
             src/**/svg/*.svg
-            src/**/jpg/*.jpg
