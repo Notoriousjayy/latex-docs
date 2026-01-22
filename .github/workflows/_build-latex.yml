@@ -201,6 +201,40 @@ jobs:
           build-all: ${{ inputs.build-all }}
           cache-aux-files: 'true'
 
+      - name: Normalize pipe-and-filter PDF location
+        if: matrix.category == 'architecture'
+        run: |
+          set -euo pipefail
+          base="src/architecture/views-and-beyond/component-connector-viewtype"
+          expected="$base/pipe-and-filter/pipe-and-filter-style.pdf"
+          flat="$base/pipe-and-filter-style.pdf"
+
+          mkdir -p "$(dirname "$expected")"
+
+          # Always enforce canonical location: move a flat PDF into the subsection folder (overwrites canonical)
+          if [[ -f "$flat" ]]; then
+            mv -f "$flat" "$expected"
+          fi
+
+          # If canonical is still missing, try to locate any other matching PDF under the base folder
+          if [[ ! -f "$expected" ]]; then
+            found="$(find "$base" -maxdepth 4 -name 'pipe-and-filter-style.pdf' -type f | grep -v -F "$expected" | head -n 1 || true)"
+            if [[ -n "$found" ]]; then
+              mv -f "$found" "$expected"
+            fi
+          fi
+
+          # Remove any remaining duplicates (prevents the index from listing both flat + canonical)
+          find "$base" -maxdepth 4 -name 'pipe-and-filter-style.pdf' -type f ! -path "$expected" -print -delete || true
+
+          # Fail fast to prevent publishing an index link that 404s
+          if [[ ! -f "$expected" ]]; then
+            echo "ERROR: Missing canonical PDF: $expected"
+            echo "Candidates under $base:"
+            find "$base" -maxdepth 4 -name 'pipe-and-filter-style.pdf' -type f -print || true
+            exit 1
+          fi
+
       - name: Collect PDFs for upload
         run: |
           set -euo pipefail
