@@ -7,11 +7,11 @@ on:
   push:
     branches: [main]
     paths:
-      - 'src/**/*.tex'
-      - 'src/**/*.puml'
-      - 'tooling/**'
-      - '.github/workflows/*.yml'
-      - '.github/actions/**'
+      - "src/**/*.tex"
+      - "src/**/*.puml"
+      - "tooling/**"
+      - ".github/workflows/*.yml"
+      - ".github/actions/**"
 
 concurrency:
   group: pages
@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   # ============================================================================
-  # Build all documents
+  # Build all documents (reusable workflow)
   # ============================================================================
   build:
     uses: ./.github/workflows/_build-latex.yml
@@ -35,108 +35,119 @@ jobs:
 
   # ============================================================================
   # Stage PDFs for GitHub Pages
+  #   - downloads all "pdfs-*" artifacts (one per category)
+  #   - merges into a single "site/pdfs" tree while preserving subdirectories
+  #   - (optional) rehydrates structure if any PDFs were flattened upstream
+  #   - generates site/index.html from the staged tree
   # ============================================================================
   stage:
     needs: build
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download built PDFs
+      - name: Download all PDF artifacts (pdfs-*)
         uses: actions/download-artifact@v4
         with:
-          name: latex-pdfs
-          path: site/pdfs
+          pattern: "pdfs-*"
+          path: all-pdfs
+          merge-multiple: false
 
-      # ------------------------------------------------------------------------
-      # IMPORTANT:
-      # If any upstream step flattened PDFs into a parent directory, rebuild the
-      # correct directory structure by mapping each PDF back to its .tex root in
-      # src/ using the basename (foo.pdf -> foo.tex).
-      # ------------------------------------------------------------------------
-      - name: Rehydrate PDF directory structure from src/
+      - name: Merge all category artifacts (preserve full structure)
         run: |
           set -euo pipefail
 
-          echo "=== Rehydrating PDF directory structure (if needed) ==="
+          echo "=== Downloaded artifact structure ==="
+          # Avoid failing the step due to SIGPIPE when piping into head under pipefail
+          set +o pipefail
+          find all-pdfs -type d | head -30 || true
+          set -o pipefail
+          echo ""
+
+          mkdir -p site/pdfs
+
+          # Merge all category artifacts preserving the embedded structure inside each artifact
+          for artifact_dir in all-pdfs/pdfs-*/; do
+            if [[ -d "${artifact_dir}" ]]; then
+              echo "Merging from: ${artifact_dir}"
+              # rsync preserves directory structure and does not flatten
+              rsync -a "${artifact_dir}/" "site/pdfs/"
+            fi
+          done
+
+          echo ""
+          echo "=== Merged PDF structure (showing directories) ==="
+          set +o pipefail
+          find site/pdfs -type d | sort | head -60 || true
+          set -o pipefail
+          echo ""
+
+          total="$(find site/pdfs -name "*.pdf" -type f 2>/dev/null | wc -l | tr -d ' ')"
+          echo "Total PDFs: ${total}"
+
+          echo ""
+          echo "=== PDF listing (first 60) ==="
+          set +o pipefail
+          find site/pdfs -name "*.pdf" -type f | sort | head -60 || true
+          set -o pipefail
+
+      # Best-effort: if any upstream stage flattened PDFs into a parent directory,
+      # restore correct structure by mapping <name>.pdf -> src/**/<name>.tex root that has \documentclass.
+      - name: Rehydrate PDF directory structure from src (best-effort)
+        run: |
+          set -euo pipefail
 
           moved=0
           skipped=0
           ambiguous=0
           missing=0
 
-          # Iterate all PDFs currently staged for Pages
           while IFS= read -r -d '' pdf; do
             base="$(basename "$pdf" .pdf)"
-            tex_matches=()
 
-            # Find matching TeX roots by basename; include only roots with \documentclass
-            while IFS= read -r -d '' tex; do
-              if grep -qE '^[[:space:]]*\\documentclass' "$tex"; then
-                tex_matches+=("$tex")
-              fi
-            done < <(find src -type f -name "${base}.tex" -print0 2>/dev/null || true)
+            # Find TeX roots by basename; keep only real roots (\documentclass)
+            mapfile -d '' tex_matches < <(
+              find src -type f -name "${base}.tex" -print0 2>/dev/null | \
+              xargs -0 -I{} bash -lc 'grep -qE "^[[:space:]]*\\documentclass" "{}" && printf "%s\0" "{}" || true'
+            )
 
             if [[ ${#tex_matches[@]} -eq 0 ]]; then
-              # No matching root found; leave it where it is
               missing=$((missing + 1))
               continue
             fi
 
             if [[ ${#tex_matches[@]} -gt 1 ]]; then
-              echo "::warning::Ambiguous mapping for $(basename "$pdf"): multiple TeX roots found:"
-              for t in "${tex_matches[@]}"; do
-                echo "  - $t"
-              done
+              echo "::warning::Ambiguous mapping for $(basename "$pdf") (multiple TeX roots). Leaving as-is."
               ambiguous=$((ambiguous + 1))
               continue
             fi
 
             tex="${tex_matches[0]}"
-
-            # Desired destination is site/pdfs/<path relative to src/> with .pdf extension
             rel_tex="${tex#src/}"
             rel_dir="$(dirname "$rel_tex")"
-            desired_dir="site/pdfs/${rel_dir}"
-            desired_pdf="${desired_dir}/${base}.pdf"
+            desired="site/pdfs/${rel_dir}/${base}.pdf"
 
-            # If already in correct place, do nothing
-            if [[ "$pdf" == "$desired_pdf" ]]; then
+            # Already correct
+            if [[ "$pdf" == "$desired" ]]; then
               skipped=$((skipped + 1))
               continue
             fi
 
-            # Only move if the desired path doesn't already exist; otherwise warn and skip
-            if [[ -e "$desired_pdf" ]]; then
-              echo "::warning::Destination already exists, skipping move: $desired_pdf"
+            # Do not clobber
+            if [[ -e "$desired" ]]; then
+              echo "::warning::Destination exists; skipping move: $desired"
               skipped=$((skipped + 1))
               continue
             fi
 
-            mkdir -p "$desired_dir"
-            mv "$pdf" "$desired_pdf"
+            mkdir -p "$(dirname "$desired")"
+            mv "$pdf" "$desired"
             moved=$((moved + 1))
           done < <(find site/pdfs -type f -name "*.pdf" -print0 2>/dev/null)
 
-          echo ""
-          echo "Rehydration results:"
-          echo "  moved=$moved"
-          echo "  skipped=$skipped"
-          echo "  ambiguous=$ambiguous"
-          echo "  missing=$missing"
-          echo ""
-
-      - name: Display PDF structure
-        run: |
-          set -euo pipefail
-          echo "=== PDF directory tree (showing all levels) ==="
-          find site/pdfs -type d | sort
-          echo ""
-          echo "=== All PDFs with full paths ==="
-          find site/pdfs -name "*.pdf" -type f | sort
-          echo ""
-          echo "Total PDFs: $(find site/pdfs -name "*.pdf" -type f | wc -l)"
+          echo "rehydrate: moved=$moved skipped=$skipped ambiguous=$ambiguous missing=$missing"
 
       - name: Generate index.html
         run: |
@@ -150,127 +161,44 @@ jobs:
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>LaTeX PDFs</title>
             <style>
-              :root {
-                --bg: #fafafa;
-                --text: #333;
-                --accent: #0066cc;
-                --border: #ddd;
-                --hover: #f0f0f0;
-              }
+              :root { --bg:#fafafa; --text:#333; --accent:#0066cc; --border:#ddd; --hover:#f0f0f0; }
               @media (prefers-color-scheme: dark) {
-                :root {
-                  --bg: #1a1a1a;
-                  --text: #e0e0e0;
-                  --accent: #4da6ff;
-                  --border: #444;
-                  --hover: #2a2a2a;
-                }
+                :root { --bg:#1a1a1a; --text:#e0e0e0; --accent:#4da6ff; --border:#444; --hover:#2a2a2a; }
               }
-              * { box-sizing: border-box; }
-              body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                max-width: 1000px;
-                margin: 0 auto;
-                padding: 2rem 1rem;
-                background: var(--bg);
-                color: var(--text);
-                line-height: 1.6;
-              }
-              header {
-                border-bottom: 2px solid var(--border);
-                padding-bottom: 1rem;
-                margin-bottom: 2rem;
-              }
-              .title { font-size: 2rem; margin: 0; }
-              .sub { color: #666; margin: 0.5rem 0 0 0; }
-              .sub code {
-                background: var(--hover);
-                padding: 0.2em 0.4em;
-                border-radius: 3px;
-                font-size: 0.9em;
-              }
-              h1 {
-                font-size: 1.5rem;
-                margin: 2rem 0 0.5rem 0;
-                padding-top: 1rem;
-                border-top: 1px solid var(--border);
-              }
-              h1:first-of-type { border-top: none; margin-top: 0; }
-              h2 {
-                font-size: 1.2rem;
-                margin: 1.5rem 0 0.5rem 0;
-                color: #555;
-              }
-              h3 {
-                font-size: 1rem;
-                margin: 1rem 0 0.3rem 0;
-                color: #666;
-              }
-              h4 {
-                font-size: 0.95rem;
-                margin: 0.8rem 0 0.3rem 1rem;
-                color: #777;
-              }
-              h5 {
-                font-size: 0.9rem;
-                margin: 0.6rem 0 0.2rem 1.5rem;
-                color: #888;
-              }
-              h6 {
-                font-size: 0.85rem;
-                margin: 0.5rem 0 0.2rem 2rem;
-                color: #999;
-              }
-              ul.files {
-                list-style: none;
-                padding: 0;
-                margin: 0.5rem 0;
-              }
-              ul.files li {
-                padding: 0.4rem 0.6rem;
-                border-radius: 4px;
-              }
-              ul.files li:hover {
-                background: var(--hover);
-              }
-              ul.files a {
-                color: var(--accent);
-                text-decoration: none;
-              }
-              ul.files a:hover {
-                text-decoration: underline;
-              }
-              .updated {
-                color: #888;
-                font-size: 0.85rem;
-                margin-top: 3rem;
-                padding-top: 1rem;
-                border-top: 1px solid var(--border);
-              }
-              .stats {
-                display: flex;
-                gap: 2rem;
-                margin: 1rem 0;
-              }
-              .stat {
-                background: var(--hover);
-                padding: 1rem;
-                border-radius: 8px;
-              }
-              .stat-value { font-size: 1.5rem; font-weight: bold; }
-              .stat-label { font-size: 0.85rem; color: #666; }
+              *{box-sizing:border-box}
+              body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:1000px;margin:0 auto;padding:2rem 1rem;background:var(--bg);color:var(--text);line-height:1.6}
+              header{border-bottom:2px solid var(--border);padding-bottom:1rem;margin-bottom:2rem}
+              .title{font-size:2rem;margin:0}
+              .sub{color:#666;margin:.5rem 0 0 0}
+              .sub code{background:var(--hover);padding:.2em .4em;border-radius:3px;font-size:.9em}
+              h1{font-size:1.5rem;margin:2rem 0 .5rem 0;padding-top:1rem;border-top:1px solid var(--border)}
+              h1:first-of-type{border-top:none;margin-top:0}
+              h2{font-size:1.2rem;margin:1.5rem 0 .5rem 0;color:#555}
+              h3{font-size:1rem;margin:1rem 0 .3rem 0;color:#666}
+              h4{font-size:.95rem;margin:.8rem 0 .3rem 1rem;color:#777}
+              h5{font-size:.9rem;margin:.6rem 0 .2rem 1.5rem;color:#888}
+              h6{font-size:.85rem;margin:.5rem 0 .2rem 2rem;color:#999}
+              ul.files{list-style:none;padding:0;margin:.5rem 0}
+              ul.files li{padding:.4rem .6rem;border-radius:4px}
+              ul.files li:hover{background:var(--hover)}
+              ul.files a{color:var(--accent);text-decoration:none}
+              ul.files a:hover{text-decoration:underline}
+              .updated{color:#888;font-size:.85rem;margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border)}
+              .stats{display:flex;gap:2rem;margin:1rem 0;flex-wrap:wrap}
+              .stat{background:var(--hover);padding:1rem;border-radius:8px;min-width:160px}
+              .stat-value{font-size:1.5rem;font-weight:700}
+              .stat-label{font-size:.85rem;color:#666}
             </style>
           </head>
           <body>
             <header>
-              <p class="title">📄 LaTeX PDFs</p>
+              <p class="title">LaTeX PDFs</p>
               <p class="sub">Published from <code>src/**/*.tex</code> roots on the <code>main</code> branch.</p>
             </header>
           HTMLEOF
 
-          # Count total PDFs
-          total=$(find site/pdfs -name "*.pdf" -type f 2>/dev/null | wc -l)
-          categories=$(find site/pdfs -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+          total="$(find site/pdfs -name "*.pdf" -type f 2>/dev/null | wc -l | tr -d ' ')"
+          categories="$(find site/pdfs -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')"
 
           cat >> site/index.html << STATSEOF
             <div class="stats">
@@ -280,106 +208,83 @@ jobs:
               </div>
               <div class="stat">
                 <div class="stat-value">${categories}</div>
-                <div class="stat-label">Categories</div>
+                <div class="stat-label">Top-level categories</div>
               </div>
             </div>
           STATSEOF
 
-          # Generate category sections with recursive structure (supports arbitrary depth)
           generate_section() {
             local dir="$1"
             local depth="$2"
             local prefix="$3"
 
-            # Get PDFs in current directory only (not subdirs)
-            local pdfs=()
-            while IFS= read -r -d '' f; do
-              pdfs+=("$f")
-            done < <(find "$dir" -maxdepth 1 -name "*.pdf" -type f -print0 2>/dev/null | sort -z)
-
-            # Get immediate subdirectories
-            local subdirs=()
-            while IFS= read -r -d '' d; do
-              subdirs+=("$d")
-            done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null | sort -z)
-
-            # Check if this directory or any descendant has PDFs
             local total_pdfs
-            total_pdfs=$(find "$dir" -name "*.pdf" -type f 2>/dev/null | wc -l)
-            if [[ $total_pdfs -eq 0 ]]; then
-              return
-            fi
+            total_pdfs=$(find "$dir" -name "*.pdf" -type f 2>/dev/null | wc -l | tr -d ' ')
+            [[ "$total_pdfs" -eq 0 ]] && return
 
-            # Determine heading level (h1..h6 then stay at h6)
+            local pdfs=()
+            while IFS= read -r -d '' f; do pdfs+=("$f"); done < <(
+              find "$dir" -maxdepth 1 -name "*.pdf" -type f -print0 2>/dev/null | sort -z
+            )
+
+            local subdirs=()
+            while IFS= read -r -d '' d; do subdirs+=("$d"); done < <(
+              find "$dir" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null | sort -z
+            )
+
             local htag="h1"
-            local id_prefix=""
             case $depth in
-              1) htag="h1"; id_prefix="" ;;
-              2) htag="h2"; id_prefix="${prefix}-" ;;
-              3) htag="h3"; id_prefix="${prefix}-" ;;
-              4) htag="h4"; id_prefix="${prefix}-" ;;
-              5) htag="h5"; id_prefix="${prefix}-" ;;
-              *) htag="h6"; id_prefix="${prefix}-" ;;
+              1) htag="h1" ;;
+              2) htag="h2" ;;
+              3) htag="h3" ;;
+              4) htag="h4" ;;
+              5) htag="h5" ;;
+              *) htag="h6" ;;
             esac
 
-            local name
-            name=$(basename "$dir")
-            local id="${id_prefix}${name}"
+            local name id
+            name="$(basename "$dir")"
+            if [[ -n "$prefix" ]]; then
+              id="${prefix}-${name}"
+            else
+              id="${name}"
+            fi
 
             echo "<${htag} id=\"${id}\">${name}</${htag}>"
 
-            # List PDFs in this directory
             if [[ ${#pdfs[@]} -gt 0 ]]; then
               echo '<ul class="files">'
               for pdf in "${pdfs[@]}"; do
-                local fname
-                fname=$(basename "$pdf")
-                local rel_path="${pdf#site/}"
-                echo "<li><a href=\"${rel_path}\" title=\"${rel_path}\">${fname}</a></li>"
+                local fname rel
+                fname="$(basename "$pdf")"
+                rel="${pdf#site/}"   # => pdfs/...
+                echo "<li><a href=\"${rel}\" title=\"${rel}\">${fname}</a></li>"
               done
               echo '</ul>'
             fi
 
-            # Recurse into subdirectories
             for subdir in "${subdirs[@]}"; do
               generate_section "$subdir" $((depth + 1)) "$id"
             done
           }
 
-          # Process each top-level category
-          for category in $(find site/pdfs -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort); do
-            generate_section "site/pdfs/$category" 1 "$category" >> site/index.html
-          done
+          while IFS= read -r -d '' topdir; do
+            generate_section "$topdir" 1 ""
+          done < <(find site/pdfs -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null | sort -z) >> site/index.html
 
-          # Footer
           cat >> site/index.html << FOOTEREOF
             <p class="updated">Last updated: $(date -u +'%Y-%m-%d %H:%M UTC')</p>
           </body>
           </html>
           FOOTEREOF
 
-          echo "Generated index.html with $total documents in $categories categories"
-
-      - name: Copy build logs (optional)
-        run: |
-          set -euo pipefail
-          mkdir -p site/logs
-          find site/pdfs -name "*.log.txt" -o -name "*.stderr.txt" -o -name "*.stdout.txt" | while read -r f; do
-            rel="${f#site/pdfs/}"
-            dest="site/logs/$rel"
-            mkdir -p "$(dirname "$dest")"
-            cp "$f" "$dest" 2>/dev/null || true
-          done
-        continue-on-error: true
+          echo "Generated site/index.html (total PDFs: ${total})"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
-  # ============================================================================
-  # Deploy to GitHub Pages
-  # ============================================================================
   deploy:
     needs: stage
     runs-on: ubuntu-latest
