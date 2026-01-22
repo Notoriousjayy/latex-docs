@@ -42,14 +42,15 @@ runs:
         CONFIG_NAMES=("plantuml-config.puml" "config.puml")
         read -ra FORMATS <<< "${{ inputs.formats }}"
         
-        # Function to find nearest config file
+        # Function to find nearest config file (returns ABSOLUTE path)
         find_config() {
           local start_dir="$1"
           local d="$start_dir"
           while true; do
             for n in "${CONFIG_NAMES[@]}"; do
               if [[ -f "${d}/${n}" ]]; then
-                echo "${d}/${n}"
+                # Return absolute path immediately
+                readlink -f "${d}/${n}"
                 return 0
               fi
             done
@@ -76,24 +77,28 @@ runs:
         fi
         
         rendered_files=()
+        failed_count=0
         
         for puml in "${PUMLS[@]}"; do
           dir="$(dirname "$puml")"
           base="$(basename "$puml" .puml)"
-          cfg="$(find_config "$dir")"
+          # Get absolute config path BEFORE changing directories
+          cfg_abs="$(find_config "$dir")"
           
           echo "Rendering: ${puml}"
+          if [[ -n "$cfg_abs" ]]; then
+            echo "  Config: ${cfg_abs}"
+          fi
           
           for fmt in "${FORMATS[@]}"; do
             mkdir -p "${dir}/${fmt}"
             dest="${dir}/${fmt}/${base}.${fmt}"
             
             pushd "$dir" >/dev/null
-            if [[ -n "$cfg" ]]; then
-              cfg_abs="$(readlink -f "$cfg")"
-              plantuml "-t${fmt}" -o "${fmt}" -config "$cfg_abs" "$(basename "$puml")" 2>/dev/null || true
+            if [[ -n "$cfg_abs" ]]; then
+              plantuml "-t${fmt}" -o "${fmt}" -config "$cfg_abs" "$(basename "$puml")" 2>&1 || echo "  PlantUML warning/error (continuing)"
             else
-              plantuml "-t${fmt}" -o "${fmt}" "$(basename "$puml")" 2>/dev/null || true
+              plantuml "-t${fmt}" -o "${fmt}" "$(basename "$puml")" 2>&1 || echo "  PlantUML warning/error (continuing)"
             fi
             popd >/dev/null
             
@@ -102,9 +107,17 @@ runs:
               rendered_files+=("$dest")
             else
               echo "  ⚠ Failed: ${dest}"
+              ((failed_count++)) || true
             fi
           done
         done
         
+        echo ""
+        echo "Summary: ${#rendered_files[@]} files rendered, ${failed_count} failures"
+        
         echo "count=${#PUMLS[@]}" >> "$GITHUB_OUTPUT"
-        printf 'files=%s\n' "$(printf '%s\n' "${rendered_files[@]}" | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+        if [[ ${#rendered_files[@]} -gt 0 ]]; then
+          printf 'files=%s\n' "$(printf '%s\n' "${rendered_files[@]}" | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+        else
+          echo 'files=[]' >> "$GITHUB_OUTPUT"
+        fi
