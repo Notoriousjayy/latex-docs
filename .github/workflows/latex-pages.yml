@@ -57,7 +57,21 @@ jobs:
           find site/pdfs -name "*.pdf" -type f | sort
           echo ""
           echo "Total PDFs: $(find site/pdfs -name '*.pdf' -type f | wc -l)"
+      - name: Create legacy PDF aliases
+        run: |
+          set -euo pipefail
 
+          # Backward-compatible paths for previously shared/linked URLs.
+          # Add more mappings here as needed (canonical -> legacy flat path).
+          base="site/pdfs/architecture/views-and-beyond/component-connector-viewtype"
+
+          canonical="${base}/pipe-and-filter/pipe-and-filter-style.pdf"
+          legacy_flat="${base}/pipe-and-filter-style.pdf"
+
+          if [[ -f "$canonical" && ! -f "$legacy_flat" ]]; then
+            echo "Creating legacy alias: ${legacy_flat#site/} -> ${canonical#site/}"
+            cp -f "$canonical" "$legacy_flat"
+          fi
       - name: Generate index.html
         run: |
           set -euo pipefail
@@ -210,6 +224,13 @@ jobs:
               for pdf in "${pdfs[@]}"; do
                 local fname rel
                 fname="$(basename "$pdf")"
+
+                # Hide "legacy flat" aliases from the index when the same basename exists deeper in the subtree.
+                # (This keeps the index canonical while still allowing old direct URLs to work.)
+                if find "$dir" -mindepth 2 -type f -name "$fname" -print -quit 2>/dev/null | grep -q .; then
+                  continue
+                fi
+
                 rel="${pdf#site/}"
                 echo "<li><a class=\"pdf\" href=\"${rel}\" title=\"${rel}\">${fname}</a><span class=\"path\">${rel}</span></li>" >> site/index.html
               done
