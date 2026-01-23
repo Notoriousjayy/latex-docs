@@ -246,47 +246,132 @@ jobs:
       - name: Setup LaTeX
         uses: ./.github/actions/setup-latex
 
-      - name: Build ${{ matrix.category }} documents
+      - name: Build ${{ matrix.category }} LaTeX roots (recursive) and stage outputs
         id: build
-        uses: ./.github/actions/build-documents
-        with:
-          source-dir: src
-          document-filter: 'src/${{ matrix.category }}'
-          build-all: ${{ inputs.build-all }}
-          cache-aux-files: 'true'
-
-      - name: Collect PDFs for upload
-        id: collect
+        shell: bash
         run: |
           set -euo pipefail
-          
-          CATEGORY="${{ matrix.category }}"
-          echo "Collecting PDFs for category: $CATEGORY"
-          
-          mkdir -p "collected-pdfs/${CATEGORY}"
-          
-          # Find all PDFs and preserve directory structure
-          while IFS= read -r -d '' pdf; do
-            # Get relative path from src/
-            rel_path="${pdf#src/}"
-            dest_dir="collected-pdfs/$(dirname "$rel_path")"
-            mkdir -p "$dest_dir"
-            cp "$pdf" "$dest_dir/"
-            echo "Collected: $rel_path"
-          done < <(find "src/${CATEGORY}" -name "*.pdf" -type f -print0 2>/dev/null)
-          
-          # Also collect build logs
-          while IFS= read -r -d '' log; do
-            rel_path="${log#src/}"
-            dest_dir="collected-pdfs/$(dirname "$rel_path")"
-            mkdir -p "$dest_dir"
-            cp "$log" "$dest_dir/"
-          done < <(find "src/${CATEGORY}" \( -name "*.log.txt" -o -name "*.build.stdout.txt" -o -name "*.build.stderr.txt" \) -type f -print0 2>/dev/null)
-          
-          count=$(find "collected-pdfs" -name "*.pdf" -type f 2>/dev/null | wc -l)
-          echo "count=$count" >> "$GITHUB_OUTPUT"
-          echo "Collected $count PDFs"
 
+          CATEGORY="${{ matrix.category }}"
+          CATEGORY_DIR="src/${CATEGORY}"
+
+          echo "=== Building LaTeX roots under ${CATEGORY_DIR} (recursive, no maxdepth) ==="
+
+          mkdir -p collected-pdfs build-out build-logs
+
+          # Discover standalone LaTeX roots within the category (no depth limit)
+          mapfile -d '' roots < <(grep -RIlZ --include='*.tex' '^[[:space:]]*\\documentclass' "${CATEGORY_DIR}" 2>/dev/null | sort -z || true)
+
+          if [[ ${#roots[@]} -eq 0 ]]; then
+            echo "No LaTeX roots found under ${CATEGORY_DIR}"
+            echo "count=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Found ${#roots[@]} LaTeX roots"
+
+          built=0
+          failed=0
+          failed_list=()
+
+          detect_engine() {
+            local f="$1"
+            if grep -qiE '^[[:space:]]*%[[:space:]]*!TeX[[:space:]]+program[[:space:]]*=[[:space:]]*lualatex' "$f"; then
+              echo "lualatex"
+            elif grep -qiE '^[[:space:]]*%[[:space:]]*!TeX[[:space:]]+program[[:space:]]*=[[:space:]]*xelatex' "$f"; then
+              echo "xelatex"
+            else
+              echo "pdflatex"
+            fi
+          }
+
+          common_args='-interaction=nonstopmode -halt-on-error -file-line-error -shell-escape'
+
+          for tex in "${roots[@]}"; do
+            [[ -z "$tex" ]] && continue
+
+            rel="${tex#src/}"
+            rel_dir="$(dirname "$rel")"
+            base="$(basename "$rel" .tex)"
+
+            out_dir="$GITHUB_WORKSPACE/build-out/${rel_dir}/${base}"
+            log_dir="$GITHUB_WORKSPACE/build-logs/${rel_dir}"
+            dest_dir="$GITHUB_WORKSPACE/collected-pdfs/${rel_dir}"
+
+            mkdir -p "$out_dir" "$log_dir" "$dest_dir"
+
+            engine="$(detect_engine "$tex")"
+
+            echo ""
+            echo "=== Building: ${tex} (engine=${engine}) ==="
+
+            stdout_log="${log_dir}/${base}.stdout.txt"
+            stderr_log="${log_dir}/${base}.stderr.txt"
+
+            doc_dir="$(dirname "$tex")"
+            tex_file="$(basename "$tex")"
+
+            pushd "$doc_dir" >/dev/null
+
+            if [[ "$engine" == "lualatex" ]]; then
+              latexmk -pdf \
+                -outdir="$out_dir" \
+                -pdflatex="lualatex ${common_args} %O %S" \
+                "$tex_file" \
+                >"$stdout_log" 2>"$stderr_log" || true
+            elif [[ "$engine" == "xelatex" ]]; then
+              latexmk -pdf \
+                -outdir="$out_dir" \
+                -pdflatex="xelatex ${common_args} %O %S" \
+                "$tex_file" \
+                >"$stdout_log" 2>"$stderr_log" || true
+            else
+              latexmk -pdf \
+                -outdir="$out_dir" \
+                -pdflatex="pdflatex ${common_args} %O %S" \
+                "$tex_file" \
+                >"$stdout_log" 2>"$stderr_log" || true
+            fi
+
+            popd >/dev/null
+
+            built_pdf="${out_dir}/${base}.pdf"
+            dest_pdf="${dest_dir}/${base}.pdf"
+
+            if [[ -f "$built_pdf" ]]; then
+              cp -f "$built_pdf" "$dest_pdf"
+              # Also publish logs next to the PDF for Pages build reports
+              cp -f "$stdout_log" "$dest_dir/${base}.stdout.txt" 2>/dev/null || true
+              cp -f "$stderr_log" "$dest_dir/${base}.stderr.txt" 2>/dev/null || true
+              echo "  ✓ ${dest_pdf}"
+              ((++built))
+            else
+              echo "  ✗ FAILED: ${tex}"
+              echo "    stdout: ${stdout_log#${GITHUB_WORKSPACE}/}"
+              echo "    stderr: ${stderr_log#${GITHUB_WORKSPACE}/}"
+              failed_list+=("$tex")
+              ((++failed))
+            fi
+          done
+
+          echo ""
+          echo "=== Build Summary (${CATEGORY}) ==="
+          echo "Built:  ${built}"
+          echo "Failed: ${failed}"
+
+          if (( failed > 0 )); then
+            printf '%s\n' "${failed_list[@]}" > "$GITHUB_WORKSPACE/collected-pdfs/${CATEGORY}/FAILED_BUILDS.txt" 2>/dev/null || true
+          fi
+
+          # Output count for visibility
+          count=$(find "$GITHUB_WORKSPACE/collected-pdfs/${CATEGORY}" -name "*.pdf" -type f 2>/dev/null | wc -l | tr -d ' ' || echo 0)
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "Collected $count PDFs under collected-pdfs/${CATEGORY}"
+
+          # Fail the job if any build failed (keeps CI honest and prevents silently missing PDFs)
+          if (( failed > 0 )); then
+            exit 1
+          fi
       - name: Upload category PDFs
         uses: actions/upload-artifact@v4
         with:
