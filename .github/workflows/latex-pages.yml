@@ -57,24 +57,87 @@ jobs:
           find site/pdfs -name "*.pdf" -type f | sort
           echo ""
           echo "Total PDFs: $(find site/pdfs -name '*.pdf' -type f | wc -l)"
-      - name: Create legacy PDF aliases
+
+      - name: Normalize & alias PDFs (prevent 404s)
         run: |
           set -euo pipefail
 
-          # Backward-compatible paths for previously shared/linked URLs.
-          # Add more mappings here as needed (canonical -> legacy flat path).
+          # Keep canonical location for the pipe-and-filter PDF, but also publish a legacy flat alias
+          # so previously shared URLs remain valid.
           base="site/pdfs/architecture/views-and-beyond/component-connector-viewtype"
+          legacy="${base}/pipe-and-filter-style.pdf"
+          preferred="${base}/pipe-and-filter/pipe-and-filter-style.pdf"
 
-          canonical="${base}/pipe-and-filter/pipe-and-filter-style.pdf"
-          legacy_flat="${base}/pipe-and-filter-style.pdf"
+          echo "=== Normalizing pipe-and-filter-style PDF paths ==="
+          echo "Base:       ${base}"
+          echo "Preferred:  ${preferred}"
+          echo "Legacy URL: ${legacy}"
 
-          if [[ -f "$canonical" && ! -f "$legacy_flat" ]]; then
-            echo "Creating legacy alias: ${legacy_flat#site/} -> ${canonical#site/}"
-            cp -f "$canonical" "$legacy_flat"
+          if [[ ! -d "${base}" ]]; then
+            echo "ERROR: Missing expected base directory: ${base}"
+            echo "Top-level under site/pdfs:"
+            find site/pdfs -mindepth 1 -maxdepth 2 -type d | sort || true
+            exit 1
           fi
+
+          # Find any candidate (covers both flat and nested variants).
+          mapfile -t candidates < <(find "${base}" -type f -name 'pipe-and-filter-style.pdf' -print | sort || true)
+
+          if [[ ${#candidates[@]} -eq 0 ]]; then
+            echo "ERROR: pipe-and-filter-style.pdf not found under ${base}"
+            echo "Closest matches:"
+            find "${base}" -maxdepth 6 -type f -iname '*pipe*filter*style*.pdf' -print | sort || true
+            echo ""
+            echo "All PDFs under ${base}:"
+            find "${base}" -maxdepth 6 -type f -name '*.pdf' -print | sort || true
+            exit 1
+          fi
+
+          echo "Found candidates:"
+          printf '  - %s\n' "${candidates[@]}"
+
+          mkdir -p "$(dirname "${preferred}")"
+
+          if [[ -f "${preferred}" ]]; then
+            canonical="${preferred}"
+          else
+            canonical="${candidates[0]}"
+            if [[ "${canonical}" != "${preferred}" ]]; then
+              echo "Promoting canonical -> ${preferred}"
+              mv -f "${canonical}" "${preferred}"
+              canonical="${preferred}"
+            fi
+          fi
+
+          echo "Canonical: ${canonical}"
+
+          # Create legacy flat alias so old links keep working.
+          mkdir -p "$(dirname "${legacy}")"
+          cp -f "${canonical}" "${legacy}"
+
+          # Remove any remaining duplicates (but keep canonical + legacy).
+          find "${base}" -maxdepth 6 -type f -name 'pipe-and-filter-style.pdf' \
+            ! -path "${canonical}" ! -path "${legacy}" -print -delete || true
+
+          echo ""
+          echo "=== Post-normalization checks ==="
+          [[ -f "${canonical}" ]] || { echo "ERROR: Missing canonical after normalization: ${canonical}"; exit 1; }
+          [[ -f "${legacy}"   ]] || { echo "ERROR: Missing legacy alias after normalization: ${legacy}"; exit 1; }
+          echo "OK: canonical + legacy alias present."
+
+          echo ""
+          echo "Legacy directory listing: $(dirname "${legacy}")"
+          ls -la "$(dirname "${legacy}")" || true
+          echo ""
+          echo "Canonical directory listing: $(dirname "${canonical}")"
+          ls -la "$(dirname "${canonical}")" || true
+
       - name: Generate index.html
         run: |
           set -euo pipefail
+          
+          # Exclude legacy alias PDFs from the index (but keep them published for backwards-compatible URLs).
+          LEGACY_IGNORE="site/pdfs/architecture/views-and-beyond/component-connector-viewtype/pipe-and-filter-style.pdf"
 
           slugify() {
             echo "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//; s/-+/-/g'
@@ -82,7 +145,7 @@ jobs:
 
           mkdir -p site
 
-          total=$(find site/pdfs -name "*.pdf" -type f 2>/dev/null | wc -l | tr -d ' ')
+          total=$(find site/pdfs -name "*.pdf" -type f ! -path "$LEGACY_IGNORE" 2>/dev/null | wc -l | tr -d ' ')
           categories=$(find site/pdfs -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
           last_updated="$(date -u +'%Y-%m-%d %H:%M UTC')"
 
@@ -224,13 +287,6 @@ jobs:
               for pdf in "${pdfs[@]}"; do
                 local fname rel
                 fname="$(basename "$pdf")"
-
-                # Hide "legacy flat" aliases from the index when the same basename exists deeper in the subtree.
-                # (This keeps the index canonical while still allowing old direct URLs to work.)
-                if find "$dir" -mindepth 2 -type f -name "$fname" -print -quit 2>/dev/null | grep -q .; then
-                  continue
-                fi
-
                 rel="${pdf#site/}"
                 echo "<li><a class=\"pdf\" href=\"${rel}\" title=\"${rel}\">${fname}</a><span class=\"path\">${rel}</span></li>" >> site/index.html
               done
