@@ -31,7 +31,8 @@ runs:
         sudo apt-get install -y --no-install-recommends \
           plantuml \
           graphviz \
-          default-jre-headless
+          default-jre-headless \
+          jq
         sudo rm -rf /var/lib/apt/lists/* || true
 
     - name: Render PlantUML diagrams
@@ -103,6 +104,15 @@ runs:
               echo "  ✓ ${fmt}/$(basename "$dest")"
               rendered_files+=("$dest")
             else
+              # Fallback: if the diagram uses "@startuml <name>", PlantUML may export using <name> instead of the source filename.
+              alt_base=""
+              alt_base="$(awk 'match($0,/^[[:space:]]*@startuml[[:space:]]+([^[:space:]]+)/,m){print m[1]; exit}' "$puml" 2>/dev/null || true)"
+              if [[ -n "$alt_base" && -f "${dir}/${fmt}/${alt_base}.${fmt}" ]]; then
+                echo "  ✓ ${fmt}/${alt_base}.${fmt} (from @startuml name; source=$(basename "$puml"))"
+                rendered_files+=("${dir}/${fmt}/${alt_base}.${fmt}")
+                continue
+              fi
+
               echo "  ✗ Failed: ${fmt}/$(basename "$dest")"
               echo "----- plantuml output -----"
               echo "$out"
@@ -121,4 +131,10 @@ runs:
           printf 'files=%s\n' "$(printf '%s\n' "${rendered_files[@]}" | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
         else
           echo 'files=[]' >> "$GITHUB_OUTPUT"
+        fi
+
+
+        # Fail the step only if there were real rendering failures.
+        if (( failed_count > 0 )); then
+          exit 1
         fi
