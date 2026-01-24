@@ -1,6 +1,9 @@
 # .github/workflows/_build-latex.yml
-# Reusable workflow for building LaTeX documents
-# Renders PlantUML diagrams inline before compilation (no external dependencies)
+# ============================================================================
+# REUSABLE WORKFLOW FOR BUILDING LATEX DOCUMENTS
+# ============================================================================
+# Now uses the unified render-plantuml action (DRY - no inline duplication)
+# ============================================================================
 name: _Build LaTeX (Reusable)
 
 on:
@@ -18,6 +21,14 @@ on:
         description: 'Upload built PDFs as artifacts'
         type: boolean
         default: true
+      render-plantuml:
+        description: 'Render PlantUML diagrams before LaTeX compilation'
+        type: boolean
+        default: true
+      generate-jpg:
+        description: 'Generate JPG files from PNG (passed to PlantUML action)'
+        type: boolean
+        default: false
     outputs:
       pdf-count:
         description: 'Total PDFs built'
@@ -111,7 +122,7 @@ jobs:
           fi
 
   # ============================================================================
-  # Stage 2: Build documents (with inline PlantUML rendering)
+  # Stage 2: Build documents (using unified PlantUML action)
   # ============================================================================
   build:
     needs: prepare
@@ -126,101 +137,29 @@ jobs:
         uses: actions/checkout@v4
 
       # ----------------------------------------------------------------------
-      # PlantUML Rendering (inline, no external action dependency)
+      # PlantUML Rendering - Uses the SINGLE render unit (DRY)
       # ----------------------------------------------------------------------
-      - name: Install PlantUML
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends plantuml graphviz default-jre-headless
-
       - name: Render PlantUML diagrams for ${{ matrix.category }}
-        run: |
-          set -euo pipefail
-          
-          CATEGORY_DIR="src/${{ matrix.category }}"
-          CONFIG_NAMES=("plantuml-config.puml" "config.puml")
-          FORMATS=(png svg)
-          
-          echo "=== Rendering PlantUML diagrams in $CATEGORY_DIR ==="
-          
-          # Function to find nearest config file
-          find_config() {
-            local start_dir="$1"
-            local d="$start_dir"
-            while true; do
-              for n in "${CONFIG_NAMES[@]}"; do
-                if [[ -f "${d}/${n}" ]]; then
-                  readlink -f "${d}/${n}"
-                  return 0
-                fi
-              done
-              [[ "$d" == "src" || "$d" == "." ]] && break
-              d="$(dirname "$d")"
-            done
-            echo ""
-          }
-          
-          # Find all .puml files (excluding configs)
-          mapfile -d '' PUMLS < <(
-            find "$CATEGORY_DIR" -type f -name "*.puml" \
-              ! -name "plantuml-config.puml" \
-              ! -name "config.puml" \
-              -print0 2>/dev/null || true
-          )
-          
-          if [[ ${#PUMLS[@]} -eq 0 ]]; then
-            echo "No PlantUML diagrams found in $CATEGORY_DIR"
-            exit 0
-          fi
-          
-          echo "Found ${#PUMLS[@]} PlantUML diagrams"
-          
-          rendered=0
-          failed=0
-          
-          for puml in "${PUMLS[@]}"; do
-            [[ -z "$puml" ]] && continue
-            
-            dir="$(dirname "$puml")"
-            base="$(basename "$puml" .puml)"
-            cfg="$(find_config "$dir")"
-            
-            echo ""
-            echo "Rendering: $puml"
-            
-            for fmt in "${FORMATS[@]}"; do
-              mkdir -p "${dir}/${fmt}"
-              dest="${dir}/${fmt}/${base}.${fmt}"
-              
-              pushd "$dir" >/dev/null
-              if [[ -n "$cfg" ]]; then
-                plantuml "-t${fmt}" -o "${fmt}" -config "$cfg" "$(basename "$puml")" 2>&1 || true
-              else
-                plantuml "-t${fmt}" -o "${fmt}" "$(basename "$puml")" 2>&1 || true
-              fi
-              popd >/dev/null
-              
-              if [[ -f "$dest" ]]; then
-                echo "  ✓ ${fmt}/${base}.${fmt}"
-                ((++rendered))
-              else
-                echo "  ✗ Failed: ${fmt}/${base}.${fmt}"
-                ((++failed))
-              fi
-            done
-          done
-          
-          echo ""
-          echo "=== PlantUML Summary ==="
-          echo "Rendered: $rendered files"
-          echo "Failed: $failed files"
+        if: inputs.render-plantuml
+        id: plantuml
+        uses: ./.github/actions/render-plantuml
+        with:
+          source-dir: 'src/${{ matrix.category }}'
+          formats: 'png svg'
+          generate-jpg: ${{ inputs.generate-jpg && 'true' || 'false' }}
+          fail-on-error: 'false'  # Don't fail build on diagram issues
 
       - name: Verify PlantUML outputs
+        if: inputs.render-plantuml
         run: |
-          echo "=== Verifying PlantUML outputs for ${{ matrix.category }} ==="
+          echo "=== PlantUML Render Results for ${{ matrix.category }} ==="
+          echo "Diagrams found: ${{ steps.plantuml.outputs.diagram_count || 0 }}"
+          echo "Files rendered: ${{ steps.plantuml.outputs.rendered_count || 0 }}"
+          echo "Failures: ${{ steps.plantuml.outputs.failed_count || 0 }}"
+          echo ""
+          
           CATEGORY_DIR="src/${{ matrix.category }}"
           
-          echo ""
           echo "SVG files:"
           find "$CATEGORY_DIR" -type f -name "*.svg" -path "*/svg/*" 2>/dev/null | head -20 || echo "  (none)"
           
@@ -255,7 +194,7 @@ jobs:
           CATEGORY="${{ matrix.category }}"
           CATEGORY_DIR="src/${CATEGORY}"
 
-          echo "=== Building LaTeX roots under ${CATEGORY_DIR} (recursive, no maxdepth) ==="
+          echo "=== Building LaTeX roots under ${CATEGORY_DIR} (recursive) ==="
 
           mkdir -p collected-pdfs build-out build-logs
 
@@ -303,10 +242,12 @@ jobs:
             engine="$(detect_engine "$tex")"
 
             echo ""
-            echo "=== Building: ${tex} (engine=${engine}) ==="
+            echo "═══════════════════════════════════════════════════"
+            echo "Building: ${tex} (engine=${engine})"
+            echo "═══════════════════════════════════════════════════"
 
-            stdout_log="${log_dir}/${base}.stdout.txt"
-            stderr_log="${log_dir}/${base}.stderr.txt"
+            stdout_log="${log_dir}/${base}.build.stdout.txt"
+            stderr_log="${log_dir}/${base}.build.stderr.txt"
 
             doc_dir="$(dirname "$tex")"
             tex_file="$(basename "$tex")"
@@ -340,9 +281,10 @@ jobs:
 
             if [[ -f "$built_pdf" ]]; then
               cp -f "$built_pdf" "$dest_pdf"
-              # Also publish logs next to the PDF for Pages build reports
-              cp -f "$stdout_log" "$dest_dir/${base}.stdout.txt" 2>/dev/null || true
-              cp -f "$stderr_log" "$dest_dir/${base}.stderr.txt" 2>/dev/null || true
+              # Also copy latexmk log for debugging
+              cp -f "${out_dir}/${base}.log" "$dest_dir/${base}.log.txt" 2>/dev/null || true
+              cp -f "$stdout_log" "$dest_dir/${base}.build.stdout.txt" 2>/dev/null || true
+              cp -f "$stderr_log" "$dest_dir/${base}.build.stderr.txt" 2>/dev/null || true
               echo "  ✓ ${dest_pdf}"
               ((++built))
             else
@@ -355,7 +297,9 @@ jobs:
           done
 
           echo ""
-          echo "=== Build Summary (${CATEGORY}) ==="
+          echo "═══════════════════════════════════════════════════"
+          echo "BUILD SUMMARY (${CATEGORY})"
+          echo "═══════════════════════════════════════════════════"
           echo "Built:  ${built}"
           echo "Failed: ${failed}"
 
@@ -368,10 +312,11 @@ jobs:
           echo "count=$count" >> "$GITHUB_OUTPUT"
           echo "Collected $count PDFs under collected-pdfs/${CATEGORY}"
 
-          # Fail the job if any build failed (keeps CI honest and prevents silently missing PDFs)
+          # Fail the job if any build failed
           if (( failed > 0 )); then
             exit 1
           fi
+
       - name: Upload category PDFs
         uses: actions/upload-artifact@v4
         with:
@@ -439,7 +384,7 @@ jobs:
       - name: Generate build summary
         run: |
           {
-            echo "## LaTeX Build Summary"
+            echo "## 📄 LaTeX Build Summary"
             echo ""
             echo "**Total PDFs:** ${{ steps.count.outputs.total }}"
             echo ""
