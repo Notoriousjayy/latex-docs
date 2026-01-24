@@ -291,6 +291,32 @@ jobs:
               echo "  ✗ FAILED: ${tex}"
               echo "    stdout: ${stdout_log#${GITHUB_WORKSPACE}/}"
               echo "    stderr: ${stderr_log#${GITHUB_WORKSPACE}/}"
+              
+              # Copy log files to build-logs for artifact upload
+              cp -f "${out_dir}/${base}.log" "${log_dir}/${base}.log.txt" 2>/dev/null || true
+              
+              # Show immediate inline error summary
+              echo ""
+              echo "::group::Error details for ${base}.tex"
+              
+              # Show LaTeX errors from log file
+              if [[ -f "${out_dir}/${base}.log" ]]; then
+                echo "─── LaTeX Errors ───"
+                grep -n "^!" "${out_dir}/${base}.log" 2>/dev/null | head -20 || echo "(no explicit ! errors)"
+                echo ""
+                echo "─── Undefined References / Missing Files ───"
+                grep -iE "undefined|not found|missing" "${out_dir}/${base}.log" 2>/dev/null | head -15 || echo "(none)"
+              fi
+              
+              # Show stderr if non-empty
+              if [[ -s "$stderr_log" ]]; then
+                echo ""
+                echo "─── stderr ───"
+                head -30 "$stderr_log"
+              fi
+              
+              echo "::endgroup::"
+              
               failed_list+=("$tex")
               ((++failed))
             fi
@@ -316,6 +342,97 @@ jobs:
           if (( failed > 0 )); then
             exit 1
           fi
+
+      # ----------------------------------------------------------------------
+      # Display detailed error logs for failed builds
+      # ----------------------------------------------------------------------
+      - name: Display failed build logs
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          
+          CATEGORY="${{ matrix.category }}"
+          
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════════╗"
+          echo "║           DETAILED ERROR LOGS FOR FAILED BUILDS                  ║"
+          echo "╠══════════════════════════════════════════════════════════════════╣"
+          echo "║  Category: ${CATEGORY}"
+          echo "╚══════════════════════════════════════════════════════════════════╝"
+          echo ""
+          
+          # Find all stderr files in build-logs
+          shopt -s nullglob globstar
+          
+          for stderr_file in build-logs/**/*.build.stderr.txt; do
+            [[ ! -f "$stderr_file" ]] && continue
+            
+            # Get corresponding stdout file
+            stdout_file="${stderr_file%.stderr.txt}.stdout.txt"
+            log_file="${stderr_file%.build.stderr.txt}.log.txt"
+            
+            # Extract the document name from path
+            doc_path="${stderr_file#build-logs/}"
+            doc_name="${doc_path%.build.stderr.txt}"
+            
+            # Check if this build actually failed (no corresponding PDF)
+            pdf_check="collected-pdfs/${doc_name}.pdf"
+            if [[ -f "$pdf_check" ]]; then
+              continue  # Build succeeded, skip
+            fi
+            
+            echo ""
+            echo "┌──────────────────────────────────────────────────────────────────┐"
+            echo "│ FAILED: ${doc_name}.tex"
+            echo "└──────────────────────────────────────────────────────────────────┘"
+            
+            # Show LaTeX log errors (most useful)
+            latex_log="build-out/${doc_name}/${doc_name##*/}.log"
+            if [[ -f "$latex_log" ]]; then
+              echo ""
+              echo "━━━ LaTeX Errors (from .log file) ━━━"
+              # Extract error lines and surrounding context
+              grep -n -A 5 -B 2 "^!" "$latex_log" 2>/dev/null | head -100 || echo "  (no explicit errors found)"
+              echo ""
+              echo "━━━ LaTeX Warnings ━━━"
+              grep -i "warning" "$latex_log" 2>/dev/null | head -30 || echo "  (no warnings)"
+              echo ""
+              echo "━━━ Missing Files/Packages ━━━"
+              grep -i "file.*not found\|package.*not found\|missing\|undefined" "$latex_log" 2>/dev/null | head -20 || echo "  (none detected)"
+            fi
+            
+            # Show stderr (latexmk errors)
+            if [[ -s "$stderr_file" ]]; then
+              echo ""
+              echo "━━━ Build stderr ━━━"
+              cat "$stderr_file" | head -50
+            fi
+            
+            # Show last part of stdout (latexmk output)
+            if [[ -s "$stdout_file" ]]; then
+              echo ""
+              echo "━━━ Build stdout (last 50 lines) ━━━"
+              tail -50 "$stdout_file"
+            fi
+            
+            echo ""
+            echo "────────────────────────────────────────────────────────────────────"
+          done
+          
+          echo ""
+          echo "For complete logs, download the 'build-error-logs-${{ matrix.category }}' artifact."
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-error-logs-${{ matrix.category }}
+          path: |
+            build-logs/
+            build-out/**/*.log
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Upload category PDFs
         uses: actions/upload-artifact@v4
