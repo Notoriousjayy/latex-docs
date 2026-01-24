@@ -25,7 +25,86 @@
 
 % ---------- Code (minted) ----------
 % Requires: compile with -shell-escape
-\usepackage[newfloat]{minted}
+% ---------- Code (minted; CI-safe fallback) ----------
+% If compiled with *unrestricted* -shell-escape and Pygments is available, minted will be used.
+% Otherwise, we fall back to listings-based shims that compile in CI (no syntax highlighting).
+\usepackage{xparse}
+
+\newif\ifuseminted
+\ifnum\pdfshellescape=1\relax
+  \usemintedtrue
+\else
+  \usemintedfalse
+\fi
+
+% Floating code listings (optional; keeps \SetupFloatingEnvironment{listing}{...} working)
+\usepackage{newfloat}
+\usepackage{caption}
+\usepackage{float}
+\makeatletter
+\@ifundefined{c@listing}{\DeclareFloatingEnvironment[fileext=lol,placement={!ht},name=Listing]{listing}}{}
+\makeatother
+
+\ifuseminted
+  \usepackage{minted}
+\else
+  \usepackage{listings}
+
+  % Global listings defaults (plain, robust)
+  \lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    columns=fullflexible,
+    frame=single,
+    tabsize=2,
+    % Common Unicode seen in docs (renders as ASCII / LaTeX equivalents)
+    literate=
+      {—}{{---}}1
+      {–}{{--}}1
+      {•}{{$\bullet$}}1
+      {…}{{\ldots}}1
+      {→}{{$\rightarrow$}}1
+      {⇒}{{$\Rightarrow$}}1
+      {✓}{{\checkmark}}1
+      {✗}{{$\times$}}1
+      {“}{{``}}1
+      {”}{{''}}1
+      {‘}{{`}}1
+      {’}{{'}}1
+  }
+
+  % minted-compatible shims (options/lang are accepted but intentionally ignored)
+  \providecommand{\usemintedstyle}[1]{}
+  \providecommand{\setminted}[2][]{}
+  \providecommand{\setmintedinline}[2][]{}
+
+  \lstnewenvironment{minted}[2][]{\lstset{}}{}
+
+  \NewDocumentCommand{\inputminted}{ O{} m m }{\lstinputlisting{#3}}
+
+  \NewDocumentCommand{\mintinline}{ O{} m m }{\texttt{#3}}
+
+  % Support for \newminted / \newmintedfile (define environments/commands; options/lang ignored)
+  \makeatletter
+  \NewDocumentCommand{\newminted}{ O{} m m }{%
+    \def\minted@envname{#1}%
+    \ifx\minted@envname\@empty
+      \edef\minted@envname{#2code}%
+    \fi
+    \expandafter\lstnewenvironment\expandafter{\minted@envname}[1][]%
+      {\lstset{}}{}%
+  }
+  \NewDocumentCommand{\newmintedfile}{ O{} m m }{%
+    \def\minted@cmdname{#1}%
+    \ifx\minted@cmdname\@empty
+      \edef\minted@cmdname{input#2}%
+    \fi
+    \expandafter\NewDocumentCommand\csname \minted@cmdname\endcsname{ O{} m }{%
+      \lstinputlisting{##2}%
+    }%
+  }
+  \makeatother
+\fi
 \usemintedstyle{tango}
 \setminted{fontsize=\small,breaklines,linenos,tabsize=2}
 \usepackage{caption}
