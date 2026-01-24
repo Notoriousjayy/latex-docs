@@ -1,124 +1,91 @@
 #!/bin/bash
-# fix-remove-all-cache-options.sh
-# 
-# ROOT CAUSE: We replaced "frozencache" with "cache=false", but "cache=false" was
-# added to places that don't understand it (listings fallback, stub commands, etc.)
+# fix-minted-usepackage-only.sh
 #
-# SOLUTION: Remove ALL caching options entirely. When minted runs with shell-escape,
-# it will generate syntax highlighting on-the-fly (no caching needed).
+# This script adds cache=false ONLY to \usepackage{minted} lines.
+# This is safe because \usepackage{minted} only appears inside the
+# shell-escape conditional block where minted is actually loaded.
+#
+# We do NOT modify \setminted, \providecommand, or any other commands
+# that might be stub definitions in the listings fallback.
 
 set -euo pipefail
 
 TARGET_DIR="${1:-src}"
 
 echo "=============================================="
-echo "COMPREHENSIVE MINTED CACHE FIX"
+echo "PRECISE MINTED FIX - usepackage only"
 echo "=============================================="
 echo "Target: $TARGET_DIR"
 echo ""
 
-echo "=== PHASE 1: Remove ALL cache-related options ==="
+# Use a different delimiter for sed (| instead of /) to avoid issues with special chars
+# Process files one at a time to avoid issues with filenames
+
+echo "=== Adding cache=false to \\usepackage{minted} lines ==="
+
+# Pattern 1: \usepackage[newfloat]{minted} -> \usepackage[newfloat,cache=false]{minted}
+echo "Pattern 1: [newfloat] -> [newfloat,cache=false]"
+find "$TARGET_DIR" -name "*.tex" -type f -print0 | while IFS= read -r -d '' file; do
+    if grep -q '\\usepackage\[newfloat\]{minted}' "$file" 2>/dev/null; then
+        sed -i 's|\\usepackage\[newfloat\]{minted}|\\usepackage[newfloat,cache=false]{minted}|g' "$file"
+        echo "  Fixed: $file"
+    fi
+done
+
+# Pattern 2: \usepackage{minted} (no options) -> \usepackage[cache=false]{minted}
+echo "Pattern 2: {minted} -> [cache=false]{minted}"
+find "$TARGET_DIR" -name "*.tex" -type f -print0 | while IFS= read -r -d '' file; do
+    # Only match \usepackage{minted} NOT \usepackage[...]{minted}
+    if grep -qE '\\usepackage\{minted\}' "$file" 2>/dev/null; then
+        # Make sure it's not already \usepackage[...]{minted}
+        if ! grep -q '\\usepackage\[.*\]{minted}' "$file" 2>/dev/null; then
+            sed -i 's|\\usepackage{minted}|\\usepackage[cache=false]{minted}|g' "$file"
+            echo "  Fixed: $file"
+        fi
+    fi
+done
+
+# Pattern 3: Other option combinations - add cache=false if not present
+echo "Pattern 3: Adding cache=false to other option combinations"
+find "$TARGET_DIR" -name "*.tex" -type f -print0 | while IFS= read -r -d '' file; do
+    # If file has \usepackage[...]{minted} but no cache=false in that line
+    if grep -q '\\usepackage\[.*\]{minted}' "$file" 2>/dev/null; then
+        if ! grep '\\usepackage\[.*\]{minted}' "$file" | grep -q 'cache=false'; then
+            # Add cache=false after the opening bracket
+            sed -i 's|\\usepackage\[\([^]]*\)\]{minted}|\\usepackage[\1,cache=false]{minted}|g' "$file"
+            echo "  Fixed: $file"
+        fi
+    fi
+done
+
+# Clean up any double cache=false that might have been created
 echo ""
+echo "=== Cleaning up duplicates ==="
+find "$TARGET_DIR" -name "*.tex" -type f -print0 | while IFS= read -r -d '' file; do
+    if grep -q 'cache=false,cache=false' "$file" 2>/dev/null; then
+        sed -i 's|cache=false,cache=false|cache=false|g' "$file"
+        echo "  Cleaned: $file"
+    fi
+done
 
-# 1a. Remove cache=false from \usepackage options
-echo "Step 1a: Cleaning \\usepackage[...]{minted} options..."
-# [newfloat,cache=false] -> [newfloat]
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/\\usepackage\[newfloat,cache=false\]{minted}/\\usepackage[newfloat]{minted}/g' {} \;
-# [cache=false,newfloat] -> [newfloat]
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/\\usepackage\[cache=false,newfloat\]{minted}/\\usepackage[newfloat]{minted}/g' {} \;
-# [cache=false] -> (no options)
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/\\usepackage\[cache=false\]{minted}/\\usepackage{minted}/g' {} \;
-# Handle other combinations with commas
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/,cache=false,/,/g' {} \;
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/,cache=false\]/]/g' {} \;
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/\[cache=false,/[/g' {} \;
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/,cache=false}/}/g' {} \;
-echo "  ✓ Done"
-
-# 1b. Remove frozencache from \usepackage options (in case any remain)
-echo "Step 1b: Removing any remaining frozencache..."
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/\\usepackage\[frozencache\]{minted}/\\usepackage{minted}/g' {} \;
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/,frozencache,/,/g' {} \;
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/,frozencache\]/]/g' {} \;
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/\[frozencache,/[/g' {} \;
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/,frozencache}/}/g' {} \;
-echo "  ✓ Done"
-
-# 1c. Remove cache options from \setminted commands
-echo "Step 1c: Cleaning \\setminted commands..."
-# \setminted{cache=false,...} -> \setminted{...}
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/\\setminted{cache=false,/\\setminted{/g' {} \;
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/\\setminted{cache=false}/\\setminted{}/g' {} \;
-# \setminted{...,cache=false} -> \setminted{...}
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/,cache=false}/}/g' {} \;
-# \setminted{frozencache,...} -> \setminted{...}
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/\\setminted{frozencache,/\\setminted{/g' {} \;
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/\\setminted{frozencache}/\\setminted{}/g' {} \;
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/,frozencache}/}/g' {} \;
-# Clean up empty \setminted{}
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/\\setminted{}//g' {} \;
-echo "  ✓ Done"
-
-# 1d. Remove cache options from \begin{minted}[...] environments
-echo "Step 1d: Cleaning minted environment options..."
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/\\begin{minted}\[cache=false,/\\begin{minted}[/g' {} \;
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/\\begin{minted}\[cache=false\]/\\begin{minted}/g' {} \;
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/\\begin{minted}\[frozencache,/\\begin{minted}[/g' {} \;
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/\\begin{minted}\[frozencache\]/\\begin{minted}/g' {} \;
-echo "  ✓ Done"
-
-# 1e. Clean up empty option brackets
-echo "Step 1e: Cleaning up empty option brackets..."
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/\\begin{minted}\[\]/\\begin{minted}/g' {} \;
-find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's/\\usepackage\[\]{minted}/\\usepackage{minted}/g' {} \;
-echo "  ✓ Done"
+# Clean up ,cache=false,cache=false patterns
+find "$TARGET_DIR" -name "*.tex" -type f -exec sed -i 's|,cache=false,cache=false|,cache=false|g' {} \;
 
 echo ""
-echo "=== PHASE 2: Remove cache directories and files ==="
+echo "=== Verification ==="
 echo ""
-
-echo "Step 2a: Removing _minted-* cache directories..."
-find "$TARGET_DIR" -type d -name '_minted-*' -exec rm -rf {} + 2>/dev/null || true
-echo "  ✓ Done"
-
-echo "Step 2b: Removing stale .pyg/.pygtex/.pygstyle files..."
-find "$TARGET_DIR" -type f \( -name "*.pyg" -o -name "*.pygtex" -o -name "*.pygstyle" \) -delete 2>/dev/null || true
-echo "  ✓ Done"
+echo "Files with \\usepackage{minted} and cache=false:"
+grep -rn 'usepackage.*minted' "$TARGET_DIR" --include="*.tex" | grep -c 'cache=false' || echo "0"
 
 echo ""
-echo "=== PHASE 3: Verification ==="
-echo ""
-
-echo "Checking for remaining problematic patterns:"
-echo ""
-
-echo "1. Files with 'cache=false' (should be 0):"
-count=$(grep -rln 'cache=false' "$TARGET_DIR" --include="*.tex" 2>/dev/null | wc -l || echo "0")
-echo "   Count: $count"
-if [ "$count" -gt 0 ]; then
-    echo "   Files:"
-    grep -rln 'cache=false' "$TARGET_DIR" --include="*.tex" 2>/dev/null | head -10
-fi
+echo "Files with \\usepackage{minted} WITHOUT cache=false (should be 0):"
+grep -rn 'usepackage.*{minted}' "$TARGET_DIR" --include="*.tex" | grep -v 'cache=false' | grep -v 'minted-config' | wc -l
 
 echo ""
-echo "2. Files with 'frozencache' (should be 0):"
-count=$(grep -rln 'frozencache' "$TARGET_DIR" --include="*.tex" 2>/dev/null | wc -l || echo "0")
-echo "   Count: $count"
-if [ "$count" -gt 0 ]; then
-    echo "   Files:"
-    grep -rln 'frozencache' "$TARGET_DIR" --include="*.tex" 2>/dev/null | head -10
-fi
-
-echo ""
-echo "3. Sample of minted configurations:"
-grep -rn 'usepackage.*{minted}' "$TARGET_DIR" --include="*.tex" 2>/dev/null | head -10
+echo "Sample of fixed lines:"
+grep -rn 'usepackage.*cache=false.*minted' "$TARGET_DIR" --include="*.tex" | head -5
 
 echo ""
 echo "=============================================="
-echo "FIX COMPLETE"
+echo "DONE"
 echo "=============================================="
-echo ""
-echo "Next steps:"
-echo "1. git add -A"
-echo "2. git commit -m 'fix: remove all minted cache options for CI compatibility'"
-echo "3. git push"
