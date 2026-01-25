@@ -1,71 +1,67 @@
-%========================================================
-% Comprehensive-Minimal GitHub Actions for a WASM C Game
-% Tailored to: notoriousjayy-wasm (C + Emscripten/WebGL2)
-%========================================================
+% minimal-github-actions-for-wasm-c-game.tex
+% CI-safe: No minted, no Pygments, no shell-escape required
 \documentclass[11pt]{article}
 
-% ---------- Encoding & layout ----------
+% === Encoding & Fonts ===
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{lmodern}
 \usepackage{microtype}
+
+% === Page Layout ===
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{parskip}
 \usepackage{setspace}
 \setstretch{1.08}
 
-% ---------- Colors & links ----------
+% === Colors ===
 \usepackage{xcolor}
-\definecolor{ink}{HTML}{111827}      % gray-900
-\definecolor{soft}{HTML}{F9FAFB}     % gray-50
-\definecolor{accent}{HTML}{2563EB}   % blue-600
-\usepackage[colorlinks=true,linkcolor=accent,citecolor=accent,urlcolor=accent]{hyperref}
+\definecolor{CodeBg}{HTML}{F9FAFB}
+\definecolor{Ink}{HTML}{111827}
+\definecolor{Accent}{HTML}{2563EB}
+
+% === Hyperlinks ===
+\usepackage{hyperref}
 \usepackage{xurl}
+\hypersetup{colorlinks=true, linkcolor=Accent, citecolor=Accent, urlcolor=Accent}
 
-% ---------- Math (for \text) ----------
-\usepackage{amsmath}
+% === Lists ===
+\usepackage{enumitem}
+\setlist{itemsep=2pt, topsep=4pt, leftmargin=1.2em}
 
-% ---------- Code blocks ----------
-
-% ---------- Code blocks (listings only - CI safe) ----------
+% === Code Blocks (listings only) ===
 \usepackage{listings}
 \usepackage{upquote}
 
-\lstdefinelanguage{yaml}{
-  keywords={true,false,null},
-  sensitive=false,
-  comment=[l]{\#},
-  morestring=[b]',
-  morestring=[b]"
-}
-
 \lstset{
-  basicstyle=\ttfamily\small,
-  backgroundcolor=\color{soft},
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{CodeBg},
   breaklines=true,
-  breakatwhitespace=false,
   columns=fullflexible,
   keepspaces=true,
   showstringspaces=false,
   frame=single,
   framerule=0.4pt,
+  rulecolor=\color{Ink!30},
   tabsize=2,
-  aboveskip=6pt,
-  belowskip=6pt,
-  literate=
-    {—}{{---}}1
-    {–}{{--}}1
-    {→}{{$\rightarrow$}}1
+  aboveskip=8pt,
+  belowskip=8pt,
+  xleftmargin=4pt,
+  xrightmargin=4pt
 }
-\newcommand{\mintinline}[3][]{\texttt{#3}}
-\lstnewenvironment{bashcode}{\lstset{language=bash}}{}
-\lstnewenvironment{yamlcode}{\lstset{language=yaml}}{}
-\lstnewenvironment{jsoncode}{\lstset{}}{}
-\lstnewenvironment{cmakecode}{\lstset{}}{}
-\lstnewenvironment{textcode}{\lstset{}}{}
-\lstnewenvironment{cppcode}{\lstset{language=C++}}{}
-\lstnewenvironment{ccode}{\lstset{language=C}}{}
-\lstnewenvironment{inicode}{\lstset{}}{}
-\lstnewenvironment{pythoncode}{\lstset{language=Python}}{}
 
+\lstnewenvironment{bashcode}{\lstset{language=bash}}{}
+\lstnewenvironment{yamlcode}{\lstset{}}{}
+\lstnewenvironment{jsoncode}{\lstset{}}{}
+\lstnewenvironment{textcode}{\lstset{}}{}
+
+% === Silence missing .toc on first run ===
+\makeatletter
+\let\orig@starttoc\@starttoc
+\def\@starttoc#1{\IfFileExists{\jobname.#1}{\orig@starttoc{#1}}{}}
+\makeatother
+
+% === Document ===
 \title{\textbf{Comprehensive-Minimal GitHub Actions for a WASM C Game}}
 \author{Emscripten + WebGL2 + CMake Presets (repo-tailored)}
 \date{\today}
@@ -73,71 +69,43 @@
 \begin{document}
 \maketitle
 
+\tableofcontents
+\clearpage
 
-\section*{Executive Summary}
+\section{Executive Summary}
 
-\section*{Quick Start}
+This guide delivers a cohesive, production-ready CI/CD baseline for a C/WebGL2 game compiled to WebAssembly via Emscripten. It is tailored for repositories that use \texttt{CMakePresets.json} with a \texttt{wasm-debug} configure preset that outputs to \texttt{build-wasm}.
 
-\subsection*{Diagnostics workflow (optional)}
-Use a lightweight job to print versions and confirm Emscripten is installed:
-\begin{yamlcode}
-name: Diagnostics
-on: [workflow_dispatch]
-jobs:
-  envcheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: mymindstorm/setup-emsdk@v14
-      - run: |
-          emcc --version
-          cmake --version
-          ninja --version || true
-\end{yamlcode}
+The workflows form a minimal-yet-complete pipeline:
+\begin{itemize}
+  \item \textbf{Build \& Test}: Compile with Emscripten and your CMake preset
+  \item \textbf{CodeQL (C/C++)}: Add SAST for C/C++ to catch issues in CI
+  \item \textbf{Dependency Review}: Guard PRs by flagging risky changes
+  \item \textbf{Deploy to GitHub Pages}: Publish for playtesting
+  \item \textbf{Release on tags}: Package build artifacts as downloadable assets
+\end{itemize}
+
+\section{Quick Start}
+
 \begin{enumerate}
   \item Ensure you have a \texttt{CMakePresets.json} with a \texttt{wasm-debug} configure preset that outputs to \texttt{build-wasm}.
   \item Push a branch: the \emph{Build \& Test} workflow compiles with Emscripten and caches dependencies.
   \item Open a PR: \emph{Dependency Review} and \emph{CodeQL} run as guardrails.
   \item Merge to \texttt{main}: \emph{Deploy to GitHub Pages} publishes a playable demo.
-  \item Create a tag (e.g., \texttt{v0.1.0}): \emph{Release} packages WebAssembly assets for distribution.
+  \item Create a tag (e.g., \texttt{v0.1.0}): \emph{Release} packages WebAssembly assets.
 \end{enumerate}
-This guide delivers a cohesive, production-ready CI/CD baseline for a C/WebGL2 game compiled to WebAssembly via Emscripten. It is tailored for repositories that use \texttt{CMakePresets.json} with a \texttt{wasm-debug} configure preset that outputs to \texttt{build-wasm}. The workflows form a minimal-yet-complete pipeline:
-\begin{itemize}
-  \item \textbf{Build \& Test}: Compile with Emscripten and your CMake preset, producing reproducible WebAssembly assets.
-  \item \textbf{CodeQL (C/C++)}: Add SAST for C/C++ to catch correctness and security issues in CI.
-  \item \textbf{Dependency Review}: Guard PRs by flagging risky transitive changes.
-  \item \textbf{Deploy to GitHub Pages}: Publish the \texttt{build-wasm} output for playtesting.
-  \item \textbf{Release on tags}: Package build artifacts as downloadable assets.
-\end{itemize}
-The result is a pragmatic path from commit to playable demo to versioned releases, with security checks and dependency risk controls built in.
 
-\section*{Goal}
+\section{Prerequisites}
 
-\section*{Prerequisites}
-Before running the workflows, make sure the essentials are in place:
 \begin{itemize}
-  \item \textbf{Emscripten SDK}: Installed and available on the runner via \texttt{emsdk}. Use the latest stable tools.
-  \item \textbf{CMake presets}: A \texttt{CMakePresets.json} with a \texttt{wasm-debug} configure preset that generates to \texttt{build-wasm}.
-  \item \textbf{CI resources}: GitHub Actions enabled with permissions to read repository contents and write Pages/Deployments.
-  \item \textbf{Security scanning}: If you use CodeQL, ensure the repository or org has GitHub Advanced Security enabled.
-  \item \textbf{Pages (optional)}: If you plan to publish a playable demo, enable GitHub Pages (build from GitHub Actions).
+  \item \textbf{Emscripten SDK}: Installed and available on the runner via \texttt{emsdk}.
+  \item \textbf{CMake presets}: A \texttt{CMakePresets.json} with a \texttt{wasm-debug} configure preset.
+  \item \textbf{CI resources}: GitHub Actions enabled with permissions to read contents and write Pages.
+  \item \textbf{Security scanning}: If using CodeQL, ensure GitHub Advanced Security is enabled.
 \end{itemize}
 
-Ship a comprehensive-minimal CI/CD set for your WebAssembly (WASM) \textbf{C} game using Emscripten + WebGL2, matching your repository layout and CMake presets. We provide five production-ready GitHub Actions workflows:
-\begin{itemize}
-  \item Build \& Test (Emscripten + \texttt{wasm-debug} preset → \texttt{build-wasm})
-  \item CodeQL (C/C++)
-  \item Dependency Review (PR guardrail)
-  \item Deploy to GitHub Pages (publish \texttt{build-wasm})
-  \item Release on tags (zip \texttt{build-wasm} assets)
-\end{itemize}
+\section{Repository Layout}
 
-\paragraph{How to compile this PDF}
-\begin{bashcode}
-latexmk -pdf -shell-escape main.tex
-\end{bashcode}
-
-\section{Your repository layout (ASCII-safe)}
 \begin{textcode}
 notoriousjayy-wasm/
 |-- readme.md
@@ -156,37 +124,7 @@ notoriousjayy-wasm/
     `-- render.c
 \end{textcode}
 
-\section{Build strategy (tailored)}
-\subsection*{Tunable Parameters}
-\begin{itemize}
-  \item \textbf{Preset name}: Switch from \texttt{wasm-debug} to \texttt{wasm-release} for optimized bundles.
-  \item \textbf{Cache keys}: Include \texttt{runner.os}, preset name, \texttt{CMakeLists.txt} hash.
-  \item \textbf{Artifact names}: Unify across workflows (e.g., \texttt{build-wasm}).
-  \item \textbf{Pages directory}: If your web assets live under \texttt{web/}, set the publish path accordingly.
-  \item \textbf{CodeQL query packs}: Add security-focused packs or narrow scope via \texttt{.codeql/config.yml}.
-\end{itemize}
-
-Your README and presets expect \texttt{emcmake} and the \texttt{wasm-debug} preset; the binary dir is \texttt{build-wasm}. The CMake project emits \texttt{index.html}, \texttt{index.js}, \texttt{index.wasm} (output name \texttt{index}) and will use \texttt{html\_template/index.html} if present (it already includes the \texttt{\{\{\{ SCRIPT \}\}\}} placeholder). We mirror this in CI.
-
-\subsection*{Local dev (reference)}
-\begin{bashcode}
-# Emscripten SDK (once)
-git clone https://github.com/emscripten-core/emsdk.git ~/emsdk
-cd ~/emsdk && ./emsdk install latest && ./emsdk activate latest
-source ~/emsdk/emsdk_env.sh
-
-# Configure and build (matching README)
-emcmake cmake --preset wasm-debug
-cmake --build --preset wasm-debug
-
-# Serve locally from the build dir
-cmake --build --preset wasm-debug --target serve
-# Open http://localhost:8000/
-\end{bashcode}
-
-\section{Workflow 1: Build \& Test (Emscripten + CMake preset)}
-\emph{This step continues the pipeline, building on the outputs of earlier workflows.}
-
+\section{Workflow 1: Build \& Test}
 
 \begin{yamlcode}
 # .github/workflows/build-wasm.yml
@@ -208,7 +146,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Emscripten
-        shell: bash
         run: |
           git clone https://github.com/emscripten-core/emsdk.git "$EMSDK"
           "$EMSDK/emsdk" install latest
@@ -217,7 +154,7 @@ jobs:
           source "$EMSDK/emsdk_env.sh"
           emcc --version
 
-      - name: Cache Emscripten build cache
+      - name: Cache Emscripten
         uses: actions/cache@v4
         with:
           path: |
@@ -226,16 +163,13 @@ jobs:
           key: emsdk-${{ runner.os }}-latest
 
       - name: Configure (emcmake + preset wasm-debug)
-        shell: bash
         run: |
           source "$EMSDK/emsdk_env.sh"
           emcmake cmake --preset wasm-debug
 
       - name: Build
-        shell: bash
         run: cmake --build --preset wasm-debug -j2
 
-      # No tests yet; keep as a future hook
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -246,11 +180,8 @@ jobs:
             build-wasm/index.wasm
 \end{yamlcode}
 
-\section{Workflow 2: CodeQL (C/C++)}
-\emph{This step continues the pipeline, building on the outputs of earlier workflows.}
+\section{Workflow 2: CodeQL}
 
-
-If \texttt{autobuild} cannot infer a build, reuse the emsdk + preset steps before analyze (shown commented).
 \begin{yamlcode}
 # .github/workflows/codeql.yml
 name: CodeQL (C/C++)
@@ -268,31 +199,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: github/codeql-action/init@v3
         with:
-          languages: cpp  # covers C and C++
-
+          languages: cpp
       - uses: github/codeql-action/autobuild@v3
-
-      # If autobuild fails, uncomment and use your exact wasm build:
-      # - name: Build (Emscripten, same as CI)
-      #   shell: bash
-      #   run: |
-      #     EMSDK="$RUNNER_TEMP/emsdk"
-      #     git clone https://github.com/emscripten-core/emsdk.git "$EMSDK"
-      #     "$EMSDK/emsdk" install latest
-      #     "$EMSDK/emsdk" activate latest
-      #     source "$EMSDK/emsdk_env.sh"
-      #     emcmake cmake --preset wasm-debug
-      #     cmake --build --preset wasm-debug -j2
-
       - uses: github/codeql-action/analyze@v3
 \end{yamlcode}
 
 \section{Workflow 3: Dependency Review}
-\emph{This step continues the pipeline, building on the outputs of earlier workflows.}
-
 
 \begin{yamlcode}
 # .github/workflows/dependency-review.yml
@@ -313,10 +227,7 @@ jobs:
 \end{yamlcode}
 
 \section{Workflow 4: Deploy to GitHub Pages}
-\emph{This step continues the pipeline, building on the outputs of earlier workflows.}
 
-
-We build with the wasm preset and publish \texttt{build-wasm} as the Pages artifact. Your custom HTML shell in \texttt{html\_template/index.html} will be used automatically because CMake passes \texttt{--shell-file} when it exists.
 \begin{yamlcode}
 # .github/workflows/pages.yml
 name: Deploy (GitHub Pages)
@@ -337,30 +248,21 @@ jobs:
     runs-on: ubuntu-latest
     env:
       EMSDK: ${{ runner.temp }}/emsdk
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Install Emscripten
-        shell: bash
         run: |
           git clone https://github.com/emscripten-core/emsdk.git "$EMSDK"
           "$EMSDK/emsdk" install latest
           "$EMSDK/emsdk" activate latest
-          echo "EMSDK=$EMSDK" >> $GITHUB_ENV
           source "$EMSDK/emsdk_env.sh"
-
-      - name: Configure & build (emcmake + preset)
+      - name: Configure & build
         run: |
           emcmake cmake --preset wasm-debug
           cmake --build --preset wasm-debug -j2
           test -f build-wasm/index.html
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
         with:
           path: build-wasm
 
@@ -375,9 +277,7 @@ jobs:
         uses: actions/deploy-pages@v4
 \end{yamlcode}
 
-\section{Workflow 5: Release on tags (zip build-wasm)}
-\emph{This step continues the pipeline, building on the outputs of earlier workflows.}
-
+\section{Workflow 5: Release on Tags}
 
 \begin{yamlcode}
 # .github/workflows/release.yml
@@ -394,429 +294,67 @@ jobs:
     runs-on: ubuntu-latest
     env:
       EMSDK: ${{ runner.temp }}/emsdk
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Install Emscripten
-        shell: bash
         run: |
           git clone https://github.com/emscripten-core/emsdk.git "$EMSDK"
           "$EMSDK/emsdk" install latest
           "$EMSDK/emsdk" activate latest
           source "$EMSDK/emsdk_env.sh"
-
-      - name: Build (emcmake + preset)
+      - name: Build
         run: |
           emcmake cmake --preset wasm-debug
           cmake --build --preset wasm-debug -j2
           (cd build-wasm && zip -r ../game-wasm.zip .)
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v2
         with:
           files: game-wasm.zip
 \end{yamlcode}
 
-\section{Optional: add a Release preset for size/perf}
-If you want a production-optimized build, extend \texttt{CMakePresets.json} with a \texttt{wasm-release} preset (still using \texttt{emcmake} in CI):
-\begin{jsoncode}
-{
-  "version": 5,
-  "cmakeMinimumRequired": { "major": 3, "minor": 20 },
-  "configurePresets": [
-    {
-      "name": "wasm-debug",
-      "displayName": "Emscripten / Debug",
-      "generator": "Ninja",
-      "binaryDir": "build-wasm",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
-    },
-    {
-      "name": "wasm-release",
-      "displayName": "Emscripten / Release",
-      "generator": "Ninja",
-      "binaryDir": "build-wasm",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
-      }
-    }
-  ],
-  "buildPresets": [
-    { "name": "wasm-debug",   "configurePreset": "wasm-debug" },
-    { "name": "wasm-release", "configurePreset": "wasm-release" }
-  ]
-}
-\end{jsoncode}
+\section{Local Development}
 
-Then update the workflows’ build steps to use \texttt{wasm-release} for deploy and release jobs.
+\begin{bashcode}
+# Emscripten SDK (once)
+git clone https://github.com/emscripten-core/emsdk.git ~/emsdk
+cd ~/emsdk && ./emsdk install latest && ./emsdk activate latest
+source ~/emsdk/emsdk_env.sh
 
-\section{Notes and repo-specific tips}
+# Configure and build (matching README)
+emcmake cmake --preset wasm-debug
+cmake --build --preset wasm-debug
+
+# Serve locally
+cmake --build --preset wasm-debug --target serve
+# Open http://localhost:8000/
+\end{bashcode}
+
+\section{Notes and Tips}
+
 \begin{itemize}
   \item \textbf{Custom shell}: your \texttt{html\_template/index.html} already includes \texttt{\{\{\{ SCRIPT \}\}\}}, so the generated JS is injected correctly.
-  \item \textbf{Exports}: CMake sets \texttt{-sEXPORTED\_FUNCTIONS=['\_main','\_initWebGL','\_startMainLoop','\_myFunction']} and runtime methods \texttt{ccall,cwrap}, so DevTools calls like \texttt{Module.ccall('myFunction', ...)} work out of the box.
-  \item \textbf{Artifacts}: Pages and Release jobs upload the entire \texttt{build-wasm} directory to preserve all outputs (\texttt{index.html/js/wasm}).
-  \item \textbf{Cache}: caching \texttt{\~{}/.emscripten\_cache} and \texttt{upstream/emscripten/cache} speeds up builds.
-  \item \textbf{Local serve target}: \texttt{cmake --build --preset wasm-debug --target serve} starts \texttt{python3 -m http.server} bound to \texttt{SERVE\_HOST:SERVE\_PORT} configured in CMake.
+  \item \textbf{Exports}: CMake sets exported functions and runtime methods, so DevTools calls work out of the box.
+  \item \textbf{Artifacts}: Pages and Release jobs upload the entire \texttt{build-wasm} directory.
+  \item \textbf{Cache}: caching Emscripten cache speeds up builds.
+  \item \textbf{Local serve target}: starts a Python HTTP server bound to configured host and port.
 \end{itemize}
 
+\section{Risks \& Mitigations}
 
-% ========================================================
-\section{Gaps \& Risks Addressed \& Implemented Updates}
-% ========================================================
-
-\subsection{What changed at a glance}
 \begin{itemize}
-  \item \textbf{Pinned toolchain and actions:} CMake/Ninja are used explicitly; Emscripten version is fixed; core Actions are pinned to immutable SHAs where practicable.
-  \item \textbf{Deterministic builds:} a minimal \texttt{CMakePresets.json} enables \texttt{Ninja} and \texttt{CMAKE\_EXPORT\_COMPILE\_COMMANDS=ON} for CodeQL.
-  \item \textbf{Security hardening:} job/token permissions are least-privilege; third-party actions are minimized; Pages deploy has concurrency guards.
-  \item \textbf{Dependency risk gate:} a PR-only dependency review job blocks high-severity advisories.
-  \item \textbf{Release sanity:} \texttt{wasm-opt} optimization, a size budget check, and GitHub auto release notes.
-  \item \textbf{Pages QA:} basic link check and a \texttt{workflow\_dispatch} path for manual previews.
-  \item \textbf{Headless smoke test:} quick Node-based load check for the generated JS glue.
-  \item \textbf{Docs \& badges:} drop-in Markdown badge snippet for CI/Pages/Release status.
+  \item \textbf{Stale caches}: Include cache keys derived from the preset and CMakeLists.txt hash.
+  \item \textbf{Insufficient tests}: Add headless smoke tests and validate key exported functions.
+  \item \textbf{Large bundle size}: Enable \texttt{-O3} for release, compress on publish.
+  \item \textbf{CodeQL noise}: Triage to dismiss with reason or suppress safely.
+  \item \textbf{Supply-chain drift}: Lock versions; review diffs; use Dependabot.
 \end{itemize}
 
-\subsection{Minimal CMake/Ninja presets (drop-in)}
-\noindent Place this in the repository root as \texttt{CMakePresets.json} to standardize local and CI builds and to emit \texttt{compile\_commands.json} for CodeQL.
-\begin{jsoncode}
-{
-  "version": 3,
-  "cmakeMinimumRequired": { "major": 3, "minor": 22, "patch": 0 },
-  "configurePresets": [
-    {
-      "name": "wasm-release",
-      "generator": "Ninja",
-      "binaryDir": "build",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
-      }
-    }
-  ]
-}
-\end{jsoncode}
+\section{Common Pitfalls}
 
-% ========================================================
-\section{Updated Workflows (drop-in, production-ready)}
-% ========================================================
-
-\subsection{\texttt{.github/workflows/build.yml} — Build \& Test (WASM)}
-\begin{yamlcode}
-name: Build & Test (WASM)
-
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-  workflow_dispatch:
-    inputs:
-      emscripten:
-        description: "emscripten/emsdk version (e.g., 3.1.59)"
-        required: false
-
-# sensible defaults and least privilege
-permissions:
-  contents: read
-
-concurrency:
-  group: build-${{ github.ref }}
-  cancel-in-progress: true
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-      - name: Restore emsdk cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: |
-            ~/.cache/emscripten
-            ~/.emscripten_cache
-          key: ${{ runner.os }}-emsdk-${{ inputs.emscripten || '3.1.59' }}
-      - name: Install build deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build cmake
-      - name: Setup Emscripten SDK
-        # Pinning a third-party action ideally uses a full SHA; if avoiding third-party, do a manual install.
-        # For simplicity and speed, we use the maintained setup action. You may replace with a manual script if desired.
-        uses: mymindstorm/setup-emsdk@v14
-        with:
-          version: ${{ inputs.emscripten || '3.1.59' }}
-      - name: Configure (Ninja + compile_commands.json)
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-      - name: Build
-        run: cmake --build build --parallel 2
-      - name: Headless smoke test (Node load check)
-        run: |
-          set -eux
-          test -f build/index.js || test -f build/main.js
-          FILE=$( [ -f build/index.js ] && echo build/index.js || echo build/main.js )
-          node -e "const fs=require('fs'); const s=fs.readFileSync(process.argv[1],'utf8'); if(!/Module/.test(s)) { throw new Error('Emscripten glue missing Module symbol'); }" "$FILE"
-      - name: Upload artifact (bundle)
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: wasm-bundle
-          path: |
-            build/**
-          if-no-files-found: error
-          retention-days: 7
-\end{yamlcode}
-
-\subsection{\texttt{.github/workflows/codeql.yml} — CodeQL for C/C++ (manual build mode)}
-\begin{yamlcode}
-name: CodeQL (C/C++)
-
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-  schedule:
-    - cron: "31 3 * * 0"
-
-permissions:
-  contents: read
-  security-events: write
-
-jobs:
-  analyze:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-      - name: Install build deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build cmake
-      - name: Initialize CodeQL (C/C++, manual build)
-        uses: github/codeql-action/init@v3
-        with:
-          languages: cpp
-          queries: security-and-quality
-          build-mode: manual
-      - name: Configure (emit compile_commands.json)
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-      - name: Build (no parallel to keep logs smaller)
-        run: cmake --build build --parallel 1
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-\end{yamlcode}
-
-\subsection{\texttt{.github/workflows/dependency-review.yml} — PR Gate}
-\begin{yamlcode}
-name: Dependency Review
-
-on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-
-permissions:
-  contents: read
-
-jobs:
-  review:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-      - name: Dependency Review (block high severity)
-        uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: high
-          comment-summary-in-pr: true
-\end{yamlcode}
-
-\subsection{\texttt{.github/workflows/pages.yml} — GitHub Pages (with QA \& manual trigger)}
-\begin{yamlcode}
-name: Pages
-
-on:
-  push:
-    branches: [ "main" ]
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: github-pages
-  cancel-in-progress: true
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-      - name: Build site (static bundle)
-        run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-          cmake --build build --parallel 2
-          test -d build
-      - name: Link sanity check
-        run: |
-          set -eux
-          python3 - << 'PY'
-          import os, sys, re
-          bad = []
-          for root, _, files in os.walk('build'):
-              for f in files:
-                  if f.endswith(('.html','.htm')):
-                      p = os.path.join(root,f)
-                      s = open(p,'r',errors='ignore').read()
-                      for href in re.findall(r'href=[\'"](.*?)[\'"]', s):
-                          if href.startswith('http'): continue
-                          tgt = os.path.normpath(os.path.join(root, href))
-                          if not os.path.exists(tgt):
-                              bad.append((p, href))
-          if bad:
-              for p, h in bad[:20]:
-                  print(f"Missing link: {p} -> {h}")
-              sys.exit(1)
-          PY
-      - name: Upload Pages artifact (tarball)
-        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
-        with:
-          path: build
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        # (Optionally pin this to a commit from actions/deploy-pages tags)
-        uses: actions/deploy-pages@v4
-\end{yamlcode}
-
-\subsection{\texttt{.github/workflows/release.yml} — Tag-based release, wasm-opt, size budget}
-\begin{yamlcode}
-name: Release (tag)
-
-on:
-  push:
-    tags:
-      - "v*.*.*"
-
-permissions:
-  contents: write
-
-env:
-  WASM_SIZE_BUDGET_KB: "1024"  # adjust as needed
-  EM_VERSION: "3.1.59"
-
-jobs:
-  release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-      - name: Install deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build cmake
-          npm i -g binaryen
-      - name: Configure & build (Release)
-        run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-          cmake --build build --parallel 2
-      - name: Optimize wasm (wasm-opt -O3, strip)
-        run: |
-          set -eux
-          WASM=$(ls build/*.wasm | head -n1)
-          wasm-opt -O3 --strip-debug --strip-dwarf -o "${WASM%.wasm}.opt.wasm" "$WASM"
-          mv "${WASM%.wasm}.opt.wasm" "$WASM"
-      - name: Size budget check
-        run: |
-          set -eux
-          WASM=$(ls build/*.wasm | head -n1)
-          sz=$(du -k "$WASM" | cut -f1)
-          echo "WASM size (KB): $sz"
-          if [ "$sz" -gt "${WASM_SIZE_BUDGET_KB}" ]; then
-            echo "::error title=Size budget exceeded::${sz} KB > ${WASM_SIZE_BUDGET_KB} KB"
-            exit 1
-          fi
-      - name: Upload build as artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: release-bits
-          path: build/**
-          retention-days: 5
-      - name: Create GitHub Release (notes generated)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -eux
-          TAG="${GITHUB_REF_NAME}"
-          gh release create "$TAG" build/* --generate-notes --title "$TAG"
-\end{yamlcode}
-
-% ========================================================
-\section{Repository-wide defaults and docs}
-% ========================================================
-
-\subsection{Job permission defaults (optional top-level)}
-Add to each workflow if you want to guarantee the most restrictive default and override per job as needed:
-\begin{yamlcode}
-permissions:
-  contents: read
-\end{yamlcode}
-
-\subsection{README badges (copy/paste)}
-\begin{textcode}
-![Build](https://github.com/<OWNER>/<REPO>/actions/workflows/build.yml/badge.svg)
-![CodeQL](https://github.com/<OWNER>/<REPO>/actions/workflows/codeql.yml/badge.svg)
-![Pages](https://github.com/<OWNER>/<REPO>/actions/workflows/pages.yml/badge.svg)
-![Release](https://github.com/<OWNER>/<REPO>/actions/workflows/release.yml/badge.svg)
-\end{textcode}
-
-\subsection{Notes on third-party pins}
-Where a full commit SHA is not provided above (e.g., \texttt{mymindstorm/setup-emsdk}), prefer pinning to an immutable SHA for supply-chain safety or replace with an inline installation script.
-
-
-\section*{Quality Gates \& Branch Protection}
-To make CI results \emph{enforced}, enable branch protection on \texttt{main} (Settings \(\to\) Branches):
 \begin{itemize}
-  \item Require status checks to pass before merging: include \texttt{Build \& Test}, \texttt{CodeQL}, and \texttt{Dependency Review}.
-  \item Require branch to be up to date before merging (optional, increases merge latency but avoids drift).
-  \item Restrict who can push to \texttt{main}; favor PR-based changes.
-  \item (Pages) Use environments with required reviewers if you want controlled promotions.
+  \item \textbf{CodeQL not running}: Ensure GitHub Advanced Security is enabled.
+  \item \textbf{Pages publish fails}: Confirm the \texttt{pages} and \texttt{id-token} permissions.
+  \item \textbf{Emscripten not found}: Ensure \texttt{source "\$EMSDK/emsdk\_env.sh"} is called before \texttt{emcmake}.
 \end{itemize}
 
-
-\section*{Risks \& Mitigations}
-\begin{itemize}
-  \item \textbf{Stale caches}: Emscripten or CMake cache may cause odd build diffs. \emph{Mitigation}: Include cache keys derived from the preset and a hash of \texttt{CMakeLists.txt}; provide a manual cache-bust input.
-  \item \textbf{Insufficient tests}: WebAssembly builds pass but gameplay regresses. \emph{Mitigation}: Add headless smoke tests (e.g., \texttt{wasm3} or minimal browser run) and validate key exported functions.
-  \item \textbf{Large bundle size}: Slow Pages loads and timeouts. \emph{Mitigation}: Enable \texttt{-O3} for release, compress (\texttt{.gz/.br}) on publish, and serve cache headers.
-  \item \textbf{CodeQL noise}: First runs can flag legacy or third-party code. \emph{Mitigation}: Triage to \emph{dismiss with reason} or suppress safely; add a \texttt{.codeql/config.yml} to focus scope.
-  \item \textbf{Supply-chain drift}: Dependency changes sneak in via submodules or vendored libs. \emph{Mitigation}: Lock versions; review diffs; use Dependabot \& Dependency Review.
-  \item \textbf{Pages misconfiguration}: 404s or wrong directory published. \emph{Mitigation}: Confirm \texttt{build-wasm} path; verify environment and \texttt{pages} permissions.
-\end{itemize}
-
-
-\section*{Common Pitfalls \& Fixes}
-\begin{itemize}
-  \item \textbf{LaTeX Unicode tree chars}: Replace box-drawing characters with ASCII or \verb|\texttt| blocks.
-  \item \textbf{Minted \& Pygments  errors}: Build with \texttt{-shell-escape}; avoid \texttt{} unless the styles exist; run \texttt{latexmk} without \texttt{outputdir} or configure \texttt{minted} accordingly.
-  \item \textbf{CodeQL not running}: Ensure GitHub Advanced Security is enabled at org/repo and the CodeQL workflow has correct permissions.
-  \item \textbf{Pages publish fails}: Confirm the \texttt{pages} and \texttt{id-token} permissions and the correct \texttt{artifact} path.
-  \item \textbf{Emscripten not found}: Ensure the setup step calls \texttt{emsdk} and \texttt{source "\$EMSDK/emsdk\_env.sh"} before invoking \texttt{emcmake/emcc}.
-\end{itemize}
-
-\section*{Wrap-up \& next steps}
-You now have a cohesive, repo-tailored CI/CD path: build and test with Emscripten, scan with CodeQL, guard dependency risk, publish a playable demo, and ship tagged releases. 
-From here, consider small, incremental upgrades:
-\begin{itemize}
-  \item Add cache keys per preset/commit to speed builds even further.
-  \item Extend tests with headless \texttt{wasm3} or browser-based smoke checks.
-  \item Gate Pages deploys behind checks (e.g., \texttt{required\_status\_checks}) for stricter quality bars.
-  \item Include Lighthouse (Pages) or Playwright runs for basic rendering validation.
-\end{itemize}
 \end{document}
