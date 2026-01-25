@@ -1,30 +1,43 @@
 % !TEX program = pdflatex
 \documentclass[10pt,letterpaper]{article}
 
-% ---------- Packages ----------
+% ---------- Encoding & fonts ----------
 \usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{inconsolata}
+\usepackage{microtype}
 
+% ---------- Page layout ----------
+\usepackage[letterpaper,margin=0.8in]{geometry}
+\usepackage{parskip}
+
+% ---------- Colors (must come before titlesec) ----------
+\usepackage{xcolor}
+\definecolor{Ink}{HTML}{1F2937}
+\definecolor{Accent}{HTML}{2563EB}
+\definecolor{CodeBG}{HTML}{F3F4F6}
+\definecolor{Gray}{HTML}{6B7280}
+\definecolor{soft}{HTML}{F3F4F6}
+
+% ---------- Links ----------
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=Accent, urlcolor=Accent, citecolor=Accent}
+
+% ---------- Headings ----------
 \usepackage{titlesec}
 \titleformat{\section}{\large\bfseries\color{Ink}}{}{0pt}{}
 \titlespacing*{\section}{0pt}{6pt}{3pt}
 \titleformat{\subsection}{\bfseries\color{Ink}}{}{0pt}{}
 \titlespacing*{\subsection}{0pt}{4pt}{2pt}
 
-% ---------- Silence first-run missing .toc (prevents strict latexmk aborts) ----------
-\makeatletter
-\let\ci@orig@starttoc\@starttoc
-\def\@starttoc#1{%
-  \begingroup
-  \IfFileExists{\jobname.#1}{\ci@orig@starttoc{#1}}{}%
-  \endgroup
-}
-\makeatother
+% ---------- Lists ----------
+\usepackage{enumitem}
+\setlist{nosep, leftmargin=1.1em, topsep=2pt}
 
-
-% ---------- Code blocks
-\definecolor{soft}{HTML}{F3F4F6}
- (listings only - CI safe) ----------
+% ---------- Code blocks (listings only - CI safe) ----------
 \usepackage{listings}
+\usepackage{upquote}
 
 \lstdefinelanguage{yaml}{
   keywords={true,false,null},
@@ -56,89 +69,96 @@
 % Minted-compatible environments
 \lstnewenvironment{minted}[2][]{\lstset{}}{}
 \newcommand{\mintinline}[3][]{\texttt{#3}}
-\lstnewenvironment{bashcode}{\lstset{language=bash}}{}
-\lstnewenvironment{yamlcode}{\lstset{language=yaml}}{}
-\lstnewenvironment{jsoncode}{\lstset{}}{}
-\lstnewenvironment{cmakecode}{\lstset{}}{}
-\lstnewenvironment{textcode}{\lstset{}}{}
-\lstnewenvironment{cppcode}{\lstset{language=C++}}{}
-\lstnewenvironment{ccode}{\lstset{language=C}}{}
-\lstnewenvironment{inicode}{\lstset{}}{}
-\lstnewenvironment{pythoncode}{\lstset{language=Python}}{}
 
+% ---------- Silence first-run missing .toc ----------
+\makeatletter
+\let\ci@orig@starttoc\@starttoc
+\def\@starttoc#1{%
+  \begingroup
+  \IfFileExists{\jobname.#1}{\ci@orig@starttoc{#1}}{}%
+  \endgroup
+}
+\makeatother
+
+% ---------- Fix inconsolata/zi4 italic warning ----------
+\makeatletter
+\@ifundefined{DeclareFontShape}{}{%
+  \DeclareFontShape{T1}{zi4}{m}{it}{<->ssub*zi4/m/sl}{}
+  \DeclareFontShape{T1}{zi4}{b}{it}{<->ssub*zi4/b/sl}{}
+}
+\makeatother
 
 \begin{document}
 \begin{center}
 {\Large \textbf{Dependabot \& Dependency Graph — 1 Page Cheat Sheet}}\\
 \smallskip
-\textcolor{Gray}{Quick reference for GHAS dependency risk management}
+{\color{Gray}\small Quick reference for GitHub's dependency management features}
 \end{center}
 
-\section{Core Concepts}
-\textbf{Vulnerability.} A weakness in software, hardware, or systems that attackers can exploit to gain access, steal data, or disrupt operations. Examples include buffer overflows that allow code injection.\\[2pt]
-\textbf{Dependabot Alerts.} Automatic findings when dependencies in your repo match known vulnerable versions. Alerts include metadata, severity, and links to remediation guidance.\\[2pt]
-\textbf{Dependabot Security Updates vs Version Updates.}
+\section{Dependency Graph}
 \begin{itemize}
-  \item \textbf{Security Updates:} When a vulnerable version is detected and a safe version exists, Dependabot opens a PR to patch it.
-  \item \textbf{Version Updates:} Dependabot proactively opens PRs to keep dependencies current as new versions are released (not just during vulnerability scans).
+  \item Automatically detects dependencies from manifest files (package.json, requirements.txt, etc.)
+  \item Shows both direct and transitive dependencies
+  \item Accessible via \textbf{Insights} → \textbf{Dependency graph}
+  \item Supports 20+ ecosystems including npm, pip, Maven, Gradle, Go modules
 \end{itemize}
-\textbf{Dependency Graph (SBOM).} A dynamic inventory of your repository's dependencies and their relationships; integrates with Dependabot and supports SBOM export.
-\medskip
 
-\section{How It Works (At a Glance)}
-\begin{enumerate}
-  \item Repo manifests (e.g., \texttt{requirements.txt}, \texttt{package-lock.json}, \texttt{pom.xml}) are analyzed.
-  \item Dependabot builds the \emph{dependency graph} and tracks versions.
-  \item Versions are compared against multiple sources (e.g., NVD, vendor advisories, package registries).
-  \item When a match with a known vulnerable version is found, Dependabot issues an alert and, if enabled, opens a PR.
-\end{enumerate}
+\section{Dependabot Alerts}
+\begin{itemize}
+  \item Automatically notifies when dependencies have known vulnerabilities
+  \item Severity levels: Critical, High, Medium, Low
+  \item Based on GitHub Advisory Database and CVE data
+  \item View in \textbf{Security} → \textbf{Dependabot alerts}
+\end{itemize}
 
-\section{Quick Start: \texttt{.github/dependabot.yml}}
-\noindent\textit{Place at repo root in \texttt{.github/}. Compile this doc with \texttt{-shell-escape} to enable syntax highlighting.}
-\begin{minted}[linenos]{yaml}
+\section{Dependabot Security Updates}
+Enable automatic PRs for vulnerable dependencies:
+\begin{minted}{yaml}
+# .github/dependabot.yml
 version: 2
 updates:
-  - package-ecosystem: "pip"          # npm, maven, gradle, cargo, etc.
-    directory: "/"                    # location of manifest (e.g., /app)
+  - package-ecosystem: "npm"
+    directory: "/"
     schedule:
-      interval: "weekly"              # daily | weekly | monthly
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 5
-    reviewers:
-      - "org/security-reviewers"
-    labels: ["dependabot", "security"]
-    ignore:
-      - dependency-name: "pytest"
-        versions: ["< 5.0.0"]
+      interval: "daily"
 \end{minted}
 
-\section{Notify Chat Platforms (Example)}
-\noindent\textit{Idea: post new alerts or open PRs to Teams via webhook (similar patterns work for Slack).}
-\begin{minted}[linenos]{bash}
-# In a workflow step, send a message with curl (Teams Incoming Webhook)
-curl -X POST "$TEAMS_WEBHOOK_URL" \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "text": "Dependabot found a vulnerable dependency. See Security tab."
-  }'
+\section{Dependabot Version Updates}
+Keep dependencies up-to-date (not just security fixes):
+\begin{minted}{yaml}
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      dev-dependencies:
+        patterns: ["*"]
+        dependency-type: "development"
 \end{minted}
 
-\section{Operational Tips}
+\section{CLI Commands}
+\begin{minted}{bash}
+# List alerts
+gh api repos/{owner}/{repo}/dependabot/alerts
+
+# Dismiss alert
+gh api repos/{owner}/{repo}/dependabot/alerts/{id} \
+  -X PATCH -f state=dismissed -f dismissed_reason="tolerable_risk"
+
+# Enable Dependabot
+gh api repos/{owner}/{repo}/vulnerability-alerts -X PUT
+\end{minted}
+
+\section{Best Practices}
 \begin{itemize}
-  \item \textbf{Act early.} Treat alerts like code reviews; triage continuously to reduce risk and PR backlog.
-  \item \textbf{Tune noise.} Limit open Dependabot PRs per repo; batch schedules to avoid alert floods.
-  \item \textbf{Label \& route.} Auto-label Dependabot PRs, assign reviewers, and wire notifications to Teams/Slack.
-  \item \textbf{Dismiss responsibly.} Use consistent dismissal reasons (e.g., false positive, already remediated, will not fix with rationale).
+  \item Enable Dependabot for all repositories in your organization
+  \item Set up branch protection requiring security checks
+  \item Review and merge Critical/High alerts within 24-48 hours
+  \item Use grouped updates to reduce PR noise
+  \item Configure \texttt{reviewers} and \texttt{labels} in dependabot.yml
 \end{itemize}
 
-\section{Exam/Interview Recall}
-\begin{itemize}
-  \item Dependabot sources include public vulnerability feeds (e.g., NVD), vendor advisories, package registries, partner feeds, community reports, and GitHub research.
-  \item The \textbf{dependency graph} powers SBOM export and links findings to manifests.
-  \item \textbf{Security updates} vs \textbf{version updates}: both make PRs; security updates react to vulnerabilities, version updates keep you current.
-\end{itemize}
-
-\bigskip
-{\footnotesize Compile with: \texttt{latexmk -pdf -shell-escape -interaction=nonstopmode ghas-dependabot-cheatsheet-minted.tex}}
 \end{document}

@@ -1,7 +1,34 @@
+
 % !TEX TS-program = pdflatex
-% Compile with: pdflatex -shell-escape dependabot-cheatsheet.tex
+% Compile with: pdflatex dependabot-cheatsheet.tex
 \documentclass[11pt,letterpaper]{article}
 
+% ---------- Encoding & fonts ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{inconsolata}
+\usepackage{microtype}
+
+% ---------- Page & links ----------
+\usepackage[margin=1in]{geometry}
+\usepackage{parskip}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue,
+  citecolor=black
+}
+
+% ---------- Colors (must come before titlesec if using colors there) ----------
+\usepackage[dvipsnames]{xcolor}
+\definecolor{CodeBg}{RGB}{248,248,248}
+\definecolor{Accent}{RGB}{0,86,179}
+\definecolor{NoteBg}{RGB}{240,248,255}
+\definecolor{soft}{HTML}{F3F4F6}
+
+% ---------- Headings ----------
 \usepackage{titlesec}
 \titleformat{\section}{\large\bfseries\color{Accent}}{\thesection}{0.6em}{}
 \titleformat{\subsection}{\bfseries}{\thesubsection}{0.5em}{}
@@ -23,9 +50,6 @@
   colback=NoteBg, colframe=Accent!60!black, sharp corners, boxrule=0.5pt
 }
 
-% ---------- Title ----------
-
-\definecolor{soft}{HTML}{F3F4F6}
 % ---------- Code blocks (listings only - CI safe) ----------
 \usepackage{listings}
 \usepackage{upquote}
@@ -60,21 +84,8 @@
 % Minted-compatible environments
 \lstnewenvironment{minted}[2][]{\lstset{}}{}
 \newcommand{\mintinline}[3][]{\texttt{#3}}
-\lstnewenvironment{bashcode}{\lstset{language=bash}}{}
-\lstnewenvironment{yamlcode}{\lstset{language=yaml}}{}
-\lstnewenvironment{jsoncode}{\lstset{}}{}
-\lstnewenvironment{cmakecode}{\lstset{}}{}
-\lstnewenvironment{textcode}{\lstset{}}{}
-\lstnewenvironment{cppcode}{\lstset{language=C++}}{}
-\lstnewenvironment{ccode}{\lstset{language=C}}{}
-\lstnewenvironment{inicode}{\lstset{}}{}
-\lstnewenvironment{pythoncode}{\lstset{language=Python}}{}
 
-\title{\textbf{Dependabot Alerts \& Workflows — Hands-On Cheatsheet}}
-\author{}
-\date{}
-
-% ---------- Silence first-run missing .toc (prevents strict latexmk aborts) ----------
+% ---------- Silence first-run missing .toc ----------
 \makeatletter
 \let\ci@orig@starttoc\@starttoc
 \def\@starttoc#1{%
@@ -84,7 +95,7 @@
 }
 \makeatother
 
-% ---------- Fix inconsolata/zi4 italic warning (fallback to slanted) ----------
+% ---------- Fix inconsolata/zi4 italic warning ----------
 \makeatletter
 \@ifundefined{DeclareFontShape}{}{%
   \DeclareFontShape{T1}{zi4}{m}{it}{<->ssub*zi4/m/sl}{}
@@ -92,11 +103,16 @@
 }
 \makeatother
 
+% ---------- Title ----------
+\title{\textbf{Dependabot Alerts \& Workflows — Hands-On Cheatsheet}}
+\author{}
+\date{}
+
 \begin{document}
 \maketitle
 
 \begin{noteBox}
-\textbf{Heads-up:} This document uses \texttt{minted} for syntax highlighting. If you want actual GraphQL highlighting, install the Pygments lexer plugin \texttt{pygments-graphql} and switch the block back to \texttt{graphql}. Compile with: \texttt{pdflatex -shell-escape dependabot-cheatsheet.tex} (or \texttt{xelatex} with \texttt{-shell-escape}).
+\textbf{Heads-up:} This document covers Dependabot alerts, security updates, and best practices for managing dependencies in GitHub repositories.
 \end{noteBox}
 
 \section{Core Concepts}
@@ -108,7 +124,7 @@
 
 \section{Enable Security Updates}
 Add or adjust \texttt{dependabot.yml} at repo/org level to scan ecosystems and open PRs automatically.
-\begin{minted}[label=Minimal dependabot.yml]{yaml}
+\begin{minted}{yaml}
 version: 2
 updates:
   - package-ecosystem: "pip"        # npm, maven, gradle, gomod, etc.
@@ -121,110 +137,35 @@ updates:
     labels: ["dependencies","security"]
 \end{minted}
 
-\section{Triage \& Remediation Workflow}
+\section{Triage Workflow}
 \begin{enumerate}
-  \item Review new alerts in \textbf{Security \textrightarrow\ Alerts} or in the PR that raised them.
-  \item Validate severity, affected manifests, and suggested upgrade.
-  \item Run tests locally and/or in CI (unit, integration, regression).
-  \item Merge the Dependabot PR (or create one via \textit{Update now}) and monitor post-merge checks.
+  \item \textbf{Review alert severity:} Critical/High alerts should be prioritized.
+  \item \textbf{Check if exploitable:} Is the vulnerable code path actually used?
+  \item \textbf{Evaluate fix availability:} Is there a patched version?
+  \item \textbf{Test upgrade:} Run CI/CD pipeline with the proposed changes.
+  \item \textbf{Merge or dismiss:} Document the decision either way.
 \end{enumerate}
 
-\section{Query Alerts Programmatically}
-\subsection{GraphQL API (curl)}
-\begin{minted}[label=Query via GraphQL (replace TOKEN/owner/repo)]{bash}
-curl -s -H "Authorization: bearer TOKEN" \
-     -X POST https://api.github.com/graphql \
-     -d '{"query":"
-query {
-  repository(owner:\"OWNER\", name:\"REPO\") {
-    vulnerabilityAlerts(first: 20) {
-      nodes {
-        securityVulnerability { severity package { name } }
-        vulnerableManifestFilename
-        vulnerableRequirements
-        createdAt
-        state
-      }
-    }
-  }
-}"}' | jq .
-\end{minted}
-
-\subsection{GraphQL Shape}
-% If your TeX setup lacks a GraphQL lexer, change the language below to `text`.
-\begin{minted}[label=GraphQL selection set sketch]{text}
-query {
-  repository(owner: "OWNER", name: "REPO") {
-    vulnerabilityAlerts(first: 20) {
-      nodes {
-        securityVulnerability { severity package { name } }
-        vulnerableManifestFilename
-        vulnerableRequirements
-        createdAt state
-      }
-    }
-  }
-}
-\end{minted}
-\clearpage
-
-\subsection{REST via GitHub CLI}
-\begin{minted}[label=Fetch Dependabot alerts with gh api]{bash}
-# Authenticate once
-gh auth login --web --hostname github.com
-
-# List alerts (REST): /repos/{owner}/{repo}/dependabot/alerts
-gh api repos/OWNER/REPO/dependabot/alerts --paginate > alerts.json
-
-# Convert to CSV (example jq shape)
-jq -r '.[] | [
-  .number,
-  .state,
-  .dependency.package.name,
-  .security_advisory.severity,
-  .security_vulnerability.severity,
-  .created_at
-] | @csv' alerts.json > alerts.csv
-\end{minted}
-
-\section{Working From the Security Tab or PR}
-\begin{itemize}
-  \item \textbf{Security tab:} Review alert details and use \textit{Update now} to spawn a security update PR.
-  \item \textbf{Pull Request:} Dependabot comments highlight the vulnerable dependency and the safe version.
-  \item \textbf{Change control:} PR discussion and reviews record decisions and provide traceability.
-\end{itemize}
-
-\section{Advisory Intelligence}
-\begin{itemize}
-  \item Browse the \textbf{GitHub Advisory Database} (filter by ecosystem, severity, CWE, newest).
-  \item Use it to proactively check dependencies and plan upgrade windows.
-\end{itemize}
-
-\section{Dependabot CLI and Core}
-\begin{itemize}
-  \item \textbf{Dependabot Core:} Core logic is open source; backend services are proprietary to GitHub.
-  \item \textbf{CLI:} Useful for local testing/debugging of update jobs.
-\end{itemize}
-
-\section{Automation Tips}
-\begin{itemize}
-  \item Ensure unit/integration tests run on Dependabot PRs.
-  \item Consider grouping updates to reduce PR noise when appropriate.
-  \item Label, auto-assign reviewers, and protect main branches with required checks.
-\end{itemize}
-\clearpage
-
-\section{Quick Commands}
+\section{CLI Commands}
 \begin{minted}{bash}
-# Authenticate GitHub CLI (web flow)
-gh auth login --web --hostname github.com
+# List Dependabot alerts for a repository
+gh api repos/{owner}/{repo}/dependabot/alerts
 
-# List Dependabot alerts (REST)
-gh api repos/OWNER/REPO/dependabot/alerts
+# Get specific alert details
+gh api repos/{owner}/{repo}/dependabot/alerts/{alert_number}
 
-# Example: narrow by severity (jq)
-gh api repos/OWNER/REPO/dependabot/alerts \
- | jq '.[] | select(.security_advisory.severity=="critical")'
+# Dismiss an alert (with reason)
+gh api repos/{owner}/{repo}/dependabot/alerts/{alert_number} \
+  -X PATCH -f state=dismissed -f dismissed_reason="tolerable_risk"
 \end{minted}
+
+\section{Best Practices}
+\begin{itemize}
+  \item Enable Dependabot for all supported ecosystems in your repository.
+  \item Set up branch protection rules requiring security checks to pass.
+  \item Review and merge security updates promptly (within 24-48 hours for Critical).
+  \item Use \texttt{@dependabot rebase} comment to update stale PRs.
+  \item Configure grouped updates to reduce PR noise for related packages.
+\end{itemize}
 
 \end{document}
