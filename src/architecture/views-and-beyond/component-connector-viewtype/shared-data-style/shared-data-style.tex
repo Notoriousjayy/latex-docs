@@ -1,6 +1,7 @@
 \documentclass[11pt]{article}
 
 \usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
 \usepackage{enumitem}
 \usepackage[hidelinks]{hyperref}
 \usepackage{booktabs}
@@ -10,6 +11,22 @@
 \usepackage{fancyhdr}
 \usepackage{titlesec}
 \usepackage{parskip}
+\usepackage{graphicx}
+% --- CI-safe diagram inclusion ---
+% Prefer PNG outputs rendered by the PlantUML workflow (no Inkscape dependency).
+\newcommand{\safeincludegraphics}[2][]{%
+  \IfFileExists{#2}{%
+    \includegraphics[#1]{#2}%
+  }{%
+    \fbox{\scriptsize\textcolor{red}{Missing image: \detokenize{#2}}}%
+  }%
+}
+\newcommand{\diagram}[2][]{%
+  \safeincludegraphics[#1]{png/#2.png}%
+}
+
+\usepackage{float}
+\usepackage[font=small,labelfont=bf]{caption}
 
 \setlist[itemize]{leftmargin=1.5em}
 \setlist[enumerate]{leftmargin=1.5em}
@@ -22,12 +39,15 @@
 
 % Header and footer
 \pagestyle{fancy}
+\setlength{\headheight}{14pt}
 \fancyhf{}
 \fancyhead[L]{\small Shared-Data Architectural Style}
 \fancyhead[R]{\small Software Architecture Documentation}
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
+% Diagram paths
+% The render-plantuml workflow creates png/ subdirectory alongside this .tex file
 \begin{document}
 
 \title{\textbf{The Shared-Data Architectural Style}\\[0.5em]
@@ -44,6 +64,13 @@
 %==============================================================================
 
 The shared-data style is a component-and-connector architectural style that structures a system around one or more data repositories accessed by multiple data accessor components. Communication between components is mediated by the shared data store rather than through direct component-to-component interaction. This data-centric approach places persistent data at the heart of the architecture, with components reading from and writing to the shared repository.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{01-basic-architecture}
+\caption{Basic shared-data architecture showing producers writing to and consumers reading from a central repository. Components communicate indirectly through data.}
+\label{fig:basic-architecture}
+\end{figure}
 
 The fundamental characteristic of this style is indirect communication through data. Data producers write to the repository; data consumers read from it. Producers and consumers need not know about each other---they share only knowledge of the data structure and location. This indirection provides powerful decoupling, enabling components to be added, modified, or removed without affecting other components that access the same data.
 
@@ -91,6 +118,13 @@ Many systems combine shared-data with other styles. A microservices system might
 
 The shared-data style has two major variants distinguished by control flow.
 
+\begin{figure}[H]
+\centering
+\diagram[width=0.98\textwidth]{05-repository-vs-blackboard}
+\caption{Comparison of repository (passive) and blackboard (active) variants. In the repository model, accessors initiate all actions. In the blackboard model, the data store can trigger actions in knowledge sources.}
+\label{fig:repository-vs-blackboard}
+\end{figure}
+
 In the repository variant, data accessors initiate all actions. Components decide when to read from or write to the repository. The repository is passive, simply storing and retrieving data on request.
 
 In the blackboard variant, the data store can trigger actions in data accessors. When data changes, the blackboard notifies relevant components. Components may be activated based on the current state of shared data. This is common in AI and expert systems where knowledge sources respond to evolving problem state.
@@ -109,7 +143,14 @@ A repository component stores data persistently and provides access to that data
 
 \subsubsection{Types of Repository Components}
 
-Repository components vary in the type and structure of data they manage.
+Repository components vary in the type and structure of data they manage. Figure~\ref{fig:repository-types} illustrates the major categories.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{02-repository-types}
+\caption{Classification of repository component types by data model. Each category is optimized for different data structures and access patterns.}
+\label{fig:repository-types}
+\end{figure}
 
 Relational databases store structured data in tables with defined schemas, supporting SQL queries and ACID transactions. Examples include PostgreSQL, MySQL, Oracle, and SQL Server.
 
@@ -151,7 +192,14 @@ Data accessor components are the clients of the repository, reading from and wri
 
 \subsubsection{Types of Data Accessor Components}
 
-Data accessor components vary in their relationship to data.
+Data accessor components vary in their relationship to data. Figure~\ref{fig:accessor-types} illustrates the primary categories.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{03-accessor-types}
+\caption{Classification of data accessor types by their read/write patterns. Each type serves a distinct role in the data processing ecosystem.}
+\label{fig:accessor-types}
+\end{figure}
 
 Data producers primarily write data to the repository. They may create new records, update existing data, or delete obsolete data. Examples include data entry applications, ETL processes, and event collectors.
 
@@ -173,7 +221,14 @@ Connectors in the shared-data style enable communication between data accessors 
 
 \subsubsection{Types of Connectors}
 
-Connectors vary in their capabilities and protocols.
+Connectors vary in their capabilities and protocols. Figure~\ref{fig:connector-types} illustrates the major categories.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.90\textwidth]{04-connector-types}
+\caption{Classification of connector types for data access. Each type provides different capabilities for communicating with repositories.}
+\label{fig:connector-types}
+\end{figure}
 
 Database connectors use database protocols and APIs. JDBC provides Java database connectivity. ODBC provides open database connectivity for various languages. Native drivers provide database-specific optimized access. ORM frameworks like Hibernate and Entity Framework provide object-relational mapping.
 
@@ -200,6 +255,13 @@ Security properties address data protection. Encryption indicates whether connec
 %==============================================================================
 
 Relations in the shared-data style define how data accessors connect to repositories and how data flows through the system.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{06-data-flow-relations}
+\caption{Data flow relations showing reads-from, writes-to, and schema dependencies between components and repositories.}
+\label{fig:data-flow-relations}
+\end{figure}
 
 \subsection{Attachment Relation}
 
@@ -271,6 +333,13 @@ The computational model describes how shared-data systems execute.
 
 Communication between data accessors is mediated by a shared-data store. Rather than components sending messages directly to each other, they communicate indirectly through the data they share.
 
+\begin{figure}[H]
+\centering
+\diagram[width=0.85\textwidth]{07-computational-model}
+\caption{Data-mediated communication showing temporal, identity, and interface decoupling between producer and consumer components.}
+\label{fig:computational-model}
+\end{figure}
+
 A producer component writes data to the repository. The repository persists the data. A consumer component reads the data from the repository. The producer and consumer need not be aware of each other.
 
 This indirect communication provides temporal decoupling (producer and consumer need not be active simultaneously), identity decoupling (producer and consumer need not know each other's identity), and interface decoupling (producer and consumer share only the data model).
@@ -296,6 +365,13 @@ Persistence guarantees range from best-effort to durable. Synchronous persistenc
 \subsection{Concurrency and Consistency}
 
 Multiple accessors may read and write concurrently, requiring concurrency control.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{12-concurrency-consistency}
+\caption{Concurrency control strategies and consistency models for managing concurrent access to shared data.}
+\label{fig:concurrency-consistency}
+\end{figure}
 
 Pessimistic concurrency uses locks to prevent conflicts. Readers may block writers. Writers may block readers and other writers. Deadlock detection and resolution may be needed.
 
@@ -535,6 +611,13 @@ This pattern provides a middle ground between full sharing and full separation.
 
 Command Query Responsibility Segregation separates read and write models.
 
+\begin{figure}[H]
+\centering
+\diagram[width=0.85\textwidth]{08-cqrs-pattern}
+\caption{CQRS pattern separating command (write) and query (read) paths with independent optimization for each.}
+\label{fig:cqrs-pattern}
+\end{figure}
+
 Commands write to a write-optimized store. Queries read from read-optimized stores. Synchronization keeps read stores updated.
 
 Benefits include independent optimization of reads and writes, read scaling through replicas, and query model tailored to query needs.
@@ -544,6 +627,13 @@ Limitations include complexity of maintaining multiple models, eventual consiste
 \subsection{Event Sourcing with Shared Log}
 
 State changes are stored as events in a shared log.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{09-event-sourcing}
+\caption{Event sourcing pattern with immutable event log as the source of truth and multiple projections deriving current state.}
+\label{fig:event-sourcing}
+\end{figure}
 
 Events are appended to an immutable log. Current state is derived by replaying events. Multiple consumers read from the shared log.
 
@@ -555,6 +645,13 @@ Limitations include storage growth over time, replay time for reconstruction, an
 
 Raw data is stored in a central lake for diverse analytical access.
 
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{10-data-lake-pattern}
+\caption{Data lake pattern showing ingestion from multiple sources through zones (raw, curated, refined) to analytics consumers.}
+\label{fig:data-lake-pattern}
+\end{figure}
+
 Data is ingested in native formats. Schema-on-read interprets data at query time. Multiple tools access the lake for different analyses.
 
 Benefits include flexibility for diverse data types, raw data preservation, and support for varied analytical tools.
@@ -564,6 +661,13 @@ Limitations include potential for data swamp without governance, schema-on-read 
 \subsection{Cache-Aside Pattern}
 
 Applications manage a cache alongside the primary repository.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.80\textwidth]{13-cache-aside-pattern}
+\caption{Cache-aside pattern showing cache hit and miss paths with application-managed cache invalidation.}
+\label{fig:cache-aside-pattern}
+\end{figure}
 
 Applications check cache before querying the repository. Cache misses load from the repository and populate the cache. Cache invalidation removes stale entries.
 
@@ -666,6 +770,13 @@ Concrete examples illustrate shared-data concepts.
 \subsection{Enterprise Application}
 
 A traditional enterprise application uses shared-data architecture.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.90\textwidth]{11-enterprise-example}
+\caption{Enterprise application pattern with multiple accessor types sharing a centralized relational database.}
+\label{fig:enterprise-example}
+\end{figure}
 
 A relational database stores business data including customers, orders, and products.
 
@@ -880,5 +991,9 @@ As data volumes grow and analytical demands increase, the shared-data style cont
   \item Dehghani, Z. (2022). \textit{Data Mesh: Delivering Data-Driven Value at Scale}. O'Reilly Media.
   \item Sadalage, P. J., \& Fowler, M. (2012). \textit{NoSQL Distilled}. Addison-Wesley Professional.
 \end{itemize}
+
+%==============================================================================
+\listoffigures
+%==============================================================================
 
 \end{document}

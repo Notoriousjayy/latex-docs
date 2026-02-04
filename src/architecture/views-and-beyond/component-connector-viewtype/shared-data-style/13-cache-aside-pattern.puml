@@ -1,0 +1,66 @@
+@startuml
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontSize 11
+skinparam defaultFontName Arial
+skinparam shadowing false
+
+skinparam participant {
+    BorderColor #455A64
+}
+
+skinparam database {
+    BackgroundColor #FFF3E0
+    BorderColor #E65100
+}
+
+title Cache-Aside Pattern\nApplication-managed caching for read performance
+
+participant "Application" as app #E8F5E9
+database "Cache\n(Redis)" as cache #E3F2FD
+database "Primary\nDatabase" as db #FFF3E0
+
+== Cache Hit (Fast Path) ==
+app -> cache : 1. Check cache
+activate cache
+cache --> app : 2. Return data
+deactivate cache
+note right: Cache Hit\nFast response\n~1ms latency
+
+== Cache Miss (Slow Path) ==
+app -> cache : 1. Check cache
+activate cache
+cache --> app : 2. Cache miss
+deactivate cache
+
+app -> db : 3. Query database
+activate db
+db --> app : 4. Return data
+deactivate db
+note right: Cache Miss\nDatabase query\n~10-100ms latency
+
+app -> cache : 5. Populate cache
+activate cache
+cache --> app : 6. Confirm
+deactivate cache
+note right: Future reads will hit cache
+
+== Cache Invalidation ==
+app -> db : 1. Update data
+activate db
+db --> app : 2. Confirm
+deactivate db
+
+app -> cache : 3. Invalidate entry
+activate cache
+cache --> app : 4. Confirm
+deactivate cache
+note right: Stale data removed\nNext read repopulates
+
+note over app, db
+  Key Considerations:
+  TTL for automatic expiration
+  Invalidation strategy (write-through vs write-behind)
+  Cache stampede prevention
+end note
+
+@enduml
