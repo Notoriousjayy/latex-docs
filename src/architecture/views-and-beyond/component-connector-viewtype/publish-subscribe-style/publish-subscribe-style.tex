@@ -1,6 +1,7 @@
 \documentclass[11pt]{article}
 
 \usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
 \usepackage{enumitem}
 \usepackage[hidelinks]{hyperref}
 \usepackage{booktabs}
@@ -10,6 +11,22 @@
 \usepackage{fancyhdr}
 \usepackage{titlesec}
 \usepackage{parskip}
+\usepackage{graphicx}
+% --- CI-safe diagram inclusion ---
+% Prefer PNG outputs rendered by the PlantUML workflow (no Inkscape dependency).
+\newcommand{\safeincludegraphics}[2][]{%
+  \IfFileExists{#2}{%
+    \includegraphics[#1]{#2}%
+  }{%
+    \fbox{\scriptsize\textcolor{red}{Missing image: \detokenize{#2}}}%
+  }%
+}
+\newcommand{\diagram}[2][]{%
+  \safeincludegraphics[#1]{png/#2.png}%
+}
+
+\usepackage{float}
+\usepackage[font=small,labelfont=bf]{caption}
 
 \setlist[itemize]{leftmargin=1.5em}
 \setlist[enumerate]{leftmargin=1.5em}
@@ -22,12 +39,15 @@
 
 % Header and footer
 \pagestyle{fancy}
+\setlength{\headheight}{14pt}
 \fancyhf{}
 \fancyhead[L]{\small Publish--Subscribe Architectural Style}
 \fancyhead[R]{\small Software Architecture Documentation}
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
+% Diagram paths
+% The render-plantuml workflow creates png/ and svg/ subdirectories alongside this .tex file
 \begin{document}
 
 \title{\textbf{The Publish--Subscribe Architectural Style}\\[0.5em]
@@ -44,6 +64,13 @@
 %==============================================================================
 
 The publish--subscribe style is a component-and-connector architectural style that structures a system around the production, distribution, and consumption of events. Publishers announce events without knowledge of which components will receive them; subscribers express interest in events without knowledge of which components produce them. An intermediary---the publish--subscribe connector or event bus---manages the distribution of events from publishers to interested subscribers.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{01-basic-architecture}
+\caption{Basic publish-subscribe architecture showing the flow from publishers through the event bus to subscribers. Each component operates independently, communicating only through the connector.}
+\label{fig:basic-architecture}
+\end{figure}
 
 This fundamental decoupling of event producers from event consumers is the defining characteristic of the style. Publishers and subscribers interact indirectly through the event distribution mechanism rather than directly with each other. This indirection enables loose coupling, dynamic reconfiguration, and scalable event distribution.
 
@@ -86,6 +113,13 @@ The publish--subscribe style comprises components that publish or subscribe to e
 \subsection{Publisher and Subscriber Components}
 
 Any component-and-connector component with at least one publish or subscribe port participates in the publish--subscribe style. Components may be purely publishers, purely subscribers, or both.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{02-component-types}
+\caption{Classification of publisher and subscriber types by their data production and consumption patterns. Each type serves a distinct role in the event-driven system.}
+\label{fig:component-types}
+\end{figure}
 
 \subsubsection{Types of Publishing Components}
 
@@ -132,6 +166,13 @@ Quality of service properties describe delivery requirements. Delivery guarantee
 \subsection{Publish--Subscribe Connectors}
 
 The publish--subscribe connector manages event distribution from publishers to subscribers. It has announce roles for publishers and listen roles for subscribers.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{03-connector-types}
+\caption{Connector types showing topic-based, content-based, and type-based implementations. Each type offers different trade-offs between simplicity, flexibility, and routing complexity.}
+\label{fig:connector-types}
+\end{figure}
 
 \subsubsection{Types of Publish--Subscribe Connectors}
 
@@ -186,6 +227,13 @@ Scalability describes how capacity changes with publishers, subscribers, and eve
 \subsection{Events}
 
 Events are the data items flowing through the publish--subscribe system. While not architectural elements themselves, their structure significantly affects system design.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.75\textwidth]{09-event-structure}
+\caption{Event structure anatomy showing headers, metadata, and payload components. Well-designed events include all information needed for routing and processing.}
+\label{fig:event-structure}
+\end{figure}
 
 \subsubsection{Event Structure}
 
@@ -265,6 +313,13 @@ The computational model describes how publish--subscribe systems execute.
 
 The fundamental computation follows a predictable pattern. A component produces an event and announces it through its publish port. The publish--subscribe connector receives the event. The connector determines which subscribers should receive the event based on their subscriptions. The connector dispatches the event to each matching subscriber. Each subscriber's listen port receives the event. The subscriber processes the event.
 
+\begin{figure}[H]
+\centering
+\diagram[width=0.65\textwidth]{06-event-flow}
+\caption{Event distribution flow showing the sequence of operations from publication through routing to delivery and processing. Publishers are decoupled from subscriber processing.}
+\label{fig:event-flow}
+\end{figure}
+
 This basic model admits many variations in timing, ordering, and delivery guarantees.
 
 \subsection{Subscription Management}
@@ -282,6 +337,13 @@ Subscription removal occurs when a component loses interest. Graceful unsubscrip
 \subsection{Event Delivery Models}
 
 Events can be delivered through different models.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{04-delivery-models}
+\caption{Push-based vs.\ pull-based vs.\ streaming delivery models. Each model offers different trade-offs between latency, throughput, and subscriber control.}
+\label{fig:delivery-models}
+\end{figure}
 
 Push delivery has the connector actively send events to subscribers. Subscribers must be ready to receive. This provides low latency but requires subscriber availability.
 
@@ -521,6 +583,13 @@ Topic scalability handles increasing event types through efficient routing data 
 
 Reliability ensures events are delivered despite failures.
 
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{07-delivery-guarantees}
+\caption{Delivery guarantee levels showing the trade-offs between reliability, performance, and implementation complexity. Most business events use at-least-once with idempotent handlers.}
+\label{fig:delivery-guarantees}
+\end{figure}
+
 Delivery guarantees specify whether events may be lost (at-most-once), may be duplicated (at-least-once), or are delivered exactly once.
 
 Persistence enables recovery after failures by storing events durably.
@@ -584,6 +653,13 @@ Event logging provides visibility for debugging.
 %==============================================================================
 
 Several recurring patterns address common publish--subscribe challenges.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{05-common-patterns}
+\caption{Common publish-subscribe patterns showing fan-out, fan-in, and consumer groups. These patterns address scalability and load distribution challenges.}
+\label{fig:common-patterns}
+\end{figure}
 
 \subsection{Topic-Based Publish--Subscribe}
 
@@ -764,6 +840,13 @@ These services handle infrastructure, scaling, and operations, enabling focus on
 \subsection{Microservices Event Bus}
 
 Microservices architectures use publish--subscribe for integration.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.85\textwidth]{08-microservices-example}
+\caption{Microservices event bus example showing how domain events enable loose coupling between services. Each service reacts to relevant events without direct dependencies.}
+\label{fig:microservices-example}
+\end{figure}
 
 Services publish domain events when significant state changes occur. Other services subscribe to events they need to react to. An event bus or broker distributes events. Services remain loosely coupled through event contracts.
 
@@ -1002,5 +1085,9 @@ As systems become more distributed and real-time, the publish--subscribe style b
   \item Richardson, C. (2018). \textit{Microservices Patterns}. Manning Publications.
   \item Vernon, V. (2013). \textit{Implementing Domain-Driven Design}. Addison-Wesley Professional.
 \end{itemize}
+
+%==============================================================================
+\listoffigures
+%==============================================================================
 
 \end{document}
