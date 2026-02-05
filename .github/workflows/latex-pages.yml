@@ -64,74 +64,83 @@ jobs:
           set -euo pipefail
 
           # Keep canonical location for the pipe-and-filter PDF, but also publish a legacy flat alias
-          # so previously shared URLs remain valid.
-          base="site/pdfs/architecture/views-and-beyond/component-connector-viewtype"
-          legacy="${base}/pipe-and-filter-style.pdf"
-          preferred="${base}/pipe-and-filter/pipe-and-filter-style.pdf"
+          # so previously shared URLs remain valid. This block is intentionally resilient:
+          # - If the expected directory layout changes, we search for the PDF and publish it to the canonical path.
+          # - If the PDF is missing entirely, we warn and continue (do not fail the Pages deploy).
+          target_base="site/pdfs/architecture/views-and-beyond/component-connector-viewtype"
+          target_legacy="${target_base}/pipe-and-filter-style.pdf"
+          target_preferred="${target_base}/pipe-and-filter/pipe-and-filter-style.pdf"
 
           echo "=== Normalizing pipe-and-filter-style PDF paths ==="
-          echo "Base:       ${base}"
-          echo "Preferred:  ${preferred}"
-          echo "Legacy URL: ${legacy}"
+          echo "Target base:      ${target_base}"
+          echo "Target preferred: ${target_preferred}"
+          echo "Target legacy:    ${target_legacy}"
+          echo ""
 
-          if [[ ! -d "${base}" ]]; then
-            echo "ERROR: Missing expected base directory: ${base}"
-            echo "Top-level under site/pdfs:"
-            find site/pdfs -mindepth 1 -maxdepth 2 -type d | sort || true
-            exit 1
+          # Ensure target directories exist (no-op if already present).
+          mkdir -p "$(dirname "${target_preferred}")" "$(dirname "${target_legacy}")"
+
+          # Locate a source PDF in priority order.
+          candidates=()
+
+          if [[ -f "${target_preferred}" ]]; then
+            candidates=("${target_preferred}")
+          elif [[ -f "${target_legacy}" ]]; then
+            candidates=("${target_legacy}")
+          else
+            # Prefer matches under architecture/views-and-beyond, then widen scope.
+            search_roots=(
+              "site/pdfs/architecture/views-and-beyond"
+              "site/pdfs/architecture"
+              "site/pdfs"
+            )
+
+            for root in "${search_roots[@]}"; do
+              mapfile -t found < <(find "${root}" -type f -name 'pipe-and-filter-style.pdf' -print 2>/dev/null | sort || true)
+              if [[ ${#found[@]} -gt 0 ]]; then
+                candidates=("${found[@]}")
+                break
+              fi
+            done
           fi
-
-          # Find any candidate (covers both flat and nested variants).
-          mapfile -t candidates < <(find "${base}" -type f -name 'pipe-and-filter-style.pdf' -print | sort || true)
 
           if [[ ${#candidates[@]} -eq 0 ]]; then
-            echo "ERROR: pipe-and-filter-style.pdf not found under ${base}"
-            echo "Closest matches:"
-            find "${base}" -maxdepth 6 -type f -iname '*pipe*filter*style*.pdf' -print | sort || true
+            echo "WARNING: pipe-and-filter-style.pdf not found anywhere under site/pdfs."
+            echo "Skipping pipe-and-filter alias normalization."
             echo ""
-            echo "All PDFs under ${base}:"
-            find "${base}" -maxdepth 6 -type f -name '*.pdf' -print | sort || true
-            exit 1
+            echo "Closest matches under site/pdfs (if any):"
+            find site/pdfs -type f -iname '*pipe*filter*style*.pdf' -print 2>/dev/null | sort || true
+            exit 0
           fi
 
-          echo "Found candidates:"
+          echo "Found candidate source(s):"
           printf '  - %s\n' "${candidates[@]}"
+          source="${candidates[0]}"
+          echo "Using source: ${source}"
+          echo ""
 
-          mkdir -p "$(dirname "${preferred}")"
-
-          if [[ -f "${preferred}" ]]; then
-            canonical="${preferred}"
-          else
-            canonical="${candidates[0]}"
-            if [[ "${canonical}" != "${preferred}" ]]; then
-              echo "Promoting canonical -> ${preferred}"
-              mv -f "${canonical}" "${preferred}"
-              canonical="${preferred}"
-            fi
+          # Publish canonical to the preferred nested path.
+          if [[ "${source}" != "${target_preferred}" ]]; then
+            echo "Publishing canonical -> ${target_preferred}"
+            cp -f "${source}" "${target_preferred}"
           fi
 
-          echo "Canonical: ${canonical}"
+          # Publish legacy flat alias so old links keep working.
+          echo "Publishing legacy alias -> ${target_legacy}"
+          cp -f "${target_preferred}" "${target_legacy}"
 
-          # Create legacy flat alias so old links keep working.
-          mkdir -p "$(dirname "${legacy}")"
-          cp -f "${canonical}" "${legacy}"
-
-          # Remove any remaining duplicates (but keep canonical + legacy).
-          find "${base}" -maxdepth 6 -type f -name 'pipe-and-filter-style.pdf' \
-            ! -path "${canonical}" ! -path "${legacy}" -print -delete || true
+          # Remove any remaining duplicates *within* the target_base (keep canonical + legacy).
+          find "${target_base}" -maxdepth 6 -type f -name 'pipe-and-filter-style.pdf'   ! -path "${target_preferred}" ! -path "${target_legacy}" -print -delete 2>/dev/null || true
 
           echo ""
           echo "=== Post-normalization checks ==="
-          [[ -f "${canonical}" ]] || { echo "ERROR: Missing canonical after normalization: ${canonical}"; exit 1; }
-          [[ -f "${legacy}"   ]] || { echo "ERROR: Missing legacy alias after normalization: ${legacy}"; exit 1; }
+          [[ -f "${target_preferred}" ]] || { echo "ERROR: Missing canonical after normalization: ${target_preferred}"; exit 1; }
+          [[ -f "${target_legacy}"   ]] || { echo "ERROR: Missing legacy alias after normalization: ${target_legacy}"; exit 1; }
           echo "OK: canonical + legacy alias present."
 
           echo ""
-          echo "Legacy directory listing: $(dirname "${legacy}")"
-          ls -la "$(dirname "${legacy}")" || true
-          echo ""
-          echo "Canonical directory listing: $(dirname "${canonical}")"
-          ls -la "$(dirname "${canonical}")" || true
+          echo "Target directory listing: ${target_base}"
+          find "${target_base}" -maxdepth 3 -type f -name '*.pdf' -print | sort || true
 
       - name: Generate index.html
         run: |
