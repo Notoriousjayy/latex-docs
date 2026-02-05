@@ -201,43 +201,6 @@ jobs:
               .sub { color: var(--muted); margin: 0.5rem 0 0; }
               .sub code { background: var(--hover); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
               .topbar { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; align-items: center; justify-content: space-between; margin: 1rem 0 1.25rem; }
-              .actions { display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-end; }
-              .controls { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; }
-              .controls button {
-                appearance: none;
-                border: 1px solid var(--border);
-                background: var(--panel);
-                color: var(--text);
-                border-radius: 10px;
-                padding: 0.55rem 0.75rem;
-                font-weight: 650;
-                cursor: pointer;
-              }
-              .controls button:hover { background: var(--hover); }
-              .controls button:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
-              
-              details.section { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 0.6rem 0.8rem; margin: 0.75rem 0; }
-              details.section.hidden-section { display: none; }
-              details.section > summary {
-                cursor: pointer;
-                list-style: none;
-                display: flex;
-                align-items: baseline;
-                justify-content: space-between;
-                gap: 0.75rem;
-                padding: 0.25rem 0;
-                font-weight: 650;
-              }
-              details.section > summary::-webkit-details-marker { display: none; }
-              details.section > summary::before { content: '▸'; margin-right: 0.5rem; color: var(--muted); }
-              details.section[open] > summary::before { content: '▾'; }
-              .sect-meta { color: var(--muted); font-size: 0.85rem; font-weight: 550; white-space: nowrap; }
-              
-              details.section.depth-2 { margin-left: 0.75rem; }
-              details.section.depth-3 { margin-left: 1.5rem; }
-              details.section.depth-4 { margin-left: 2.25rem; }
-              details.section.depth-5 { margin-left: 3rem; }
-              details.section.depth-6 { margin-left: 3.75rem; }
               .stats { display: flex; gap: 0.75rem; flex-wrap: wrap; }
               .stat { background: var(--panel); border: 1px solid var(--border); padding: 0.75rem 0.9rem; border-radius: 10px; min-width: 150px; }
               .stat-value { font-size: 1.35rem; font-weight: 700; }
@@ -276,15 +239,9 @@ jobs:
                     <div class="stat-label">Categories</div>
                   </div>
                 </div>
-                <div class="actions">
-                  <div class="controls">
-                    <button type="button" id="expand-all" title="Expand all sections">Expand all</button>
-                    <button type="button" id="collapse-all" title="Collapse all sections">Collapse all</button>
-                  </div>
-                  <div class="search">
-                    <input id="q" type="search" placeholder="Filter by filename or path..." autocomplete="off" />
-                    <span class="hint" id="count"></span>
-                  </div>
+                <div class="search">
+                  <input id="q" type="search" placeholder="Filter by filename or path..." autocomplete="off" />
+                  <span class="hint" id="count"></span>
                 </div>
               </div>
           HTMLEOF
@@ -306,45 +263,35 @@ jobs:
             local dir="$1"
             local depth="$2"
             local prefix="$3"
-          
+
             local dname
             dname="$(basename "$dir")"
             [[ "$dname" == .* ]] && return
-          
+
             local total_pdfs
             total_pdfs=$(find "$dir" -name "*.pdf" -type f 2>/dev/null | wc -l | tr -d ' ')
             [[ "$total_pdfs" == "0" ]] && return
-          
+
             local pdfs=()
             while IFS= read -r -d '' f; do
               pdfs+=("$f")
             done < <(find "$dir" -maxdepth 1 -name "*.pdf" -type f -print0 2>/dev/null | sort -z)
-          
+
             local subdirs=()
             while IFS= read -r -d '' d; do
               subdirs+=("$d")
             done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null | sort -z)
-          
+
+            local htag="h$((depth > 6 ? 6 : depth))"
             local id
             if [[ $depth -eq 1 ]]; then
               id="$(slugify "$dname")"
             else
               id="$(slugify "${prefix}-${dname}")"
             fi
-          
-            local open_attr=""
-            if [[ $depth -eq 1 ]]; then
-              open_attr=" open"
-            fi
-          
-            local unit="pdf"
-            if [[ "$total_pdfs" != "1" ]]; then
-              unit="pdfs"
-            fi
-          
-            echo "<details class=\"section depth-${depth}\" id=\"${id}\"${open_attr}>" >> site/index.html
-            echo "<summary><span>${dname}</span><span class=\"sect-meta\">${total_pdfs} ${unit}</span></summary>" >> site/index.html
-          
+
+            echo "<${htag} id=\"${id}\">${dname}</${htag}>" >> site/index.html
+
             if [[ ${#pdfs[@]} -gt 0 ]]; then
               echo '<ul class="files">' >> site/index.html
               for pdf in "${pdfs[@]}"; do
@@ -355,14 +302,12 @@ jobs:
               done
               echo '</ul>' >> site/index.html
             fi
-          
+
             for subdir in "${subdirs[@]}"; do
               generate_section "$subdir" $((depth + 1)) "${prefix}-${dname}"
             done
-          
-            echo "</details>" >> site/index.html
           }
-          
+
           while IFS= read -r category; do
             generate_section "site/pdfs/$category" 1 "$category"
           done < <(find site/pdfs -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort)
@@ -378,56 +323,24 @@ jobs:
                 const count = document.getElementById('count');
                 const totalEl = document.getElementById('total-count');
                 const catEl = document.getElementById('cat-count');
-                const expandBtn = document.getElementById('expand-all');
-                const collapseBtn = document.getElementById('collapse-all');
-              
+
                 function normalize(s) { return (s || '').toLowerCase(); }
-              
-                function setAll(open) {
-                  document.querySelectorAll('details.section').forEach(d => { d.open = !!open; });
-                }
-              
-                if (expandBtn) expandBtn.addEventListener('click', () => setAll(true));
-                if (collapseBtn) collapseBtn.addEventListener('click', () => setAll(false));
-              
+
                 function update() {
                   const q = normalize(input.value).trim();
                   const items = document.querySelectorAll('ul.files li');
                   let visible = 0;
-              
+
                   items.forEach(li => {
                     const text = normalize(li.textContent);
                     const ok = !q || text.includes(q);
                     li.classList.toggle('hidden', !ok);
                     if (ok) visible++;
                   });
-              
-                  const sections = document.querySelectorAll('details.section');
-              
-                  if (q) {
-                    // Open the path to every visible match so results are actually discoverable.
-                    document.querySelectorAll('ul.files li:not(.hidden)').forEach(li => {
-                      let el = li.parentElement;
-                      while (el) {
-                        if (el.tagName === 'DETAILS' && el.classList.contains('section')) {
-                          el.open = true;
-                        }
-                        el = el.parentElement;
-                      }
-                    });
-              
-                    // Hide directory sections that contain no visible results.
-                    sections.forEach(sec => {
-                      const any = sec.querySelector('li:not(.hidden)') !== null;
-                      sec.classList.toggle('hidden-section', !any);
-                    });
-                  } else {
-                    sections.forEach(sec => sec.classList.remove('hidden-section'));
-                  }
-              
-                  count.textContent = q ? (visible + ' match(es)') : (items.length + ' document(s)');
+
+                  count.textContent = q ? visible + ' match(es)' : items.length + ' document(s)';
                 }
-              
+
                 totalEl.textContent = '${total}';
                 catEl.textContent = '${categories}';
                 input.addEventListener('input', update);
