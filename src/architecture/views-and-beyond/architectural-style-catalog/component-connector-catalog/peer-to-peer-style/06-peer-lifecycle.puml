@@ -1,0 +1,67 @@
+@startuml 06-peer-lifecycle
+
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam RoundCorner 10
+skinparam padding 6
+
+title <b>Peer Lifecycle State Machine</b>\nStates and transitions during a peer's participation in the network
+
+skinparam state {
+  BackgroundColor #10B981
+  FontColor #FFFFFF
+  BorderColor #059669
+  BackgroundColor<<initial>> #3B82F6
+  FontColor<<initial>> #FFFFFF
+  BorderColor<<initial>> #2563EB
+  BackgroundColor<<active>> #10B981
+  FontColor<<active>> #FFFFFF
+  BorderColor<<active>> #059669
+  BackgroundColor<<leaving>> #F59E0B
+  FontColor<<leaving>> #FFFFFF
+  BorderColor<<leaving>> #D97706
+  BackgroundColor<<failed>> #EF4444
+  FontColor<<failed>> #FFFFFF
+  BorderColor<<failed>> #DC2626
+}
+
+skinparam arrow {
+  Color #334155
+  FontColor #334155
+}
+
+[*] --> Discovering : start
+
+state "Discovering" as Discovering <<initial>> {
+}
+note right of Discovering : Contact bootstrap peers\nObtain initial peer list
+
+state "Joining" as Joining <<initial>> {
+}
+note right of Joining : Build routing table\nAssume data responsibility\nAnnounce to neighbors
+
+state "Active" as Active <<active>> {
+}
+note right of Active : Route requests\nServe & consume data\nMaintain overlay
+
+state "Graceful\nLeave" as Leaving <<leaving>> {
+}
+note left of Leaving : Transfer data\nNotify neighbors\nUpdate routing tables
+
+state "Failed" as Failed <<failed>> {
+}
+note left of Failed : Detected by neighbors\nRepair triggered\nData re-replicated
+
+Discovering --> Joining : peers found
+Discovering --> Failed : timeout /\nno peers
+Joining --> Active : integrated
+Joining --> Failed : join rejected
+Active --> Leaving : user-initiated leave
+Active --> Failed : crash / disconnect
+Active --> Active : maintenance\n& stabilization
+Leaving --> [*] : cleanup complete
+Failed --> Discovering : restart attempt
+Failed --> [*] : permanent exit
+@enduml

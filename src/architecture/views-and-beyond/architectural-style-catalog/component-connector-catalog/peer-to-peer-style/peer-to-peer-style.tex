@@ -10,6 +10,22 @@
 \usepackage{fancyhdr}
 \usepackage{titlesec}
 \usepackage{parskip}
+\usepackage{graphicx}
+% --- CI-safe diagram inclusion ---
+% Prefer PNG outputs rendered by the PlantUML workflow (no Inkscape dependency).
+\newcommand{\safeincludegraphics}[2][]{%
+  \IfFileExists{#2}{%
+    \includegraphics[#1]{#2}%
+  }{%
+    \fbox{\scriptsize\textcolor{red}{Missing image: \detokenize{#2}}}%
+  }%
+}
+\newcommand{\diagram}[2][]{%
+  \safeincludegraphics[#1]{png/#2.png}%
+}
+
+\usepackage{float}
+\usepackage[font=small,labelfont=bf]{caption}
 
 \setlist[itemize]{leftmargin=1.5em}
 \setlist[enumerate]{leftmargin=1.5em}
@@ -22,6 +38,7 @@
 
 % Header and footer
 \pagestyle{fancy}
+\setlength{\headheight}{14pt}
 \fancyhf{}
 \fancyhead[L]{\small Peer-to-Peer Architectural Style}
 \fancyhead[R]{\small Software Architecture Documentation}
@@ -44,6 +61,13 @@
 %==============================================================================
 
 The peer-to-peer (P2P) style is a component-and-connector architectural style that structures a system as a collection of equally privileged participants, called peers, that cooperate to provide services to one another. Unlike the client--server style with its asymmetric roles, P2P systems feature symmetric relationships where each participant can act as both service provider and service consumer.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{01-p2p-vs-client-server}
+\caption{Peer-to-peer vs.\ client--server architecture. In the client--server model, a central server is the single point of failure. In P2P, symmetric peers form a resilient mesh.}
+\label{fig:p2p-vs-cs}
+\end{figure}
 
 In P2P architectures, computational resources and responsibilities are distributed across all participants rather than concentrated in dedicated servers. This decentralization provides distinctive properties including resilience to individual node failures, scalability through resource contribution from all participants, and elimination of central points of control or failure.
 
@@ -95,7 +119,14 @@ A peer is a component that participates in the P2P network, potentially both pro
 
 \subsubsection{Types of Peer Components}
 
-Peer components vary in their capabilities and roles within the network.
+Peer components vary in their capabilities and roles within the network. Figure~\ref{fig:peer-types} classifies the five primary categories.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.85\textwidth]{02-peer-types}
+\caption{Classification of peer component types by capability and role. Each type serves a distinct function in the network topology.}
+\label{fig:peer-types}
+\end{figure}
 
 Full peers or full nodes participate completely in the network, maintaining complete state (such as the full blockchain or complete file index), routing requests for other peers, and providing all network services.
 
@@ -126,6 +157,15 @@ State properties describe what data peers maintain. Local state describes data s
 Connectors in P2P systems enable communication between peers. The primary connector type is the call-return connector, though P2P systems often employ additional connector types.
 
 \subsubsection{Types of Connectors}
+
+P2P systems employ several connector types for peer communication. Figure~\ref{fig:connector-types} illustrates the four primary patterns.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.85\textwidth]{03-connector-types}
+\caption{Peer-to-peer connector types. Each pattern addresses different communication needs---from synchronous request/response to one-to-many broadcast.}
+\label{fig:connector-types}
+\end{figure}
 
 Call-return connectors support request/response interaction between peers. A peer sends a request; another peer returns a response. This pattern supports service invocation, query/response, and similar interactions.
 
@@ -171,6 +211,15 @@ The \textit{overlay network} relation describes the logical network formed by pe
 
 \subsubsection{Properties of Overlay Networks}
 
+The three fundamental overlay topologies are illustrated in Figure~\ref{fig:overlay-topologies}.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{04-overlay-topologies}
+\caption{Overlay network topologies. Unstructured overlays use random connections, structured overlays (DHT) use deterministic placement, and hierarchical overlays introduce super peer coordination.}
+\label{fig:overlay-topologies}
+\end{figure}
+
 Topology type classifies the overlay structure. Unstructured overlays have random or ad-hoc topology without global organization. Structured overlays have deterministic topology based on peer identifiers, typically implementing a DHT. Hierarchical overlays organize peers into levels with different roles.
 
 Routing properties describe how messages traverse the overlay. Routing algorithm specifies how paths are determined. Routing table indicates what routing state peers maintain. Hop count describes the typical number of hops between peers. Routing efficiency describes message overhead for routing.
@@ -207,7 +256,16 @@ A fundamental computation pattern is routing requests to appropriate peers. The 
 
 In unstructured overlays, requests are flooded to neighbors or follow random walks. This approach is simple but inefficient for large networks, does not guarantee finding existing data, and works well for popular content through replication.
 
-In structured overlays using DHTs, requests are routed deterministically based on key. Each peer knows a subset of other peers arranged by identifier. Routing proceeds through peers progressively closer to the target. Lookup typically requires O(log N) hops for N peers.
+In structured overlays using DHTs, requests are routed deterministically based on key. Figure~\ref{fig:dht-lookup} illustrates a typical iterative lookup.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.85\textwidth]{05-dht-lookup}
+\caption{DHT lookup routing in a structured overlay. Each hop moves progressively closer in identifier space, completing in O(log\,N) hops for N peers.}
+\label{fig:dht-lookup}
+\end{figure}
+
+Each peer knows a subset of other peers arranged by identifier. Routing proceeds through peers progressively closer to the target. Lookup typically requires O(log N) hops for N peers.
 
 In hierarchical overlays, requests may be routed through super peers. Super peers maintain indices for their subordinate peers. This reduces routing load on ordinary peers but creates partial centralization.
 
@@ -371,7 +429,16 @@ These diagrams help visualize network structure and routing paths.
 
 \subsection{Protocol State Machines}
 
-State machine diagrams show peer behavior and protocol operation. States represent peer conditions such as joining, active, or leaving. Transitions show events causing state changes. Actions show operations performed during transitions.
+State machine diagrams show peer behavior and protocol operation. Figure~\ref{fig:peer-lifecycle} shows the complete lifecycle of a peer from discovery through active participation to departure.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.85\textwidth]{06-peer-lifecycle}
+\caption{Peer lifecycle state machine showing states from initial discovery through active participation to graceful leave or failure. Self-transitions represent ongoing maintenance.}
+\label{fig:peer-lifecycle}
+\end{figure}
+
+States represent peer conditions such as joining, active, or leaving. Transitions show events causing state changes. Actions show operations performed during transitions.
 
 These diagrams precisely specify expected peer behavior.
 
@@ -473,7 +540,16 @@ Examples include Kazaa (later versions) and eDonkey.
 
 \subsection{Swarming Pattern}
 
-Swarming divides content into pieces for collaborative distribution. A peer wanting content joins a swarm of peers with that content. The peer downloads different pieces from different swarm members. The peer uploads pieces it has to others wanting them.
+Swarming divides content into pieces for collaborative distribution. Figure~\ref{fig:swarming} illustrates how peers in a swarm exchange different pieces to reconstruct complete content.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.85\textwidth]{07-swarming-pattern}
+\caption{BitTorrent swarming pattern. A seeder provides initial pieces while leechers exchange pieces among themselves, distributing load across all participants.}
+\label{fig:swarming}
+\end{figure}
+
+A peer wanting content joins a swarm of peers with that content. The peer downloads different pieces from different swarm members. The peer uploads pieces it has to others wanting them.
 
 Benefits include distributed load, parallel download, incentive compatibility, and efficient for popular content. Limitations include dependency on initial seeders, slow for unpopular content, and piece selection complexity.
 
@@ -481,7 +557,16 @@ BitTorrent is the canonical example.
 
 \subsection{Gossip Pattern}
 
-Gossip protocols spread information through probabilistic exchange. Each peer periodically shares state with randomly selected peers. Information spreads epidemically through the network. Consistency emerges probabilistically over time.
+Gossip protocols spread information through probabilistic exchange. Figure~\ref{fig:gossip} shows how information disseminates epidemically through the network.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{10-gossip-protocol}
+\caption{Gossip protocol dissemination. Each round, informed peers share state with randomly selected neighbors. Information converges to full coverage in O(log\,N) rounds.}
+\label{fig:gossip}
+\end{figure}
+
+Each peer periodically shares state with randomly selected peers. Information spreads epidemically through the network. Consistency emerges probabilistically over time.
 
 Benefits include simplicity, robustness, and scalability. Limitations include eventual rather than immediate consistency, message overhead, and redundant transmissions.
 
@@ -541,7 +626,14 @@ Maintenance protocols keep the overlay healthy. Stabilization checks and repairs
 \section{Security Considerations}
 %==============================================================================
 
-Security in P2P systems must address threats from both external attackers and malicious participants.
+Security in P2P systems must address threats from both external attackers and malicious participants. Figure~\ref{fig:security-threats} illustrates the two most fundamental attacks.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{08-security-threats}
+\caption{Sybil and eclipse attacks. In a Sybil attack, one adversary creates many fake identities. In an eclipse attack, an adversary isolates a victim from the honest network.}
+\label{fig:security-threats}
+\end{figure}
 
 \subsection{Identity and Sybil Attacks}
 
@@ -583,7 +675,16 @@ Bootstrap infrastructure is often the most centralized part of otherwise decentr
 
 \subsection{NAT Traversal}
 
-Many peers are behind NATs, complicating direct connection. STUN discovers public addresses and NAT type. TURN relays traffic when direct connection is impossible. ICE coordinates various traversal techniques. Hole punching exploits NAT behavior to establish direct connections.
+Many peers are behind NATs, complicating direct connection. Figure~\ref{fig:nat-traversal} illustrates the three primary traversal techniques coordinated by ICE.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{09-nat-traversal}
+\caption{NAT traversal techniques for P2P connectivity. STUN discovers public addresses, hole punching establishes direct connections, and TURN relays traffic as a fallback.}
+\label{fig:nat-traversal}
+\end{figure}
+
+STUN discovers public addresses and NAT type. TURN relays traffic when direct connection is impossible. ICE coordinates various traversal techniques. Hole punching exploits NAT behavior to establish direct connections.
 
 NAT traversal significantly affects achievable connectivity and performance.
 
@@ -750,5 +851,9 @@ Understanding P2P architecture is essential for any architect working on distrib
   \item Cohen, B. (2003). Incentives build robustness in BitTorrent. In \textit{Workshop on Economics of Peer-to-Peer Systems}, 6, 68--72.
   \item Nakamoto, S. (2008). Bitcoin: A peer-to-peer electronic cash system. \textit{Decentralized Business Review}, 21260.
 \end{itemize}
+
+%==============================================================================
+\listoffigures
+%==============================================================================
 
 \end{document}
