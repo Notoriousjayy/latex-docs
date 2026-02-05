@@ -1,6 +1,7 @@
 \documentclass[11pt]{article}
 
 \usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
 \usepackage{enumitem}
 \usepackage[hidelinks]{hyperref}
 \usepackage{booktabs}
@@ -10,6 +11,22 @@
 \usepackage{fancyhdr}
 \usepackage{titlesec}
 \usepackage{parskip}
+\usepackage{graphicx}
+% --- CI-safe diagram inclusion ---
+% Prefer PNG outputs rendered by the PlantUML workflow (no Inkscape dependency).
+\newcommand{\safeincludegraphics}[2][]{%
+  \IfFileExists{#2}{%
+    \includegraphics[#1]{#2}%
+  }{%
+    \fbox{\scriptsize\textcolor{red}{Missing image: \detokenize{#2}}}%
+  }%
+}
+\newcommand{\diagram}[2][]{%
+  \safeincludegraphics[#1]{png/#2.png}%
+}
+
+\usepackage{float}
+\usepackage[font=small,labelfont=bf]{caption}
 
 \setlist[itemize]{leftmargin=1.5em}
 \setlist[enumerate]{leftmargin=1.5em}
@@ -21,12 +38,15 @@
 
 % Header and footer
 \pagestyle{fancy}
+\setlength{\headheight}{14pt}
 \fancyhf{}
 \fancyhead[L]{\small Deployment Architectural Style}
 \fancyhead[R]{\small Software Architecture Documentation}
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
+% Diagram paths
+% The render-plantuml workflow creates png/ subdirectory alongside this .tex file
 \begin{document}
 
 \title{\textbf{The Deployment Architectural Style}\\[0.5em]
@@ -44,6 +64,13 @@
 
 The deployment style describes the mapping of components and connectors in the software architecture to the hardware of the computing platform. This allocation view is essential for understanding how software will execute in its target environment, answering critical questions about physical resource utilization, network topology, and system distribution.
 
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{01-basic-deployment-architecture}
+\caption{Basic deployment architecture showing the mapping from software elements (C\&C view) to environmental elements (allocation view). Each software component is allocated to a hosting node.}
+\label{fig:basic-deployment-architecture}
+\end{figure}
+
 Unlike component-and-connector (C\&C) views that focus on runtime behavior and module views that describe code organization, deployment views bridge the gap between logical software design and physical infrastructure. They make explicit the relationship between abstract computational elements and the concrete computing resources that host them.
 
 The deployment style serves as the definitive record of where software resides during execution, what hardware capabilities are required, how components communicate across physical boundaries, and what environmental dependencies exist. This information is indispensable for operations teams, performance engineers, security architects, and anyone responsible for provisioning, configuring, or maintaining the production environment.
@@ -58,6 +85,13 @@ The style is particularly valuable when the system exhibits any of the following
 
 Deployment views complement rather than replace other architectural views. They consume information from C\&C views---specifically, the software elements that require allocation---and produce information used by operational views, capacity planning activities, and infrastructure-as-code specifications.
 
+\begin{figure}[H]
+\centering
+\diagram[width=0.85\textwidth]{15-view-relationships}
+\caption{The deployment view's relationship to other architectural views. Deployment views bridge logical design and physical infrastructure.}
+\label{fig:view-relationships}
+\end{figure}
+
 A complete architectural description typically includes module views (showing code structure), C\&C views (showing runtime behavior), and allocation views including deployment (showing physical mapping). These views together provide a holistic understanding of the system from development through operation.
 
 %==============================================================================
@@ -71,6 +105,13 @@ The deployment style comprises two fundamental categories of elements: software 
 Software elements are the components and connectors drawn from C\&C views that must be allocated to physical resources. These represent the executable units of the system---processes, services, containers, functions, or other runtime entities that consume computing resources.
 
 \subsubsection{Types of Software Elements}
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.9\textwidth]{02-software-element-types}
+\caption{Classification of software element types in deployment views. Each type has distinct resource requirements and deployment characteristics.}
+\label{fig:software-element-types}
+\end{figure}
 
 Software elements in deployment views include executables and processes (compiled binaries, interpreted scripts, or managed code that runs as operating system processes), services (long-running processes that provide specific capabilities, often accessed via network protocols), containers (packaged application units including code, runtime, libraries, and configuration), serverless functions (event-driven code units executed by cloud platform infrastructure), middleware components (application servers, message brokers, API gateways, and similar infrastructure software), data stores (databases, caches, file systems, and other persistent storage mechanisms), and batch jobs (scheduled or triggered processes that execute periodically or in response to events).
 
@@ -94,6 +135,13 @@ Environmental elements represent the physical and virtualized computing infrastr
 
 \subsubsection{Types of Environmental Elements}
 
+\begin{figure}[H]
+\centering
+\diagram[width=0.9\textwidth]{03-environmental-element-types}
+\caption{Classification of environmental element types that host software elements. Each provides different capabilities and trade-offs.}
+\label{fig:environmental-element-types}
+\end{figure}
+
 Environmental elements include physical servers (bare-metal machines in data centers, providing raw computing capacity), virtual machines (software-defined computers running on hypervisors, offering isolation and resource abstraction), containers (lightweight isolated environments sharing a host OS kernel), container orchestration nodes (Kubernetes nodes, Docker Swarm workers, or similar managed compute units), serverless platforms (cloud provider infrastructure executing functions without visible servers), edge devices (computing resources at network periphery, including IoT gateways and edge servers), network infrastructure (routers, switches, load balancers, firewalls, VPN concentrators, and DNS servers), and storage infrastructure (SAN, NAS, object storage, block storage, and distributed file systems).
 
 \subsubsection{Essential Properties of Environmental Elements}
@@ -116,13 +164,29 @@ Cost properties include hourly or monthly cost, reserved versus on-demand pricin
 
 Relations in the deployment style define how software elements map to environmental elements and how allocations may change over time.
 
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{04-deployment-relations}
+\caption{Primary relations in the deployment style: allocated-to for static mapping, migration relations for dynamic changes, and communicates-with for cross-boundary interactions.}
+\label{fig:deployment-relations}
+\end{figure}
+
 \subsection{Allocated-To Relation}
 
 The primary relation in deployment views is \textit{allocated-to}, which specifies that a software element resides on an environmental element during execution. This relation answers the fundamental question: where does this component run?
 
 \subsubsection{Properties of Allocated-To}
 
-The allocation binding defines the permanence of the allocation. Static allocation means the assignment is fixed at deployment time and does not change during execution. Dynamic allocation means the assignment may change during execution based on load, failures, or policy. Lazy allocation means the assignment is determined at first access or invocation.
+The allocation binding defines the permanence of the allocation.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.9\textwidth]{13-allocation-binding-types}
+\caption{Allocation binding types: static (fixed at deployment), dynamic (may change at runtime), and lazy (determined on first access).}
+\label{fig:allocation-binding-types}
+\end{figure}
+
+Static allocation means the assignment is fixed at deployment time and does not change during execution. Dynamic allocation means the assignment may change during execution based on load, failures, or policy. Lazy allocation means the assignment is determined at first access or invocation.
 
 Exclusivity determines resource sharing. Dedicated allocation means the environmental element hosts only this software element. Shared allocation means multiple software elements may coexist on the same environmental element. Isolated allocation means the element has dedicated resources within a shared environment (as with containers or VMs).
 
@@ -163,6 +227,13 @@ Properties relevant to deployment include network protocol and ports used, encry
 %==============================================================================
 
 The deployment style imposes constraints that ensure allocated software elements can execute correctly on their target environmental elements.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{14-deployment-constraints}
+\caption{Deployment constraints: resource satisfaction (matching requirements to capabilities), affinity/anti-affinity (placement rules), and regulatory (compliance requirements).}
+\label{fig:deployment-constraints}
+\end{figure}
 
 \subsection{Resource Satisfaction Constraints}
 
@@ -219,6 +290,43 @@ Deployment views inform operational practices including deployment procedures (w
 Deployment views serve as a communication artifact for diverse stakeholders: operations teams understand what they're responsible for managing, infrastructure teams understand provisioning requirements, security teams understand the attack surface and protection requirements, capacity planners understand resource consumption patterns, and executives understand infrastructure cost drivers.
 
 %==============================================================================
+\section{Quality Attributes}
+%==============================================================================
+
+Deployment decisions directly affect several quality attributes of the resulting system.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.85\textwidth]{12-quality-attributes}
+\caption{Quality attributes directly affected by deployment decisions. Each attribute requires specific deployment considerations.}
+\label{fig:quality-attributes}
+\end{figure}
+
+\subsection{Performance}
+
+Deployment topology determines communication latency, resource availability, and potential for contention. Key performance considerations include co-locating latency-sensitive components to minimize network hops, distributing load across multiple environmental elements to prevent bottlenecks, selecting appropriate instance sizes and types for workload characteristics, and placing components geographically near their users or data sources.
+
+\subsection{Availability}
+
+The mapping of software to hardware determines which failures affect which capabilities. Availability-focused deployment considerations include distributing redundant instances across independent failure domains, avoiding single points of failure in critical paths, providing sufficient capacity for failover scenarios, and enabling rapid detection and recovery from failures.
+
+\subsection{Scalability}
+
+Deployment architecture constrains scaling options. Scalability considerations include designing stateless components that can scale horizontally, using load balancing to distribute work across instances, provisioning infrastructure that can accommodate scaling, and planning for scaling limits and bottlenecks.
+
+\subsection{Security}
+
+Physical topology affects attack surface and defense strategies. Security-relevant deployment considerations include segmenting networks to limit lateral movement, isolating sensitive components in restricted environments, encrypting communication across network boundaries, and placing security controls at trust boundaries.
+
+\subsection{Modifiability}
+
+Deployment architecture affects the ease of making changes. Modifiability considerations include decoupling deployment units to enable independent updates, standardizing deployment patterns to reduce cognitive load, automating deployment processes to enable rapid iteration, and designing for rollback to recover from failed changes.
+
+\subsection{Cost}
+
+Infrastructure represents significant ongoing expense. Cost-focused deployment considerations include right-sizing resources to actual requirements, using reserved capacity for predictable workloads, leveraging spot or preemptible instances for fault-tolerant workloads, and optimizing data transfer to minimize network costs.
+
+%==============================================================================
 \section{Notations}
 %==============================================================================
 
@@ -253,36 +361,6 @@ These textual representations serve as executable deployment specifications that
 For rigorous analysis, formal ADLs provide precise semantics. AADL (Architecture Analysis and Design Language) supports embedded and real-time system deployment modeling. SysML deployment diagrams extend UML for systems engineering contexts. ArchiMate provides enterprise architecture deployment notation.
 
 %==============================================================================
-\section{Quality Attributes}
-%==============================================================================
-
-Deployment decisions directly affect several quality attributes of the resulting system.
-
-\subsection{Performance}
-
-Deployment topology determines communication latency, resource availability, and potential for contention. Key performance considerations include co-locating latency-sensitive components to minimize network hops, distributing load across multiple environmental elements to prevent bottlenecks, selecting appropriate instance sizes and types for workload characteristics, and placing components geographically near their users or data sources.
-
-\subsection{Availability}
-
-The mapping of software to hardware determines which failures affect which capabilities. Availability-focused deployment considerations include distributing redundant instances across independent failure domains, avoiding single points of failure in critical paths, providing sufficient capacity for failover scenarios, and enabling rapid detection and recovery from failures.
-
-\subsection{Scalability}
-
-Deployment architecture constrains scaling options. Scalability considerations include designing stateless components that can scale horizontally, using load balancing to distribute work across instances, provisioning infrastructure that can accommodate scaling, and planning for scaling limits and bottlenecks.
-
-\subsection{Security}
-
-Physical topology affects attack surface and defense strategies. Security-relevant deployment considerations include segmenting networks to limit lateral movement, isolating sensitive components in restricted environments, encrypting communication across network boundaries, and placing security controls at trust boundaries.
-
-\subsection{Modifiability}
-
-Deployment architecture affects the ease of making changes. Modifiability considerations include decoupling deployment units to enable independent updates, standardizing deployment patterns to reduce cognitive load, automating deployment processes to enable rapid iteration, and designing for rollback to recover from failed changes.
-
-\subsection{Cost}
-
-Infrastructure represents significant ongoing expense. Cost-focused deployment considerations include right-sizing resources to actual requirements, using reserved capacity for predictable workloads, leveraging spot or preemptible instances for fault-tolerant workloads, and optimizing data transfer to minimize network costs.
-
-%==============================================================================
 \section{Common Deployment Patterns}
 %==============================================================================
 
@@ -290,11 +368,25 @@ Several recurring patterns address common deployment challenges.
 
 \subsection{Single-Node Deployment}
 
+\begin{figure}[H]
+\centering
+\diagram[width=0.75\textwidth]{05-single-node-deployment}
+\caption{Single-node deployment pattern: all software elements on one environmental element. Simple but limited.}
+\label{fig:single-node-deployment}
+\end{figure}
+
 All software elements are allocated to a single environmental element. This pattern is appropriate for development environments, small-scale applications with modest requirements, systems with strong consistency requirements that preclude distribution, and cost-constrained scenarios accepting availability trade-offs.
 
 Limitations include no fault tolerance (node failure causes complete outage), limited scalability (bound by single node capacity), and potential for resource contention between components.
 
 \subsection{Load-Balanced Cluster}
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.85\textwidth]{06-load-balanced-cluster}
+\caption{Load-balanced cluster pattern: multiple instances distributed behind a load balancer for scalability and fault tolerance.}
+\label{fig:load-balanced-cluster}
+\end{figure}
 
 Multiple instances of software elements are distributed across a pool of environmental elements behind a load balancer. This pattern provides horizontal scalability (add nodes to increase capacity), fault tolerance (surviving individual node failures), and flexible load distribution across available resources.
 
@@ -302,11 +394,25 @@ Considerations include state management (stateless preferred; external state sto
 
 \subsection{Primary-Replica Deployment}
 
+\begin{figure}[H]
+\centering
+\diagram[width=0.9\textwidth]{07-primary-replica-deployment}
+\caption{Primary-replica deployment pattern: writes to primary, reads distributed across replicas with asynchronous replication.}
+\label{fig:primary-replica-deployment}
+\end{figure}
+
 A primary instance handles writes while replica instances handle reads, with state replicated from primary to replicas. This pattern addresses read-heavy workloads (scaling read capacity independently), data durability (multiple copies of data), and disaster recovery (replicas available for promotion).
 
 Considerations include replication lag (potential for stale reads), failover procedures (promoting replica to primary), split-brain prevention (consensus protocols or fencing), and consistency guarantees (eventual versus strong consistency).
 
 \subsection{Microservices Deployment}
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.9\textwidth]{08-kubernetes-deployment}
+\caption{Microservices on Kubernetes: independent services deployed as pods with service abstraction and persistent storage.}
+\label{fig:kubernetes-deployment}
+\end{figure}
 
 Independent services are deployed as separate units, each owning its allocation decisions. Benefits include independent scaling (each service scales based on its own demands), technology heterogeneity (different services use different platforms), isolated failures (service failures don't directly crash other services), and independent deployment (updating one service without affecting others).
 
@@ -320,59 +426,27 @@ Considerations include edge resource constraints (limited compute and storage), 
 
 \subsection{Multi-Region Deployment}
 
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{10-multi-region-deployment}
+\caption{Multi-region deployment pattern: software distributed across geographic regions with cross-region replication and latency-based routing.}
+\label{fig:multi-region-deployment}
+\end{figure}
+
 Software elements are distributed across multiple geographic regions for disaster recovery, latency optimization, or regulatory compliance. Considerations include data replication strategy (synchronous versus asynchronous, conflict resolution), traffic routing (geographic, latency-based, or failover routing), cost implications (cross-region data transfer costs), and operational consistency (maintaining configuration across regions).
 
 \subsection{Hybrid Cloud Deployment}
 
+\begin{figure}[H]
+\centering
+\diagram[width=0.9\textwidth]{11-hybrid-cloud-deployment}
+\caption{Hybrid cloud deployment pattern: software spanning on-premises and public cloud with secure connectivity.}
+\label{fig:hybrid-cloud-deployment}
+\end{figure}
+
 Software elements span on-premises infrastructure and public cloud resources. This pattern addresses legacy integration (connecting cloud-native and traditional systems), data sensitivity (keeping regulated data on-premises), burst capacity (using cloud for peak demand), and migration path (gradual transition to cloud).
 
 Considerations include network connectivity (secure links between environments), identity federation (unified authentication and authorization), data synchronization (keeping hybrid data consistent), and operational tool integration (unified visibility across environments).
-
-%==============================================================================
-\section{Documentation Guidelines}
-%==============================================================================
-
-Effective deployment documentation enables stakeholders to understand, analyze, and modify the system's physical architecture.
-
-\subsection{Essential Content}
-
-Deployment documentation should include an element catalog (comprehensive list of all software and environmental elements with their properties), allocation mapping (explicit documentation of which software elements are allocated to which environmental elements), network topology (how environmental elements communicate, including protocols, ports, and security controls), deployment procedures (how to provision infrastructure and deploy software), configuration management (how system configuration is maintained and updated), and monitoring and operations (what is monitored, how alerts are handled, and how incidents are managed).
-
-\subsection{Views for Different Stakeholders}
-
-Different audiences need different views of deployment architecture. Executive overview provides high-level topology showing major system components and their relationships. Operations view provides detailed node inventory with configuration baselines and monitoring endpoints. Security view provides network zones, trust boundaries, and security control placement. Development view provides deployment unit boundaries and inter-service communication paths. Capacity planning view provides resource utilization trends and growth projections.
-
-\subsection{Keeping Documentation Current}
-
-Deployment architecture changes frequently. Strategies for maintaining current documentation include generating diagrams from infrastructure-as-code (single source of truth), automated documentation updates as part of CI/CD pipelines, regular architecture reviews to validate documentation accuracy, and version-controlled documentation alongside system code.
-
-\subsection{Common Pitfalls}
-
-Documentation quality suffers when deployment documentation exhibits excessive detail (including every configuration parameter obscures the important decisions), insufficient context (diagrams without accompanying explanation of rationale), point-in-time snapshots (documentation that is never updated becomes misleading), or abstraction mismatch (documentation at wrong level for intended audience).
-
-%==============================================================================
-\section{Relationship to DevOps Practices}
-%==============================================================================
-
-Modern deployment practices are deeply intertwined with DevOps culture and tooling.
-
-\subsection{Infrastructure as Code}
-
-Deployment architecture should be expressed in executable, version-controlled infrastructure definitions. Benefits include repeatability (identical environments from same code), auditability (history of all infrastructure changes), testability (validating infrastructure before production), and collaboration (code review for infrastructure changes).
-
-Tools include Terraform (multi-cloud infrastructure provisioning), CloudFormation and ARM templates (cloud-specific infrastructure), Pulumi (infrastructure using general-purpose programming languages), and Ansible, Chef, and Puppet (configuration management).
-
-\subsection{Container Orchestration}
-
-Container platforms provide declarative deployment models. Kubernetes deployments specify desired state for containerized workloads. Helm charts package deployments for reusability. Service meshes manage inter-service communication. Platform abstractions hide infrastructure details from developers.
-
-\subsection{Continuous Deployment}
-
-Deployment architecture must support continuous delivery practices. Blue-green deployments maintain two production environments for zero-downtime switches. Canary deployments gradually shift traffic to new versions. Feature flags enable deployment without activation. Rollback capabilities enable rapid recovery from problems.
-
-\subsection{Observability}
-
-Deployment architecture must enable visibility into system behavior. Distributed tracing tracks requests across service boundaries. Metrics collection aggregates measurements from all nodes. Log aggregation centralizes logs for analysis. Alerting detects anomalies and notifies operators.
 
 %==============================================================================
 \section{Examples}
@@ -381,6 +455,13 @@ Deployment architecture must enable visibility into system behavior. Distributed
 Concrete examples illustrate deployment style concepts.
 
 \subsection{Three-Tier Web Application}
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{09-three-tier-application}
+\caption{Three-tier web application deployment with network segmentation: presentation tier in DMZ, application tier in private subnet, data tier in restricted subnet.}
+\label{fig:three-tier-application}
+\end{figure}
 
 A traditional web application deployment consists of a presentation tier where web server instances run behind a load balancer serving static content and proxying dynamic requests, an application tier where application server instances execute business logic and maintain session state, and a data tier where database servers store persistent data with primary-replica replication.
 
@@ -459,6 +540,52 @@ Distributed deployments are harder to operate. Challenges include visibility (un
 Strategies include investing in observability tooling and practices, training operations teams in distributed systems concepts, automating routine operational tasks, and using managed services to reduce operational scope.
 
 %==============================================================================
+\section{Documentation Guidelines}
+%==============================================================================
+
+Effective deployment documentation enables stakeholders to understand, analyze, and modify the system's physical architecture.
+
+\subsection{Essential Content}
+
+Deployment documentation should include an element catalog (comprehensive list of all software and environmental elements with their properties), allocation mapping (explicit documentation of which software elements are allocated to which environmental elements), network topology (how environmental elements communicate, including protocols, ports, and security controls), deployment procedures (how to provision infrastructure and deploy software), configuration management (how system configuration is maintained and updated), and monitoring and operations (what is monitored, how alerts are handled, and how incidents are managed).
+
+\subsection{Views for Different Stakeholders}
+
+Different audiences need different views of deployment architecture. Executive overview provides high-level topology showing major system components and their relationships. Operations view provides detailed node inventory with configuration baselines and monitoring endpoints. Security view provides network zones, trust boundaries, and security control placement. Development view provides deployment unit boundaries and inter-service communication paths. Capacity planning view provides resource utilization trends and growth projections.
+
+\subsection{Keeping Documentation Current}
+
+Deployment architecture changes frequently. Strategies for maintaining current documentation include generating diagrams from infrastructure-as-code (single source of truth), automated documentation updates as part of CI/CD pipelines, regular architecture reviews to validate documentation accuracy, and version-controlled documentation alongside system code.
+
+\subsection{Common Pitfalls}
+
+Documentation quality suffers when deployment documentation exhibits excessive detail (including every configuration parameter obscures the important decisions), insufficient context (diagrams without accompanying explanation of rationale), point-in-time snapshots (documentation that is never updated becomes misleading), or abstraction mismatch (documentation at wrong level for intended audience).
+
+%==============================================================================
+\section{Relationship to DevOps Practices}
+%==============================================================================
+
+Modern deployment practices are deeply intertwined with DevOps culture and tooling.
+
+\subsection{Infrastructure as Code}
+
+Deployment architecture should be expressed in executable, version-controlled infrastructure definitions. Benefits include repeatability (identical environments from same code), auditability (history of all infrastructure changes), testability (validating infrastructure before production), and collaboration (code review for infrastructure changes).
+
+Tools include Terraform (multi-cloud infrastructure provisioning), CloudFormation and ARM templates (cloud-specific infrastructure), Pulumi (infrastructure using general-purpose programming languages), and Ansible, Chef, and Puppet (configuration management).
+
+\subsection{Container Orchestration}
+
+Container platforms provide declarative deployment models. Kubernetes deployments specify desired state for containerized workloads. Helm charts package deployments for reusability. Service meshes manage inter-service communication. Platform abstractions hide infrastructure details from developers.
+
+\subsection{Continuous Deployment}
+
+Deployment architecture must support continuous delivery practices. Blue-green deployments maintain two production environments for zero-downtime switches. Canary deployments gradually shift traffic to new versions. Feature flags enable deployment without activation. Rollback capabilities enable rapid recovery from problems.
+
+\subsection{Observability}
+
+Deployment architecture must enable visibility into system behavior. Distributed tracing tracks requests across service boundaries. Metrics collection aggregates measurements from all nodes. Log aggregation centralizes logs for analysis. Alerting detects anomalies and notifies operators.
+
+%==============================================================================
 \section{Conclusion}
 %==============================================================================
 
@@ -479,5 +606,9 @@ As systems increasingly span cloud regions, edge devices, and hybrid environment
   \item Morris, K. (2016). \textit{Infrastructure as Code: Managing Servers in the Cloud}. O'Reilly Media.
   \item Newman, S. (2021). \textit{Building Microservices: Designing Fine-Grained Systems} (2nd ed.). O'Reilly Media.
 \end{itemize}
+
+%==============================================================================
+\listoffigures
+%==============================================================================
 
 \end{document}

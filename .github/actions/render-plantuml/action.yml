@@ -28,6 +28,10 @@ inputs:
     description: 'Space-separated config file names to search for'
     required: false
     default: 'plantuml-config.puml config.puml'
+  plantuml-version:
+    description: 'PlantUML version to install (e.g., 1.2026.1) or "latest"'
+    required: false
+    default: 'latest'
 
 outputs:
   diagram-count:
@@ -57,24 +61,65 @@ runs:
       run: |
         set -euo pipefail
         echo "::group::Installing PlantUML dependencies"
+
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends \
-          plantuml \
+          ca-certificates \
+          curl \
+          jq \
           graphviz \
-          default-jre-headless \
-          jq
-        
+          default-jre-headless
+
         # Install ImageMagick only if JPG generation is requested
         if [[ "${{ inputs.generate-jpg }}" == "true" ]]; then
           sudo apt-get install -y --no-install-recommends imagemagick
           echo "ImageMagick installed for JPG generation"
         fi
-        
+
+        # Install PlantUML from the official GitHub releases (latest by default).
+        # Pass inputs.plantuml-version as either:
+        #   - "latest" (default)
+        #   - "1.2026.1" (or "v1.2026.1")
+                PLANTUML_VERSION="${{ inputs.plantuml-version }}"
+        if [[ -z "$PLANTUML_VERSION" || "$PLANTUML_VERSION" == "latest" ]]; then
+          # Prefer GitHub's "latest non-prerelease" endpoint.
+          PLANTUML_VERSION="$(curl -fsSL https://api.github.com/repos/plantuml/plantuml/releases/latest | jq -r .tag_name 2>/dev/null || true)"
+
+          # Fallback if GitHub is rate-limited or unavailable.
+          if [[ -z "$PLANTUML_VERSION" || "$PLANTUML_VERSION" == "null" ]]; then
+            PLANTUML_VERSION="$(curl -fsSL https://plantuml.com/download | sed -nE 's/.*lastest version is (v[0-9.]+).*/\1/p' | head -1 || true)"
+          fi
+
+          if [[ -z "$PLANTUML_VERSION" || "$PLANTUML_VERSION" == "null" ]]; then
+            echo "::error::Unable to determine the latest PlantUML version"
+            exit 1
+          fi
+        else
+          [[ "$PLANTUML_VERSION" =~ ^v ]] || PLANTUML_VERSION="v${PLANTUML_VERSION}"
+        fi
+
+        JAR_VERSION="${PLANTUML_VERSION#v}"
+        JAR_URL="https://github.com/plantuml/plantuml/releases/download/${PLANTUML_VERSION}/plantuml-${JAR_VERSION}.jar"
+
+        echo "Installing PlantUML ${PLANTUML_VERSION} from:"
+        echo "  ${JAR_URL}"
+
+        sudo mkdir -p /usr/local/lib/plantuml
+        sudo curl -fsSL -L "$JAR_URL" -o /usr/local/lib/plantuml/plantuml.jar
+
+        # Provide a `plantuml` CLI compatible with existing scripts.
+        sudo tee /usr/local/bin/plantuml >/dev/null <<'EOF'
+        #!/usr/bin/env bash
+        set -euo pipefail
+        exec java -Djava.awt.headless=true -jar /usr/local/lib/plantuml/plantuml.jar "$@"
+        EOF
+        sudo chmod +x /usr/local/bin/plantuml
+
         sudo rm -rf /var/lib/apt/lists/* || true
         echo "::endgroup::"
-        
+
         echo "=== PlantUML Environment ==="
-        plantuml -version 2>&1 | head -3 || echo "PlantUML version check skipped"
+        plantuml -version 2>&1 | head -5 || echo "PlantUML version check failed"
 
     # ------------------------------------------------------------------
     # Render all PlantUML diagrams
