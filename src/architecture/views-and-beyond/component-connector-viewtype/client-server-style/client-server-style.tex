@@ -1,6 +1,7 @@
 \documentclass[11pt]{article}
 
 \usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
 \usepackage{enumitem}
 \usepackage[hidelinks]{hyperref}
 \usepackage{booktabs}
@@ -10,6 +11,22 @@
 \usepackage{fancyhdr}
 \usepackage{titlesec}
 \usepackage{parskip}
+\usepackage{graphicx}
+% --- CI-safe diagram inclusion ---
+% Prefer PNG outputs rendered by the PlantUML workflow (no Inkscape dependency).
+\newcommand{\safeincludegraphics}[2][]{%
+  \IfFileExists{#2}{%
+    \includegraphics[#1]{#2}%
+  }{%
+    \fbox{\scriptsize\textcolor{red}{Missing image: \detokenize{#2}}}%
+  }%
+}
+\newcommand{\diagram}[2][]{%
+  \safeincludegraphics[#1]{png/#2.png}%
+}
+
+\usepackage{float}
+\usepackage[font=small,labelfont=bf]{caption}
 
 \setlist[itemize]{leftmargin=1.5em}
 \setlist[enumerate]{leftmargin=1.5em}
@@ -22,12 +39,15 @@
 
 % Header and footer
 \pagestyle{fancy}
+\setlength{\headheight}{14pt}
 \fancyhf{}
 \fancyhead[L]{\small Client--Server Architectural Style}
 \fancyhead[R]{\small Software Architecture Documentation}
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
+% Diagram paths
+% The render-plantuml workflow creates png/ and svg/ subdirectories alongside this .tex file
 \begin{document}
 
 \title{\textbf{The Client--Server Architectural Style}\\[0.5em]
@@ -44,6 +64,13 @@
 %==============================================================================
 
 The client--server style is a component-and-connector architectural style that structures a system as a set of clients that request services and servers that provide them. This fundamental pattern underlies much of modern distributed computing, from web applications to database systems to enterprise service architectures.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.85\textwidth]{01-basic-architecture}
+\caption{Basic client--server architecture showing clients requesting services through connectors from a server. The asymmetric relationship is fundamental to the style.}
+\label{fig:basic-architecture}
+\end{figure}
 
 In the client--server style, the division of responsibility is asymmetric: clients initiate interactions by requesting services, while servers wait for requests and respond to them. This asymmetry creates a clear separation of concerns---clients focus on presenting information and capturing user intent, while servers focus on processing requests, managing data, and enforcing business rules.
 
@@ -65,7 +92,16 @@ Understanding this evolution helps architects recognize the trade-offs inherent 
 
 \subsection{Relationship to Other Styles}
 
-The client--server style relates to several other architectural styles. It specializes the more general call-return style by adding the asymmetric client and server roles. It can be composed with the layered style, where each layer acts as a server to the layer above and a client to the layer below. It contrasts with peer-to-peer styles where components have symmetric roles. It provides the interaction pattern used within service-oriented and microservices architectures. It can be implemented using the pipe-and-filter style for request processing pipelines.
+The client--server style relates to several other architectural styles, as illustrated in Figure~\ref{fig:style-relationships}.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{10-style-relationships}
+\caption{Relationships between the client--server style and other architectural styles. The style specializes call-return, composes with layered and event-driven patterns, and implements service-oriented architectures.}
+\label{fig:style-relationships}
+\end{figure}
+
+The client--server style specializes the more general call-return style by adding the asymmetric client and server roles. It can be composed with the layered style, where each layer acts as a server to the layer above and a client to the layer below. It contrasts with peer-to-peer styles where components have symmetric roles. It provides the interaction pattern used within service-oriented and microservices architectures. It can be implemented using the pipe-and-filter style for request processing pipelines.
 
 Many systems combine client--server interactions with other styles. A microservices system uses client--server between services while employing event-driven patterns for asynchronous communication. A web application uses client--server between browser and server while using the MVC pattern within the server.
 
@@ -81,7 +117,16 @@ A client is a component that invokes services of a server component. Clients ini
 
 \subsubsection{Types of Client Components}
 
-Client components appear in various forms depending on the system context. Thin clients provide primarily user interface functionality, delegating most processing to servers; web browsers exemplify this type. Thick or fat clients contain significant application logic, using servers primarily for data access and shared services. Rich clients balance local processing with server interaction, often providing offline capability. Headless clients are non-interactive components that consume server services, such as batch processors or automated agents. Mobile clients are applications on mobile devices with intermittent connectivity and resource constraints. Other servers acting as clients consume services from other servers, common in multi-tier and microservices architectures.
+Client components appear in various forms depending on the system context, as shown in Figure~\ref{fig:component-types}.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{02-component-types}
+\caption{Classification of client and server component types. Client types range from thin browser-based clients to headless batch processors. Server types include web, application, database, API, cache, and authentication servers.}
+\label{fig:component-types}
+\end{figure}
+
+Thin clients provide primarily user interface functionality, delegating most processing to servers; web browsers exemplify this type. Thick or fat clients contain significant application logic, using servers primarily for data access and shared services. Rich clients balance local processing with server interaction, often providing offline capability. Headless clients are non-interactive components that consume server services, such as batch processors or automated agents. Mobile clients are applications on mobile devices with intermittent connectivity and resource constraints. Other servers acting as clients consume services from other servers, common in multi-tier and microservices architectures.
 
 \subsubsection{Essential Properties of Client Components}
 
@@ -177,7 +222,16 @@ The computational model describes how client--server systems execute.
 
 \subsection{Basic Request/Reply Interaction}
 
-The fundamental interaction follows a predictable sequence. The client constructs a request message containing the operation to invoke and necessary parameters. The request is transmitted through the connector to the server. The server receives and parses the request. The server executes the requested operation, potentially accessing other services or data. The server constructs a reply message containing results or error information. The reply is transmitted back through the connector to the client. The client receives and processes the reply.
+The fundamental interaction follows a predictable sequence, as illustrated in Figure~\ref{fig:request-reply}.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.75\textwidth]{03-request-reply-interaction}
+\caption{Request/reply interaction model showing both synchronous and asynchronous variants. In synchronous mode, the client blocks waiting for the reply. In asynchronous mode, the client continues execution and receives the reply via callback or future.}
+\label{fig:request-reply}
+\end{figure}
+
+The client constructs a request message containing the operation to invoke and necessary parameters. The request is transmitted through the connector to the server. The server receives and parses the request. The server executes the requested operation, potentially accessing other services or data. The server constructs a reply message containing results or error information. The reply is transmitted back through the connector to the client. The client receives and processes the reply.
 
 This basic model assumes synchronous, blocking interaction---the client waits for the reply before proceeding. Many variations exist for different requirements.
 
@@ -194,14 +248,6 @@ Stateless servers treat each request independently, with no memory of previous i
 Stateful servers maintain session state across requests from a given client. Session information is stored on the server and associated with client identity. Benefits include reduced request size since context need not be repeated, ability to implement multi-step transactions, support for server-push notification, and potentially improved performance through caching.
 
 Many systems use a hybrid approach: stateless application servers with state stored in a separate data tier.
-
-\subsection{Connection Management}
-
-Connections between clients and servers may be managed in various ways. Per-request connections establish a new connection for each request, which is simple but has high overhead for frequent requests. Persistent connections maintain connections across multiple requests, reducing overhead but requiring connection management. Connection pooling maintains a pool of reusable connections, amortizing connection cost across requests. Multiplexed connections carry multiple concurrent requests on a single connection, as in HTTP/2.
-
-\subsection{Concurrency Models}
-
-Servers must handle multiple concurrent clients. Process-per-request creates a new process for each request, providing isolation but with high overhead. Thread-per-request creates a new thread for each request, which is lighter weight but requires careful synchronization. Thread pool uses a fixed pool of worker threads, bounding resource usage. Event-driven uses non-blocking I/O with event loops, supporting high concurrency with fewer threads. Hybrid approaches combine these models for different workload characteristics.
 
 %==============================================================================
 \section{Constraints}
@@ -357,55 +403,73 @@ Testability addresses the ease of verifying system behavior. Clear interfaces en
 \section{Common Client--Server Patterns}
 %==============================================================================
 
-Several recurring patterns address common client--server challenges.
+Several recurring patterns address common client--server challenges, as illustrated in Figures~\ref{fig:tiered-architectures} and~\ref{fig:common-patterns}.
 
-\subsection{Two-Tier Architecture}
+\subsection{Tiered Architecture Patterns}
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{04-tiered-architectures}
+\caption{Tiered architecture patterns showing evolution from two-tier through three-tier to N-tier designs. Each tier serves the tier above and consumes services from the tier below.}
+\label{fig:tiered-architectures}
+\end{figure}
+
+\subsubsection{Two-Tier Architecture}
 
 In two-tier architecture, clients connect directly to database servers. Clients contain both presentation and business logic. The database server provides data storage and retrieval. This pattern is simple but has limitations. Business logic is distributed across clients, making updates difficult. Clients require database connectivity. Security enforcement relies on database access control.
 
 This pattern is appropriate for simple applications with few clients and limited business logic.
 
-\subsection{Three-Tier Architecture}
+\subsubsection{Three-Tier Architecture}
 
 Three-tier architecture introduces an application tier between clients and data. The presentation tier handles user interface in clients. The application tier contains business logic in application servers. The data tier manages persistence in database servers.
 
 Benefits include centralized business logic, thin clients, independent tier scaling, and clear security boundaries. This pattern is the foundation of most enterprise web applications.
 
-\subsection{N-Tier Architecture}
+\subsubsection{N-Tier Architecture}
 
 N-tier architectures add tiers for specific concerns. Web tier handles HTTP and presentation. API tier exposes programmatic interfaces. Service tier implements business operations. Integration tier connects to external systems. Data tier manages persistence.
 
 Additional tiers add separation but also complexity and latency.
 
-\subsection{Microservices Architecture}
+\subsection{Modern Distribution Patterns}
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{05-common-patterns}
+\caption{Common modern client--server patterns including API Gateway for unified entry points, Backend for Frontend for client-specific optimization, and Service Mesh for inter-service communication.}
+\label{fig:common-patterns}
+\end{figure}
+
+\subsubsection{Microservices Architecture}
 
 Microservices decompose the server side into independently deployable services. Each service owns its data and logic for a specific capability. Services communicate through APIs, often HTTP/REST or messaging. Services can be developed, deployed, and scaled independently.
 
 This pattern enables organizational scaling and technology diversity but adds distributed systems complexity.
 
-\subsection{Backend for Frontend (BFF)}
+\subsubsection{Backend for Frontend (BFF)}
 
 The BFF pattern creates dedicated backend services for different client types. A mobile BFF serves mobile clients. A web BFF serves browser clients. Each BFF tailors responses to its client's needs.
 
 This pattern optimizes for client-specific requirements but adds backend components to maintain.
 
-\subsection{API Gateway Pattern}
+\subsubsection{API Gateway Pattern}
 
 An API gateway provides a single entry point for clients. The gateway routes requests to appropriate backend services. It can handle cross-cutting concerns like authentication, rate limiting, and logging. It can aggregate responses from multiple services.
 
 This pattern simplifies client interaction with complex backends but introduces a potential bottleneck.
 
-\subsection{Service Mesh Pattern}
+\subsubsection{Service Mesh Pattern}
 
 A service mesh handles service-to-service communication. Sidecar proxies handle communication, security, and observability. A control plane manages proxy configuration. The application code is freed from communication concerns.
 
 This pattern adds infrastructure complexity but provides powerful operational capabilities.
 
-\subsection{CQRS Pattern}
+\subsubsection{CQRS Pattern}
 
 Command Query Responsibility Segregation separates read and write models. Commands modify state through one path. Queries read state through another path, often optimized differently. This pattern can improve performance and scalability for read-heavy workloads.
 
-\subsection{Event Sourcing with Client--Server}
+\subsubsection{Event Sourcing with Client--Server}
 
 Event sourcing stores state changes as events. Clients send commands that generate events. Event stores persist the event stream. Read models project events for queries. This pattern provides audit trails and temporal queries but adds complexity.
 
@@ -413,59 +477,57 @@ Event sourcing stores state changes as events. Clients send commands that genera
 \section{Protocol Considerations}
 %==============================================================================
 
-The choice of communication protocol significantly affects client--server systems.
+The choice of communication protocol significantly affects client--server systems, as shown in Figure~\ref{fig:protocol-comparison}.
 
-\subsection{HTTP and REST}
+\begin{figure}[H]
+\centering
+\diagram[width=0.9\textwidth]{09-protocol-comparison}
+\caption{Comparison of communication protocols for client--server systems. Each protocol has distinct characteristics suited to different use cases.}
+\label{fig:protocol-comparison}
+\end{figure}
 
-HTTP is the dominant protocol for web-based client--server communication. REST architectural style uses HTTP methods semantically: GET for retrieval, POST for creation, PUT for update, and DELETE for removal. Resources are identified by URLs. Representations use formats like JSON or XML.
+\subsection{REST/HTTP}
 
-Benefits include universal client support, extensive tooling, cacheability, and statelessness. Limitations include verbosity, lack of streaming support in HTTP/1.1, and impedance mismatch with non-resource-oriented domains.
-
-\subsection{GraphQL}
-
-GraphQL provides a query language for APIs. Clients specify exactly what data they need. A single endpoint handles all queries. The schema defines available types and operations.
-
-Benefits include client-specified responses reducing over-fetching, strong typing, and introspection. Limitations include complexity, potential for expensive queries, and caching challenges.
+REST (Representational State Transfer) over HTTP is the dominant protocol for web APIs. It uses standard HTTP methods (GET, POST, PUT, DELETE) on resources identified by URLs. JSON is the typical data format. Benefits include simplicity, wide tooling support, cacheability, and human readability. Limitations include verbosity and lack of built-in streaming.
 
 \subsection{gRPC}
 
-gRPC uses Protocol Buffers for efficient binary serialization. It provides strongly-typed service definitions. Streaming is natively supported. HTTP/2 provides multiplexing and header compression.
+gRPC uses HTTP/2 with Protocol Buffers for efficient binary communication. It provides strong typing, code generation, and bidirectional streaming. Benefits include high performance and language-neutral contracts. It is well-suited for internal service-to-service communication.
 
-Benefits include efficiency, streaming support, and code generation. Limitations include less tooling than REST, binary format complexity for debugging, and browser support challenges.
+\subsection{GraphQL}
+
+GraphQL provides a query language allowing clients to request exactly the data they need. A single endpoint serves all queries. Benefits include eliminating over-fetching and under-fetching, introspection, and strong typing. It is well-suited for complex data requirements and mobile applications.
 
 \subsection{WebSocket}
 
-WebSocket provides full-duplex communication over a single connection. After an HTTP upgrade handshake, bidirectional messages can flow. This enables server push and real-time updates.
-
-Benefits include low latency for frequent messages and server-initiated communication. Limitations include connection state management and scaling challenges.
-
-\subsection{Message Queues}
-
-Message queue protocols like AMQP and MQTT support asynchronous request/reply. Requests and replies are correlated through message identifiers. Queues provide buffering and delivery guarantees.
-
-Benefits include decoupling, reliability, and support for offline clients. Limitations include added infrastructure and eventual consistency.
+WebSocket provides full-duplex communication over a single TCP connection. It enables server-initiated messages and real-time updates. Benefits include low latency for bidirectional communication. It is well-suited for real-time applications, chat, and live updates.
 
 %==============================================================================
 \section{Error Handling}
 %==============================================================================
 
-Robust error handling is essential for client--server systems.
+Error handling is critical in client--server systems and requires patterns at multiple levels, as illustrated in Figure~\ref{fig:resilience-patterns}.
 
-\subsection{Error Categories}
-
-Errors in client--server systems fall into several categories. Client errors result from invalid requests, authentication failures, or authorization denials. Server errors result from internal server failures, resource exhaustion, or downstream service failures. Communication errors result from network failures, timeouts, or protocol errors. Business errors result from domain rule violations distinct from technical errors.
-
-\subsection{Error Representation}
-
-Errors must be communicated from server to client. HTTP status codes provide standard error categories. Error response bodies provide details such as error codes, messages, and remediation hints. Structured error formats like RFC 7807 Problem Details standardize error representation.
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{08-resilience-patterns}
+\caption{Error handling and resilience patterns for client--server systems. Client-side patterns include timeouts, retries, and fallbacks. The circuit breaker pattern prevents cascade failures. Server-side patterns include graceful degradation and health checks.}
+\label{fig:resilience-patterns}
+\end{figure}
 
 \subsection{Client Error Handling}
 
-Clients must handle errors appropriately. Retry logic handles transient failures with appropriate backoff. Circuit breakers prevent repeated calls to failing services. Fallback behavior provides degraded functionality when services are unavailable. User feedback communicates errors appropriately to users.
+Clients must anticipate and handle various error conditions. Network errors occur when communication fails. Timeout errors occur when servers don't respond promptly. Protocol errors occur when messages are malformed. Application errors occur when servers reject requests or processing fails.
+
+Robust clients implement timeout handling, retry with exponential backoff, and fallback behavior when services are unavailable.
 
 \subsection{Server Error Handling}
 
 Servers must handle errors without compromising security or stability. Graceful degradation maintains partial functionality during partial failures. Error logging records errors for debugging and monitoring. Error abstraction hides internal details from clients to prevent information leakage. Transaction rollback maintains data consistency after failures.
+
+\subsection{Circuit Breaker Pattern}
+
+The circuit breaker pattern prevents cascade failures when downstream services are unavailable. In the closed state, requests pass through normally. After repeated failures, the circuit opens and requests fail fast without attempting the downstream call. After a timeout, the circuit enters half-open state and allows limited requests to test recovery.
 
 \subsection{Timeout Handling}
 
@@ -475,7 +537,14 @@ Timeouts are critical for system stability. Client timeouts prevent indefinite w
 \section{Security Considerations}
 %==============================================================================
 
-Security is paramount in client--server architectures.
+Security is paramount in client--server architectures, as illustrated in Figure~\ref{fig:security-architecture}.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.9\textwidth]{06-security-architecture}
+\caption{Security architecture for client--server systems showing the security boundary with TLS termination, authentication, authorization, input validation, and rate limiting. All client input must be validated on the server.}
+\label{fig:security-architecture}
+\end{figure}
 
 \subsection{Authentication}
 
@@ -505,7 +574,14 @@ Monitoring detects and responds to security incidents. Audit logging records sec
 \section{Deployment Considerations}
 %==============================================================================
 
-Client--server architecture affects deployment decisions.
+Client--server architecture affects deployment decisions, as illustrated in Figure~\ref{fig:scalability-patterns}.
+
+\begin{figure}[H]
+\centering
+\diagram[width=0.95\textwidth]{07-scalability-patterns}
+\caption{Scalability and deployment patterns showing load balancing, horizontal scaling of application servers, distributed caching, and database replication. CDN caching at the edge reduces latency for static content.}
+\label{fig:scalability-patterns}
+\end{figure}
 
 \subsection{Load Balancing}
 
@@ -676,5 +752,9 @@ Investment in understanding client--server architecture pays dividends across vi
   \item Nygard, M. (2018). \textit{Release It! Design and Deploy Production-Ready Software} (2nd ed.). Pragmatic Bookshelf.
   \item Fielding, R. T. (2000). \textit{Architectural Styles and the Design of Network-based Software Architectures}. Doctoral dissertation, University of California, Irvine.
 \end{itemize}
+
+%==============================================================================
+\listoffigures
+%==============================================================================
 
 \end{document}

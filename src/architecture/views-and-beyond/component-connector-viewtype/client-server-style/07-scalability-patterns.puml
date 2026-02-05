@@ -1,0 +1,90 @@
+@startuml
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam roundCorner 5
+
+skinparam rectangle {
+    BorderColor #424242
+}
+
+skinparam package {
+    BackgroundColor #FAFAFA
+    BorderColor #BDBDBD
+}
+
+title Scalability and Deployment Patterns
+
+package "Clients" {
+    rectangle "Client 1" as C1 #E3F2FD
+    rectangle "Client 2" as C2 #E3F2FD
+    rectangle "Client N" as CN #E3F2FD
+}
+
+package "Edge" {
+    rectangle "CDN Cache" as CDN #F3E5F5
+}
+
+rectangle "Load Balancer" as LB #FFF3E0
+
+package "Application Tier" {
+    rectangle "Server 1" as S1 #E8F5E9
+    rectangle "Server 2" as S2 #E8F5E9
+    rectangle "Server N" as SN #E8F5E9
+}
+
+package "Cache Tier" {
+    rectangle "Redis/Memcached" as CACHE #F3E5F5
+}
+
+package "Data Tier" {
+    rectangle "Primary DB" as PDB #FCE4EC
+    rectangle "Read Replica" as RDB #FCE4EC
+}
+
+C1 --> CDN
+C2 --> CDN
+CN --> CDN
+
+CDN --> LB
+
+LB --> S1 : round-robin
+LB --> S2 : least-conn
+LB --> SN : weighted
+
+S1 --> CACHE
+S2 --> CACHE
+SN --> CACHE
+
+CACHE --> PDB : cache miss
+S1 --> RDB : reads
+S2 --> RDB : reads
+SN --> PDB : writes
+
+PDB ..> RDB : replicate
+
+note bottom of LB
+  Strategies: Round-robin
+  Least connections, Weighted
+  Session affinity
+end note
+
+note right of CACHE
+  Cache reduces
+  DB load and latency
+end note
+
+note bottom of PDB
+  Write to primary
+  Read from replicas
+end note
+
+legend right
+  |= Component |= Purpose |
+  | <#FFF3E0> | Load Balancer |
+  | <#E8F5E9> | App Server |
+  | <#F3E5F5> | Cache |
+  | <#FCE4EC> | Database |
+endlegend
+@enduml
