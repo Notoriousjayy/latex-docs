@@ -1,0 +1,1685 @@
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\setlist[itemize]{nosep,leftmargin=*}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\sloppy
+\hbadness=10000
+\vbadness=10000
+
+\title{Embedded C Coding Standard (BARR-C)\\Rulebook with ``Shall/Shall-Not'' Requirements, Rationales, and Enforcement Ideas}
+\author{Compiled from a user-provided source document}
+\date{2026-02-04}
+
+\begin{document}
+\maketitle
+
+This document compiles the rules from the provided Embedded C Coding Standard (BARR-C) into an implementation-focused rulebook. For each rule, the guidance is rewritten as a precise shall/shall-not requirement, followed by a short rationale and candidate enforcement approaches (static analysis, review checks, and unit-test or build-time guard rails). The intent is strict, automatable conformance suitable for CI pipelines.
+
+\tableofcontents
+\newpage
+\section{1.1 Which C?}
+Guideline scope: Which C?.
+
+\subsection*{BARR-C-1.1.a}
+\textbf{Requirement.} The codebase shall be written to comply with the C99 version of the ISO C Programming Language Standard.
+\textbf{Rationale.} Language and core style constraints improve portability, readability, and tool effectiveness for defect detection.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-1.1.b}
+\textbf{Requirement.} Shall: Whenever a C++ compiler is used, appropriate compiler options shall be set to restrict the language to the selected version of ISO C.
+\textbf{Rationale.} Language and core style constraints improve portability, readability, and tool effectiveness for defect detection.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-1.1.c}
+\textbf{Requirement.} The use of proprietary compiler language keyword extensions, \#pragma, and inline assembly shall be kept to the minimum necessary to get the job done and be localized to a small number of device driver modules that interface directly to hardware.
+\textbf{Rationale.} Language and core style constraints improve portability, readability, and tool effectiveness for defect detection.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-1.1.d}
+\textbf{Requirement.} Shall: Preprocessor directive \#define shall not be used to alter or rename any keyword or other aspect of the programming language.
+\textbf{Rationale.} Language and core style constraints improve portability, readability, and tool effectiveness for defect detection.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{1.2 Line Widths}
+Guideline scope: Line Widths.
+
+\subsection*{BARR-C-1.2.a}
+\textbf{Requirement.} Each source line shall be 80 characters or fewer.
+\textbf{Rationale.} Keeps code readable in side-by-side diffs and common editors, and reduces the risk of hidden logic due to wrapping.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: reject lines >80 (pre-commit/CI script) except documented tool-generated blocks.
+\item Formatter: enforce wrapping with a standard style (e.g., clang-format) and fail CI on diffs.
+\end{itemize}
+
+\newpage
+\section{1.3 Braces}
+Guideline scope: Braces.
+
+\subsection*{BARR-C-1.3.a}
+\textbf{Requirement.} Shall: Braces shall always surround the blocks of code (a.k.a., compound statements), following if, else, switch, while, do, and for statements; single statements and empty statements following these keywords shall also always be surrounded by braces.
+\textbf{Rationale.} Consistent brace usage prevents ambiguous control flow and eliminates bug classes caused by misleading indentation.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Formatter: enforce brace placement (e.g., clang-format) and run in CI with --dry-run.
+\item Static analysis: require braces around single-statement bodies (clang-tidy or custom AST checks).
+\end{itemize}
+
+\subsection*{BARR-C-1.3.b}
+\textbf{Requirement.} Each left brace (\{) shall appear by itself on the line below the start of the block it opens. The corresponding right brace (\}) shall appear by itself in the same position the appropriate number of lines later in the file.
+\textbf{Rationale.} Consistent brace usage prevents ambiguous control flow and eliminates bug classes caused by misleading indentation.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Formatter: enforce brace placement (e.g., clang-format) and run in CI with --dry-run.
+\item Static analysis: require braces around single-statement bodies (clang-tidy or custom AST checks).
+\end{itemize}
+
+\newpage
+\section{1.4 Parentheses}
+Guideline scope: Parentheses.
+
+\subsection*{BARR-C-1.4.a}
+\textbf{Requirement.} Shall not  rely on C's operator precedence rules, as they may not be obvious to those who maintain the code. To aid clarity, use parentheses (and/or break long statements into multiple lines of code) to ensure proper execution order within a sequence of operations.
+\textbf{Rationale.} Explicit grouping makes precedence unambiguous and avoids subtle logic errors.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enable compiler warnings for precedence/suspicious constructs (e.g., -Wparentheses).
+\item Review checklist: require explicit parentheses for mixed-operator expressions and macro arguments.
+\end{itemize}
+
+\subsection*{BARR-C-1.4.b}
+\textbf{Requirement.} Shall: Unless it is a single identifier or constant, each operand of the logical AND (\&\&) and logical OR (||) operators shall be surrounded by parentheses.
+\textbf{Rationale.} Explicit grouping makes precedence unambiguous and avoids subtle logic errors.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enable compiler warnings for precedence/suspicious constructs (e.g., -Wparentheses).
+\item Review checklist: require explicit parentheses for mixed-operator expressions and macro arguments.
+\end{itemize}
+
+\newpage
+\section{1.5 Common Abbreviations}
+Guideline scope: Common Abbreviations.
+
+\subsection*{BARR-C-1.5.a}
+\textbf{Requirement.} Shall: Abbreviations and acronyms should generally be avoided unless their meanings are widely and consistently understood in the engineering community.
+\textbf{Rationale.} Language and core style constraints improve portability, readability, and tool effectiveness for defect detection.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-1.5.b}
+\textbf{Requirement.} Shall: A table of project-specific abbreviations and acronyms shall be maintained in a version-controlled document.
+\textbf{Rationale.} Language and core style constraints improve portability, readability, and tool effectiveness for defect detection.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{1.6 Casts}
+Guideline scope: Casts.
+
+\subsection*{BARR-C-1.6.a}
+\textbf{Requirement.} Each cast shall feature an associated comment describing how the code ensures proper behavior across the range of possible values on the right side.
+\textbf{Rationale.} Consistent commenting supports maintainability and audits without obscuring the source.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: run a lexer-style check to detect comment-token surprises inside comments.
+\item Review checklist: verify file headers and comment conventions.
+\end{itemize}
+
+\newpage
+\section{1.7 Keywords to Avoid}
+Guideline scope: Keywords to Avoid.
+
+\subsection*{BARR-C-1.7.a}
+\textbf{Requirement.} The auto keyword shall not be used.
+\textbf{Rationale.} Language and core style constraints improve portability, readability, and tool effectiveness for defect detection.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: grep for \texttt{auto} in C sources.
+\item Compiler: build with -std=c99/-std=c11 and treat warnings as errors to catch misuse.
+\end{itemize}
+
+\subsection*{BARR-C-1.7.b}
+\textbf{Requirement.} The register keyword shall not be used.
+\textbf{Rationale.} Language and core style constraints improve portability, readability, and tool effectiveness for defect detection.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: grep for \texttt{register} in C sources.
+\item Compiler: build with -std=c99/-std=c11 and treat warnings as errors to catch misuse.
+\end{itemize}
+
+\subsection*{BARR-C-1.7.c}
+\textbf{Requirement.} Preferred practice: avoid all use of the goto keyword. If goto is used it shall only jump to a label declared later in the same or an enclosing block.
+\textbf{Rationale.} Unstructured jumps make control flow hard to reason about and complicate verification, testing, and maintenance.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: grep for pattern \texttt{\textbackslash{}bgoto\textbackslash{}b} and require a waiver if present.
+\item Review checklist: if used, confirm forward-only jumps to a label in the same/enclosing block.
+\end{itemize}
+
+\subsection*{BARR-C-1.7.d}
+\textbf{Requirement.} Preferred practice: avoid all use of the continue keyword.
+\textbf{Rationale.} Multiple loop exits reduce local reasoning about loop invariants and can obscure error handling paths.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: grep for pattern \texttt{\textbackslash{}bcontinue\textbackslash{}b} and require a waiver if present.
+\item Review checklist: prefer structured loops; ensure invariants remain clear without early-continue paths.
+\end{itemize}
+
+\newpage
+\section{1.8 Keywords to Frequent}
+Guideline scope: Keywords to Frequent.
+
+\subsection*{BARR-C-1.8.a}
+\textbf{Requirement.} The static keyword shall be used to declare all functions and variables that do not need to be visible outside of the module in which they are declared.
+\textbf{Rationale.} Language and core style constraints improve portability, readability, and tool effectiveness for defect detection.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-1.8.b}
+\textbf{Requirement.} The const keyword shall be used whenever appropriate.
+\textbf{Rationale.} Const-correctness documents intent, enables compiler diagnostics, and supports safer interfaces.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enable const-correctness checks and \texttt{-Wcast-qual}.
+\item Review checklist: ensure inputs are \texttt{const} when mutation is not required.
+\end{itemize}
+
+\subsection*{BARR-C-1.8.b.i}
+\textbf{Requirement.} Shall: To declare variables that should not be changed after initialization,
+\textbf{Rationale.} Language and core style constraints improve portability, readability, and tool effectiveness for defect detection.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-1.8.b.ii}
+\textbf{Requirement.} Shall: To define call-by-reference function parameters that should not be modified (e.g., char const * param),
+\textbf{Rationale.} Const-correctness documents intent, enables compiler diagnostics, and supports safer interfaces.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-1.8.b.iii}
+\textbf{Requirement.} Shall: To define fields in a struct or union that should not be modified (e.g., in a struct overlay for memory-mapped I/O peripheral registers), and
+\textbf{Rationale.} Clear and portable type definitions reduce ambiguity, improve interface contracts, and prevent size/signedness surprises.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enforce loop style rules (AST checks) and flag empty bodies or suspect constructs.
+\item Review checklist: confirm loop bounds, termination, and side effects are explicit.
+\end{itemize}
+
+\subsection*{BARR-C-1.8.b.iv}
+\textbf{Requirement.} Shall: As a strongly typed alternative to \#define for numerical constants.
+\textbf{Rationale.} Const-correctness documents intent, enables compiler diagnostics, and supports safer interfaces.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enforce loop style rules (AST checks) and flag empty bodies or suspect constructs.
+\item Review checklist: confirm loop bounds, termination, and side effects are explicit.
+\end{itemize}
+
+\subsection*{BARR-C-1.8.c}
+\textbf{Requirement.} The volatile keyword shall be used whenever appropriate.
+\textbf{Rationale.} Correct volatile usage is essential for I/O and concurrency; misuse can cause missed updates or broken optimizations.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Review checklist: require rationale for each \texttt{volatile} (I/O register, ISR/shared flag, etc.).
+\item Static analysis: flag volatile misuse patterns (e.g., non-atomic RMW on shared flags).
+\end{itemize}
+
+\subsection*{BARR-C-1.8.c.i}
+\textbf{Requirement.} Shall: To declare a global variable accessible (by current use or scope) by any interrupt service routine,
+\textbf{Rationale.} Language and core style constraints improve portability, readability, and tool effectiveness for defect detection.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-1.8.c.ii}
+\textbf{Requirement.} Shall: To declare a global variable accessible (by current use or scope) by two or more threads,
+\textbf{Rationale.} Language and core style constraints improve portability, readability, and tool effectiveness for defect detection.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-1.8.c.iii}
+\textbf{Requirement.} Shall: To declare a pointer to a memory-mapped I/O peripheral register set (e.g., timer\_t volatile * const p\_timer),
+\textbf{Rationale.} Correct volatile usage is essential for I/O and concurrency; misuse can cause missed updates or broken optimizations.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Review checklist: require rationale for each \texttt{volatile} (I/O register, ISR/shared flag, etc.).
+\item Static analysis: flag volatile misuse patterns (e.g., non-atomic RMW on shared flags).
+\end{itemize}
+
+\subsection*{BARR-C-1.8.c.iv}
+\textbf{Requirement.} Shall: To declare a delay loop counter.
+\textbf{Rationale.} Language and core style constraints improve portability, readability, and tool effectiveness for defect detection.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enforce loop style rules (AST checks) and flag empty bodies or suspect constructs.
+\item Review checklist: confirm loop bounds, termination, and side effects are explicit.
+\end{itemize}
+
+\newpage
+\section{2.1 Acceptable Formats}
+Guideline scope: Acceptable Formats.
+
+\subsection*{BARR-C-2.1.a}
+\textbf{Requirement.} Single-line comments in the C++ style (i.e., preceded by //) are a useful and acceptable alternative to traditional C style comments (i.e., /* ... */).
+\textbf{Rationale.} Consistent commenting supports maintainability and audits without obscuring the source.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: run a lexer-style check to detect comment-token surprises inside comments.
+\item Review checklist: verify file headers and comment conventions.
+\end{itemize}
+
+\subsection*{BARR-C-2.1.b}
+\textbf{Requirement.} Shall: Comments shall not contain the preprocessor tokens /*, //, or \textbackslash{}.
+\textbf{Rationale.} Consistent commenting supports maintainability and audits without obscuring the source.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: run a lexer-style check to detect comment-token surprises inside comments.
+\item Review checklist: verify file headers and comment conventions.
+\end{itemize}
+
+\subsection*{BARR-C-2.1.c}
+\textbf{Requirement.} Shall: Code shall not be commented out, even temporarily.
+\textbf{Rationale.} Consistent commenting supports maintainability and audits without obscuring the source.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: run a lexer-style check to detect comment-token surprises inside comments.
+\item Review checklist: verify file headers and comment conventions.
+\end{itemize}
+
+\subsection*{BARR-C-2.1.c.i}
+\textbf{Requirement.} Shall: To temporarily disable a block of code, use the preprocessor's conditional compilation feature (e.g., \#if 0 ... \#endif).
+\textbf{Rationale.} Comment conventions prevent lexical surprises and keep intent clear for humans and tools.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-2.1.c.ii}
+\textbf{Requirement.} Shall: Any line or block of code that exists specifically to increase the level of debug output information shall be surrounded by \#ifndef NDEBUG ... \#endif.
+\textbf{Rationale.} Comment conventions prevent lexical surprises and keep intent clear for humans and tools.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{2.2 Locations and Content}
+Guideline scope: Locations and Content.
+
+\subsection*{BARR-C-2.2.a}
+\textbf{Requirement.} Shall: All comments shall be written in clear and complete sentences, with proper spelling and grammar and appropriate punctuation.
+\textbf{Rationale.} Consistent commenting supports maintainability and audits without obscuring the source.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: run a lexer-style check to detect comment-token surprises inside comments.
+\item Review checklist: verify file headers and comment conventions.
+\end{itemize}
+
+\subsection*{BARR-C-2.2.b}
+\textbf{Requirement.} The most useful comments generally precede a block of code that performs one step of a larger algorithm. A blank line shall follow each such code block. The comments in front of the block should be at the same indentation level.
+\textbf{Rationale.} Consistent commenting supports maintainability and audits without obscuring the source.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: run a lexer-style check to detect comment-token surprises inside comments.
+\item Review checklist: verify file headers and comment conventions.
+\end{itemize}
+
+\subsection*{BARR-C-2.2.c}
+\textbf{Requirement.} Shall: Avoid explaining the obvious. Assume the reader knows the C programming language. For example, end-of-line comments should only be used where the meaning of that one line of code may be unclear from the variable and function names and operations alone but where a short comment makes it clear. Specifically, avoid writing unhelpful and redundant comments, e.g., "numero <<= 2; // Shift numero left 2 bits.".
+\textbf{Rationale.} Consistent commenting supports maintainability and audits without obscuring the source.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: run a lexer-style check to detect comment-token surprises inside comments.
+\item Review checklist: verify file headers and comment conventions.
+\end{itemize}
+
+\subsection*{BARR-C-2.2.d}
+\textbf{Requirement.} The number and length of individual comment blocks shall be proportional to the complexity of the code they describe.
+\textbf{Rationale.} Consistent commenting supports maintainability and audits without obscuring the source.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: run a lexer-style check to detect comment-token surprises inside comments.
+\item Review checklist: verify file headers and comment conventions.
+\end{itemize}
+
+\subsection*{BARR-C-2.2.e}
+\textbf{Requirement.} Shall: Whenever an algorithm or technical detail is defined in an external reference---e.g., a design specification, patent, or textbook---a comment shall include a sufficient reference to the original source to allow a reader of the code to locate the document.
+\textbf{Rationale.} Consistent commenting supports maintainability and audits without obscuring the source.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\subsection*{BARR-C-2.2.f}
+\textbf{Requirement.} Shall: Whenever a flow chart or other diagram is needed to sufficiently document the code, the drawing shall be maintained with the source code under version control and the comments should reference the diagram by file name or title.
+\textbf{Rationale.} Consistent commenting supports maintainability and audits without obscuring the source.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: run a lexer-style check to detect comment-token surprises inside comments.
+\item Review checklist: verify file headers and comment conventions.
+\end{itemize}
+
+\subsection*{BARR-C-2.2.g}
+\textbf{Requirement.} Shall: All assumptions shall be spelled out in comments.
+\textbf{Rationale.} Consistent commenting supports maintainability and audits without obscuring the source.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: run a lexer-style check to detect comment-token surprises inside comments.
+\item Review checklist: verify file headers and comment conventions.
+\end{itemize}
+
+\subsection*{BARR-C-2.2.h}
+\textbf{Requirement.} Each module and function shall be commented in a manner suitable for automatic documentation generation, e.g., via Doxygen. barrgroup.com/embedded-systems/how-to/design-by-contract-for-embedded-software.
+\textbf{Rationale.} Consistent commenting supports maintainability and audits without obscuring the source.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: run a lexer-style check to detect comment-token surprises inside comments.
+\item Review checklist: verify file headers and comment conventions.
+\end{itemize}
+
+\subsection*{BARR-C-2.2.h.i}
+\textbf{Requirement.} Shall: Use the following capitalized comment markers to highlight important issues:
+\textbf{Rationale.} Consistent commenting supports maintainability and audits without obscuring the source.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: run a lexer-style check to detect comment-token surprises inside comments.
+\item Review checklist: verify file headers and comment conventions.
+\end{itemize}
+
+\subsection*{BARR-C-2.2.h.i}
+\textbf{Requirement.} Shall: "WARNING:" alerts a maintainer there is risk in changing this code. For example, that a delay loop counter's terminal value was determined empirically and may need to change when the code is ported or the optimization level tweaked.
+\textbf{Rationale.} Comment conventions prevent lexical surprises and keep intent clear for humans and tools.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enforce loop style rules (AST checks) and flag empty bodies or suspect constructs.
+\item Review checklist: confirm loop bounds, termination, and side effects are explicit.
+\end{itemize}
+
+\subsection*{BARR-C-2.2.h.ii}
+\textbf{Requirement.} Shall: "NOTE:" provides descriptive comments about the "why" of a chunk of code---as distinguished from the "how" usually placed in comments. For example, that a chunk of driver code deviates from the datasheet because there was an errata in the chip. Or that an assumption is being made by the original programmer.
+\textbf{Rationale.} Consistent commenting supports maintainability and audits without obscuring the source.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: run a lexer-style check to detect comment-token surprises inside comments.
+\item Review checklist: verify file headers and comment conventions.
+\end{itemize}
+
+\subsection*{BARR-C-2.2.h.iii}
+\textbf{Requirement.} Shall: "TODO:" indicates an area of the code is still under construction and explains what remains to be done. When appropriate, an all-caps programmer name or set of initials may be included before the word TODO (e.g., "MJB TODO:").
+\textbf{Rationale.} Const-correctness documents intent, enables compiler diagnostics, and supports safer interfaces.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\newpage
+\section{3.1 Spaces}
+Guideline scope: Spaces.
+
+\subsection*{BARR-C-3.1.a}
+\textbf{Requirement.} Each of the keywords if, while, for, switch, and return shall be followed by one space when there is additional program text on the same line.
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Compiler/static analysis: enable \texttt{-Wswitch/-Wswitch-enum} and fail on missing cases.
+\item Review checklist: ensure each case ends in an explicit break/return and a default when required.
+\end{itemize}
+
+\subsection*{BARR-C-3.1.b}
+\textbf{Requirement.} Each of the assignment operators =, +=, -=, *=, /=, \%=, \&=, |=, \textasciicircum{}=, \textasciitilde{}=, and != shall always be preceded and followed by one space.
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-3.1.c}
+\textbf{Requirement.} Each of the binary operators +, -, *, /, \%, <, <=, >, >=, ==,!=, <<, >>, \&, |, \textasciicircum{}, \&\&, and || shall always be preceded and followed by one space.
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-3.1.d}
+\textbf{Requirement.} Each of the unary operators +, -, ++, --, ! , and \textasciitilde{}, shall be written without a space on the operand side.
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-3.1.e}
+\textbf{Requirement.} The pointer operators * and \& shall be written with white space on each side within declarations but otherwise without a space on the operand side.
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-3.1.f}
+\textbf{Requirement.} The ? and : characters that comprise the ternary operator shall each always be preceded and followed by one space.
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-3.1.g}
+\textbf{Requirement.} The structure pointer and structure member operators (-> and ., respectively) shall always be without surrounding spaces.
+\textbf{Rationale.} Clear and portable type definitions reduce ambiguity, improve interface contracts, and prevent size/signedness surprises.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-3.1.h}
+\textbf{Requirement.} The left and right brackets of the array subscript operator ([ and ]) shall be without surrounding spaces, except as required by another white space rule.
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-3.1.h.i}
+\textbf{Requirement.} Shall: Expressions within parentheses shall always have no spaces adjacent to the left and right parenthesis characters.
+\textbf{Rationale.} Explicit grouping makes precedence unambiguous and avoids subtle logic errors.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enable compiler warnings for precedence/suspicious constructs (e.g., -Wparentheses).
+\item Review checklist: require explicit parentheses for mixed-operator expressions and macro arguments.
+\end{itemize}
+
+\subsection*{BARR-C-3.1.j}
+\textbf{Requirement.} The left and right parentheses of the function call operator shall always be without surrounding spaces, except that the function declaration shall feature one space between the function name and the left parenthesis to allow that one particular mention of the function name to be easily located.
+\textbf{Rationale.} Explicit grouping makes precedence unambiguous and avoids subtle logic errors.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enable compiler warnings for precedence/suspicious constructs (e.g., -Wparentheses).
+\item Review checklist: require explicit parentheses for mixed-operator expressions and macro arguments.
+\end{itemize}
+
+\subsection*{BARR-C-3.1.k}
+\textbf{Requirement.} Shall: Except when at the end of a line, each comma separating function parameters shall always be followed by one space.
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-3.1.l}
+\textbf{Requirement.} Each semicolon separating the elements of a for statement shall always be followed by one space.
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enforce loop style rules (AST checks) and flag empty bodies or suspect constructs.
+\item Review checklist: confirm loop bounds, termination, and side effects are explicit.
+\end{itemize}
+
+\subsection*{BARR-C-3.1.m}
+\textbf{Requirement.} Each semicolon shall follow the statement it terminates without a preceding space.
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{3.2 Alignment}
+Guideline scope: Alignment.
+
+\subsection*{BARR-C-3.2.a}
+\textbf{Requirement.} The names of variables within a series of declarations shall have their first characters aligned.
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-3.2.b}
+\textbf{Requirement.} The names of struct and union members shall have their first characters aligned.
+\textbf{Rationale.} Clear and portable type definitions reduce ambiguity, improve interface contracts, and prevent size/signedness surprises.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-3.2.c}
+\textbf{Requirement.} The assignment operators within a block of adjacent assignment statements shall be aligned.
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-3.2.d}
+\textbf{Requirement.} The \# in a preprocessor directive shall always be located at the start of a line, though the directives themselves may be indented within a \#if or \#ifdef sequence.
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{3.3 Blank Lines}
+Guideline scope: Blank Lines.
+
+\subsection*{BARR-C-3.3.a}
+\textbf{Requirement.} Shall: No line of code shall contain more than one statement.
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-3.3.b}
+\textbf{Requirement.} Shall: There shall be a blank line before and after each natural block of code. Examples of natural blocks of code are loops, if...else and switch statements, and consecutive declarations.
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Compiler/static analysis: enable \texttt{-Wswitch/-Wswitch-enum} and fail on missing cases.
+\item Review checklist: ensure each case ends in an explicit break/return and a default when required.
+\end{itemize}
+
+\subsection*{BARR-C-3.3.c}
+\textbf{Requirement.} Each source file shall terminate with a comment marking the end of file followed by a blank line.
+\textbf{Rationale.} Consistent commenting supports maintainability and audits without obscuring the source.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: run a lexer-style check to detect comment-token surprises inside comments.
+\item Review checklist: verify file headers and comment conventions.
+\end{itemize}
+
+\newpage
+\section{3.4 Indentation}
+Guideline scope: Indentation.
+
+\subsection*{BARR-C-3.4.a}
+\textbf{Requirement.} Each indentation level should align at a multiple of 4 characters from the start of the line.
+\textbf{Rationale.} Keeps code readable in side-by-side diffs and common editors, and reduces the risk of hidden logic due to wrapping.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: reject lines >80 (pre-commit/CI script) except documented tool-generated blocks.
+\item Formatter: enforce wrapping with a standard style (e.g., clang-format) and fail CI on diffs.
+\end{itemize}
+
+\subsection*{BARR-C-3.4.b}
+\textbf{Requirement.} Shall: Within a switch statement, the case labels shall be aligned; the contents of each case block shall be indented once from there.
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Compiler/static analysis: enable \texttt{-Wswitch/-Wswitch-enum} and fail on missing cases.
+\item Review checklist: ensure each case ends in an explicit break/return and a default when required.
+\end{itemize}
+
+\subsection*{BARR-C-3.4.c}
+\textbf{Requirement.} Shall: Whenever a line of code is too long to fit within the maximum line width, indent the second and any subsequent lines in the most readable manner possible.
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{3.5 Tabs}
+Guideline scope: Tabs.
+
+\subsection*{BARR-C-3.5.a}
+\textbf{Requirement.} The tab character (ASCII 0x09) shall not appear within any source code file.
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{3.6 Non-Printing Characters}
+Guideline scope: Non-Printing Characters.
+
+\subsection*{BARR-C-3.6.a}
+\textbf{Requirement.} Shall: Whenever possible, all source code lines shall end only with the single character 'LF' (ASCII 0x0A), not with the pair 'CR'-'LF' (0x0D 0x0A).
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-3.6.b}
+\textbf{Requirement.} The only other non-printable character permitted in a source code file is the form feed character 'FF' (ASCII 0x0C).
+\textbf{Rationale.} Whitespace consistency improves scanability and reduces noisy diffs.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{4.1 Naming Conventions}
+Guideline scope: Naming Conventions.
+
+\subsection*{BARR-C-4.1.a}
+\textbf{Requirement.} Shall: All module names shall consist entirely of lowercase letters, numbers, and underscores. No spaces shall appear within the module's header and source file names.
+\textbf{Rationale.} Disciplined header practices reduce coupling, prevent build-order dependence, and avoid interface mismatches.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\subsection*{BARR-C-4.1.b}
+\textbf{Requirement.} Shall: All module names shall be unique in their first 8 characters and end with suffices .h and .c for the header and source file names, respectively.
+\textbf{Rationale.} Disciplined header practices reduce coupling, prevent build-order dependence, and avoid interface mismatches.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\subsection*{BARR-C-4.1.c}
+\textbf{Requirement.} Shall: No module's header file name shall share the name of a header file from the C Standard Library or C++ Standard Library. For example, modules shall not be named "stdio" or "math".
+\textbf{Rationale.} Disciplined header practices reduce coupling, prevent build-order dependence, and avoid interface mismatches.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\subsection*{BARR-C-4.1.d}
+\textbf{Requirement.} Shall: Any module containing a main() function shall have the word "main" as part of its source file name.
+\textbf{Rationale.} Module/file structure rules reduce coupling, clarify ownership, and improve build reproducibility.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{4.2 Header Files}
+Guideline scope: Header Files.
+
+\subsection*{BARR-C-4.2.a}
+\textbf{Requirement.} Shall: There shall always be precisely one header file for each source file and they shall always have the same root name.
+\textbf{Rationale.} Disciplined header practices reduce coupling, prevent build-order dependence, and avoid interface mismatches.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\subsection*{BARR-C-4.2.b}
+\textbf{Requirement.} Each header file shall contain a preprocessor guard against multiple inclusion, as shown in the example below.
+\textbf{Rationale.} Disciplined header practices reduce coupling, prevent build-order dependence, and avoid interface mismatches.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\subsection*{BARR-C-4.2.c}
+\textbf{Requirement.} The header file shall identify only the procedures, constants, and data types (via prototypes or macros, \#define, and typedefs, respectively) about which it is strictly necessary for other modules to be informed.
+\textbf{Rationale.} Const-correctness documents intent, enables compiler diagnostics, and supports safer interfaces.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\subsection*{BARR-C-4.2.c.i}
+\textbf{Requirement.} Preferred practice: no variable ever be declared (via extern) in a header file.
+\textbf{Rationale.} Disciplined header practices reduce coupling, prevent build-order dependence, and avoid interface mismatches.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\subsection*{BARR-C-4.2.c.ii}
+\textbf{Requirement.} Shall: No storage for any variable shall be allocated in a header file.
+\textbf{Rationale.} Disciplined header practices reduce coupling, prevent build-order dependence, and avoid interface mismatches.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\subsection*{BARR-C-4.2.d}
+\textbf{Requirement.} Shall: No public header file shall contain a \#include of any private header file.
+\textbf{Rationale.} Disciplined header practices reduce coupling, prevent build-order dependence, and avoid interface mismatches.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\newpage
+\section{4.3 Source Files}
+Guideline scope: Source Files.
+
+\subsection*{BARR-C-4.3.a}
+\textbf{Requirement.} Each source file shall include only the behaviors appropriate to control one "entity". Examples of entities include encapsulated data types, active objects, peripheral drivers (e.g., for a UART), and communication protocols or layers (e.g., ARP).
+\textbf{Rationale.} Module/file structure rules reduce coupling, clarify ownership, and improve build reproducibility.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\subsection*{BARR-C-4.3.b}
+\textbf{Requirement.} Each source file shall be comprised of some or all of the following sections, in the order listed: comment block; include statements; data type, constant, and macro definitions; static data declarations; private function prototypes; public function bodies; then private function bodies.
+\textbf{Rationale.} Const-correctness documents intent, enables compiler diagnostics, and supports safer interfaces.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\subsection*{BARR-C-4.3.c}
+\textbf{Requirement.} Each source file shall always \#include the header file of the same name (e.g., file adc.c should \#include "adc.h"), to allow the compiler to confirm that each public function and its prototype match.
+\textbf{Rationale.} Disciplined header practices reduce coupling, prevent build-order dependence, and avoid interface mismatches.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\subsection*{BARR-C-4.3.d}
+\textbf{Requirement.} Shall: Absolute paths shall not be used in include file names.
+\textbf{Rationale.} Module/file structure rules reduce coupling, clarify ownership, and improve build reproducibility.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\subsection*{BARR-C-4.3.e}
+\textbf{Requirement.} Each source file shall be free of unused include files.
+\textbf{Rationale.} Dynamic allocation can fragment memory and introduce non-determinism and failure modes that are difficult to control in embedded systems.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: forbid calls to \texttt{malloc/calloc/realloc/free} (grep or AST-based check).
+\item Link-time guard rail: provide wrappers that fail the link if allocator symbols are referenced.
+\end{itemize}
+
+\subsection*{BARR-C-4.3.f}
+\textbf{Requirement.} Shall: No source file shall \#include another source file.
+\textbf{Rationale.} Disciplined header practices reduce coupling, prevent build-order dependence, and avoid interface mismatches.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\newpage
+\section{4.4 File Templates}
+Guideline scope: File Templates.
+
+\subsection*{BARR-C-4.4.a}
+\textbf{Requirement.} Shall: A set of templates for header files and source files shall be maintained at the project level.
+\textbf{Rationale.} Disciplined header practices reduce coupling, prevent build-order dependence, and avoid interface mismatches.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\newpage
+\section{5.1 Naming Conventions}
+Guideline scope: Naming Conventions.
+
+\subsection*{BARR-C-5.1.a}
+\textbf{Requirement.} The names of all new data types, including structures, unions, and enumerations, shall consist only of lowercase characters and internal underscores and end with '\_t'.
+\textbf{Rationale.} Clear and portable type definitions reduce ambiguity, improve interface contracts, and prevent size/signedness surprises.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-5.1.b}
+\textbf{Requirement.} Shall: All new structures, unions, and enumerations shall be named via a typedef.
+\textbf{Rationale.} Clear and portable type definitions reduce ambiguity, improve interface contracts, and prevent size/signedness surprises.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-5.1.c}
+\textbf{Requirement.} The name of all public data types shall be prefixed with their module name and an underscore.
+\textbf{Rationale.} Data type rules minimize undefined/implementation-defined behavior and improve cross-platform predictability.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{5.2 Fixed-Width Integers}
+Guideline scope: Fixed-Width Integers.
+
+\subsection*{BARR-C-5.2.a}
+\textbf{Requirement.} Shall: Whenever the width, in bits or bytes, of an integer value matters in the program, one of the fixed width data types shall be used in place of char, short, int, long, or long long. The signed and unsigned fixed-width integer types shall be as shown in the table below. Integer Width Signed Type Unsigned Type
+\textbf{Rationale.} Data type rules minimize undefined/implementation-defined behavior and improve cross-platform predictability.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-5.2.b}
+\textbf{Requirement.} The keywords short and long shall not be used.
+\textbf{Rationale.} Data type rules minimize undefined/implementation-defined behavior and improve cross-platform predictability.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-5.2.c}
+\textbf{Requirement.} Shall: Use of the keyword char shall be restricted to the declaration of and operations concerning strings.
+\textbf{Rationale.} Data type rules minimize undefined/implementation-defined behavior and improve cross-platform predictability.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{5.3 Signed and Unsigned Integers}
+Guideline scope: Signed and Unsigned Integers.
+
+\subsection*{BARR-C-5.3.a}
+\textbf{Requirement.} Shall: Bit-fields shall not be defined within signed integer types.
+\textbf{Rationale.} Data type rules minimize undefined/implementation-defined behavior and improve cross-platform predictability.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-5.3.b}
+\textbf{Requirement.} Shall: None of the bitwise operators (i.e., \&, |, \textasciitilde{}, \textasciicircum{}, <<, and >>) shall be used to manipulate signed integer data.
+\textbf{Rationale.} Data type rules minimize undefined/implementation-defined behavior and improve cross-platform predictability.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-5.3.c}
+\textbf{Requirement.} Shall: Signed integers shall not be combined with unsigned integers in comparisons or expressions. In support of this, decimal constants meant to be unsigned should be declared with a 'u' at the end.
+\textbf{Rationale.} Const-correctness documents intent, enables compiler diagnostics, and supports safer interfaces.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{5.4 Floating Point}
+Guideline scope: Floating Point.
+
+\subsection*{BARR-C-5.4.a}
+\textbf{Requirement.} Shall: Avoid the use of floating point constants and variables whenever possible. Fixed-point math may be an alternative.
+\textbf{Rationale.} Floating point behavior can vary by platform and may introduce determinism and precision pitfalls.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: flag \texttt{float/double} usage; require module-level exception approval.
+\item Compiler flags: enable conversion warnings (-Wconversion, -Wdouble-promotion) and treat as errors.
+\end{itemize}
+
+\subsection*{BARR-C-5.4.b}
+\textbf{Requirement.} Shall: When floating point calculations are necessary:
+\textbf{Rationale.} Floating point behavior can vary by platform and may introduce determinism and precision pitfalls.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: flag \texttt{float/double} usage; require module-level exception approval.
+\item Compiler flags: enable conversion warnings (-Wconversion, -Wdouble-promotion) and treat as errors.
+\end{itemize}
+
+\subsection*{BARR-C-5.4.b.i}
+\textbf{Requirement.} Shall: Use the C99 type names float32\_t, float64\_t, and float128\_t.
+\textbf{Rationale.} Floating point behavior can vary by platform and may introduce determinism and precision pitfalls.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: flag \texttt{float/double} usage; require module-level exception approval.
+\item Compiler flags: enable conversion warnings (-Wconversion, -Wdouble-promotion) and treat as errors.
+\end{itemize}
+
+\subsection*{BARR-C-5.4.b.ii}
+\textbf{Requirement.} Shall: Append an 'f' to all single-precision constants (e.g., pi = 3.141592f).
+\textbf{Rationale.} Const-correctness documents intent, enables compiler diagnostics, and supports safer interfaces.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-5.4.b.iii}
+\textbf{Requirement.} Shall: Ensure that the compiler supports double precision, if your math depends on it.
+\textbf{Rationale.} Data type rules minimize undefined/implementation-defined behavior and improve cross-platform predictability.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-5.4.b.iv}
+\textbf{Requirement.} Shall: Never test for equality or inequality of floating point values.
+\textbf{Rationale.} Floating point behavior can vary by platform and may introduce determinism and precision pitfalls.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: flag \texttt{float/double} usage; require module-level exception approval.
+\item Compiler flags: enable conversion warnings (-Wconversion, -Wdouble-promotion) and treat as errors.
+\end{itemize}
+
+\subsection*{BARR-C-5.4.b.v}
+\textbf{Requirement.} Shall: Always invoke the isfinite() macro to check that prior calculations have resulted in neither INFINITY nor NAN.
+\textbf{Rationale.} Data type rules minimize undefined/implementation-defined behavior and improve cross-platform predictability.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{5.5 Structures and Unions}
+Guideline scope: Structures and Unions.
+
+\subsection*{BARR-C-5.5.a}
+\textbf{Requirement.} Shall: Appropriate care shall be taken to prevent the compiler from inserting padding bytes within struct or union types used to communicate to or from a peripheral or over a bus or network to another processor.
+\textbf{Rationale.} Clear and portable type definitions reduce ambiguity, improve interface contracts, and prevent size/signedness surprises.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-5.5.b}
+\textbf{Requirement.} Shall: Appropriate care shall be taken to prevent the compiler from altering the intended order of the bits within bit-fields.
+\textbf{Rationale.} Data type rules minimize undefined/implementation-defined behavior and improve cross-platform predictability.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{5.6 Booleans}
+Guideline scope: Booleans.
+
+\subsection*{BARR-C-5.6.a}
+\textbf{Requirement.} Shall: Boolean variables shall be declared as type bool.
+\textbf{Rationale.} Data type rules minimize undefined/implementation-defined behavior and improve cross-platform predictability.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-5.6.b}
+\textbf{Requirement.} Shall: Non-Boolean values shall be converted to Boolean via use of relational operators (e.g., < or !=), not via casts.
+\textbf{Rationale.} Data type rules minimize undefined/implementation-defined behavior and improve cross-platform predictability.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{6.1 Naming Conventions}
+Guideline scope: Naming Conventions.
+
+\subsection*{BARR-C-6.1.a}
+\textbf{Requirement.} Shall: No procedure shall have a name that is a keyword of any standard version of the C or C++ programming language. Restricted names include interrupt, inline, class, true, false, public, private, friend, protected, and many others.
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\subsection*{BARR-C-6.1.b}
+\textbf{Requirement.} Shall: No procedure shall have a name that overlaps a function in the C Standard Library. Examples of such names include strlen, atoi, and memset.
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\subsection*{BARR-C-6.1.c}
+\textbf{Requirement.} Shall: No procedure shall have a name that begins with an underscore.
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-6.1.d}
+\textbf{Requirement.} Shall: No procedure name shall be longer than 31 characters.
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-6.1.e}
+\textbf{Requirement.} Shall: No function name shall contain any uppercase letters.
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-6.1.f}
+\textbf{Requirement.} Shall: No macro name shall contain any lowercase letters.
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-6.1.g}
+\textbf{Requirement.} Shall: Underscores shall be used to separate words in procedure names.
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-6.1.h}
+\textbf{Requirement.} Each procedure's name shall be descriptive of its purpose. Note that procedures encapsulate the "actions" of a program and thus benefit from the use of verbs in their names (e.g., adc\_read()); this "noun-verb" word ordering is recommended. Alternatively, procedures may be named according to the question they answer (e.g., led\_is\_on()).
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-6.1.h.i}
+\textbf{Requirement.} The names of all public functions shall be prefixed with their module name and an underscore (e.g., sensor\_read()).
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{6.2 Functions}
+Guideline scope: Functions.
+
+\subsection*{BARR-C-6.2.a}
+\textbf{Requirement.} Shall: All reasonable effort shall be taken to keep the length of each function limited to one printed page, or a maximum of 100 lines.
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-6.2.b}
+\textbf{Requirement.} Shall: Whenever possible, all functions shall be made to start at the top of a printed page, except when several small functions can fit onto a single page.
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-6.2.c}
+\textbf{Requirement.} Preferred practice: all functions shall have just one exit point and it shall be via a return at the bottom of the function.
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-6.2.d}
+\textbf{Requirement.} Shall: A prototype shall be declared for each public function in the module header file.
+\textbf{Rationale.} Disciplined header practices reduce coupling, prevent build-order dependence, and avoid interface mismatches.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\subsection*{BARR-C-6.2.e}
+\textbf{Requirement.} Shall: All private functions shall be declared static.
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-6.2.f}
+\textbf{Requirement.} Each parameter shall be explicitly declared and meaningfully named. beginning of the first line on the comment block that precedes the function definition.
+\textbf{Rationale.} Consistent commenting supports maintainability and audits without obscuring the source.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: run a lexer-style check to detect comment-token surprises inside comments.
+\item Review checklist: verify file headers and comment conventions.
+\end{itemize}
+
+\newpage
+\section{6.3 Function-Like Macros}
+Guideline scope: Function-Like Macros.
+
+\subsection*{BARR-C-6.3.a}
+\textbf{Requirement.} Shall: Parameterized macros shall not be used if a function can be written to accomplish the same behavior.
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-6.3.b}
+\textbf{Requirement.} If parameterized macros are used for some reason,
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enforce loop style rules (AST checks) and flag empty bodies or suspect constructs.
+\item Review checklist: confirm loop bounds, termination, and side effects are explicit.
+\end{itemize}
+
+\subsection*{BARR-C-6.3.b.i}
+\textbf{Requirement.} Shall: Surround the entire macro body with parentheses.
+\textbf{Rationale.} Explicit grouping makes precedence unambiguous and avoids subtle logic errors.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enable compiler warnings for precedence/suspicious constructs (e.g., -Wparentheses).
+\item Review checklist: require explicit parentheses for mixed-operator expressions and macro arguments.
+\end{itemize}
+
+\subsection*{BARR-C-6.3.b.ii}
+\textbf{Requirement.} Shall: Surround each use of a parameter with parentheses.
+\textbf{Rationale.} Explicit grouping makes precedence unambiguous and avoids subtle logic errors.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enable compiler warnings for precedence/suspicious constructs (e.g., -Wparentheses).
+\item Review checklist: require explicit parentheses for mixed-operator expressions and macro arguments.
+\end{itemize}
+
+\subsection*{BARR-C-6.3.b.iii}
+\textbf{Requirement.} Shall: Use each parameter no more than once, to avoid unintended side effects.
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-6.3.b.iv}
+\textbf{Requirement.} Shall: Never include a transfer of control (e.g., return keyword).
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\newpage
+\section{6.4 Threads of Execution}
+Guideline scope: Threads of Execution.
+
+\subsection*{BARR-C-6.4.a}
+\textbf{Requirement.} Shall: All functions that encapsulate threads of execution (a.k.a., tasks, processes) shall be given names ending with "\_thread" (or "\_task", "\_process").
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{6.5 Interrupt Service Routines}
+Guideline scope: Interrupt Service Routines.
+
+\subsection*{BARR-C-6.5.a}
+\textbf{Requirement.} Shall: Interrupt service routines (ISRs) are not ordinary functions. The compiler must be informed that the function is an ISR by way of a \#pragma or compiler-specific keyword, such as "\_\_interrupt".
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-6.5.b}
+\textbf{Requirement.} Shall: All functions that implement ISRs shall be given names ending with "\_isr".
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-6.5.c}
+\textbf{Requirement.} Shall: To ensure that ISRs are not inadvertently called from other parts of the software (they may corrupt the CPU and call stack if this happens), each ISR function shall be declared static and/or be located at the end of the associated driver module as permitted by the target platform.
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-6.5.d}
+\textbf{Requirement.} Shall: A stub or default ISR shall be installed in the vector table at the location of all unexpected or otherwise unhandled interrupt sources. Each such stub could attempt to disable future interrupts of the same type, say at the interrupt controller, and assert().
+\textbf{Rationale.} Procedure rules promote clear control flow, testability, and determinism.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{7.1 Naming Conventions}
+Guideline scope: Naming Conventions.
+
+\subsection*{BARR-C-7.1.a}
+\textbf{Requirement.} Shall: No variable shall have a name that is a keyword of C, C++, or any other well-known extension of the C programming language, including specifically K\&R C and C99. Restricted names include interrupt, inline, restrict, class, true, false, public, private, friend, and protected.
+\textbf{Rationale.} Variable rules encourage clear lifetimes, initialization safety, and minimal shared state.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: enforce include guards and include ordering (script/tooling) and fail on violations.
+\item Review checklist: verify minimal dependencies and no build-order coupling.
+\end{itemize}
+
+\subsection*{BARR-C-7.1.b}
+\textbf{Requirement.} Shall: No variable shall have a name that overlaps with a variable name from the C Standard Library (e.g., errno).
+\textbf{Rationale.} Variable rules encourage clear lifetimes, initialization safety, and minimal shared state.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-7.1.c}
+\textbf{Requirement.} Shall: No variable shall have a name that begins with an underscore.
+\textbf{Rationale.} Variable rules encourage clear lifetimes, initialization safety, and minimal shared state.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-7.1.d}
+\textbf{Requirement.} Shall: No variable name shall be longer than 31 characters.
+\textbf{Rationale.} Variable rules encourage clear lifetimes, initialization safety, and minimal shared state.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-7.1.e}
+\textbf{Requirement.} Shall: No variable name shall be shorter than 3 characters, including loop counters.
+\textbf{Rationale.} Variable rules encourage clear lifetimes, initialization safety, and minimal shared state.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enforce loop style rules (AST checks) and flag empty bodies or suspect constructs.
+\item Review checklist: confirm loop bounds, termination, and side effects are explicit.
+\end{itemize}
+
+\subsection*{BARR-C-7.1.f}
+\textbf{Requirement.} Shall: No variable name shall contain any uppercase letters.
+\textbf{Rationale.} Variable rules encourage clear lifetimes, initialization safety, and minimal shared state.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-7.1.g}
+\textbf{Requirement.} Shall: No variable name shall contain any numeric value that is called out elsewhere, such as the number of elements in an array or the number of bits in the underlying type.
+\textbf{Rationale.} Variable rules encourage clear lifetimes, initialization safety, and minimal shared state.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-7.1.h}
+\textbf{Requirement.} Shall: Underscores shall be used to separate words in variable names.
+\textbf{Rationale.} Variable rules encourage clear lifetimes, initialization safety, and minimal shared state.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-7.1.h.i}
+\textbf{Requirement.} Each variable's name shall be descriptive of its purpose.
+\textbf{Rationale.} Variable rules encourage clear lifetimes, initialization safety, and minimal shared state.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-7.1.j}
+\textbf{Requirement.} The names of any global variables shall begin with the letter 'g'. For example, g\_zero\_offset.
+\textbf{Rationale.} Variable rules encourage clear lifetimes, initialization safety, and minimal shared state.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enforce loop style rules (AST checks) and flag empty bodies or suspect constructs.
+\item Review checklist: confirm loop bounds, termination, and side effects are explicit.
+\end{itemize}
+
+\subsection*{BARR-C-7.1.k}
+\textbf{Requirement.} The names of any pointer variables shall begin with the letter 'p'. For example, p\_led\_reg.
+\textbf{Rationale.} Variable rules encourage clear lifetimes, initialization safety, and minimal shared state.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enforce loop style rules (AST checks) and flag empty bodies or suspect constructs.
+\item Review checklist: confirm loop bounds, termination, and side effects are explicit.
+\end{itemize}
+
+\subsection*{BARR-C-7.1.l}
+\textbf{Requirement.} The names of any pointer-to-pointer variables shall begin with the letters 'pp'. For example, pp\_vector\_table.
+\textbf{Rationale.} Variable rules encourage clear lifetimes, initialization safety, and minimal shared state.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enforce loop style rules (AST checks) and flag empty bodies or suspect constructs.
+\item Review checklist: confirm loop bounds, termination, and side effects are explicit.
+\end{itemize}
+
+\subsection*{BARR-C-7.1.m}
+\textbf{Requirement.} The names of all integer variables containing Boolean information (including 0 vs. non-zero) shall begin with the letter 'b' and phrased as the question they answer. For example, b\_done\_yet or b\_is\_buffer\_full.
+\textbf{Rationale.} Variable rules encourage clear lifetimes, initialization safety, and minimal shared state.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enforce loop style rules (AST checks) and flag empty bodies or suspect constructs.
+\item Review checklist: confirm loop bounds, termination, and side effects are explicit.
+\end{itemize}
+
+\subsection*{BARR-C-7.1.n}
+\textbf{Requirement.} The names of any variables representing non-pointer handles for objects, e.g., file handles, shall begin with the letter 'h'. For example, h\_input\_file.
+\textbf{Rationale.} Variable rules encourage clear lifetimes, initialization safety, and minimal shared state.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enforce loop style rules (AST checks) and flag empty bodies or suspect constructs.
+\item Review checklist: confirm loop bounds, termination, and side effects are explicit.
+\end{itemize}
+
+\subsection*{BARR-C-7.1.o}
+\textbf{Requirement.} Shall: In the case of a variable name requiring multiple of the above prefixes, the order of their inclusion before the first underscore shall be [g][p|pp][b|h].
+\textbf{Rationale.} Variable rules encourage clear lifetimes, initialization safety, and minimal shared state.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{7.2 Initialization}
+Guideline scope: Initialization.
+
+\subsection*{BARR-C-7.2.a}
+\textbf{Requirement.} Shall: All variables shall be initialized before use.
+\textbf{Rationale.} Variable rules encourage clear lifetimes, initialization safety, and minimal shared state.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-7.2.b}
+\textbf{Requirement.} Shall: It is preferable to define local variables as you need them, rather than all at the top of a function.
+\textbf{Rationale.} Variable rules encourage clear lifetimes, initialization safety, and minimal shared state.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-7.2.c}
+\textbf{Requirement.} If project- or file-global variables are used, their definitions shall be grouped together and placed at the top of a source code file.
+\textbf{Rationale.} Variable rules encourage clear lifetimes, initialization safety, and minimal shared state.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-7.2.d}
+\textbf{Requirement.} Shall: Any pointer variable lacking an initial address shall be initialized to NULL.
+\textbf{Rationale.} Variable rules encourage clear lifetimes, initialization safety, and minimal shared state.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{8.1 Variable Declarations}
+Guideline scope: Variable Declarations.
+
+\subsection*{BARR-C-8.1.a}
+\textbf{Requirement.} The comma operator (,) shall not be used within variable declarations.
+\textbf{Rationale.} Statement rules prevent ambiguous control flow and reduce the risk of branching/looping defects.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{8.2 Conditional Statements}
+Guideline scope: Conditional Statements.
+
+\subsection*{BARR-C-8.2.a}
+\textbf{Requirement.} Preferred practice: the shortest (measured in lines of code) of the if and else if clauses should be placed first.
+\textbf{Rationale.} Statement rules prevent ambiguous control flow and reduce the risk of branching/looping defects.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-8.2.b}
+\textbf{Requirement.} Shall: Nested if...else statements shall not be deeper than two levels. Use function calls or switch statements to reduce complexity and aid understanding.
+\textbf{Rationale.} Statement rules prevent ambiguous control flow and reduce the risk of branching/looping defects.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Compiler/static analysis: enable \texttt{-Wswitch/-Wswitch-enum} and fail on missing cases.
+\item Review checklist: ensure each case ends in an explicit break/return and a default when required.
+\end{itemize}
+
+\subsection*{BARR-C-8.2.c}
+\textbf{Requirement.} Shall: Assignments shall not be made within an if or else if test.
+\textbf{Rationale.} Statement rules prevent ambiguous control flow and reduce the risk of branching/looping defects.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\subsection*{BARR-C-8.2.d}
+\textbf{Requirement.} Shall: Any if statement with an else if clause shall end with an else clause.
+\textbf{Rationale.} Statement rules prevent ambiguous control flow and reduce the risk of branching/looping defects.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{8.3 Switch Statements}
+Guideline scope: Switch Statements.
+
+\subsection*{BARR-C-8.3.a}
+\textbf{Requirement.} The break for each case shall be indented to align with the associated case, rather than with the contents of the case code block.
+\textbf{Rationale.} Multiple loop exits reduce local reasoning about loop invariants and can obscure error handling paths.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enforce loop style rules (AST checks) and flag empty bodies or suspect constructs.
+\item Review checklist: confirm loop bounds, termination, and side effects are explicit.
+\end{itemize}
+
+\subsection*{BARR-C-8.3.b}
+\textbf{Requirement.} Shall: All switch statements shall contain a default block.
+\textbf{Rationale.} Statement rules prevent ambiguous control flow and reduce the risk of branching/looping defects.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Compiler/static analysis: enable \texttt{-Wswitch/-Wswitch-enum} and fail on missing cases.
+\item Review checklist: ensure each case ends in an explicit break/return and a default when required.
+\end{itemize}
+
+\subsection*{BARR-C-8.3.c}
+\textbf{Requirement.} Shall: Any case designed to fall through to the next shall be commented to clearly explain the absence of the corresponding break.
+\textbf{Rationale.} Multiple loop exits reduce local reasoning about loop invariants and can obscure error handling paths.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: run a lexer-style check to detect comment-token surprises inside comments.
+\item Review checklist: verify file headers and comment conventions.
+\end{itemize}
+
+\newpage
+\section{8.4 Loops}
+Guideline scope: Loops.
+
+\subsection*{BARR-C-8.4.a}
+\textbf{Requirement.} Shall: Magic numbers shall not be used as the initial value or in the endpoint test of a while, do...while, or for loop.
+\textbf{Rationale.} Statement rules prevent ambiguous control flow and reduce the risk of branching/looping defects.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enforce loop style rules (AST checks) and flag empty bodies or suspect constructs.
+\item Review checklist: confirm loop bounds, termination, and side effects are explicit.
+\end{itemize}
+
+\subsection*{BARR-C-8.4.b}
+\textbf{Requirement.} Shall: With the exception of the initialization of a loop counter in the first clause of a for statement and the change to the same variable in the third, no assignment shall be made in any loop's controlling expression.
+\textbf{Rationale.} Statement rules prevent ambiguous control flow and reduce the risk of branching/looping defects.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enforce loop style rules (AST checks) and flag empty bodies or suspect constructs.
+\item Review checklist: confirm loop bounds, termination, and side effects are explicit.
+\end{itemize}
+
+\subsection*{BARR-C-8.4.c}
+\textbf{Requirement.} Shall: Infinite loops shall be implemented via controlling expression for (;;).
+\textbf{Rationale.} Statement rules prevent ambiguous control flow and reduce the risk of branching/looping defects.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: enforce loop style rules (AST checks) and flag empty bodies or suspect constructs.
+\item Review checklist: confirm loop bounds, termination, and side effects are explicit.
+\end{itemize}
+
+\subsection*{BARR-C-8.4.d}
+\textbf{Requirement.} Each loop with an empty body shall feature a set of braces enclosing a comment to explain why nothing needs to be done until after the loop terminates.
+\textbf{Rationale.} Consistent brace usage prevents ambiguous control flow and eliminates bug classes caused by misleading indentation.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Formatter: enforce brace placement (e.g., clang-format) and run in CI with --dry-run.
+\item Static analysis: require braces around single-statement bodies (clang-tidy or custom AST checks).
+\end{itemize}
+
+\newpage
+\section{8.5 Jumps}
+Guideline scope: Jumps.
+
+\subsection*{BARR-C-8.5.a}
+\textbf{Requirement.} The use of goto statements shall be restricted as per Rule 1.7.c.
+\textbf{Rationale.} Unstructured jumps make control flow hard to reason about and complicate verification, testing, and maintenance.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item CI lint: grep for pattern \texttt{\textbackslash{}bgoto\textbackslash{}b} and require a waiver if present.
+\item Review checklist: if used, confirm forward-only jumps to a label in the same/enclosing block.
+\end{itemize}
+
+\subsection*{BARR-C-8.5.b}
+\textbf{Requirement.} Shall: C Standard Library functions abort(), exit(), setjmp(), and longjmp() shall not be used.
+\textbf{Rationale.} Statement rules prevent ambiguous control flow and reduce the risk of branching/looping defects.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\section{8.6 Equivalence Tests}
+Guideline scope: Equivalence Tests.
+
+\subsection*{BARR-C-8.6.a}
+\textbf{Requirement.} Shall: When evaluating the equality of a variable against a constant, the constant shall always be placed to the left of the equal-to operator (==).
+\textbf{Rationale.} Const-correctness documents intent, enables compiler diagnostics, and supports safer interfaces.
+\textbf{Candidate enforcement approaches.}
+\begin{itemize}
+\item Static analysis: run clang-analyzer/clang-tidy and Cppcheck with the project rule set enabled.
+\item Review checklist: add an explicit check for this rule in PR templates.
+\end{itemize}
+
+\newpage
+\end{document}

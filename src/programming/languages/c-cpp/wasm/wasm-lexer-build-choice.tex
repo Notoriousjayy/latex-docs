@@ -1,0 +1,108 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codebg}{rgb}{0.97,0.97,0.97}
+\lstdefinestyle{code}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  columns=fullflexible,
+  frame=single,
+  rulecolor=\color{black!15},
+  xleftmargin=0.5em,
+  xrightmargin=0.5em,
+  aboveskip=0.8em,
+  belowskip=0.8em
+}
+
+\title{Compiling a C Lexical Scanner to WebAssembly for Front-End Use\\
+\large Choosing Between a Custom HTML Template and a JavaScript Module}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Context}
+This note addresses a practical build decision when compiling a C-based lexical scanner to WebAssembly (Wasm) for use in a front-end application: whether to (1) generate a runnable HTML page using an Emscripten shell (including a custom HTML template) or (2) compile to JavaScript glue code as an ES module (typically \texttt{.mjs}) that your application imports and initializes.
+
+\section*{Recommendation}
+\textbf{Preferred default for a front-end lexical scanner: compile to a JavaScript module (ES module factory), not a custom HTML template.}
+
+A lexical scanner is typically invoked repeatedly and integrated into an existing UI runtime (SPA framework, bundler, routing, code-splitting, workers). The ES module approach gives explicit control over initialization, loading, instantiation, caching, and thread placement.
+
+\section*{Why the JavaScript Module Route Is Usually Better}
+\begin{enumerate}[leftmargin=*, itemsep=0.3em]
+  \item \textbf{Aligns with real app architecture.} Your front-end owns the HTML shell. For scanners embedded in an editor/IDE-like UI, you want the Wasm module to be just another dependency (like a library), not the thing that generates the page.
+  \item \textbf{Bundler and deployment integration.} ES modules integrate cleanly with modern build pipelines:
+    \begin{itemize}[leftmargin=*, itemsep=0.2em]
+      \item code splitting / lazy loading (load the lexer only where needed),
+      \item hashed assets for caching,
+      \item CDN-friendly static serving,
+      \item consistent dev/prod builds.
+    \end{itemize}
+  \item \textbf{Explicit instantiation and fewer global collisions.} Using \texttt{-sMODULARIZE} produces a factory function so you can instantiate the module intentionally. This avoids reliance on a global \texttt{Module} and reduces collisions during multi-instance or hot-reload scenarios.
+  \item \textbf{Better UX and performance flexibility.} You can choose loading patterns and move the scanner to a \textbf{Web Worker} for responsiveness without contorting around a generated HTML harness.
+\end{enumerate}
+
+\section*{When a Custom HTML Template Is the Right Choice}
+A custom HTML template via \texttt{--shell-file} is appropriate when:
+\begin{itemize}[leftmargin=*, itemsep=0.3em]
+  \item you are shipping a \textbf{standalone} demo/test page where HTML is the product,
+  \item you want Emscripten to manage the full runtime scaffolding for a quick prototype,
+  \item you are not yet integrating with a bundler or framework and want the simplest runnable artifact.
+\end{itemize}
+
+For a production front-end lexical scanner embedded inside a larger application, these conditions are less common.
+
+\section*{Practical Build Pattern (Recommended)}
+\subsection*{Compile to an ES Module Factory}
+Typical flags:
+\begin{itemize}[leftmargin=*, itemsep=0.25em]
+  \item \texttt{-O3} for performance optimization,
+  \item \texttt{-sMODULARIZE=1} to generate a factory for explicit instantiation,
+  \item \texttt{-sEXPORT\_ES6=1} if emitting ES module syntax,
+  \item narrow exports to only what the scanner needs (smaller surface area).
+\end{itemize}
+
+\noindent Example command:
+\begin{lstlisting}[style=code, language=bash]
+emcc lexer.c -O3 \
+  -o lexer.mjs \
+  -sMODULARIZE=1 \
+  -sEXPORT_ES6=1 \
+  -sENVIRONMENT=web \
+  -sEXPORTED_FUNCTIONS="['_lex_init','_lex_next','_malloc','_free']" \
+  -sEXPORTED_RUNTIME_METHODS="['cwrap']"
+\end{lstlisting}
+
+\subsection*{Import and Initialize in Your App}
+\begin{lstlisting}[style=code, language=JavaScript]
+import createLexerModule from "./lexer.mjs";
+
+const Module = await createLexerModule();
+const lexNext = Module.cwrap("lex_next", "number", ["number"]);
+
+// Use lexNext(...) in your scanning loop.
+\end{lstlisting}
+
+\section*{Rule of Thumb}
+\begin{itemize}[leftmargin=*, itemsep=0.35em]
+  \item \textbf{Real app feature (lexer in an application):} compile to a \textbf{JavaScript module} (prefer \texttt{MODULARIZE}).
+  \item \textbf{Standalone demo / quick harness:} generate \textbf{HTML} (optionally with a custom \texttt{--shell-file} template).
+\end{itemize}
+
+\section*{Implementation Notes (Optional Next Decisions)}
+Once you choose the module form, performance and correctness are typically dominated by:
+\begin{itemize}[leftmargin=*, itemsep=0.3em]
+  \item \textbf{Thread placement:} main thread vs. Web Worker (common for editors),
+  \item \textbf{Input encoding:} ASCII vs UTF-8 and how you pass buffers into Wasm,
+  \item \textbf{API shape:} chunked scanning vs full-buffer scanning, and minimizing JS$\leftrightarrow$Wasm boundary crossings.
+\end{itemize}
+
+\end{document}

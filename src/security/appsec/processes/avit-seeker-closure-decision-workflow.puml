@@ -1,0 +1,75 @@
+@startuml
+' =====================================================================
+' AVIT ↔ Seeker Closure — Decision Workflow (Activity)
+' Audience: AppSec analysts
+' Purpose: Provide the closure decision tree with explicit guardrails.
+' =====================================================================
+
+title AVIT ↔ Seeker Closure SOP — Decision Workflow
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam linetype ortho
+skinparam ArrowColor #444444
+skinparam DefaultTextAlignment left
+skinparam NoteBackgroundColor #FFFBE6
+skinparam NoteBorderColor #C7B96B
+skinparam LegendBackgroundColor #FFFFFF
+skinparam LegendBorderColor #B0B0B0
+
+start
+
+:Open AVIT/EBIT ticket;
+:Capture inputs
+(Project/module, Finding ID,
+Short description, repo hints);
+
+:Open Seeker;
+:Confirm correct project/module;
+
+:Search by Finding ID (preferred);
+if (Found?) then (Yes)
+  :Validate record matches context;
+  :Check Seeker status;
+  if (Status = False Positive?) then (Yes)
+    :Record evidence
+(link/screenshot, status,
+filters/versions, timestamp);
+    :Close ticket\nJustification: "Seeker false positive";
+    stop
+  else (No)
+    if (Status = Resolved/Fixed?) then (Yes)
+      :Record evidence
+(link/screenshot, status,
+filters/versions, timestamp);
+      :Close ticket\nJustification: "Resolved in Seeker";
+      stop
+    else (No)
+      :Do NOT close;
+      :Escalate to Seeker SME / project owner\n(reason: ambiguous workflow state);
+      stop
+    endif
+  endif
+else (No)
+  :Expand Seeker filters;
+  :Check statuses:\nOpen, Requires approval,\nResolved/Fixed, False Positive;
+  :Iterate versions (if versioned);
+  :Re-run search by Finding ID;
+  if (Found after checks?) then (Yes)
+    :Return to status evaluation path;
+    note right
+      If it becomes "Found",
+      treat as normal: FP/Resolved/Ambiguous.
+    end note
+    stop
+  else (No)
+    :Record "not found" evidence
+(screenshot of empty results,
+filters/versions checked, timestamp);
+    :Close ticket\nJustification: "No longer in Seeker";
+    stop
+  endif
+endif
+
+@enduml

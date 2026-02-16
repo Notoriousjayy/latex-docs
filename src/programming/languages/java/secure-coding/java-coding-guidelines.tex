@@ -1,0 +1,242 @@
+% !TeX program = pdflatex
+% Compile: pdflatex java-coding-guidelines-expanded.tex (run twice for ToC)
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+\setlist[itemize]{topsep=4pt,itemsep=2pt,parsep=0pt,partopsep=0pt}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.8em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.8em}{}
+
+\newcommand{\Rule}[5]{%
+  \subsection*{Rule~#1: #2}
+  \phantomsection
+  \addcontentsline{toc}{subsection}{Rule~#1: #2}
+  \noindent\textbf{Requirement (shall/shall-not).} #3\par\smallskip
+  \noindent\textbf{Rationale.} #4\par\smallskip
+  \noindent\textbf{Enforcement approaches.} #5\par\medskip
+}
+
+\begin{document}
+\pagenumbering{roman}
+\hypersetup{pageanchor=false}
+\begin{titlepage}
+\centering
+{\LARGE\bfseries Java Coding Guidelines — 75 Rules Expanded\par}
+\vspace{0.5em}
+{\large Shall/Shall-Not Requirements, Rationales, and Enforcement Approaches\par}
+\vspace{1.5em}
+{\normalsize Compiled from: Java Coding Guidelines: 75 Recommendations for Reliable and Secure Programs (Addison-Wesley, 2013)\par}
+\vfill
+{\normalsize Compiled: 2026-02-04\par}
+\vspace{1.5em}
+\begin{minipage}{0.92\textwidth}
+\small
+\textbf{Purpose.} This document reformulates each of the 75 Java Coding Guidelines recommendations into an internal-standard-friendly form: a precise \emph{shall/shall-not} requirement, a short rationale, and candidate enforcement approaches (static analysis, review checklist items, and test guard rails).
+\par\medskip
+\textbf{Scope.} These rules target reliability, security, defensive programming, understandability, and common misconceptions in Java programs. The enforcement approaches are tool-agnostic; adapt them to your CI/CD and quality gate stack.
+\par\medskip
+\textbf{How to adopt.} Tag each rule as: (1) \emph{mandatory} (must pass in CI), (2) \emph{review-gated} (requires explicit justification), or (3) \emph{advisory}. Calibrate by system criticality and threat model.
+\end{minipage}
+\end{titlepage}
+\hypersetup{pageanchor=true}
+
+\tableofcontents
+\newpage
+
+\section*{Document Conventions}
+\addcontentsline{toc}{section}{Document Conventions}
+\begin{itemize}
+\item \textbf{Requirement} is written for enforceability: actionable, testable, and suitable for a coding standard.
+\item \textbf{Rationale} is short and risk-oriented: why the rule matters.
+\item \textbf{Enforcement} lists candidate controls: static analysis patterns, review checks, and unit/integration test guard rails.
+\end{itemize}
+
+\clearpage
+\pagenumbering{arabic}
+
+\section{Security}
+
+\Rule{1}{Limit the lifetime of sensitive data}{Minimize in-memory residency of secrets (passwords, keys, tokens, PII) and actively clear/overwrite buffers holding them as soon as they are no longer needed.}{Long-lived secrets increase exposure via memory disclosure (debugging, core dumps, swapping, compromised co-resident code).}{Ban \texttt{String} for secrets; require \texttt{char[]} / \texttt{byte[]} plus explicit wipe; review item: "wipe-after-use"; unit tests verifying clearing; static checks for patterns like \texttt{new\ String(passwordBytes)}.}
+
+\Rule{2}{Do not store unencrypted sensitive information on the client side}{Do not persist sensitive data (credentials, PII, access-granting tokens) on the client unless strongly protected (encryption + integrity protection) and strictly necessary.}{Client storage is attacker-accessible; compromise yields disclosure or replay.}{Security review for any client persistence; scan for cookies/local storage containing secrets; tests asserting cookies do not contain password/PII fields; prefer server-side sessions.}
+
+\Rule{3}{Provide sensitive mutable classes with unmodifiable wrappers}{When exposing sensitive mutable objects to less-trusted code, return an unmodifiable/safe view or defensive copy that prevents mutation and avoids leaking internal references.}{Prevents tampering and blocks "write-through" via returned references.}{Review for getters returning internal arrays/collections; require \texttt{Collections.unmodifiable*} or defensive copies; static checks for returning mutable fields; tests that mutation attempts fail.}
+
+\Rule{4}{Ensure that security-sensitive methods are called with validated arguments}{Validate all arguments to security-sensitive methods (including \texttt{null} semantics) and do not rely on undocumented defaults or corner-case behaviors.}{Unexpected arguments can negate security controls (e.g., bypass privilege reduction).}{Use wrapper utilities that validate inputs; checklist for privileged/security APIs; static checks for suspicious \texttt{null} passes; unit tests for edge/\texttt{null} arguments.}
+
+\Rule{5}{Prevent arbitrary file upload}{Restrict uploads by size, allowed types, and verified content; do not trust client-provided metadata (\texttt{Content-Type}, filename extension) alone.}{Attackers can upload executable/scriptable content enabling RCE/XSS or persistence.}{Server-side magic-byte validation; AV scanning where applicable; tests with forged headers/extensions; ensure upload dirs are non-executable; review for "trust \texttt{Content-Type} only".}
+
+\Rule{6}{Properly encode or escape output}{Output-encode/escape untrusted data for the specific sink/context (HTML, attribute, URL, JS, CSS, SQL, LDAP, etc.); never render untrusted data raw.}{Encoding at the sink prevents injection; incorrect context encoding fails.}{Centralize encoding utilities; use auto-escaping templates; static rules for raw writes and string concatenation into sinks; unit tests with representative XSS/injection payloads.}
+
+\Rule{7}{Prevent code injection}{Do not construct executable code (scripts/expressions) using untrusted input; if dynamic execution is unavoidable, strictly validate input and use parameterized APIs.}{Dynamic evaluation turns input into executable logic (RCE).}{Ban concatenated inputs into evaluators (e.g., \texttt{ScriptEngine.eval}); require allowlists/builders; SAST rules for eval/reflection execution; tests injecting payloads.}
+
+\Rule{8}{Prevent XPath injection}{Do not build XPath expressions via string concatenation of untrusted data; use variable binding or strict input validation.}{Injected XPath can bypass authorization filters or exfiltrate XML.}{Static checks for \texttt{XPath} expressions containing user input; require variable resolvers; tests with XPath payloads (e.g., quote/union tricks).}
+
+\Rule{9}{Prevent LDAP injection}{Escape LDAP special characters or use safe filter builders; never embed untrusted input directly in LDAP filter strings.}{LDAP injection can broaden search scope, bypass checks, or leak directory data.}{Central LDAP escaping utilities; static checks for filter concatenation; tests with payloads containing \texttt{*}, \texttt{)}, \texttt{(|}.}
+
+\Rule{10}{Do not use clone() to copy untrusted method parameters}{Do not call \texttt{clone()} on untrusted objects for defensive copies; use safe copy mechanisms (copy constructors, serialization into trusted types, or manual copy).}{\texttt{clone()} is overrideable; attacker-controlled \texttt{clone()} can execute malicious behavior.}{Ban \texttt{param.clone()} for non-final/untrusted types; prefer immutables; static checks for \texttt{clone()} on inputs crossing trust boundaries; review rule: "defensive copy must be non-polymorphic".}
+
+\Rule{11}{Do not use Object.equals() to compare cryptographic keys}{Compare cryptographic material using constant-time, type-appropriate equality; do not rely on generic \texttt{equals()} for secret comparisons when timing may leak.}{Timing side-channels can leak key material; generic equality may be unsafe or semantically wrong.}{Use \texttt{MessageDigest.isEqual()} or a constant-time utility; static checks for \texttt{equals()} on key/byte arrays; review checklist for secret comparisons.}
+
+\Rule{12}{Do not use insecure or weak cryptographic algorithms}{Do not use deprecated or weak cryptography (broken hashes, short keys, insecure modes); use modern primitives with safe modes and sizes per security policy.}{Weak crypto is often practically breakable and provides false assurance.}{Allowlist approved algorithms/modes; scan for \texttt{MD5}, \texttt{SHA1}, \texttt{DES}, \texttt{RC4}, \texttt{ECB}; tests verifying algorithm selection and parameters.}
+
+\Rule{13}{Store passwords using a hash function}{Store passwords only as salted, slow, adaptive hashes (not plaintext or reversible encryption) and never log or persist raw passwords.}{Mitigates damage from credential-store compromise and resists offline cracking.}{Require PBKDF2/bcrypt/scrypt/Argon2 per policy; static checks for logging/password persistence; tests ensuring password fields are never written raw.}
+
+\Rule{14}{Ensure that SecureRandom is properly seeded}{Use \texttt{SecureRandom} correctly for security decisions and do not seed it with predictable values or replace it with non-cryptographic PRNGs.}{Predictable randomness collapses the security of tokens/keys/nonces.}{Ban \texttt{java.util.Random} for tokens; scan for \texttt{setSeed()} with low-entropy sources; tests for uniqueness and basic unpredictability heuristics; review entropy sources.}
+
+\Rule{15}{Do not rely on methods that can be overridden by untrusted code}{Do not make security decisions based on invoking methods that untrusted subclasses can override unless the type is final/sealed or the trust boundary is controlled.}{Polymorphism can route security-critical behavior through attacker-controlled overrides.}{Prefer final classes and composition; static checks for calling overridable methods during authz/authn; code review checklist: "no security on virtual dispatch".}
+
+\Rule{16}{Avoid granting excess privileges}{Run privileged execution with the minimum necessary permissions and scope; do not elevate broader than required.}{Over-privilege turns minor bugs into severe compromise.}{Security review of privileged sections; privilege allowlists; static checks for overly broad privileged blocks; tests under restrictive policies.}
+
+\Rule{17}{Minimize privileged code}{Keep privileged blocks as small and specific as possible; never call untrusted code inside privileged context.}{Smaller privileged surface reduces audit complexity and abuse risk.}{Review checklist: "privileged block minimal"; static checks for large privileged blocks; unit/integration tests with reduced permissions.}
+
+\Rule{18}{Do not expose methods that use reduced-security checks to untrusted code}{Methods that bypass or relax checks shall not be accessible to untrusted callers; enforce via visibility, modules, and explicit trust checks.}{Attackers exploit fast paths that skip validation/authorization.}{Restrict access modifiers; package/module boundaries; static checks for public APIs skipping checks; tests that untrusted code cannot invoke them.}
+
+\Rule{19}{Define custom security permissions for fine-grained security}{Protect sensitive resource access using explicit permissions and checks rather than coarse all-or-nothing gates.}{Fine-grained permissions reduce blast radius and enable policy-driven control.}{Define permission classes; centralize permission checks; policy tests verifying denial without permission; review gate for new sensitive operations.}
+
+\Rule{20}{Create a secure sandbox using a security manager}{When executing untrusted code, enforce a sandbox policy (permissions/resource controls) rather than relying on convention alone.}{Sandbox containment prevents untrusted code from accessing sensitive resources.}{Integration tests executing plugins/scripts under restricted policies; review checklist for dynamic execution features; static checks for missing permission checks.}
+
+\Rule{21}{Do not let untrusted code misuse privileges of callback methods}{Callback APIs must not allow untrusted implementations to execute with elevated privileges; privileged actions must not invoke untrusted callbacks.}{Callbacks can create confused-deputy privilege escalation paths.}{Separate privilege boundary from callbacks; static checks for callbacks invoked inside privileged blocks; unit tests with malicious callback implementations.}
+
+\newpage
+
+\section{Defensive Programming}
+
+\Rule{22}{Minimize the scope of variables}{Declare variables in the narrowest possible scope and do not keep them alive beyond their needed lifetime.}{Reduces misuse, accidental reuse, and secret exposure duration.}{Lint rules for "declare close to use"; code review checklist; refactor to smaller blocks/methods.}
+
+\Rule{23}{Minimize the scope of the @SuppressWarnings annotation}{Apply \texttt{@SuppressWarnings} at the smallest feasible element and do not suppress warnings broadly.}{Broad suppression hides new defects and weakens tool signal.}{Ban package/class-level suppressions; require justification comments; CI rule: no new suppressions without approval; static checks for wide suppressions.}
+
+\Rule{24}{Minimize the accessibility of classes and their members}{Use the least permissive access level for classes/members and do not expose internals unnecessarily.}{Smaller API surface reduces misuse and attack surface.}{Static checks for unnecessary \texttt{public}; API review; module boundaries; tests for encapsulation where applicable.}
+
+\Rule{25}{Document thread-safety and use annotations where applicable}{Public types must state thread-safety guarantees (thread-safe, not thread-safe, conditionally safe) and use concurrency annotations where available.}{Concurrency assumptions are a common source of severe defects.}{Review gate requiring thread-safety docs; static checks for shared mutable state; stress tests for claimed thread-safe classes.}
+
+\Rule{26}{Always provide feedback about the resulting value of a method}{Methods that can fail or partially succeed must communicate outcomes explicitly (return value, exception, or result object) and must not fail silently.}{Silent failure causes latent correctness and security issues.}{Static checks for ignored return values; review checklist "no silent failure"; unit tests covering failure paths and verifying signaling.}
+
+\Rule{27}{Identify files using multiple file attributes}{Do not rely on a single file attribute (e.g., name/path) for identity; validate using multiple attributes (canonical path, permissions, owner, metadata).}{Single-attribute checks are vulnerable to spoofing and race conditions.}{Review checklist for file identity; tests with symlinks/TOCTOU; static checks for path-based allowlists without canonicalization.}
+
+\Rule{28}{Do not attach significance to the ordinal associated with an enum}{Do not persist, transmit, or branch logic on \texttt{enum.ordinal()}; use explicit stable values instead.}{Enum ordering changes break persistence and external protocols.}{Static checks for \texttt{.ordinal()}; API review; serialization tests ensuring stable external representations.}
+
+\Rule{29}{Be aware of numeric promotion behavior}{Account for Java numeric promotion rules in arithmetic and do not assume operands remain narrow types during operations.}{Promotion can change sign/precision and introduce overflow or logic errors.}{Static analysis for overflow/cast issues; review checklist for mixed-type arithmetic; boundary-value unit tests.}
+
+\Rule{30}{Enable compile-time type checking of variable arity parameter types}{Design and use varargs APIs to preserve compile-time type safety and avoid unsafe generic varargs usage.}{Varargs + generics can cause heap pollution and runtime \texttt{ClassCastException}.}{Use \texttt{@SafeVarargs} only when valid; static checks for unsafe generic varargs; unit tests exercising varargs with generics.}
+
+\Rule{31}{Do not apply public final to constants whose value might change in later releases}{Do not expose evolving constants as \texttt{public static final} compile-time constants; use accessors or configuration instead.}{Clients inline constants at compile time, causing version skew when values change.}{API review for exported constants; static checks for \texttt{public static final} primitives/Strings in libraries; compatibility tests.}
+
+\Rule{32}{Avoid cyclic dependencies between packages}{Package/module dependency graphs must be acyclic; do not introduce package cycles.}{Cycles hinder modularity, testing, reuse, and clean initialization.}{Architecture tests that enforce dependency DAG; build-time cycle detection; review checklist for new dependencies.}
+
+\Rule{33}{Prefer user-defined exceptions over more general exception types}{Throw specific, meaningful exceptions and avoid overly broad exception types when domain-specific exceptions improve handling.}{Specific exceptions enable correct recovery and reduce catch-all misuse.}{Static checks for \texttt{throw new Exception()} / generic \texttt{RuntimeException}; review checklist for exception taxonomy; unit tests asserting exception types.}
+
+\Rule{34}{Try to gracefully recover from system errors}{Handle recoverable system failures gracefully and do not crash or proceed in a corrupted state.}{Robust error handling improves availability and limits cascading failures.}{Fault-injection tests; static checks for swallowed exceptions; review checklist for error paths; integration tests simulating I/O/resource failures.}
+
+\Rule{35}{Carefully design interfaces before releasing them}{Public APIs must undergo stability and security design review before release; do not expose premature or leaky abstractions.}{Released interfaces are difficult to change without breaking consumers.}{API governance (design review + versioning); compatibility testing; documentation requirements; deprecation policy enforcement.}
+
+\Rule{36}{Write garbage collection–friendly code}{Minimize unnecessary allocations, avoid inadvertent reference retention, and design for predictable object lifetimes.}{GC pressure increases latency and can collapse throughput.}{Allocation profiling budgets; static checks for object churn in hot paths; performance tests with allocation assertions; review checklist for caching/leak risks.}
+
+\newpage
+
+\section{Reliability}
+
+\Rule{37}{Do not shadow or obscure identifiers in subscopes}{Do not redeclare identifiers that shadow outer-scope names when it reduces clarity or changes meaning.}{Shadowing leads to subtle bugs and misreads during maintenance.}{Compiler warnings treated as errors; static checks for shadowing; review checklist.}
+
+\Rule{38}{Do not declare more than one variable per declaration}{Declare a single variable per declaration statement.}{Improves readability and reduces initialization mistakes.}{Checkstyle/formatter rule; review checklist.}
+
+\Rule{39}{Use meaningful symbolic constants to represent literal values in program logic}{Replace magic numbers/strings in logic with named constants or enums.}{Names communicate intent and prevent inconsistent duplication.}{Static checks for repeated literals; review checklist; configuration-driven tests where applicable.}
+
+\Rule{40}{Properly encode relationships in constant definitions}{Define related constants to preserve relationships (derive constants rather than duplicating numeric values).}{Prevents divergence when one constant changes.}{Review checklist for duplicated related values; static checks for duplicated literals; unit tests verifying relationships.}
+
+\Rule{41}{Return an empty array or collection instead of a null value for methods that return an array or collection}{Return empty arrays/collections rather than \texttt{null}.}{Eliminates pervasive null checks and prevents \texttt{NullPointerException}.}{Static checks for returning null collections; unit tests asserting non-null returns; API contracts with annotations.}
+
+\Rule{42}{Use exceptions only for exceptional conditions}{Do not use exceptions for normal control flow; use conditionals or explicit result types for expected outcomes.}{Control-flow exceptions harm readability/performance and obscure intent.}{Review checklist; static checks for exceptions on expected branches; unit tests ensuring expected paths do not throw.}
+
+\Rule{43}{Use a try-with-resources statement to safely handle closeable resources}{Manage \texttt{Closeable}/\texttt{AutoCloseable} resources with try-with-resources (or guaranteed-close patterns) and do not rely on finalizers for cleanup.}{Prevents resource leaks and ensures closure on exceptions.}{Static checks for resource leaks; review checklist; tests that assert closure on exceptional paths (e.g., verifying streams are closed).}
+
+\Rule{44}{Do not use assertions to verify the absence of runtime errors}{Do not use \texttt{assert} for required runtime checks, input validation, or security enforcement.}{Assertions can be disabled in production, removing checks.}{Static checks for asserts in production paths; review checklist; tests running with assertions disabled.}
+
+\Rule{45}{Use the same type for the second and third operands in conditional expressions}{Keep the second and third operands of ternary expressions type-consistent to avoid implicit conversions.}{Mixed types can trigger surprising conversion and incorrect results.}{Compiler/static warnings; static checks for mixed-type ternaries; unit tests for boundary cases.}
+
+\Rule{46}{Do not serialize direct handles to system resources}{Do not serialize OS resource handles (file descriptors, sockets, threads, native pointers); serialize stable identifiers instead.}{Handles are process-local and can enable misuse or break on restore.}{Serialization review gate; static checks for \texttt{Serializable} types holding resource handles; tests for safe round-trip behavior.}
+
+\Rule{47}{Prefer using iterators over enumerations}{Use \texttt{Iterator} / enhanced-for / Streams instead of legacy \texttt{Enumeration}.}{Iterators are more expressive and consistent with modern Java collections.}{Static checks for \texttt{Enumeration}; automated refactoring; review checklist.}
+
+\Rule{48}{Do not use direct buffers for short-lived, infrequently used objects}{Do not allocate direct buffers for short-lived, infrequent operations; use them only with justified performance needs and explicit lifecycle management.}{Direct buffers are expensive and not reclaimed like regular heap objects.}{Static checks for \texttt{ByteBuffer.allocateDirect}; performance review gate; load tests ensuring native memory stability.}
+
+\Rule{49}{Remove short-lived objects from long-lived container objects}{Ensure long-lived containers do not retain references to short-lived objects; remove entries promptly or use appropriate weak references with eviction strategy.}{Unintended retention causes memory leaks and GC pressure.}{Leak tests; static checks for caches without eviction; review checklist requiring eviction policy; monitoring/heap threshold alerts.}
+
+\newpage
+
+\section{Program Understandability}
+
+\Rule{50}{Be careful using visually misleading identifiers and literals}{Do not use identifiers/literals that are visually confusable (look-alike characters, ambiguous names) in security- or logic-critical code.}{Visual ambiguity causes review misses and operational mistakes.}{Lints for confusable Unicode; naming conventions; code review checklist.}
+
+\Rule{51}{Avoid ambiguous overloading of variable-arity methods}{Do not create varargs overload sets that are ambiguous at call sites; prefer distinct names or unambiguous signatures.}{Overload resolution surprises can call the wrong method.}{Static checks for ambiguous overloads; API review; unit tests covering representative call sites.}
+
+\Rule{52}{Avoid in-band error indicators}{Do not signal errors using sentinel return values that overlap with valid results; use exceptions or explicit result types.}{Sentinels are often ignored and indistinguishable from valid outputs.}{Review checklist; static checks for sentinel values used as errors; unit tests asserting explicit error signaling.}
+
+\Rule{53}{Do not perform assignments in conditional expressions}{Do not embed assignments inside conditions; separate assignment from conditional test.}{Prevents accidental assignment-vs-comparison defects and improves readability.}{Lint rule; review checklist; formatter enforcement.}
+
+\Rule{54}{Use braces for the body of an if, for, or while statement}{Always use braces for control-statement bodies, including single-statement bodies.}{Prevents dangling-statement bugs during edits.}{Checkstyle/formatter rule; review checklist.}
+
+\Rule{55}{Do not place a semicolon immediately following an if, for, or while condition}{Do not use empty-body control statements via stray semicolons (e.g., \texttt{if (...) ;}).}{Creates near-invisible no-op logic errors.}{Lint rule for empty-body control statements; review checklist; unit tests for behavioral correctness.}
+
+\Rule{56}{Finish every set of statements associated with a case label with a break statement}{Terminate each \texttt{switch} case explicitly (\texttt{break/return/throw}) unless fall-through is intentional and documented.}{Accidental fall-through is a common source of defects.}{Compiler/static checks for fall-through; require \texttt{// fall through} comment; unit tests for switch behavior.}
+
+\Rule{57}{Avoid inadvertent wrapping of loop counters}{Protect loop counters against overflow/wraparound using appropriate types and bounds checks.}{Wraparound can cause infinite loops or out-of-bounds access.}{Static checks for suspicious counter ranges; review checklist; unit tests with large counts and boundary values.}
+
+\Rule{58}{Use parentheses for precedence of operation}{Use parentheses to make precedence explicit in mixed-operator expressions.}{Prevents misinterpretation and precedence bugs.}{Style lint; review checklist; formatter.}
+
+\Rule{59}{Do not make assumptions about file creation}{Verify file-creation outcomes and handle platform and race-condition behaviors; do not assume create/open implies secure creation.}{File creation can fail, be redirected, or be attacked via TOCTOU/symlinks.}{Review checklist; tests with permission denial/symlink scenarios; static checks for insecure temp-file usage.}
+
+\Rule{60}{Convert integers to floating-point for floating-point operations}{Explicitly promote operands to floating-point before performing floating-point computations (especially division) to avoid integer truncation.}{Integer operations silently truncate and corrupt numeric results.}{Static checks for integer division assigned to float/double; unit tests for representative calculations.}
+
+\Rule{61}{Ensure that the clone() method calls super.clone()}{If implementing \texttt{clone()}, call \texttt{super.clone()} and satisfy the \texttt{Cloneable} contract; do not implement ad-hoc cloning that violates object invariants.}{Ensures correct object copying semantics and avoids partial clones.}{Static checks for \texttt{clone()} missing \texttt{super.clone()}; unit tests for clone correctness (as specified: shallow/deep).}
+
+\Rule{62}{Use comments consistently and in a readable fashion}{Write clear, consistent comments that reflect intent and remain accurate; do not leave stale or misleading comments.}{Misleading comments misdirect reviewers and maintainers.}{Review checklist: "comments accurate"; doc linting; require Javadoc for public APIs; periodic cleanup tasks.}
+
+\Rule{63}{Detect and remove superfluous code and values}{Remove dead code, unused variables, and redundant values; do not keep unused code "just in case."}{Reduces attack surface and maintenance cost; improves clarity.}{Compiler warnings as errors; static checks for unused code; coverage gates; review checklist.}
+
+\Rule{64}{Strive for logical completeness}{Handle all required cases, including defaults/else branches and error states; do not omit necessary conditions or states.}{Missing cases become latent defects and security bypasses.}{Exhaustive \texttt{switch} over enums; default handling rules; unit/property tests covering edge cases and state transitions.}
+
+\Rule{65}{Avoid ambiguous or confusing uses of overloading}{Keep overloads semantically consistent and unambiguous; avoid overloading when behavior differs materially or confuses call-site meaning.}{Confusing overloads cause wrong-call defects and misuse.}{API review; static checks for subtle overload sets; unit tests documenting intended selection.}
+
+\newpage
+
+\section{Programmer Misconceptions}
+
+\Rule{66}{Do not assume that declaring a reference volatile guarantees safe publication of the members of the referenced object}{Do not assume \texttt{volatile} on an object reference safely publishes the object's internal state; use proper synchronization, immutability, or safe publication patterns.}{Publishing a reference does not guarantee safe publication of all fields in all patterns.}{Concurrency review; static checks for broken double-checked locking; stress tests (JCStress-style) for safe publication claims.}
+
+\Rule{67}{Do not assume that the sleep(), yield(), or getState() methods provide synchronization semantics}{Do not use timing or thread state as synchronization; use proper concurrency primitives (locks, atomics, latches, etc.).}{Scheduling is nondeterministic; these calls do not establish happens-before.}{Static checks for \texttt{sleep()} used for coordination; review checklist; concurrency tests under load.}
+
+\Rule{68}{Do not assume that the remainder operator always returns a nonnegative result for integral operands}{Handle negative operands explicitly when using \texttt{\%}; do not assume nonnegative results.}{In Java, the remainder carries the sign of the dividend.}{Static checks for \texttt{\%} used in indexing without normalization; unit tests with negative inputs.}
+
+\Rule{69}{Do not confuse abstract object equality with reference equality}{Use \texttt{equals()} for value equality and \texttt{==} only for reference identity where intended (e.g., enums/singletons).}{Misuse yields incorrect comparisons and can break security logic.}{Static checks for \texttt{==} on \texttt{String} and boxed types; review checklist; unit tests for equality semantics.}
+
+\Rule{70}{Understand the differences between bitwise and logical operators}{Use \texttt{\&\&}/\texttt{||} for short-circuit boolean logic; use \texttt{\&}/\texttt{|} on booleans only when non-short-circuit evaluation is explicitly required.}{Wrong operator can force evaluation of unsafe expressions or change logic.}{Static checks for \texttt{\&}/\texttt{|} on booleans; review checklist; unit tests with operand side-effects.}
+
+\Rule{71}{Understand how escape characters are interpreted when strings are loaded}{Correctly handle escape sequences across sources (literals, properties files, external inputs) and do not assume identical interpretation across all loading mechanisms.}{Misinterpreted escapes can cause security bypass and data corruption.}{Review checklist for config parsing; unit tests loading strings from real sources; avoid hand-rolled unescape logic unless tested.}
+
+\Rule{72}{Do not use overloaded methods to differentiate between runtime types}{Do not expect overload resolution to dispatch by runtime type; use polymorphism, visitors, or explicit type checks where appropriate.}{Overload selection is compile-time; runtime types do not affect the chosen method.}{Review checklist; static checks for suspicious overload sets; unit tests demonstrating correct dispatch behavior.}
+
+\Rule{73}{Never confuse the immutability of a reference with that of the referenced object}{Do not treat \texttt{final} references as implying immutable objects; enforce immutability through object design (no setters, defensive copies, immutable fields).}{\texttt{final} prevents reassignment, not mutation.}{Review checklist; static checks for exposing mutable internals from "immutable" classes; unit tests that mutation attempts are impossible.}
+
+\Rule{74}{Use the serialization methods writeUnshared() and readUnshared() with care}{Use \texttt{writeUnshared()} / \texttt{readUnshared()} only when object identity and sharing semantics are fully understood; do not use casually.}{Misuse breaks aliasing expectations and can introduce subtle defects.}{Serialization review gate; unit tests validating identity/sharing across round-trip; static checks for unshared calls in sensitive code.}
+
+\Rule{75}{Do not attempt to help the garbage collector by setting local reference variables to null}{Do not set locals to \texttt{null} solely to "help GC" except in rare, justified cases supported by profiling in long-running scopes.}{It adds noise and often provides no benefit; smaller scopes are cleaner.}{Lint rule for nulling locals; review checklist; performance profiling to justify exceptions.}
+
+\newpage
+
+\section*{Implementation Notes}
+\addcontentsline{toc}{section}{Implementation Notes}
+\begin{itemize}
+\item \textbf{Static analysis:} Implement the "shall/shall-not" items with Checkstyle/PMD/SpotBugs plus targeted custom rules in your SAST platform.
+\item \textbf{Review checklist:} For contextual rules (crypto choices, sandboxing, privileged code), require explicit sign-off and documented justification.
+\item \textbf{Test guard rails:} Add regression tests for prior defect classes (injection payload tests, boundary tests, concurrency stress tests, resource leak tests).
+\end{itemize}
+
+\end{document}

@@ -1,0 +1,320 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+
+\captionsetup{justification=raggedright,singlelinecheck=false}
+
+\graphicspath{{images/}}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue
+}
+
+\setlist[itemize]{leftmargin=*, itemsep=0.25em, topsep=0.25em}
+\setlist[enumerate]{leftmargin=*, itemsep=0.25em, topsep=0.25em}
+
+\newcommand{\KeyTakeaway}[1]{%
+  \vspace{0.5em}
+  \noindent\textbf{Key takeaway:} #1
+  \vspace{0.5em}
+}
+
+\title{Broken Access Control\\\large Comprehensive Study Notes}
+\author{Compiled from transcript notes}
+\date{February 11, 2026}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Why Broken Access Control Matters}
+Broken Access Control is a class of security failures where an authenticated (or unauthenticated) actor can perform actions or access resources \emph{outside} of the permissions intended by the application. The impact ranges from sensitive data exposure to unauthorized modification or destruction of data, and can sometimes enable further compromise when chained with other issues (e.g., privilege escalation enabling dangerous admin features).
+
+\KeyTakeaway{Access control is about \emph{authorization}---what the current identity is allowed to do on this specific request.}
+
+\section{Core Concepts: Authentication vs Session vs Access Control}
+These three concepts are commonly conflated. They are related but distinct mechanisms with distinct failure modes.
+
+\subsection{Authentication (Who are you?)}
+Authentication verifies identity (e.g., username/password, SSO, MFA). If authentication is broken, attackers can impersonate other users directly (account takeover, credential stuffing success, etc.).
+
+\subsection{Session Management (How do we keep you logged in?)}
+Session management maintains continuity across requests after authentication, typically via a session cookie or token. The browser automatically sends session tokens with subsequent requests. If an attacker steals a valid session token, they can act as that user (session hijacking), even if authentication is strong.
+
+\subsection{Access Control / Authorization (What are you allowed to do?)}
+On each request, the backend typically:
+\begin{enumerate}
+  \item Maps the session token to an authenticated identity (user id).
+  \item Evaluates the requested action against authorization rules.
+  \item Allows the request or denies it (ideally with logging/monitoring).
+\end{enumerate}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\linewidth]{bac-request-evaluation-flow.png}
+  \caption{Request evaluation pipeline: authenticate, derive the subject, load the target resource, enforce ownership/policy checks, then execute (or deny and log).}
+  \label{fig:bac-request-eval}
+\end{figure}
+
+\KeyTakeaway{Authentication gets you an identity; sessions preserve that identity across requests; access control decides whether that identity can perform the requested action on the requested resource.}
+
+\section{Types of Access Control Boundaries}
+Most real applications need multiple types of access control simultaneously.
+
+\subsection{Vertical Access Control (Role / Privilege Boundary)}
+Prevents a low-privileged user from accessing higher-privileged functionality (e.g., normal user vs admin actions).
+
+\subsection{Horizontal Access Control (Same Role, Different Owner)}
+Prevents peer users (same role) from accessing each other's resources (e.g., user A cannot read or modify user B's account, orders, messages).
+
+\subsection{Context-Dependent (Workflow / State Boundary)}
+Prevents actions out of sequence or outside the correct state (e.g., confirming a destructive action; preventing cart edits after payment; preventing repeated refunds).
+
+\KeyTakeaway{A secure system enforces vertical, horizontal, and workflow/state constraints---not just ``admin vs user.''}
+
+\section{Major Classes of Broken Access Control}
+\subsection{Horizontal Privilege Escalation (Often ``IDOR'')}
+\textbf{Shape:} The app uses a client-supplied identifier (URL parameter, JSON field, hidden form field) to select the target resource, but fails to verify that the resource belongs to (or is accessible by) the current user.
+\begin{itemize}
+  \item Example: \texttt{/account?userId=123} and changing \texttt{userId} to another user's id.
+  \item Example: \texttt{GET /orders/10001} as Alice works; Alice tries \texttt{/orders/10002} and receives Bob's order.
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\linewidth]{bac-idor-vulnerability-and-fix.png}
+  \caption{IDOR (horizontal escalation): the vulnerable path trusts a client-supplied identifier; the secure path binds access to the authenticated identity and explicit authorization.}
+  \label{fig:bac-idor}
+\end{figure}
+
+\textbf{Root cause:} Authorization decisions are effectively made using untrusted client input (``who to access'') without server-side ownership checks.
+
+\subsection{Vertical Privilege Escalation}
+\textbf{Shape:} A user can access privileged functions or admin-only endpoints without having the correct role.
+\begin{itemize}
+  \item Example: the role is determined by a client-controlled flag like \texttt{admin=true} or a manipulable cookie.
+  \item Example: UI hides admin buttons, but endpoints remain callable and are not protected server-side.
+\end{itemize}
+
+\subsection{Workflow / Multi-Step Process Bypass}
+\textbf{Shape:} Some steps are protected, others are not. Developers assume the user must follow the intended UI sequence.
+\begin{itemize}
+  \item Example: ``confirm'' step checks role; ``execute delete'' step does not.
+  \item Example: shopping cart not locked after payment (pay for a cheap item, then add expensive items).
+\end{itemize}
+
+\KeyTakeaway{If any sensitive endpoint can be invoked directly without full authorization checks, the workflow can often be bypassed.}
+
+\section{Other Recurring Access Control Failure Patterns}
+Broken Access Control shows up in many forms. Common patterns include:
+\begin{itemize}
+  \item \textbf{Parameter tampering:} Manipulating URL/query/body parameters or ``hidden'' HTML fields to access different data or functions.
+  \item \textbf{Method-level gaps:} \texttt{GET} is protected but \texttt{POST/PUT/DELETE} is not (or vice versa).
+  \item \textbf{Metadata manipulation:} Cookies/JWT/session metadata that encodes authorization decisions and is replayable/tamperable.
+  \item \textbf{CORS mistakes:} Over-permissive cross-origin policy can enable unauthorized origins to call protected APIs in some contexts.
+  \item \textbf{Forceful browsing:} Directly requesting endpoints that are not linked in the UI.
+\end{itemize}
+
+\section{How These Bugs Appear in Code (Anti-Patterns)}
+A large fraction of Broken Access Control is simply \textbf{missing authorization checks}.
+
+\subsection{Canonical Anti-Pattern: Server Trusts a Client-Supplied Resource ID}
+Consider a function like \texttt{deleteOrder(id)}:
+\begin{itemize}
+  \item It receives \texttt{id} from the client.
+  \item It deletes the order without checking whether the order is owned by (or accessible to) the current authenticated user.
+\end{itemize}
+
+\subsection{What ``Correct'' Looks Like Conceptually}
+On the server, before performing a sensitive action:
+\begin{enumerate}
+  \item Identify the current user from the session context.
+  \item Load the target resource by id.
+  \item Check ownership/relationship/role/policy: \texttt{resource.owner == currentUser} \emph{or} a policy grants access.
+  \item If not authorized, deny and log suspicious activity.
+\end{enumerate}
+
+\KeyTakeaway{The server must bind the requested resource to the authenticated identity (or an explicit policy), not to client-supplied hints.}
+
+\section{Impact Analysis (CIA + Chaining)}
+Assess severity through the CIA triad and the possibility of chaining.
+
+\subsection{Confidentiality}
+Unauthorized reading of resources (profiles, orders, documents, internal admin data).
+
+\subsection{Integrity}
+Unauthorized actions: modifying another user's data, transferring funds, changing settings, approving requests, etc.
+
+\subsection{Availability}
+Deletion or corruption of resources (accounts, orders, files), potentially at scale if automation is possible.
+
+\subsection{Chaining Risk}
+Privilege escalation to admin can unlock powerful features (user management, file upload, integrations) that enable further compromise depending on the application.
+
+\section{How to Find Broken Access Control (Practical Testing Methodology)}
+\subsection{Gray-Box Approach (Most Realistic)}
+You typically have:
+\begin{itemize}
+  \item A target URL
+  \item At least one normal user account
+  \item Ideally, an admin account (or a higher privilege role)
+\end{itemize}
+
+\paragraph{Step 1: Map the Application}
+Browse the app and capture traffic with an intercepting proxy. Build an inventory of endpoints and identify candidate authorization inputs:
+\begin{itemize}
+  \item URL parameters (e.g., \texttt{id}, \texttt{userId}, \texttt{accountId}, \texttt{orgId})
+  \item JSON fields in APIs
+  \item Hidden form fields
+  \item Cookies/session tokens/JWTs
+\end{itemize}
+
+\paragraph{Step 2: Set Up Accounts for Both Vertical and Horizontal Testing}
+\begin{itemize}
+  \item \textbf{Vertical:} at least two privilege levels (e.g., user and admin).
+  \item \textbf{Horizontal:} two accounts at the same privilege level (e.g., userA and userB).
+\end{itemize}
+
+\paragraph{Step 3: Systematically Mutate Candidate Inputs}
+Once you know which inputs appear to select resources or toggle capabilities:
+\begin{itemize}
+  \item Change identifiers to those belonging to another user.
+  \item Remove parameters and observe defaults.
+  \item Try ``guessable'' sequences (increment/decrement ids).
+  \item Swap cookies/sessions and replay requests.
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\linewidth]{bac-testing-methodology-flow.png}
+  \caption{Practical BAC testing workflow: map endpoints, capture baseline requests, replay under different identities, mutate control points, then document impact and fixes.}
+  \label{fig:bac-testing}
+\end{figure}
+
+\subsection{Authorization Testing Automation (Proxy Extensions)}
+An authorization testing tool can replay captured requests under different identities:
+\begin{itemize}
+  \item Unauthenticated (no cookies)
+  \item Low-privileged user
+  \item Different peer user (horizontal test)
+\end{itemize}
+It may flag potential problems via response similarity/length heuristics, but always validate manually.
+
+\subsection{White-Box Review (Code-Assisted Assurance)}
+When reviewing code/config:
+\begin{itemize}
+  \item Identify where authorization \emph{should} be enforced (filters, middleware, policy layer).
+  \item Confirm a \textbf{deny-by-default} posture.
+  \item Find sensitive endpoints (admin, data export, delete, update, billing, ACL changes).
+  \item Look for method-level gaps (protecting \texttt{GET} but not \texttt{POST}, etc.).
+  \item Validate at runtime---framework configuration may enforce protections not obvious in isolated functions.
+\end{itemize}
+
+\KeyTakeaway{Access control should be enforced centrally and consistently; scattered ad-hoc checks are where gaps are born.}
+
+\section{High-Level Exploitation Model (Ethical Testing)}
+Once discovered, Broken Access Control is typically exploited by manipulating the vulnerable control point:
+\begin{itemize}
+  \item URL/query parameters (resource ids)
+  \item Body fields (JSON payloads)
+  \item Hidden form fields
+  \item Cookies/JWT claims (when incorrectly relied upon for authorization)
+  \item Direct calls to endpoints not reachable in the UI
+\end{itemize}
+Ethical testing requires proper authorization and reporting with clear reproduction steps and impact.
+
+\section{Prevention and Mitigation (Positive Patterns)}
+\subsection{Centralize Authorization}
+Use a centralized authorization component (middleware/filter/policy engine) so every request is evaluated consistently.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\linewidth]{bac-architecture-centralized-authorization.png}
+  \caption{Centralized authorization architecture: a single AuthZ layer enforces deny-by-default policy decisions consistently, reducing scattered ``forgotten check'' gaps.}
+  \label{fig:bac-central-authz}
+\end{figure}
+
+\subsection{Deny by Default}
+If there is no explicit policy allowing an action, deny it. This is a safer default for new endpoints and reduces silent exposure when new features are added.
+
+\subsection{Least Privilege (Application and Runtime)}
+\begin{itemize}
+  \item Grant users and service accounts only the permissions they need.
+  \item Do not run web apps as root/system; constrain runtime permissions to reduce blast radius.
+\end{itemize}
+
+\subsection{Server-Side Ownership Checks}
+Bind every resource access to the authenticated identity or an explicit policy. Never trust the client to tell you which user/resource they should be allowed to access.
+
+\subsection{Prefer ABAC When Needed}
+For complex multi-tenant or feature-flagged systems, Attribute-Based Access Control (ABAC) can provide more precise policies than simple roles.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\linewidth]{bac-rbac-policy-model.png}
+  \caption{Authorization decision model: compute allow/deny from subject (identity/roles/attributes), action, resource (including ownership), and contextual constraints (ABAC-style).}
+  \label{fig:bac-policy-model}
+\end{figure}
+
+\section{Checklists}
+\subsection{Tester Checklist (Broken Access Control)}
+\begin{itemize}
+  \item Inventory all parameters/fields/cookies that select resources or toggle capabilities.
+  \item Test \textbf{horizontal} boundaries with two peer accounts; swap ids and replay requests.
+  \item Test \textbf{vertical} boundaries by replaying privileged requests as low-priv and unauthenticated.
+  \item Probe multi-step flows: can you invoke ``step 2'' directly?
+  \item Compare protections across HTTP methods (\texttt{GET} vs \texttt{POST/PUT/DELETE}).
+  \item Attempt forceful browsing to endpoints not linked in the UI.
+\end{itemize}
+
+\subsection{Developer Checklist (Prevention)}
+\begin{itemize}
+  \item Enforce authorization centrally (filters/middleware/policies).
+  \item Adopt deny-by-default for new routes and sensitive actions.
+  \item Implement consistent ownership checks for resource access and mutation.
+  \item Ensure every endpoint and every method is protected consistently.
+  \item Keep authorization decisions server-side; treat all client input as untrusted.
+  \item Run with least privilege at runtime (non-root service accounts).
+  \item Add logging/alerting for repeated authorization failures (signal of probing).
+\end{itemize}
+
+\section{Exam-Style Prompts (Self-Check)}
+Use these prompts to verify understanding:
+\begin{enumerate}
+  \item Explain the difference between authentication, session management, and access control. Give one bug example for each.
+  \item Define vertical vs horizontal access control. Provide a realistic example of each.
+  \item Describe an IDOR-style vulnerability and the precise server-side check that prevents it.
+  \item How can multi-step workflows be bypassed? What should be enforced on \emph{every} step?
+  \item Why is ``hiding admin buttons in the UI'' not access control?
+  \item List five signals in HTTP traffic that suggest access control may rely on client input.
+  \item In a code review, what patterns suggest method-level protection gaps?
+  \item Describe how deny-by-default changes the risk profile of new endpoints.
+\end{enumerate}
+
+\section{One-Page Summary}
+\begin{itemize}
+  \item Broken Access Control = actions/resources accessible outside intended permissions.
+  \item Protect both role boundaries (vertical) and ownership boundaries (horizontal), and enforce workflow/state constraints.
+  \item The server must decide authorization using authenticated identity + policy; never trust the client to declare role/owner.
+  \item Common causes: missing checks, inconsistent checks, method-level gaps, and workflow assumptions.
+  \item Prevention: centralize authZ, deny-by-default, least privilege, server-side ownership checks, and robust testing/monitoring.
+\end{itemize}
+
+\end{document}

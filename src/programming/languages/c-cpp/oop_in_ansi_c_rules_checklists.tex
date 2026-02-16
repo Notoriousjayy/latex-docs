@@ -1,0 +1,380 @@
+
+% ============================================================================
+% Object-Oriented Programming in ANSI C — Rules & Practical Checklists
+% Based on: Axel T. Schreiner, "Object-Oriented Programming with ANSI-C" (1993)
+% ============================================================================
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue
+}
+
+\setlist[itemize]{leftmargin=*, itemsep=2pt, topsep=4pt}
+\setlist[enumerate]{leftmargin=*, itemsep=2pt, topsep=4pt}
+
+\titleformat{\section}{\Large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.6em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{14pt}
+\lhead{OOP in ANSI C — Rules \& Checklists}
+\rhead{\thepage}
+
+% Simple checkbox helpers
+\newcommand{\cb}{\(\square\)}
+\newcommand{\cbdone}{\(\blacksquare\)}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  frame=single,
+  breaklines=true,
+  showstringspaces=false
+}
+
+\title{Object-Oriented Programming in ANSI C\\Rules \& Practical Checklists}
+\author{Derived from Axel T. Schreiner (1993)}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\textbf{Purpose.} This document extracts and operationalizes the rules, conventions, and defensive practices for ``Object-Oriented C'' (OOC) as presented in Schreiner's approach. It is intended as a \emph{working standard}: rules you can enforce in code review, CI, and library design.
+\end{center}
+
+\tableofcontents
+\newpage
+
+% ----------------------------------------------------------------------------
+\section{Foundational Rules: Objects, Classes, and Methods}
+
+\subsection{Object Layout and the Class Pointer}
+
+\begin{itemize}
+  \item \textbf{Rule F1 (Class pointer first).} Every object representation \emph{must begin} with a pointer to its class/type description (often named \texttt{class}). This enables \texttt{delete()} (and other generic operations) to locate type-specific methods without knowing the concrete type.
+  \item \textbf{Rule F2 (Initialize class pointer in allocation).} The allocation routine (e.g., \texttt{new()} or a lower-level \texttt{allocate()}) is responsible for writing that first class pointer before any selector/method dispatch occurs.
+  \item \textbf{Rule F3 (Objects are zero-filled before construction).} A robust \texttt{new()} typically allocates zero-filled memory, writes the class pointer, then calls the constructor selector.
+\end{itemize}
+
+\subsection{Responsibility Split: new/delete vs ctor/dtor}
+
+\begin{itemize}
+  \item \textbf{Rule F4 (Memory ownership).} Constructors and destructors are \emph{not} responsible for acquiring or releasing the memory of the object itself. Allocation/freeing of the object block is the job of \texttt{new()} and \texttt{delete()} (or \texttt{allocate()/free()}).
+  \item \textbf{Rule F5 (Ctor/dtor symmetry).} The destructor should reverse the resource acquisition performed by the constructor (heap allocations, handles, locks, etc.) before the object block is reclaimed.
+  \item \textbf{Rule F6 (Ctor may receive partially initialized memory).} Only constructors must tolerate a partially initialized (or zero-filled) object state.
+\end{itemize}
+
+\subsection{Methods, Messages, and ``self''}
+
+\begin{itemize}
+  \item \textbf{Rule F7 (Methods operate on the receiver).} Methods are functions selected through the receiver object's class description. The receiver is conventionally named \texttt{self}.
+  \item \textbf{Rule F8 (self position).} Since these are plain C functions, \texttt{self} need not be the first parameter, but \emph{consistent conventions} should be enforced by tooling/style.
+\end{itemize}
+
+% ----------------------------------------------------------------------------
+\section{Selectors and Dynamic Linkage (Polymorphism)}
+
+\subsection{Selector Functions Are Mandatory for Dynamically Linked Methods}
+
+\begin{itemize}
+  \item \textbf{Rule S1 (Selector per dynamic method).} Every dynamically linked method must have a selector function. Selectors perform dispatch: they obtain the class description from the receiver and call the appropriate function pointer.
+  \item \textbf{Rule S2 (Selectors validate).} Selectors should defensively validate the presence of a method pointer (e.g., \texttt{assert(class->method)}). When applicable, selectors should also validate non-\texttt{self} arguments before calling the method.
+  \item \textbf{Rule S3 (Uniform, robust interface).} The selector layer should be consistent across the system (same null handling, same argument checks, same dispatch structure).
+\end{itemize}
+
+\subsection{Superclass Selectors and Chaining}
+
+\begin{itemize}
+  \item \textbf{Rule S4 (Ctor chaining).} A subclass constructor is required to call the superclass constructor \emph{before} performing subclass initialization.
+  \item \textbf{Rule S5 (Dtor chaining).} A subclass destructor must call the superclass destructor \emph{after} completing its own reclamation.
+  \item \textbf{Rule S6 (Provide superclass selectors).} For every dynamically linked method selector, provide a corresponding \texttt{super\_method} selector so subclass implementations can call the superclass method cleanly.
+\end{itemize}
+
+\noindent\textbf{Typical pattern (conceptual).}
+\begin{lstlisting}[language=C]
+void * super_ctor(const void *class, void *self, va_list *app);
+void * super_dtor(const void *class, void *self);
+\end{lstlisting}
+
+% ----------------------------------------------------------------------------
+\section{Encapsulation and the ``Need-to-Know'' Module Boundary}
+
+\subsection{Hide Representation by Default}
+
+\begin{itemize}
+  \item \textbf{Rule E1 (Need-to-know).} Expose only what clients need: public interface declarations in headers; keep representation details private to implementation/representation units.
+  \item \textbf{Rule E2 (Prefer access functions).} Instead of exposing struct fields, provide functions/methods to access or mutate state.
+  \item \textbf{Rule E3 (Do not ``reach into'' base struct).} With inheritance-by-struct-extension, treat the base subobject as private; never directly assign into it from outside the base class implementation.
+\end{itemize}
+
+% ----------------------------------------------------------------------------
+\section{Inheritance in C: ``Lengthening'' Structures}
+
+\subsection{Subclassing via Prefix Layout Compatibility}
+
+\begin{itemize}
+  \item \textbf{Rule I1 (Lengthen, don't rearrange).} A subclass is derived from a superclass by \emph{adding fields at the end} of the superclass representation.
+  \item \textbf{Rule I2 (Base part first).} The derived struct begins with a copy of the base struct as its first field, ensuring the initial memory layout matches the base type.
+  \item \textbf{Rule I3 (Const base field and underscore name).} Name the embedded base field with an ``almost invisible'' underscore (e.g., \texttt{\_}) and declare it \texttt{const} to discourage direct mutation and accidental slicing-like assignments.
+  \item \textbf{Rule I4 (Up-cast is sound).} Passing a subclass pointer to a function expecting a superclass pointer is sound when the function only touches the base prefix of the layout.
+  \item \textbf{Rule I5 (Down-cast is unsafe unless proven).} Converting a superclass pointer to a subclass pointer is only permissible when the object is actually an instance of the subclass (requires explicit checks/casts).
+\end{itemize}
+
+\noindent\textbf{Canonical pattern.}
+\begin{lstlisting}[language=C]
+struct Circle {
+    const struct Point _;  /* embedded base, first */
+    int rad;               /* extension */
+};
+\end{lstlisting}
+
+% ----------------------------------------------------------------------------
+\section{Defensive Programming: Dynamic Type Checking}
+
+\subsection{The Cast Discipline}
+
+\begin{itemize}
+  \item \textbf{Rule T1 (Cast on import).} Every method should validate its object parameters \emph{when importing them} (commonly via \texttt{cast(Class, ptr)}).
+  \item \textbf{Rule T2 (Selectors validate arguments they pass).} Selectors that call methods should validate non-\texttt{self} arguments before dispatch, so methods can assume validated inputs when invoked through selectors.
+  \item \textbf{Rule T3 (Return values are checked by the caller).} If every dereference is checked on import, then return values may go unchecked in the callee; callers are expected to apply \texttt{cast()} before dereferencing.
+  \item \textbf{Rule T4 (Compiler-assisted type discipline).} Use incomplete struct types (e.g., \texttt{struct Object}) in method signatures to make unsafe assignments less likely; a class-typed pointer is more restrictive than \texttt{void *}.
+\end{itemize}
+
+\subsection{Avoiding Recursion in cast()}
+
+\begin{itemize}
+  \item \textbf{Rule T5 (cast must be self-contained).} If you want defensive checking everywhere, \texttt{cast()} cannot rely on other selector-based functions (\texttt{classOf}, \texttt{isOf}, \texttt{super}) in ways that create dependency cycles. Keep \texttt{cast()} as an ``innermost'' primitive.
+  \item \textbf{Rule T6 (Magic number option).} One robust technique is to include a per-object magic number in the root object representation and assert it inside \texttt{cast()} to distinguish real objects from arbitrary pointers.
+\end{itemize}
+
+\noindent\textbf{Illustrative macros.}
+\begin{lstlisting}[language=C]
+#define MAGIC 0x0effaced
+#define isObject(p) (assert(p), assert(((struct Object*)p)->magic==MAGIC), (p))
+\end{lstlisting}
+
+% ----------------------------------------------------------------------------
+\section{Static Initialization of Class Descriptions}
+
+\subsection{The ``Static Constructor'' Problem}
+
+\begin{itemize}
+  \item \textbf{Rule SI1 (Class descriptions are static objects).} Class descriptions live as long as the program and must be constructed (not just initialized) when the program starts.
+  \item \textbf{Rule SI2 (Two common strategies).}
+  \begin{itemize}
+    \item \textbf{Initializer list strategy (munch).} Build a list/array of initializer function pointers and call them at startup, potentially generating that list using symbol table tools.
+    \item \textbf{Lazy init function strategy.} Represent each ``static object'' as a function that lazily constructs the object the first time it is requested.
+  \end{itemize}
+\end{itemize}
+
+\subsection{The Lazy Initialization Pattern}
+
+\begin{itemize}
+  \item \textbf{Rule SI3 (Access class descriptions through functions/macros).} Access a class description via \texttt{Class(X)} or \texttt{X()} rather than a bare global pointer, so you can ensure it is initialized.
+  \item \textbf{Rule SI4 (One init function per class).} Each class description needs an initialization function (e.g., \texttt{initPoint}) that returns the initialized class description.
+\end{itemize}
+
+\noindent\textbf{Illustrative macro.}
+\begin{lstlisting}[language=C]
+#define Class(x) (x ? x : (x = init ## x ()))
+\end{lstlisting}
+
+% ----------------------------------------------------------------------------
+\section{Class Methods and Metaclasses}
+
+\subsection{What ``Class Methods'' Mean Here}
+
+\begin{itemize}
+  \item \textbf{Rule CM1 (Class methods apply to class descriptions).} A class method is a dynamically linked method applied to a class description (not an instance).
+  \item \textbf{Rule CM2 (Make new() dynamically overridable when needed).} If you want \texttt{new()} to be dynamically linked, store its pointer in the appropriate metaclass description so it can be overridden for subtrees (e.g., allocation tracking, pooling).
+\end{itemize}
+
+\subsection{Lifecycle Rule of Thumb}
+
+\begin{itemize}
+  \item \textbf{Rule CM3 (Keep new() thin).} As a rule of thumb, class methods like \texttt{new()} should only connect an allocation function with a constructor and avoid doing object-specific initialization themselves.
+  \item \textbf{Rule CM4 (allocate initializes class pointer).} Allocation functions should initialize the class description pointer; failing to do so leads to hard-to-debug failures in dispatch and destruction.
+  \item \textbf{Rule CM5 (delete delegates to dtor, then frees).} Reclamation should let the destructor dispose of resources accumulated during the lifecycle, then pass the empty object block to a recycler such as \texttt{free()}.
+\end{itemize}
+
+% ----------------------------------------------------------------------------
+\section{Capabilities Over Taxonomy: respondsTo() and Delegation}
+
+\begin{itemize}
+  \item \textbf{Rule C1 (Prefer capability queries).} When deciding if an object can participate in an operation, prefer asking whether it responds to a method tag/name (capability) rather than checking membership in a subclass.
+  \item \textbf{Rule C2 (Use tags for protocol membership).} A method tag used by \texttt{respondsTo()} effectively defines a protocol; you can evolve behavior without tight coupling to inheritance trees.
+\end{itemize}
+
+% ----------------------------------------------------------------------------
+\section{Persistent Objects: Storing and Loading}
+
+\begin{itemize}
+  \item \textbf{Rule P1 (Persistence is recreation).} Loading persistent objects resembles allocation and construction: you must validate, (re)create, and integrate objects into live structures safely.
+  \item \textbf{Rule P2 (Store only objects supporting a protocol).} Decide which objects to save based on whether they support a required method/protocol (e.g., \texttt{move}) rather than explicit subclass tests.
+  \item \textbf{Rule P3 (Validate inputs).} Treat files/streams as untrusted: reject objects that lack required capabilities or invariants.
+\end{itemize}
+
+% ----------------------------------------------------------------------------
+\section{Exceptions: Disciplined Error Recovery in C}
+
+\subsection{Nestable Handlers}
+
+\begin{itemize}
+  \item \textbf{Rule X1 (Use a stack of recovery points).} Nestable exception handling in C can be built by stacking \texttt{jmp\_buf} recovery points (via \texttt{setjmp/longjmp}).
+  \item \textbf{Rule X2 (Exception objects are stack elements).} Model recovery points as \texttt{Exception} objects pushed onto a hidden stack when created.
+  \item \textbf{Rule X3 (Delete in reverse order).} Exception objects must be deleted exactly in the reverse order of their creation.
+\end{itemize}
+
+\subsection{Practical Skeleton}
+
+\begin{lstlisting}[language=C]
+void *ex = new(Exception());
+switch (catch(ex)) {
+case 0:
+    /* risky action */
+    break;
+default:
+    /* handler */
+    break;
+}
+delete(ex); /* must match creation order */
+\end{lstlisting}
+
+% ----------------------------------------------------------------------------
+\section{Forwarding Messages (``Does Not Understand'')}
+
+\begin{itemize}
+  \item \textbf{Rule FWD1 (Selectors can forward).} If a selector cannot find a method pointer in the receiver's class description, it can invoke \texttt{forward()} with full call context.
+  \item \textbf{Rule FWD2 (forward() is dynamically linked).} The default \texttt{forward()} can fail fast; classes that want forwarding override \texttt{forward()} to implement delegation, dynamic composition, or proxying.
+\end{itemize}
+
+% ----------------------------------------------------------------------------
+\section{ooc Preprocessor and Coding-Standard Rules}
+
+\subsection{Why ooc Matters}
+
+\begin{itemize}
+  \item \textbf{Rule O1 (Standardization).} Enforce a consistent coding standard for selectors, casts, and declarations by generating boilerplate rather than writing it manually.
+  \item \textbf{Rule O2 (Underscore reservation).} The preprocessor relies on naming patterns (notably underscores); do not introduce identifiers that begin with underscore, except for the conventional base-field underscore in inheritance.
+  \item \textbf{Rule O3 (Declarator limitations).} The description parser typically assumes simple declarators where the type precedes the name; do not use exotic C declarator forms in class descriptions.
+\end{itemize}
+
+% ----------------------------------------------------------------------------
+\section{Practical ``Do This Every Time'' Checklists}
+
+\subsection{Checklist A: Defining a New Class}
+
+\begin{itemize}
+  \item \cb Choose the superclass (or root \texttt{Object}).
+  \item \cb Define the object representation:
+    \begin{itemize}
+      \item \cb First field is \texttt{const void * class;} (or root-object layout including magic number if used).
+      \item \cb No representation fields are exposed publicly unless required.
+    \end{itemize}
+  \item \cb Define the method set:
+    \begin{itemize}
+      \item \cb Constructor (\texttt{ctor}) only initializes; does not allocate the object block.
+      \item \cb Destructor (\texttt{dtor}) only releases internal resources; does not free the object block.
+      \item \cb For each dynamically linked method, ensure there is a selector.
+    \end{itemize}
+  \item \cb Create/maintain class description initialization (init function or initializer list).
+  \item \cb If using ooc: write/maintain the class description file and regenerate interface/representation outputs.
+\end{itemize}
+
+\subsection{Checklist B: Implementing a Method}
+
+\begin{itemize}
+  \item \cb \textbf{Import defensively:} \texttt{self = cast(ThisClass, \_self);} and \texttt{cast(OtherClass, arg);} for object args.
+  \item \cb \textbf{Never} directly mutate a base subobject from outside its class implementation.
+  \item \cb If overriding a method, decide whether you must call the superclass method (use \texttt{super\_method}).
+  \item \cb Return class-typed pointers (not raw \texttt{void *}) where possible.
+\end{itemize}
+
+\subsection{Checklist C: Implementing ctor/dtor Correctly}
+
+\begin{itemize}
+  \item \cb In subclass \texttt{ctor}: call \texttt{super\_ctor} first, then initialize subclass fields/invariants.
+  \item \cb In subclass \texttt{dtor}: release subclass-owned resources first, then call \texttt{super\_dtor}.
+  \item \cb Keep ctor/dtor free of object-block allocation/freeing.
+\end{itemize}
+
+\subsection{Checklist D: Adding Inheritance}
+
+\begin{itemize}
+  \item \cb Embed the base struct as the \emph{first} field of the derived struct.
+  \item \cb Name that field \texttt{\_} and declare it \texttt{const}.
+  \item \cb Up-cast is allowed; down-cast only after proving the dynamic type (e.g., via \texttt{isOf}/\texttt{cast}).
+  \item \cb When you override methods, supply/maintain superclass selectors and chain intentionally.
+\end{itemize}
+
+\subsection{Checklist E: Safe Allocation and Deallocation}
+
+\begin{itemize}
+  \item \cb \texttt{allocate()} returns zeroed memory and writes the class pointer.
+  \item \cb \texttt{new()} calls \texttt{ctor()} and returns the constructed object.
+  \item \cb \texttt{delete()} calls \texttt{dtor()} and then frees/recycles the object block.
+  \item \cb If you override \texttt{new()}/\texttt{delete()}, preserve these responsibilities and invariants.
+\end{itemize}
+
+\subsection{Checklist F: Static Initialization}
+
+\begin{itemize}
+  \item \cb Provide an init function per class description (and metaclass if needed).
+  \item \cb Access class descriptions only through \texttt{Class(X)} or \texttt{X()} wrappers.
+  \item \cb If using initializer lists: ensure \texttt{main()} invokes the list before any OOC usage.
+\end{itemize}
+
+\subsection{Checklist G: Exceptions}
+
+\begin{itemize}
+  \item \cb Create exception objects to establish handlers.
+  \item \cb Use \texttt{catch()} to arm the handler; use \texttt{cause(code)} to trigger.
+  \item \cb Delete exception objects in \emph{reverse creation order}.
+\end{itemize}
+
+\subsection{Checklist H: Forwarding}
+
+\begin{itemize}
+  \item \cb If you want proxy/delegation behavior, override \texttt{forward()} in your class.
+  \item \cb Ensure selectors call \texttt{forward()} when a method pointer is missing.
+  \item \cb Make forwarding decisions based on protocol/capability, not deep inheritance assumptions.
+\end{itemize}
+
+% ----------------------------------------------------------------------------
+\section{Appendix: Quick ``Review Gates'' (CI/Code Review)}
+
+\begin{tabular}{@{}p{0.36\linewidth}p{0.6\linewidth}@{}}
+\toprule
+\textbf{Gate} & \textbf{Fail If\ldots} \\
+\midrule
+Object layout & First field is not a class pointer / root layout; allocation doesn't set it. \\
+Ctor/Dtor discipline & ctor frees object block or dtor frees object block; ctor doesn't call super\_ctor; dtor doesn't call super\_dtor. \\
+Inheritance layout & Derived struct doesn't begin with base struct; base field not const/\_. \\
+Type safety & Methods dereference object args without cast-on-import. \\
+Selectors & Dynamically linked methods lack a selector; selector doesn't validate method pointer. \\
+Static init & Class descriptions accessed without init wrapper; init order assumptions exist. \\
+Forwarding & Selector silently ignores missing methods (unless explicit policy). \\
+Exceptions & Exception objects not deleted in reverse creation order. \\
+\bottomrule
+\end{tabular}
+
+\end{document}

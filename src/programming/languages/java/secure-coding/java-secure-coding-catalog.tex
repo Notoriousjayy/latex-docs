@@ -1,0 +1,1432 @@
+% !TeX program = pdflatex
+% Compile: pdflatex merged-java-secure-coding-catalog.tex (run twice for ToC)
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{longtable}
+\usepackage{booktabs}
+
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+\setlist[itemize]{topsep=4pt,itemsep=2pt,parsep=0pt,partopsep=0pt}
+\setlist[description]{style=nextline,leftmargin=0pt,itemsep=0.35\baselineskip}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.8em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.8em}{}
+\setcounter{tocdepth}{2}
+
+% Rule block macros
+\newcommand{\Rule}[5]{%
+  \subsection*{Rule~#1: #2}%
+  \phantomsection%
+  \addcontentsline{toc}{subsection}{Rule~#1: #2}%
+  \noindent\textbf{Requirement (shall/shall-not).} #3\par\smallskip%
+  \noindent\textbf{Rationale.} #4\par\smallskip%
+  \noindent\textbf{Enforcement approaches.} #5\par\medskip%
+}
+
+\newcommand{\CERTJRule}[5]{%
+  \subsection*{#1: #2}%
+  \phantomsection%
+  \addcontentsline{toc}{subsection}{#1: #2}%
+  \noindent\textbf{Requirement (shall/shall-not).} #3\par\smallskip%
+  \noindent\textbf{Rationale.} #4\par\smallskip%
+  \noindent\textbf{Enforcement approaches.} #5\par\medskip%
+}
+
+\title{Java Secure Coding Rule Catalog (Merged)}
+\author{Compiled catalog (rule IDs \& titles preserved; requirements/rationales/enforcement expanded)}
+\date{2026-02-03}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\clearpage
+
+\section*{About this document}
+\addcontentsline{toc}{section}{About this document}
+\noindent This file merges two rule sets into a single, consistently formatted catalog:
+\begin{itemize}
+\item \textbf{Java Coding Guidelines (2013)} --- 75 recommendations, expanded into enforceable shall/shall-not requirements, rationales, and candidate enforcement approaches.
+\item \textbf{CERT Oracle Secure Coding Standard for Java (2011)} --- 156 rules (IDs and titles preserved). The requirement/rationale/enforcement text in this compilation is a synthesized expansion driven primarily by the rule title and topic mnemonic; consult the full standard for definitive intent and examples.
+\end{itemize}
+
+\noindent \textbf{How to use.} Treat each rule as (1) \emph{mandatory} (CI-gated), (2) \emph{review-gated} (requires documented justification), or (3) \emph{advisory}. Calibrate by system criticality and threat model.
+\clearpage
+
+\part{Java Coding Guidelines (2013) --- Expanded Rules}
+\noindent\textbf{Source.} \emph{Java Coding Guidelines: 75 Recommendations for Reliable and Secure Programs} (Addison-Wesley, 2013).\par
+\noindent\textbf{Note.} Rule IDs in this section use the source document's numbering (\texttt{Rule~1}--\texttt{Rule~75}).\par
+\medskip
+\section{Security}
+
+\Rule{SEC-01}{Limit the lifetime of sensitive data}{Minimize in-memory residency of secrets (passwords, keys, tokens, PII) and actively clear/overwrite buffers holding them as soon as they are no longer needed.}{Long-lived secrets increase exposure via memory disclosure (debugging, core dumps, swapping, compromised co-resident code).}{Ban \texttt{String} for secrets; require \texttt{char[]} / \texttt{byte[]} plus explicit wipe; review item: "wipe-after-use"; unit tests verifying clearing; static checks for patterns like \texttt{new\ String(passwordBytes)}.}
+
+\Rule{SEC-02}{Do not store unencrypted sensitive information on the client side}{Do not persist sensitive data (credentials, PII, access-granting tokens) on the client unless strongly protected (encryption + integrity protection) and strictly necessary.}{Client storage is attacker-accessible; compromise yields disclosure or replay.}{Security review for any client persistence; scan for cookies/local storage containing secrets; tests asserting cookies do not contain password/PII fields; prefer server-side sessions.}
+
+\Rule{SEC-03}{Provide sensitive mutable classes with unmodifiable wrappers}{When exposing sensitive mutable objects to less-trusted code, return an unmodifiable/safe view or defensive copy that prevents mutation and avoids leaking internal references.}{Prevents tampering and blocks "write-through" via returned references.}{Review for getters returning internal arrays/collections; require \texttt{Collections.unmodifiable*} or defensive copies; static checks for returning mutable fields; tests that mutation attempts fail.}
+
+\Rule{SEC-04}{Ensure that security-sensitive methods are called with validated arguments}{Validate all arguments to security-sensitive methods (including \texttt{null} semantics) and do not rely on undocumented defaults or corner-case behaviors.}{Unexpected arguments can negate security controls (e.g., bypass privilege reduction).}{Use wrapper utilities that validate inputs; checklist for privileged/security APIs; static checks for suspicious \texttt{null} passes; unit tests for edge/\texttt{null} arguments.}
+
+\Rule{SEC-05}{Prevent arbitrary file upload}{Restrict uploads by size, allowed types, and verified content; do not trust client-provided metadata (\texttt{Content-Type}, filename extension) alone.}{Attackers can upload executable/scriptable content enabling RCE/XSS or persistence.}{Server-side magic-byte validation; AV scanning where applicable; tests with forged headers/extensions; ensure upload dirs are non-executable; review for "trust \texttt{Content-Type} only".}
+
+\Rule{SEC-06}{Properly encode or escape output}{Output-encode/escape untrusted data for the specific sink/context (HTML, attribute, URL, JS, CSS, SQL, LDAP, etc.); never render untrusted data raw.}{Encoding at the sink prevents injection; incorrect context encoding fails.}{Centralize encoding utilities; use auto-escaping templates; static rules for raw writes and string concatenation into sinks; unit tests with representative XSS/injection payloads.}
+
+\Rule{SEC-07}{Prevent code injection}{Do not construct executable code (scripts/expressions) using untrusted input; if dynamic execution is unavoidable, strictly validate input and use parameterized APIs.}{Dynamic evaluation turns input into executable logic (RCE).}{Ban concatenated inputs into evaluators (e.g., \texttt{ScriptEngine.eval}); require allowlists/builders; SAST rules for eval/reflection execution; tests injecting payloads.}
+
+\Rule{SEC-08}{Prevent XPath injection}{Do not build XPath expressions via string concatenation of untrusted data; use variable binding or strict input validation.}{Injected XPath can bypass authorization filters or exfiltrate XML.}{Static checks for \texttt{XPath} expressions containing user input; require variable resolvers; tests with XPath payloads (e.g., quote/union tricks).}
+
+\Rule{SEC-09}{Prevent LDAP injection}{Escape LDAP special characters or use safe filter builders; never embed untrusted input directly in LDAP filter strings.}{LDAP injection can broaden search scope, bypass checks, or leak directory data.}{Central LDAP escaping utilities; static checks for filter concatenation; tests with payloads containing \texttt{*}, \texttt{)}, \texttt{(|}.}
+
+\Rule{SEC-10}{Do not use clone() to copy untrusted method parameters}{Do not call \texttt{clone()} on untrusted objects for defensive copies; use safe copy mechanisms (copy constructors, serialization into trusted types, or manual copy).}{\texttt{clone()} is overrideable; attacker-controlled \texttt{clone()} can execute malicious behavior.}{Ban \texttt{param.clone()} for non-final/untrusted types; prefer immutables; static checks for \texttt{clone()} on inputs crossing trust boundaries; review rule: "defensive copy must be non-polymorphic".}
+
+\Rule{SEC-11}{Do not use Object.equals() to compare cryptographic keys}{Compare cryptographic material using constant-time, type-appropriate equality; do not rely on generic \texttt{equals()} for secret comparisons when timing may leak.}{Timing side-channels can leak key material; generic equality may be unsafe or semantically wrong.}{Use \texttt{MessageDigest.isEqual()} or a constant-time utility; static checks for \texttt{equals()} on key/byte arrays; review checklist for secret comparisons.}
+
+\Rule{SEC-12}{Do not use insecure or weak cryptographic algorithms}{Do not use deprecated or weak cryptography (broken hashes, short keys, insecure modes); use modern primitives with safe modes and sizes per security policy.}{Weak crypto is often practically breakable and provides false assurance.}{Allowlist approved algorithms/modes; scan for \texttt{MD5}, \texttt{SHA1}, \texttt{DES}, \texttt{RC4}, \texttt{ECB}; tests verifying algorithm selection and parameters.}
+
+\Rule{SEC-13}{Store passwords using a hash function}{Store passwords only as salted, slow, adaptive hashes (not plaintext or reversible encryption) and never log or persist raw passwords.}{Mitigates damage from credential-store compromise and resists offline cracking.}{Require PBKDF2/bcrypt/scrypt/Argon2 per policy; static checks for logging/password persistence; tests ensuring password fields are never written raw.}
+
+\Rule{SEC-14}{Ensure that SecureRandom is properly seeded}{Use \texttt{SecureRandom} correctly for security decisions and do not seed it with predictable values or replace it with non-cryptographic PRNGs.}{Predictable randomness collapses the security of tokens/keys/nonces.}{Ban \texttt{java.util.Random} for tokens; scan for \texttt{setSeed()} with low-entropy sources; tests for uniqueness and basic unpredictability heuristics; review entropy sources.}
+
+\Rule{SEC-15}{Do not rely on methods that can be overridden by untrusted code}{Do not make security decisions based on invoking methods that untrusted subclasses can override unless the type is final/sealed or the trust boundary is controlled.}{Polymorphism can route security-critical behavior through attacker-controlled overrides.}{Prefer final classes and composition; static checks for calling overridable methods during authz/authn; code review checklist: "no security on virtual dispatch".}
+
+\Rule{SEC-16}{Avoid granting excess privileges}{Run privileged execution with the minimum necessary permissions and scope; do not elevate broader than required.}{Over-privilege turns minor bugs into severe compromise.}{Security review of privileged sections; privilege allowlists; static checks for overly broad privileged blocks; tests under restrictive policies.}
+
+\Rule{SEC-17}{Minimize privileged code}{Keep privileged blocks as small and specific as possible; never call untrusted code inside privileged context.}{Smaller privileged surface reduces audit complexity and abuse risk.}{Review checklist: "privileged block minimal"; static checks for large privileged blocks; unit/integration tests with reduced permissions.}
+
+\Rule{SEC-18}{Do not expose methods that use reduced-security checks to untrusted code}{Methods that bypass or relax checks shall not be accessible to untrusted callers; enforce via visibility, modules, and explicit trust checks.}{Attackers exploit fast paths that skip validation/authorization.}{Restrict access modifiers; package/module boundaries; static checks for public APIs skipping checks; tests that untrusted code cannot invoke them.}
+
+\Rule{SEC-19}{Define custom security permissions for fine-grained security}{Protect sensitive resource access using explicit permissions and checks rather than coarse all-or-nothing gates.}{Fine-grained permissions reduce blast radius and enable policy-driven control.}{Define permission classes; centralize permission checks; policy tests verifying denial without permission; review gate for new sensitive operations.}
+
+\Rule{SEC-20}{Create a secure sandbox using a security manager}{When executing untrusted code, enforce a sandbox policy (permissions/resource controls) rather than relying on convention alone.}{Sandbox containment prevents untrusted code from accessing sensitive resources.}{Integration tests executing plugins/scripts under restricted policies; review checklist for dynamic execution features; static checks for missing permission checks.}
+
+\Rule{SEC-21}{Do not let untrusted code misuse privileges of callback methods}{Callback APIs must not allow untrusted implementations to execute with elevated privileges; privileged actions must not invoke untrusted callbacks.}{Callbacks can create confused-deputy privilege escalation paths.}{Separate privilege boundary from callbacks; static checks for callbacks invoked inside privileged blocks; unit tests with malicious callback implementations.}
+
+\newpage
+
+\section{Defensive Programming}
+
+\Rule{DEF-01}{Minimize the scope of variables}{Declare variables in the narrowest possible scope and do not keep them alive beyond their needed lifetime.}{Reduces misuse, accidental reuse, and secret exposure duration.}{Lint rules for "declare close to use"; code review checklist; refactor to smaller blocks/methods.}
+
+\Rule{DEF-02}{Minimize the scope of the @SuppressWarnings annotation}{Apply \texttt{@SuppressWarnings} at the smallest feasible element and do not suppress warnings broadly.}{Broad suppression hides new defects and weakens tool signal.}{Ban package/class-level suppressions; require justification comments; CI rule: no new suppressions without approval; static checks for wide suppressions.}
+
+\Rule{DEF-03}{Minimize the accessibility of classes and their members}{Use the least permissive access level for classes/members and do not expose internals unnecessarily.}{Smaller API surface reduces misuse and attack surface.}{Static checks for unnecessary \texttt{public}; API review; module boundaries; tests for encapsulation where applicable.}
+
+\Rule{DEF-04}{Document thread-safety and use annotations where applicable}{Public types must state thread-safety guarantees (thread-safe, not thread-safe, conditionally safe) and use concurrency annotations where available.}{Concurrency assumptions are a common source of severe defects.}{Review gate requiring thread-safety docs; static checks for shared mutable state; stress tests for claimed thread-safe classes.}
+
+\Rule{DEF-05}{Always provide feedback about the resulting value of a method}{Methods that can fail or partially succeed must communicate outcomes explicitly (return value, exception, or result object) and must not fail silently.}{Silent failure causes latent correctness and security issues.}{Static checks for ignored return values; review checklist "no silent failure"; unit tests covering failure paths and verifying signaling.}
+
+\Rule{DEF-06}{Identify files using multiple file attributes}{Do not rely on a single file attribute (e.g., name/path) for identity; validate using multiple attributes (canonical path, permissions, owner, metadata).}{Single-attribute checks are vulnerable to spoofing and race conditions.}{Review checklist for file identity; tests with symlinks/TOCTOU; static checks for path-based allowlists without canonicalization.}
+
+\Rule{DEF-07}{Do not attach significance to the ordinal associated with an enum}{Do not persist, transmit, or branch logic on \texttt{enum.ordinal()}; use explicit stable values instead.}{Enum ordering changes break persistence and external protocols.}{Static checks for \texttt{.ordinal()}; API review; serialization tests ensuring stable external representations.}
+
+\Rule{DEF-08}{Be aware of numeric promotion behavior}{Account for Java numeric promotion rules in arithmetic and do not assume operands remain narrow types during operations.}{Promotion can change sign/precision and introduce overflow or logic errors.}{Static analysis for overflow/cast issues; review checklist for mixed-type arithmetic; boundary-value unit tests.}
+
+\Rule{DEF-09}{Enable compile-time type checking of variable arity parameter types}{Design and use varargs APIs to preserve compile-time type safety and avoid unsafe generic varargs usage.}{Varargs + generics can cause heap pollution and runtime \texttt{ClassCastException}.}{Use \texttt{@SafeVarargs} only when valid; static checks for unsafe generic varargs; unit tests exercising varargs with generics.}
+
+\Rule{DEF-10}{Do not apply public final to constants whose value might change in later releases}{Do not expose evolving constants as \texttt{public static final} compile-time constants; use accessors or configuration instead.}{Clients inline constants at compile time, causing version skew when values change.}{API review for exported constants; static checks for \texttt{public static final} primitives/Strings in libraries; compatibility tests.}
+
+\Rule{DEF-11}{Avoid cyclic dependencies between packages}{Package/module dependency graphs must be acyclic; do not introduce package cycles.}{Cycles hinder modularity, testing, reuse, and clean initialization.}{Architecture tests that enforce dependency DAG; build-time cycle detection; review checklist for new dependencies.}
+
+\Rule{DEF-12}{Prefer user-defined exceptions over more general exception types}{Throw specific, meaningful exceptions and avoid overly broad exception types when domain-specific exceptions improve handling.}{Specific exceptions enable correct recovery and reduce catch-all misuse.}{Static checks for \texttt{throw new Exception()} / generic \texttt{RuntimeException}; review checklist for exception taxonomy; unit tests asserting exception types.}
+
+\Rule{DEF-13}{Try to gracefully recover from system errors}{Handle recoverable system failures gracefully and do not crash or proceed in a corrupted state.}{Robust error handling improves availability and limits cascading failures.}{Fault-injection tests; static checks for swallowed exceptions; review checklist for error paths; integration tests simulating I/O/resource failures.}
+
+\Rule{DEF-14}{Carefully design interfaces before releasing them}{Public APIs must undergo stability and security design review before release; do not expose premature or leaky abstractions.}{Released interfaces are difficult to change without breaking consumers.}{API governance (design review + versioning); compatibility testing; documentation requirements; deprecation policy enforcement.}
+
+\Rule{DEF-15}{Write garbage collection–friendly code}{Minimize unnecessary allocations, avoid inadvertent reference retention, and design for predictable object lifetimes.}{GC pressure increases latency and can collapse throughput.}{Allocation profiling budgets; static checks for object churn in hot paths; performance tests with allocation assertions; review checklist for caching/leak risks.}
+
+\newpage
+
+\section{Reliability}
+
+\Rule{REL-01}{Do not shadow or obscure identifiers in subscopes}{Do not redeclare identifiers that shadow outer-scope names when it reduces clarity or changes meaning.}{Shadowing leads to subtle bugs and misreads during maintenance.}{Compiler warnings treated as errors; static checks for shadowing; review checklist.}
+
+\Rule{REL-02}{Do not declare more than one variable per declaration}{Declare a single variable per declaration statement.}{Improves readability and reduces initialization mistakes.}{Checkstyle/formatter rule; review checklist.}
+
+\Rule{REL-03}{Use meaningful symbolic constants to represent literal values in program logic}{Replace magic numbers/strings in logic with named constants or enums.}{Names communicate intent and prevent inconsistent duplication.}{Static checks for repeated literals; review checklist; configuration-driven tests where applicable.}
+
+\Rule{REL-04}{Properly encode relationships in constant definitions}{Define related constants to preserve relationships (derive constants rather than duplicating numeric values).}{Prevents divergence when one constant changes.}{Review checklist for duplicated related values; static checks for duplicated literals; unit tests verifying relationships.}
+
+\Rule{REL-05}{Return an empty array or collection instead of a null value for methods that return an array or collection}{Return empty arrays/collections rather than \texttt{null}.}{Eliminates pervasive null checks and prevents \texttt{NullPointerException}.}{Static checks for returning null collections; unit tests asserting non-null returns; API contracts with annotations.}
+
+\Rule{REL-06}{Use exceptions only for exceptional conditions}{Do not use exceptions for normal control flow; use conditionals or explicit result types for expected outcomes.}{Control-flow exceptions harm readability/performance and obscure intent.}{Review checklist; static checks for exceptions on expected branches; unit tests ensuring expected paths do not throw.}
+
+\Rule{REL-07}{Use a try-with-resources statement to safely handle closeable resources}{Manage \texttt{Closeable}/\texttt{AutoCloseable} resources with try-with-resources (or guaranteed-close patterns) and do not rely on finalizers for cleanup.}{Prevents resource leaks and ensures closure on exceptions.}{Static checks for resource leaks; review checklist; tests that assert closure on exceptional paths (e.g., verifying streams are closed).}
+
+\Rule{REL-08}{Do not use assertions to verify the absence of runtime errors}{Do not use \texttt{assert} for required runtime checks, input validation, or security enforcement.}{Assertions can be disabled in production, removing checks.}{Static checks for asserts in production paths; review checklist; tests running with assertions disabled.}
+
+\Rule{REL-09}{Use the same type for the second and third operands in conditional expressions}{Keep the second and third operands of ternary expressions type-consistent to avoid implicit conversions.}{Mixed types can trigger surprising conversion and incorrect results.}{Compiler/static warnings; static checks for mixed-type ternaries; unit tests for boundary cases.}
+
+\Rule{REL-10}{Do not serialize direct handles to system resources}{Do not serialize OS resource handles (file descriptors, sockets, threads, native pointers); serialize stable identifiers instead.}{Handles are process-local and can enable misuse or break on restore.}{Serialization review gate; static checks for \texttt{Serializable} types holding resource handles; tests for safe round-trip behavior.}
+
+\Rule{REL-11}{Prefer using iterators over enumerations}{Use \texttt{Iterator} / enhanced-for / Streams instead of legacy \texttt{Enumeration}.}{Iterators are more expressive and consistent with modern Java collections.}{Static checks for \texttt{Enumeration}; automated refactoring; review checklist.}
+
+\Rule{REL-12}{Do not use direct buffers for short-lived, infrequently used objects}{Do not allocate direct buffers for short-lived, infrequent operations; use them only with justified performance needs and explicit lifecycle management.}{Direct buffers are expensive and not reclaimed like regular heap objects.}{Static checks for \texttt{ByteBuffer.allocateDirect}; performance review gate; load tests ensuring native memory stability.}
+
+\Rule{REL-13}{Remove short-lived objects from long-lived container objects}{Ensure long-lived containers do not retain references to short-lived objects; remove entries promptly or use appropriate weak references with eviction strategy.}{Unintended retention causes memory leaks and GC pressure.}{Leak tests; static checks for caches without eviction; review checklist requiring eviction policy; monitoring/heap threshold alerts.}
+
+\newpage
+
+\section{Program Understandability}
+
+\Rule{UND-01}{Be careful using visually misleading identifiers and literals}{Do not use identifiers/literals that are visually confusable (look-alike characters, ambiguous names) in security- or logic-critical code.}{Visual ambiguity causes review misses and operational mistakes.}{Lints for confusable Unicode; naming conventions; code review checklist.}
+
+\Rule{UND-02}{Avoid ambiguous overloading of variable-arity methods}{Do not create varargs overload sets that are ambiguous at call sites; prefer distinct names or unambiguous signatures.}{Overload resolution surprises can call the wrong method.}{Static checks for ambiguous overloads; API review; unit tests covering representative call sites.}
+
+\Rule{UND-03}{Avoid in-band error indicators}{Do not signal errors using sentinel return values that overlap with valid results; use exceptions or explicit result types.}{Sentinels are often ignored and indistinguishable from valid outputs.}{Review checklist; static checks for sentinel values used as errors; unit tests asserting explicit error signaling.}
+
+\Rule{UND-04}{Do not perform assignments in conditional expressions}{Do not embed assignments inside conditions; separate assignment from conditional test.}{Prevents accidental assignment-vs-comparison defects and improves readability.}{Lint rule; review checklist; formatter enforcement.}
+
+\Rule{UND-05}{Use braces for the body of an if, for, or while statement}{Always use braces for control-statement bodies, including single-statement bodies.}{Prevents dangling-statement bugs during edits.}{Checkstyle/formatter rule; review checklist.}
+
+\Rule{UND-06}{Do not place a semicolon immediately following an if, for, or while condition}{Do not use empty-body control statements via stray semicolons (e.g., \texttt{if (...) ;}).}{Creates near-invisible no-op logic errors.}{Lint rule for empty-body control statements; review checklist; unit tests for behavioral correctness.}
+
+\Rule{UND-07}{Finish every set of statements associated with a case label with a break statement}{Terminate each \texttt{switch} case explicitly (\texttt{break/return/throw}) unless fall-through is intentional and documented.}{Accidental fall-through is a common source of defects.}{Compiler/static checks for fall-through; require \texttt{// fall through} comment; unit tests for switch behavior.}
+
+\Rule{UND-08}{Avoid inadvertent wrapping of loop counters}{Protect loop counters against overflow/wraparound using appropriate types and bounds checks.}{Wraparound can cause infinite loops or out-of-bounds access.}{Static checks for suspicious counter ranges; review checklist; unit tests with large counts and boundary values.}
+
+\Rule{UND-09}{Use parentheses for precedence of operation}{Use parentheses to make precedence explicit in mixed-operator expressions.}{Prevents misinterpretation and precedence bugs.}{Style lint; review checklist; formatter.}
+
+\Rule{UND-10}{Do not make assumptions about file creation}{Verify file-creation outcomes and handle platform and race-condition behaviors; do not assume create/open implies secure creation.}{File creation can fail, be redirected, or be attacked via TOCTOU/symlinks.}{Review checklist; tests with permission denial/symlink scenarios; static checks for insecure temp-file usage.}
+
+\Rule{UND-11}{Convert integers to floating-point for floating-point operations}{Explicitly promote operands to floating-point before performing floating-point computations (especially division) to avoid integer truncation.}{Integer operations silently truncate and corrupt numeric results.}{Static checks for integer division assigned to float/double; unit tests for representative calculations.}
+
+\Rule{UND-12}{Ensure that the clone() method calls super.clone()}{If implementing \texttt{clone()}, call \texttt{super.clone()} and satisfy the \texttt{Cloneable} contract; do not implement ad-hoc cloning that violates object invariants.}{Ensures correct object copying semantics and avoids partial clones.}{Static checks for \texttt{clone()} missing \texttt{super.clone()}; unit tests for clone correctness (as specified: shallow/deep).}
+
+\Rule{UND-13}{Use comments consistently and in a readable fashion}{Write clear, consistent comments that reflect intent and remain accurate; do not leave stale or misleading comments.}{Misleading comments misdirect reviewers and maintainers.}{Review checklist: "comments accurate"; doc linting; require Javadoc for public APIs; periodic cleanup tasks.}
+
+\Rule{UND-14}{Detect and remove superfluous code and values}{Remove dead code, unused variables, and redundant values; do not keep unused code "just in case."}{Reduces attack surface and maintenance cost; improves clarity.}{Compiler warnings as errors; static checks for unused code; coverage gates; review checklist.}
+
+\Rule{UND-15}{Strive for logical completeness}{Handle all required cases, including defaults/else branches and error states; do not omit necessary conditions or states.}{Missing cases become latent defects and security bypasses.}{Exhaustive \texttt{switch} over enums; default handling rules; unit/property tests covering edge cases and state transitions.}
+
+\Rule{UND-16}{Avoid ambiguous or confusing uses of overloading}{Keep overloads semantically consistent and unambiguous; avoid overloading when behavior differs materially or confuses call-site meaning.}{Confusing overloads cause wrong-call defects and misuse.}{API review; static checks for subtle overload sets; unit tests documenting intended selection.}
+
+\newpage
+
+\section{Programmer Misconceptions}
+
+\Rule{MIS-01}{Do not assume that declaring a reference volatile guarantees safe publication of the members of the referenced object}{Do not assume \texttt{volatile} on an object reference safely publishes the object's internal state; use proper synchronization, immutability, or safe publication patterns.}{Publishing a reference does not guarantee safe publication of all fields in all patterns.}{Concurrency review; static checks for broken double-checked locking; stress tests (JCStress-style) for safe publication claims.}
+
+\Rule{MIS-02}{Do not assume that the sleep(), yield(), or getState() methods provide synchronization semantics}{Do not use timing or thread state as synchronization; use proper concurrency primitives (locks, atomics, latches, etc.).}{Scheduling is nondeterministic; these calls do not establish happens-before.}{Static checks for \texttt{sleep()} used for coordination; review checklist; concurrency tests under load.}
+
+\Rule{MIS-03}{Do not assume that the remainder operator always returns a nonnegative result for integral operands}{Handle negative operands explicitly when using \texttt{\%}; do not assume nonnegative results.}{In Java, the remainder carries the sign of the dividend.}{Static checks for \texttt{\%} used in indexing without normalization; unit tests with negative inputs.}
+
+\Rule{MIS-04}{Do not confuse abstract object equality with reference equality}{Use \texttt{equals()} for value equality and \texttt{==} only for reference identity where intended (e.g., enums/singletons).}{Misuse yields incorrect comparisons and can break security logic.}{Static checks for \texttt{==} on \texttt{String} and boxed types; review checklist; unit tests for equality semantics.}
+
+\Rule{MIS-05}{Understand the differences between bitwise and logical operators}{Use \texttt{\&\&}/\texttt{||} for short-circuit boolean logic; use \texttt{\&}/\texttt{|} on booleans only when non-short-circuit evaluation is explicitly required.}{Wrong operator can force evaluation of unsafe expressions or change logic.}{Static checks for \texttt{\&}/\texttt{|} on booleans; review checklist; unit tests with operand side-effects.}
+
+\Rule{MIS-06}{Understand how escape characters are interpreted when strings are loaded}{Correctly handle escape sequences across sources (literals, properties files, external inputs) and do not assume identical interpretation across all loading mechanisms.}{Misinterpreted escapes can cause security bypass and data corruption.}{Review checklist for config parsing; unit tests loading strings from real sources; avoid hand-rolled unescape logic unless tested.}
+
+\Rule{MIS-07}{Do not use overloaded methods to differentiate between runtime types}{Do not expect overload resolution to dispatch by runtime type; use polymorphism, visitors, or explicit type checks where appropriate.}{Overload selection is compile-time; runtime types do not affect the chosen method.}{Review checklist; static checks for suspicious overload sets; unit tests demonstrating correct dispatch behavior.}
+
+\Rule{MIS-08}{Never confuse the immutability of a reference with that of the referenced object}{Do not treat \texttt{final} references as implying immutable objects; enforce immutability through object design (no setters, defensive copies, immutable fields).}{\texttt{final} prevents reassignment, not mutation.}{Review checklist; static checks for exposing mutable internals from "immutable" classes; unit tests that mutation attempts are impossible.}
+
+\Rule{MIS-09}{Use the serialization methods writeUnshared() and readUnshared() with care}{Use \texttt{writeUnshared()} / \texttt{readUnshared()} only when object identity and sharing semantics are fully understood; do not use casually.}{Misuse breaks aliasing expectations and can introduce subtle defects.}{Serialization review gate; unit tests validating identity/sharing across round-trip; static checks for unshared calls in sensitive code.}
+
+\Rule{MIS-10}{Do not attempt to help the garbage collector by setting local reference variables to null}{Do not set locals to \texttt{null} solely to "help GC" except in rare, justified cases supported by profiling in long-running scopes.}{It adds noise and often provides no benefit; smaller scopes are cleaner.}{Lint rule for nulling locals; review checklist; performance profiling to justify exceptions.}
+
+\newpage
+
+\section*{Implementation Notes}
+\addcontentsline{toc}{section}{Implementation Notes}
+\begin{itemize}
+\item \textbf{Static analysis:} Implement the "shall/shall-not" items with Checkstyle/PMD/SpotBugs plus targeted custom rules in your SAST platform.
+\item \textbf{Review checklist:} For contextual rules (crypto choices, sandboxing, privileged code), require explicit sign-off and documented justification.
+\item \textbf{Test guard rails:} Add regression tests for prior defect classes (injection payload tests, boundary tests, concurrency stress tests, resource leak tests).
+\end{itemize}
+
+
+\clearpage
+\part{CERT Oracle Secure Coding Standard for Java (2011) --- Expanded Rules}
+\noindent\textbf{Source.} Fred Long, Dhruv Mohindra, Robert C. Seacord, Dean F. Sutherland, \emph{The CERT\textregistered{} Oracle\textregistered{} Secure Coding Standard for Java\texttrademark{}} (Addison-Wesley, 2011).\par
+\noindent\textbf{Summary.} 156 rules grouped by mnemonic topic.\par
+\medskip
+
+\begin{longtable}{@{}llr@{}}
+\toprule
+Mnemonic & Topic & Count\\
+\midrule
+\endfirsthead
+\toprule
+Mnemonic & Topic & Count\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+IDS & Input Validation and Data Sanitization & 14\\
+DCL & Declarations and Initialization & 3\\
+EXP & Expressions & 7\\
+NUM & Numeric Types and Operations & 14\\
+OBJ & Object Orientation & 12\\
+MET & Methods & 13\\
+ERR & Exceptional Behavior & 10\\
+VNA & Visibility and Atomicity & 6\\
+LCK & Locking & 12\\
+THI & Thread APIs & 6\\
+TPS & Thread Pools & 5\\
+TSM & Thread-Safety Miscellaneous & 4\\
+FIO & Input Output & 15\\
+SER & Serialization & 12\\
+SEC & Platform Security & 9\\
+ENV & Runtime Environment & 6\\
+MSC & Miscellaneous & 8\\
+\end{longtable}
+
+\noindent\textbf{Important.} The expansions below are intentionally conservative: they express an enforceable interpretation of the title. For high-assurance systems, refine each rule with project-specific constraints (approved APIs, threat model, data classifications, and hardening patterns).\par
+\clearpage
+
+% --- Inserted: JCG↔CERT mnemonic crosswalk ---
+
+\clearpage
+\section{JCG$\leftrightarrow$CERT Mnemonic Crosswalk}
+\subsection{Rule ID Scheme}
+Java Coding Guidelines rules in this catalog use synthetic IDs of the form \texttt{\textit{TOPIC}-\textit{NN}} where \textit{TOPIC} is one of \texttt{SEC}, \texttt{DEF}, \texttt{REL}, \texttt{UND}, \texttt{MIS} and \textit{NN} is a chapter-local counter.
+\subsection{Crosswalk (Primary + Secondary Mnemonics)}
+\small
+\begin{longtable}{@{}p{0.14\textwidth}p{0.36\textwidth}p{0.14\textwidth}p{0.10\textwidth}p{0.18\textwidth}@{}}
+\toprule
+\textbf{JCG Rule ID} & \textbf{Rule Title} & \textbf{JCG Chapter} & \textbf{Primary CERT} & \textbf{Secondary CERT} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{JCG Rule ID} & \textbf{Rule Title} & \textbf{JCG Chapter} & \textbf{Primary CERT} & \textbf{Secondary CERT} \\
+\midrule
+\endhead
+\midrule \multicolumn{5}{r}{\emph{Continued on next page}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\texttt{SEC-01} & Limit the lifetime of sensitive data & Security & \texttt{SEC} & MSC, FIO \\
+\texttt{SEC-02} & Do not store unencrypted sensitive information on the client side & Security & \texttt{SER} & SEC, FIO \\
+\texttt{SEC-03} & Provide sensitive mutable classes with unmodifiable wrappers & Security & \texttt{OBJ} & SEC \\
+\texttt{SEC-04} & Ensure that security-sensitive methods are called with validated arguments & Security & \texttt{MET} & IDS, SEC \\
+\texttt{SEC-05} & Prevent arbitrary file upload & Security & \texttt{IDS} & -- \\
+\texttt{SEC-06} & Properly encode or escape output & Security & \texttt{IDS} & -- \\
+\texttt{SEC-07} & Prevent code injection & Security & \texttt{IDS} & -- \\
+\texttt{SEC-08} & Prevent XPath injection & Security & \texttt{IDS} & -- \\
+\texttt{SEC-09} & Prevent LDAP injection & Security & \texttt{IDS} & -- \\
+\texttt{SEC-10} & Do not use clone() to copy untrusted method parameters & Security & \texttt{MET} & OBJ \\
+\texttt{SEC-11} & Do not use Object.equals() to compare cryptographic keys & Security & \texttt{MET} & OBJ, MSC \\
+\texttt{SEC-12} & Do not use insecure or weak cryptographic algorithms & Security & \texttt{MSC} & SEC \\
+\texttt{SEC-13} & Store passwords using a hash function & Security & \texttt{MSC} & SEC \\
+\texttt{SEC-14} & Ensure that SecureRandom is properly seeded & Security & \texttt{MSC} & NUM \\
+\texttt{SEC-15} & Do not rely on methods that can be overridden by untrusted code & Security & \texttt{MET} & OBJ, SEC \\
+\texttt{SEC-16} & Avoid granting excess privileges & Security & \texttt{SEC} & -- \\
+\texttt{SEC-17} & Minimize privileged code & Security & \texttt{SEC} & IDS \\
+\texttt{SEC-18} & Do not expose methods that use reduced-security checks to untrusted code & Security & \texttt{SEC} & MET \\
+\texttt{SEC-19} & Define custom security permissions for fine-grained security & Security & \texttt{SEC} & IDS, FIO \\
+\texttt{SEC-20} & Create a secure sandbox using a security manager & Security & \texttt{SEC} & IDS \\
+\texttt{SEC-21} & Do not let untrusted code misuse privileges of callback methods & Security & \texttt{SEC} & OBJ \\
+\texttt{DEF-01} & Minimize the scope of variables & Defensive Programming & \texttt{OBJ} & MET, ERR \\
+\texttt{DEF-02} & Minimize the scope of the @SuppressWarnings annotation & Defensive Programming & \texttt{OBJ} & MET, ERR \\
+\texttt{DEF-03} & Minimize the accessibility of classes and their members & Defensive Programming & \texttt{OBJ} & -- \\
+\texttt{DEF-04} & Document thread-safety and use annotations where applicable & Defensive Programming & \texttt{OBJ} & MET, MSC \\
+\texttt{DEF-05} & Always provide feedback about the resulting value of a method & Defensive Programming & \texttt{MET} & -- \\
+\texttt{DEF-06} & Identify files using multiple file attributes & Defensive Programming & \texttt{IDS} & EXP, OBJ \\
+\texttt{DEF-07} & Do not attach significance to the ordinal associated with an enum & Defensive Programming & \texttt{MSC} & OBJ, MET \\
+\texttt{DEF-08} & Be aware of numeric promotion behavior & Defensive Programming & \texttt{NUM} & ERR, OBJ \\
+\texttt{DEF-09} & Enable compile-time type checking of variable arity parameter types & Defensive Programming & \texttt{MET} & MSC, ERR \\
+\texttt{DEF-10} & Do not apply public final to constants whose value might change in later releases & Defensive Programming & \texttt{OBJ} & -- \\
+\texttt{DEF-11} & Avoid cyclic dependencies between packages & Defensive Programming & \texttt{MSC} & DCL, OBJ \\
+\texttt{DEF-12} & Prefer user-defined exceptions over more general exception types & Defensive Programming & \texttt{ERR} & -- \\
+\texttt{DEF-13} & Try to gracefully recover from system errors & Defensive Programming & \texttt{ERR} & OBJ, MET \\
+\texttt{DEF-14} & Carefully design interfaces before releasing them & Defensive Programming & \texttt{OBJ} & MSC, EXP \\
+\texttt{DEF-15} & Write garbage collection–friendly code & Defensive Programming & \texttt{MSC} & -- \\
+\texttt{REL-01} & Do not shadow or obscure identifiers in subscopes & Reliability & \texttt{DCL} & -- \\
+\texttt{REL-02} & Do not declare more than one variable per declaration & Reliability & \texttt{DCL} & FIO \\
+\texttt{REL-03} & Use meaningful symbolic constants to represent literal values in program logic & Reliability & \texttt{MSC} & SER, ERR \\
+\texttt{REL-04} & Properly encode relationships in constant definitions & Reliability & \texttt{MSC} & EXP, DCL \\
+\texttt{REL-05} & Return an empty array or collection instead of a null value for methods that return an array or collection & Reliability & \texttt{ERR} & MET \\
+\texttt{REL-06} & Use exceptions only for exceptional conditions & Reliability & \texttt{ERR} & DCL, FIO \\
+\texttt{REL-07} & Use a try-with-resources statement to safely handle closeable resources & Reliability & \texttt{FIO} & -- \\
+\texttt{REL-08} & Do not use assertions to verify the absence of runtime errors & Reliability & \texttt{ERR} & IDS, EXP \\
+\texttt{REL-09} & Use the same type for the second and third operands in conditional expressions & Reliability & \texttt{EXP} & SER, ERR \\
+\texttt{REL-10} & Do not serialize direct handles to system resources & Reliability & \texttt{FIO} & -- \\
+\texttt{REL-11} & Prefer using iterators over enumerations & Reliability & \texttt{MET} & FIO, MSC \\
+\texttt{REL-12} & Do not use direct buffers for short-lived, infrequently used objects & Reliability & \texttt{MSC} & FIO \\
+\texttt{REL-13} & Remove short-lived objects from long-lived container objects & Reliability & \texttt{MSC} & SER, ERR \\
+\texttt{UND-01} & Be careful using visually misleading identifiers and literals & Program Understandability & \texttt{EXP} & NUM, MSC \\
+\texttt{UND-02} & Avoid ambiguous overloading of variable-arity methods & Program Understandability & \texttt{MET} & NUM, EXP \\
+\texttt{UND-03} & Avoid in-band error indicators & Program Understandability & \texttt{ERR} & -- \\
+\texttt{UND-04} & Do not perform assignments in conditional expressions & Program Understandability & \texttt{EXP} & -- \\
+\texttt{UND-05} & Use braces for the body of an if, for, or while statement & Program Understandability & \texttt{EXP} & -- \\
+\texttt{UND-06} & Do not place a semicolon immediately following an if, for, or while condition & Program Understandability & \texttt{EXP} & -- \\
+\texttt{UND-07} & Finish every set of statements associated with a case label with a break statement & Program Understandability & \texttt{EXP} & -- \\
+\texttt{UND-08} & Avoid inadvertent wrapping of loop counters & Program Understandability & \texttt{NUM} & -- \\
+\texttt{UND-09} & Use parentheses for precedence of operation & Program Understandability & \texttt{EXP} & -- \\
+\texttt{UND-10} & Do not make assumptions about file creation & Program Understandability & \texttt{EXP} & -- \\
+\texttt{UND-11} & Convert integers to floating-point for floating-point operations & Program Understandability & \texttt{NUM} & -- \\
+\texttt{UND-12} & Ensure that the clone() method calls super.clone() & Program Understandability & \texttt{EXP} & NUM \\
+\texttt{UND-13} & Use comments consistently and in a readable fashion & Program Understandability & \texttt{MSC} & -- \\
+\texttt{UND-14} & Detect and remove superfluous code and values & Program Understandability & \texttt{EXP} & NUM, MSC \\
+\texttt{UND-15} & Strive for logical completeness & Program Understandability & \texttt{EXP} & -- \\
+\texttt{UND-16} & Avoid ambiguous or confusing uses of overloading & Program Understandability & \texttt{EXP} & NUM \\
+\texttt{MIS-01} & Do not assume that declaring a reference volatile guarantees safe publication of the members of the referenced object & Programmer Misconceptions & \texttt{VNA} & OBJ \\
+\texttt{MIS-02} & Do not assume that the sleep(), yield(), or getState() methods provide synchronization semantics & Programmer Misconceptions & \texttt{THI} & -- \\
+\texttt{MIS-03} & Do not assume that the remainder operator always returns a nonnegative result for integral operands & Programmer Misconceptions & \texttt{NUM} & EXP, VNA \\
+\texttt{MIS-04} & Do not confuse abstract object equality with reference equality & Programmer Misconceptions & \texttt{OBJ} & THI, VNA \\
+\texttt{MIS-05} & Understand the differences between bitwise and logical operators & Programmer Misconceptions & \texttt{EXP} & -- \\
+\texttt{MIS-06} & Understand how escape characters are interpreted when strings are loaded & Programmer Misconceptions & \texttt{IDS} & VNA, THI \\
+\texttt{MIS-07} & Do not use overloaded methods to differentiate between runtime types & Programmer Misconceptions & \texttt{MET} & VNA, THI \\
+\texttt{MIS-08} & Never confuse the immutability of a reference with that of the referenced object & Programmer Misconceptions & \texttt{OBJ} & -- \\
+\texttt{MIS-09} & Use the serialization methods writeUnshared() and readUnshared() with care & Programmer Misconceptions & \texttt{SER} & VNA, THI \\
+\texttt{MIS-10} & Do not attempt to help the garbage collector by setting local reference variables to null & Programmer Misconceptions & \texttt{EXP} & VNA, THI \\
+\end{longtable}
+\normalsize
+\subsection{Topic + Count}
+\begin{table}[h]\centering
+\begin{tabular}{@{}llr@{}}
+\toprule
+\textbf{CERT Mnemonic} & \textbf{CERT Topic} & \textbf{Count (Primary)} \\
+\midrule
+\texttt{DCL} & Declarations and Initialization & 2 \\
+\texttt{ENV} & Runtime Environment & 0 \\
+\texttt{ERR} & Exceptional Behavior & 6 \\
+\texttt{EXP} & Expressions & 15 \\
+\texttt{FIO} & Input Output & 2 \\
+\texttt{IDS} & Input Validation and Data Sanitization & 8 \\
+\texttt{LCK} & Locking & 0 \\
+\texttt{MET} & Methods & 9 \\
+\texttt{MSC} & Miscellaneous & 9 \\
+\texttt{NUM} & Numeric Types and Operations & 4 \\
+\texttt{OBJ} & Object Orientation & 9 \\
+\texttt{SEC} & Platform Security & 7 \\
+\texttt{SER} & Serialization & 2 \\
+\texttt{THI} & Thread APIs & 1 \\
+\texttt{TPS} & Thread Pools & 0 \\
+\texttt{TSM} & Thread-Safety Miscellaneous & 0 \\
+\texttt{VNA} & Visibility and Atomicity & 1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% --- End inserted crosswalk ---
+
+\section{IDS --- Input Validation and Data Sanitization}
+\noindent\textbf{Topic scope.} Untrusted input is a primary source of injection, path traversal, and authorization bypass. Clear trust boundaries, normalization, and strict validation reduce ambiguity and attack surface.
+
+\CERTJRule{IDS00-J}{Sanitize untrusted data passed across a trust boundary}{The implementation shall sanitize untrusted data passed across a trust boundary.}{Untrusted input is a primary source of injection, path traversal, and authorization bypass. Clear trust boundaries, normalization, and strict validation reduce ambiguity and attack surface.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{IDS01-J}{Normalize strings before validating them}{The implementation shall normalize strings before validating them.}{Untrusted input is a primary source of injection, path traversal, and authorization bypass. Clear trust boundaries, normalization, and strict validation reduce ambiguity and attack surface.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{IDS02-J}{Canonicalize path names before validating them}{The implementation shall canonicalize path names before validating them.}{Untrusted input is a primary source of injection, path traversal, and authorization bypass. Clear trust boundaries, normalization, and strict validation reduce ambiguity and attack surface. Incorrect path handling can enable traversal, symlink attacks, or unintended file disclosure/modification.}{\begin{itemize}
+\item Static analysis: detect validation of file paths prior to canonicalization; require canonicalize/normalize (e.g., \texttt{Path.normalize}, \texttt{toRealPath}) before policy checks.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{IDS03-J}{Do not log unsanitized user input}{The implementation shall not log unsanitized user input.}{Untrusted input is a primary source of injection, path traversal, and authorization bypass. Clear trust boundaries, normalization, and strict validation reduce ambiguity and attack surface. Unsanitized logs can enable log injection, corrupt audit trails, or leak sensitive data.}{\begin{itemize}
+\item Static analysis: taint-track user-controlled data into logging calls; require encoding/sanitization and prohibit logging of secrets.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{IDS04-J}{Limit the size of files passed to ZipInputStream}{The implementation shall limit the size of files passed to ZipInputStream.}{Untrusted input is a primary source of injection, path traversal, and authorization bypass. Clear trust boundaries, normalization, and strict validation reduce ambiguity and attack surface. Compressed input can be weaponized (ZIP bombs) to exhaust CPU, memory, or disk. Incorrect path handling can enable traversal, symlink attacks, or unintended file disclosure/modification.}{\begin{itemize}
+\item Static analysis: flag uses of \texttt{ZipInputStream}/\texttt{ZipFile} and require explicit size limits (entry count, uncompressed bytes) and safe extraction (no path traversal).
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{IDS05-J}{Use a subset of ASCII for file and path names}{The implementation shall use a subset of ASCII for file and path names.}{Untrusted input is a primary source of injection, path traversal, and authorization bypass. Clear trust boundaries, normalization, and strict validation reduce ambiguity and attack surface. Incorrect path handling can enable traversal, symlink attacks, or unintended file disclosure/modification.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{IDS06-J}{Exclude user input from format strings}{The implementation shall exclude user input from format strings.}{Untrusted input is a primary source of injection, path traversal, and authorization bypass. Clear trust boundaries, normalization, and strict validation reduce ambiguity and attack surface.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{IDS07-J}{Do not pass untrusted, unsanitized data to the Runtime.exec() method}{The implementation shall not pass untrusted, unsanitized data to the Runtime.exec() method.}{Untrusted input is a primary source of injection, path traversal, and authorization bypass. Clear trust boundaries, normalization, and strict validation reduce ambiguity and attack surface.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{IDS08-J}{Sanitize untrusted data passed to a regex}{The implementation shall sanitize untrusted data passed to a regex.}{Untrusted input is a primary source of injection, path traversal, and authorization bypass. Clear trust boundaries, normalization, and strict validation reduce ambiguity and attack surface.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{IDS09-J}{Do not use locale-dependent methods on locale-dependent data without specifying the appropriate locale}{The implementation shall not use locale-dependent methods on locale-dependent data without specifying the appropriate locale.}{Untrusted input is a primary source of injection, path traversal, and authorization bypass. Clear trust boundaries, normalization, and strict validation reduce ambiguity and attack surface.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{IDS10-J}{Do not split characters between two data structures}{The implementation shall not split characters between two data structures.}{Untrusted input is a primary source of injection, path traversal, and authorization bypass. Clear trust boundaries, normalization, and strict validation reduce ambiguity and attack surface.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{IDS11-J}{Eliminate noncharacter code points before validation}{The implementation shall eliminate noncharacter code points before validation.}{Untrusted input is a primary source of injection, path traversal, and authorization bypass. Clear trust boundaries, normalization, and strict validation reduce ambiguity and attack surface.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{IDS12-J}{Perform lossless conversion of String data between differing character encodings}{The implementation shall comply with IDS12-J by following: Perform lossless conversion of String data between differing character encodings.}{Untrusted input is a primary source of injection, path traversal, and authorization bypass. Clear trust boundaries, normalization, and strict validation reduce ambiguity and attack surface.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{IDS13-J}{Use compatible encodings on both sides of file or network I/O}{The implementation shall use compatible encodings on both sides of file or network I/O.}{Untrusted input is a primary source of injection, path traversal, and authorization bypass. Clear trust boundaries, normalization, and strict validation reduce ambiguity and attack surface. Incorrect path handling can enable traversal, symlink attacks, or unintended file disclosure/modification.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\clearpage
+
+\section{DCL --- Declarations and Initialization}
+\noindent\textbf{Topic scope.} Incorrect declarations or initialization can violate invariants and lead to null dereferences, information leaks, and unpredictable behavior.
+
+\CERTJRule{DCL00-J}{Prevent class initialization cycles}{The implementation shall prevent class initialization cycles.}{Incorrect declarations or initialization can violate invariants and lead to null dereferences, information leaks, and unpredictable behavior.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{DCL01-J}{Do not reuse public identifiers from the Java Standard Library}{The implementation shall not reuse public identifiers from the Java Standard Library.}{Incorrect declarations or initialization can violate invariants and lead to null dereferences, information leaks, and unpredictable behavior.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{DCL02-J}{Declare all enhanced for statement loop variables final}{The implementation shall comply with DCL02-J by following: Declare all enhanced for statement loop variables final.}{Incorrect declarations or initialization can violate invariants and lead to null dereferences, information leaks, and unpredictable behavior.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\clearpage
+
+\section{EXP --- Expressions}
+\noindent\textbf{Topic scope.} Expression-level pitfalls (side effects, precedence, implicit conversions) often cause subtle logic errors that undermine security checks and correctness.
+
+\CERTJRule{EXP00-J}{Do not ignore values returned by methods}{The implementation shall not ignore values returned by methods.}{Expression-level pitfalls (side effects, precedence, implicit conversions) often cause subtle logic errors that undermine security checks and correctness.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{EXP01-J}{Never dereference null pointers}{The implementation shall not dereference null pointers.}{Expression-level pitfalls (side effects, precedence, implicit conversions) often cause subtle logic errors that undermine security checks and correctness.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{EXP02-J}{Use the two-argument Arrays.equals() method to compare the contents of arrays}{The implementation shall use the two-argument Arrays.equals() method to compare the contents of arrays.}{Expression-level pitfalls (side effects, precedence, implicit conversions) often cause subtle logic errors that undermine security checks and correctness.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{EXP03-J}{Do not use the equality operators when comparing values of boxed primitives}{The implementation shall not use the equality operators when comparing values of boxed primitives.}{Expression-level pitfalls (side effects, precedence, implicit conversions) often cause subtle logic errors that undermine security checks and correctness.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{EXP04-J}{Ensure that autoboxed values have the intended type}{The implementation shall ensure that autoboxed values have the intended type.}{Expression-level pitfalls (side effects, precedence, implicit conversions) often cause subtle logic errors that undermine security checks and correctness.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{EXP05-J}{Do not write more than once to the same variable within an expression}{The implementation shall not write more than once to the same variable within an expression.}{Expression-level pitfalls (side effects, precedence, implicit conversions) often cause subtle logic errors that undermine security checks and correctness.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{EXP06-J}{Do not use side-effecting expressions in assertions}{The implementation shall not use side-effecting expressions in assertions.}{Expression-level pitfalls (side effects, precedence, implicit conversions) often cause subtle logic errors that undermine security checks and correctness.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\clearpage
+
+\section{NUM --- Numeric Types and Operations}
+\noindent\textbf{Topic scope.} Numeric errors (overflow, truncation, NaN/Infinity, rounding) can break bounds checks, enable denial of service, or corrupt security-critical computations.
+
+\CERTJRule{NUM00-J}{Detect or prevent integer overflow}{The implementation shall detect or prevent integer overflow.}{Numeric errors (overflow, truncation, NaN/Infinity, rounding) can break bounds checks, enable denial of service, or corrupt security-critical computations.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{NUM01-J}{Do not perform bitwise and arithmetic operations on the same data}{The implementation shall not perform bitwise and arithmetic operations on the same data.}{Numeric errors (overflow, truncation, NaN/Infinity, rounding) can break bounds checks, enable denial of service, or corrupt security-critical computations.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{NUM02-J}{Ensure that division and modulo operations do not result in divide-by-zero errors}{The implementation shall ensure that division and modulo operations do not result in divide-by-zero errors.}{Numeric errors (overflow, truncation, NaN/Infinity, rounding) can break bounds checks, enable denial of service, or corrupt security-critical computations.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{NUM03-J}{Use integer types that can fully represent the possible range of unsigned data}{The implementation shall use integer types that can fully represent the possible range of unsigned data.}{Numeric errors (overflow, truncation, NaN/Infinity, rounding) can break bounds checks, enable denial of service, or corrupt security-critical computations.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{NUM04-J}{Do not use floating-point numbers if precise computation is required}{The implementation shall not use floating-point numbers if precise computation is required.}{Numeric errors (overflow, truncation, NaN/Infinity, rounding) can break bounds checks, enable denial of service, or corrupt security-critical computations.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{NUM05-J}{Do not use denormalized numbers}{The implementation shall not use denormalized numbers.}{Numeric errors (overflow, truncation, NaN/Infinity, rounding) can break bounds checks, enable denial of service, or corrupt security-critical computations.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{NUM06-J}{Use the strictfp modifier for floating-point calculation consistency across platforms}{The implementation shall use the strictfp modifier for floating-point calculation consistency across platforms.}{Numeric errors (overflow, truncation, NaN/Infinity, rounding) can break bounds checks, enable denial of service, or corrupt security-critical computations.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{NUM07-J}{Do not attempt comparisons with NaN}{The implementation shall not attempt comparisons with NaN.}{Numeric errors (overflow, truncation, NaN/Infinity, rounding) can break bounds checks, enable denial of service, or corrupt security-critical computations.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{NUM08-J}{Check floating-point inputs for exceptional values}{The implementation shall check floating-point inputs for exceptional values.}{Numeric errors (overflow, truncation, NaN/Infinity, rounding) can break bounds checks, enable denial of service, or corrupt security-critical computations. Exceptions that propagate unexpectedly can leak state or leave objects partially initialized.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{NUM09-J}{Do not use floating-point variables as loop counters}{The implementation shall not use floating-point variables as loop counters.}{Numeric errors (overflow, truncation, NaN/Infinity, rounding) can break bounds checks, enable denial of service, or corrupt security-critical computations.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{NUM10-J}{Do not construct BigDecimal objects from floating-point literals}{The implementation shall not construct BigDecimal objects from floating-point literals.}{Numeric errors (overflow, truncation, NaN/Infinity, rounding) can break bounds checks, enable denial of service, or corrupt security-critical computations.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{NUM11-J}{Do not compare or inspect the string representation of floating-point values}{The implementation shall not compare or inspect the string representation of floating-point values.}{Numeric errors (overflow, truncation, NaN/Infinity, rounding) can break bounds checks, enable denial of service, or corrupt security-critical computations.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{NUM12-J}{Ensure conversions of numeric types to narrower types do not result in lost or misinterpreted data}{The implementation shall ensure conversions of numeric types to narrower types do not result in lost or misinterpreted data.}{Numeric errors (overflow, truncation, NaN/Infinity, rounding) can break bounds checks, enable denial of service, or corrupt security-critical computations.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{NUM13-J}{Avoid loss of precision when converting primitive integers to floating-point}{The implementation shall avoid loss of precision when converting primitive integers to floating-point.}{Numeric errors (overflow, truncation, NaN/Infinity, rounding) can break bounds checks, enable denial of service, or corrupt security-critical computations.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\clearpage
+
+\section{OBJ --- Object Orientation}
+\noindent\textbf{Topic scope.} Object-oriented misuse can break encapsulation and invariants, exposing privileged state or enabling unexpected behavior through inheritance and mutation.
+
+\CERTJRule{OBJ00-J}{Limit extensibility of classes and methods with invariants to trusted subclasses only}{The implementation shall limit extensibility of classes and methods with invariants to trusted subclasses only.}{Object-oriented misuse can break encapsulation and invariants, exposing privileged state or enabling unexpected behavior through inheritance and mutation.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{OBJ01-J}{Declare data members as private and provide accessible wrapper methods}{The implementation shall comply with OBJ01-J by following: Declare data members as private and provide accessible wrapper methods.}{Object-oriented misuse can break encapsulation and invariants, exposing privileged state or enabling unexpected behavior through inheritance and mutation. Security checks must be authoritative and resistant to spoofing or bypass.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{OBJ02-J}{Preserve dependencies in subclasses when changing superclasses}{The implementation shall preserve dependencies in subclasses when changing superclasses.}{Object-oriented misuse can break encapsulation and invariants, exposing privileged state or enabling unexpected behavior through inheritance and mutation.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{OBJ03-J}{Do not mix generic with nongeneric raw types in new code}{The implementation shall not mix generic with nongeneric raw types in new code.}{Object-oriented misuse can break encapsulation and invariants, exposing privileged state or enabling unexpected behavior through inheritance and mutation.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{OBJ04-J}{Provide mutable classes with copy functionality to safely allow passing instances to untrusted code}{The implementation shall provide mutable classes with copy functionality to safely allow passing instances to untrusted code.}{Object-oriented misuse can break encapsulation and invariants, exposing privileged state or enabling unexpected behavior through inheritance and mutation.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{OBJ05-J}{Defensively copy private mutable class members before returning their references}{The implementation shall defensively copy private mutable class members before returning their references.}{Object-oriented misuse can break encapsulation and invariants, exposing privileged state or enabling unexpected behavior through inheritance and mutation.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{OBJ06-J}{Defensively copy mutable inputs and mutable internal components}{The implementation shall defensively copy mutable inputs and mutable internal components.}{Object-oriented misuse can break encapsulation and invariants, exposing privileged state or enabling unexpected behavior through inheritance and mutation.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{OBJ07-J}{Sensitive classes must not let themselves be copied}{The implementation shall not let themselves be copied.}{Object-oriented misuse can break encapsulation and invariants, exposing privileged state or enabling unexpected behavior through inheritance and mutation.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{OBJ08-J}{Do not expose private members of an outer class from within a nested class}{The implementation shall not expose private members of an outer class from within a nested class.}{Object-oriented misuse can break encapsulation and invariants, exposing privileged state or enabling unexpected behavior through inheritance and mutation.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{OBJ09-J}{Compare classes and not class names}{The implementation shall compare classes and not class names.}{Object-oriented misuse can break encapsulation and invariants, exposing privileged state or enabling unexpected behavior through inheritance and mutation.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{OBJ10-J}{Do not use public static nonfinal variables}{The implementation shall not use public static nonfinal variables.}{Object-oriented misuse can break encapsulation and invariants, exposing privileged state or enabling unexpected behavior through inheritance and mutation.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{OBJ11-J}{Be wary of letting constructors throw exceptions}{The implementation shall ensure letting constructors throw exceptions.}{Object-oriented misuse can break encapsulation and invariants, exposing privileged state or enabling unexpected behavior through inheritance and mutation. Exceptions that propagate unexpectedly can leak state or leave objects partially initialized.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\clearpage
+
+\section{MET --- Methods}
+\noindent\textbf{Topic scope.} Method and constructor contract violations can leak state, break invariants, and create unsafe APIs that are difficult to verify and maintain.
+
+\CERTJRule{MET00-J}{Validate method arguments}{The implementation shall validate method arguments.}{Method and constructor contract violations can leak state, break invariants, and create unsafe APIs that are difficult to verify and maintain.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{MET01-J}{Never use assertions to validate method arguments}{The implementation shall not use assertions to validate method arguments.}{Method and constructor contract violations can leak state, break invariants, and create unsafe APIs that are difficult to verify and maintain.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{MET02-J}{Do not use deprecated or obsolete classes or methods}{The implementation shall not use deprecated or obsolete classes or methods.}{Method and constructor contract violations can leak state, break invariants, and create unsafe APIs that are difficult to verify and maintain.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{MET03-J}{Methods that perform a security check must be declared private or final}{Methods that perform a security check shall be declared private or final.}{Method and constructor contract violations can leak state, break invariants, and create unsafe APIs that are difficult to verify and maintain.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{MET04-J}{Do not increase the accessibility of overridden or hidden methods}{The implementation shall not increase the accessibility of overridden or hidden methods.}{Method and constructor contract violations can leak state, break invariants, and create unsafe APIs that are difficult to verify and maintain. Security checks must be authoritative and resistant to spoofing or bypass.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{MET05-J}{Ensure that constructors do not call overridable methods}{The implementation shall ensure that constructors do not call overridable methods.}{Method and constructor contract violations can leak state, break invariants, and create unsafe APIs that are difficult to verify and maintain.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{MET06-J}{Do not invoke overridable methods in clone()}{The implementation shall not invoke overridable methods in clone().}{Method and constructor contract violations can leak state, break invariants, and create unsafe APIs that are difficult to verify and maintain.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{MET07-J}{Never declare a class method that hides a method declared in a superclass or superinterface}{The implementation shall not declare a class method that hides a method declared in a superclass or superinterface.}{Method and constructor contract violations can leak state, break invariants, and create unsafe APIs that are difficult to verify and maintain.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{MET08-J}{Ensure objects that are equated are equatable}{The implementation shall ensure objects that are equated are equatable.}{Method and constructor contract violations can leak state, break invariants, and create unsafe APIs that are difficult to verify and maintain.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{MET09-J}{Classes that define an equals() method must also define a hashCode() method}{Classes that define an equals() method shall also define a hashCode() method.}{Method and constructor contract violations can leak state, break invariants, and create unsafe APIs that are difficult to verify and maintain.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{MET10-J}{Follow the general contract when implementing thecompareTo() method}{The implementation shall follow the general contract when implementing thecompareTo() method.}{Method and constructor contract violations can leak state, break invariants, and create unsafe APIs that are difficult to verify and maintain.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{MET11-J}{Ensure that keys used in comparison operations are immutable}{The implementation shall ensure that keys used in comparison operations are immutable.}{Method and constructor contract violations can leak state, break invariants, and create unsafe APIs that are difficult to verify and maintain.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{MET12-J}{Do not use finalizers}{The implementation shall not use finalizers.}{Method and constructor contract violations can leak state, break invariants, and create unsafe APIs that are difficult to verify and maintain.}{\begin{itemize}
+\item Static analysis: flag \texttt{finalize()} and reliance on finalizers for resource management; require try-with-resources or explicit cleanup.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\clearpage
+
+\section{ERR --- Exceptional Behavior}
+\noindent\textbf{Topic scope.} Improper exception handling can expose sensitive data, mask failures, or leave objects in unsafe/partial states.
+
+\CERTJRule{ERR00-J}{Do not suppress or ignore checked exceptions}{The implementation shall not suppress or ignore checked exceptions.}{Improper exception handling can expose sensitive data, mask failures, or leave objects in unsafe/partial states. Exceptions that propagate unexpectedly can leak state or leave objects partially initialized.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{ERR01-J}{Do not allow exceptions to expose sensitive information}{The implementation shall not allow exceptions to expose sensitive information.}{Improper exception handling can expose sensitive data, mask failures, or leave objects in unsafe/partial states. Exceptions that propagate unexpectedly can leak state or leave objects partially initialized.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{ERR02-J}{Prevent exceptions while logging data}{The implementation shall prevent exceptions while logging data.}{Improper exception handling can expose sensitive data, mask failures, or leave objects in unsafe/partial states. Unsanitized logs can enable log injection, corrupt audit trails, or leak sensitive data. Exceptions that propagate unexpectedly can leak state or leave objects partially initialized.}{\begin{itemize}
+\item Static analysis: taint-track user-controlled data into logging calls; require encoding/sanitization and prohibit logging of secrets.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{ERR03-J}{Restore prior object state on method failure}{The implementation shall restore prior object state on method failure.}{Improper exception handling can expose sensitive data, mask failures, or leave objects in unsafe/partial states.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{ERR04-J}{Do not exit abruptly from a finally block}{The implementation shall not exit abruptly from a finally block.}{Improper exception handling can expose sensitive data, mask failures, or leave objects in unsafe/partial states. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{ERR05-J}{Do not let checked exceptions escape from a finally block}{The implementation shall not let checked exceptions escape from a finally block.}{Improper exception handling can expose sensitive data, mask failures, or leave objects in unsafe/partial states. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures. Exceptions that propagate unexpectedly can leak state or leave objects partially initialized.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{ERR06-J}{Do not throw undeclared checked exceptions}{The implementation shall not throw undeclared checked exceptions.}{Improper exception handling can expose sensitive data, mask failures, or leave objects in unsafe/partial states. Exceptions that propagate unexpectedly can leak state or leave objects partially initialized.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{ERR07-J}{Do not throw RuntimeException ,Exception , orThrowable}{The implementation shall not throw RuntimeException ,Exception , orThrowable.}{Improper exception handling can expose sensitive data, mask failures, or leave objects in unsafe/partial states. Exceptions that propagate unexpectedly can leak state or leave objects partially initialized.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{ERR08-J}{Do not catch NullPointerException or any of its ancestors}{The implementation shall not catch NullPointerException or any of its ancestors.}{Improper exception handling can expose sensitive data, mask failures, or leave objects in unsafe/partial states. Exceptions that propagate unexpectedly can leak state or leave objects partially initialized.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{ERR09-J}{Do not allow untrusted code to terminate the JVM}{The implementation shall not allow untrusted code to terminate the JVM.}{Improper exception handling can expose sensitive data, mask failures, or leave objects in unsafe/partial states.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\clearpage
+
+\section{VNA --- Visibility and Atomicity}
+\noindent\textbf{Topic scope.} Visibility and atomicity issues lead to data races and stale reads, producing inconsistent security decisions and hard-to-reproduce failures.
+
+\CERTJRule{VNA00-J}{Ensure visibility when accessing shared primitive variables}{The implementation shall ensure visibility when accessing shared primitive variables.}{Visibility and atomicity issues lead to data races and stale reads, producing inconsistent security decisions and hard-to-reproduce failures. Security checks must be authoritative and resistant to spoofing or bypass.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{VNA01-J}{Ensure visibility of shared references to immutable objects}{The implementation shall ensure visibility of shared references to immutable objects.}{Visibility and atomicity issues lead to data races and stale reads, producing inconsistent security decisions and hard-to-reproduce failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{VNA02-J}{Ensure that compound operations on shared variables are atomic}{The implementation shall ensure that compound operations on shared variables are atomic.}{Visibility and atomicity issues lead to data races and stale reads, producing inconsistent security decisions and hard-to-reproduce failures. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{VNA03-J}{Do not assume that a group of calls to independently atomic methods is atomic}{The implementation shall not assume that a group of calls to independently atomic methods is atomic.}{Visibility and atomicity issues lead to data races and stale reads, producing inconsistent security decisions and hard-to-reproduce failures. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{VNA04-J}{Ensure that calls to chained methods are atomic}{The implementation shall ensure that calls to chained methods are atomic.}{Visibility and atomicity issues lead to data races and stale reads, producing inconsistent security decisions and hard-to-reproduce failures. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{VNA05-J}{Ensure atomicity when reading and writing 64-bit values}{The implementation shall ensure atomicity when reading and writing 64-bit values.}{Visibility and atomicity issues lead to data races and stale reads, producing inconsistent security decisions and hard-to-reproduce failures. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\clearpage
+
+\section{LCK --- Locking}
+\noindent\textbf{Topic scope.} Locking mistakes can cause deadlock, starvation, or data races, impacting availability and correctness in concurrent code.
+
+\CERTJRule{LCK00-J}{Use private final lock objects to synchronize classes that may interact with untrusted code}{The implementation shall use private final lock objects to synchronize classes that may interact with untrusted code.}{Locking mistakes can cause deadlock, starvation, or data races, impacting availability and correctness in concurrent code. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{LCK01-J}{Do not synchronize on objects that may be reused}{The implementation shall not synchronize on objects that may be reused.}{Locking mistakes can cause deadlock, starvation, or data races, impacting availability and correctness in concurrent code. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{LCK02-J}{Do not synchronize on the class object returned by getClass()}{The implementation shall not synchronize on the class object returned by getClass().}{Locking mistakes can cause deadlock, starvation, or data races, impacting availability and correctness in concurrent code. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{LCK03-J}{Do not synchronize on the intrinsic locks of high-level concurrency objects}{The implementation shall not synchronize on the intrinsic locks of high-level concurrency objects.}{Locking mistakes can cause deadlock, starvation, or data races, impacting availability and correctness in concurrent code. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{LCK04-J}{Do not synchronize on a collection view if the backing collection is accessible}{The implementation shall not synchronize on a collection view if the backing collection is accessible.}{Locking mistakes can cause deadlock, starvation, or data races, impacting availability and correctness in concurrent code. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures. Security checks must be authoritative and resistant to spoofing or bypass.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{LCK05-J}{Synchronize access to static fields that can be modified by untrusted code}{The implementation shall synchronize access to static fields that can be modified by untrusted code.}{Locking mistakes can cause deadlock, starvation, or data races, impacting availability and correctness in concurrent code. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures. Security checks must be authoritative and resistant to spoofing or bypass.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{LCK06-J}{Do not use an instance lock to protect shared static data}{The implementation shall not use an instance lock to protect shared static data.}{Locking mistakes can cause deadlock, starvation, or data races, impacting availability and correctness in concurrent code. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{LCK07-J}{Avoid deadlock by requesting and releasing locks in the same order}{The implementation shall avoid deadlock by requesting and releasing locks in the same order.}{Locking mistakes can cause deadlock, starvation, or data races, impacting availability and correctness in concurrent code. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{LCK08-J}{Ensure actively held locks are released on exceptional conditions}{The implementation shall ensure actively held locks are released on exceptional conditions.}{Locking mistakes can cause deadlock, starvation, or data races, impacting availability and correctness in concurrent code. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures. Exceptions that propagate unexpectedly can leak state or leave objects partially initialized.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{LCK09-J}{Do not perform operations that can block while holding a lock}{The implementation shall not perform operations that can block while holding a lock.}{Locking mistakes can cause deadlock, starvation, or data races, impacting availability and correctness in concurrent code. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{LCK10-J}{Do not use incorrect forms of the double-checked locking idiom}{The implementation shall not use incorrect forms of the double-checked locking idiom.}{Locking mistakes can cause deadlock, starvation, or data races, impacting availability and correctness in concurrent code. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{LCK11-J}{Avoid client-side locking when using classes that do not commit to their locking strategy}{The implementation shall avoid client-side locking when using classes that do not commit to their locking strategy.}{Locking mistakes can cause deadlock, starvation, or data races, impacting availability and correctness in concurrent code. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\clearpage
+
+\section{THI --- Thread APIs}
+\noindent\textbf{Topic scope.} Misuse of thread APIs can break lifecycle guarantees, leak resources, and create race conditions that are difficult to detect in review.
+
+\CERTJRule{THI00-J}{Do not invoke Thread.run()}{The implementation shall not invoke Thread.run().}{Misuse of thread APIs can break lifecycle guarantees, leak resources, and create race conditions that are difficult to detect in review. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{THI01-J}{Do not invoke ThreadGroup methods}{The implementation shall not invoke ThreadGroup methods.}{Misuse of thread APIs can break lifecycle guarantees, leak resources, and create race conditions that are difficult to detect in review. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{THI02-J}{Notify all waiting threads rather than a single thread}{The implementation shall notify all waiting threads rather than a single thread.}{Misuse of thread APIs can break lifecycle guarantees, leak resources, and create race conditions that are difficult to detect in review. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{THI03-J}{Always invoke wait() and await() methods inside a loop}{The implementation shall always invoke wait() and await() methods inside a loop.}{Misuse of thread APIs can break lifecycle guarantees, leak resources, and create race conditions that are difficult to detect in review.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{THI04-J}{Ensure that threads performing blocking operations can be terminated}{The implementation shall ensure that threads performing blocking operations can be terminated.}{Misuse of thread APIs can break lifecycle guarantees, leak resources, and create race conditions that are difficult to detect in review. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{THI05-J}{Do not use Thread.stop() to terminate threads}{The implementation shall not use Thread.stop() to terminate threads.}{Misuse of thread APIs can break lifecycle guarantees, leak resources, and create race conditions that are difficult to detect in review. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\clearpage
+
+\section{TPS --- Thread Pools}
+\noindent\textbf{Topic scope.} Thread-pool misuse can cause deadlock, task starvation, and unbounded queueing, degrading availability and reliability under load.
+
+\CERTJRule{TPS00-J}{Use thread pools to enable graceful degradation of service during traffic bursts}{The implementation shall use thread pools to enable graceful degradation of service during traffic bursts.}{Thread-pool misuse can cause deadlock, task starvation, and unbounded queueing, degrading availability and reliability under load. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{TPS01-J}{Do not execute interdependent tasks in a bounded thread pool}{The implementation shall not execute interdependent tasks in a bounded thread pool.}{Thread-pool misuse can cause deadlock, task starvation, and unbounded queueing, degrading availability and reliability under load. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{TPS02-J}{Ensure that tasks submitted to a thread pool are interruptible}{The implementation shall ensure that tasks submitted to a thread pool are interruptible.}{Thread-pool misuse can cause deadlock, task starvation, and unbounded queueing, degrading availability and reliability under load. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{TPS03-J}{Ensure that tasks executing in a thread pool do not fail silently}{The implementation shall ensure that tasks executing in a thread pool do not fail silently.}{Thread-pool misuse can cause deadlock, task starvation, and unbounded queueing, degrading availability and reliability under load. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{TPS04-J}{Ensure ThreadLocal variables are reinitialized when using thread pools}{The implementation shall ensure ThreadLocal variables are reinitialized when using thread pools.}{Thread-pool misuse can cause deadlock, task starvation, and unbounded queueing, degrading availability and reliability under load. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add thread-pool reuse tests to ensure \texttt{ThreadLocal} state is cleared/reinitialized between tasks.
+\end{itemize}}
+
+\clearpage
+
+\section{TSM --- Thread-Safety Miscellaneous}
+\noindent\textbf{Topic scope.} Thread-safety edge cases (publishing, escape, interruption, unsafe collections) can introduce concurrency defects that invalidate security assumptions.
+
+\CERTJRule{TSM00-J}{Do not override thread-safe methods with methods that are not thread-safe}{The implementation shall not override thread-safe methods with methods that are not thread-safe.}{Thread-safety edge cases (publishing, escape, interruption, unsafe collections) can introduce concurrency defects that invalidate security assumptions. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{TSM01-J}{Do not let the this reference escape during object construction}{The implementation shall not let the this reference escape during object construction.}{Thread-safety edge cases (publishing, escape, interruption, unsafe collections) can introduce concurrency defects that invalidate security assumptions.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{TSM02-J}{Do not use background threads during class initialization}{The implementation shall not use background threads during class initialization.}{Thread-safety edge cases (publishing, escape, interruption, unsafe collections) can introduce concurrency defects that invalidate security assumptions. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{TSM03-J}{Do not publish partially initialized objects}{The implementation shall not publish partially initialized objects.}{Thread-safety edge cases (publishing, escape, interruption, unsafe collections) can introduce concurrency defects that invalidate security assumptions.}{\begin{itemize}
+\item Static analysis: enable concurrency checkers (SpotBugs concurrency detectors, Error Prone checkers) and add custom rules to flag unsafe synchronization, publication, and thread lifecycle misuse.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\clearpage
+
+\section{FIO --- Input Output}
+\noindent\textbf{Topic scope.} I/O code is prone to TOCTOU, resource leaks, and unsafe path handling. Defensive checks and correct resource management reduce exposure.
+
+\CERTJRule{FIO00-J}{Do not operate on files in shared directories}{The implementation shall not operate on files in shared directories.}{I/O code is prone to TOCTOU, resource leaks, and unsafe path handling. Defensive checks and correct resource management reduce exposure. Incorrect path handling can enable traversal, symlink attacks, or unintended file disclosure/modification.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{FIO01-J}{Create files with appropriate access permissions}{The implementation shall create files with appropriate access permissions.}{I/O code is prone to TOCTOU, resource leaks, and unsafe path handling. Defensive checks and correct resource management reduce exposure. Incorrect path handling can enable traversal, symlink attacks, or unintended file disclosure/modification. Security checks must be authoritative and resistant to spoofing or bypass.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: confirm permission checks use authoritative sources (\texttt{SecurityManager}/\texttt{Permission} checks or policy enforcement) and cannot be bypassed via spoofed inputs.
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{FIO02-J}{Detect and handle file-related errors}{The implementation shall detect and handle file-related errors.}{I/O code is prone to TOCTOU, resource leaks, and unsafe path handling. Defensive checks and correct resource management reduce exposure. Incorrect path handling can enable traversal, symlink attacks, or unintended file disclosure/modification.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{FIO03-J}{Remove temporary files before termination}{The implementation shall remove temporary files before termination.}{I/O code is prone to TOCTOU, resource leaks, and unsafe path handling. Defensive checks and correct resource management reduce exposure. Incorrect path handling can enable traversal, symlink attacks, or unintended file disclosure/modification.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{FIO04-J}{Close resources when they are no longer needed}{The implementation shall close resources when they are no longer needed.}{I/O code is prone to TOCTOU, resource leaks, and unsafe path handling. Defensive checks and correct resource management reduce exposure.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{FIO05-J}{Do not expose buffers created using the wrap() orduplicate() methods to untrusted code}{The implementation shall not expose buffers created using the wrap() orduplicate() methods to untrusted code.}{I/O code is prone to TOCTOU, resource leaks, and unsafe path handling. Defensive checks and correct resource management reduce exposure.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{FIO06-J}{Do not create multiple buffered wrappers on a single InputStream}{The implementation shall not create multiple buffered wrappers on a single InputStream.}{I/O code is prone to TOCTOU, resource leaks, and unsafe path handling. Defensive checks and correct resource management reduce exposure.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{FIO07-J}{Do not let external processes block on input and output streams}{The implementation shall not let external processes block on input and output streams.}{I/O code is prone to TOCTOU, resource leaks, and unsafe path handling. Defensive checks and correct resource management reduce exposure. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{FIO08-J}{Use an int to capture the return value of methods that read a character or byte}{The implementation shall use an int to capture the return value of methods that read a character or byte.}{I/O code is prone to TOCTOU, resource leaks, and unsafe path handling. Defensive checks and correct resource management reduce exposure.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{FIO09-J}{Do not rely on the write() method to output integers outside the range 0 to 255}{The implementation shall not rely on the write() method to output integers outside the range 0 to 255.}{I/O code is prone to TOCTOU, resource leaks, and unsafe path handling. Defensive checks and correct resource management reduce exposure.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{FIO10-J}{Ensure the array is filled when using read() to fill an array}{The implementation shall ensure the array is filled when using read() to fill an array.}{I/O code is prone to TOCTOU, resource leaks, and unsafe path handling. Defensive checks and correct resource management reduce exposure.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{FIO11-J}{Do not attempt to read raw binary data as character data}{The implementation shall not attempt to read raw binary data as character data.}{I/O code is prone to TOCTOU, resource leaks, and unsafe path handling. Defensive checks and correct resource management reduce exposure.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{FIO12-J}{Provide methods to read and write little-endian data}{The implementation shall provide methods to read and write little-endian data.}{I/O code is prone to TOCTOU, resource leaks, and unsafe path handling. Defensive checks and correct resource management reduce exposure.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{FIO13-J}{Do not log sensitive information outside a trust boundary}{The implementation shall not log sensitive information outside a trust boundary.}{I/O code is prone to TOCTOU, resource leaks, and unsafe path handling. Defensive checks and correct resource management reduce exposure. Unsanitized logs can enable log injection, corrupt audit trails, or leak sensitive data.}{\begin{itemize}
+\item Static analysis: taint-track user-controlled data into logging calls; require encoding/sanitization and prohibit logging of secrets.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{FIO14-J}{Perform proper cleanup at program termination}{The implementation shall comply with FIO14-J by following: Perform proper cleanup at program termination.}{I/O code is prone to TOCTOU, resource leaks, and unsafe path handling. Defensive checks and correct resource management reduce exposure.}{\begin{itemize}
+\item Static analysis: use taint tracking (e.g., custom CodeQL queries) from untrusted sources (HTTP params, files, IPC) to sinks (logging, filesystem, command execution), requiring validation/sanitization on all paths.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\clearpage
+
+\section{SER --- Serialization}
+\noindent\textbf{Topic scope.} Serialization/deserialization can bypass constructors and invariants and is a common attack vector for gadget-based exploits. Strict controls and validation are required.
+
+\CERTJRule{SER00-J}{Maintain serialization compatibility during class evolution}{The implementation shall maintain serialization compatibility during class evolution.}{Serialization/deserialization can bypass constructors and invariants and is a common attack vector for gadget-based exploits. Strict controls and validation are required.}{\begin{itemize}
+\item Static analysis: flag uses of Java serialization APIs (\texttt{ObjectInputStream}, \texttt{readObject}, \texttt{Serializable}) and require allowlists, integrity checks, and hardening patterns.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{SER01-J}{Do not deviate from the proper signatures of serialization methods}{The implementation shall not deviate from the proper signatures of serialization methods.}{Serialization/deserialization can bypass constructors and invariants and is a common attack vector for gadget-based exploits. Strict controls and validation are required.}{\begin{itemize}
+\item Static analysis: flag uses of Java serialization APIs (\texttt{ObjectInputStream}, \texttt{readObject}, \texttt{Serializable}) and require allowlists, integrity checks, and hardening patterns.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{SER02-J}{Sign then seal sensitive objects before sending them across a trust boundary}{The implementation shall comply with SER02-J by following: Sign then seal sensitive objects before sending them across a trust boundary.}{Serialization/deserialization can bypass constructors and invariants and is a common attack vector for gadget-based exploits. Strict controls and validation are required.}{\begin{itemize}
+\item Static analysis: flag uses of Java serialization APIs (\texttt{ObjectInputStream}, \texttt{readObject}, \texttt{Serializable}) and require allowlists, integrity checks, and hardening patterns.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{SER03-J}{Do not serialize unencrypted, sensitive data}{The implementation shall not serialize unencrypted, sensitive data.}{Serialization/deserialization can bypass constructors and invariants and is a common attack vector for gadget-based exploits. Strict controls and validation are required. Deserialization is high risk because attacker-controlled streams can trigger unexpected object graphs or gadget execution.}{\begin{itemize}
+\item Static analysis: flag uses of Java serialization APIs (\texttt{ObjectInputStream}, \texttt{readObject}, \texttt{Serializable}) and require allowlists, integrity checks, and hardening patterns.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add hostile deserialization tests (unexpected classes, oversized graphs) and verify allowlists/filters reject them without side effects.
+\end{itemize}}
+
+\CERTJRule{SER04-J}{Do not allow serialization and deserialization to bypass the security manager}{The implementation shall not allow serialization and deserialization to bypass the security manager.}{Serialization/deserialization can bypass constructors and invariants and is a common attack vector for gadget-based exploits. Strict controls and validation are required. Deserialization is high risk because attacker-controlled streams can trigger unexpected object graphs or gadget execution. Security checks must be authoritative and resistant to spoofing or bypass.}{\begin{itemize}
+\item Static analysis: flag uses of Java serialization APIs (\texttt{ObjectInputStream}, \texttt{readObject}, \texttt{Serializable}) and require allowlists, integrity checks, and hardening patterns.
+\item Review checklist: confirm permission checks use authoritative sources (\texttt{SecurityManager}/\texttt{Permission} checks or policy enforcement) and cannot be bypassed via spoofed inputs.
+\item Unit-test guard rails: add hostile deserialization tests (unexpected classes, oversized graphs) and verify allowlists/filters reject them without side effects.
+\end{itemize}}
+
+\CERTJRule{SER05-J}{Do not serialize instances of inner classes}{The implementation shall not serialize instances of inner classes.}{Serialization/deserialization can bypass constructors and invariants and is a common attack vector for gadget-based exploits. Strict controls and validation are required. Deserialization is high risk because attacker-controlled streams can trigger unexpected object graphs or gadget execution.}{\begin{itemize}
+\item Static analysis: flag uses of Java serialization APIs (\texttt{ObjectInputStream}, \texttt{readObject}, \texttt{Serializable}) and require allowlists, integrity checks, and hardening patterns.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add hostile deserialization tests (unexpected classes, oversized graphs) and verify allowlists/filters reject them without side effects.
+\end{itemize}}
+
+\CERTJRule{SER06-J}{Make defensive copies of private mutable components during deserialization}{The implementation shall comply with SER06-J by following: Make defensive copies of private mutable components during deserialization.}{Serialization/deserialization can bypass constructors and invariants and is a common attack vector for gadget-based exploits. Strict controls and validation are required. Deserialization is high risk because attacker-controlled streams can trigger unexpected object graphs or gadget execution.}{\begin{itemize}
+\item Static analysis: flag uses of Java serialization APIs (\texttt{ObjectInputStream}, \texttt{readObject}, \texttt{Serializable}) and require allowlists, integrity checks, and hardening patterns.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add hostile deserialization tests (unexpected classes, oversized graphs) and verify allowlists/filters reject them without side effects.
+\end{itemize}}
+
+\CERTJRule{SER07-J}{Do not use the default serialized form for implementation-defined invariants}{The implementation shall not use the default serialized form for implementation-defined invariants.}{Serialization/deserialization can bypass constructors and invariants and is a common attack vector for gadget-based exploits. Strict controls and validation are required. Deserialization is high risk because attacker-controlled streams can trigger unexpected object graphs or gadget execution.}{\begin{itemize}
+\item Static analysis: flag uses of Java serialization APIs (\texttt{ObjectInputStream}, \texttt{readObject}, \texttt{Serializable}) and require allowlists, integrity checks, and hardening patterns.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add hostile deserialization tests (unexpected classes, oversized graphs) and verify allowlists/filters reject them without side effects.
+\end{itemize}}
+
+\CERTJRule{SER08-J}{Minimize privileges before deserializing from a privileged context}{The implementation shall minimize privileges before deserializing from a privileged context.}{Serialization/deserialization can bypass constructors and invariants and is a common attack vector for gadget-based exploits. Strict controls and validation are required. Privilege boundaries must not be widened by untrusted input or leaks from privileged execution. Deserialization is high risk because attacker-controlled streams can trigger unexpected object graphs or gadget execution.}{\begin{itemize}
+\item Static analysis: flag uses of Java serialization APIs (\texttt{ObjectInputStream}, \texttt{readObject}, \texttt{Serializable}) and require allowlists, integrity checks, and hardening patterns.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add hostile deserialization tests (unexpected classes, oversized graphs) and verify allowlists/filters reject them without side effects.
+\end{itemize}}
+
+\CERTJRule{SER09-J}{Do not invoke overridable methods from thereadObject() method}{The implementation shall not invoke overridable methods from thereadObject() method.}{Serialization/deserialization can bypass constructors and invariants and is a common attack vector for gadget-based exploits. Strict controls and validation are required.}{\begin{itemize}
+\item Static analysis: flag uses of Java serialization APIs (\texttt{ObjectInputStream}, \texttt{readObject}, \texttt{Serializable}) and require allowlists, integrity checks, and hardening patterns.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{SER10-J}{Avoid memory and resource leaks during serialization}{The implementation shall avoid memory and resource leaks during serialization.}{Serialization/deserialization can bypass constructors and invariants and is a common attack vector for gadget-based exploits. Strict controls and validation are required.}{\begin{itemize}
+\item Static analysis: flag uses of Java serialization APIs (\texttt{ObjectInputStream}, \texttt{readObject}, \texttt{Serializable}) and require allowlists, integrity checks, and hardening patterns.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{SER11-J}{Prevent overwriting of externalizable objects}{The implementation shall prevent overwriting of externalizable objects.}{Serialization/deserialization can bypass constructors and invariants and is a common attack vector for gadget-based exploits. Strict controls and validation are required.}{\begin{itemize}
+\item Static analysis: flag uses of Java serialization APIs (\texttt{ObjectInputStream}, \texttt{readObject}, \texttt{Serializable}) and require allowlists, integrity checks, and hardening patterns.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\clearpage
+
+\section{SEC --- Platform Security}
+\noindent\textbf{Topic scope.} Security controls (privilege, policy checks, class loading, crypto) must be explicit and non-bypassable to preserve confidentiality, integrity, and least privilege.
+
+\CERTJRule{SEC00-J}{Do not allow privileged blocks to leak sensitive information across a trust boundary}{The implementation shall not allow privileged blocks to leak sensitive information across a trust boundary.}{Security controls (privilege, policy checks, class loading, crypto) must be explicit and non-bypassable to preserve confidentiality, integrity, and least privilege. Privilege boundaries must not be widened by untrusted input or leaks from privileged execution. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: search for privileged/security-sensitive APIs (\texttt{AccessController.doPrivileged}, class loading, permission checks, crypto) and require explicit, reviewable guard conditions.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{SEC01-J}{Do not allow tainted variables in privileged blocks}{The implementation shall not allow tainted variables in privileged blocks.}{Security controls (privilege, policy checks, class loading, crypto) must be explicit and non-bypassable to preserve confidentiality, integrity, and least privilege. Privilege boundaries must not be widened by untrusted input or leaks from privileged execution. Concurrency defects can produce inconsistent state that bypasses security checks or causes availability failures.}{\begin{itemize}
+\item Static analysis: search for privileged/security-sensitive APIs (\texttt{AccessController.doPrivileged}, class loading, permission checks, crypto) and require explicit, reviewable guard conditions.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{SEC02-J}{Do not base security checks on untrusted sources}{The implementation shall not base security checks on untrusted sources.}{Security controls (privilege, policy checks, class loading, crypto) must be explicit and non-bypassable to preserve confidentiality, integrity, and least privilege.}{\begin{itemize}
+\item Static analysis: search for privileged/security-sensitive APIs (\texttt{AccessController.doPrivileged}, class loading, permission checks, crypto) and require explicit, reviewable guard conditions.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{SEC03-J}{Do not load trusted classes after allowing untrusted code to load arbitrary classes}{The implementation shall not load trusted classes after allowing untrusted code to load arbitrary classes.}{Security controls (privilege, policy checks, class loading, crypto) must be explicit and non-bypassable to preserve confidentiality, integrity, and least privilege.}{\begin{itemize}
+\item Static analysis: search for privileged/security-sensitive APIs (\texttt{AccessController.doPrivileged}, class loading, permission checks, crypto) and require explicit, reviewable guard conditions.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{SEC04-J}{Protect sensitive operations with security manager checks}{The implementation shall protect sensitive operations with security manager checks.}{Security controls (privilege, policy checks, class loading, crypto) must be explicit and non-bypassable to preserve confidentiality, integrity, and least privilege. Security checks must be authoritative and resistant to spoofing or bypass.}{\begin{itemize}
+\item Static analysis: search for privileged/security-sensitive APIs (\texttt{AccessController.doPrivileged}, class loading, permission checks, crypto) and require explicit, reviewable guard conditions.
+\item Review checklist: confirm permission checks use authoritative sources (\texttt{SecurityManager}/\texttt{Permission} checks or policy enforcement) and cannot be bypassed via spoofed inputs.
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{SEC05-J}{Do not use reflection to increase accessibility of classes, methods, or fields}{The implementation shall not use reflection to increase accessibility of classes, methods, or fields.}{Security controls (privilege, policy checks, class loading, crypto) must be explicit and non-bypassable to preserve confidentiality, integrity, and least privilege. Security checks must be authoritative and resistant to spoofing or bypass.}{\begin{itemize}
+\item Static analysis: search for privileged/security-sensitive APIs (\texttt{AccessController.doPrivileged}, class loading, permission checks, crypto) and require explicit, reviewable guard conditions.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{SEC06-J}{Do not rely on the default automatic signature verification provided by URLClassLoader and java.util.jar}{The implementation shall not rely on the default automatic signature verification provided by URLClassLoader and java.util.jar.}{Security controls (privilege, policy checks, class loading, crypto) must be explicit and non-bypassable to preserve confidentiality, integrity, and least privilege.}{\begin{itemize}
+\item Static analysis: search for privileged/security-sensitive APIs (\texttt{AccessController.doPrivileged}, class loading, permission checks, crypto) and require explicit, reviewable guard conditions.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{SEC07-J}{Call the superclass’s getPermissions() method when writing a custom class loader}{The implementation shall comply with SEC07-J by following: Call the superclass’s getPermissions() method when writing a custom class loader.}{Security controls (privilege, policy checks, class loading, crypto) must be explicit and non-bypassable to preserve confidentiality, integrity, and least privilege. Security checks must be authoritative and resistant to spoofing or bypass.}{\begin{itemize}
+\item Static analysis: search for privileged/security-sensitive APIs (\texttt{AccessController.doPrivileged}, class loading, permission checks, crypto) and require explicit, reviewable guard conditions.
+\item Review checklist: confirm permission checks use authoritative sources (\texttt{SecurityManager}/\texttt{Permission} checks or policy enforcement) and cannot be bypassed via spoofed inputs.
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{SEC08-J}{Define wrappers around native methods 599xiv}{The implementation shall comply with SEC08-J by following: Define wrappers around native methods 599xiv.}{Security controls (privilege, policy checks, class loading, crypto) must be explicit and non-bypassable to preserve confidentiality, integrity, and least privilege.}{\begin{itemize}
+\item Static analysis: search for privileged/security-sensitive APIs (\texttt{AccessController.doPrivileged}, class loading, permission checks, crypto) and require explicit, reviewable guard conditions.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\clearpage
+
+\section{ENV --- Runtime Environment}
+\noindent\textbf{Topic scope.} Runtime environment assumptions (class loading, configuration, permissions, environment variables) can be subverted, so code must validate and harden its execution context.
+
+\CERTJRule{ENV00-J}{Do not sign code that performs only unprivileged operations}{The implementation shall not sign code that performs only unprivileged operations.}{Runtime environment assumptions (class loading, configuration, permissions, environment variables) can be subverted, so code must validate and harden its execution context. Privilege boundaries must not be widened by untrusted input or leaks from privileged execution.}{\begin{itemize}
+\item Static analysis: search for privileged/security-sensitive APIs (\texttt{AccessController.doPrivileged}, class loading, permission checks, crypto) and require explicit, reviewable guard conditions.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{ENV01-J}{Place all security-sensitive code in a single jar and sign and seal it}{The implementation shall comply with ENV01-J by following: Place all security-sensitive code in a single jar and sign and seal it.}{Runtime environment assumptions (class loading, configuration, permissions, environment variables) can be subverted, so code must validate and harden its execution context.}{\begin{itemize}
+\item Static analysis: search for privileged/security-sensitive APIs (\texttt{AccessController.doPrivileged}, class loading, permission checks, crypto) and require explicit, reviewable guard conditions.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{ENV02-J}{Do not trust the values of environment variables}{The implementation shall not trust the values of environment variables.}{Runtime environment assumptions (class loading, configuration, permissions, environment variables) can be subverted, so code must validate and harden its execution context.}{\begin{itemize}
+\item Static analysis: search for privileged/security-sensitive APIs (\texttt{AccessController.doPrivileged}, class loading, permission checks, crypto) and require explicit, reviewable guard conditions.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{ENV03-J}{Do not grant dangerous combinations of permissions}{The implementation shall not grant dangerous combinations of permissions.}{Runtime environment assumptions (class loading, configuration, permissions, environment variables) can be subverted, so code must validate and harden its execution context. Security checks must be authoritative and resistant to spoofing or bypass.}{\begin{itemize}
+\item Static analysis: search for privileged/security-sensitive APIs (\texttt{AccessController.doPrivileged}, class loading, permission checks, crypto) and require explicit, reviewable guard conditions.
+\item Review checklist: confirm permission checks use authoritative sources (\texttt{SecurityManager}/\texttt{Permission} checks or policy enforcement) and cannot be bypassed via spoofed inputs.
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{ENV04-J}{Do not disable bytecode verification}{The implementation shall not disable bytecode verification.}{Runtime environment assumptions (class loading, configuration, permissions, environment variables) can be subverted, so code must validate and harden its execution context.}{\begin{itemize}
+\item Static analysis: search for privileged/security-sensitive APIs (\texttt{AccessController.doPrivileged}, class loading, permission checks, crypto) and require explicit, reviewable guard conditions.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{ENV05-J}{Do not deploy an application that can be remotely monitored}{The implementation shall not deploy an application that can be remotely monitored.}{Runtime environment assumptions (class loading, configuration, permissions, environment variables) can be subverted, so code must validate and harden its execution context.}{\begin{itemize}
+\item Static analysis: search for privileged/security-sensitive APIs (\texttt{AccessController.doPrivileged}, class loading, permission checks, crypto) and require explicit, reviewable guard conditions.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\clearpage
+
+\section{MSC --- Miscellaneous}
+\noindent\textbf{Topic scope.} General defensive programming rules prevent denial of service, correctness regressions, and unsafe defaults that compound into security risk.
+
+\CERTJRule{MSC00-J}{Use SSLSocket rather than Socket for secure data exchange}{The implementation shall use SSLSocket rather than Socket for secure data exchange.}{General defensive programming rules prevent denial of service, correctness regressions, and unsafe defaults that compound into security risk.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{MSC01-J}{Do not use an empty infinite loop}{The implementation shall not use an empty infinite loop.}{General defensive programming rules prevent denial of service, correctness regressions, and unsafe defaults that compound into security risk.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{MSC02-J}{Generate strong random numbers}{The implementation shall generate strong random numbers.}{General defensive programming rules prevent denial of service, correctness regressions, and unsafe defaults that compound into security risk. Weak randomness undermines cryptographic and security tokens.}{\begin{itemize}
+\item Static analysis: flag uses of \texttt{java.util.Random} (or non-crypto RNG) in security contexts; require \texttt{SecureRandom} for tokens/keys.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{MSC03-J}{Never hard code sensitive information}{The implementation shall not hard code sensitive information.}{General defensive programming rules prevent denial of service, correctness regressions, and unsafe defaults that compound into security risk.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{MSC04-J}{Do not leak memory}{The implementation shall not leak memory.}{General defensive programming rules prevent denial of service, correctness regressions, and unsafe defaults that compound into security risk.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{MSC05-J}{Do not exhaust heap space}{The implementation shall not exhaust heap space.}{General defensive programming rules prevent denial of service, correctness regressions, and unsafe defaults that compound into security risk.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{MSC06-J}{Do not modify the underlying collection when an iteration is in progress}{The implementation shall not modify the underlying collection when an iteration is in progress.}{General defensive programming rules prevent denial of service, correctness regressions, and unsafe defaults that compound into security risk.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\CERTJRule{MSC07-J}{Prevent multiple instantiations of singleton objects}{The implementation shall prevent multiple instantiations of singleton objects.}{General defensive programming rules prevent denial of service, correctness regressions, and unsafe defaults that compound into security risk.}{\begin{itemize}
+\item Static analysis: enable language and security linters (SpotBugs, PMD, Error Prone, Sonar) and add targeted custom rules for your most frequent defect classes in this topic.
+\item Review checklist: require reviewers to confirm the rule's preconditions and failure modes are handled (edge cases, error paths, and attacker-controlled inputs).
+\item Unit-test guard rails: add negative tests that attempt to violate the rule (malformed inputs, boundary values, concurrency stress, permission failures) and assert safe failure.
+\end{itemize}}
+
+\clearpage
+
+\end{document}
