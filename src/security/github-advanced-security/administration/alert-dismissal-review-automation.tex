@@ -1,0 +1,583 @@
+
+\documentclass[11pt]{article}
+
+% --- Encoding & typography (pdfLaTeX-friendly) ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% --- Page layout ---
+\usepackage[margin=1in]{geometry}
+\usepackage{parskip}
+
+% --- Links ---
+\usepackage[hidelinks]{hyperref}
+\usepackage{bookmark}
+\usepackage{url}
+\usepackage{xurl}
+
+% --- Code listings ---
+\usepackage{xcolor}
+\usepackage{listings}
+
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codeframe}{RGB}{210,210,210}
+
+\definecolor{codekw}{RGB}{0,0,180}
+\definecolor{codestr}{RGB}{0,128,128}
+\definecolor{codecom}{RGB}{110,110,110}
+
+
+% YAML language for listings
+\lstdefinelanguage{yaml}{
+  keywords={true,false,null,y,n},
+  keywordstyle=\color{codekw}\bfseries,
+  basicstyle=\ttfamily\small,
+  sensitive=false,
+  comment=[l]{\#},
+  commentstyle=\color{codecom}\ttfamily,
+  stringstyle=\color{codestr}\ttfamily,
+  morestring=[b]',
+  morestring=[b]",
+  alsoletter={:,-},
+  morekeywords={on,name,permissions,jobs,runs-on,steps,uses,with,run,env,schedule,cron,workflow_dispatch,contents,read,security-events,write,python-version}
+}
+
+
+
+% HTTP/REST endpoint language for listings (single-line endpoints)
+\lstdefinelanguage{http}{
+  keywords={GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS},
+  keywordstyle=\color{codekw}\bfseries,
+  sensitive=true,
+  morecomment=[l]{\#},
+  commentstyle=\color{codecom}\ttfamily,
+  stringstyle=\color{codestr}\ttfamily,
+  morestring=[b]",
+  morestring=[b]'
+}
+
+\lstdefinestyle{endpoint}{
+  language=http,
+  numbers=none,
+  basicstyle=\ttfamily\small,
+  frame=single
+}
+
+\lstset{
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{codeframe},
+  frameround=ffff,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{codekw}\bfseries,
+  stringstyle=\color{codestr}\ttfamily,
+  commentstyle=\color{codecom}\ttfamily,
+  numbers=left,
+  numberstyle=\tiny\color{codecom},
+  numbersep=10pt,
+  columns=fullflexible,
+  breaklines=true,
+  breakatwhitespace=false,
+  keepspaces=true,
+  showstringspaces=false,
+  tabsize=2,
+  captionpos=b
+}
+
+\title{\texorpdfstring{Automating Review of GitHub Advanced Security Alert Dismissals\\\large A Python + GitHub Actions Field Guide}{Automating Review of GitHub Advanced Security Alert Dismissals - A Python + GitHub Actions Field Guide}}
+\author{Prepared for internal security operations}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\clearpage
+
+\section{Overview}
+
+This field guide describes how to automate review of GitHub Advanced Security (GHAS) \emph{alert dismissal requests} using:
+\begin{itemize}
+  \item the GitHub REST API for \textbf{Secret Scanning} and \textbf{Code Scanning} dismissal requests, and
+  \item a Python reviewer script executed in a \textbf{GitHub Actions} workflow.
+\end{itemize}
+
+The primary goal is to preserve a \textbf{delegated dismissal control} (request \textrightarrow{} review \textrightarrow{} approve/deny) while enforcing consistent policy rules at scale.
+
+\subsection{Two common flows (do not mix these up)}
+
+GitHub supports two related but distinct workflows:
+
+\begin{enumerate}
+  \item \textbf{Delegated alert dismissal (review workflow).}
+  A developer requests dismissal; a reviewer approves or denies that request via the \texttt{/dismissal-requests/} endpoints.
+  This is the intended automation target in this guide.
+  \item \textbf{Direct dismissal of an alert.}
+  An administrator updates the alert state directly (for example, via a PATCH to an alert endpoint).
+  This can be useful for bulk administrative cleanup, but it bypasses the delegated-review control.
+\end{enumerate}
+
+If you care about auditability and separation of duties, prefer delegated dismissal.
+
+\section{Prerequisites}
+
+\subsection{Platform prerequisites}
+\begin{itemize}
+  \item GHAS is enabled for the relevant repositories or organization.
+  \item Delegated dismissal is enabled where required (for example, secret scanning delegated dismissal).
+  \item Python 3.8+ (Python 3.12 recommended).
+  \item A token with sufficient permissions to list and review dismissal requests.
+\end{itemize}
+
+\subsection{Authentication options}
+
+\textbf{Recommended: GitHub App installation token.}
+A GitHub App allows least-privilege access and better auditability.
+
+\textbf{Alternative: Personal Access Token (PAT).}
+A classic PAT with \texttt{security\_events} scope is often sufficient but is broader than ideal.
+
+\subsection{Permissions (practical guidance)}
+
+Permissions depend on whether you list requests \emph{org-wide} or \emph{repo-scoped}, and whether you will \emph{review} (approve/deny).
+In GitHub Actions, the built-in \texttt{GITHUB\_TOKEN} can work for repo-scoped workflows if the workflow grants:
+\begin{itemize}
+  \item \texttt{contents: read}
+  \item \texttt{security-events: write}
+\end{itemize}
+
+For org-wide automation, use a GitHub App token or a dedicated secret (PAT/App token) with appropriate permissions.
+
+\section{API Surface}
+
+\subsection{Secret Scanning dismissal requests (delegated workflow)}
+
+Common endpoints:
+\begin{itemize}
+  \item List org-wide requests:
+\begin{lstlisting}[style=endpoint]
+GET /orgs/{org}/dismissal-requests/secret-scanning
+\end{lstlisting}
+
+  \item List repo requests:
+\begin{lstlisting}[style=endpoint]
+GET /repos/{owner}/{repo}/dismissal-requests/secret-scanning
+\end{lstlisting}
+
+  \item Get a specific request:
+\begin{lstlisting}[style=endpoint]
+GET /repos/{owner}/{repo}/dismissal-requests/secret-scanning/{alert_number}
+\end{lstlisting}
+
+  \item Approve or deny a request:
+\begin{lstlisting}[style=endpoint]
+PATCH /repos/{owner}/{repo}/dismissal-requests/secret-scanning/{alert_number}
+\end{lstlisting}
+\end{itemize}
+
+\subsection{Code Scanning dismissal requests (delegated workflow)}
+
+Common endpoints:
+\begin{itemize}
+  \item List org-wide requests:
+\begin{lstlisting}[style=endpoint]
+GET /orgs/{org}/dismissal-requests/code-scanning
+\end{lstlisting}
+
+  \item List repo requests:
+\begin{lstlisting}[style=endpoint]
+GET /repos/{owner}/{repo}/dismissal-requests/code-scanning
+\end{lstlisting}
+
+  \item Get a specific request:
+\begin{lstlisting}[style=endpoint]
+GET /repos/{owner}/{repo}/dismissal-requests/code-scanning/{alert_number}
+\end{lstlisting}
+
+  \item Approve or deny a request:
+\begin{lstlisting}[style=endpoint]
+PATCH /repos/{owner}/{repo}/dismissal-requests/code-scanning/{alert_number}
+\end{lstlisting}
+\end{itemize}
+
+\subsection{Review payload schema}
+
+For both secret scanning and code scanning review endpoints, the reviewer submits:
+\begin{itemize}
+  \item \texttt{status}: \texttt{approve} or \texttt{deny}
+  \item \texttt{message}: reviewer comment that becomes part of the audit trail (size-limited; enforce truncation)
+\end{itemize}
+
+
+\section{Automation design}
+
+\subsection{High-level steps}
+
+\begin{enumerate}
+  \item \textbf{Fetch open dismissal requests} (org-wide or repo-scoped).
+  \item \textbf{Evaluate each request} against policy (comment quality, reason allowlist, evidence requirements).
+  \item \textbf{Approve or deny} by PATCHing the dismissal-request endpoint with an audit-quality message.
+  \item \textbf{Run continuously} via GitHub Actions.
+\end{enumerate}
+
+\subsection{Policy logic (what to enforce)}
+
+Your policy should be explicit and machine-checkable. Common checks:
+\begin{itemize}
+  \item Require a minimum justification length in \texttt{requester\_comment}.
+  \item Enforce an allowlist of reasons (e.g., \texttt{false\_positive}, \texttt{used\_in\_tests}).
+  \item If \texttt{wont\_fix}, require compensating controls to be documented.
+  \item Optionally, require linkage to an internal ticket ID (ServiceNow/Jira), e.g., \nolinkurl{SNOW:CTASK1234567}.
+  \item Optionally, verify remediation evidence (file removed, secret rotated, repository history rewritten) by calling additional GitHub APIs.
+\end{itemize}
+
+\section{Reference Python implementation}
+
+\subsection{Features}
+The script below:
+\begin{itemize}
+  \item supports org-wide or repo-only listing,
+  \item paginates using GitHub \texttt{Link} headers,
+  \item applies a configurable policy function \texttt{choose\_decision()},
+  \item approves/denies with a truncation guard for audit messages,
+  \item supports \texttt{DRY\_RUN} for safe testing.
+\end{itemize}
+
+\subsection{Python script}
+
+\begin{lstlisting}[language=Python,caption={review\_dismissal\_requests.py (reference implementation)}]
+#!/usr/bin/env python3
+# Automate review of delegated alert dismissal requests for Secret Scanning and Code Scanning.
+
+from __future__ import annotations
+
+import os
+import sys
+import time
+import requests
+from typing import Any, Dict, Iterable, Optional, Tuple
+
+API = "https://api.github.com"
+API_VERSION = "2022-11-28"
+
+def require_env(name: str) -> str:
+    val = os.getenv(name)
+    if not val:
+        raise SystemExit(f"Missing required env var: {name}")
+    return val
+
+def build_session(token: str) -> requests.Session:
+    s = requests.Session()
+    s.headers.update({
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {token}",
+        "X-GitHub-Api-Version": API_VERSION,
+        "User-Agent": "dismissal-review-bot/1.0",
+    })
+    return s
+
+def parse_next_link(link_header: Optional[str]) -> Optional[str]:
+    # Return the URL for rel='next' in GitHub's Link header, if present.
+    if not link_header:
+        return None
+    parts = [p.strip() for p in link_header.split(",")]
+    for part in parts:
+        if 'rel="next"' in part:
+            url_part = part.split(";")[0].strip()
+            if url_part.startswith("<") and url_part.endswith(">"):
+                return url_part[1:-1]
+    return None
+
+def gh_get_paginated(session: requests.Session, url: str, params: Optional[Dict[str, Any]] = None) -> Iterable[Dict[str, Any]]:
+    # Yield items across pages for endpoints that return JSON arrays.
+    next_url = url
+    next_params = dict(params or {})
+    while next_url:
+        r = session.get(next_url, params=next_params, timeout=30)
+
+        # Basic rate-limit handling
+        if r.status_code == 403 and "rate limit" in r.text.lower():
+            reset = int(r.headers.get("X-RateLimit-Reset", "0"))
+            sleep_for = max(1, reset - int(time.time()) + 2)
+            print(f"[rate-limit] sleeping {sleep_for}s", file=sys.stderr)
+            time.sleep(sleep_for)
+            continue
+
+        r.raise_for_status()
+
+        data = r.json()
+        if not isinstance(data, list):
+            raise RuntimeError(f"Expected list response from {next_url}, got: {type(data)}")
+
+        for item in data:
+            yield item
+
+        next_url = parse_next_link(r.headers.get("Link"))
+        next_params = {}  # next_url already includes pagination state
+
+def choose_decision(request_obj: Dict[str, Any], feature: str) -> Tuple[str, str]:
+    # Return (status, message) where status is 'approve' or 'deny'. Customize to match policy.
+    requester = (request_obj.get("requester") or {}).get("actor_name", "unknown")
+    requester_comment = (request_obj.get("requester_comment") or "").strip()
+    data_list = request_obj.get("data") or []
+    reason = (data_list[0].get("reason") if data_list else None)
+
+    # Example minimum policy:
+    if len(requester_comment) < 25:
+        return ("deny", f"Denied: requester_comment too short (<25 chars). Provide justification and remediation evidence. (requester={requester})")
+    if not reason:
+        return ("deny", f"Denied: missing reason in dismissal request data. (requester={requester})")
+
+    # Example allowlist:
+    allowed_reasons = {"false_positive", "used_in_tests", "wont_fix", "won't fix"}
+    normalized_reason = str(reason).lower()
+    if normalized_reason not in allowed_reasons:
+        return ("deny", f"Denied: reason '{reason}' not in allowlist {sorted(allowed_reasons)}. (requester={requester})")
+
+    # Example extra rule:
+    if normalized_reason in {"wont_fix", "won't fix"} and "compensating control" not in requester_comment.lower():
+        return ("deny", "Denied: wont_fix requires a documented compensating control in requester_comment.")
+
+    return ("approve", f"Approved by automation policy for {feature}. Reason={reason}. Requester={requester}.")
+
+def review_request(
+    session: requests.Session,
+    owner: str,
+    repo: str,
+    alert_number: int,
+    feature: str,
+    status: str,
+    message: str,
+    dry_run: bool,
+) -> None:
+    if feature == "secret":
+        endpoint = f"{API}/repos/{owner}/{repo}/dismissal-requests/secret-scanning/{alert_number}"
+    elif feature == "code":
+        endpoint = f"{API}/repos/{owner}/{repo}/dismissal-requests/code-scanning/{alert_number}"
+    else:
+        raise ValueError("feature must be 'secret' or 'code'")
+
+    payload = {"status": status, "message": message[:2048]}
+
+    if dry_run:
+        print(f"[dry-run] PATCH {endpoint} {payload}")
+        return
+
+    r = session.patch(endpoint, json=payload, timeout=30)
+
+    # Code scanning review often returns 204 No Content.
+    if feature == "code" and r.status_code == 204:
+        print(f"[ok] code-scanning alert {owner}/{repo}#{alert_number}: {status}")
+        return
+
+    r.raise_for_status()
+    print(f"[ok] {feature} alert {owner}/{repo}#{alert_number}: {status}")
+
+def process_feature(session: requests.Session, feature: str, org: Optional[str], owner: Optional[str], repo: Optional[str], dry_run: bool) -> None:
+    if org:
+        if feature == "secret":
+            list_url = f"{API}/orgs/{org}/dismissal-requests/secret-scanning"
+        else:
+            list_url = f"{API}/orgs/{org}/dismissal-requests/code-scanning"
+        params = {"per_page": 100}
+    else:
+        if not (owner and repo):
+            raise SystemExit("Provide ORG for org mode OR provide OWNER+REPO for repo mode.")
+        if feature == "secret":
+            list_url = f"{API}/repos/{owner}/{repo}/dismissal-requests/secret-scanning"
+        else:
+            list_url = f"{API}/repos/{owner}/{repo}/dismissal-requests/code-scanning"
+        params = {"per_page": 100}
+
+    count = 0
+    for req in gh_get_paginated(session, list_url, params=params):
+        # Process only open requests
+        req_status = str(req.get("status", "")).lower()
+        if req_status and req_status != "open":
+            continue
+
+        # Repo context may be embedded in org-wide responses
+        full_name = ((req.get("repository") or {}).get("full_name") or "")
+        if full_name:
+            req_owner, req_repo = full_name.split("/", 1)
+        else:
+            req_owner, req_repo = owner or "", repo or ""
+
+        data_list = req.get("data") or []
+        alert_number = None
+        if data_list and isinstance(data_list, list):
+            alert_number = data_list[0].get("alert_number")
+        if alert_number is None:
+            alert_number = req.get("resource_identifier")
+
+        try:
+            alert_number = int(alert_number)
+        except Exception:
+            print(f"[skip] cannot determine alert_number for request id={req.get('id')}", file=sys.stderr)
+            continue
+
+        decision, msg = choose_decision(req, feature)
+        print(f"[decision] {feature} {req_owner}/{req_repo}#{alert_number}: {decision} | {msg}")
+
+        review_request(session, req_owner, req_repo, alert_number, feature, decision, msg, dry_run)
+        count += 1
+
+    print(f"[done] processed {count} '{feature}' dismissal requests")
+
+def main() -> None:
+    token = require_env("GITHUB_TOKEN")
+    org = os.getenv("ORG")
+    owner = os.getenv("OWNER")
+    repo = os.getenv("REPO")
+    mode = (os.getenv("MODE") or "both").lower()
+    dry_run = (os.getenv("DRY_RUN") or "false").lower() == "true"
+
+    session = build_session(token)
+
+    if mode in {"secret", "both"}:
+        process_feature(session, "secret", org, owner, repo, dry_run)
+    if mode in {"code", "both"}:
+        process_feature(session, "code", org, owner, repo, dry_run)
+
+if __name__ == "__main__":
+    main()
+\end{lstlisting}
+
+\section{GitHub Actions integration}
+
+\subsection{Repo-scoped workflow using \texttt{GITHUB\_TOKEN}}
+
+This option reviews dismissal requests for a single repository and can run on a schedule.
+
+\begin{lstlisting}[language=yaml,caption={.github/workflows/review-ghas-dismissals.yml (repo-scoped)}]
+name: Review GHAS dismissal requests (repo)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */6 * * *"  # every 6 hours
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: python -m pip install --upgrade pip requests
+
+      - name: Review dismissal requests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+          MODE: both
+          DRY_RUN: "false"
+        run: python review_dismissal_requests.py
+\end{lstlisting}
+
+\subsection{Org-wide workflow (recommended: GitHub App token)}
+
+To review across many repositories, list requests org-wide by setting \texttt{ORG}. Use a dedicated secret token such as \texttt{GH\_SECURITY\_REVIEW\_TOKEN} (GitHub App installation token recommended).
+
+\begin{lstlisting}[language=yaml,caption={.github/workflows/review-ghas-dismissals-org.yml (org-wide)}]
+name: Review GHAS dismissal requests (org)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 */6 * * *"  # every 6 hours (offset)
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: python -m pip install --upgrade pip requests
+
+      - name: Review dismissal requests (org-wide listing)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_SECURITY_REVIEW_TOKEN }}
+          ORG: your-org-name
+          MODE: both
+          DRY_RUN: "false"
+        run: python review_dismissal_requests.py
+\end{lstlisting}
+
+\section{Operational guidance}
+
+\subsection{Audit quality}
+
+Treat the review message as an audit artifact. A good message typically includes:
+\begin{itemize}
+  \item the policy rule that was applied (e.g., \texttt{POLICY-SS-001}),
+  \item the dismissal reason and justification summary,
+  \item any required ticket references (if applicable),
+  \item reviewer identity (automation bot) and timestamp (implicit in GitHub audit logs).
+\end{itemize}
+
+\subsection{Safe rollout}
+
+Recommended rollout sequence:
+\begin{enumerate}
+  \item Run with \texttt{DRY\_RUN=true} and export logs to validate decisions.
+  \item Enable deny-only enforcement (approve nothing) to harden request quality.
+  \item Gradually enable approvals for low-risk allowlisted reasons.
+  \item Add stronger checks (ticket validation, repo content verification) as needed.
+\end{enumerate}
+
+\subsection{Rate limits and pagination}
+
+GitHub REST endpoints paginate. The script uses the \texttt{Link} header to follow \texttt{rel="next"}.
+For large orgs, plan around API rate limits and consider:
+\begin{itemize}
+  \item caching decisions,
+  \item batching by repository,
+  \item filtering requests to \texttt{open} only.
+\end{itemize}
+
+\section{Customization checklist}
+
+Update \texttt{choose\_decision()} to match your governance model:
+\begin{itemize}
+  \item Define an allowlist of acceptable reasons per alert type.
+  \item Define strict comment format rules (minimum length, mandatory fields, required keywords).
+  \item Enforce ticket linkage (regex) and optionally validate via internal APIs.
+  \item Add enrichment calls (e.g., fetch alert details, verify file removed) to reduce false approvals.
+  \item Emit structured logs (JSON) if you want ingestion into SIEM or a data lake.
+\end{itemize}
+
+\section{References}
+
+The following official documentation pages are useful starting points:
+\begin{itemize}
+  \item Review alert dismissal requests (GitHub Docs):\\
+  \url{https://docs.github.com/en/code-security/how-tos/manage-security-alerts/remediate-alerts-at-scale/review-alert-dismissal-requests}
+  \item Secret scanning dismissal request endpoints (GitHub REST API docs):\\
+  \url{https://docs.github.com/en/rest/secret-scanning/alert-dismissal-requests}
+  \item Code scanning dismissal request endpoints (GitHub REST API docs):\\
+  \url{https://docs.github.com/en/rest/code-scanning/alert-dismissal-requests}
+  \item GitHub changelog: manage secret scanning dismissal requests via REST (Apr 18, 2025):\\
+  \url{https://github.blog/changelog/2025-04-18-manage-secret-scanning-alert-dismissal-requests-with-the-rest-api/}
+\end{itemize}
+
+\end{document}

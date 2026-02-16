@@ -1,0 +1,721 @@
+
+% ============================================================================
+% Runbook: Automatic Enforcement of GitHub Advanced Security Policy (Policy-as-Code)
+% Authoring note: This document is designed to compile with pdfLaTeX.
+% ============================================================================
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{titlesec}
+
+% -------------------------- Hyperref --------------------------
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue,
+  pdftitle={Runbook: Automatic Enforcement of GitHub Advanced Security Policy using Policy-as-Code},
+  pdfauthor={Security Engineering},
+  pdfsubject={GitHub Advanced Security, Compliance Automation, Policy-as-Code},
+  pdfkeywords={GHAS, policy as code, GitHub Actions, code scanning, secret scanning, dependabot}
+}
+
+% -------------------------- Header/Footer --------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{GHAS Policy Enforcement Runbook}
+\rhead{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% -------------------------- Section formatting --------------------------
+\titleformat{\section}{\Large\bfseries}{\thesection}{0.8em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.8em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{0.8em}{}
+\titlespacing*{\section}{0pt}{1.2em}{0.6em}
+\titlespacing*{\subsection}{0pt}{1.0em}{0.4em}
+
+% -------------------------- Listings --------------------------
+\definecolor{codebg}{rgb}{0.97,0.97,0.97}
+\definecolor{codeframe}{rgb}{0.85,0.85,0.85}
+
+\lstdefinestyle{ghascode}{
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{codeframe},
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  breaklines=true,
+  breakatwhitespace=true,
+  showstringspaces=false,
+  tabsize=2,
+  xleftmargin=0.25in,
+  xrightmargin=0.25in
+}
+
+\lstdefinelanguage{YAML}{
+  keywords={true,false,null,yes,no,on,off},
+  sensitive=false,
+  comment=[l]{\#},
+  morestring=[b]",
+  morestring=[b]'
+}
+
+% -------------------------- Convenience macros --------------------------
+\newcommand{\cmd}[1]{\texttt{#1}}
+\newcommand{\product}[1]{\textbf{#1}}
+
+\begin{document}
+
+% ============================================================================
+% Title page
+% ============================================================================
+\begin{titlepage}
+  \centering
+  \vspace*{1.2in}
+  {\Huge \bfseries Runbook \par}
+  \vspace{0.2in}
+  {\LARGE Automatic Enforcement of GitHub Advanced Security Policy \par}
+  \vspace{0.15in}
+  {\Large Using \textit{Policy-as-Code} (YAML + GitHub Actions) \par}
+  \vspace{0.6in}
+
+  \begin{minipage}{0.9\textwidth}
+  \small
+  \begin{tabular}{@{}p{0.25\textwidth}p{0.7\textwidth}@{}}
+    \toprule
+    Document Owner & Security Engineering / AppSec \\
+    Intended Audience & Enterprise Owners, Org Owners, Security Managers, Repo Admins, AppSec Engineers, Platform Engineering \\
+    Scope & Enterprise, organization, and repository-level enforcement of GHAS controls using automated policy evaluation \\
+    Last Updated & \today \\
+    Version & 1.0 \\
+    \bottomrule
+  \end{tabular}
+  \end{minipage}
+
+  \vfill
+  {\small \textit{This runbook is a technical-operational document. Copy/paste examples are provided as-is and should be reviewed to match your organization’s governance model.} \par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ============================================================================
+\section{Purpose and outcomes}
+
+This runbook describes how to \textbf{automatically enforce security policy for GitHub Advanced Security (GHAS)} using a \textbf{Policy-as-Code} approach: \textit{security requirements are encoded in YAML policy files, executed by GitHub Actions, and enforced as required checks}.
+
+\subsection{What this runbook enables}
+
+By implementing the patterns in this runbook, you will be able to:
+
+\begin{itemize}[leftmargin=*]
+  \item Define an organization-wide or enterprise-wide baseline security policy once and apply it consistently to many repositories.
+  \item Fail pull requests or merges when policy violations are detected (for example: high severity Dependabot alerts, disallowed licenses, or unremediated code scanning alerts).
+  \item Provide actionable feedback to developers through job summaries and optional pull request comments.
+  \item Control exceptions in a governed manner (time-bounded waivers, allowlists, and change control on policies).
+  \item Combine \textbf{platform guardrails} (enterprise/organization policies) with \textbf{repository gates} (required checks) for defense-in-depth.
+\end{itemize}
+
+\subsection{Non-goals}
+
+This runbook does not attempt to replace:
+\begin{itemize}[leftmargin=*]
+  \item Threat modeling and secure design reviews.
+  \item Secure SDLC processes (risk acceptance, vulnerability management SLAs, incident response).
+  \item Third-party scanning tools where required (e.g., SAST/DAST beyond CodeQL).
+\end{itemize}
+
+% ============================================================================
+\section{Operating model and roles}
+
+\subsection{Key roles}
+
+\begin{longtable}{@{}p{0.22\textwidth}p{0.73\textwidth}@{}}
+\toprule
+Role & Responsibilities in this runbook \\
+\midrule
+Enterprise Owner & Configures enterprise-level policies that control GHAS feature availability and who can change security settings across organizations. \\
+Organization Owner / Security Manager & Ensures GHAS features are enabled, manages organization defaults, and approves/maintains policy repositories. \\
+Repository Admin & Implements repository rulesets/branch protections that require the Policy-as-Code check; manages repo onboarding and local exceptions. \\
+AppSec Engineer & Authors policy rules, tunes thresholds, manages exceptions, supports triage and remediation guidance. \\
+Developers / Maintainers & Remediate alerts, update dependencies, remove secrets, and collaborate on secure coding fixes. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Policy layering (defense in depth)}
+
+Use multiple layers concurrently:
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Enterprise guardrails:} restrict who can enable/disable security features and configure enterprise-wide policies.
+  \item \textbf{Organization defaults:} required baselines, onboarding templates, and centralized policy repositories.
+  \item \textbf{Repository enforcement:} rulesets/branch protections that require specific checks to pass, plus CODEOWNERS and review requirements.
+  \item \textbf{Policy-as-Code gates:} automated evaluation of code scanning, secret scanning, Dependabot, dependency and licensing rules based on YAML policy.
+\end{enumerate}
+
+% ============================================================================
+\section{Prerequisites}
+
+\subsection{Technical prerequisites}
+
+\begin{itemize}[leftmargin=*]
+  \item GitHub Actions enabled for the target repositories.
+  \item GHAS capabilities available in your plan (GitHub Code Security / GitHub Secret Protection / GHAS).
+  \item A policy repository (recommended) containing versioned YAML policy files.
+  \item A repository governance mechanism to make checks mandatory (rulesets/branch protections).
+  \item A token strategy (see Section \ref{sec:token-strategy}) appropriate for the features you want to evaluate.
+\end{itemize}
+
+\subsection{Governance prerequisites}
+
+\begin{itemize}[leftmargin=*]
+  \item A baseline policy statement defining:
+    \begin{itemize}
+      \item Thresholds (e.g., ``fail on \textit{high} and above'' for Dependabot).
+      \item Required feature enablement (e.g., code scanning must run on default branch).
+      \item Remediation timelines (e.g., high severity issues fixed within 7 days).
+      \item Exception process (owner, approval chain, expiry).
+    \end{itemize}
+  \item A change management process for policy updates (recommended: pull requests, reviews, version tags).
+\end{itemize}
+
+% ============================================================================
+\section{Token and permissions strategy}
+\label{sec:token-strategy}
+
+Policy evaluation requires API access to GHAS data. Different features require different permissions.
+
+\subsection{Minimum GitHub Actions permissions (baseline)}
+
+At workflow or job scope, start with least privilege and add only what you need:
+\begin{itemize}[leftmargin=*]
+  \item \cmd{contents: read} --- required to checkout code and read policy files.
+  \item \cmd{security-events: read} --- required to read code scanning results.
+  \item \cmd{pull-requests: write} --- only if you want PR summaries/comments posted by the workflow.
+\end{itemize}
+
+\subsection{Important limitation: Secret Scanning and Dependabot alert access}
+
+\textbf{Secret scanning alerts and Dependabot alerts cannot be accessed using the default \cmd{GITHUB\_TOKEN} in some contexts; a GitHub App or PAT is required for those features.}
+
+\subsection{Recommended approaches}
+
+\subsubsection{Approach A (best practice): GitHub App token}
+
+Use a dedicated GitHub App with minimal repository permissions (read-only for the relevant security APIs). This supports:
+\begin{itemize}[leftmargin=*]
+  \item central auditability,
+  \item controlled installation scope,
+  \item revocation and rotation without developer disruption,
+  \item minimal privileges compared to broad-scoped PATs.
+\end{itemize}
+
+\subsubsection{Approach B: Fine-scoped PAT (fallback)}
+
+If a GitHub App is not feasible, use a fine-scoped PAT stored as an Actions secret. Constrain repository access and rotate regularly.
+
+\subsubsection{Approach C: \cmd{GITHUB\_TOKEN} only (limited scope)}
+
+Use only \cmd{GITHUB\_TOKEN} when evaluating code scanning and dependency graph features where the token is sufficient.
+
+% ============================================================================
+\section{Reference implementation architecture}
+
+\subsection{High-level workflow}
+
+\begin{enumerate}[leftmargin=*]
+  \item A centralized \textbf{policy repository} stores YAML policy files (e.g., \cmd{policies/default.yml}, \cmd{policies/strict.yml}).
+  \item Target repositories include a \textbf{Policy-as-Code workflow} (GitHub Action) that loads the selected policy file.
+  \item The workflow executes on:
+  \begin{itemize}
+    \item pull requests (shift-left feedback),
+    \item pushes to the default branch (post-merge verification),
+    \item scheduled intervals (continuous compliance drift detection).
+  \end{itemize}
+  \item Repository rulesets/branch protection require the workflow check to pass before merge.
+\end{enumerate}
+
+\subsection{Repository structure (recommended)}
+
+\begin{lstlisting}[style=ghascode]
+security-policies/
+  policies/
+    default.yml
+    strict.yml
+    nonprod.yml
+  allowlists/
+    licenses-allowed.txt
+    codeql-rule-allowlist.txt
+    typosquatting-names.txt
+  docs/
+    CHANGELOG.md
+    POLICY-MODEL.md
+  CODEOWNERS
+\end{lstlisting}
+
+\subsection{Policy versioning strategy}
+
+Prefer one of the following:
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Branch pinning:} Reference a stable branch (e.g., \cmd{main}) and rely on protected reviews for policy changes.
+  \item \textbf{Tag pinning:} Reference a tag (recommended for regulated environments) so enforcement changes are explicit and release-managed.
+\end{itemize}
+
+% ============================================================================
+\section{Step-by-step implementation}
+
+\subsection{Step 1: Create and govern a central policy repository}
+
+\subsubsection{Controls to apply to the policy repository}
+
+\begin{itemize}[leftmargin=*]
+  \item Restrict write access to a small set of maintainers (Security Engineering / Platform Governance).
+  \item Require pull request reviews by code owners.
+  \item Require signed commits (where appropriate) and status checks.
+  \item Treat policy files as production infrastructure: test changes, review diffs, and document rationale.
+\end{itemize}
+
+\subsubsection{Sample \cmd{CODEOWNERS} for policy approvals}
+
+\begin{lstlisting}[style=ghascode]
+# Require AppSec approvals for policy changes
+/policies/ @org/appsec-team
+/allowlists/ @org/appsec-team @org/platform-security
+\end{lstlisting}
+
+\subsection{Step 2: Choose a token model and configure secrets}
+
+\subsubsection{GitHub App token pattern (recommended)}
+
+\begin{enumerate}[leftmargin=*]
+  \item Create a GitHub App (enterprise/org admin):
+    \begin{itemize}
+      \item Repository permissions: contents (read), code scanning alerts (read), secret scanning alerts (read), Dependabot alerts (read).
+      \item Install the app only in the organizations/repos that require enforcement.
+    \end{itemize}
+  \item Store the GitHub App private key as an Actions secret (e.g., \cmd{GHAS\_PAC\_APP\_PRIVATE\_KEY}).
+  \item Store the App ID as an Actions variable/secret (e.g., \cmd{GHAS\_PAC\_APP\_ID}).
+\end{enumerate}
+
+\subsubsection{Fine-scoped PAT pattern (fallback)}
+
+\begin{enumerate}[leftmargin=*]
+  \item Create a fine-scoped PAT with least privileges required for your policy checks.
+  \item Restrict repo access and rotate on a defined schedule.
+  \item Store in Actions secrets (e.g., \cmd{GHAS\_PAC\_TOKEN}).
+\end{enumerate}
+
+\subsection{Step 3: Add the Policy-as-Code workflow to repositories}
+
+\subsubsection{Baseline workflow (code scanning only; \cmd{GITHUB\_TOKEN} permitted)}
+
+\begin{lstlisting}[style=ghascode, language=YAML]
+name: ghas-policy-baseline
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+  schedule:
+    - cron: "0 3 * * *"  # daily 03:00 UTC
+
+permissions:
+  contents: read
+  security-events: read
+
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Evaluate GHAS policy (code scanning only)
+        uses: advanced-security/policy-as-code@v2.11.1
+        with:
+          policy: org/security-policies
+          policy-path: policies/default.yml
+          policy-branch: main
+          # token defaults to GITHUB_TOKEN; suitable for code scanning in many cases
+          action: break
+\end{lstlisting}
+
+\paragraph{When to use this:} Use this when you only need code scanning and dependency data that can be accessed by \cmd{GITHUB\_TOKEN}.
+
+\subsubsection{Full workflow (includes Dependabot + Secret Scanning using a GitHub App token)}
+
+The following is a robust enterprise-friendly pattern. It generates an app token at runtime and uses it for policy evaluation.
+
+\begin{lstlisting}[style=ghascode, language=YAML]
+name: ghas-policy-enforcement
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+  schedule:
+    - cron: "0 3 * * *"
+
+permissions:
+  contents: read
+  security-events: read
+  pull-requests: write   # only needed if you enable PR summaries/comments
+
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.GHAS_PAC_APP_ID }}
+          private-key: ${{ secrets.GHAS_PAC_APP_PRIVATE_KEY }}
+
+      - name: Evaluate GHAS policy (full)
+        uses: advanced-security/policy-as-code@v2.11.1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          policy: org/security-policies
+          policy-path: policies/strict.yml
+          policy-branch: main
+          action: break
+          # Additional CLI args (examples): --pr-comment, --debug
+          argvs: "--pr-comment"
+\end{lstlisting}
+
+\paragraph{Operational note:} Only enable \cmd{pull-requests: write} if you actually post PR summaries/comments. If you prefer job summaries only, omit this permission.
+
+\subsection{Step 4: Make policy enforcement mandatory}
+
+Policy enforcement must be \textbf{required} to prevent bypass. Apply one or more of the following:
+\begin{itemize}[leftmargin=*]
+  \item Branch protections requiring the \textit{Policy-as-Code} workflow check.
+  \item Repository rulesets enforcing required checks across multiple repositories (recommended for scale).
+  \item Required reviews by code owners for sensitive areas.
+\end{itemize}
+
+\subsection{Step 5: Establish baseline GHAS enablement}
+
+Policy-as-Code evaluates existing security signals. For meaningful enforcement, ensure the underlying GHAS features are enabled and producing data:
+\begin{itemize}[leftmargin=*]
+  \item Code scanning configured (e.g., CodeQL workflow runs on default branch and PRs).
+  \item Dependabot alerts enabled and (optionally) security updates PRs enabled.
+  \item Secret scanning enabled for supported repositories.
+  \item Push protection enabled for secret scanning where appropriate (blocks commits before secrets are pushed).
+\end{itemize}
+
+% ============================================================================
+\section{Authoring Policy-as-Code rules (YAML model)}
+
+This section explains how to write maintainable policies that are strict enough to reduce risk while remaining operationally feasible.
+
+\subsection{Policy blocks and intent}
+
+Policy-as-Code evaluates multiple technologies/features. Each feature generally supports:
+\begin{itemize}[leftmargin=*]
+  \item \textbf{level}: a severity threshold (e.g., \cmd{error}, \cmd{high}, \cmd{all}, \cmd{none}).
+  \item \textbf{conditions}: explicit rule triggers (IDs or names).
+  \item \textbf{warnings}: issues that should be reported but not necessarily fail builds (depending on your configuration).
+  \item \textbf{ignores}: allowlisted exceptions (prefer time-bounded governance rather than permanent ignores).
+  \item \textbf{imports}: load IDs/names from external files to keep YAML small and maintain lists separately.
+\end{itemize}
+
+\subsection{Severity levels}
+
+Severity levels are ordered; choosing \cmd{error} includes higher severities such as \cmd{high} and \cmd{critical}. You may also use \cmd{all} or \cmd{none}.
+
+\subsection{Wildcard matching}
+
+IDs and names can use Unix shell-style wildcards (e.g., \cmd{"*/sql-injection"}).
+
+\subsection{Time to remediate}
+
+Policies can specify remediation windows (days) per severity class. This enables enforcement based on \textit{age} of an alert rather than only its severity.
+
+\subsection{Example policies}
+
+\subsubsection{Example 1: Minimal baseline policy}
+
+\begin{lstlisting}[style=ghascode, language=YAML]
+# policies/default.yml
+general:
+  level: error
+
+codescanning:
+  level: error
+
+dependabot:
+  level: high
+
+secretscanning:
+  # Enforce that any secret scanning alert is treated as a violation
+  level: all
+\end{lstlisting}
+
+\subsubsection{Example 2: Strict code scanning policy with explicit rule IDs and wildcard matching}
+
+\begin{lstlisting}[style=ghascode, language=YAML]
+# policies/strict.yml
+codescanning:
+  level: error
+  conditions:
+    ids:
+      # Always fail if any SQL injection rule fires (regardless of default severity)
+      - "*/sql-injection"
+      - "js/sql-injection"
+    names:
+      - "Missing rate limiting"
+\end{lstlisting}
+
+\subsubsection{Example 3: Dependabot + licensing + typosquatting controls}
+
+\begin{lstlisting}[style=ghascode, language=YAML]
+dependabot:
+  level: high
+  conditions:
+    ids:
+      - GHSA-446m-mv8f-q348
+      - CWE-89
+  ignores:
+    ids:
+      - GHSA-mh5c-679w-hh4r
+
+licensing:
+  conditions:
+    ids:
+      - GPL-2.0
+      - GPL-3.0
+    names:
+      - maven://org.apache.struts
+      - maven://org.apache.struts#2.0.5
+  warnings:
+    ids:
+      - Other
+      - NA
+  ignores:
+    ids:
+      - MIT License
+
+dependencies:
+  conditions:
+    imports:
+      names: allowlists/typosquatting-names.txt
+  warnings:
+    ids:
+      - Maintenance
+      - Organization
+\end{lstlisting}
+
+\subsubsection{Example 4: Time-to-remediate SLA enforcement}
+
+\begin{lstlisting}[style=ghascode, language=YAML]
+# policies/time-to-remediate.yml
+general:
+  remediate:
+    errors: 7
+    warnings: 30
+    all: 90
+
+codescanning:
+  level: error
+  # Inherits general.remediate unless overridden
+
+dependabot:
+  remediate:
+    high: 7
+\end{lstlisting}
+
+\subsubsection{Example 5: Environment-specific policies (prod vs non-prod)}
+
+\begin{lstlisting}[style=ghascode, language=YAML]
+# policies/nonprod.yml
+general:
+  level: high
+
+codescanning:
+  level: high
+
+dependabot:
+  level: high
+
+# In non-prod, still enforce secrets strictly
+secretscanning:
+  level: all
+\end{lstlisting}
+
+\paragraph{Recommended practice:} Select policy per repository environment (e.g., \cmd{strict.yml} for production, \cmd{nonprod.yml} for experimental repositories) and require approvals for policy selection changes.
+
+% ============================================================================
+\section{Enterprise and organization-level guardrails}
+
+Policy-as-Code is most effective when paired with platform controls that prevent policy bypass and configuration drift.
+
+\subsection{Enterprise policies for code security and analysis}
+
+Enterprise owners can enforce policies that control whether repository admins may enable/disable GHAS and related features across organizations. Common patterns:
+\begin{itemize}[leftmargin=*]
+  \item Disallow repository admins from disabling Secret Protection / Code Security once enabled.
+  \item Centrally control availability of Advanced Security products for organizations.
+  \item Use policy scope: all organizations or selected organizations.
+\end{itemize}
+
+\subsection{Key nuance}
+
+Some enterprise policies affect whether repository administrators can enable features for additional repositories, but do not necessarily disable features already enabled. Plan for gradual rollout and governance for newly created repositories.
+
+\subsection{Organization security baselines (recommended examples)}
+
+While exact controls vary by risk posture, many organizations standardize on:
+\begin{itemize}[leftmargin=*]
+  \item Enforced multi-factor authentication or SSO.
+  \item Restricted default member permissions.
+  \item Tight controls on inviting outside collaborators.
+  \item Repository rulesets for default branch protection (reviews, status checks, signed commits).
+  \item Automated notifications and compliance monitoring for drift detection.
+\end{itemize}
+
+% ============================================================================
+\section{Runbook: Operational procedures}
+
+\subsection{Onboarding a new repository (standard procedure)}
+
+\begin{enumerate}[leftmargin=*]
+  \item Confirm repository is in the correct organization and inherits required org defaults (or enterprise policies).
+  \item Enable GHAS features per your baseline:
+    \begin{itemize}
+      \item code scanning (CodeQL),
+      \item Dependabot alerts,
+      \item secret scanning and push protection (where applicable).
+    \end{itemize}
+  \item Add the Policy-as-Code workflow file (use templates).
+  \item Apply ruleset/branch protection to require the policy check and other mandatory controls.
+  \item Validate by opening a test pull request and confirming:
+    \begin{itemize}
+      \item the workflow executes,
+      \item job summary is produced,
+      \item merges are blocked when violations exist.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Responding to a policy failure (triage procedure)}
+
+\begin{enumerate}[leftmargin=*]
+  \item Identify the failing check and review the job summary (or PR comment if enabled).
+  \item Determine the category of failure:
+    \begin{itemize}
+      \item Code scanning: review alerts and confirm whether findings are new or pre-existing.
+      \item Secret scanning: rotate/revoke exposed secret, remove from code, and purge history if needed.
+      \item Dependabot: update dependency, merge Dependabot security PR, or mitigate/patch.
+      \item Licensing: replace dependency or obtain approval for exception (time-bounded).
+      \item Dependencies/typosquatting: validate package authenticity and remove malicious dependency.
+    \end{itemize}
+  \item Remediate the issue (preferred) or request an exception (controlled).
+  \item Re-run the workflow and verify check passes before merge.
+\end{enumerate}
+
+\subsection{Exceptions (waivers)}
+
+Exceptions should be:
+\begin{itemize}[leftmargin=*]
+  \item documented (reason, owner, approval, expiry),
+  \item time-bounded by default,
+  \item minimized (avoid permanent ignores),
+  \item visible to governance (security reports, exception ledger).
+\end{itemize}
+
+\paragraph{Implementation options for exceptions:}
+\begin{itemize}[leftmargin=*]
+  \item YAML ignore list (least preferred; tends to accumulate).
+  \item Imported allowlist file with structured review and expiry tracking.
+  \item Separate exception policy file referenced only for approved repositories.
+\end{itemize}
+
+% ============================================================================
+\section{Troubleshooting}
+
+\subsection{Common failures and fixes}
+
+\begin{longtable}{@{}p{0.30\textwidth}p{0.63\textwidth}@{}}
+\toprule
+Symptom & Likely fix \\
+\midrule
+Action fails with missing Python & Add \cmd{actions/setup-python} step before running the action. \\
+Secret scanning / Dependabot results missing & Use GitHub App or PAT token rather than default \cmd{GITHUB\_TOKEN}; confirm app permissions and installation scope. \\
+Policy repository cannot be read & Ensure \cmd{contents: read} and, if using a separate policy repository, provide \cmd{policy-repo-token} with read access. \\
+PR comments not posted & Ensure workflow has \cmd{pull-requests: write} and that PR events are supported; confirm \cmd{argvs: "--pr-comment"}. \\
+Rate-limit or transient API failures & Increase retries; schedule the workflow to run off-hours; reduce scope where feasible. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Local debugging using the CLI}
+
+For deeper debugging (or to test policy changes before rollout), run Policy-as-Code locally:
+\begin{lstlisting}[style=ghascode]
+git clone --branch "v2.11.1" https://github.com/advanced-security/policy-as-code.git
+cd policy-as-code
+./policy-as-code --help
+\end{lstlisting}
+
+% ============================================================================
+\section{Appendix A: Deployment checklists}
+
+\subsection{Repository onboarding checklist}
+
+\begin{itemize}[leftmargin=*]
+  \item Repository is in the correct org; correct visibility and member access.
+  \item Code scanning enabled and running on PR + default branch.
+  \item Dependabot alerts enabled; security updates configured if desired.
+  \item Secret scanning enabled; push protection configured where required.
+  \item Policy-as-Code workflow added, runs successfully.
+  \item Branch protections/rulesets require the policy check and reviews.
+  \item Exception process documented for the repo (owner, escalation path).
+\end{itemize}
+
+\subsection{Policy change checklist}
+
+\begin{itemize}[leftmargin=*]
+  \item Policy changes reviewed by AppSec code owners.
+  \item Changes tested in a sandbox repo (or via CLI).
+  \item Release notes documented (what changed, why, expected impact).
+  \item Rollback plan exists (revert PR or switch policy tag).
+\end{itemize}
+
+% ============================================================================
+\section{Appendix B: References}
+
+\begin{itemize}[leftmargin=*]
+  \item GitHub Policy-as-Code project: \url{https://github.com/advanced-security/policy-as-code}
+  \item Enforcing enterprise code security policies: \url{https://docs.github.com/en/enterprise-cloud@latest/admin/enforcing-policies/enforcing-policies-for-your-enterprise/enforcing-policies-for-code-security-and-analysis-for-your-enterprise}
+  \item Adding a repository security policy (SECURITY.md): \url{https://docs.github.com/articles/adding-a-security-policy-to-your-repository}
+  \item About push protection: \url{https://docs.github.com/en/code-security/concepts/secret-security/about-push-protection}
+\end{itemize}
+
+\end{document}
