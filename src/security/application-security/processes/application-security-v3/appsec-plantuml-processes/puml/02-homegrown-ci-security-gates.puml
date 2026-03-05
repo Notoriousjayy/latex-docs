@@ -1,0 +1,58 @@
+@startuml
+!include appsec-style.puml
+title AppSec Process 02: Homegrown CI Security Gates (Shift Left)
+
+' Purpose: Prevent new critical/high risk findings from merging while keeping developer flow.
+'          AppCode is used to correlate results across tools and route ownership.
+
+start
+
+partition "Pull Request" {
+  :Create PR;
+  :Attach AppCode metadata (repo tags, build vars, artifact labels);
+  :Build + unit tests;
+}
+
+partition "Build & Quality Gates" {
+  :Static analysis (SonarQube)<<gate>>;
+  :80% coverage threshold<<gate>>;
+}
+
+partition "Security Gates (CI)" {
+  :GHAS SAST (CodeQL);
+  :GHAS secrets;
+  :GHAS dependency review / SCA;
+  :Trivy IaC/config scan;
+  :Trivy image scan (if container);
+  :Optional Coverity (language gap SAST);
+}
+
+partition "Triage" {
+  :Normalize + dedupe findings (key = AppCode);
+  if (New critical/high?) then (Yes)
+    :Assign owner (AppCode -> team);
+    :Fix or mitigate;
+  else (No)
+    :Proceed;
+  endif
+}
+
+partition "Gate" {
+  :Merge decision<<gate>>;
+}
+
+partition "After Merge" {
+  :Main branch scans (GHAS/SonarQube/Trivy);
+  :Publish SBOM (Trivy) + link to AppCode;
+  :CD deploy;
+  :DAST schedule (InsightAppSec);
+  :IAST in QA (Seeker);
+}
+
+note right
+Key message: **"No new critical/high" merge gate**.
+AppCode ties every finding to an owner and an SLA.
+end note
+
+stop
+@enduml
