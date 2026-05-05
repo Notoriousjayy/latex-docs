@@ -1,0 +1,368 @@
+% =============================================================================
+% latex-docs-style.sty
+% Canonical house style for the latex-docs repository.
+%
+% Loaded once per document via:
+%
+%     \usepackage{latex-docs-style}
+%
+% This file deliberately groups concerns into clearly labelled sections and is
+% safe to load on top of an existing preamble: it uses \PassOptionsToPackage
+% before each \RequirePackage, never clobbers user definitions (uses
+% \providecommand / \@ifundefined / \@ifpackageloaded throughout), and degrades
+% gracefully when shell-escape or minted is unavailable.
+%
+% Maintenance contract:
+%   * Any change here must keep ALL existing documents compiling cleanly under
+%     latexmk (pdflatex) in CI without shell-escape.
+%   * Macro names exposed to documents (the public API) must stay
+%     backwards-compatible. Add new names; do not rename existing ones.
+% =============================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{latex-docs-style}[2026/05/05 v1.0 latex-docs house style]
+
+
+% -----------------------------------------------------------------------------
+% 1. Encoding and fonts
+% -----------------------------------------------------------------------------
+\PassOptionsToPackage{utf8}{inputenc}
+\PassOptionsToPackage{T1}{fontenc}
+\RequirePackage{iftex}
+\ifPDFTeX
+  \RequirePackage{inputenc}
+  \RequirePackage{fontenc}
+\fi
+\RequirePackage{lmodern}
+\RequirePackage{textcomp}
+\RequirePackage{microtype}
+
+
+% -----------------------------------------------------------------------------
+% 2. Layout and typography
+% -----------------------------------------------------------------------------
+\PassOptionsToPackage{margin=1in}{geometry}
+\RequirePackage{geometry}
+
+\PassOptionsToPackage{parfill}{parskip}
+\RequirePackage{parskip}
+
+\RequirePackage{setspace}
+\RequirePackage{titlesec}
+\RequirePackage{fancyhdr}
+\RequirePackage{lastpage}
+
+
+% -----------------------------------------------------------------------------
+% 3. Tables, lists, floats
+% -----------------------------------------------------------------------------
+\RequirePackage{array}
+\RequirePackage{booktabs}
+\RequirePackage{tabularx}
+\RequirePackage{longtable}
+\RequirePackage{multirow}
+\RequirePackage{makecell}
+\RequirePackage{enumitem}
+\RequirePackage{float}
+\RequirePackage{newfloat}
+\RequirePackage{caption}
+
+\setlist[itemize]{topsep=2pt,itemsep=2pt,parsep=0pt}
+\setlist[enumerate]{topsep=2pt,itemsep=2pt,parsep=0pt}
+\setlist[description]{topsep=2pt,itemsep=2pt,parsep=0pt,style=nextline,
+                      leftmargin=1.6em}
+
+
+% -----------------------------------------------------------------------------
+% 4. Colors and boxes
+% -----------------------------------------------------------------------------
+\PassOptionsToPackage{table,svgnames,dvipsnames}{xcolor}
+\RequirePackage{xcolor}
+
+% House palette. Uses \providecolor so a document-level \definecolor wins.
+\makeatletter
+\providecommand{\providecolor}[3]{%
+  \@ifundefinedcolor{#1}{\definecolor{#1}{#2}{#3}}{}%
+}
+\makeatother
+% Primary palette (navy / steel / teal / brick).
+\providecolor{Navy}{HTML}{1F2A44}
+\providecolor{Steel}{HTML}{4A5568}
+\providecolor{Teal}{HTML}{0E7490}
+\providecolor{Brick}{HTML}{B91C1C}
+% Neutral / surface tokens used by callout boxes.
+\providecolor{Ink}{HTML}{111827}
+\providecolor{Soft}{HTML}{F9FAFB}
+\providecolor{Meta}{HTML}{6B7280}
+\providecolor{Accent}{HTML}{2563EB}
+\providecolor{CardBack}{HTML}{FFFFFF}
+\providecolor{CardFrame}{HTML}{D1D5DB}
+
+\RequirePackage{graphicx}
+\RequirePackage{tcolorbox}
+\tcbuselibrary{breakable,skins}
+
+% Default box look. Documents may override via \tcbset{...} after loading.
+\tcbset{
+  enhanced jigsaw,
+  breakable,
+  colback=Soft,
+  colframe=Meta!60,
+  boxrule=0.5pt,
+  arc=2pt,
+  left=3mm,right=3mm,top=2mm,bottom=2mm
+}
+
+% Reusable named callouts. House style centralizes these here. The optional
+% argument, when present, is used as the box title, matching the convention
+% used throughout the repository:
+%
+%     \begin{notebox}[My Title]   ...   \end{notebox}
+%
+% Documents should not redefine these; doc-level \newtcolorbox calls for
+% these names are stripped during normalization.
+\newtcolorbox{notebox}[1][Note]{title=\textbf{#1},colframe=Steel,
+  colback=Soft,coltitle=white,fonttitle=\bfseries}
+\newtcolorbox{tipbox}[1][Tip]{title=\textbf{#1},colframe=Teal,
+  colback=Soft,coltitle=white,fonttitle=\bfseries}
+\newtcolorbox{warnbox}[1][Warning]{title=\textbf{#1},colframe=Brick,
+  colback=Soft,coltitle=white,fonttitle=\bfseries}
+\newtcolorbox{infobox}[1][Info]{title=\textbf{#1},colframe=Navy,
+  colback=Soft,coltitle=white,fonttitle=\bfseries}
+% viewbox: a quiet content frame with no title bar.
+\newtcolorbox{viewbox}{colback=gray!3,colframe=gray!50,
+  arc=2mm,boxrule=0.5pt,left=3mm,right=3mm,top=2mm,bottom=2mm}
+
+
+% -----------------------------------------------------------------------------
+% 5. Hyperlinks and references
+% -----------------------------------------------------------------------------
+% Math packages must be loaded BEFORE cleveref/hyperref so cleveref's
+% reference-name machinery picks up amsmath theorems correctly.
+\RequirePackage{amsmath}
+\RequirePackage{amssymb}
+\RequirePackage{amsthm}
+
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{hidelinks,bookmarksnumbered,unicode}{hyperref}
+\RequirePackage{hyperref}
+\RequirePackage{bookmark}
+\RequirePackage{xurl}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=Navy,
+  citecolor=Navy,
+  urlcolor=Teal,
+  filecolor=Teal
+}
+
+\RequirePackage{cleveref}
+
+
+% -----------------------------------------------------------------------------
+% 6. Code rendering (minted with safe fallback to listings)
+%
+% The document compiles cleanly in both modes:
+%   * with shell-escape and Pygments installed, minted is used;
+%   * without shell-escape (typical CI default), minted's interface is shimmed
+%     onto listings so existing \begin{minted}{lang}, \mintinline, and
+%     \inputminted calls still typeset.
+% -----------------------------------------------------------------------------
+\RequirePackage{fancyvrb}
+\RequirePackage{upquote}
+
+\makeatletter
+\newif\iflds@useminted
+\lds@usemintedfalse
+\ifdefined\pdfshellescape
+  \ifnum\pdfshellescape=1\relax
+    \lds@usemintedtrue
+  \fi
+\fi
+
+\iflds@useminted
+  \IfFileExists{minted.sty}{%
+    \PassOptionsToPackage{newfloat,cache=false}{minted}%
+    \RequirePackage{minted}%
+    \setminted{fontsize=\small,breaklines=true,breakanywhere=true,tabsize=2,
+               frame=single,framesep=2mm,xleftmargin=2mm}%
+  }{\lds@usemintedfalse}%
+\fi
+
+\iflds@useminted\else
+  % Preload listings now (\RequirePackage must run in the preamble).
+  \RequirePackage{listings}%
+  \lstdefinelanguage{text}{}%
+  \lstdefinelanguage{yaml}{sensitive=true,morecomment=[l]{\#},
+                          morestring=[b]",morestring=[b]'}%
+  \lstdefinelanguage{json}{sensitive=true,morestring=[b]",
+                          showstringspaces=false}%
+  \lstdefinelanguage{ini}{sensitive=false,morecomment=[l]{;},
+                         morecomment=[l]{\#},morestring=[b]"}%
+  \lstset{
+    basicstyle=\ttfamily\small,
+    columns=fullflexible,
+    keepspaces=true,
+    breaklines=true,
+    breakatwhitespace=true,
+    upquote=true,
+    showstringspaces=false,
+    frame=single,
+    framerule=0.4pt,
+    rulecolor=\color{Meta!50},
+    tabsize=2,
+    backgroundcolor=\color{Soft}
+  }%
+  % Floating `listing' environment (minted with [newfloat] would create this).
+  \@ifundefined{c@listing}{%
+    \DeclareFloatingEnvironment[name=Listing]{listing}%
+  }{}%
+  % Defer the minted env shim to \AtBeginDocument so we yield to any document
+  % that has installed its own listings-fallback block. We only define the
+  % shim if no `minted' environment is in scope by the time the body begins.
+  \AtBeginDocument{%
+    \@ifundefined{minted}{%
+      \providecommand{\setminted}[2][]{}%
+      \providecommand{\setmintedinline}[2][]{}%
+      \providecommand{\mintinline}[2]{\lstinline[language=#1]!#2!}%
+      \providecommand{\inputminted}[3][]{%
+        \lstinputlisting[language=#2,#1]{#3}%
+      }%
+      \lstnewenvironment{minted}[2][]{\lstset{language=#2,#1}}{}%
+    }{}%
+  }%
+\fi
+\makeatother
+
+
+% -----------------------------------------------------------------------------
+% 7. CI-safe helpers (always defined regardless of code path)
+% -----------------------------------------------------------------------------
+% Skip silently when an image is missing, instead of failing the build.
+\providecommand{\safeincludegraphics}[2][]{%
+  \IfFileExists{#2}{\includegraphics[#1]{#2}}{}%
+}
+
+% Common semantic markers used across documents.
+\RequirePackage{pifont}
+\providecommand{\cmark}{\textcolor{Teal}{\ding{51}}}
+\providecommand{\xmark}{\textcolor{Brick}{\ding{55}}}
+
+% Inline keyboard / file / command markers.
+\providecommand{\kbd}[1]{\texttt{\small #1}}
+\providecommand{\filename}[1]{\texttt{\small #1}}
+\providecommand{\cmd}[1]{\texttt{\small #1}}
+
+
+% -----------------------------------------------------------------------------
+% 8. Document metadata API
+%
+% Public value-holder macros (override in document preamble after
+% \usepackage{latex-docs-style}, using either form):
+%
+%     \renewcommand{\DocTitle}{...}    \renewcommand{\DocSubtitle}{...}
+%     \renewcommand{\DocVersion}{...}  \renewcommand{\DocStatus}{...}
+%     \renewcommand{\DocOwner}{...}    \renewcommand{\DocAuthor}{...}
+%     \renewcommand{\DocDate}{...}     \renewcommand{\DocSummary}{...}
+%
+% Or, equivalently, the convenience setters:
+%
+%     \setDocTitle{...} \setDocSubtitle{...} \setDocVersion{...} ...
+%
+% Then in the body:
+%
+%     \makedoctitle         % renders centered title block + meta line
+%     \makedoctocpage       % title block + summary box + ToC
+%
+% These cooperate with, but do not replace, \title / \author / \maketitle, so
+% legacy documents using the standard LaTeX title machinery still work.
+% -----------------------------------------------------------------------------
+% Value-holders. \providecommand keeps any earlier definition the document may
+% have made; the convenience setter below uses \def so it always overrides.
+\providecommand{\DocTitle}{}
+\providecommand{\DocSubtitle}{}
+\providecommand{\DocVersion}{}
+\providecommand{\DocStatus}{}
+\providecommand{\DocOwner}{}
+\providecommand{\DocAuthor}{}
+\providecommand{\DocDate}{\today}
+\providecommand{\DocSummary}{}
+
+\newcommand{\setDocTitle}[1]{\def\DocTitle{#1}}
+\newcommand{\setDocSubtitle}[1]{\def\DocSubtitle{#1}}
+\newcommand{\setDocVersion}[1]{\def\DocVersion{#1}}
+\newcommand{\setDocStatus}[1]{\def\DocStatus{#1}}
+\newcommand{\setDocOwner}[1]{\def\DocOwner{#1}}
+\newcommand{\setDocAuthor}[1]{\def\DocAuthor{#1}}
+\newcommand{\setDocDate}[1]{\def\DocDate{#1}}
+\newcommand{\setDocSummary}[1]{\def\DocSummary{#1}}
+
+\makeatletter
+% Internal: emit a single "Version | Status | Owner | Author | Date" line,
+% skipping empty fields without leaving stray separators.
+\newcommand{\lds@metaline}{%
+  \begingroup\small\color{Meta}%
+  \def\lds@sep{}%
+  \def\lds@field##1{%
+    \edef\lds@val{##1}%
+    \ifx\lds@val\@empty\else
+      \lds@sep ##1\def\lds@sep{\quad\textbar\quad}%
+    \fi}%
+  \lds@field{\DocVersion}%
+  \lds@field{\DocStatus}%
+  \lds@field{\DocOwner}%
+  \lds@field{\DocAuthor}%
+  \lds@field{\DocDate}%
+  \endgroup}
+
+\newcommand{\makedoctitle}{%
+  \begin{center}%
+    {\LARGE\bfseries\color{Navy}\DocTitle\par}%
+    \edef\lds@sub{\DocSubtitle}%
+    \ifx\lds@sub\@empty\else
+      \vspace{4pt}{\large\color{Steel}\DocSubtitle\par}%
+    \fi
+    \vspace{6pt}\lds@metaline
+  \end{center}
+  \vspace{0.5em}}
+
+\newcommand{\makedocsummary}{%
+  \edef\lds@sum{\DocSummary}%
+  \ifx\lds@sum\@empty\else
+    \begin{viewbox}\textbf{Purpose.} \DocSummary\end{viewbox}%
+  \fi}
+
+\newcommand{\makedoctocpage}{%
+  \makedoctitle
+  \makedocsummary
+  \tableofcontents
+  \clearpage}
+\makeatother
+
+
+% -----------------------------------------------------------------------------
+% 9. Page style
+% -----------------------------------------------------------------------------
+\setlength{\headheight}{14pt}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyhead[L]{\small\color{Steel}\DocTitle}
+\fancyhead[R]{\small\color{Steel}\DocVersion}
+\fancyfoot[C]{\small\color{Meta}\thepage\ /\ \pageref*{LastPage}}
+
+
+% -----------------------------------------------------------------------------
+% 10. Section heading style
+% -----------------------------------------------------------------------------
+\titleformat{\section}{\Large\bfseries\color{Navy}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{Navy}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{Steel}}%
+            {\thesubsubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.0\baselineskip}{0.4\baselineskip}
+\titlespacing*{\subsection}{0pt}{0.8\baselineskip}{0.3\baselineskip}
+\titlespacing*{\subsubsection}{0pt}{0.6\baselineskip}{0.25\baselineskip}
+
+
+\endinput

@@ -20,6 +20,16 @@ SRC_DIR   := src
 BUILD_DIR := public/pdfs
 LOG_DIR   := public/logs
 
+# Shared style: tooling/latex/latex-docs-style.sty is loaded by every doc via
+# `\usepackage{latex-docs-style}`. Recipes below cd into each doc's leaf
+# directory (because latexmk caches relative to the source dir), so the
+# repo-root latexmkrc is *not* auto-loaded by latexmk in that mode. We make
+# the shared .sty resolvable by exporting TEXINPUTS for every recipe; the
+# trailing `//:` tells kpathsea to search recursively then fall through to
+# the system tree.
+TEXINPUTS_PREFIX := $(abspath tooling/latex)//:
+export TEXINPUTS := $(TEXINPUTS_PREFIX)$(TEXINPUTS)
+
 # Source discovery
 CATEGORIES := $(shell find $(SRC_DIR) -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort)
 ROOT_TEX   := $(shell find $(SRC_DIR) -name '*.tex' -type f -exec grep -l '^\s*\\documentclass' {} \; 2>/dev/null | sort)

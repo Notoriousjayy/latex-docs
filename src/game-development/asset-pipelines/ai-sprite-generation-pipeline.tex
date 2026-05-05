@@ -1,19 +1,13 @@
+% -------------------------------------------------------------------------
+% File: src/game-development/asset-pipelines/ai-sprite-generation-pipeline.tex
+% Style: latex-docs-style v1.0 (see tooling/latex/latex-docs-style.sty)
+% Build: pdflatex via latexmk; minted-aware with listings fallback.
+% -------------------------------------------------------------------------
 \documentclass[11pt]{article}
+\usepackage{latex-docs-style}
 
-\usepackage[a4paper,margin=1in]{geometry}
-\usepackage{hyperref}
-\usepackage{booktabs}
-\usepackage{graphicx}
-\usepackage{enumitem}
-\usepackage{amsmath}
-\usepackage{amssymb}
 % \usepackage{microtype} % Removed due to font issues
-\usepackage{xcolor}
-\usepackage{fancyhdr}
 \usepackage{listings}
-\usepackage{tcolorbox}
-\usepackage{parskip}
-\usepackage{float}
 
 \hypersetup{
     colorlinks=true,
@@ -36,12 +30,6 @@
 }
 
 % Custom boxes for tips and warnings
-\newtcolorbox{tipbox}{
-    colback=blue!5!white,
-    colframe=blue!75!black,
-    title=Implementation Tip,
-    fonttitle=\bfseries
-}
 
 \newtcolorbox{warningbox}{
     colback=red!5!white,
@@ -79,7 +67,6 @@ This document provides a comprehensive technical framework for integrating AI-as
 
 \tableofcontents
 \newpage
-
 
 \section{Executive Summary}
 
@@ -634,8 +621,6 @@ In practice, you can often spend \emph{less} than this:
 
 This section is meant as a planning baseline, not a hard requirement; you can tune each line item to match your actual workflow and production schedule.
 
-
-
 \section{Pipeline Architecture and Implementation}
 
 \subsection{Recommended Pipeline Stages}
@@ -670,18 +655,18 @@ class SpritePipeline:
     def __init__(self, config_path: str):
         with open(config_path) as f:
             self.config = json.load(f)
-        
+
         self.sd_url = self.config['stable_diffusion_url']
         self.output_dir = self.config['output_directory']
         self.style_lora = self.config['style_lora']
-    
+
     def generate_batch(self, prompts: List[str]) -> List[Dict]:
         """Generate multiple sprites with consistent style"""
         results = []
-        
+
         for idx, prompt in enumerate(prompts):
             print(f"Generating {idx+1}/{len(prompts)}: {prompt}")
-            
+
             payload = {
                 "prompt": f"{prompt}, {self.style_lora}",
                 "negative_prompt": "blurry, low quality, deformed",
@@ -691,26 +676,26 @@ class SpritePipeline:
                 "height": 512,
                 "seed": -1
             }
-            
+
             response = requests.post(
-                f"{self.sd_url}/sdapi/v1/txt2img", 
+                f"{self.sd_url}/sdapi/v1/txt2img",
                 json=payload
             )
-            
+
             if response.status_code == 200:
                 data = response.json()
                 filename = f"sprite_{idx:04d}.png"
                 filepath = os.path.join(self.output_dir, filename)
-                
+
                 # Save image (base64 decode and save)
                 import base64
                 from PIL import Image
                 import io
-                
+
                 image_data = base64.b64decode(data['images'][0])
                 image = Image.open(io.BytesIO(image_data))
                 image.save(filepath)
-                
+
                 results.append({
                     "path": filepath,
                     "prompt": prompt,
@@ -722,7 +707,7 @@ class SpritePipeline:
                     "success": False,
                     "error": response.text
                 })
-        
+
         return results
 
 # Usage
@@ -749,19 +734,19 @@ import numpy as np
 class SpriteValidator:
     def __init__(self, specs: dict):
         self.specs = specs
-    
+
     def validate(self, image_path: str) -> dict:
         """Validate sprite against specifications"""
         img = Image.open(image_path)
         results = {"valid": True, "errors": [], "warnings": []}
-        
+
         # Check resolution
         if img.size != tuple(self.specs['target_resolution']):
             results["errors"].append(
                 f"Resolution {img.size} != {self.specs['target_resolution']}"
             )
             results["valid"] = False
-        
+
         # Check color count for pixel art
         if self.specs.get('max_colors'):
             colors = len(set(img.getdata()))
@@ -769,7 +754,7 @@ class SpriteValidator:
                 results["warnings"].append(
                     f"Colors: {colors} > {self.specs['max_colors']}"
                 )
-        
+
         # Check for anti-aliasing in pixel art
         if self.specs.get('no_antialiasing') and img.mode == 'RGBA':
             alpha = np.array(img)[:, :, 3]
@@ -777,7 +762,7 @@ class SpriteValidator:
             if unique_alphas > 2:  # Should only be 0 or 255
                 results["errors"].append("Anti-aliasing detected")
                 results["valid"] = False
-        
+
         return results
 
 # Usage
@@ -1012,7 +997,7 @@ from PIL import Image
 
 class SpriteGenerator(ABC):
     """Abstract base for any sprite generation tool"""
-    
+
     @abstractmethod
     def generate(self, prompt: str) -> Image:
         pass
@@ -1031,7 +1016,7 @@ class FutureAIGenerator(SpriteGenerator):
 class Pipeline:
     def __init__(self, generator: SpriteGenerator):
         self.generator = generator
-    
+
     def create_character(self, spec):
         return self.generator.generate(spec.prompt)
 \end{lstlisting}
@@ -1106,19 +1091,19 @@ ChatGPT Plus & Automation, DALL-E & \$20 \\
 
 \begin{lstlisting}[caption={Reusable prompt patterns}]
 Character Idle:
-"{character} {description}, standing idle, {style}, 
+"{character} {description}, standing idle, {style},
 {perspective}, neutral expression, game sprite"
 
 Character Walk:
-"{character} {description}, walking animation, {style}, 
+"{character} {description}, walking animation, {style},
 {perspective}, frame {n} of 8"
 
 Enemy Variant:
-"{enemy_type}, {variant}, {style}, {perspective}, 
+"{enemy_type}, {variant}, {style}, {perspective},
 menacing, game enemy sprite"
 
 Item/Pickup:
-"{item_name}, {style}, icon view, clean background, 
+"{item_name}, {style}, icon view, clean background,
 game item sprite"
 \end{lstlisting}
 

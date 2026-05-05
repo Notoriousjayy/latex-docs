@@ -1,6 +1,21 @@
 # latexmkrc - Global LaTeX build configuration for CI and local builds
 # Place in repository root
 # ============================================================================
+#
+# IMPORTANT: latexmk only auto-reads ~/.latexmkrc and a `latexmkrc` /
+# `.latexmkrc` in the *current working directory* at invocation time. The
+# repo-level `Makefile` cd's into each document's leaf directory before
+# calling latexmk (so minted's auxiliary tree stays alongside the source),
+# which means this file is NOT auto-loaded during `make build-*` runs.
+# Instead, the Makefile exports the relevant settings (TEXINPUTS, shell-escape)
+# directly. This file remains the canonical config for direct `latexmk` use
+# from the repo root and is read by CI workflows that invoke latexmk from
+# this directory.
+#
+# Shared style (tooling/latex/latex-docs-style.sty) is found via TEXINPUTS:
+#   export TEXINPUTS="$(pwd)/tooling/latex//:$TEXINPUTS"
+# `make` already does this for you.
+# ============================================================================
 
 # ============================================================================
 # PDF Output Mode
