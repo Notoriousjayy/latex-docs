@@ -1,0 +1,75 @@
+@startuml cross_storage_device_vertical_tiering
+title Cross-Storage Device Vertical Tiering Architecture\nLUN scales up across devices without disconnecting consumers
+
+skinparam backgroundColor #FEFEFE
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 11
+skinparam roundcorner 6
+skinparam activity {
+  BackgroundColor #EAF2F8
+  BorderColor #2874A6
+  DiamondBackgroundColor #FDEBD0
+  DiamondBorderColor #B9770E
+}
+
+|Cloud Service Consumer|
+start
+:Issue storage requests;
+
+|Storage Service Gateway|
+:Forward requests to
+primary (lower-capacity)
+cloud storage device;
+
+|Automated Scaling Listener|
+:Monitor request volume
+against thresholds;
+if (Threshold reached?) then (yes)
+  :Notify storage management program;
+else (no)
+  :Continue monitoring;
+  stop
+endif
+
+|Storage Management Program|
+:Categorize storage by
+device performance;
+:Call LUN migration to
+move LUN to secondary
+(higher-capacity) device;
+
+|LUN Migration|
+:Copy LUN to secondary device
+(original remains active during transfer);
+:Verify destination copy;
+
+|Storage Service Gateway|
+:Redirect requests to
+new cloud storage device;
+
+|Storage Management Program|
+:Delete LUN from
+lower-capacity device;
+
+|Automated Scaling Listener|
+:Monitor sustained demand
+on higher-capacity device;
+stop
+
+note right
+  Service interruption is prevented:
+  there is never a disconnection
+  during the transfer.
+end note
+
+note left
+  Supporting mechanisms:
+  Audit Monitor (data-relocation
+  legality and policy checks),
+  Cloud Usage Monitor,
+  Pay-Per-Use Monitor (source
+  and destination accounting).
+end note
+
+@enduml

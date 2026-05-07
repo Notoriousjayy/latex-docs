@@ -1,0 +1,56 @@
+@startuml persistent_virtual_network_configuration
+title Persistent Virtual Network Configuration Architecture\nCentralized switch + VIM replicate config so migrated VMs keep network connectivity
+
+skinparam backgroundColor #FEFEFE
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 11
+skinparam roundcorner 6
+skinparam component {
+  BackgroundColor #EAF2F8
+  BorderColor #2874A6
+}
+skinparam node {
+  BackgroundColor #FDEBD0
+  BorderColor #B9770E
+}
+
+component "VIM\n(Virtual Infrastructure\nManager)" as vim
+component "Centralized\nVirtual Switch\n(shared, published)" as cvs
+
+node "Physical Server A" as psa {
+  component "Hypervisor A" as hv1
+  component "Virtual Server A\n(initial host)" as vsa1
+  component "Local switch port\nassignments" as lp1
+}
+
+node "Physical Server B" as psb {
+  component "Hypervisor B" as hv2
+  component "Virtual Server A\n(after move)" as vsa2
+  component "Local switch port\nassignments" as lp2
+}
+
+vim -down-> cvs : initiates replication\nof switch config
+cvs -down-> lp1 : replicate ports +\nnetwork config
+cvs -down-> lp2 : replicate ports +\nnetwork config
+
+vsa1 -right-> vsa2 : migrate when\nServer A fails
+vsa2 -up-> lp2 : retrieve config\nfrom centralized switch\n(connectivity preserved)
+
+note bottom of psb
+  Without this architecture, the destination
+  host lacks the required port assignments
+  and configuration, so the migrated VM
+  loses network connectivity.
+end note
+
+note right of vim
+  Supporting mechanisms:
+  Hypervisor, Logical Network Perimeter
+  (consumer isolation pre/post migration),
+  Resource Replication
+  (replicates switch config and
+  network capacity allocations).
+end note
+
+@enduml
