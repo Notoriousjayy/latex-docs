@@ -1,0 +1,351 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=0.72in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{url}
+\usepackage{listings}
+\usepackage{microtype}
+\usepackage{needspace}
+
+\definecolor{zapblue}{RGB}{20,76,120}
+\definecolor{zaplight}{RGB}{238,246,252}
+\definecolor{zapgray}{RGB}{80,80,80}
+\definecolor{riskhigh}{RGB}{170,40,40}
+\definecolor{riskmed}{RGB}{180,95,20}
+\definecolor{risklow}{RGB}{160,130,20}
+\definecolor{riskinfo}{RGB}{80,105,130}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{OWASP ZAP Security Testing Handout}
+\rhead{Application Security}
+\cfoot{\thepage}
+\setlength{\headheight}{14pt}
+
+\titleformat{\section}{\Large\bfseries\color{zapblue}}{}{0em}{}
+\titleformat{\subsection}{\large\bfseries\color{zapblue}}{}{0em}{}
+\titleformat{\subsubsection}{\bfseries\color{zapgray}}{}{0em}{}
+\titlespacing*{\section}{0pt}{1.0em}{0.45em}
+\titlespacing*{\subsection}{0pt}{0.8em}{0.35em}
+\titlespacing*{\subsubsection}{0pt}{0.65em}{0.25em}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.45em}
+\renewcommand{\arraystretch}{1.2}
+\setlist[itemize]{leftmargin=1.25em,itemsep=0.22em,topsep=0.22em}
+\setlist[enumerate]{leftmargin=1.55em,itemsep=0.22em,topsep=0.22em}
+\emergencystretch=2em
+\Urlmuskip=0mu plus 2mu
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\term}[1]{\textbf{#1}}
+\newcommand{\risk}[2]{\textbf{\textcolor{#1}{#2}}}
+\newcommand{\source}[1]{\textsuperscript{[#1]}}
+\newcommand{\sectionbreak}{\Needspace{8\baselineskip}}
+\newcommand{\callout}[2]{%
+  \begin{center}
+  \setlength{\fboxsep}{8pt}%
+  \fcolorbox{zapblue}{zaplight}{%
+    \begin{minipage}{0.94\linewidth}
+      \textbf{#1}\par\smallskip #2
+    \end{minipage}}
+  \end{center}}
+
+\lstdefinestyle{zapcode}{
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  framerule=0.3pt,
+  breaklines=true,
+  xleftmargin=0pt,
+  xrightmargin=0pt
+}
+\lstset{style=zapcode}
+
+\begin{document}
+
+\begin{center}
+  {\huge\bfseries\color{zapblue} OWASP ZAP Web Application Security Testing Handout}\par
+  \vspace{0.3em}
+  {\large Practical workflow for proxying, crawling, scanning, fuzzing, reviewing alerts, and reporting}\par
+\end{center}
+
+\callout{Authorized-use boundary}{OWASP ZAP is an attack-capable security testing tool. Use active scanning, fuzzing, forced browsing, and other intrusive actions only on applications you own or are explicitly authorized to test. Prefer scoped and protected testing modes for day-to-day work.}
+
+\section{Purpose}
+
+OWASP ZAP, also known as Zed Attack Proxy, is an open-source web application security testing tool used to inspect traffic, map an application, passively analyze requests and responses, and actively test for selected vulnerability classes. ZAP is useful for developer testing, AppSec validation, manual penetration-testing support, and CI/CD security automation.\source{1}\source{2}
+
+This handout focuses on a safe, repeatable workflow:
+
+\begin{enumerate}
+  \item Install and launch ZAP.
+  \item Define testing scope before intrusive actions.
+  \item Explore the application through ZAP to build a site map.
+  \item Use spiders and AJAX spidering when manual browsing misses routes.
+  \item Run active scans only after authorization and scoping are clear.
+  \item Review alerts by risk and confidence, then manually verify important findings.
+  \item Export reports for remediation tracking and evidence.
+\end{enumerate}
+
+\section{Core Concepts}
+
+\begin{tabularx}{\linewidth}{@{}p{0.24\linewidth}Y@{}}
+\toprule
+\textbf{Concept} & \textbf{What it means in ZAP} \\
+\midrule
+Proxy & ZAP sits between the browser or test client and the target web application so it can observe, intercept, and analyze HTTP and HTTPS traffic.\source{2} \\
+Session & A saved ZAP workspace containing sites, history, alerts, contexts, authentication settings, and scan activity. \\
+Context & A logical definition of the application or portion of the application under test. Contexts can include URLs, exclude URLs, and store authentication-related settings.\source{3} \\
+Scope & The active set of URLs or contexts ZAP should treat as in bounds. Scope helps prevent accidental scanning outside the authorized target.\source{8} \\
+Spider & A crawler that discovers resources by starting from seed URLs, visiting pages, extracting links, and recursively adding new URLs.\source{5} \\
+AJAX Spider & A crawler for modern JavaScript-heavy applications; it can be combined with the standard spider for better coverage.\source{6} \\
+Passive Scan & Analysis performed while traffic passes through ZAP. It does not submit attack payloads. \\
+Active Scan & Intrusive testing that sends known attack patterns to selected targets to look for certain vulnerability classes. It is an attack against those targets.\source{4} \\
+Fuzzer & A tool for sending many unexpected or invalid inputs to requests and manually assessing the resulting behavior.\source{10} \\
+Alert & A potential security issue shown in the Alerts tab and grouped in risk order.\source{11} \\
+\bottomrule
+\end{tabularx}
+
+\section{Recommended Operating Modes}
+
+ZAP supports modes that change what actions are allowed. For routine enterprise testing, start in \term{Protected} mode after defining scope. Protected mode permits potentially dangerous actions only on URLs that are in scope.\source{8}
+
+\begin{tabularx}{\linewidth}{@{}p{0.18\linewidth}Y@{}}
+\toprule
+\textbf{Mode} & \textbf{Recommended use} \\
+\midrule
+Safe & Use while observing traffic, learning the interface, or reviewing previously captured results. Potentially dangerous operations are not permitted. \\
+Protected & Use for most authorized testing. It constrains spidering, active scanning, fuzzing, breaking, and resending to scoped URLs. \\
+Standard & Use only when you are confident the environment is isolated and scope controls are already well understood. \\
+Attack & Use with extreme care. New in-scope nodes are actively scanned as they are discovered. \\
+\bottomrule
+\end{tabularx}
+
+\section{Setup Checklist}
+
+\begin{enumerate}
+  \item \term{Install ZAP.} Download the appropriate installer or package for Windows, Linux, or macOS from the official ZAP website.\source{1}
+  \item \term{Launch ZAP.} Decide whether to persist the session or start with a temporary session. Persist sessions when you need evidence, repeatability, or later review.
+  \item \term{Confirm authorization.} Record the target hostnames, environments, test window, testing constraints, excluded paths, and emergency contact.
+  \item \term{Define scope.} Create or adjust a context for the target application. Include only approved hosts and paths, and exclude logout, destructive, payment, email-sending, or production data-modifying endpoints unless explicitly authorized.
+  \item \term{Set mode to Protected.} This reduces the chance of accidentally attacking URLs outside the approved scope.\source{8}
+  \item \term{Configure proxying.} Use ZAP's preconfigured browser from Quick Start, or manually configure a browser or test client to proxy through ZAP.\source{2}\source{3}
+  \item \term{Capture baseline traffic.} Browse key user flows: login, navigation, forms, search, file upload, API-backed pages, and logout.
+\end{enumerate}
+
+\section{Workflow 1: Quick Start Automated Scan}
+
+Use this for a fast first pass against a deliberately testable target, such as a training application, non-production environment, or authorized staging system.
+
+\begin{enumerate}
+  \item Open the \term{Quick Start} tab.
+  \item Select \term{Automated Scan}.
+  \item Enter the full target URL, including \texttt{http://} or \texttt{https://}.
+  \item Click \term{Attack}.
+  \item Monitor progress in the Sites, Spider, Active Scan, History, and Alerts areas.
+  \item Review alerts and manually validate important findings before filing defects.
+\end{enumerate}
+
+\callout{When to avoid one-click scanning}{Do not use a one-click automated scan on production, externally owned, fragile, payment-processing, state-changing, or poorly scoped applications. Use a context-driven workflow instead.}
+
+\section{Workflow 2: Manual Explore Through the Proxy}
+
+Manual exploration is the preferred starting point for authenticated, stateful, or workflow-heavy applications. ZAP's Quick Start Manual Explore option can launch a browser already configured to proxy through ZAP and ignore certificate errors for that launched profile.\source{3}
+
+\begin{enumerate}
+  \item Open \term{Quick Start} and select \term{Manual Explore}.
+  \item Enter the target URL.
+  \item Choose a browser and launch it from ZAP.
+  \item Log in with a test account approved for security testing.
+  \item Exercise the important application paths while ZAP records traffic.
+  \item Review the Sites tree to confirm that key areas were discovered.
+  \item Keep the application in scope before running spidering, active scanning, or fuzzing.
+\end{enumerate}
+
+\section{Workflow 3: Context-Driven Testing}
+
+Contexts are essential for complex applications because they let you define the target application, included and excluded URLs, and authentication-related behavior. ZAP authentication handling is context-based; each context can define how authentication is handled and how ZAP detects whether a request is authenticated.\source{9}
+
+\begin{enumerate}
+  \item Create a context for the application.
+  \item Add only approved hostnames and application paths to the context.
+  \item Exclude logout, destructive, or out-of-bounds endpoints.
+  \item Configure authentication and session handling where needed.
+  \item Add test users or roles when the application requires authenticated scanning.
+  \item Place the context in scope.
+  \item Run spiders and scans against the context rather than the entire observed web.
+\end{enumerate}
+
+\section{Workflow 4: Spider and AJAX Spider Coverage}
+
+The standard Spider discovers URLs by visiting pages and extracting links recursively.\source{5} For modern front-end applications, the AJAX Spider can discover routes and pages that depend on client-side JavaScript execution. The AJAX Spider can be combined with the standard Spider for better coverage.\source{6}
+
+\begin{tabularx}{\linewidth}{@{}p{0.26\linewidth}Y@{}}
+\toprule
+\textbf{Coverage technique} & \textbf{Use when} \\
+\midrule
+Manual Explore & User flows require login, business choices, role-specific screens, or sequence-sensitive navigation. \\
+Standard Spider & The application exposes discoverable links, forms, and conventional server-rendered paths. \\
+AJAX Spider & The application is a single-page app or heavily JavaScript-driven and the standard spider misses important routes. \\
+Automated regression traffic & You already have Selenium, Playwright, Cypress, API, or integration tests that exercise realistic application behavior through ZAP. \\
+\bottomrule
+\end{tabularx}
+
+\section{Workflow 5: Active Scanning}
+
+Active scanning sends attack payloads to selected targets to find certain types of vulnerabilities. It can help identify issues such as injection weaknesses and misconfigurations, but it will not find all vulnerability classes. Logical flaws, such as broken access control, generally require manual testing and review.\source{4}
+
+\begin{enumerate}
+  \item Confirm written or ticket-based authorization.
+  \item Confirm the target is in a non-production or approved test window unless production testing is explicitly authorized.
+  \item Confirm scope and switch to \term{Protected} mode.
+  \item Select the context, site, folder, or request to scan.
+  \item Right-click and choose \term{Attack} followed by \term{Active Scan}.
+  \item Select or customize the scan policy, threshold, and strength based on the risk of the environment.
+  \item Start the scan and monitor server health, application logs, and ZAP's Active Scan tab.
+  \item Stop the scan immediately if the application becomes unstable or testing violates the agreed boundary.
+\end{enumerate}
+
+\callout{Important limitation}{Treat ZAP active scan findings as security signals, not final proof. Confirm exploitability, business impact, affected endpoint, request evidence, response evidence, and remediation guidance before creating high-priority defects.}
+
+\section{Workflow 6: Fuzzing}
+
+Fuzzing submits many unexpected or invalid inputs to a selected request. ZAP can fuzz requests with built-in payloads, optional add-on payloads, and custom scripts. Fuzzing results require manual assessment to determine whether a vulnerability exists.\source{10}\source{12}
+
+\begin{enumerate}
+  \item Identify a request parameter, header, cookie, JSON field, path segment, or body value worth testing.
+  \item Confirm the request is in scope and safe to repeat.
+  \item Open the request, highlight the input location, and choose \term{Fuzz}.
+  \item Select payload generators or custom payload files.
+  \item Run the fuzzer at a controlled rate.
+  \item Compare status codes, response lengths, error messages, timing, redirects, and application-side effects.
+  \item Manually validate any suspicious behavior before escalating.
+\end{enumerate}
+
+\section{Alert Review and Triage}
+
+The Alerts tab displays alerts raised during the session in risk order. Selecting an alert shows the details in the right pane, and filtering can restrict alerts to in-scope URLs.\source{11}
+
+\begin{tabularx}{\linewidth}{@{}p{0.19\linewidth}Y@{}}
+\toprule
+\textbf{Alert level} & \textbf{Triage action} \\
+\midrule
+\risk{riskhigh}{High} & Validate immediately. Capture request, response, endpoint, reproduction steps, user role, data sensitivity, business impact, and remediation owner. \\
+\risk{riskmed}{Medium} & Validate and prioritize based on exploitability, exposure, authentication requirement, compensating controls, and affected data. \\
+\risk{risklow}{Low} & Review for hygiene, hardening, compliance, or defense-in-depth value. Batch where appropriate. \\
+\risk{riskinfo}{Informational} & Use as context. Do not treat as a defect unless it supports a confirmed risk or policy requirement. \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Minimum Evidence for a Valid Finding}
+
+\begin{itemize}
+  \item Target URL, endpoint, route, or API operation.
+  \item Test account or role used during discovery.
+  \item ZAP alert name, risk, confidence, plugin ID if available, and timestamp.
+  \item Full request and relevant response evidence, with secrets redacted.
+  \item Manual verification notes, including payload, observed behavior, and impact.
+  \item Reproduction steps that another engineer can follow.
+  \item Recommended fix or control objective.
+  \item False-positive rationale, if the finding is not actionable.
+\end{itemize}
+
+\section{Report Generation}
+
+ZAP's Report Generation add-on supports flexible report creation from the desktop UI and the Automation Framework. The desktop dialog is available from \term{Report} followed by \term{Generate Report}. Report templates include HTML, JSON, Markdown, PDF, XML, and SARIF-oriented options.\source{13}\source{14}
+
+\begin{enumerate}
+  \item Filter results to the approved context or in-scope URLs.
+  \item Remove or mark false positives where appropriate.
+  \item Choose a report template suitable for the audience.
+  \item Include risk and confidence levels needed for the workflow.
+  \item Save the report with target, environment, date, and scan type in the filename.
+  \item Attach the report to the security ticket, change record, or remediation backlog item.
+\end{enumerate}
+
+\section{Best Practices}
+
+\begin{itemize}
+  \item \term{Scope first.} Define contexts, included URLs, excluded URLs, and test accounts before running attack-capable features.
+  \item \term{Use Protected mode.} This is the safest default for authorized testing because dangerous actions are constrained to scoped URLs.\source{8}
+  \item \term{Prefer manual exploration for authenticated apps.} Automated discovery often misses role-specific and workflow-specific behavior.
+  \item \term{Use AJAX Spider for modern apps.} Single-page apps and JavaScript-heavy applications often need browser-driven discovery.\source{6}
+  \item \term{Customize scan policy.} Reduce noise and operational risk by disabling irrelevant rules and tuning thresholds for the target technology.
+  \item \term{Throttle intrusive tests.} Avoid overwhelming fragile services with high-strength active scans or aggressive fuzzing.
+  \item \term{Verify before escalation.} High-risk alerts still require reproduction and impact analysis.
+  \item \term{Redact sensitive data.} Reports and tickets should not expose credentials, tokens, session cookies, personal data, or proprietary payloads.
+  \item \term{Pair ZAP with human testing.} Active scanning only finds certain vulnerability classes and does not replace business-logic review.\source{4}
+\end{itemize}
+
+\section{CI/CD Automation Starting Point}
+
+ZAP can be automated through its Automation Framework, and report generation supports automation jobs.\source{7}\source{13} A practical CI/CD pattern is to begin with a passive or baseline-style scan for pull requests or nightly builds, then reserve active scanning for controlled test environments.
+
+\begin{lstlisting}
+# Example concept only. Tune jobs, scope, auth, and report settings
+# for the application and environment before operational use.
+zap.sh -cmd -autorun zap.yaml
+\end{lstlisting}
+
+\begin{tabularx}{\linewidth}{@{}p{0.26\linewidth}Y@{}}
+\toprule
+\textbf{Pipeline control} & \textbf{Recommended decision rule} \\
+\midrule
+Pull request & Prefer passive scan, dependency/security headers review, and low-risk automation. Do not run destructive tests against shared services. \\
+Nightly integration & Run broader spidering and passive analysis against a seeded test environment. \\
+Pre-release security gate & Run active scanning against approved staging targets with test data, defined scope, and rollback contacts. \\
+Production monitoring & Avoid intrusive active scanning unless explicitly approved. Use controlled passive validation, headers checks, and external attack-surface monitoring instead. \\
+\bottomrule
+\end{tabularx}
+
+\section{Practitioner Checklist}
+
+Before starting ZAP testing, be able to answer the following:
+
+\begin{enumerate}
+  \item What application, environment, hostnames, and paths are authorized for testing?
+  \item Are there any endpoints that must be excluded from crawling, scanning, or fuzzing?
+  \item Are test users, roles, seed data, and authentication requirements available?
+  \item Is the target stable enough for spidering, active scanning, or fuzzing?
+  \item What mode is ZAP running in, and is scope enforced?
+  \item What scan policy, thresholds, and strength settings are appropriate?
+  \item Who must be notified if testing causes instability?
+  \item Which report format and evidence package are required for remediation tracking?
+  \item What findings require manual verification before escalation?
+  \item Where will validated findings be tracked and who owns remediation?
+\end{enumerate}
+
+\section{Official Sources Consulted}
+
+\begin{tabularx}{\linewidth}{@{}p{0.08\linewidth}Y@{}}
+\toprule
+\textbf{Ref.} & \textbf{Official ZAP or OWASP source} \\
+\midrule
+1 & ZAP Getting Started, \url{https://www.zaproxy.org/getting-started/} \\
+2 & ZAP Desktop Getting Started, \url{https://www.zaproxy.org/docs/desktop/start/} \\
+3 & Quick Start add-on, \url{https://www.zaproxy.org/docs/desktop/addons/quick-start/} \\
+4 & Active Scan feature, \url{https://www.zaproxy.org/docs/desktop/start/features/ascan/} \\
+5 & Spider add-on, \url{https://www.zaproxy.org/docs/desktop/addons/spider/} \\
+6 & AJAX Spider add-on, \url{https://www.zaproxy.org/docs/desktop/addons/ajax-spider/} \\
+7 & Automation Framework add-on, \url{https://www.zaproxy.org/docs/desktop/addons/automation-framework/} \\
+8 & ZAP Modes, \url{https://www.zaproxy.org/docs/desktop/start/features/modes/} \\
+9 & Authentication feature, \url{https://www.zaproxy.org/docs/desktop/start/features/authentication/} \\
+10 & Fuzzing add-on, \url{https://www.zaproxy.org/docs/desktop/addons/fuzzer/} \\
+11 & Alerts tab, \url{https://www.zaproxy.org/docs/desktop/ui/tabs/alerts/} \\
+12 & Fuzzer tab, \url{https://www.zaproxy.org/docs/desktop/addons/fuzzer/tab/} \\
+13 & Report Generation add-on, \url{https://www.zaproxy.org/docs/desktop/addons/report-generation/} \\
+14 & Report Templates, \url{https://www.zaproxy.org/docs/desktop/addons/report-generation/templates/} \\
+\bottomrule
+\end{tabularx}
+
+\end{document}

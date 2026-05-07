@@ -1,0 +1,157 @@
+
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{array,booktabs,longtable,tabularx,multicol}
+\usepackage[table]{xcolor}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{lastpage}
+\usepackage{pdflscape}
+\usepackage{tcolorbox}
+\tcbuselibrary{breakable,skins}
+\hypersetup{hidelinks}
+\definecolor{Navy}{HTML}{1F4E79}
+\definecolor{LightBlue}{HTML}{EAF3F8}
+\definecolor{LightGray}{HTML}{F5F7FA}
+\definecolor{RuleGray}{HTML}{D9E2EC}
+\definecolor{GoodGreen}{HTML}{2E7D32}
+\definecolor{RiskAmber}{HTML}{B26A00}
+\definecolor{RiskRed}{HTML}{B00020}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{GLPI + iTop Integration}
+\rhead{\thepage\ of \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\headheight}{14pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,topsep=2pt,itemsep=2pt}
+\setlist[enumerate]{leftmargin=*,topsep=2pt,itemsep=2pt}
+\titleformat{\section}{\Large\bfseries\color{Navy}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\large\bfseries\color{Navy}}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{Navy}}{}{0em}{}
+\newcommand{\docversion}{Version 1.0}
+\newcommand{\checkbox}{\fbox{\rule{0pt}{1.1ex}\rule{1.1ex}{0pt}}}
+\newcommand{\statusgood}{\textcolor{GoodGreen}{Recommended}}
+\newcommand{\statuswarn}{\textcolor{RiskAmber}{Conditional}}
+\newcommand{\statusrisk}{\textcolor{RiskRed}{Risk}}
+\newtcolorbox{purposebox}{enhanced,breakable,colback=LightBlue,colframe=Navy,boxrule=0.6pt,arc=2mm,left=6pt,right=6pt,top=6pt,bottom=6pt}
+\newtcolorbox{calloutbox}{enhanced,breakable,colback=LightGray,colframe=RuleGray,boxrule=0.5pt,arc=2mm,left=6pt,right=6pt,top=6pt,bottom=6pt}
+\newcommand{\sourcesection}{%
+\section*{Reference Sources}
+\small
+\begin{itemize}
+  \item GLPI Help Center, user documentation: \url{https://help.glpi-project.org/documentation/readme-1}
+  \item GLPI Help Center, RESTful API V2: \url{https://help.glpi-project.org/documentation/modules/configuration/general/api/restful-api-v2}
+  \item GLPI Project, native inventory announcement and inventory endpoint context: \url{https://www.glpi-project.org/en/discover-native-glpi-inventory/}
+  \item GLPI Project, GLPI Inventory integration overview: \url{https://www.glpi-project.org/en/integration/glpi-inventory/}
+  \item GLPI Agent documentation: \url{https://glpi-agent.readthedocs.io/}
+  \item iTop Documentation, REST/JSON services: \url{https://www.itophub.io/wiki/page?id=latest\%3Aadvancedtopics\%3Arest_json}
+  \item iTop Documentation, CMDB data model: \url{https://www.itophub.io/wiki/page?id=latest\%3Adatamodel\%3Astart}
+  \item iTop Documentation, change management module: \url{https://www.itophub.io/wiki/page?id=latest\%3Adatamodel\%3Aitop-change-mgmt}
+  \item iTop Documentation, integrating iTop: \url{https://www.itophub.io/wiki/page?id=latest\%3Aadvancedtopics\%3Astart}
+\end{itemize}
+\normalsize
+}
+
+
+\title{\bfseries\color{Navy} GLPI + iTop Integration Handout\\\large Practical ITAM-to-CMDB Operating Pattern}
+\author{Prepared for IT Operations, CMDB, and ITSM Teams}
+\date{\docversion}
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\begin{purposebox}
+\textbf{Purpose.} Use this handout as a concise reference for combining GLPI and iTop without creating duplicate systems of record. The recommended model is GLPI for ITAM and inventory, iTop for governed CMDB and ITSM workflows, and a controlled integration layer between them.
+\end{purposebox}
+
+\section{Recommended Positioning}
+
+\begin{longtable}{p{0.23\linewidth}p{0.33\linewidth}p{0.34\linewidth}}
+\toprule
+\rowcolor{LightBlue}\textbf{Tool} & \textbf{Best Role} & \textbf{Primary Value} \\
+\midrule
+GLPI & ITAM and inventory source & Tracks hardware, software, licenses, contracts, asset lifecycle, inventory collection, and operational support details. \\
+iTop & CMDB and ITSM process layer & Models CIs, relationships, organizations, teams, services, incidents, changes, and service impact analysis. \\
+Integration layer & Policy enforcement and synchronization control & Maps, validates, reconciles, logs, and synchronizes only approved records from GLPI to iTop. \\
+\bottomrule
+\end{longtable}
+
+\section{Target Architecture}
+
+\begin{enumerate}
+  \item \textbf{Discover and manage assets in GLPI.} GLPI Agent, inventory plugins, OCS-style inputs, manual updates, or APIs populate the ITAM repository.
+  \item \textbf{Approve assets for CMDB use.} Asset owners confirm identity, lifecycle status, location, organization, and ownership.
+  \item \textbf{Transform assets into CIs.} The integration layer maps GLPI records to iTop classes and attributes.
+  \item \textbf{Validate and reconcile.} The connector rejects incomplete records, prevents duplicates, and preserves field ownership.
+  \item \textbf{Create or update iTop CIs.} iTop receives only actionable CIs needed for service management, impact analysis, or change/incident workflows.
+  \item \textbf{Use iTop for process execution.} Incidents, changes, service catalog decisions, and impact analysis use the governed CI model.
+\end{enumerate}
+
+\section{What Should Synchronize?}
+
+\subsection{Synchronize}
+\begin{itemize}
+  \item Servers, endpoints, and network devices that support business services.
+  \item Assets with stable identifiers, owners, locations, and lifecycle state.
+  \item Software or license information needed for compliance, service support, or risk decisions.
+  \item CIs required for incident routing, change impact analysis, or service dependency mapping.
+\end{itemize}
+
+\subsection{Do Not Synchronize by Default}
+\begin{itemize}
+  \item Temporary, test-only, unmanaged, or low-value assets.
+  \item Records without reliable identifiers or accountable ownership.
+  \item Raw inventory noise that does not improve ITSM workflows.
+  \item Sensitive personal data unless it is required for an approved operational purpose.
+\end{itemize}
+
+\section{Minimum Implementation Checklist}
+
+\begin{multicols}{2}
+\begin{itemize}
+  \item[\checkbox] Define GLPI and iTop system-of-record boundaries.
+  \item[\checkbox] Identify in-scope asset classes.
+  \item[\checkbox] Define GLPI-to-iTop field mappings.
+  \item[\checkbox] Define CI identity and duplicate-prevention rules.
+  \item[\checkbox] Define lifecycle state translations.
+  \item[\checkbox] Define mandatory iTop CI attributes.
+  \item[\checkbox] Create dedicated integration accounts.
+  \item[\checkbox] Store API secrets securely.
+  \item[\checkbox] Run a dry-run synchronization.
+  \item[\checkbox] Review rejected records and duplicate candidates.
+  \item[\checkbox] Pilot with a limited CI class or service.
+  \item[\checkbox] Track synchronization and data-quality KPIs.
+\end{itemize}
+\end{multicols}
+
+\section{Recommended Controls}
+
+\begin{longtable}{p{0.27\linewidth}p{0.63\linewidth}}
+\toprule
+\rowcolor{LightBlue}\textbf{Control} & \textbf{Requirement} \\
+\midrule
+Field ownership & GLPI owns inventory facts; iTop owns CI relationships and ITSM process context. \\
+Reconciliation & Use serial number, asset tag, hostname, UUID, MAC address, or composite keys before creating a CI. \\
+Validation & Reject missing mandatory attributes before updating iTop. \\
+Exception handling & Route rejected records to accountable asset or CMDB owners. \\
+Auditability & Log every run: timestamp, created, updated, skipped, rejected, failed, and error reasons. \\
+Security & Use least-privilege service accounts, TLS, protected secrets, and no personal admin credentials. \\
+Change control & Treat mapping, connector, and bulk update changes as controlled releases. \\
+\bottomrule
+\end{longtable}
+
+\section{Recommended Decision}
+
+\begin{calloutbox}
+Adopt a controlled one-way synchronization model from GLPI to iTop for approved CI-relevant asset data. Start with a small pilot, measure data quality, validate service-management value, then expand by asset class and business service.
+\end{calloutbox}
+
+\sourcesection
+\end{document}

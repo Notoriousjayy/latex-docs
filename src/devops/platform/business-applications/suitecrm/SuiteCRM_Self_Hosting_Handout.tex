@@ -1,0 +1,207 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage{xurl}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue}
+\setlength{\headheight}{14pt}
+\emergencystretch=3em
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{SuiteCRM Self-Hosting Handout}
+\rhead{Internal Operations}
+\cfoot{\thepage}
+
+\definecolor{lightgray}{gray}{0.95}
+\lstset{basicstyle=\ttfamily\small, backgroundcolor=\color{lightgray}, breaklines=true, frame=single, columns=fullflexible}
+\setlist[itemize]{topsep=3pt,itemsep=2pt,parsep=0pt}
+\setlist[enumerate]{topsep=3pt,itemsep=2pt,parsep=0pt}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\titleformat{\section}{\Large\bfseries}{\thesection}{0.5em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.5em}{}
+
+\title{SuiteCRM Self-Hosting Operations Handout}
+\author{Prepared for deployment planning and operational runbooks}
+\date{May 2026}
+
+\begin{document}
+\maketitle
+
+\section*{Scope}
+This handout summarizes a production-oriented self-hosting model for SuiteCRM 8.x. The default target is SuiteCRM 8.10.x on Linux with Apache 2.4, PHP 8.2--8.4, and MariaDB or MySQL. Nginx/LEMP can be used as an operator pattern only after route, rewrite, API, upload, scheduler, and upgrade validation, because the current SuiteCRM 8.10.x compatibility matrix centers Apache 2.4.
+
+\section{Reference Architecture}
+\begin{itemize}
+  \item Users access SuiteCRM over HTTPS through DNS and a web server or reverse proxy.
+  \item The web server should expose SuiteCRM's \texttt{public} directory, not the full application root.
+  \item PHP executes the SuiteCRM application and required extensions.
+  \item MariaDB or MySQL stores CRM records, users, metadata, and module data.
+  \item The filesystem stores uploads, cache, logs, and customizations.
+  \item The scheduler runs recurring background jobs such as workflows, email checks, report generation, and indexing.
+  \item Backups must include both the database and application file tree.
+\end{itemize}
+
+\section{Version and Runtime Baseline}
+\begin{longtable}{L{0.30\linewidth} L{0.60\linewidth}}
+\textbf{Area} & \textbf{Default Baseline} \\
+\hline
+SuiteCRM & SuiteCRM 8.10.x for new SuiteCRM 8 deployments. \\
+PHP & PHP 8.2, 8.3, or 8.4 for SuiteCRM 8.10.x. \\
+Web server & Apache 2.4 for strict official compatibility alignment. \\
+Database & MariaDB 10.6, 10.11, 11.4, 11.8 or MySQL 8.0, 8.4 for SuiteCRM 8.10.x. \\
+PHP modules & cli, curl, common, intl, json, gd, mbstring, mysqli, pdo\_mysql, openssl, soap, xml, zip; imap and ldap if needed. \\
+Performance & Enable OPcache in production after validation. \\
+\end{longtable}
+
+\section{Deployment Procedure}
+\subsection{Install runtime packages}
+\begin{lstlisting}[language=bash]
+sudo apt update
+sudo apt install -y apache2 mariadb-server unzip curl ca-certificates
+sudo apt install -y php php-cli php-common php-curl php-intl php-gd php-mbstring \
+  php-mysql php-soap php-xml php-zip php-opcache
+sudo apt install -y php-imap php-ldap   # optional
+sudo a2enmod rewrite headers ssl
+sudo systemctl restart apache2
+\end{lstlisting}
+
+\subsection{Create database}
+\begin{lstlisting}[language=SQL]
+CREATE DATABASE suitecrm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'suitecrm'@'localhost' IDENTIFIED BY 'REPLACE_WITH_STRONG_PASSWORD';
+GRANT ALL PRIVILEGES ON suitecrm.* TO 'suitecrm'@'localhost';
+FLUSH PRIVILEGES;
+\end{lstlisting}
+
+\subsection{Configure Apache vhost}
+\begin{lstlisting}
+<VirtualHost *:80>
+    ServerName crm.example.com
+    DocumentRoot /var/www/suitecrm/public
+
+    <Directory /var/www/suitecrm/public>
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/suitecrm_error.log
+    CustomLog ${APACHE_LOG_DIR}/suitecrm_access.log combined
+</VirtualHost>
+\end{lstlisting}
+
+\subsection{Run installer}
+The UI installer is appropriate for first-time manual setup. The CLI installer is better for repeatable builds. Example CLI pattern:
+
+\begin{lstlisting}[language=bash]
+cd /var/www/suitecrm
+sudo -u www-data ./bin/console suitecrm:app:install \
+  -u "admin" \
+  -p "REPLACE_WITH_ADMIN_PASSWORD" \
+  -U "suitecrm" \
+  -P "REPLACE_WITH_DB_PASSWORD" \
+  -H "127.0.0.1" \
+  -N "suitecrm" \
+  -S "https://crm.example.com" \
+  -d "no"
+\end{lstlisting}
+
+\section{Security Hardening Gate}
+\begin{longtable}{L{0.08\linewidth} L{0.82\linewidth}}
+\textbf{Done} & \textbf{Control} \\
+\hline
+$\square$ & HTTPS is enabled and HTTP redirects to HTTPS. \\
+$\square$ & The web server document root points to \texttt{/var/www/suitecrm/public}. \\
+$\square$ & Database ports are not exposed publicly. \\
+$\square$ & SuiteCRM database user is scoped to the SuiteCRM database. \\
+$\square$ & Login throttling remains enabled or is explicitly tuned through approved configuration. \\
+$\square$ & Trusted hosts are configured for the production hostname. \\
+$\square$ & Administrative users have 2FA enabled. \\
+$\square$ & Scheduler runs as an allowed non-root user. \\
+$\square$ & Backups are off-host, encrypted, and restore-tested. \\
+\end{longtable}
+
+\section{Scheduler Runbook}
+SuiteCRM scheduled jobs must be manually enabled. Use cron or a systemd timer, and run as an allowed non-root user. Example cron entry:
+
+\begin{lstlisting}[language=bash]
+sudo crontab -u www-data -e
+\end{lstlisting}
+
+\begin{lstlisting}
+* * * * * cd /var/www/suitecrm && ./bin/console schedulers:run >> /var/log/suitecrm-scheduler.log 2>&1
+\end{lstlisting}
+
+Verification:
+\begin{lstlisting}[language=bash]
+cd /var/www/suitecrm
+sudo -u www-data ./bin/console schedulers:run -vvv
+sudo tail -n 100 /var/log/suitecrm-scheduler.log
+\end{lstlisting}
+
+\section{Backup and Restore Runbook}
+\subsection{Backup scope}
+\begin{itemize}
+  \item Database dump or database snapshot.
+  \item Application file tree, including configuration, customizations, uploads, cache, and logs as required.
+  \item Web server, PHP, cron, and systemd configuration.
+\end{itemize}
+
+\subsection{Database backup example}
+\begin{lstlisting}[language=bash]
+BACKUP_DIR=/srv/backups/suitecrm
+DATE=$(date +%Y%m%d-%H%M%S)
+mkdir -p "$BACKUP_DIR"
+mysqldump --single-transaction --routines --triggers suitecrm \
+  | gzip > "$BACKUP_DIR/suitecrm-db-$DATE.sql.gz"
+sha256sum "$BACKUP_DIR/suitecrm-db-$DATE.sql.gz" \
+  > "$BACKUP_DIR/suitecrm-db-$DATE.sql.gz.sha256"
+\end{lstlisting}
+
+\subsection{File backup example}
+\begin{lstlisting}[language=bash]
+BACKUP_DIR=/srv/backups/suitecrm
+DATE=$(date +%Y%m%d-%H%M%S)
+tar --acls --xattrs -czf "$BACKUP_DIR/suitecrm-files-$DATE.tar.gz" \
+  -C /var/www suitecrm
+sha256sum "$BACKUP_DIR/suitecrm-files-$DATE.tar.gz" \
+  > "$BACKUP_DIR/suitecrm-files-$DATE.tar.gz.sha256"
+\end{lstlisting}
+
+\section{Operational Acceptance Criteria}
+\begin{itemize}
+  \item SuiteCRM is reachable at the canonical HTTPS URL.
+  \item Installer pre-checks are passed or approved warnings are documented.
+  \item A test record can be created and retrieved.
+  \item Scheduler last-run timestamps update.
+  \item Admin 2FA is enabled.
+  \item Database and file backups complete.
+  \item Restore has been tested in a non-production environment.
+\end{itemize}
+
+\section{References}
+\begin{itemize}
+  \item SuiteCRM 8.x Compatibility Matrix: \url{https://docs.suitecrm.com/8.x/admin/compatibility-matrix/}
+  \item SuiteCRM 8.x Webserver Setup Guide: \url{https://docs.suitecrm.com/8.x/admin/installation-guide/webserver-setup-guide/}
+  \item SuiteCRM 8.x Downloading and Installing: \url{https://docs.suitecrm.com/8.x/admin/installation-guide/downloading-installing/}
+  \item SuiteCRM 8.x UI Installer: \url{https://docs.suitecrm.com/8.x/admin/installation-guide/running-the-ui-installer/}
+  \item SuiteCRM 8.x CLI Installer: \url{https://docs.suitecrm.com/8.x/admin/installation-guide/running-the-cli-installer/}
+  \item SuiteCRM 8.x Schedulers: \url{https://docs.suitecrm.com/8.x/admin/administration-panel/schedulers/}
+  \item SuiteCRM 8.x Performance: \url{https://docs.suitecrm.com/8.x/admin/installation-guide/performance/}
+  \item SuiteCRM 8.x Login Throttling: \url{https://docs.suitecrm.com/8.x/admin/configuration/login-throttling-configuration/}
+  \item SuiteCRM 8.x Trusted Hosts: \url{https://docs.suitecrm.com/8.x/admin/configuration/trusted-hosts-configuration/}
+  \item SuiteCRM 8.x Two-Factor Authentication: \url{https://docs.suitecrm.com/8.x/features/two-factor/two-factor/}
+\end{itemize}
+
+\end{document}

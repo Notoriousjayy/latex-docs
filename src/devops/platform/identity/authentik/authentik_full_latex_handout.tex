@@ -1,0 +1,183 @@
+
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=0.75in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{amssymb}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\emergencystretch=3em
+\setlist[itemize]{leftmargin=1.2em,itemsep=2pt,topsep=2pt}
+\setlist[enumerate]{leftmargin=1.4em,itemsep=2pt,topsep=2pt}
+\renewcommand{\arraystretch}{1.25}
+\newcommand{\checkbox}{$\Box$\hspace{0.4em}}
+\newcommand{\ok}{\textbf{Success criteria:} }
+\newcommand{\sourcebasis}{\section*{Official Source Basis}\begin{itemize}
+\item Authentik Docker Compose installation: \url{https://docs.goauthentik.io/install-config/install/docker-compose/}
+\item Authentik reverse proxy guidance: \url{https://docs.goauthentik.io/install-config/reverse-proxy/}
+\item Authentik configuration reference: \url{https://docs.goauthentik.io/install-config/configuration/}
+\item Authentik first steps: \url{https://docs.goauthentik.io/install-config/first-steps/}
+\item Authentik backup and restore: \url{https://docs.goauthentik.io/sys-mgmt/ops/backup-restore/}
+\item Authentik upgrade guidance: \url{https://docs.goauthentik.io/install-config/upgrade/}
+\item Authentik monitoring: \url{https://docs.goauthentik.io/sys-mgmt/ops/monitoring/}
+\item Authentik example flows: \url{https://docs.goauthentik.io/add-secure-apps/flows-stages/flow/examples/flows/}
+\item Authentik service accounts: \url{https://docs.goauthentik.io/sys-mgmt/service-accounts/}
+\item Authentik certificates: \url{https://docs.goauthentik.io/sys-mgmt/certificates/}
+\end{itemize}}
+
+\title{Authentik Self-Hosting Full LaTeX Handout}\author{Prepared from official Authentik documentation}\date{May 6, 2026}\begin{document}\maketitle
+
+\section*{Executive Summary}
+Authentik can be self-hosted as a centralized identity provider for SSO and MFA-sensitive access patterns. For small-scale deployments, the official Docker Compose path provides the core stack, while the reverse proxy, backup, upgrade, monitoring, and identity-policy configuration determine whether the deployment is operationally safe.
+
+\section*{Reference Architecture}
+\begin{itemize}
+\item \textbf{Users and administrators} access Authentik through a domain name and HTTPS reverse proxy.
+\item \textbf{Reverse proxy} terminates TLS, redirects HTTP to HTTPS, forwards required proxy headers, and supports WebSocket upgrades.
+\item \textbf{Authentik server} handles the web UI, API, and authentication flows.
+\item \textbf{Authentik worker} runs background tasks and watches blueprints and certificates.
+\item \textbf{PostgreSQL} stores persistent Authentik data, including users, policies, and configuration.
+\item \textbf{Static directories} preserve local data such as uploaded files, icons, certificates, custom templates, and blueprints when those features are used.
+\item \textbf{Applications and providers} connect external applications to Authentik through the selected protocol.
+\item \textbf{Outposts} extend Authentik into proxy or LDAP patterns and must stay version-aligned with the core instance.
+\end{itemize}
+
+\section*{Minimum Deployment Requirements}
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.28\linewidth}>{\raggedright\arraybackslash}p{0.62\linewidth}}
+\textbf{Requirement} & \textbf{Minimum or required action} \\
+\hline
+Compute & At least 2 CPU cores and 2 GB of RAM. \\
+Runtime & Docker Compose v2 or Podman with Compose support. \\
+Installation scope & Docker Compose is suitable for test setups and small-scale production setups. \\
+Secrets & Generate \texttt{PG\_PASS} and \texttt{AUTHENTIK\_SECRET\_KEY} for a fresh install. \\
+Network & Use ports 9000 and 9443 internally by default, or set \texttt{COMPOSE\_PORT\_HTTP} and \texttt{COMPOSE\_PORT\_HTTPS}. \\
+TLS & Use a reverse proxy with modern TLS and a certificate matching the Authentik FQDN. \\
+Proxy headers & Forward protocol, client IP, host, and WebSocket upgrade headers. \\
+Backup & Back up PostgreSQL and local static directories as applicable. \\
+Monitoring & Monitor server liveness, readiness, worker health, outpost health, and metrics. \\
+Upgrade & Back up first, read release notes, follow upgrade sequencing, and match outpost versions. \\
+\end{longtable}
+
+\section*{Docker Compose Installation Procedure}
+\subsection*{1. Prepare the directory}
+\begin{verbatim}
+sudo mkdir -p /opt/authentik
+sudo chown "$USER":"$USER" /opt/authentik
+cd /opt/authentik
+\end{verbatim}
+
+\subsection*{2. Download the Compose file}
+\begin{verbatim}
+wget https://docs.goauthentik.io/compose.yml
+\end{verbatim}
+Or:
+\begin{verbatim}
+curl -O https://docs.goauthentik.io/compose.yml
+\end{verbatim}
+
+\subsection*{3. Generate required secrets}
+\begin{verbatim}
+echo "PG_PASS=$(openssl rand -base64 36 | tr -d '\n')" >> .env
+echo "AUTHENTIK_SECRET_KEY=$(openssl rand -base64 60 | tr -d '\n')" >> .env
+\end{verbatim}
+
+\subsection*{4. Optionally set exposed ports}
+\begin{verbatim}
+cat >> .env <<'EOF'
+COMPOSE_PORT_HTTP=80
+COMPOSE_PORT_HTTPS=443
+EOF
+\end{verbatim}
+
+\subsection*{5. Pull and start}
+\begin{verbatim}
+docker compose pull
+docker compose up -d
+\end{verbatim}
+
+\subsection*{6. Complete first setup}
+Open:
+\begin{verbatim}
+http://<your server's IP or hostname>:9000/if/flow/initial-setup/
+\end{verbatim}
+Set the default \texttt{akadmin} password. The trailing slash is required.
+
+\section*{Reverse Proxy Requirements}
+A reverse proxy must support WebSockets and forward the required upstream headers. HTTP/1.0 reverse proxies are not supported for Authentik because WebSockets and protocol upgrades are required for outpost communication.
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.33\linewidth}>{\raggedright\arraybackslash}p{0.57\linewidth}}
+\textbf{Header or setting} & \textbf{Reason} \\
+\hline
+\texttt{X-Forwarded-Proto} & Communicates whether Authentik and proxy providers are being served over HTTPS. \\
+\texttt{X-Forwarded-For} & Preserves client IP information for logging and IP-sensitive policy behavior. \\
+\texttt{Host} & Required for security checks, WebSocket handshake, and outpost/proxy-provider communication. \\
+\texttt{Connection: Upgrade} and \texttt{Upgrade: WebSocket} & Required for WebSocket endpoints under HTTP/1.1. \\
+Trusted proxy CIDRs & Required when Authentik should accept proxy headers from a non-default proxy network. \\
+\end{longtable}
+
+\section*{First Application and User}
+After installation, create an application and provider pair from the Admin interface. Every application added to Authentik requires a provider that defines the protocol between the application and Authentik. For OAuth2/OpenID Connect integrations, preserve the client ID, client secret, slug, redirect URI, and related protocol settings required by the service provider. Then create a non-admin user under \texttt{Directory > Users} and apply bindings or policies where access should be restricted.
+
+\section*{Security Hardening Checklist}
+\begin{itemize}
+\item \checkbox Enforce HTTPS at the reverse proxy.
+\item \checkbox Pass all required proxy and WebSocket headers.
+\item \checkbox Configure trusted proxy CIDRs when required by the proxy network design.
+\item \checkbox Use an external certificate matching the FQDN, preferably from a publicly trusted CA.
+\item \checkbox Protect \texttt{.env} and any secrets used for PostgreSQL and Authentik.
+\item \checkbox Evaluate whether the Docker socket mount should remain, be replaced with a Docker socket proxy, or be removed in favor of manual outpost deployment.
+\item \checkbox Use MFA-capable flows for high-risk applications and administrative access patterns.
+\item \checkbox Use bindings and policies to restrict application access.
+\item \checkbox Apply least privilege to service accounts and prefer expiring tokens where feasible.
+\item \checkbox Avoid trace logging except during tightly controlled troubleshooting because it can expose sensitive information.
+\end{itemize}
+
+\section*{Backup and Restore Scope}
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.25\linewidth}>{\raggedright\arraybackslash}p{0.35\linewidth}>{\raggedright\arraybackslash}p{0.30\linewidth}}
+\textbf{Component} & \textbf{Purpose} & \textbf{Backup note} \\
+\hline
+PostgreSQL & Persistent Authentik data, users, policies, and configuration. & Back up with PostgreSQL-native tools. Exclude \texttt{template0} and \texttt{template1}. \\
+\texttt{/data} & Icons, flow backgrounds, uploaded files, and CSV reports. & Required if not using S3 external storage. \\
+\texttt{/certs} & TLS certificates in filesystem storage. & Back up if the filesystem copies are relied upon. \\
+\texttt{/custom-templates} & Custom UI changes. & Required when default appearance has been modified. \\
+\texttt{/blueprints} & Custom blueprints. & Optional but recommended when custom blueprints are used. \\
+\end{longtable}
+
+\section*{Monitoring Checklist}
+\begin{itemize}
+\item \checkbox Server liveness: \texttt{/-/health/live/} returns HTTP 200 while Authentik is running.
+\item \checkbox Server readiness: \texttt{/-/health/ready/} returns HTTP 200 when PostgreSQL connectivity is available.
+\item \checkbox Worker health: run \texttt{ak healthcheck} inside the worker container.
+\item \checkbox Outpost health: send HTTP requests to \texttt{/outpost.goauthentik.io/ping} on the outpost.
+\item \checkbox Metrics: scrape Prometheus metrics on port 9300 from intended monitoring networks only.
+\end{itemize}
+
+\section*{Upgrade Procedure}
+\begin{enumerate}
+\item Read release notes for the target version.
+\item Back up PostgreSQL.
+\item Follow the required major/minor upgrade sequence; do not skip directly from an older major version to the newest version.
+\item Download the current Compose file.
+\item Run \texttt{docker compose pull} and \texttt{docker compose up -d}.
+\item Upgrade any outposts with the core Authentik instance.
+\item Verify the running version in \texttt{Dashboards > Overview}.
+\end{enumerate}
+
+\section*{Operational Warnings}
+\begin{itemize}
+\item Authentik does not support downgrading; keep a database backup before upgrades.
+\item All internal operations use UTC. Do not mount \texttt{/etc/timezone} or \texttt{/etc/localtime} into Authentik containers.
+\item The default Compose file mounts the Docker socket into the worker container for automatic outpost management; treat that as privileged access.
+\item Trace logging can expose sensitive information, including session cookies.
+\end{itemize}
+
+\sourcebasis
+
+\end{document}

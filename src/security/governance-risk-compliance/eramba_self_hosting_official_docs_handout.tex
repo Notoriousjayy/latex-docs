@@ -1,0 +1,316 @@
+\documentclass[10pt,letterpaper]{article}
+
+\usepackage[margin=0.62in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{titlesec}
+\usepackage{tcolorbox}
+\usepackage{listings}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{navy}{HTML}{1F3A5F}
+\definecolor{bluegray}{HTML}{EAF1F8}
+\definecolor{lightgray}{HTML}{F6F8FA}
+\definecolor{darkgray}{HTML}{333333}
+\definecolor{success}{HTML}{EAF7EA}
+\definecolor{warning}{HTML}{FFF6E5}
+\definecolor{bordergray}{HTML}{CBD5E1}
+
+\hypersetup{
+  pdftitle={Self-Hosting Eramba with Docker Compose},
+  pdfauthor={Jordan Suber},
+  pdfsubject={Official documentation-only Eramba self-hosting handout},
+  pdfkeywords={Eramba, Docker Compose, GRC, self-hosting}
+}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\setlist[itemize]{leftmargin=*, nosep, topsep=1pt}
+\setlist[enumerate]{leftmargin=*, itemsep=2pt, topsep=2pt}
+\renewcommand{\arraystretch}{1.18}
+\emergencystretch=4em
+\sloppy
+
+\titleformat{\section}{\large\bfseries\color{navy}}{}{0pt}{}
+\titleformat{\subsection}{\normalsize\bfseries\color{darkgray}}{}{0pt}{}
+\titlespacing*{\section}{0pt}{8pt}{3pt}
+\titlespacing*{\subsection}{0pt}{6pt}{2pt}
+
+\newcommand{\source}[1]{\textsuperscript{\textcolor{navy}{#1}}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\lstdefinestyle{shellstyle}{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  framerule=0.3pt,
+  rulecolor=\color{bordergray},
+  backgroundcolor=\color{lightgray},
+  showstringspaces=false,
+  xleftmargin=1pt,
+  xrightmargin=1pt
+}
+\lstset{style=shellstyle}
+
+\newtcolorbox{infobox}[1]{
+  colback=bluegray,
+  colframe=navy,
+  title=\textbf{#1},
+  arc=1.5mm,
+  boxrule=0.5pt,
+  left=5pt,
+  right=5pt,
+  top=4pt,
+  bottom=4pt
+}
+
+\newtcolorbox{warningbox}[1]{
+  colback=warning,
+  colframe=orange!70!black,
+  title=\textbf{#1},
+  arc=1.5mm,
+  boxrule=0.5pt,
+  left=5pt,
+  right=5pt,
+  top=4pt,
+  bottom=4pt
+}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{navy} Self-Hosting Eramba with Docker Compose}\\[3pt]
+  {\large Official Documentation-Only Handout}\\[6pt]
+  {\small Prepared for implementation planning, Linux administration, and GRC platform onboarding}
+\end{center}
+
+\begin{infobox}{Scope}
+This handout summarizes a supported self-hosting path for Eramba Community or Enterprise using Docker Compose. It intentionally uses official documentation only: Eramba Learning, Eramba's official Docker repository, and Docker Docs. Third-party links from the source draft were excluded.
+\end{infobox}
+
+\section{1. What Docker Deploys}
+Eramba's Docker installation uses a container stack that includes MySQL for the database, Redis for caching, the Eramba application, and a cron container for batch processes.\source{[1]} Eramba's logging documentation also describes the on-premise Docker install as multiple containers: \texttt{eramba}, \texttt{mysql}, \texttt{cron}, and \texttt{redis}.\source{[5]}
+
+\begin{center}
+\begin{tabularx}{\linewidth}{L{0.24\linewidth}Y}
+\toprule
+\textbf{Component} & \textbf{Role} \\
+\midrule
+MySQL & Stores Eramba application data in a MySQL-compatible database. \\
+Redis & Provides caching support for the application stack. \\
+Eramba application & Runs the web application. \\
+Cron & Runs scheduled and batch processes. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{2. Prerequisites}
+\subsection{Host and platform}
+\begin{itemize}
+  \item Linux host or virtual machine with Docker Engine installed. Eramba's Docker guide treats Docker Engine as a prerequisite and points administrators to Docker's official installation documentation.\source{[1]} Docker's official Docker Engine documentation covers supported Linux platforms such as Debian, Ubuntu, RHEL, Fedora, and CentOS.\source{[7]}
+  \item Docker Compose plugin installed. Docker's official Compose plugin documentation states that the plugin assumes Docker Engine and Docker CLI are already installed, and it provides package-based installation and version verification guidance.\source{[8]}
+  \item Administrator-level access to manage Docker, edit environment files, configure certificates, and review logs.
+\end{itemize}
+
+\subsection{Resource baseline}
+\begin{center}
+\begin{tabularx}{\linewidth}{L{0.25\linewidth}Y}
+\toprule
+\textbf{Category} & \textbf{Official Eramba guidance} \\
+\midrule
+Minimum compute & 64-bit kernel and CPU virtualization support, 1 vCPU, and at least 4 GB RAM plus 10 GB swap.\source{[1]} \\
+Recommended compute & 64-bit kernel and CPU virtualization support, 2 vCPUs, and 8 GB RAM.\source{[1]} \\
+Storage for Eramba data & At least 3 GB for database data and uploaded attachments.\source{[1]} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Network and internet access}
+Eramba's Docker installation requires the containers to reach Eramba update servers for registration, updates, and error-log submission; the official documentation states that Eramba cannot be used in offline mode.\source{[1]} During first build, Eramba lists required outbound access to \texttt{eramba.org}, \texttt{docker.com}, \texttt{docker.io}, \texttt{github.com}, \texttt{ghcr.io}, and \texttt{githubusercontent.com} on ports 80 and 443.\source{[1]}
+
+\section{3. Persistent Data and Volumes}
+Eramba's Docker install uses persistent volumes for application data, attachments, application files, and database data.\source{[1]}
+
+\begin{center}
+\begin{tabularx}{\linewidth}{L{0.30\linewidth}Y}
+\toprule
+\textbf{Volume} & \textbf{Purpose} \\
+\midrule
+\path{data:/var/www/eramba/app/upgrade/data} & Holds application data and attachments. \\
+\path{app:/var/www/eramba} & Holds the application files. \\
+\path{db-data:/var/lib/mysql} & Holds the MySQL database files. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{warningbox}{Production note}
+Treat these volumes as production data. Backup, migration, restore testing, encryption, and retention should be handled under your organization's infrastructure and GRC operating standards. Eramba's backup guidance emphasizes backing up both the database and uploaded attachment files.\source{[4]}
+\end{warningbox}
+
+\section{4. Installation Procedure}
+\subsection{Step 1: Install and verify Docker Engine and Compose}
+Follow Docker's official installation guidance for Docker Engine on your Linux distribution and install the Docker Compose plugin. Verify Compose before proceeding.\source{[7]}\source{[8]}
+
+\begin{lstlisting}[language=bash]
+docker --version
+docker compose version
+\end{lstlisting}
+
+\subsection{Step 2: Download Eramba Docker helper files}
+Eramba's Docker guide instructs administrators to download the official Eramba Docker repository as a ZIP or by cloning from GitHub.\source{[1]} Eramba's official GitHub repository also directs Docker install users back to the Eramba Learning Platform.\source{[6]}
+
+\begin{lstlisting}[language=bash]
+git clone https://github.com/eramba/docker
+cd docker
+\end{lstlisting}
+
+\subsection{Step 3: Configure database credentials}
+Edit \texttt{.env} and update the database password variables. Eramba identifies \texttt{DB\_PASSWORD} as the Eramba database user's password and \texttt{MYSQL\_ROOT\_PASSWORD} as the MySQL root account password.\source{[1]}
+
+\begin{lstlisting}[language=bash]
+DB_PASSWORD=Your_DB_user_P@ssw0rd
+MYSQL_ROOT_PASSWORD=Your_MysQl_ROOt_P@ssw0rd
+\end{lstlisting}
+
+\subsection{Step 4: Configure public address and proxy settings}
+Set \texttt{PUBLIC\_ADDRESS} in \texttt{.env} to the host IP address or DNS name Eramba will use. The default documented value is \texttt{https://localhost:8443}.\source{[1]} If the host is behind a proxy, configure the proxy settings in \texttt{/docker/.env} and also follow Docker's own proxy guidance for the Docker client.\source{[1]}
+
+\begin{lstlisting}[language=bash]
+PUBLIC_ADDRESS=https://localhost:8443
+USE_PROXY=0
+PROXY_HOST=
+PROXY_PORT=
+USE_PROXY_AUTH=0
+PROXY_AUTH_USER=
+PROXY_AUTH_PASS=
+\end{lstlisting}
+
+\subsection{Step 5: Configure TLS for production use}
+By default, Eramba runs on encrypted port 8443 using a self-signed certificate. To use your own certificate or adjust Apache configuration, replace the documented certificate and virtual-host files.\source{[1]} Eramba's official Docker repository also warns that the bundled files under \texttt{apache/ssl/} are intended only for local or simple demo installs and should be replaced for real deployments.\source{[6]}
+
+\begin{lstlisting}[language=bash]
+apache/ssl/mycert.crt
+apache/ssl/mycert.key
+apache/vhost-ssl.conf
+\end{lstlisting}
+
+\subsection{Step 6A: Install Community}
+Run the Community Compose file from the Eramba Docker directory.\source{[1]}
+
+\begin{lstlisting}[language=bash]
+docker compose -f docker-compose.simple-install.yml up -d
+\end{lstlisting}
+
+\subsection{Step 6B: Install Enterprise}
+For Enterprise, Eramba's official instructions require a license key, downloading Enterprise software from Eramba's download service, loading the AMD or ARM image, and then running Compose with the Enterprise override file.\source{[1]}
+
+\begin{lstlisting}[language=bash]
+# AMD image
+docker load --input eramba-enterprise-latest-amd64.tar
+
+# ARM image
+docker load --input eramba-enterprise-latest-arm64.tar
+
+# Enterprise compose command
+docker compose -f docker-compose.simple-install.yml \
+  -f docker-compose.simple-install.enterprise.yml up -d
+\end{lstlisting}
+
+\subsection{Step 7: Monitor startup logs}
+After containers, networks, and volumes are created, monitor the Eramba container logs. Eramba's documentation says the Eramba container must complete startup processes before using the browser; Apache running is the signal to proceed.\source{[1]}
+
+\begin{lstlisting}[language=bash]
+docker logs -f eramba
+\end{lstlisting}
+
+\subsection{Step 8: Complete first login}
+After startup, access Eramba at \texttt{https://localhost:8443} or the configured DNS name. Community first login prompts for password, admin email, and country and sends an activation token to the configured email address.\source{[1]} Enterprise first login also prompts for password, admin email, and country.\source{[1]}
+
+\section{5. Post-Installation Configuration}
+\begin{center}
+\begin{tabularx}{\linewidth}{L{0.31\linewidth}Y}
+\toprule
+\textbf{Task} & \textbf{Where to configure} \\
+\midrule
+Email settings & \texttt{Settings / System \& Maintenance / Email Configuration}. Configure and test email delivery.\source{[2]} \\
+Time zone & \texttt{Settings / Application Configuration / Localization / Time Zone}.\source{[2]} \\
+Enterprise activation & \texttt{Settings / About}. Enter the purchased key and activate.\source{[2]} \\
+Custom logo & \texttt{Settings / Application Configuration / Custom Logo}. Optional branding step.\source{[2]} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{6. Maintenance Procedures}
+\subsection{Recompose after environment changes}
+If \texttt{.env} changes after installation, Eramba instructs administrators to bring the containers down and back up using the appropriate Community or Enterprise Compose command.\source{[1]}
+
+\begin{lstlisting}[language=bash]
+# Community
+docker compose -f docker-compose.simple-install.yml down
+docker compose -f docker-compose.simple-install.yml up -d
+
+# Enterprise
+docker compose -f docker-compose.simple-install.yml \
+  -f docker-compose.simple-install.enterprise.yml down
+
+docker compose -f docker-compose.simple-install.yml \
+  -f docker-compose.simple-install.enterprise.yml up -d
+\end{lstlisting}
+
+\subsection{Update Eramba}
+For on-premise Eramba, official update guidance says to ensure System Health is green under \texttt{Settings > System \& Maintenance > System Health}, enable Maintenance Mode, then apply updates under \texttt{Settings > Updates}. Multiple updates must be applied one by one.\source{[3]}
+
+\subsection{Back up and restore}
+Eramba backup guidance separates the platform into code, database, and attachments. The database contains Eramba-created data, and attachments include uploaded files such as comments, awareness-program materials, and account-review files.\source{[4]} Use \texttt{Settings / System \& Maintenance / Backup \& Restore} to download database and file backups.\source{[4]} Restores are supported on a newly installed system when the source and target application versions match.\source{[4]}
+
+\subsection{Review logs}
+For container-level logs, use Docker logs against the relevant container. Eramba documents the pattern \texttt{docker logs container-name} and gives \texttt{docker logs eramba} as an example.\source{[5]} Core application logs are accessible through the interface at \texttt{System / Settings / Error Logs and Diagnostics}. With container access, the same log files can be found under \path{/var/www/eramba/app/upgrade/logs}.\source{[5]}
+
+\begin{lstlisting}[language=bash]
+docker logs eramba
+docker exec -it eramba bash
+cd /var/www/eramba/app/upgrade/logs
+\end{lstlisting}
+
+\section{7. Production Readiness Checklist}
+\begin{itemize}
+  \item Docker Engine and Docker Compose plugin are installed from official Docker guidance and verified with version commands.\source{[7]}\source{[8]}
+  \item Host meets or exceeds Eramba minimum resource requirements: 64-bit kernel and CPU virtualization support, 1 vCPU, 4 GB RAM, and 10 GB swap.\source{[1]}
+  \item Persistent volumes are identified and included in backup planning.\source{[1]}\source{[4]}
+  \item \texttt{DB\_PASSWORD} and \texttt{MYSQL\_ROOT\_PASSWORD} are changed from defaults.\source{[1]}
+  \item \texttt{PUBLIC\_ADDRESS} matches the intended IP address or DNS name.\source{[1]}
+  \item Production certificate and key replace demo or self-signed certificate material.\source{[1]}\source{[6]}
+  \item Email configuration is tested from the Eramba UI.\source{[2]}
+  \item Time zone is configured.\source{[2]}
+  \item Enterprise license activation is completed if using Enterprise.\source{[2]}
+  \item System Health is green before updates.\source{[3]}
+  \item Backup and restore procedures are documented and tested.\source{[4]}
+  \item Container and application-log access procedures are documented for operations.\source{[5]}
+\end{itemize}
+
+\section{8. Official Resources}
+\begin{enumerate}[label={[\arabic*]}, leftmargin=*]
+  \item Eramba Learning, Docker Installation: \url{https://www.eramba.org/learning/courses/12/episodes/274}
+  \item Eramba Learning, Post Install Configurations: \url{https://www.eramba.org/learning/courses/12/episodes/275}
+  \item Eramba Learning, Updating Eramba: \url{https://www.eramba.org/learning/courses/12/episodes/276}
+  \item Eramba Learning, Backups \& Migrations: \url{https://www.eramba.org/learning/courses/12/episodes/292}
+  \item Eramba Learning, Logging: \url{https://www.eramba.org/learning/courses/12/episodes/434}
+  \item Eramba Official Docker Repository: \url{https://github.com/eramba/docker}
+  \item Docker Docs, Install Docker Engine: \url{https://docs.docker.com/engine/install/}
+  \item Docker Docs, Install the Docker Compose Plugin: \url{https://docs.docker.com/compose/install/linux/}
+  \item Docker Docs, Docker Compose Overview: \url{https://docs.docker.com/compose/}
+\end{enumerate}
+
+\end{document}

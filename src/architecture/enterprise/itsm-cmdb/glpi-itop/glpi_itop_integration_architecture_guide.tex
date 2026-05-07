@@ -1,0 +1,303 @@
+
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{array,booktabs,longtable,tabularx,multicol}
+\usepackage[table]{xcolor}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{lastpage}
+\usepackage{pdflscape}
+\usepackage{tcolorbox}
+\tcbuselibrary{breakable,skins}
+\hypersetup{hidelinks}
+\definecolor{Navy}{HTML}{1F4E79}
+\definecolor{LightBlue}{HTML}{EAF3F8}
+\definecolor{LightGray}{HTML}{F5F7FA}
+\definecolor{RuleGray}{HTML}{D9E2EC}
+\definecolor{GoodGreen}{HTML}{2E7D32}
+\definecolor{RiskAmber}{HTML}{B26A00}
+\definecolor{RiskRed}{HTML}{B00020}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{GLPI + iTop Integration}
+\rhead{\thepage\ of \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\headheight}{14pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,topsep=2pt,itemsep=2pt}
+\setlist[enumerate]{leftmargin=*,topsep=2pt,itemsep=2pt}
+\titleformat{\section}{\Large\bfseries\color{Navy}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\large\bfseries\color{Navy}}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{Navy}}{}{0em}{}
+\newcommand{\docversion}{Version 1.0}
+\newcommand{\checkbox}{\fbox{\rule{0pt}{1.1ex}\rule{1.1ex}{0pt}}}
+\newcommand{\statusgood}{\textcolor{GoodGreen}{Recommended}}
+\newcommand{\statuswarn}{\textcolor{RiskAmber}{Conditional}}
+\newcommand{\statusrisk}{\textcolor{RiskRed}{Risk}}
+\newtcolorbox{purposebox}{enhanced,breakable,colback=LightBlue,colframe=Navy,boxrule=0.6pt,arc=2mm,left=6pt,right=6pt,top=6pt,bottom=6pt}
+\newtcolorbox{calloutbox}{enhanced,breakable,colback=LightGray,colframe=RuleGray,boxrule=0.5pt,arc=2mm,left=6pt,right=6pt,top=6pt,bottom=6pt}
+\newcommand{\sourcesection}{%
+\section*{Reference Sources}
+\small
+\begin{itemize}
+  \item GLPI Help Center, user documentation: \url{https://help.glpi-project.org/documentation/readme-1}
+  \item GLPI Help Center, RESTful API V2: \url{https://help.glpi-project.org/documentation/modules/configuration/general/api/restful-api-v2}
+  \item GLPI Project, native inventory announcement and inventory endpoint context: \url{https://www.glpi-project.org/en/discover-native-glpi-inventory/}
+  \item GLPI Project, GLPI Inventory integration overview: \url{https://www.glpi-project.org/en/integration/glpi-inventory/}
+  \item GLPI Agent documentation: \url{https://glpi-agent.readthedocs.io/}
+  \item iTop Documentation, REST/JSON services: \url{https://www.itophub.io/wiki/page?id=latest\%3Aadvancedtopics\%3Arest_json}
+  \item iTop Documentation, CMDB data model: \url{https://www.itophub.io/wiki/page?id=latest\%3Adatamodel\%3Astart}
+  \item iTop Documentation, change management module: \url{https://www.itophub.io/wiki/page?id=latest\%3Adatamodel\%3Aitop-change-mgmt}
+  \item iTop Documentation, integrating iTop: \url{https://www.itophub.io/wiki/page?id=latest\%3Aadvancedtopics\%3Astart}
+\end{itemize}
+\normalsize
+}
+
+
+\title{\bfseries\color{Navy} GLPI + iTop Integration Architecture Guide\\\large ITAM-to-CMDB Synchronization Pattern}
+\author{Prepared for IT Asset, CMDB, and ITSM Stakeholders}
+\date{\docversion}
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\begin{purposebox}
+\textbf{Purpose.} This guide defines a practical integration architecture where GLPI acts as the IT asset management and inventory source, while iTop acts as the governed CMDB and ITSM process layer. The objective is to create an accurate, reconcilable, and process-ready configuration model without duplicating uncontrolled asset records across tools.
+\end{purposebox}
+
+\section{Executive Summary}
+
+GLPI and iTop can be combined effectively when each system has a clearly bounded responsibility. GLPI should be treated as the operational ITAM and inventory repository for endpoints, hardware, software, contracts, licenses, and lifecycle tracking. iTop should be treated as the governed CMDB and ITSM process layer for configuration items, service relationships, impact analysis, incident management, change enablement, and service catalog dependencies.
+
+The recommended architecture is a controlled one-way synchronization from GLPI to iTop for approved asset and configuration data. GLPI receives or manages inventory data from GLPI Agent, GLPI Inventory, OCS-style inputs, manual asset updates, or API-based records. A connector or ETL job then extracts approved assets, maps them to iTop CI classes, validates data quality, reconciles duplicates, and creates or updates iTop CIs through the iTop REST/JSON API or controlled import workflow.
+
+\begin{calloutbox}
+\textbf{Architecture principle.} Do not synchronize everything. Only synchronize assets that have operational value for service management, impact analysis, incident routing, change risk assessment, ownership, supportability, or compliance reporting.
+\end{calloutbox}
+
+\section{Target Operating Model}
+
+\begin{longtable}{p{0.24\linewidth}p{0.33\linewidth}p{0.33\linewidth}}
+\toprule
+\rowcolor{LightBlue}\textbf{Domain} & \textbf{GLPI Responsibility} & \textbf{iTop Responsibility} \\
+\midrule
+Tool role & ITAM and inventory system of record for discovered and managed assets. & CMDB and ITSM process system of record for governed CIs and relationships. \\
+\addlinespace
+Data focus & Hardware, software, licenses, contracts, asset ownership, endpoint inventory, lifecycle facts. & CI classes, dependencies, application solutions, business processes, organizations, locations, persons, teams, tickets, changes. \\
+\addlinespace
+Operational workflow & Asset intake, inventory validation, license tracking, stock/location updates, local support visibility. & Incident, change, service impact analysis, CMDB governance, service catalog dependencies, audit and integrity checks. \\
+\addlinespace
+Integration boundary & Publishes approved asset records and selected lifecycle facts. & Receives normalized CIs and maintains service relationships and process workflow context. \\
+\addlinespace
+Authoritative ownership & Asset custodians, endpoint/infrastructure teams, software asset managers. & CMDB manager, service owners, change managers, ITSM process owners. \\
+\bottomrule
+\end{longtable}
+
+\section{Reference Architecture}
+
+\subsection{Logical Components}
+
+\begin{longtable}{p{0.22\linewidth}p{0.68\linewidth}}
+\toprule
+\rowcolor{LightBlue}\textbf{Component} & \textbf{Purpose} \\
+\midrule
+Endpoint and infrastructure fleet & Servers, workstations, network devices, virtual machines, software installations, and other discoverable IT assets. \\
+GLPI Agent / inventory source & Collects inventory facts and sends them to GLPI or an inventory collection layer. \\
+GLPI ITAM repository & Maintains asset records, inventory, contracts, licenses, stock, lifecycle status, and operational ownership. \\
+Integration connector / ETL job & Extracts approved data from GLPI, transforms fields, applies class mappings, and prepares CI payloads. \\
+Mapping and policy store & Defines CI class mapping, identifier rules, lifecycle state mapping, synchronization scope, and field-level ownership. \\
+Validation and reconciliation layer & Rejects incomplete records, prevents duplicate CIs, checks mandatory attributes, and routes exceptions. \\
+iTop CMDB & Stores governed CIs, relationships, organizations, locations, teams, business processes, and application/service context. \\
+iTop ITSM processes & Uses CMDB data for incidents, change management, impact analysis, service catalog, and operational reporting. \\
+Audit and reporting layer & Tracks synchronization outcomes, rejected records, reconciliation exceptions, and data-quality trends. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Recommended Data Flow}
+
+\begin{enumerate}
+  \item \textbf{Collect inventory.} GLPI Agent, GLPI Inventory, OCS-style collection, or manual/API entry captures hardware and software facts.
+  \item \textbf{Normalize in GLPI.} Asset teams validate ownership, location, entity, user assignment, lifecycle status, and license/contract metadata.
+  \item \textbf{Select eligible records.} Only assets that meet synchronization criteria are released to the integration layer.
+  \item \textbf{Transform to CI model.} The connector maps GLPI asset types and fields to iTop CI classes, attributes, organizations, teams, and status values.
+  \item \textbf{Validate and reconcile.} Required fields are checked, identifiers are matched, duplicates are prevented, and exceptions are routed for correction.
+  \item \textbf{Update iTop.} iTop receives new or changed CIs through REST/JSON API calls or a controlled import process.
+  \item \textbf{Use in ITSM.} iTop links CIs to incidents, changes, services, application solutions, and impact analysis views.
+  \item \textbf{Measure data health.} Operations teams review synchronization success, duplicate rate, missing-owner rate, stale-CI rate, and rejected-record trends.
+\end{enumerate}
+
+\section{Integration Patterns}
+
+\subsection{Pattern A: Scheduled API Synchronization}
+
+\begin{calloutbox}
+\textbf{Use when:} the organization needs repeatable synchronization, audit logs, API-based error handling, and controlled incremental updates.
+\end{calloutbox}
+
+A scheduled connector extracts assets from GLPI using API calls or controlled exports, transforms the payload, and writes to iTop using iTop REST/JSON services. This is the preferred target pattern because it supports automation, idempotency, validation, and auditability.
+
+\textbf{Minimum controls:}
+\begin{itemize}
+  \item Dedicated service accounts with least privilege in both tools.
+  \item Stable identity matching using serial number, asset tag, hostname, UUID, MAC address, or a composite key.
+  \item Explicit field ownership matrix to prevent conflicting updates.
+  \item Dry-run mode before production updates.
+  \item Synchronization logs with record counts, rejected records, errors, and timestamps.
+\end{itemize}
+
+\subsection{Pattern B: CSV Import with Governance Gate}
+
+\begin{calloutbox}
+\textbf{Use when:} the organization needs a controlled initial load, periodic manual refresh, or a simple low-automation deployment phase.
+\end{calloutbox}
+
+GLPI exports approved asset records to CSV. The integration owner validates the CSV against an import template, applies mapping rules, and imports the records into iTop. This pattern is suitable for an initial baseline but is weaker for ongoing operational synchronization unless it is tightly governed.
+
+\textbf{Minimum controls:}
+\begin{itemize}
+  \item Version-controlled CSV templates.
+  \item Pre-import validation for required fields and duplicates.
+  \item Post-import reconciliation reports.
+  \item Change record or approval for bulk CMDB updates.
+\end{itemize}
+
+\subsection{Pattern C: Partner or Community Connector}
+
+\begin{calloutbox}
+\textbf{Use when:} an existing connector meets the data model, security, support, and maintainability requirements.
+\end{calloutbox}
+
+A specialized connector may reduce initial implementation effort. It should still be reviewed as integration code with clear ownership, version support, authentication handling, logging, exception handling, and rollback procedures. Treat community connectors as accelerators, not as substitutes for a governed integration design.
+
+\section{Canonical Data Mapping}
+
+\begin{longtable}{p{0.19\linewidth}p{0.25\linewidth}p{0.25\linewidth}p{0.20\linewidth}}
+\toprule
+\rowcolor{LightBlue}\textbf{Concept} & \textbf{GLPI Example} & \textbf{iTop Example} & \textbf{Mapping Rule} \\
+\midrule
+Physical endpoint & Computer, server, laptop & PC, Server, Virtual Machine & Map by asset type, operating system, virtualization flag, and support group. \\
+Network device & Switch, router, firewall, network equipment & Network device & Require hostname, management IP, location, and owning team. \\
+Software & Installed software, software inventory & Software Instance / Software License & Synchronize only if needed for compliance, support, or service dependency. \\
+License & Software license record & License object or contract-linked CI data & Preserve entitlement count, expiration, vendor, and related software. \\
+User assignment & User, department, entity & Person, Team, Organization & Map using canonical directory identity; avoid free-text users. \\
+Location & GLPI location/entity & Location / Organization & Use controlled location hierarchy; reject unknown locations. \\
+Lifecycle state & In stock, in use, retired, disposed & CI status / lifecycle state & Use approved state translation table. \\
+Service relationship & Asset manually linked to service/support function & Business Process / Application Solution dependency & Build relationships in iTop after CI identity is stable. \\
+\bottomrule
+\end{longtable}
+
+\section{Synchronization Scope Rules}
+
+\subsection{Recommended Inclusion Criteria}
+
+Synchronize a GLPI asset into iTop when at least one of the following is true:
+
+\begin{itemize}
+  \item The asset supports a business service, application, infrastructure service, or critical support process.
+  \item The asset is used for incident routing, service impact analysis, change risk assessment, or service ownership.
+  \item The asset requires compliance evidence, warranty tracking, support ownership, or license control in ITSM workflows.
+  \item The asset has a stable identifier and an accountable owner or support team.
+\end{itemize}
+
+\subsection{Recommended Exclusion Criteria}
+
+Do not synchronize a GLPI asset into iTop when any of the following is true:
+
+\begin{itemize}
+  \item The asset is temporary, unmanaged, test-only, or not relevant to service operations.
+  \item Required identifiers are missing or unreliable.
+  \item Ownership, location, or lifecycle status is unknown.
+  \item The asset would create excessive CMDB noise without improving incident, change, or service management.
+\end{itemize}
+
+\section{Data Governance Controls}
+
+\begin{longtable}{p{0.22\linewidth}p{0.37\linewidth}p{0.31\linewidth}}
+\toprule
+\rowcolor{LightBlue}\textbf{Control} & \textbf{Requirement} & \textbf{Evidence} \\
+\midrule
+Field ownership & Define which tool owns each attribute. GLPI should own inventory facts; iTop should own service relationships and ITSM process context. & Field ownership matrix and approved mapping document. \\
+Identity reconciliation & Use deterministic keys before creating or updating CIs. & Reconciliation rule set and duplicate exception report. \\
+Mandatory attributes & Reject or quarantine records missing required fields. & Validation report with rejected-record reasons. \\
+Lifecycle governance & Define how retirement, disposal, stock, active, and inactive states translate. & Lifecycle state mapping table. \\
+Exception handling & Route failures to accountable owners with resolution criteria. & Exception queue, ticket record, or data-quality dashboard. \\
+Audit logging & Log run timestamp, source count, target count, created, updated, skipped, failed, and deleted/retired records. & Integration run log retained according to policy. \\
+Access control & Use least-privilege service accounts and rotate credentials. & Access review record and credential rotation evidence. \\
+Change control & Manage integration changes through release or change-management process. & Change record, test evidence, rollback plan. \\
+\bottomrule
+\end{longtable}
+
+\section{Security Architecture}
+
+\begin{itemize}
+  \item \textbf{Authentication:} use dedicated integration identities, not personal administrator accounts.
+  \item \textbf{Authorization:} grant only read access to approved GLPI asset data and only required create/update access in iTop.
+  \item \textbf{Secrets management:} store API credentials in a secret manager or protected automation platform variable store.
+  \item \textbf{Network controls:} restrict API access by network path, source IP, reverse proxy policy, or firewall rules where feasible.
+  \item \textbf{Transport security:} require TLS for all integration traffic.
+  \item \textbf{Logging:} avoid logging secrets, full tokens, or sensitive personal data.
+  \item \textbf{Data minimization:} synchronize only the data needed for CMDB and ITSM use cases.
+\end{itemize}
+
+\section{Implementation Roadmap}
+
+\begin{longtable}{p{0.17\linewidth}p{0.55\linewidth}p{0.18\linewidth}}
+\toprule
+\rowcolor{LightBlue}\textbf{Phase} & \textbf{Key Activities} & \textbf{Exit Criteria} \\
+\midrule
+1. Scope & Identify CI classes, service use cases, asset sources, stakeholders, and ownership boundaries. & Approved scope and data owner list. \\
+2. Data model & Map GLPI fields to iTop classes, mandatory attributes, lifecycle states, and relationship types. & Approved mapping workbook or document. \\
+3. Baseline load & Run sample export/import or API dry run using non-production data. & No critical mapping errors; duplicate rate acceptable. \\
+4. Connector build & Implement extraction, transformation, validation, reconciliation, and iTop update logic. & Integration produces repeatable dry-run report. \\
+5. Governance gate & Add exception handling, approvals for bulk changes, credential controls, and audit logs. & Security and CMDB owners sign off. \\
+6. Production pilot & Synchronize a limited asset class or business service. & Pilot CIs usable in incident/change workflows. \\
+7. Scale & Expand to additional asset classes, locations, and service dependencies. & Operational runbook and KPI dashboard active. \\
+\bottomrule
+\end{longtable}
+
+\section{Operational KPIs}
+
+\begin{longtable}{p{0.28\linewidth}p{0.32\linewidth}p{0.30\linewidth}}
+\toprule
+\rowcolor{LightBlue}\textbf{Metric} & \textbf{Definition} & \textbf{Use} \\
+\midrule
+Synchronization success rate & Successful updates divided by attempted updates. & Measures integration reliability. \\
+Rejected record rate & Records rejected for missing or invalid data. & Measures source-data readiness. \\
+Duplicate CI rate & Potential duplicate CIs detected per run or per class. & Measures reconciliation quality. \\
+Missing owner rate & CIs without accountable person, team, or organization. & Measures operational accountability. \\
+Stale CI rate & CIs not updated or verified within the defined freshness window. & Measures CMDB trustworthiness. \\
+Relationship coverage & Percentage of critical CIs linked to services, application solutions, or business processes. & Measures impact-analysis usefulness. \\
+Exception aging & Average age of unresolved sync exceptions. & Measures governance follow-through. \\
+\bottomrule
+\end{longtable}
+
+\section{Key Risks and Mitigations}
+
+\begin{longtable}{p{0.28\linewidth}p{0.32\linewidth}p{0.30\linewidth}}
+\toprule
+\rowcolor{LightBlue}\textbf{Risk} & \textbf{Impact} & \textbf{Mitigation} \\
+\midrule
+Unclear system of record & Conflicting data and low CMDB trust. & Define field ownership and update direction. \\
+Over-synchronization & CMDB noise, poor performance, and process fatigue. & Use inclusion criteria and synchronize only actionable records. \\
+Weak identifiers & Duplicate or overwritten CIs. & Use deterministic reconciliation rules and exception queues. \\
+Poor lifecycle mapping & Retired or disposed assets appear active. & Maintain approved lifecycle translation and retirement process. \\
+Connector dependency & Unsupported connector breaks after upgrades. & Version-pin, test upgrades, and document rollback. \\
+Sensitive data exposure & Excessive personal or operational data copied to CMDB. & Apply data minimization and access control. \\
+Process disconnect & Synchronized CIs do not improve incident/change outcomes. & Link CIs to services and define ITSM use cases before scaling. \\
+\bottomrule
+\end{longtable}
+
+\section{Decision Summary}
+
+\begin{calloutbox}
+\textbf{Recommended decision.} Use GLPI as the inventory and ITAM source, iTop as the governed CMDB and ITSM process layer, and a controlled integration service as the policy enforcement point between them. Start with a limited pilot, prove reconciliation quality, then scale by CI class and service priority.
+\end{calloutbox}
+
+\sourcesection
+\end{document}
