@@ -1,0 +1,108 @@
+
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=0.75in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{amssymb}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\emergencystretch=3em
+\setlist[itemize]{leftmargin=1.2em,itemsep=2pt,topsep=2pt}
+\setlist[enumerate]{leftmargin=1.4em,itemsep=2pt,topsep=2pt}
+\renewcommand{\arraystretch}{1.25}
+\newcommand{\checkbox}{$\Box$\hspace{0.4em}}
+\newcommand{\ok}{\textbf{Success criteria:} }
+\newcommand{\sourcebasis}{\section*{Official Source Basis}\begin{itemize}
+\item Authentik Docker Compose installation: \url{https://docs.goauthentik.io/install-config/install/docker-compose/}
+\item Authentik reverse proxy guidance: \url{https://docs.goauthentik.io/install-config/reverse-proxy/}
+\item Authentik configuration reference: \url{https://docs.goauthentik.io/install-config/configuration/}
+\item Authentik first steps: \url{https://docs.goauthentik.io/install-config/first-steps/}
+\item Authentik backup and restore: \url{https://docs.goauthentik.io/sys-mgmt/ops/backup-restore/}
+\item Authentik upgrade guidance: \url{https://docs.goauthentik.io/install-config/upgrade/}
+\item Authentik monitoring: \url{https://docs.goauthentik.io/sys-mgmt/ops/monitoring/}
+\item Authentik example flows: \url{https://docs.goauthentik.io/add-secure-apps/flows-stages/flow/examples/flows/}
+\item Authentik service accounts: \url{https://docs.goauthentik.io/sys-mgmt/service-accounts/}
+\item Authentik certificates: \url{https://docs.goauthentik.io/sys-mgmt/certificates/}
+\end{itemize}}
+
+\title{Authentik Security Hardening Checklist}\author{Prepared from official Authentik documentation}\date{May 6, 2026}\begin{document}\maketitle
+
+\section*{Purpose}
+This hardening checklist focuses on the controls most relevant to a Docker Compose Authentik deployment using the official documentation: secure proxying, trusted headers, MFA flows, Docker socket exposure, service-account least privilege, backups, upgrades, and safe troubleshooting.
+
+\section*{Network and TLS Hardening}
+\begin{itemize}
+\item \checkbox Place Authentik behind an HTTPS-capable reverse proxy when exposing it through a public or shared network name.
+\item \checkbox Pass \texttt{X-Forwarded-Proto}, \texttt{X-Forwarded-For}, \texttt{Host}, and WebSocket upgrade headers to Authentik.
+\item \checkbox Use modern TLS configuration and disable SSL/TLS protocols older than TLS 1.3 where feasible.
+\item \checkbox Configure \texttt{AUTHENTIK\_LISTEN\_\_TRUSTED\_PROXY\_CIDRS} when proxy headers are accepted from a proxy path outside the default trusted ranges.
+\item \checkbox Use a certificate generated outside Authentik that matches the FQDN; prefer a publicly trusted certificate authority for proxy provider and brand use cases.
+\end{itemize}
+
+\section*{Secrets and Configuration Hardening}
+\begin{itemize}
+\item \checkbox Generate a strong \texttt{PG\_PASS} during initial deployment.
+\item \checkbox Generate a strong \texttt{AUTHENTIK\_SECRET\_KEY} during initial deployment.
+\item \checkbox Keep \texttt{.env} file access limited to administrators and automation accounts that require it.
+\item \checkbox Use the worker dump-config command to verify applied configuration when needed.
+\item \checkbox Avoid mounting \texttt{/etc/timezone} or \texttt{/etc/localtime} into Authentik containers; Authentik internal operations use UTC.
+\end{itemize}
+
+\section*{Docker Socket and Outpost Hardening}
+\begin{itemize}
+\item \checkbox Treat \texttt{/var/run/docker.sock} exposure to the worker container as privileged access.
+\item \checkbox Use a Docker socket proxy when automatic outpost management is required and the organization wants reduced socket exposure.
+\item \checkbox Remove the Docker socket mount and manually deploy/manage outposts when automatic outpost management is not required.
+\item \checkbox Keep Authentik server and outpost versions matched during upgrades.
+\end{itemize}
+
+\section*{Identity and Access Hardening}
+\begin{itemize}
+\item \checkbox Use application/provider pairs deliberately; every protected application should have a clear provider configuration and access policy.
+\item \checkbox Use bindings to restrict application visibility and access to intended users or groups.
+\item \checkbox Use the two-factor login example flow or equivalent MFA design when additional verification is required.
+\item \checkbox Force two-factor authentication by adjusting the Authenticator Validation Stage behavior where required.
+\item \checkbox For recovery flows, prefer recovery designs that include MFA verification when the user population supports it.
+\end{itemize}
+
+\section*{Service Account Hardening}
+\begin{itemize}
+\item \checkbox Use service accounts only for machine-to-machine access and automation.
+\item \checkbox Remember that service accounts cannot log in through the UI, cannot have a password, and use tokens exclusively.
+\item \checkbox Prefer expiring tokens where operationally feasible.
+\item \checkbox Revoke or rotate service account tokens when they are no longer needed.
+\item \checkbox Apply least privilege: assign only the groups, permissions, applications, and resources required for the integration.
+\end{itemize}
+
+\section*{Backup, Upgrade, and Recovery Hardening}
+\begin{itemize}
+\item \checkbox Back up PostgreSQL regularly because it stores persistent Authentik data including users, policies, and configuration.
+\item \checkbox Back up \texttt{/data} if file storage is local and not backed by S3.
+\item \checkbox Back up \texttt{/certs} when certificates are relied on from the filesystem.
+\item \checkbox Back up \texttt{/custom-templates} when UI customizations exist.
+\item \checkbox Back up \texttt{/blueprints} when custom blueprints are used.
+\item \checkbox Before upgrades, read release notes, back up PostgreSQL, and follow the documented upgrade sequence.
+\item \checkbox Do not plan on downgrading Authentik; the official guidance states downgrades are unsupported.
+\end{itemize}
+
+\section*{Monitoring and Troubleshooting Hardening}
+\begin{itemize}
+\item \checkbox Monitor \texttt{/-/health/live/} for server liveness.
+\item \checkbox Monitor \texttt{/-/health/ready/} for readiness and PostgreSQL connectivity.
+\item \checkbox Monitor worker health with \texttt{ak healthcheck} inside the worker container.
+\item \checkbox Monitor outposts with \texttt{/outpost.goauthentik.io/ping}.
+\item \checkbox Scrape metrics on port 9300 only from intended monitoring networks; metrics are unauthenticated and non-exposed by default.
+\item \checkbox Keep normal log level at \texttt{info} unless troubleshooting requires temporary escalation.
+\item \checkbox Avoid \texttt{trace} logging unless absolutely necessary; trace logs can expose sensitive information including session cookies.
+\end{itemize}
+
+\sourcebasis
+
+\end{document}

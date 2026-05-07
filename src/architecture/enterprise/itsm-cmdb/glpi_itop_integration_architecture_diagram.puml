@@ -1,0 +1,119 @@
+@startuml
+' GLPI + iTop Integration Architecture Diagram
+' Standalone PlantUML. No external includes required.
+
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam handwritten false
+skinparam roundcorner 12
+skinparam ArrowColor #1F4E79
+skinparam ArrowThickness 1.4
+skinparam rectangle {
+  BackgroundColor #EAF3F8
+  BorderColor #1F4E79
+}
+skinparam component {
+  BackgroundColor #F5F7FA
+  BorderColor #1F4E79
+}
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor #B26A00
+}
+skinparam queue {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+}
+skinparam note {
+  BackgroundColor #FFFDE7
+  BorderColor #B26A00
+}
+
+title GLPI + iTop Integration Architecture\nITAM-to-CMDB Synchronization Pattern
+
+actor "Asset / Endpoint\nOwner" as AssetOwner
+actor "IT Support /\nChange Manager" as ITSMUser
+
+node "Endpoint and\nInfrastructure Fleet" as Fleet {
+  component "Servers" as Servers
+  component "Workstations" as Workstations
+  component "Network Devices" as NetworkDevices
+  component "Software\nInstallations" as Software
+}
+
+rectangle "Inventory Collection Layer" as Collection {
+  component "GLPI Agent" as GLPIAgent
+  component "GLPI Inventory /\nOCS-Compatible Inputs" as InventoryInputs
+}
+
+database "GLPI\nITAM + Inventory Source" as GLPI
+
+queue "Integration Service\nScheduler + ETL + Connector" as Connector
+
+database "Mapping and Policy Store\nCI classes, field ownership,\nlifecycle rules, identity keys" as Mapping
+
+rectangle "Validation and\nReconciliation Gate" as Gate
+
+database "iTop CMDB\nGoverned CIs + Relationships" as ITop
+
+rectangle "iTop ITSM Processes" as ITSM {
+  component "Incident\nManagement" as Incident
+  component "Change\nManagement" as Change
+  component "Service Catalog /\nImpact Analysis" as Impact
+}
+
+rectangle "Audit, Reporting, and\nException Management" as Audit
+
+Fleet --> GLPIAgent : discovered inventory facts
+Fleet --> InventoryInputs : inventory payloads
+GLPIAgent --> GLPI : asset and software inventory
+InventoryInputs --> GLPI : normalized inventory feed
+AssetOwner --> GLPI : asset ownership, lifecycle,\nlocation, license context
+
+GLPI --> Connector : approved asset extract\nREST API or controlled CSV export
+Mapping --> Connector : mapping rules and\nfield ownership policies
+Connector --> Gate : normalized CI candidate payloads
+Gate --> ITop : create or update governed CIs\nREST/JSON or controlled import
+Gate --> Audit : rejected records, duplicate candidates,\nmissing mandatory fields
+Connector --> Audit : run metrics, errors,\ncreated/updated/skipped counts
+
+ITop --> Incident : CI context for incidents
+ITop --> Change : CI context for changes
+ITop --> Impact : service relationships\nand dependency model
+ITSMUser --> ITSM : triage, approve, analyze, report
+
+note right of GLPI
+Recommended role:
+- ITAM source of record
+- hardware/software inventory
+- licenses and contracts
+- asset lifecycle facts
+end note
+
+note right of ITop
+Recommended role:
+- governed CMDB
+- CI relationships
+- incident/change context
+- service impact analysis
+end note
+
+note bottom of Gate
+Governance controls:
+1. deterministic identity matching
+2. duplicate prevention
+3. mandatory-field validation
+4. lifecycle-state translation
+5. exception queue and audit log
+end note
+
+legend right
+|= Color |= Meaning |
+| <#EAF3F8> | collection / process layer |
+| <#FFF8E1> | system of record / database |
+| <#F3E5F5> | integration service |
+| <#FFFDE7> | governance note |
+endlegend
+
+@enduml

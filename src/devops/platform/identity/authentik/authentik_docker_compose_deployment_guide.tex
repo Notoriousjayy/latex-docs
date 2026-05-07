@@ -1,0 +1,161 @@
+
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=0.75in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{amssymb}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\emergencystretch=3em
+\setlist[itemize]{leftmargin=1.2em,itemsep=2pt,topsep=2pt}
+\setlist[enumerate]{leftmargin=1.4em,itemsep=2pt,topsep=2pt}
+\renewcommand{\arraystretch}{1.25}
+\newcommand{\checkbox}{$\Box$\hspace{0.4em}}
+\newcommand{\ok}{\textbf{Success criteria:} }
+\newcommand{\sourcebasis}{\section*{Official Source Basis}\begin{itemize}
+\item Authentik Docker Compose installation: \url{https://docs.goauthentik.io/install-config/install/docker-compose/}
+\item Authentik reverse proxy guidance: \url{https://docs.goauthentik.io/install-config/reverse-proxy/}
+\item Authentik configuration reference: \url{https://docs.goauthentik.io/install-config/configuration/}
+\item Authentik first steps: \url{https://docs.goauthentik.io/install-config/first-steps/}
+\item Authentik backup and restore: \url{https://docs.goauthentik.io/sys-mgmt/ops/backup-restore/}
+\item Authentik upgrade guidance: \url{https://docs.goauthentik.io/install-config/upgrade/}
+\item Authentik monitoring: \url{https://docs.goauthentik.io/sys-mgmt/ops/monitoring/}
+\item Authentik example flows: \url{https://docs.goauthentik.io/add-secure-apps/flows-stages/flow/examples/flows/}
+\item Authentik service accounts: \url{https://docs.goauthentik.io/sys-mgmt/service-accounts/}
+\item Authentik certificates: \url{https://docs.goauthentik.io/sys-mgmt/certificates/}
+\end{itemize}}
+
+\title{Authentik Docker Compose Deployment Guide}\author{Prepared from official Authentik documentation}\date{May 6, 2026}\begin{document}\maketitle
+
+\section*{Purpose}
+This guide provides a task-oriented Docker Compose deployment procedure for Authentik based only on the official Authentik documentation. It assumes a single host, Docker Compose v2, a reverse proxy for HTTPS, and persistent PostgreSQL-backed configuration.
+
+\section*{Prerequisites}
+\begin{itemize}
+\item Host with at least 2 CPU cores and 2 GB of RAM.
+\item Docker Compose v2 or Podman with Compose support.
+\item DNS name for Authentik if it will be accessed through a reverse proxy.
+\item Reverse proxy capable of HTTPS and WebSocket upgrade forwarding.
+\item Administrative control over the host filesystem, Compose project, and backup process.
+\end{itemize}
+
+\section*{Procedure 1 - Create the Installation Directory}
+\begin{verbatim}
+sudo mkdir -p /opt/authentik
+sudo chown "$USER":"$USER" /opt/authentik
+cd /opt/authentik
+\end{verbatim}
+\ok The operator is in a dedicated Authentik installation directory.
+
+\section*{Procedure 2 - Download the Official Compose File}
+Linux:
+\begin{verbatim}
+wget https://docs.goauthentik.io/compose.yml
+\end{verbatim}
+macOS or systems preferring curl:
+\begin{verbatim}
+curl -O https://docs.goauthentik.io/compose.yml
+\end{verbatim}
+\ok The directory contains the official \texttt{compose.yml} file.
+
+\section*{Procedure 3 - Generate Required Secrets}
+For a fresh installation, generate the PostgreSQL password and Authentik secret key into \texttt{.env}:
+\begin{verbatim}
+echo "PG_PASS=$(openssl rand -base64 36 | tr -d '\n')" >> .env
+echo "AUTHENTIK_SECRET_KEY=$(openssl rand -base64 60 | tr -d '\n')" >> .env
+\end{verbatim}
+\ok The \texttt{.env} file contains \texttt{PG\_PASS} and \texttt{AUTHENTIK\_SECRET\_KEY}.
+
+\section*{Procedure 4 - Optional Configuration}
+Enable Authentik error reporting only if desired:
+\begin{verbatim}
+echo "AUTHENTIK_ERROR_REPORTING__ENABLED=true" >> .env
+\end{verbatim}
+Expose HTTP and HTTPS on alternative host ports if needed:
+\begin{verbatim}
+cat >> .env <<'EOF'
+COMPOSE_PORT_HTTP=80
+COMPOSE_PORT_HTTPS=443
+EOF
+\end{verbatim}
+Apply later configuration changes with:
+\begin{verbatim}
+docker compose up -d
+\end{verbatim}
+Verify the applied configuration when needed:
+\begin{verbatim}
+docker compose run --rm worker ak dump_config
+\end{verbatim}
+\ok Optional settings are documented in \texttt{.env} and can be verified through \texttt{ak dump\_config}.
+
+\section*{Procedure 5 - Start Authentik}
+\begin{verbatim}
+docker compose pull
+docker compose up -d
+\end{verbatim}
+\ok The Authentik server, worker, and PostgreSQL database are started by Docker Compose.
+
+\section*{Procedure 6 - Complete Initial Setup}
+Open the initial setup URL. Include the trailing slash:
+\begin{verbatim}
+http://<your server's IP or hostname>:9000/if/flow/initial-setup/
+\end{verbatim}
+Set the default \texttt{akadmin} password.
+\ok The default administrator can log in to Authentik.
+
+\section*{Procedure 7 - Configure the Reverse Proxy}
+The reverse proxy must pass these upstream headers:
+\begin{itemize}
+\item \texttt{X-Forwarded-Proto}
+\item \texttt{X-Forwarded-For}
+\item \texttt{Host}
+\item \texttt{Connection: Upgrade} and \texttt{Upgrade: WebSocket} for HTTP/1.1 WebSocket endpoints
+\end{itemize}
+When the proxy is not accessing Authentik from a trusted private range, configure trusted proxy CIDRs:
+\begin{verbatim}
+AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS=<proxy-cidr-list>
+\end{verbatim}
+\ok Authentik receives correct protocol, host, client IP, and WebSocket forwarding context.
+
+\section*{Procedure 8 - Add the First Application and User}
+\begin{enumerate}
+\item Log in as an administrator and open the Admin interface.
+\item Navigate to \texttt{Applications > Applications}.
+\item Create an application and provider pair.
+\item Record provider values required by the target application, such as client ID, client secret, slug, redirect URI, and signing key.
+\item Navigate to \texttt{Directory > Users}.
+\item Create the first non-admin user.
+\item Add bindings or policies when access should be restricted to selected users or groups.
+\end{enumerate}
+\ok The first protected application and user are available.
+
+\section*{Procedure 9 - Back Up the Deployment}
+Back up PostgreSQL using native PostgreSQL tooling such as \texttt{pg\_dump}, \texttt{pg\_dumpall}, or continuous archiving. Exclude system databases \texttt{template0} and \texttt{template1}. Back up static directories when they are used locally:
+\begin{itemize}
+\item \texttt{/data}
+\item \texttt{/certs}
+\item \texttt{/custom-templates}
+\item \texttt{/blueprints}
+\end{itemize}
+\ok The database and deployment-specific static content can be restored.
+
+\section*{Procedure 10 - Upgrade Authentik}
+Before upgrading, read the release notes, back up PostgreSQL, and do not skip required major/minor upgrade sequence steps. Then run:
+\begin{verbatim}
+wget -O compose.yml https://docs.goauthentik.io/compose.yml
+docker compose pull
+docker compose up -d
+\end{verbatim}
+Verify the version from \texttt{Dashboards > Overview}. Ensure Authentik outposts are upgraded with the core instance.
+\ok The deployment is upgraded and the running version is verified.
+
+\sourcebasis
+
+\end{document}

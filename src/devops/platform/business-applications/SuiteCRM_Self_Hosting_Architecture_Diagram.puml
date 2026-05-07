@@ -1,0 +1,97 @@
+@startuml
+' SuiteCRM Self-Hosting Architecture Diagram
+' Default target: SuiteCRM 8.10.x, Apache 2.4, PHP 8.2-8.4, MariaDB/MySQL.
+' Nginx/LEMP is an operator pattern and must be validated separately.
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam ArrowColor #333333
+skinparam defaultTextAlignment center
+skinparam rectangle {
+  BorderColor #333333
+  BackgroundColor #F8F8F8
+}
+skinparam database {
+  BorderColor #333333
+  BackgroundColor #F8F8F8
+}
+
+title SuiteCRM Self-Hosting Architecture
+
+actor "CRM Users" as Users
+actor "CRM Administrators" as Admins
+
+cloud "Internet / Corporate Network" as Net
+
+node "Public Edge" as Edge {
+  rectangle "DNS\ncrm.example.com" as DNS
+  rectangle "TLS / HTTPS\nCertificate + Redirect" as TLS
+}
+
+node "SuiteCRM Application Host" as AppHost {
+  rectangle "Apache 2.4 vHost\nDocumentRoot: /var/www/suitecrm/public" as Apache
+  rectangle "PHP Runtime\nPHP 8.2-8.4\nRequired Extensions" as PHP
+  component "SuiteCRM Application" as SuiteCRM
+  folder "public/" as Public
+  folder "custom/" as Custom
+  folder "uploads / cache / logs" as Files
+  component "API Layer\nApi/ and Api/V8/" as API
+  component "Scheduler Command\n./bin/console schedulers:run" as Scheduler
+}
+
+database "MariaDB / MySQL" as DB
+node "Backup Target" as Backup {
+  database "DB Dumps / Snapshots" as DBDump
+  folder "File Archives" as FileArchive
+}
+
+node "Operations" as Ops {
+  rectangle "Monitoring\nUptime, disk, DB, logs" as Monitoring
+  rectangle "Patch / Upgrade Process" as Patching
+  rectangle "Restore Test Environment" as Restore
+}
+
+Users --> Net
+Admins --> Net
+Net --> DNS
+DNS --> TLS
+TLS --> Apache : HTTPS
+Apache --> Public : serves public web root
+Apache --> PHP : PHP execution
+PHP --> SuiteCRM
+SuiteCRM --> API
+SuiteCRM --> Files : uploads, cache, logs
+SuiteCRM --> Custom : extensions/customizations
+SuiteCRM --> DB : CRM data and metadata
+Scheduler --> SuiteCRM : recurring jobs
+Scheduler --> DB : workflow/email/report/index state
+DB --> DBDump : backup
+Files --> FileArchive : backup
+DBDump --> Restore : restore test
+FileArchive --> Restore : restore test
+Monitoring --> Apache
+Monitoring --> PHP
+Monitoring --> DB
+Monitoring --> Scheduler
+Patching --> AppHost
+Patching --> DB
+
+note right of Apache
+Official SuiteCRM webserver setup recommends
+pointing the vhost to the public directory.
+Do not expose the full SuiteCRM root.
+end note
+
+note bottom of Scheduler
+Run scheduler as an allowed non-root user.
+Do not run as root.
+end note
+
+note bottom of Backup
+Production backup scope = database + files + config.
+Restore testing is the acceptance criterion.
+end note
+
+@enduml

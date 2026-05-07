@@ -1,0 +1,77 @@
+@startuml
+' Authentik self-hosting architecture diagram
+' Source basis: official Authentik Docker Compose, reverse proxy, configuration,
+' first steps, backup/restore, monitoring, and upgrade documentation.
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam rectangle {
+  BorderColor #333333
+  FontColor #111111
+}
+skinparam database {
+  BorderColor #333333
+  FontColor #111111
+}
+skinparam folder {
+  BorderColor #333333
+  FontColor #111111
+}
+skinparam ArrowColor #333333
+skinparam wrapWidth 220
+skinparam maxMessageSize 120
+
+title Authentik Self-Hosted Docker Compose Architecture
+
+actor "Users / Admins" as users
+rectangle "HTTPS Reverse Proxy\n- TLS termination\n- HTTP to HTTPS redirect\n- WebSocket upgrade support\n- Required forwarding headers" as proxy
+
+node "Docker Compose Host" as host {
+  rectangle "authentik Server\n- Web UI\n- API\n- Identity flows\n- HTTP 9000 / HTTPS 9443 default" as server
+  rectangle "authentik Worker\n- Background tasks\n- Blueprint watcher\n- Certificate watcher\n- Optional outpost automation" as worker
+  database "PostgreSQL\nPersistent users, policies,\nproviders, flows, and config" as db
+  folder "Static Volumes\n/data\n/certs\n/custom-templates\n/blueprints" as storage
+}
+
+rectangle "Applications" as apps {
+  rectangle "Application + Provider Pair\nOIDC / OAuth2, SAML, LDAP,\nProxy Provider, or other supported provider" as app_provider
+}
+
+rectangle "Outposts\nProxy / LDAP extension points\nVersion must match core instance" as outposts
+rectangle "Monitoring" as monitoring {
+  rectangle "Server health\n/-/health/live/\n/-/health/ready/" as health
+  rectangle "Worker health\nak healthcheck" as workerhealth
+  rectangle "Outpost health\n/outpost.goauthentik.io/ping" as outposthealth
+  rectangle "Metrics\nPort 9300" as metrics
+}
+
+users --> proxy : HTTPS requests
+proxy --> server : Forwarded HTTPS context\nHost + X-Forwarded-*\nWebSocket upgrades
+server --> db : persistent data
+worker --> db : background task state
+server --> storage : local file storage
+worker --> storage : blueprints and certificates
+server --> app_provider : IdP protocol endpoints
+outposts --> server : outpost communication
+outposts --> app_provider : protect / expose apps
+monitoring ..> server : health and readiness
+monitoring ..> worker : worker checks
+monitoring ..> outposts : outpost checks
+monitoring ..> metrics : Prometheus scrape
+
+note right of proxy
+Accept proxy headers only from trusted proxy CIDRs.
+Use modern TLS and disable protocols older than TLS 1.3 where feasible.
+end note
+
+note bottom of db
+Back up PostgreSQL before upgrades and on a recurring schedule.
+end note
+
+note bottom of worker
+The default Compose file mounts the Docker socket for automatic outpost management.
+Use a socket proxy or manual outpost deployment when reducing socket exposure.
+end note
+
+@enduml

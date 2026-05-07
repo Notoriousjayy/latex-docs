@@ -1,0 +1,84 @@
+@startuml
+' Gauntlt CI/CD security testing architecture
+' Purpose: show how Gauntlt wraps approved tools and gates a release candidate.
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 14
+skinparam defaultFontName Arial
+skinparam componentStyle rectangle
+skinparam ArrowColor #2F4858
+skinparam rectangle {
+  BorderColor #2F4858
+  BackgroundColor #F7FAFC
+}
+skinparam database {
+  BorderColor #2F4858
+  BackgroundColor #FFF7E6
+}
+
+title Gauntlt CI/CD Security Testing Reference Architecture
+
+actor Developer as dev
+
+rectangle "Source Control" as repo {
+  component "Application Code" as code
+  component "Gauntlt .attack Files" as attacks
+  component "Pipeline Definition" as pipeline
+}
+
+rectangle "CI/CD Platform" as cicd {
+  component "Build + Unit Tests" as build
+  component "Deploy Candidate" as deploy
+  component "Gauntlt Runner" as runner
+  component "Quality Gate" as gate
+}
+
+rectangle "Approved Test Environment" as env {
+  component "Application Under Test" as app
+  component "Test Accounts + Seed Data" as data
+}
+
+rectangle "Security Tool Adapters" as tools {
+  component "curl\nHTTP checks" as curl
+  component "nmap\nport exposure" as nmap
+  component "SSLyze\nTLS checks" as sslyze
+  component "sqlmap\nSQLi regression" as sqlmap
+  component "Custom CLI\ncontrol checks" as custom
+}
+
+database "Evidence Store" as evidence
+rectangle "Issue Tracker" as tracker
+rectangle "AppSec / Release Governance" as governance
+
+dev --> repo : commit code and attack files
+repo --> build : trigger pipeline
+build --> deploy : package candidate
+deploy --> app : deploy to authorized target
+runner --> attacks : read scenarios
+runner --> tools : invoke approved tools
+curl --> app : send HTTP requests
+nmap --> app : scan approved ports
+sslyze --> app : check TLS posture
+sqlmap --> app : run scoped SQLi checks
+custom --> app : run organization checks
+runner --> gate : return pass/fail
+gate --> evidence : archive logs, output, versions
+gate --> tracker : create remediation item on failure
+gate --> governance : provide release signal
+
+data .. app : supports repeatable tests
+
+note right of runner
+Run only against authorized targets.
+Keep attack files narrow, deterministic,
+and mapped to explicit control objectives.
+end note
+
+note bottom of gate
+Blocking rules should distinguish
+mandatory failures, warning-only findings,
+and approved exceptions.
+end note
+
+@enduml
