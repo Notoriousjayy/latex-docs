@@ -1,0 +1,80 @@
+@startuml
+' ============================================================
+' Diagram   : Nondisruptive Service Relocation - Runtime Flow
+' Section   : 14.4 Nondisruptive Service Relocation Architecture
+' Type      : Sequence diagram
+' Message   : A duplicate cloud service is confirmed to be
+'             receiving requests successfully BEFORE the
+'             original is deactivated, ensuring zero
+'             disruption to consumers.
+' ============================================================
+
+title 14.4 Nondisruptive Service Relocation\nDuplicate-then-Cutover Sequence
+
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam roundCorner 6
+skinparam ArrowColor #555555
+skinparam ParticipantBackgroundColor #F0F4F8
+skinparam ParticipantBorderColor #4A6B8A
+skinparam ActorBackgroundColor #F0F4F8
+skinparam ActorBorderColor #4A6B8A
+skinparam noteBackgroundColor #FFF8DC
+skinparam noteBorderColor #999999
+
+actor "Cloud Service\nConsumers" as CSC
+participant "Automated\nScaling Listener" as ASL
+participant "Cloud Service A\non VS A\n(Physical Server A)" as CSA
+participant "VIM" as VIM
+participant "Live VM\nMigration" as LVM
+participant "Origin\nHypervisor" as HO
+participant "Destination\nHypervisor" as HD
+participant "Cloud Service A\non VS B\n(Physical Server B)" as CSB
+
+== Steady state ==
+CSC -> ASL : 1. requests
+ASL -> CSA : forward
+
+== Trigger ==
+CSA -> ASL : 2. workload reaches\npredefined threshold
+ASL -> VIM : 3. signal relocation
+
+== Provision destination ==
+VIM -> LVM : 4. initiate live VM migration
+LVM -> HO : instruct origin
+LVM -> HD : 5. create duplicate VS\n& cloud service
+HD -> CSB : start
+
+== Synchronize ==
+CSA <-> CSB : 6. synchronize state
+
+== Cut-over (only after success confirmed) ==
+ASL -> CSB : redirect
+CSC -> CSB : 8. requests succeed
+note right of CSB
+  Removal proceeds only after
+  consumer requests are confirmed
+  to be successfully exchanged
+  with the new instance.
+end note
+HO -> CSA : 7. remove instance
+
+note over LVM
+  Migration mode A: copy VS disks
+   when source uses local or non-shared remote storage.
+  Migration mode B: transfer ownership only
+   when source and destination share remote storage.
+end note
+
+note over VIM
+  Mechanisms: automated scaling listener, load balancer,
+  cloud storage device, hypervisor, virtual server,
+  cloud usage monitor, pay-per-use monitor,
+  resource replication, SLA management system, SLA monitor.
+  CONFLICT: cannot combine with the direct I/O access
+  architecture (Chapter 15).
+end note
+
+@enduml

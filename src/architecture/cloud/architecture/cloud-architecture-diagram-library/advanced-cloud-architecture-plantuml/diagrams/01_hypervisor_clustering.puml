@@ -1,0 +1,69 @@
+@startuml
+' ============================================================
+' Diagram   : Hypervisor Clustering - Heartbeat and Failover
+' Section   : 14.1 Hypervisor Clustering Architecture
+' Type      : Sequence diagram
+' Message   : VIM-orchestrated live VM migration restores hosted
+'             virtual servers when a hypervisor stops responding.
+' ============================================================
+
+title 14.1 Hypervisor Clustering\nHeartbeat and Failover Sequence
+
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam roundCorner 6
+skinparam ArrowColor #555555
+skinparam ParticipantBackgroundColor #F0F4F8
+skinparam ParticipantBorderColor #4A6B8A
+skinparam ActorBackgroundColor #F0F4F8
+skinparam ActorBorderColor #4A6B8A
+skinparam DatabaseBackgroundColor #F0F4F8
+skinparam DatabaseBorderColor #4A6B8A
+skinparam noteBackgroundColor #FFF8DC
+skinparam noteBorderColor #999999
+
+actor "Cloud Resource\nAdministrator" as Admin
+participant "VIM" as VIM
+participant "Hypervisor A\n(Physical Server A)" as HA
+participant "Hypervisor B\n(Physical Server B)" as HB
+participant "Hypervisor C\n(Physical Server C)" as HC
+database "Shared Cloud\nStorage Device" as STG
+
+== Cluster setup ==
+Admin -> VIM : enable hypervisor cluster
+VIM -> HA : install / join cluster
+VIM -> HB : install / join cluster
+VIM -> HC : install / join cluster
+HA -> STG : access VM\nconfig files
+HB -> STG : access VM\nconfig files
+HC -> STG : access VM\nconfig files
+
+== Scheduled heartbeats ==
+loop predefined schedule
+  HA -> VIM : heartbeat
+  HB -> VIM : heartbeat
+  HC -> VIM : heartbeat
+end
+
+== Hypervisor failure ==
+note over HB #FFE0E0
+  Physical Server B fails;
+  Virtual Server C is jeopardized
+end note
+HB -x VIM : heartbeat\nstops
+VIM -> VIM : assess available\ncapacity in cluster
+
+== Live VM migration ==
+VIM -> HC : assign Virtual Server C
+HC -> STG : read Virtual\nServer C config
+HC -> HC : start Virtual Server C\n(restart if needed)
+HC --> VIM : migration complete
+
+note over VIM, HC
+  Mechanisms: hypervisor, resource cluster, virtual server,
+  logical network perimeter, resource replication.
+end note
+
+@enduml

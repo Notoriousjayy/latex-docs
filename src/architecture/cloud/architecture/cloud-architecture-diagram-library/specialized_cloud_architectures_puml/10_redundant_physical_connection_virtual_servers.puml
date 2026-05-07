@@ -1,0 +1,57 @@
+@startuml redundant_physical_connection_virtual_servers
+title Redundant Physical Connection for Virtual Servers Architecture\nStandby uplink takes over transparently when the primary uplink fails
+
+skinparam backgroundColor #FEFEFE
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 11
+skinparam roundcorner 6
+skinparam activity {
+  BackgroundColor #EAF2F8
+  BorderColor #2874A6
+  DiamondBackgroundColor #FDEBD0
+  DiamondBorderColor #B9770E
+}
+
+start
+:Add second NIC to host (1);
+:Connect both NICs to physical switch (2);
+:Configure both NICs as virtual switch uplinks (3);
+:Designate primary uplink (4);
+:Designate secondary uplink as standby
+(receives packets but does not forward);
+
+repeat
+  :Virtual servers send traffic
+  via primary uplink;
+  if (Primary uplink available?) then (yes)
+    :Secondary remains in standby
+    (no forwarding);
+  else (no  (5))
+    :Failover system promotes
+    standby to active uplink (6);
+    :Secondary uplink forwards
+    virtual server packets externally;
+    :Virtual servers remain
+    connected (transparent) (7);
+    if (Failed uplink returns to operation?) then (yes)
+      :Failed uplink resumes as primary;
+      :Other NIC returns to standby;
+    else (no)
+      :Continue on secondary uplink;
+    endif
+  endif
+repeat while (host running?) is (yes)
+->no;
+stop
+
+note right
+  Supporting mechanisms:
+  Failover System (transition to standby),
+  Hypervisor, Logical Network Perimeter
+  (per-consumer virtual switch isolation),
+  Resource Replication (replicate active
+  uplink status to standby).
+end note
+
+@enduml

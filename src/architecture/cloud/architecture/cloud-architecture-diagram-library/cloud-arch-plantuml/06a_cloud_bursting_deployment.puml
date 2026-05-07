@@ -1,0 +1,50 @@
+@startuml
+title Cloud Bursting Architecture - Burst-Out and Burst-In
+
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #F7F9FC
+  BorderColor #4A6FA5
+}
+
+actor "Service\nConsumer A" as SCA
+actor "Service\nConsumer B" as SCB
+actor "Service\nConsumer C" as SCC
+
+node "On-Premises Environment" as OnPrem {
+  component "Service A\n(on-premises)" as SA
+  database "State management\ndatabase (on-prem)" as DB1
+  component "Automated\nScaling Listener" as ASL
+}
+
+cloud "Cloud Environment" as Cloud {
+  component "Cloud Service A\n(redundant, predeployed,\ninactive until burst)" as CSA
+  database "State management\ndatabase (cloud)" as DB2
+  component "Pay-Per-Use Monitor" as PPM
+}
+
+SCA --> ASL
+SCB --> ASL
+SCC --> ASL
+
+ASL --> SA : within capacity\nthreshold
+ASL --> CSA : (1) burst-out:\nredirect when threshold exceeded
+
+DB1 <..> DB2 : (2) resource replication\nkeeps state synchronized
+
+PPM ..> CSA : tracks cloud usage\nfor billing
+
+note right of CSA
+  Cloud-based resources are released
+  ("burst in") when no longer required;
+  no further cloud usage fees incurred.
+end note
+
+note bottom of ASL
+  Automated scaling listener determines
+  when to redirect requests to cloud-based
+  IT resources.
+end note
+
+@enduml

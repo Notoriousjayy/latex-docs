@@ -1,0 +1,69 @@
+@startuml direct_lun_access
+title Direct LUN Access Architecture\nVirtual servers reach RAW block-based LUNs via a physical HBA
+
+skinparam backgroundColor #FEFEFE
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 11
+skinparam roundcorner 6
+skinparam component {
+  BackgroundColor #EAF2F8
+  BorderColor #2874A6
+}
+skinparam node {
+  BackgroundColor #FDEBD0
+  BorderColor #B9770E
+}
+skinparam database {
+  BackgroundColor #D5F5E3
+  BorderColor #1E8449
+}
+
+' Top: virtual servers
+together {
+  component "Virtual Server 1" as vs1
+  component "Virtual Server 2" as vs2
+}
+
+' Middle: physical hosts with HBAs
+node "Physical Host A\n(Hypervisor + HBA)" as ha
+node "Physical Host B\n(Hypervisor + HBA)" as hb
+
+' Bottom: cloud storage device with shared LUN
+database "Cloud Storage Device\n(raw device mapping)" as csd {
+  component "Shared LUN\n(unique LUN ID,\nRAW block-based,\nunformatted)" as lun
+}
+
+vs1 -down-> ha : (3) direct\nmapping
+vs2 -down-> hb : (3) direct\nmapping
+ha -down-> lun : (4) direct RAW\nblock access
+hb -down-> lun : (4) direct RAW\nblock access
+
+note right of csd
+  (1) Cloud storage device installed
+      and configured.
+  (2) LUNs created and presented
+      to the hypervisors.
+  Same LUN visible to all virtual
+  servers as shared cluster storage.
+end note
+
+note left of csd
+  Runtime command flow:
+  (5) Virtual server storage
+      commands are received
+      by the hypervisor.
+  (6) Hypervisor forwards them
+      to the storage processor.
+end note
+
+' Supporting mechanisms
+package "Supporting Mechanisms" as mech {
+  component "Cloud Usage Monitor" as cum
+  component "Pay-Per-Use Monitor" as ppm
+  component "Resource Replication" as rr
+}
+
+mech .right.> csd : track LUN usage,\nbill, replace file-based\nwith block-based
+
+@enduml

@@ -1,0 +1,67 @@
+@startuml
+' ============================================================
+' Diagram   : Load-Balanced VS Instances - Workload Rebalance
+' Section   : 14.3 Load-Balanced Virtual Server Instances
+' Type      : Sequence diagram
+' Message   : The capacity watchdog system detects host
+'             over/under-utilization and triggers live VM
+'             migration to redistribute virtual servers.
+' ============================================================
+
+title 14.3 Load-Balanced Virtual Server Instances\nCapacity Watchdog Rebalance Sequence
+
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam roundCorner 6
+skinparam ArrowColor #555555
+skinparam ParticipantBackgroundColor #F0F4F8
+skinparam ParticipantBorderColor #4A6B8A
+skinparam noteBackgroundColor #FFF8DC
+skinparam noteBorderColor #999999
+
+participant "Capacity\nWatchdog\nMonitor" as CWM
+participant "Capacity\nPlanner" as CP
+participant "VIM" as VIM
+participant "Load Balancer" as LB
+participant "Live VM\nMigration" as LVM
+participant "Hypervisor\n(origin)" as HO
+participant "Hypervisor\n(destination)" as HD
+
+note over HO, HD
+  Built on the hypervisor clustering architecture
+end note
+
+== Configure ==
+CWM -> CWM : 2. load policies\n& thresholds
+CWM -> HO : 3. measure physical\n& VS capacity
+CWM -> HD : 3. measure physical\n& VS capacity
+
+== Detect ==
+CP <- CWM : capacity fluctuation\nreport
+CP -> CP : compare physical capacity\nvs VS requirements
+CP -> VIM : 4. over-utilization\ndetected
+
+== Rebalance ==
+VIM -> LB : 5. redistribute workload\n(predefined thresholds)
+LB -> LVM : 6. move selected\nvirtual servers
+LVM -> HO : 7. evacuate VS
+LVM -> HD : 7. receive VS
+HD --> LVM : ready
+LVM --> LB : migration done
+
+== Continue monitoring ==
+loop steady state
+  CWM -> HO : 9. monitor
+  CWM -> HD : 9. monitor
+end
+
+note over CWM
+  Mechanisms: hypervisor, resource clustering, virtual server,
+  cloud usage monitor (capacity watchdog), automated scaling
+  listener, load balancer, logical network perimeter,
+  resource replication.
+end note
+
+@enduml

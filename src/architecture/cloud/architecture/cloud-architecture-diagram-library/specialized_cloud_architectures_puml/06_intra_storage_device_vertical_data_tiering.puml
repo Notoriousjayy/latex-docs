@@ -1,0 +1,75 @@
+@startuml intra_storage_device_vertical_data_tiering
+title Intra-Storage Device Vertical Data Tiering Architecture\nLUNs migrate between graded disk tiers inside a single storage device
+
+skinparam backgroundColor #FEFEFE
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 11
+skinparam roundcorner 6
+skinparam activity {
+  BackgroundColor #EAF2F8
+  BorderColor #2874A6
+  DiamondBackgroundColor #FDEBD0
+  DiamondBorderColor #B9770E
+}
+skinparam component {
+  BackgroundColor #EAF2F8
+  BorderColor #2874A6
+}
+skinparam database {
+  BackgroundColor #D5F5E3
+  BorderColor #1E8449
+}
+
+' Structural overview
+package "Cloud Storage Device" as csd {
+  database "Disk Group 1\n(lower-grade tier)" as dg1
+  database "Disk Group 2\n(higher-grade tier)" as dg2
+  database "Disk Group n\n(higher tiers)" as dgn
+
+  component "Storage Controller" as sc
+  component "LUN Migration Program" as lm
+  component "Storage Management\nProgram" as smp
+}
+
+component "Automated Scaling\nListener" as asl
+component "Pay-Per-Use Monitor" as ppm
+
+actor "Cloud Service\nConsumers" as csc
+
+csc -down-> sc : storage requests
+sc -down-> dg1
+sc -down-> dg2
+sc -down-> dgn
+
+asl -right-> smp : threshold reached
+smp -right-> lm : request migration
+lm -down-> sc : move LUN between\ngraded tiers
+ppm -up-> dg1 : track tier-based\nusage cost
+ppm -up-> dg2
+ppm -up-> dgn
+
+note right of csd
+  Disks (e.g., SATA, SAS, SSD)
+  are organized into graded tiers
+  by I/O performance.
+  LUNs can move up or down to
+  match processing and storage
+  requirements.
+end note
+
+note left of asl
+  Tiering workflow:
+  1. Group disks into tiers (1)(2)
+  2. Place LUNs on a tier (3)
+  3. Listener watches thresholds (4)
+  4. Pay-per-use tracks usage (5)
+  5. Listener informs SMP (6)
+  6. SMP signals LUN migration (7)
+  7. Migration moves LUN with
+     storage controller (8)
+  8. New tier yields new
+     usage price (9)
+end note
+
+@enduml
