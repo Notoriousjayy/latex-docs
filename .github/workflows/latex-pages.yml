@@ -21,6 +21,12 @@ on:
       - '.github/workflows/*.yml'
       - '.github/actions/**'
 
+# Force JS actions still using Node.js 20 internally (e.g. the upload-artifact
+# nested inside upload-pages-artifact@v3) onto Node.js 24. Aligns with the
+# Sept-2025 deprecation notice and the June-2026 forced cutover.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 concurrency:
   group: pages
   cancel-in-progress: true
@@ -49,16 +55,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download built PDFs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: latex-pdfs
           path: site/pdfs
 
       - name: Download rendered diagrams
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         continue-on-error: true   # tolerate runs with no diagrams
         with:
           name: latex-diagrams
@@ -170,10 +176,27 @@ jobs:
       # ----------------------------------------------------------------------
       - name: Generate index.html
         shell: bash
+        env:
+          LAST_UPDATED: "" # populated below; declared here so set -u is happy
         run: |
-          set -euo pipefail
+          set -eu
           mkdir -p site
-          export LAST_UPDATED="$(date -u +'%Y-%m-%d %H:%M UTC')"
+          LAST_UPDATED="$(date -u +'%Y-%m-%d %H:%M UTC')"
+          export LAST_UPDATED
+
+          echo "::group::Pre-flight diagnostics"
+          echo "Python: $(python3 --version 2>&1)"
+          echo "PWD: $(pwd)"
+          echo "Script exists: $([[ -f .github/workflows/build_index.py ]] && echo yes || echo no)"
+          echo "site/ contents (top 20):"
+          find site -maxdepth 3 2>/dev/null | head -20 || echo "  (empty)"
+          echo "site/pdfs PDF count: $(find site/pdfs -name '*.pdf' -type f 2>/dev/null | wc -l)"
+          echo "site/diagrams file count: $(find site/diagrams -type f 2>/dev/null | wc -l)"
+          echo "::endgroup::"
+
+          # Run the generator. Its progress logs go to stderr; the workflow
+          # captures them inline. On failure the script prints a full
+          # traceback to stderr and exits 1, which fails the step cleanly.
           python3 .github/workflows/build_index.py
 
       - name: Copy build logs

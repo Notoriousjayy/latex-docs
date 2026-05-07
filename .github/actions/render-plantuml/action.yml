@@ -2,8 +2,16 @@
 # ============================================================================
 # SINGLE RENDER UNIT - Used by both CI validation and commit workflows
 # ============================================================================
-# This composite action is the DRY solution for PlantUML rendering.
-# It handles PNG, SVG, and optionally JPG generation with strict failure handling.
+# Composite action that handles PNG, SVG, and optionally JPG generation
+# with strict failure handling.
+#
+# v2: skips PUML files without an @startuml directive. Such files are
+# include fragments (shared style sheets, named-component definitions
+# pulled in via !include from other diagrams) and PlantUML correctly
+# rejects them when rendered as standalone diagrams. Skipping them by
+# content is robust against any naming convention; the previous name-
+# based exclusion only handled `plantuml-config.puml` / `config.puml`.
+# ============================================================================
 name: 'Render PlantUML Diagrams'
 description: 'Unified PlantUML renderer with configurable outputs and strict validation'
 
@@ -43,6 +51,9 @@ outputs:
   failed-count:
     description: 'Number of render failures'
     value: ${{ steps.render.outputs.failed_count }}
+  skipped-count:
+    description: 'Number of include-only PUML fragments skipped'
+    value: ${{ steps.render.outputs.skipped_count }}
   rendered-files:
     description: 'JSON array of rendered file paths'
     value: ${{ steps.render.outputs.files }}
@@ -70,22 +81,16 @@ runs:
           graphviz \
           default-jre-headless
 
-        # Install ImageMagick only if JPG generation is requested
         if [[ "${{ inputs.generate-jpg }}" == "true" ]]; then
           sudo apt-get install -y --no-install-recommends imagemagick
           echo "ImageMagick installed for JPG generation"
         fi
 
         # Install PlantUML from the official GitHub releases (latest by default).
-        # Pass inputs.plantuml-version as either:
-        #   - "latest" (default)
-        #   - "1.2026.1" (or "v1.2026.1")
-                PLANTUML_VERSION="${{ inputs.plantuml-version }}"
+        PLANTUML_VERSION="${{ inputs.plantuml-version }}"
         if [[ -z "$PLANTUML_VERSION" || "$PLANTUML_VERSION" == "latest" ]]; then
-          # Prefer GitHub's "latest non-prerelease" endpoint.
           PLANTUML_VERSION="$(curl -fsSL https://api.github.com/repos/plantuml/plantuml/releases/latest | jq -r .tag_name 2>/dev/null || true)"
 
-          # Fallback if GitHub is rate-limited or unavailable.
           if [[ -z "$PLANTUML_VERSION" || "$PLANTUML_VERSION" == "null" ]]; then
             PLANTUML_VERSION="$(curl -fsSL https://plantuml.com/download | sed -nE 's/.*lastest version is (v[0-9.]+).*/\1/p' | head -1 || true)"
           fi
@@ -107,7 +112,6 @@ runs:
         sudo mkdir -p /usr/local/lib/plantuml
         sudo curl -fsSL -L "$JAR_URL" -o /usr/local/lib/plantuml/plantuml.jar
 
-        # Provide a `plantuml` CLI compatible with existing scripts.
         sudo tee /usr/local/bin/plantuml >/dev/null <<'EOF'
         #!/usr/bin/env bash
         set -euo pipefail
@@ -129,13 +133,13 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        
+
         ROOT="${{ inputs.source-dir }}"
         read -ra CONFIG_NAMES <<< "${{ inputs.config-names }}"
         read -ra FORMATS <<< "${{ inputs.formats }}"
         GENERATE_JPG="${{ inputs.generate-jpg }}"
         FAIL_ON_ERROR="${{ inputs.fail-on-error }}"
-        
+
         echo "=== PlantUML Render Configuration ==="
         echo "Source directory: $ROOT"
         echo "Output formats: ${FORMATS[*]}"
@@ -143,7 +147,20 @@ runs:
         echo "Fail on error: $FAIL_ON_ERROR"
         echo "Config file names: ${CONFIG_NAMES[*]}"
         echo ""
-        
+
+        if [[ ! -d "$ROOT" ]]; then
+          echo "Source directory $ROOT does not exist; nothing to render."
+          {
+            echo "diagram_count=0"
+            echo "rendered_count=0"
+            echo "failed_count=0"
+            echo "skipped_count=0"
+            echo 'files=[]'
+            echo "has_changes=false"
+          } >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
         # Function to find nearest config file (searches up directory tree)
         find_config() {
           local start_dir="$1"
@@ -155,70 +172,94 @@ runs:
                 return 0
               fi
             done
-            # Stop at source root or filesystem root
             [[ "$d" == "$ROOT" || "$d" == "." || "$d" == "/" ]] && break
             d="$(dirname "$d")"
           done
           echo ""
         }
-        
-        # Collect all .puml files (excluding config files)
+
+        # Collect all .puml files (excluding config files by name)
         exclude_pattern=""
         for cfg_name in "${CONFIG_NAMES[@]}"; do
           exclude_pattern="${exclude_pattern} ! -name ${cfg_name}"
         done
-        
-        mapfile -d '' PUMLS < <(
+
+        mapfile -d '' CANDIDATES < <(
           eval "find \"$ROOT\" -type f -name '*.puml' $exclude_pattern -print0" 2>/dev/null || true
         )
-        
+
+        # ----------------------------------------------------------------
+        # Filter out files that lack an @startuml directive. These are
+        # include fragments (shared styles, partial diagram pieces) that
+        # are pulled into renderable diagrams via `!include`. PlantUML
+        # rejects them when invoked directly, which surfaces as a render
+        # failure even though the fragment is functioning correctly.
+        # ----------------------------------------------------------------
+        PUMLS=()
+        SKIPPED=()
+        for puml in "${CANDIDATES[@]}"; do
+          [[ -z "$puml" ]] && continue
+          if grep -qE '^[[:space:]]*@startuml' "$puml" 2>/dev/null; then
+            PUMLS+=("$puml")
+          else
+            SKIPPED+=("$puml")
+          fi
+        done
+
         diagram_count=${#PUMLS[@]}
-        echo "Discovered ${diagram_count} PlantUML diagrams"
-        echo ""
-        
+        skipped_count=${#SKIPPED[@]}
+
+        echo "Discovered ${diagram_count} renderable diagram(s)"
+        if (( skipped_count > 0 )); then
+          echo "Skipping ${skipped_count} include-only file(s) (no @startuml directive):"
+          printf '  - %s\n' "${SKIPPED[@]}"
+          echo ""
+        fi
+
         if [[ $diagram_count -eq 0 ]]; then
-          echo "diagram_count=0" >> "$GITHUB_OUTPUT"
-          echo "rendered_count=0" >> "$GITHUB_OUTPUT"
-          echo "failed_count=0" >> "$GITHUB_OUTPUT"
-          echo 'files=[]' >> "$GITHUB_OUTPUT"
-          echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          {
+            echo "diagram_count=0"
+            echo "rendered_count=0"
+            echo "failed_count=0"
+            echo "skipped_count=$skipped_count"
+            echo 'files=[]'
+            echo "has_changes=false"
+          } >> "$GITHUB_OUTPUT"
           exit 0
         fi
-        
+
         rendered_files=()
         rendered_count=0
         failed_count=0
         failed_diagrams=()
-        
+
         for puml in "${PUMLS[@]}"; do
           [[ -z "$puml" ]] && continue
-          
+
           dir="$(dirname "$puml")"
           base="$(basename "$puml" .puml)"
           cfg_abs="$(find_config "$dir")"
-          
+
           echo "────────────────────────────────────────"
           echo "Rendering: ${puml}"
           [[ -n "$cfg_abs" ]] && echo "  Config: ${cfg_abs}"
-          
+
           diagram_failed=false
-          
+
           for fmt in "${FORMATS[@]}"; do
             mkdir -p "${dir}/${fmt}"
             dest="${dir}/${fmt}/${base}.${fmt}"
-            
+
             pushd "$dir" >/dev/null
-            
-            # Run PlantUML
+
             if [[ -n "$cfg_abs" ]]; then
               output="$(plantuml "-t${fmt}" -o "${fmt}" -config "$cfg_abs" "$(basename "$puml")" 2>&1)" || true
             else
               output="$(plantuml "-t${fmt}" -o "${fmt}" "$(basename "$puml")" 2>&1)" || true
             fi
-            
+
             popd >/dev/null
-            
-            # Check for output file
+
             if [[ -f "$dest" ]]; then
               echo "  ✓ ${fmt}/${base}.${fmt}"
               rendered_files+=("$dest")
@@ -227,7 +268,7 @@ runs:
               # Fallback: PlantUML may use @startuml name instead of filename
               alt_base=""
               alt_base="$(awk 'match($0,/^[[:space:]]*@startuml[[:space:]]+([^[:space:]]+)/,m){print m[1]; exit}' "$puml" 2>/dev/null || true)"
-              
+
               if [[ -n "$alt_base" && -f "${dir}/${fmt}/${alt_base}.${fmt}" ]]; then
                 echo "  ✓ ${fmt}/${alt_base}.${fmt} (from @startuml name)"
                 rendered_files+=("${dir}/${fmt}/${alt_base}.${fmt}")
@@ -239,12 +280,12 @@ runs:
               fi
             fi
           done
-          
+
           # Generate JPG from PNG if requested
           if [[ "$GENERATE_JPG" == "true" && -f "${dir}/png/${base}.png" ]]; then
             mkdir -p "${dir}/jpg"
             jpg_dest="${dir}/jpg/${base}.jpg"
-            
+
             if magick "${dir}/png/${base}.png" "$jpg_dest" 2>/dev/null || \
                convert "${dir}/png/${base}.png" "$jpg_dest" 2>/dev/null; then
               echo "  ✓ jpg/${base}.jpg (from PNG)"
@@ -255,32 +296,36 @@ runs:
               diagram_failed=true
             fi
           fi
-          
+
           if [[ "$diagram_failed" == "true" ]]; then
             ((++failed_count))
             failed_diagrams+=("$puml")
           fi
         done
-        
+
         echo ""
         echo "════════════════════════════════════════"
         echo "RENDER SUMMARY"
         echo "════════════════════════════════════════"
-        echo "Source diagrams: $diagram_count"
-        echo "Files rendered:  $rendered_count"
-        echo "Failures:        $failed_count"
-        
+        echo "Source diagrams:        $diagram_count"
+        echo "Include-only skipped:   $skipped_count"
+        echo "Files rendered:         $rendered_count"
+        echo "Failures:               $failed_count"
+
         if [[ $failed_count -gt 0 ]]; then
           echo ""
           echo "Failed diagrams:"
           printf '  - %s\n' "${failed_diagrams[@]}"
         fi
-        
+
         # Set outputs
-        echo "diagram_count=$diagram_count" >> "$GITHUB_OUTPUT"
-        echo "rendered_count=$rendered_count" >> "$GITHUB_OUTPUT"
-        echo "failed_count=$failed_count" >> "$GITHUB_OUTPUT"
-        
+        {
+          echo "diagram_count=$diagram_count"
+          echo "rendered_count=$rendered_count"
+          echo "failed_count=$failed_count"
+          echo "skipped_count=$skipped_count"
+        } >> "$GITHUB_OUTPUT"
+
         if [[ ${#rendered_files[@]} -gt 0 ]]; then
           printf 'files=%s\n' "$(printf '%s\n' "${rendered_files[@]}" | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
           echo "has_changes=true" >> "$GITHUB_OUTPUT"
@@ -288,8 +333,7 @@ runs:
           echo 'files=[]' >> "$GITHUB_OUTPUT"
           echo "has_changes=false" >> "$GITHUB_OUTPUT"
         fi
-        
-        # Exit with failure if strict mode is enabled and there were failures
+
         if [[ "$FAIL_ON_ERROR" == "true" && $failed_count -gt 0 ]]; then
           echo ""
           echo "::error::$failed_count diagram(s) failed to render"
