@@ -177,27 +177,606 @@ jobs:
       - name: Generate index.html
         shell: bash
         env:
-          LAST_UPDATED: "" # populated below; declared here so set -u is happy
+          LAST_UPDATED: ""    # declared so set -u stays happy until assignment
         run: |
           set -eu
           mkdir -p site
           LAST_UPDATED="$(date -u +'%Y-%m-%d %H:%M UTC')"
           export LAST_UPDATED
 
+          # ----------------------------------------------------------------
+          # Pre-flight diagnostics. Helps debug surprises like "the script
+          # file isn't in the repo" or "the artifact never landed".
+          # ----------------------------------------------------------------
           echo "::group::Pre-flight diagnostics"
-          echo "Python: $(python3 --version 2>&1)"
-          echo "PWD: $(pwd)"
-          echo "Script exists: $([[ -f .github/workflows/build_index.py ]] && echo yes || echo no)"
-          echo "site/ contents (top 20):"
-          find site -maxdepth 3 2>/dev/null | head -20 || echo "  (empty)"
-          echo "site/pdfs PDF count: $(find site/pdfs -name '*.pdf' -type f 2>/dev/null | wc -l)"
+          echo "Python:   $(python3 --version 2>&1)"
+          echo "PWD:      $(pwd)"
+          echo "site/ contents (top 30):"
+          find site -maxdepth 3 2>/dev/null | head -30 || echo "  (empty)"
+          echo "site/pdfs PDF count:     $(find site/pdfs -name '*.pdf' -type f 2>/dev/null | wc -l)"
           echo "site/diagrams file count: $(find site/diagrams -type f 2>/dev/null | wc -l)"
           echo "::endgroup::"
 
-          # Run the generator. Its progress logs go to stderr; the workflow
-          # captures them inline. On failure the script prints a full
-          # traceback to stderr and exits 1, which fails the step cleanly.
-          python3 .github/workflows/build_index.py
+          # ----------------------------------------------------------------
+          # The catalog generator is inlined here (rather than kept as a
+          # separate .py file) so this workflow is self-contained — there
+          # is no risk of the workflow being committed without its helper
+          # script. The script is written to $RUNNER_TEMP and executed.
+          # All progress is logged to stderr; on failure a full traceback
+          # is printed and the script exits 1.
+          # ----------------------------------------------------------------
+          SCRIPT="$RUNNER_TEMP/build_index.py"
+          cat > "$SCRIPT" <<'BUILD_INDEX_PY_EOF'
+          #!/usr/bin/env python3
+          """
+          Generate site/index.html for GitHub Pages.
+          
+          Walks site/pdfs/ and site/diagrams/ and emits a single unified catalog
+          page. Doing this in Python (rather than nested bash heredocs) keeps the
+          HTML generation, sorting, deduplication, and slugging readable.
+          
+          Inputs (from environment):
+              LAST_UPDATED   ← timestamp string injected by the workflow
+          
+          Output:
+              site/index.html
+          
+          This script is hardened against:
+          - Missing site/pdfs or site/diagrams directories
+          - Empty category directories
+          - Non-UTF-8 filenames (caught and reported, not crashed)
+          - Permission errors during traversal (logged, that subtree skipped)
+          
+          Failure mode:
+              On any unhandled exception, a full traceback is written to stderr
+              and the process exits with code 1. Exit code 2 is reserved for
+              "script invoked with bad arguments" (we have none, so never used).
+          """
+          
+          from __future__ import annotations
+          
+          import html
+          import os
+          import re
+          import sys
+          import traceback
+          from collections import defaultdict
+          from pathlib import Path
+          from typing import Iterable
+          
+          SITE = Path("site")
+          PDFS_ROOT = SITE / "pdfs"
+          DIAGRAMS_ROOT = SITE / "diagrams"
+          
+          # Legacy alias paths to hide from the catalog (still served, just not indexed).
+          LEGACY_PDF_HIDES = {
+              Path("site/pdfs/architecture/views-and-beyond/component-connector-viewtype/pipe-and-filter-style.pdf"),
+          }
+          
+          LAST_UPDATED = os.environ.get("LAST_UPDATED", "")
+          
+          
+          def log(msg: str) -> None:
+              """Verbose progress to stderr — keeps stdout clean for HTML."""
+              print(f"[build_index] {msg}", file=sys.stderr, flush=True)
+          
+          
+          def slugify(s: str) -> str:
+              s = s.lower()
+              s = re.sub(r"[^a-z0-9]+", "-", s)
+              s = re.sub(r"-+", "-", s).strip("-")
+              return s or "section"
+          
+          
+          def safe_iter_dir(p: Path) -> Iterable[Path]:
+              """Iterate a directory robustly: log and skip on permission/OS errors."""
+              try:
+                  yield from p.iterdir()
+              except (PermissionError, OSError) as e:
+                  log(f"WARN: cannot iterate {p}: {e}")
+          
+          
+          def safe_rglob(p: Path, pattern: str) -> Iterable[Path]:
+              """Recursive glob that swallows OSErrors mid-walk and keeps going."""
+              try:
+                  yield from p.rglob(pattern)
+              except (PermissionError, OSError) as e:
+                  log(f"WARN: rglob({p}, {pattern!r}) raised {e}")
+          
+          
+          def find_categories(root: Path) -> list[str]:
+              if not root.is_dir():
+                  return []
+              cats: list[str] = []
+              for p in safe_iter_dir(root):
+                  try:
+                      if p.is_dir() and not p.name.startswith("."):
+                          cats.append(p.name)
+                  except OSError as e:
+                      log(f"WARN: stat failed on {p}: {e}")
+              return sorted(cats)
+          
+          
+          def find_pdfs(root: Path) -> list[Path]:
+              """Return all .pdf files under root, excluding legacy alias paths."""
+              if not root.is_dir():
+                  return []
+              found: list[Path] = []
+              for p in safe_rglob(root, "*.pdf"):
+                  try:
+                      if p.is_file() and p not in LEGACY_PDF_HIDES:
+                          found.append(p)
+                  except OSError as e:
+                      log(f"WARN: stat failed on {p}: {e}")
+              return sorted(found)
+          
+          
+          def find_diagrams(root: Path) -> dict[Path, dict[str, dict[str, Path]]]:
+              """
+              Return {logical_dir: {basename: {fmt: path}}} for diagrams.
+          
+              `logical_dir` is the parent of the format folder (png/svg/jpg).
+              Each diagram name groups its PNG/SVG/JPG outputs together.
+              """
+              out: dict[Path, dict[str, dict[str, Path]]] = defaultdict(lambda: defaultdict(dict))
+              if not root.is_dir():
+                  return {}
+          
+              for fmt_dir in safe_rglob(root, "*"):
+                  try:
+                      if not fmt_dir.is_dir():
+                          continue
+                  except OSError:
+                      continue
+                  if fmt_dir.name not in ("png", "svg", "jpg"):
+                      continue
+                  logical_dir = fmt_dir.parent
+                  for f in safe_iter_dir(fmt_dir):
+                      try:
+                          if not f.is_file():
+                              continue
+                      except OSError:
+                          continue
+                      ext = f.suffix.lower().lstrip(".")
+                      if ext not in ("png", "svg", "jpg"):
+                          continue
+                      out[logical_dir][f.stem][ext] = f
+          
+              sorted_out: dict[Path, dict[str, dict[str, Path]]] = {}
+              for logical_dir in sorted(out.keys()):
+                  sorted_out[logical_dir] = {
+                      name: out[logical_dir][name] for name in sorted(out[logical_dir].keys())
+                  }
+              return sorted_out
+          
+          
+          def html_escape(s: str) -> str:
+              return html.escape(s, quote=True)
+          
+          
+          # -----------------------------------------------------------------------------
+          # Section rendering
+          # -----------------------------------------------------------------------------
+          def render_pdf_section(category: str, parts: list[str]) -> int:
+              """Append PDF entries for a single category to `parts`. Returns count."""
+              cat_dir = PDFS_ROOT / category
+              pdfs = find_pdfs(cat_dir)
+              if not pdfs:
+                  return 0
+          
+              by_parent: dict[Path, list[Path]] = defaultdict(list)
+              for pdf in pdfs:
+                  by_parent[pdf.parent].append(pdf)
+          
+              parts.append(
+                  f'<section class="cat-section pdf-section" id="pdf-{slugify(category)}">'
+              )
+              parts.append(f'  <h2>📄 {html_escape(category)}</h2>')
+              parts.append(f'  <p class="meta">{len(pdfs)} document(s)</p>')
+          
+              for parent in sorted(by_parent.keys()):
+                  try:
+                      rel_parent = parent.relative_to(PDFS_ROOT)
+                  except ValueError:
+                      log(f"WARN: PDF parent {parent} not under {PDFS_ROOT}, skipping")
+                      continue
+                  rel_parts = rel_parent.parts
+                  depth = len(rel_parts)
+          
+                  if depth > 1:
+                      heading = " / ".join(rel_parts[1:])
+                      parts.append(f'  <h3 class="subhead">{html_escape(heading)}</h3>')
+          
+                  parts.append('  <ul class="files">')
+                  for pdf in sorted(by_parent[parent]):
+                      try:
+                          rel = pdf.relative_to(PDFS_ROOT)
+                      except ValueError:
+                          continue
+                      href = "/".join(("pdfs",) + rel.parts)
+                      parts.append(
+                          f'    <li>'
+                          f'<a class="pdf" href="{html_escape(href)}" '
+                          f'title="{html_escape(href)}">{html_escape(pdf.name)}</a>'
+                          f'<span class="path">{html_escape(href)}</span>'
+                          f'</li>'
+                      )
+                  parts.append("  </ul>")
+          
+              parts.append("</section>")
+              return len(pdfs)
+          
+          
+          def render_diagram_section(category: str, parts: list[str]) -> int:
+              """Append PlantUML diagram entries for a single category. Returns count."""
+              cat_dir = DIAGRAMS_ROOT / category
+              diagrams = find_diagrams(cat_dir)
+              if not diagrams:
+                  return 0
+          
+              total_diagrams = sum(len(d) for d in diagrams.values())
+          
+              parts.append(
+                  f'<section class="cat-section diagram-section" id="diagram-{slugify(category)}">'
+              )
+              parts.append(f'  <h2>🖼 {html_escape(category)} <span class="tag">diagrams</span></h2>')
+              parts.append(f'  <p class="meta">{total_diagrams} diagram(s)</p>')
+          
+              for logical_dir in diagrams.keys():
+                  try:
+                      rel = logical_dir.relative_to(DIAGRAMS_ROOT)
+                  except ValueError:
+                      log(f"WARN: diagram dir {logical_dir} not under {DIAGRAMS_ROOT}, skipping")
+                      continue
+                  rel_parts = rel.parts
+                  if len(rel_parts) > 1:
+                      heading = " / ".join(rel_parts[1:])
+                      parts.append(f'  <h3 class="subhead">{html_escape(heading)}</h3>')
+          
+                  parts.append('  <div class="diagram-grid">')
+                  for name, formats in diagrams[logical_dir].items():
+                      preview_src: str | None = None
+                      png_href: str | None = None
+                      svg_href: str | None = None
+                      jpg_href: str | None = None
+          
+                      if "svg" in formats:
+                          try:
+                              rel_svg = formats["svg"].relative_to(DIAGRAMS_ROOT)
+                              svg_href = "/".join(("diagrams",) + rel_svg.parts)
+                              preview_src = svg_href
+                          except ValueError:
+                              pass
+                      if "png" in formats:
+                          try:
+                              rel_png = formats["png"].relative_to(DIAGRAMS_ROOT)
+                              png_href = "/".join(("diagrams",) + rel_png.parts)
+                              if preview_src is None:
+                                  preview_src = png_href
+                          except ValueError:
+                              pass
+                      if "jpg" in formats:
+                          try:
+                              rel_jpg = formats["jpg"].relative_to(DIAGRAMS_ROOT)
+                              jpg_href = "/".join(("diagrams",) + rel_jpg.parts)
+                          except ValueError:
+                              pass
+          
+                      parts.append('    <figure class="diagram-card">')
+                      if preview_src:
+                          parts.append(
+                              f'      <a class="diagram-preview-link" '
+                              f'href="{html_escape(preview_src)}" target="_blank" rel="noopener" '
+                              f'title="{html_escape(name)}">'
+                              f'<img class="diagram-preview" loading="lazy" '
+                              f'src="{html_escape(preview_src)}" '
+                              f'alt="{html_escape(name)}" /></a>'
+                          )
+                      parts.append(
+                          f'      <figcaption><span class="diagram-name">'
+                          f'{html_escape(name)}</span>'
+                      )
+                      links = []
+                      if png_href is not None:
+                          links.append(f'<a class="fmt png" href="{html_escape(png_href)}">PNG</a>')
+                      if svg_href is not None:
+                          links.append(f'<a class="fmt svg" href="{html_escape(svg_href)}">SVG</a>')
+                      if jpg_href is not None:
+                          links.append(f'<a class="fmt jpg" href="{html_escape(jpg_href)}">JPG</a>')
+                      parts.append(
+                          '      <span class="diagram-links">' + " ".join(links) + "</span>"
+                      )
+                      parts.append("      </figcaption>")
+                      parts.append("    </figure>")
+                  parts.append("  </div>")
+          
+              parts.append("</section>")
+              return total_diagrams
+          
+          
+          # -----------------------------------------------------------------------------
+          # Main
+          # -----------------------------------------------------------------------------
+          def build_html() -> str:
+              log(f"cwd={os.getcwd()}")
+              log(f"PDFS_ROOT={PDFS_ROOT.resolve() if PDFS_ROOT.exists() else '(missing)'}")
+              log(f"DIAGRAMS_ROOT={DIAGRAMS_ROOT.resolve() if DIAGRAMS_ROOT.exists() else '(missing)'}")
+          
+              log("Phase 1: discovering PDF categories")
+              pdf_categories = find_categories(PDFS_ROOT)
+              log(f"  found {len(pdf_categories)} PDF category(ies): {pdf_categories}")
+          
+              log("Phase 2: discovering diagram categories")
+              diagram_categories = find_categories(DIAGRAMS_ROOT)
+              log(f"  found {len(diagram_categories)} diagram category(ies): {diagram_categories}")
+          
+              log("Phase 3: counting totals")
+              pdf_total = 0
+              for c in pdf_categories:
+                  n = len(find_pdfs(PDFS_ROOT / c))
+                  log(f"  PDFs in {c}: {n}")
+                  pdf_total += n
+          
+              diagram_total = 0
+              diagram_png = 0
+              diagram_svg = 0
+              for c in diagram_categories:
+                  d = find_diagrams(DIAGRAMS_ROOT / c)
+                  cat_total = 0
+                  for entries in d.values():
+                      cat_total += len(entries)
+                      diagram_total += len(entries)
+                      for fmts in entries.values():
+                          if "png" in fmts:
+                              diagram_png += 1
+                          if "svg" in fmts:
+                              diagram_svg += 1
+                  log(f"  diagrams in {c}: {cat_total}")
+          
+              log(f"Totals: pdfs={pdf_total}, diagrams={diagram_total} (png={diagram_png}, svg={diagram_svg})")
+          
+              log("Phase 4: rendering HTML head")
+              head = f"""<!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>LaTeX Docs &amp; Diagrams</title>
+            <style>
+              :root {{
+                --bg: #fafafa;
+                --text: #222;
+                --muted: #666;
+                --accent: #0066cc;
+                --accent2: #0e7490;
+                --border: #ddd;
+                --hover: #f0f0f0;
+                --panel: #ffffff;
+                --tag-bg: #eef2ff;
+                --tag-fg: #1f2a44;
+              }}
+              @media (prefers-color-scheme: dark) {{
+                :root {{
+                  --bg: #121212;
+                  --text: #e8e8e8;
+                  --muted: #b0b0b0;
+                  --accent: #4da6ff;
+                  --accent2: #4dd0e1;
+                  --border: #3a3a3a;
+                  --hover: #1f1f1f;
+                  --panel: #161616;
+                  --tag-bg: #25304a;
+                  --tag-fg: #d6deff;
+                }}
+              }}
+              * {{ box-sizing: border-box; }}
+              body {{
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                margin: 0;
+                background: var(--bg);
+                color: var(--text);
+                line-height: 1.55;
+              }}
+              .wrap {{ max-width: 1180px; margin: 0 auto; padding: 2rem 1rem 3rem; }}
+              header {{ border-bottom: 2px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.25rem; }}
+              .title {{ font-size: 2rem; margin: 0; font-weight: 650; }}
+              .sub {{ color: var(--muted); margin: 0.5rem 0 0; }}
+              .sub code {{ background: var(--hover); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }}
+              .topbar {{ display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; align-items: center; justify-content: space-between; margin: 1rem 0 1.25rem; }}
+              .stats {{ display: flex; gap: 0.75rem; flex-wrap: wrap; }}
+              .stat {{ background: var(--panel); border: 1px solid var(--border); padding: 0.75rem 0.9rem; border-radius: 10px; min-width: 130px; }}
+              .stat-value {{ font-size: 1.35rem; font-weight: 700; }}
+              .stat-label {{ font-size: 0.85rem; color: var(--muted); }}
+              .search input {{ width: min(520px, 100%); padding: 0.65rem 0.75rem; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); color: var(--text); outline: none; }}
+              .search input:focus {{ border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }}
+              nav.jump {{ background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 0.85rem 0.95rem; margin: 0 0 1.5rem; }}
+              nav.jump .label {{ font-weight: 600; margin: 0 0 0.5rem; font-size: 0.9rem; color: var(--muted); }}
+              nav.jump .group {{ margin-bottom: 0.4rem; }}
+              nav.jump .group-label {{ display: inline-block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-right: 0.5rem; }}
+              nav.jump a {{ color: var(--accent); text-decoration: none; margin-right: 0.9rem; white-space: nowrap; font-size: 0.92rem; }}
+              nav.jump a:hover {{ text-decoration: underline; }}
+              h2 {{ margin: 2rem 0 0.4rem; font-size: 1.5rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }}
+              h3.subhead {{ margin: 1.2rem 0 0.4rem; font-size: 1.05rem; color: var(--muted); border-bottom: 1px dashed var(--border); padding-bottom: 0.25rem; font-weight: 600; }}
+              .tag {{ font-size: 0.75rem; padding: 0.15em 0.55em; border-radius: 999px; background: var(--tag-bg); color: var(--tag-fg); vertical-align: middle; margin-left: 0.4rem; font-weight: 500; }}
+              .meta {{ color: var(--muted); margin: 0.1rem 0 0.6rem; font-size: 0.9rem; }}
+              ul.files {{ list-style: none; padding: 0; margin: 0.4rem 0 1.2rem; }}
+              ul.files li {{ padding: 0.4rem 0.6rem; border-radius: 6px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; }}
+              ul.files li:hover {{ background: var(--hover); }}
+              ul.files li.hidden {{ display: none; }}
+              a.pdf {{ color: var(--accent); text-decoration: none; font-weight: 500; }}
+              a.pdf:hover {{ text-decoration: underline; }}
+              .path {{ color: var(--muted); font-size: 0.8rem; word-break: break-all; }}
+              .diagram-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.85rem; margin: 0.5rem 0 1.2rem; }}
+              .diagram-card {{ background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 0.6rem; margin: 0; display: flex; flex-direction: column; }}
+              .diagram-card.hidden {{ display: none; }}
+              .diagram-preview-link {{ display: block; }}
+              .diagram-preview {{ width: 100%; height: 140px; object-fit: contain; background: #fff; border-radius: 6px; border: 1px solid var(--border); }}
+              @media (prefers-color-scheme: dark) {{ .diagram-preview {{ background: #f5f5f5; }} }}
+              .diagram-card figcaption {{ display: flex; flex-direction: column; gap: 0.3rem; padding: 0.5rem 0.1rem 0.1rem; font-size: 0.85rem; }}
+              .diagram-name {{ word-break: break-all; color: var(--text); }}
+              .diagram-links {{ display: flex; gap: 0.4rem; flex-wrap: wrap; }}
+              a.fmt {{ font-size: 0.72rem; text-decoration: none; padding: 0.15em 0.55em; border-radius: 999px; border: 1px solid var(--border); color: var(--accent); }}
+              a.fmt:hover {{ background: var(--hover); }}
+              a.fmt.svg {{ color: var(--accent2); }}
+              .updated {{ margin-top: 2.5rem; color: var(--muted); font-size: 0.85rem; text-align: center; }}
+              .hint {{ color: var(--muted); font-size: 0.85rem; margin-left: 0.5rem; }}
+            </style>
+          </head>
+          <body>
+          <div class="wrap">
+            <header>
+              <h1 class="title">📚 LaTeX Documents &amp; PlantUML Diagrams</h1>
+              <p class="sub">Published from <code>src/**/*.tex</code> and <code>src/**/*.puml</code> on the <code>main</code> branch.</p>
+            </header>
+            <div class="topbar">
+              <div class="stats">
+                <div class="stat">
+                  <div class="stat-value">{pdf_total}</div>
+                  <div class="stat-label">Documents</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-value">{diagram_total}</div>
+                  <div class="stat-label">Diagrams</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-value">{diagram_png}</div>
+                  <div class="stat-label">PNG files</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-value">{diagram_svg}</div>
+                  <div class="stat-label">SVG files</div>
+                </div>
+              </div>
+              <div class="search">
+                <input id="q" type="search" placeholder="Filter by filename, path, or diagram name..." autocomplete="off" />
+                <span class="hint" id="count"></span>
+              </div>
+            </div>
+          """
+          
+              parts: list[str] = [head]
+          
+              log("Phase 5: building jump nav")
+              parts.append('<nav class="jump">')
+              parts.append('  <div class="label">Jump to</div>')
+              if pdf_categories:
+                  parts.append('  <div class="group">')
+                  parts.append('    <span class="group-label">📄 Documents</span>')
+                  for c in pdf_categories:
+                      if find_pdfs(PDFS_ROOT / c):
+                          parts.append(f'    <a href="#pdf-{slugify(c)}">{html_escape(c)}</a>')
+                  parts.append("  </div>")
+              if diagram_categories:
+                  parts.append('  <div class="group">')
+                  parts.append('    <span class="group-label">🖼 Diagrams</span>')
+                  for c in diagram_categories:
+                      if find_diagrams(DIAGRAMS_ROOT / c):
+                          parts.append(f'    <a href="#diagram-{slugify(c)}">{html_escape(c)}</a>')
+                  parts.append("  </div>")
+              parts.append("</nav>")
+          
+              parts.append('<main id="content">')
+          
+              log("Phase 6: rendering PDF sections")
+              if pdf_categories:
+                  parts.append('<h1 class="title" style="margin-top:1rem; font-size:1.5rem; border-bottom:none;">📄 Documents</h1>')
+                  for c in pdf_categories:
+                      try:
+                          rendered = render_pdf_section(c, parts)
+                          log(f"  rendered PDF section {c}: {rendered} entries")
+                      except Exception as e:
+                          log(f"ERROR rendering PDF section {c}: {e!r} — skipping")
+                          traceback.print_exc(file=sys.stderr)
+          
+              log("Phase 7: rendering diagram sections")
+              if diagram_categories:
+                  parts.append('<h1 class="title" style="margin-top:2.5rem; font-size:1.5rem; border-bottom:none;">🖼 PlantUML Diagrams</h1>')
+                  for c in diagram_categories:
+                      try:
+                          rendered = render_diagram_section(c, parts)
+                          log(f"  rendered diagram section {c}: {rendered} entries")
+                      except Exception as e:
+                          log(f"ERROR rendering diagram section {c}: {e!r} — skipping")
+                          traceback.print_exc(file=sys.stderr)
+          
+              parts.append("</main>")
+          
+              log("Phase 8: appending footer + scripts")
+              footer = f"""
+            <p class="updated">Last updated: {html_escape(LAST_UPDATED)}</p>
+          </div>
+          <script>
+            (function () {{
+              const input = document.getElementById('q');
+              const count = document.getElementById('count');
+          
+              function normalize(s) {{ return (s || '').toLowerCase(); }}
+          
+              function update() {{
+                const q = normalize(input.value).trim();
+          
+                const items = document.querySelectorAll('ul.files li');
+                let visible = 0;
+                items.forEach(li => {{
+                  const text = normalize(li.textContent);
+                  const ok = !q || text.includes(q);
+                  li.classList.toggle('hidden', !ok);
+                  if (ok) visible++;
+                }});
+          
+                const cards = document.querySelectorAll('.diagram-card');
+                let visibleCards = 0;
+                cards.forEach(card => {{
+                  const text = normalize(card.textContent);
+                  const ok = !q || text.includes(q);
+                  card.classList.toggle('hidden', !ok);
+                  if (ok) visibleCards++;
+                }});
+          
+                const total = items.length + cards.length;
+                const shown = visible + visibleCards;
+                count.textContent = q ? shown + ' match(es)' : total + ' item(s)';
+              }}
+          
+              input.addEventListener('input', update);
+              update();
+            }})();
+          </script>
+          </body>
+          </html>
+          """
+              parts.append(footer)
+          
+              log(f"Phase 9: joining {len(parts)} parts into final HTML")
+              return "\n".join(parts)
+          
+          
+          def main() -> int:
+              try:
+                  html_out = build_html()
+              except Exception:
+                  log("FATAL: build_html() raised an unhandled exception:")
+                  traceback.print_exc(file=sys.stderr)
+                  return 1
+          
+              try:
+                  SITE.mkdir(parents=True, exist_ok=True)
+                  out_file = SITE / "index.html"
+                  out_file.write_text(html_out, encoding="utf-8")
+              except Exception:
+                  log("FATAL: failed writing site/index.html:")
+                  traceback.print_exc(file=sys.stderr)
+                  return 1
+          
+              log(f"Generated {out_file} ({len(html_out)} bytes)")
+              return 0
+          
+          
+          if __name__ == "__main__":
+              sys.exit(main())
+          BUILD_INDEX_PY_EOF
+
+          python3 "$SCRIPT"
 
       - name: Copy build logs
         run: |
