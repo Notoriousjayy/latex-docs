@@ -1,0 +1,223 @@
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=0.8in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+
+\hypersetup{
+  hidelinks,
+  pdfauthor={OpenAI},
+  pdftitle={Harness SaaS Continuous Delivery Discovery Handout},
+  pdfsubject={Platform engineering interview guide},
+  pdfcreator={ChatGPT}
+}
+
+\setlength{\parindent}{0pt}
+\setlength{\emergencystretch}{3em}
+\raggedbottom
+\setlength{\headheight}{14pt}
+
+\definecolor{HeadingBlue}{HTML}{183A66}
+\definecolor{RuleGray}{HTML}{C8D1DC}
+\definecolor{AccentGray}{HTML}{4E5B6A}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Harness CD Discovery Handout}
+\rhead{Platform Engineering Working Session}
+\cfoot{\thepage\ of \pageref*{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\newcommand{\doccluster}[1]{%
+  {\small\textcolor{AccentGray}{\textbf{Official Harness docs:} #1}}\par\vspace{0.4em}
+}
+
+\newcommand{\qblock}[5]{%
+  \textbf{#1}\par
+  \begin{itemize}[leftmargin=1.5em,itemsep=0.2em,topsep=0.3em]
+    \item[--] \textbf{Why it matters:} #2
+    \item[--] \textbf{Strong answer:} #3
+    \item[--] \textbf{Risky answer:} #4
+    \item[--] \textbf{Harness doc topic:} #5
+  \end{itemize}
+  \vspace{0.4em}
+}
+
+\begin{document}
+
+{\LARGE\bfseries Harness SaaS Continuous Delivery Discovery Handout}\par
+\vspace{0.25em}
+{\large Platform-level meeting questions for a working session with a platform team member}\par
+\vspace{0.5em}
+\textbf{Scope:} Official Harness documentation only. No blogs, forums, Reddit, or inferred internal process details. Where Harness documentation does not prescribe an organizational decision, this handout treats that gap as a discovery target rather than filling it in.\par
+\vspace{0.6em}
+\hrule height 0.8pt
+\vspace{0.7em}
+
+\section*{Pre-read briefing}
+\doccluster{\href{https://developer.harness.io/docs/continuous-delivery/overview}{Overview}; \href{https://developer.harness.io/docs/continuous-delivery/x-platform-cd-features/services/services-overview}{Services overview}; \href{https://developer.harness.io/docs/continuous-delivery/x-platform-cd-features/environments/environment-overview}{Environments overview}; \href{https://developer.harness.io/docs/platform/delegates/delegate-concepts/delegate-overview/}{Overview}; \href{https://developer.harness.io/docs/platform/get-started/overview/}{Overview}; \href{https://developer.harness.io/docs/platform/pipelines/input-sets}{Input sets and overlays}; \href{https://developer.harness.io/docs/category/triggers/}{Triggers}; \href{https://developer.harness.io/docs/platform/templates/template}{Templates overview}; \href{https://developer.harness.io/docs/platform/role-based-access-control/rbac-in-harness/}{Role-based access control (RBAC) in Harness}; \href{https://developer.harness.io/docs/platform/governance/policy-as-code/harness-governance-overview}{Harness Policy As Code overview}.}
+
+\begin{itemize}[leftmargin=1.5em,itemsep=0.25em]
+  \item Harness CD focuses on deployment: it pulls pre-built artifacts and deploys them to target infrastructure.
+  \item A \textbf{Service} is what you deploy and contains artifacts, manifests or specifications, configuration, and service-specific variables.
+  \item An \textbf{Environment} is where you deploy and is categorized as \textbf{prod} or \textbf{non-prod}.
+  \item Each Environment contains one or more \textbf{Infrastructure Definitions} that represent the physical targets.
+  \item In Harness CD, a stage models \textbf{what} you deploy through Services, \textbf{where} you deploy through Environments, and \textbf{how} you deploy through execution steps.
+  \item Harness \textbf{Delegates} run in your network or VPC and execute deployment and integration tasks on behalf of Harness Manager.
+  \item \textbf{Git Experience} can manage pipelines, templates, and input sets in Git, but it does not sync every platform object.
+  \item \textbf{Input sets} and overlays pre-populate runtime values for repeatable executions.
+  \item \textbf{Triggers} can start pipelines from Git events, schedules, artifacts, webhooks, and other supported events.
+  \item \textbf{Templates}, \textbf{RBAC}, and \textbf{Policy as Code} are the main Harness-native levers for consistency, control, and governance.
+\end{itemize}
+
+\section*{1. CD operating model and ownership}
+\doccluster{\href{https://developer.harness.io/docs/continuous-delivery/overview}{Overview}; \href{https://developer.harness.io/docs/continuous-delivery/manage-deployments/deployment-concepts}{Deployment concepts and strategies}; \href{https://developer.harness.io/docs/platform/role-based-access-control/rbac-in-harness/}{Role-based access control (RBAC) in Harness}.}
+
+\qblock{1. Where does CI end and CD begin in our operating model?}{Harness documents a real boundary: CD deploys pre-built artifacts, while CI is the separate build-and-test capability. This question exposes the artifact handoff, evidence expectations, and release control point.}{"CI ends at a versioned immutable artifact plus release evidence. CD starts with artifact selection, environment targeting, approvals, and deployment execution."}{"Anything after merge is CD."}{Deployment concepts and strategies}
+
+\qblock{2. Who owns the shared CD platform layer versus application-team pipeline content?}{Harness supports account, organization, and project scopes, but the ownership split is an internal design choice. This question surfaces centralized versus delegated administration.}{"Platform owns delegates, shared templates, guardrails, RBAC patterns, and core approval policy. Teams own service-specific configuration within approved patterns."}{"Each team manages everything in its project however it wants."}{Role-based access control (RBAC) in Harness}
+
+\section*{2. Pipeline architecture and stage design}
+\doccluster{\href{https://developer.harness.io/docs/continuous-delivery/manage-deployments/deployment-concepts}{Deployment concepts and strategies}; \href{https://developer.harness.io/docs/continuous-delivery/cd-onboarding/new-user/cd-pipeline-modeling-overview}{4. Deployment Pipeline Modeling Overview}; \href{https://developer.harness.io/docs/continuous-delivery/x-platform-cd-features/advanced/multiserv-multienv/}{Use multiple services and environments in a deployment}.}
+
+\qblock{3. What is the default stage pattern for a production-capable deployment pipeline?}{Harness lets teams compose stages flexibly. A platform team should still define a default architecture to avoid pipeline drift.}{"We standardize stage order, required gates, and failure handling by workload class."}{"Teams design their own stage sequence from scratch."}{Deployment concepts and strategies}
+
+\qblock{4. When do we allow multi-service or multi-environment deployments instead of one service per deployment path?}{Harness supports these patterns but documents behavior and limitations. This question reveals how much coupling the platform is willing to tolerate.}{"Single-service is the default. Bundled deployments are exceptions with explicit justification and ownership."}{"We group many services into one pipeline because it is simpler to click once."}{Use multiple services and environments in a deployment}
+
+\section*{3. Service, environment, and infrastructure modeling}
+\doccluster{\href{https://developer.harness.io/docs/continuous-delivery/x-platform-cd-features/services/services-overview}{Services overview}; \href{https://developer.harness.io/docs/continuous-delivery/x-platform-cd-features/environments/environment-overview}{Environments overview}; \href{https://developer.harness.io/docs/continuous-delivery/overview}{Overview}.}
+
+\qblock{5. What is the rule for defining a Harness Service in this organization?}{Harness says a Service represents what you are deploying, but it does not define your internal taxonomy. This question forces a deployable-unit model.}{"A Service maps to one independently deployable workload with a clear artifact and manifest boundary."}{"A Service is whatever a team happens to call a service."}{Services overview}
+
+\qblock{6. How do we model lifecycle environments, and what makes an environment prod versus non-prod?}{Harness environment type is first-class. The answer should not rely only on naming conventions.}{"Environment type is authoritative and tied to approvals, RBAC, and promotion controls."}{"If the name contains prod, we treat it as production."}{Environments overview}
+
+\qblock{7. When do we add a new Infrastructure Definition versus a new Environment?}{Harness environments can contain multiple Infrastructure Definitions. This question exposes scoping discipline and reuse strategy.}{"A new infrastructure definition is used for another physical target within the same logical environment; a new environment represents a different lifecycle or risk boundary."}{"We create new environments whenever there is another namespace or cluster."}{Overview / Environments overview}
+
+\section*{4. Delegate placement, connectivity, and execution boundaries}
+\doccluster{\href{https://developer.harness.io/docs/platform/delegates/delegate-concepts/delegate-overview/}{Overview}; \href{https://developer.harness.io/docs/platform/delegates/manage-delegates/select-delegates-with-selectors}{Use delegate selectors}; \href{https://developer.harness.io/docs/platform/delegates/delegate-concepts/delegate-requirements}{Delegate system requirements}; \href{https://developer.harness.io/docs/platform/reference-architectures/delegate-architecture-bestpractices}{Harness Delegate Architecture Best Practices}.}
+
+\qblock{8. Where do delegates run today, and which network or trust boundary is each one expected to cross?}{Delegates are the execution plane. Their placement determines which infrastructure and integrated systems CD can reach.}{"Delegate placement aligns to trust boundaries, network reachability, and operational ownership."}{"We have a shared delegate that can reach most things."}{Overview}
+
+\qblock{9. What blast radius is acceptable for a delegate, and when do we require delegate selectors?}{Harness supports selectors for targeted execution. This question tests whether routing and access boundaries are deliberate or ad hoc.}{"Selectors are used intentionally for access segregation, not as a troubleshooting patch."}{"We add selectors whenever something fails to find the right delegate."}{Use delegate selectors}
+
+\qblock{10. How do we scale delegates for concurrency, maintenance, and failure?}{Harness documents delegate resource planning and concurrent execution considerations. This question surfaces whether capacity planning is proactive.}{"We have a scaling model, upgrade process, and failure replacement plan tied to concurrency expectations."}{"We add another delegate only after queues and failures become visible."}{Delegate system requirements}
+
+\section*{5. Deployment strategy, promotion flow, and rollback design}
+\doccluster{\href{https://developer.harness.io/docs/continuous-delivery/manage-deployments/deployment-concepts}{Deployment concepts and strategies}; \href{https://developer.harness.io/docs/platform/approvals/adding-harness-approval-stages}{Using manual Harness approval stages}; \href{https://developer.harness.io/docs/platform/approvals/custom-approvals}{Adding custom approval stages and steps}.}
+
+\qblock{11. Which deployment strategies are approved for which workload types, and who decides the default?}{Harness supports multiple deployment strategies, but the platform team should define the selection criteria.}{"Rolling, canary, blue-green, or equivalent strategies are chosen by workload type, failure domain, and rollback expectations."}{"Teams pick whatever strategy they are most familiar with."}{Deployment concepts and strategies}
+
+\qblock{12. How does promotion from non-prod to prod work in practice?}{This question exposes whether promotion preserves artifact immutability and controlled inputs, or whether production deploys are effectively rebuilt decisions.}{"Promotion reuses the same tested artifact and controlled configuration set, with approvals at defined boundaries."}{"Prod just reruns the pipeline with different values."}{Deployment concepts and strategies / Input sets and overlays}
+
+\qblock{13. What is our rollback contract for technical failure versus bad-but-successful release outcomes?}{Rollback behavior is one of the clearest maturity signals in a CD operating model.}{"Automatic rollback handles technical failure. A defined manual or automated path exists for post-deployment rollback when the deployment succeeded but the release outcome is bad."}{"Rollback depends on who is on call and whether they remember the last good version."}{Deployment concepts and strategies}
+
+\section*{6. Git, input set, and trigger operating model}
+\doccluster{\href{https://developer.harness.io/docs/platform/get-started/overview/}{Overview}; \href{https://developer.harness.io/docs/platform/pipelines/input-sets}{Input sets and overlays}; \href{https://developer.harness.io/docs/platform/git-experience/manage-input-sets-in-simplified-git-experience}{Manage Git-backed input sets}; \href{https://developer.harness.io/docs/category/triggers/}{Triggers}; \href{https://developer.harness.io/docs/platform/pipeline-faq/}{Pipeline FAQs}.}
+
+\qblock{14. Is Git or the Harness UI the source of truth for pipelines, templates, and input sets?}{Harness Git Experience has clear scope boundaries. This question exposes whether the operating model is coherent or split-brain.}{"Git is authoritative for pipeline definitions and related Git-backed objects. Platform-only entities that are not Git-backed have explicit owners and change controls."}{"People edit YAML wherever is fastest."}{Overview / Pipeline FAQs}
+
+\qblock{15. How are input sets standardized so operators do not hand-enter critical values at runtime?}{Harness input sets exist to reduce manual variance and make execution repeatable.}{"We publish approved input sets and overlays by scenario, environment, or team pattern, and review them through code or controlled change."}{"Operators usually type the values when they run the pipeline."}{Input sets and overlays / Manage Git-backed input sets}
+
+\qblock{16. Which events are allowed to trigger CD automatically, and what restrictions apply by environment type?}{Harness supports multiple trigger types. This question reveals whether automation boundaries are deliberately controlled.}{"Broad automation is allowed in non-prod. Production triggers are narrow, policy-backed, and tied to approvals and artifact provenance."}{"Any supported trigger can start any deployment if the pipeline author configures it."}{Triggers}
+
+\section*{7. Governance, approvals, RBAC, and policy enforcement}
+\doccluster{\href{https://developer.harness.io/docs/platform/approvals/adding-harness-approval-stages}{Using manual Harness approval stages}; \href{https://developer.harness.io/docs/continuous-delivery/x-platform-cd-features/cd-steps/approvals/using-harness-approval-steps-in-cd-stages}{Using manual Harness approval steps in CD stages}; \href{https://developer.harness.io/docs/platform/role-based-access-control/rbac-in-harness/}{Role-based access control (RBAC) in Harness}; \href{https://developer.harness.io/docs/platform/governance/policy-as-code/harness-governance-overview}{Harness Policy As Code overview}; \href{https://developer.harness.io/docs/platform/governance/policy-as-code/harness-governance-quickstart/}{Policy As Code quickstart}; \href{https://developer.harness.io/docs/platform/harness-platform-faqs}{Harness Platform FAQs}.}
+
+\qblock{17. Where are approval gates mandatory in the promotion path, and which approval mechanism do we standardize on?}{Harness supports approval stages and steps, including manual and custom approvals. The question exposes whether approval placement is platform policy or author preference.}{"Approval points are tied to risk transitions and use a standard mechanism with explicit timeout and rejection behavior."}{"Pipelines have approvals if the author decides they need one."}{Using manual Harness approval stages / Using manual Harness approval steps in CD stages}
+
+\qblock{18. How are production versus non-production boundaries enforced in access control?}{Harness states environment access is controlled by environment type rather than pipeline stage. This is a critical governance boundary.}{"Prod access is isolated through resource groups, roles, and environment-type-aware controls."}{"We mostly depend on pipeline names or stage names to tell users what is production."}{Role-based access control (RBAC) in Harness / Harness Platform FAQs}
+
+\qblock{19. Which controls are enforced by RBAC and which are enforced by Policy as Code?}{Harness offers both. Mature platform teams use them for different problems rather than treating either one as a catch-all control.}{"RBAC controls who can act. Policy as Code controls what configurations and execution conditions are allowed on save or run events."}{"We rely on peer review to catch bad YAML and bad permissions."}{Harness Policy As Code overview / Policy As Code quickstart}
+
+\section*{8. Reuse, templates, scaling across teams, and platform guardrails}
+\doccluster{\href{https://developer.harness.io/docs/platform/templates/template}{Templates overview}; \href{https://developer.harness.io/docs/platform/templates/templates-best-practices}{Best practices and guidelines for templates}; \href{https://developer.harness.io/docs/platform/templates/reconcile-pipeline-templates/}{Reconcile pipeline template changes}.}
+
+\qblock{20. What must be templated versus what may remain team-specific?}{Templates are the main Harness-native standardization mechanism. This question exposes whether reuse is optional or enforced.}{"Stage patterns, approval logic, deployment skeletons, and guardrail logic are templated. Teams supply only approved runtime or service-specific values."}{"Templates are available, but teams can ignore them."}{Templates overview}
+
+\qblock{21. How do we version and roll out shared templates safely across teams?}{Harness supports template versioning and reconciliation. This question reveals whether shared change is controlled or disruptive.}{"Templates are versioned intentionally, breaking changes are introduced via stable references or planned migrations, and reconciliation is managed."}{"We edit the shared template and downstream pipelines deal with the fallout."}{Best practices and guidelines for templates / Reconcile pipeline template changes}
+
+\section*{9. Troubleshooting, observability, auditability, and failure handling}
+\doccluster{\href{https://developer.harness.io/docs/continuous-delivery/x-platform-cd-features/executions/execution-history}{Pipeline Execution History}; \href{https://developer.harness.io/docs/platform/pipelines/executions-and-logs/view-and-compare-pipeline-executions}{View and compare pipeline executions}; \href{https://developer.harness.io/docs/platform/governance/audit-trail/}{View audit trail}; \href{https://developer.harness.io/docs/platform/harness-platform-faqs}{Harness Platform FAQs}.}
+
+\qblock{22. When a deployment fails, what is the first authoritative place operators go for diagnosis?}{Harness gives teams execution history, compiled YAML views, execution comparisons, logs, and audit data. A mature support model defines the primary diagnostic path.}{"Operators start with execution history and compiled YAML, then compare executions and inspect logs or audit trail as needed."}{"Everyone debugs differently depending on who is available."}{Pipeline Execution History / View and compare pipeline executions}
+
+\qblock{23. What do we expect to be auditable for configuration changes and pipeline execution events, and what is outside that audit trail?}{Harness documents audit behavior and limitations. This question reveals whether the team actually understands its evidence surface.}{"We know which changes and execution events are audited, which audit settings are enabled, and which actions are out of scope such as read-only API requests."}{"Auditability is handled somewhere in the platform."}{View audit trail / Harness Platform FAQs}
+
+\section*{Top 7 must-ask questions for a 30-minute meeting}
+\begin{enumerate}[leftmargin=1.5em,itemsep=0.25em]
+  \item Where does CI end and CD begin in our operating model?
+  \item Is Git or the Harness UI the source of truth for pipelines, templates, and input sets?
+  \item What is the rule for defining a Harness Service here?
+  \item How do we distinguish and enforce prod versus non-prod boundaries?
+  \item Where do delegates run, and what is each delegate allowed to reach?
+  \item What is the standard promotion path into production, including approvals?
+  \item What is the rollback contract for technical failure and bad release outcomes?
+\end{enumerate}
+
+\section*{Top 7 follow-up questions for a deeper architecture session}
+\begin{enumerate}[leftmargin=1.5em,itemsep=0.25em]
+  \item What is the default stage pattern for a production-capable pipeline?
+  \item When are multi-service or multi-environment deployments allowed?
+  \item When do we add a new Infrastructure Definition versus a new Environment?
+  \item Which deployment strategies are approved for which workload types?
+  \item How are input sets and overlays standardized and reviewed?
+  \item What must be templated versus team-specific?
+  \item Which controls are enforced by RBAC versus Policy as Code?
+\end{enumerate}
+
+\section*{Seven red flags to watch for}
+\begin{itemize}[leftmargin=1.5em,itemsep=0.25em]
+  \item Production is identified mostly by naming convention.
+  \item Teams edit pipeline definitions in Git and in the UI without a clear source of truth.
+  \item A single delegate or delegate pool has broad reach across unrelated trust zones.
+  \item Rollback is manual, undocumented, or depends on tribal knowledge.
+  \item Approval placement is left entirely to pipeline authors.
+  \item Templates are optional guidance rather than an enforcement mechanism.
+  \item Nobody can describe the artifact handoff between CI completion and CD execution.
+\end{itemize}
+
+\section*{Official Harness documentation referenced}
+{\small
+\begin{enumerate}[leftmargin=1.5em,itemsep=0.2em]
+  \item \href{https://developer.harness.io/docs/continuous-delivery/overview}{Overview}
+  \item \href{https://developer.harness.io/docs/continuous-delivery/manage-deployments/deployment-concepts}{Deployment concepts and strategies}
+  \item \href{https://developer.harness.io/docs/continuous-delivery/cd-onboarding/new-user/cd-pipeline-modeling-overview}{4. Deployment Pipeline Modeling Overview}
+  \item \href{https://developer.harness.io/docs/continuous-delivery/x-platform-cd-features/services/services-overview}{Services overview}
+  \item \href{https://developer.harness.io/docs/continuous-delivery/x-platform-cd-features/environments/environment-overview}{Environments overview}
+  \item \href{https://developer.harness.io/docs/continuous-delivery/x-platform-cd-features/advanced/multiserv-multienv/}{Use multiple services and environments in a deployment}
+  \item \href{https://developer.harness.io/docs/platform/delegates/delegate-concepts/delegate-overview/}{Overview}
+  \item \href{https://developer.harness.io/docs/platform/delegates/manage-delegates/select-delegates-with-selectors}{Use delegate selectors}
+  \item \href{https://developer.harness.io/docs/platform/delegates/delegate-concepts/delegate-requirements}{Delegate system requirements}
+  \item \href{https://developer.harness.io/docs/platform/reference-architectures/delegate-architecture-bestpractices}{Harness Delegate Architecture Best Practices}
+  \item \href{https://developer.harness.io/docs/platform/get-started/overview/}{Overview}
+  \item \href{https://developer.harness.io/docs/platform/pipelines/input-sets}{Input sets and overlays}
+  \item \href{https://developer.harness.io/docs/platform/git-experience/manage-input-sets-in-simplified-git-experience}{Manage Git-backed input sets}
+  \item \href{https://developer.harness.io/docs/category/triggers/}{Triggers}
+  \item \href{https://developer.harness.io/docs/platform/pipeline-faq/}{Pipeline FAQs}
+  \item \href{https://developer.harness.io/docs/platform/approvals/adding-harness-approval-stages}{Using manual Harness approval stages}
+  \item \href{https://developer.harness.io/docs/continuous-delivery/x-platform-cd-features/cd-steps/approvals/using-harness-approval-steps-in-cd-stages}{Using manual Harness approval steps in CD stages}
+  \item \href{https://developer.harness.io/docs/platform/approvals/custom-approvals}{Adding custom approval stages and steps}
+  \item \href{https://developer.harness.io/docs/platform/role-based-access-control/rbac-in-harness/}{Role-based access control (RBAC) in Harness}
+  \item \href{https://developer.harness.io/docs/platform/governance/policy-as-code/harness-governance-overview}{Harness Policy As Code overview}
+  \item \href{https://developer.harness.io/docs/platform/governance/policy-as-code/harness-governance-quickstart/}{Policy As Code quickstart}
+  \item \href{https://developer.harness.io/docs/platform/templates/template}{Templates overview}
+  \item \href{https://developer.harness.io/docs/platform/templates/templates-best-practices}{Best practices and guidelines for templates}
+  \item \href{https://developer.harness.io/docs/platform/templates/reconcile-pipeline-templates/}{Reconcile pipeline template changes}
+  \item \href{https://developer.harness.io/docs/continuous-delivery/x-platform-cd-features/executions/execution-history}{Pipeline Execution History}
+  \item \href{https://developer.harness.io/docs/platform/pipelines/executions-and-logs/view-and-compare-pipeline-executions}{View and compare pipeline executions}
+  \item \href{https://developer.harness.io/docs/platform/governance/audit-trail/}{View audit trail}
+  \item \href{https://developer.harness.io/docs/platform/harness-platform-faqs}{Harness Platform FAQs}
+\end{enumerate}
+}
+
+\end{document}
