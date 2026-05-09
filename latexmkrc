@@ -1,9 +1,9 @@
 # .latexmkrc -- repo root
-# Purpose: make custom LaTeX style packages (latex-docs-*.sty) discoverable
+# Purpose: make custom LaTeX style packages (*.sty) discoverable
 # by pdflatex/latexmk regardless of which subdirectory a leaf .tex is built from.
 #
 # Why this exists:
-#   Leaf documents under src/architecture/**/ \usepackage{latex-docs-*}, but the
+#   Leaf documents under src/architecture/**/ \usepackage{*}, but the
 #   .sty files live under src/architecture/style-system/ (and possibly sty/, tex/).
 #   kpathsea won't find them unless TEXINPUTS includes those trees recursively.
 #

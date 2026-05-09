@@ -24,8 +24,8 @@ type. The repository builds standalone roots (`.tex` files containing
 - **Naming:** lowercase kebab-case for every folder and file. See
   `RESTRUCTURE-PROPOSAL.md` §6 for the full rules.
 - **House style:** every root document loads
-  `\usepackage{latex-docs-style}` (resolved via `TEXINPUTS` to
-  `tooling/latex/latex-docs-style.sty`).
+  `\usepackage{style}` (resolved via `TEXINPUTS` to
+  `tooling/latex/style.sty`).
 - **Diagrams:** PlantUML co-locates with the document that owns it.
   Cross-cutting PlantUML config lives in `tooling/plantuml/`.
 - **Generated artifacts:** PDFs and LaTeX aux files are git-ignored;
@@ -61,7 +61,7 @@ convention, not a mandate.
 ## Related
 
 - `../README.md` — repository top-level README.
-- `../tooling/latex/latex-docs-style.sty` — house style.
+- `../tooling/latex/style.sty` — house style.
 - `../RESTRUCTURE-PROPOSAL.md` — restructuring rationale.
 
 

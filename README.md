@@ -5,7 +5,7 @@ directory naming. The repository is **source-first**: PDFs and LaTeX build
 artifacts are generated locally/CI and are not committed.
 
 All documents share a single canonical house style supplied by
-`tooling/latex/latex-docs-style.sty` (loaded as `latex-docs-style`).
+`tooling/latex/style.sty` (loaded as `style`).
 
 ---
 
@@ -16,8 +16,8 @@ All documents share a single canonical house style supplied by
   `mathematics/`, `game-development/`, `electronics/`, `personal/`, …).
 - `src/common/` — shared helpers (e.g., CI-safe macros).
 - `tooling/latex/` — shared style and preamble:
-  - `latex-docs-style.sty` — the canonical house style. Every root
-    document loads it via `\usepackage{latex-docs-style}` immediately
+  - `style.sty` — the canonical house style. Every root
+    document loads it via `\usepackage{style}` immediately
     after `\documentclass`.
   - `common-preamble.tex` — legacy include retained for backwards
     compatibility.
@@ -31,9 +31,9 @@ All documents share a single canonical house style supplied by
 
 ---
 
-## House style: `latex-docs-style.sty`
+## House style: `style.sty`
 
-`tooling/latex/latex-docs-style.sty` is loaded once per document and owns
+`tooling/latex/style.sty` is loaded once per document and owns
 every shared concern: page geometry, fonts and microtypography, tables
 and lists, the colour palette (Navy / Steel / Teal / Brick over neutral
 backgrounds), tcolorbox callouts, hyperlinks, code rendering, and
@@ -45,7 +45,7 @@ helper-macro definitions during normalization.
 
 #### Metadata (value-emitter macros)
 
-In any document preamble, after `\usepackage{latex-docs-style}`:
+In any document preamble, after `\usepackage{style}`:
 
 ```latex
 \renewcommand{\DocTitle}{Cloud Governance \& Control Framework}
@@ -132,7 +132,7 @@ Makefile instead exports
 TEXINPUTS := $(abspath tooling/latex)//:$(TEXINPUTS)
 ```
 
-so the shared `latex-docs-style.sty` is found via `kpsewhich`. If you
+so the shared `style.sty` is found via `kpsewhich`. If you
 invoke `latexmk` directly from the repo root, prepend the same path
 manually:
 
@@ -211,7 +211,7 @@ attached.
 
 ## Maintaining the house style
 
-Changes to `tooling/latex/latex-docs-style.sty` must keep ALL existing
+Changes to `tooling/latex/style.sty` must keep ALL existing
 documents compiling cleanly under `latexmk -pdf -shell-escape` with no
 new warnings. The style file uses `\providecommand`, `\providecolor`,
 `\PassOptionsToPackage`, and `\@ifundefined` guards throughout so it is

@@ -20,8 +20,8 @@ SRC_DIR   := src
 BUILD_DIR := public/pdfs
 LOG_DIR   := public/logs
 
-# Shared style: tooling/latex/latex-docs-style.sty is loaded by every doc via
-# `\usepackage{latex-docs-style}`. Recipes below cd into each doc's leaf
+# Shared style: tooling/latex/style.sty is loaded by every doc via
+# `\usepackage{style}`. Recipes below cd into each doc's leaf
 # directory (because latexmk caches relative to the source dir), so the
 # repo-root latexmkrc is *not* auto-loaded by latexmk in that mode. We make
 # the shared .sty resolvable by exporting TEXINPUTS for every recipe; the
