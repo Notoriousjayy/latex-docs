@@ -36,6 +36,26 @@
 \RequirePackage{textcomp}
 \RequirePackage{microtype}
 
+% lmodern does not ship a bold-smallcaps shape (T1/lmr/bx/sc) or a
+% bold-italic-smallcaps shape (T1/lmr/bx/scit / T1/lmr/bx/scsl). When the
+% house style emphasises a defined term with \textsc inside an already-bold
+% context (section heading, description-list label, etc.), LaTeX would
+% otherwise emit an "undefined font shape" warning and silently substitute
+% bold-normal. `ssub' is a silent substitution that performs the same
+% fallback without the warning. The visible output is identical to LaTeX's
+% automatic substitution.
+%
+% \DeclareFontShape needs the family to be declared first, and lmodern
+% declares T1/lmr lazily via t1lmr.fd (loaded on first use). Wrapping in
+% \AtBeginDocument guarantees the .fd has run by the time we add the silent
+% substitutions. (At \AtBeginDocument, any standard preamble use of \rmfamily
+% or \textbf has already triggered the load.)
+\AtBeginDocument{%
+  \DeclareFontShape{T1}{lmr}{bx}{sc}{<->ssub*lmr/bx/n}{}%
+  \DeclareFontShape{T1}{lmr}{bx}{scit}{<->ssub*lmr/bx/it}{}%
+  \DeclareFontShape{T1}{lmr}{bx}{scsl}{<->ssub*lmr/bx/sl}{}%
+}
+
 
 % -----------------------------------------------------------------------------
 % 2. Layout and typography
@@ -199,6 +219,16 @@
                           showstringspaces=false}%
   \lstdefinelanguage{ini}{sensitive=false,morecomment=[l]{;},
                          morecomment=[l]{\#},morestring=[b]"}%
+  % minted-compat: documents in this repo use \begin{minted}[fontsize=...]{lang}
+  % for several languages (latex, text, etc.). The fallback shim below routes
+  % those calls through listings; for it to compile we have to teach listings
+  % about (a) the `fontsize' key, which is minted-only and undefined in
+  % listings' keyval table, and (b) the `latex' language, which listings does
+  % not auto-register. Both are resolved here, in the preamble, so the shim
+  % itself stays small.
+  \lst@Key{fontsize}\relax{\def\lst@basicstyle{#1\ttfamily}}%
+  \lstloadlanguages{TeX}%
+  \lstdefinelanguage{latex}[LaTeX]{TeX}{}%
   \lstset{
     basicstyle=\ttfamily\small,
     columns=fullflexible,
@@ -304,7 +334,11 @@
   \begingroup\small\color{Meta}%
   \def\lds@sep{}%
   \def\lds@field##1{%
-    \edef\lds@val{##1}%
+    % \protected@edef (rather than \edef) so that fragile/protected
+    % commands (\texttt, \textbf, ...) embedded in metadata fields are
+    % preserved as tokens rather than being expanded into their NFSS
+    % internals (\text@command, etc.) where they trigger \@item errors.
+    \protected@edef\lds@val{##1}%
     \ifx\lds@val\@empty\else
       \lds@sep ##1\def\lds@sep{\quad\textbar\quad}%
     \fi}%
@@ -318,7 +352,7 @@
 \newcommand{\makedoctitle}{%
   \begin{center}%
     {\LARGE\bfseries\color{Navy}\DocTitle\par}%
-    \edef\lds@sub{\DocSubtitle}%
+    \protected@edef\lds@sub{\DocSubtitle}%
     \ifx\lds@sub\@empty\else
       \vspace{4pt}{\large\color{Steel}\DocSubtitle\par}%
     \fi
@@ -327,7 +361,7 @@
   \vspace{0.5em}}
 
 \newcommand{\makedocsummary}{%
-  \edef\lds@sum{\DocSummary}%
+  \protected@edef\lds@sum{\DocSummary}%
   \ifx\lds@sum\@empty\else
     \begin{viewbox}\textbf{Purpose.} \DocSummary\end{viewbox}%
   \fi}
@@ -366,6 +400,3 @@
 
 
 \endinput
-
-
-

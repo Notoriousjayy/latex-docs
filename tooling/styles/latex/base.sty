@@ -99,10 +99,12 @@
 
 % Re-evaluate \DocClass once at \begin{document}: if the document has not
 % explicitly set it, fall back to the active module's display name.
+% \protected@edef (rather than \edef) so any fragile commands a document
+% may have placed inside \DocClass are preserved as tokens.
 \AtBeginDocument{%
-  \edef\lds@dc@cur{\DocClass}%
+  \protected@edef\lds@dc@cur{\DocClass}%
   \ifx\lds@dc@cur\@empty
-    \edef\lds@dc@mod{\LdsCurrentModuleName}%
+    \protected@edef\lds@dc@mod{\LdsCurrentModuleName}%
     \ifx\lds@dc@mod\@empty\else
       \let\DocClass\LdsCurrentModuleName
     \fi
@@ -123,7 +125,7 @@
 % -----------------------------------------------------------------------------
 \providecommand{\LdsExtraTitleMeta}{}
 \providecommand{\LdsExtraHeader}{%
-  \edef\lds@hdr@cls{\DocClass}%
+  \protected@edef\lds@hdr@cls{\DocClass}%
   \ifx\lds@hdr@cls\@empty\else\quad\textbar\quad\DocClass\fi
 }
 
@@ -133,7 +135,7 @@
 \let\lds@base@orig@makedoctitle\makedoctitle
 \renewcommand{\makedoctitle}{%
   \lds@base@orig@makedoctitle
-  \edef\lds@etm{\LdsExtraTitleMeta}%
+  \protected@edef\lds@etm{\LdsExtraTitleMeta}%
   \ifx\lds@etm\@empty\else
     \begin{center}\small\color{Meta}\LdsExtraTitleMeta\end{center}%
     \vspace{-0.4em}%
@@ -200,7 +202,11 @@
     \newtcolorbox[auto counter,number within=section]{#1}[1][]{%
       enhanced jigsaw,breakable,colback=Soft,colframe=#4,
       coltitle=white,fonttitle=\bfseries,
-      title={#3~\protect\refstepcounter{Lds#2}\protect\theLds#2%
+      % \theLds#2 does NOT concatenate at parameter substitution time:
+      % `\theLds' is a control sequence token, `#2' substitutes letter
+      % tokens after it. Use \@nameuse{theLds#2} so the CS lookup happens
+      % at title-rendering time, after #2 has been substituted.
+      title={#3~\protect\refstepcounter{Lds#2}\protect\@nameuse{theLds#2}%
              \ifstrempty{##1}{}{\space\textendash\space ##1}}%
     }%
   }{}%
@@ -254,7 +260,33 @@
 % -----------------------------------------------------------------------------
 \setlength{\emergencystretch}{2em}
 
+% -----------------------------------------------------------------------------
+% 10. Hyphen-breakpoint helper for kebab-case identifiers
+%
+% \texttt{...} suppresses hyphenation, so long kebab-case identifiers like
+% `technical-user-manual' appear as one unbreakable hbox. When such a token
+% lands near the right margin of a justified paragraph, no break point is
+% available between it and the preceding word, producing a hairline overfull
+% (or, if \emergencystretch is bumped to absorb it, a corresponding underfull
+% on the same line). The structural fix is to give TeX legitimate break
+% opportunities AT the hyphens. \LdsHyphenBreak{<text>} emits <text>
+% verbatim with `\allowbreak' inserted after every '-' at brace level 0.
+%
+% Implementation: a delimited-parameter scanner. \lds@hb@scan grabs the run
+% of tokens before the next '-' as #1, the rest as #2. After emitting #1,
+% if #2 is non-empty we emit `-\allowbreak' and recurse on #2. Hyphens
+% inside braced groups are not matched (the delimiter scan respects brace
+% nesting), so \Module{\textbf{a-b}-c} breaks only at the outer hyphen.
+%
+% Family modules use this in their semantic-tagging macros (\Module,
+% \Function, \TypeName) so kebab identifiers in body text don't force
+% overfull lines.
+% -----------------------------------------------------------------------------
+\def\lds@hb@scan#1-#2\lds@hb@end{%
+  #1%
+  \ifx\relax#2\relax\else
+    -\allowbreak \lds@hb@scan#2\lds@hb@end
+  \fi}
+\providecommand{\LdsHyphenBreak}[1]{\lds@hb@scan#1-\lds@hb@end}
+
 \endinput
-
-
-
