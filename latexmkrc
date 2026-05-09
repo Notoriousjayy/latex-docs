@@ -24,6 +24,8 @@ my $root = dirname(abs_path(__FILE__));
 
 # Recursive search paths for custom .sty / .cls / .tex includes.
 my @texinputs = (
+    "$root/tooling/latex//",         # canonical house style (style.sty + helpers)
+    "$root/tooling/styles/latex//",  # domain modules (technical-*, financial, hr, ...)
     "$root/src/architecture/style-system//",
     "$root/src//",     # catches any other in-tree .sty co-located with docs
     "$root/sty//",     # harmless if absent
