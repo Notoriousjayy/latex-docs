@@ -139,3 +139,13 @@ push @generated_exts, qw(idx ind ilg);
 # $pdf_previewer = 'start %S';
 # WSL with Windows PDF viewer:
 # $pdf_previewer = 'cmd.exe /c start "" %S';
+
+
+
+
+# Extend kpathsea search to include the modular style hierarchy
+# under tooling/styles/latex (additive, alongside the canonical
+# tooling/latex tree). The trailing `//:` makes the search recursive.
+$ENV{'TEXINPUTS'} = './/' . ':' .
+  ($ENV{'TEXINPUTS'} // '') . ':' .
+  './tooling/latex//:./tooling/styles/latex//:';

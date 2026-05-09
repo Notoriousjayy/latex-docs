@@ -64,3 +64,6 @@ git commit -m "Add cloud architecture PlantUML diagram library"
 git add src/architecture/cloud/architecture/cloud-architecture-diagram-library-index.tex
 git commit -m "Add cloud architecture diagram library index handout"
 ```
+
+
+

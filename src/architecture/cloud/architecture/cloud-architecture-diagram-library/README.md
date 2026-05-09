@@ -73,3 +73,6 @@ For `pdflatex`, PNG is the least fragile default. Use SVG only when the reposito
 ## Validation
 
 Run the generated validation checklist in `validation-checklist.md` after migration and after any diagram update.
+
+
+

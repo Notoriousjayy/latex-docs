@@ -27,7 +27,7 @@ LOG_DIR   := public/logs
 # the shared .sty resolvable by exporting TEXINPUTS for every recipe; the
 # trailing `//:` tells kpathsea to search recursively then fall through to
 # the system tree.
-TEXINPUTS_PREFIX := $(abspath tooling/latex)//:
+TEXINPUTS_PREFIX := $(abspath tooling/latex)//:$(abspath tooling/styles/latex)//:
 export TEXINPUTS := $(TEXINPUTS_PREFIX)$(TEXINPUTS)
 
 # Source discovery
@@ -275,3 +275,6 @@ render-plantuml:
 	  plantuml -tsvg -o svg "$$puml" 2>/dev/null || true; \
 	done
 	@echo "PlantUML rendering complete."
+
+
+

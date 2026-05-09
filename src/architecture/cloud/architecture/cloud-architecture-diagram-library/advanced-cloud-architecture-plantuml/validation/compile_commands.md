@@ -34,3 +34,6 @@ Each diagram in this set is self-contained and compiles independently. No `!incl
 - Output files are written next to each input `.puml` unless `-o` is specified.
 - The diagrams use only built-in PlantUML constructs and a small set of `skinparam` directives. No external themes or stylesheets are referenced.
 - Each `.puml` file passes a clean compile (no errors and no warnings) on PlantUML 1.2020.02.
+
+
+

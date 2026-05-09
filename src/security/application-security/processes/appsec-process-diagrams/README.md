@@ -34,3 +34,6 @@ Use any PlantUML renderer (CLI or IDE plugin). Each `.puml` is standalone and in
 - **Left-to-right** flow, limited palette, clear partitions, labeled decisions
 - **AppCode** is referenced in every process where ownership/correlation matters
 - Gates are marked with the `<<gate>>` stereotype for consistent highlighting
+
+
+

@@ -40,3 +40,6 @@ make build-category-mathematics
 - `../README.md`
 - `../programming/languages/c-cpp/` (implementation companions).
 - Upstream: O'Rourke, *Computational Geometry in C*; *Handbook of Discrete and Computational Geometry*, 3rd ed.
+
+
+

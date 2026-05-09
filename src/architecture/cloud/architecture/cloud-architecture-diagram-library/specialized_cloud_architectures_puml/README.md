@@ -92,3 +92,6 @@ Virtual Server, Cloud Storage Device, Load Balancer, Storage Service Gateway,
 Storage Management Program, LUN Migration, Live Storage Migration, Automated
 Scaling Listener, Intelligent Automation Engine, VIM, Centralized Virtual
 Switch, Data Virtualization Layer) come directly from the source document.
+
+
+

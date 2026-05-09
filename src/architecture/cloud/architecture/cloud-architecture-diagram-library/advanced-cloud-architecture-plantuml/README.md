@@ -54,3 +54,6 @@ Where the source describes qualitative behavior without naming a specific compon
 ## Originality
 
 These diagrams are original PlantUML interpretations based only on the source document. They are not visual reproductions of the figures in the chapter. They preserve the source's terminology, stated mechanisms, sequence logic, and stated constraints (including the explicit conflict between Nondisruptive Service Relocation and the direct I/O access architecture). They add no inferred implementation technologies (no AWS, Azure, GCP, Kubernetes, Terraform, ServiceNow, or any other tooling).
+
+
+

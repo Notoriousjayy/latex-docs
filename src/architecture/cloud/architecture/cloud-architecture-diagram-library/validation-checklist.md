@@ -40,3 +40,6 @@ Use this checklist after migration and after diagram-library updates.
 - [ ] Rendered diagrams can be used from LaTeX without absolute paths.
 - [ ] README/index documentation explains how to use and maintain the library.
 - [ ] No unrelated files are renamed, moved, or deleted.
+
+
+

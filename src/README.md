@@ -63,3 +63,6 @@ convention, not a mandate.
 - `../README.md` — repository top-level README.
 - `../tooling/latex/latex-docs-style.sty` — house style.
 - `../RESTRUCTURE-PROPOSAL.md` — restructuring rationale.
+
+
+
