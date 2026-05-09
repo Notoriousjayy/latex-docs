@@ -1,151 +1,47 @@
-# latexmkrc - Global LaTeX build configuration for CI and local builds
-# Place in repository root
-# ============================================================================
+# .latexmkrc -- repo root
+# Purpose: make custom LaTeX style packages (latex-docs-*.sty) discoverable
+# by pdflatex/latexmk regardless of which subdirectory a leaf .tex is built from.
 #
-# IMPORTANT: latexmk only auto-reads ~/.latexmkrc and a `latexmkrc` /
-# `.latexmkrc` in the *current working directory* at invocation time. The
-# repo-level `Makefile` cd's into each document's leaf directory before
-# calling latexmk (so minted's auxiliary tree stays alongside the source),
-# which means this file is NOT auto-loaded during `make build-*` runs.
-# Instead, the Makefile exports the relevant settings (TEXINPUTS, shell-escape)
-# directly. This file remains the canonical config for direct `latexmk` use
-# from the repo root and is read by CI workflows that invoke latexmk from
-# this directory.
+# Why this exists:
+#   Leaf documents under src/architecture/**/ \usepackage{latex-docs-*}, but the
+#   .sty files live under src/architecture/style-system/ (and possibly sty/, tex/).
+#   kpathsea won't find them unless TEXINPUTS includes those trees recursively.
 #
-# Shared style (tooling/latex/latex-docs-style.sty) is found via TEXINPUTS:
-#   export TEXINPUTS="$(pwd)/tooling/latex//:$TEXINPUTS"
-# `make` already does this for you.
-# ============================================================================
+# Notes:
+#   - '//' at the end of a path is kpathsea's recursive-descent marker.
+#   - Leading and trailing ':' preserve the system TEXINPUTS so core packages
+#     (article.cls, geometry.sty, etc.) still resolve.
+#   - We anchor paths to this file's directory (the repo root) so builds work
+#     no matter what CWD latexmk is invoked from.
 
-# ============================================================================
-# PDF Output Mode
-# ============================================================================
+use strict;
+use warnings;
+
+use File::Basename qw(dirname);
+use Cwd            qw(abs_path);
+
+my $root = dirname(abs_path(__FILE__));
+
+# Recursive search paths for custom .sty / .cls / .tex includes.
+my @texinputs = (
+    "$root/src/architecture/style-system//",
+    "$root/src//",     # catches any other in-tree .sty co-located with docs
+    "$root/sty//",     # harmless if absent
+    "$root/tex//",     # harmless if absent
+);
+
+$ENV{TEXINPUTS} = ':' . join(':', @texinputs) . ':' . ($ENV{TEXINPUTS} // '') . ':';
+
+# Same treatment for BibTeX inputs and styles (no-op until you add bibs).
+$ENV{BIBINPUTS} = ":$root/src//:" . ($ENV{BIBINPUTS} // '') . ':';
+$ENV{BSTINPUTS} = ":$root/src//:" . ($ENV{BSTINPUTS} // '') . ':';
+
+# Engine: pdflatex (matches your CI matrix).
 $pdf_mode = 1;
 
-# ============================================================================
-# Engine Configurations with -shell-escape for minted/Pygments
-# ============================================================================
-# pdflatex - most documents
-$pdflatex = 'pdflatex -interaction=nonstopmode -halt-on-error -shell-escape %O %S';
+# Build hygiene.
+$silent      = 0;
+$emulate_aux = 1;
 
-# lualatex - for documents using fontspec, Unicode, etc.
-$lualatex = 'lualatex -interaction=nonstopmode -halt-on-error -shell-escape %O %S';
-
-# xelatex - alternative Unicode engine
-$xelatex = 'xelatex -interaction=nonstopmode -halt-on-error -shell-escape %O %S';
-
-# ============================================================================
-# Build Behavior
-# ============================================================================
-# Run enough passes to resolve all references, TOC, and minted code blocks
-$max_repeat = 5;
-
-# Show commands being run (useful for CI debugging)
-$silent = 0;
-
-# Use synctex for editor integration (local development)
-$synctex = 1;
-
-# ============================================================================
-# Bibliography Support
-# ============================================================================
-$bibtex_use = 2;
-$biber = 'biber --validate-datamodel %O %S';
-
-# ============================================================================
-# File Cleanup - Standard LaTeX auxiliary files
-# ============================================================================
-$clean_ext = 'aux bbl bcf blg fdb_latexmk fls log out run.xml synctex.gz toc lof lot loa nav snm vrb';
-
-# ============================================================================
-# Minted-Specific Configuration (Critical for CI)
-# ============================================================================
-# Add minted auxiliary file extensions to cleanup
-push @generated_exts, qw(pyg pygtex pygstyle);
-
-# Track _minted-* directories for cleanup
-$clean_full_ext = 'pdf dvi ps synctex.gz';
-
-# Custom dependency: tell latexmk to track .pyg files
-# This ensures proper rebuilds when source code blocks change
-add_cus_dep('pyg', 'pygtex', 0, 'run_pygmentize');
-sub run_pygmentize {
-    # Pygments is called automatically by minted with -shell-escape
-    # This dependency just ensures proper rebuild tracking
-    return 0;
-}
-
-# Detect minted errors and trigger rebuild
-push @file_not_found, '^Package minted Error';
-
-# ============================================================================
-# Custom Rules for Recursive Directory Cleanup
-# ============================================================================
-# Clean _minted-* cache directories (they can cause issues between builds)
-$cleanup_includes_cusdep_generated = 1;
-$cleanup_includes_generated = 1;
-
-# Add hook to clean _minted-* directories
-# This runs during `latexmk -c` or `latexmk -C`
-END {
-    if ($cleanup_mode > 0) {
-        # Find and remove _minted-* directories in current directory
-        my @minted_dirs = glob("_minted-*");
-        foreach my $dir (@minted_dirs) {
-            if (-d $dir) {
-                print "Cleaning minted cache: $dir\n";
-                system("rm -rf \"$dir\"");
-            }
-        }
-    }
-}
-
-# ============================================================================
-# PythonTeX Support (if using pythontex package)
-# ============================================================================
-add_cus_dep('pytxcode', 'tex', 0, 'pythontex');
-sub pythontex {
-    system("pythontex \"$_[0]\"");
-}
-
-# ============================================================================
-# Glossary Support (if using glossaries package)
-# ============================================================================
-add_cus_dep('glo', 'gls', 0, 'makeglo2gls');
-sub makeglo2gls {
-    system("makeindex -s \"$_[0].ist\" -t \"$_[0].glg\" -o \"$_[0].gls\" \"$_[0].glo\"");
-}
-push @generated_exts, qw(glo gls glg);
-
-# ============================================================================
-# Index Support
-# ============================================================================
-add_cus_dep('idx', 'ind', 0, 'makeindex');
-sub makeindex {
-    system("makeindex \"$_[0].idx\"");
-}
-push @generated_exts, qw(idx ind ilg);
-
-# ============================================================================
-# Preview Settings (uncomment for local development)
-# ============================================================================
-# Linux (GNOME):
-# $pdf_previewer = 'evince %O %S';
-# Linux (KDE):
-# $pdf_previewer = 'okular %O %S';
-# macOS:
-# $pdf_previewer = 'open -a Preview %S';
-# Windows:
-# $pdf_previewer = 'start %S';
-# WSL with Windows PDF viewer:
-# $pdf_previewer = 'cmd.exe /c start "" %S';
-
-
-
-
-# Extend kpathsea search to include the modular style hierarchy
-# under tooling/styles/latex (additive, alongside the canonical
-# tooling/latex tree). The trailing `//:` makes the search recursive.
-$ENV{'TEXINPUTS'} = './/' . ':' .
-  ($ENV{'TEXINPUTS'} // '') . ':' .
-  './tooling/latex//:./tooling/styles/latex//:';
+# Track .synctex.gz as a generated artifact so 'latexmk -c' cleans it.
+push @generated_exts, 'synctex.gz';
