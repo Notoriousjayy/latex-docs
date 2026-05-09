@@ -1,0 +1,128 @@
+% =============================================================================
+% example-technical-testing.tex
+% Style: latex-docs-technical-testing
+% Build: pdflatex via latexmk; minted-aware with listings fallback.
+% =============================================================================
+\documentclass[11pt]{article}
+\usepackage{latex-docs-technical-testing}
+
+\setDocTitle{Tile Binner -- Test Plan}
+\setDocSubtitle{Acceptance and regression coverage for the
+                forward tile-binned pipeline}
+\setDocVersion{v0.3}
+\setDocStatus{Draft}
+\setDocOwner{Engine QA}
+\setDocAuthor{Jordan Suber}
+\setDocDate{May 8, 2026}
+\setDocSummary{%
+  Reference test plan demonstrating the testing subtype: identified
+  test cases with pre/postconditions and detailed steps, status
+  glyphs, and a requirements-to-tests coverage matrix.%
+}
+
+\begin{document}
+\makedoctocpage
+
+\section{Scope}
+This plan covers the acceptance test cases for the \texttt{TileBinner}
+component of the AetherForge render pipeline. It traces every
+requirement in the design specification (REQ-RP-001 through
+REQ-RP-004) to one or more test cases, captures the expected results,
+and records the most recent execution status.
+
+\section{Test cases}
+
+\begin{testcase}{TC-PARITY-01}{Reference scene parity, native vs.\ WebGL}
+  \Precondition{Native and WebGL builds at the same git commit; reference
+                scene \filename{atrium.afs} loaded.}
+  \begin{teststeps}
+    \TStep{Render frame 0 on the native build at 1920x1080.}%
+          {PNG saved as \filename{atrium-native.png}.}%
+          {As expected.}{\Pass}
+    \TStep{Render the same frame 0 on the WebGL build at the same
+           resolution.}%
+          {PNG saved as \filename{atrium-web.png}.}%
+          {As expected.}{\Pass}
+    \TStep{Run \cmd{aetherforge-imgdiff} on the two PNGs with tolerance
+           1/256 per channel.}%
+          {Exit status 0; max delta below tolerance.}%
+          {1/256 on 0.04\% of pixels.}{\Pass}
+  \end{teststeps}
+  \Postcondition{Both PNGs and the diff report retained for review.}
+\end{testcase}
+
+\begin{testcase}{TC-LIGHTS-01}{Many-light scalability}
+  \Precondition{Reference hardware (8-core CPU, mid-range GPU); scene
+                with 256 randomised dynamic point lights.}
+  \begin{teststeps}
+    \TStep{Run for 600 frames; capture per-frame metrics.}%
+          {Both metrics emitted on every frame.}%
+          {As expected.}{\Pass}
+    \TStep{Compute the 95th-percentile values across the run.}%
+          {p95 run under 1500~us; p95 GPU under 6000~us.}%
+          {p95 run = 412; p95 GPU = 4831.}{\Pass}
+    \TStep{Confirm zero frames exceeded the 16~ms total GPU budget.}%
+          {No frame over budget.}%
+          {0 / 600 over budget.}{\Pass}
+  \end{teststeps}
+  \Postcondition{Performance trace archived as a run artifact.}
+\end{testcase}
+
+\begin{testcase}{TC-DET-01}{Frame determinism}
+  \Precondition{Identical input state captured to a baseline file.}
+  \begin{teststeps}
+    \TStep{Render 10 consecutive frames from the captured state on
+           the native build.}%
+          {10 PNGs written.}%
+          {As expected.}{\Pass}
+    \TStep{Compute SHA-256 of each PNG.}%
+          {All 10 hashes are equal.}%
+          {All 10 hashes equal.}{\Pass}
+    \TStep{Repeat on the WebGL build.}%
+          {All 10 hashes equal (and equal to the native run).}%
+          {All 10 hashes equal to native.}{\Pass}
+  \end{teststeps}
+  \Postcondition{Hash log retained; visual baseline updated only on
+                 confirmed intentional changes.}
+\end{testcase}
+
+\begin{testcase}{TC-WEB-01}{WebGL 2.0 feature-set conformance}
+  \Precondition{WebGL build hosted via the test harness on three
+                browsers (Firefox, Chrome, Safari) on a system whose
+                GPU exposes only the WebGL 2.0 baseline (no
+                extensions).}
+  \begin{teststeps}
+    \TStep{Load the harness URL on each browser.}%
+          {No console errors; canvas paints the welcome scene.}%
+          {As expected on all three.}{\Pass}
+    \TStep{Trigger a render of the reference scene.}%
+          {Output is visually consistent with the native baseline.}%
+          {As expected on all three.}{\Pass}
+    \TStep{Confirm no use of compute or tessellation entry points.}%
+          {No \texttt{glDispatchCompute} or tessellation calls.}%
+          {As expected.}{\Pass}
+  \end{teststeps}
+  \Postcondition{Dev-tools transcript archived per browser.}
+\end{testcase}
+
+\section{Coverage matrix}
+\begin{coverage}
+  \Cov{REQ-RP-001}{Backend output parity for the reference scene set.}%
+      {TC-PARITY-01, TC-PARITY-02..06 (one per reference scene).}
+  \Cov{REQ-RP-002}{Many-light scalability under 16~ms GPU budget.}%
+      {TC-LIGHTS-01, TC-LIGHTS-02, TC-LIGHTS-03.}
+  \Cov{REQ-RP-003}{Frame determinism for visual regression.}%
+      {TC-DET-01, TC-DET-02.}
+  \Cov{REQ-RP-004}{WebGL 2.0 implementability without compute shaders.}%
+      {TC-WEB-01, TC-WEB-02.}
+\end{coverage}
+
+\section{Run summary}
+\begin{itemize}
+  \item Total test cases in this plan: 4 representative cases shown
+        above; the full suite contains 13.
+  \item Most recent run status: \Pass.
+  \item No \Fail{} or \Block{} cases at the time of writing.
+\end{itemize}
+
+\end{document}

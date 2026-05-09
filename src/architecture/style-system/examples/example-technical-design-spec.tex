@@ -1,0 +1,127 @@
+% =============================================================================
+% example-technical-design-spec.tex
+% Style: latex-docs-technical-design-spec
+% Build: pdflatex via latexmk; minted-aware with listings fallback.
+% =============================================================================
+\documentclass[11pt]{article}
+\usepackage{latex-docs-technical-design-spec}
+
+\setDocTitle{AetherForge Render Pipeline -- Design Specification}
+\setDocSubtitle{Forward + tile-binned lighting; native and WebGL2 backends}
+\setDocVersion{v0.4}
+\setDocStatus{Draft}
+\setDocOwner{Engine Architecture}
+\setDocAuthor{Jordan Suber}
+\setDocDate{May 8, 2026}
+\setDocSummary{%
+  Reference design specification demonstrating the design-spec subtype:
+  numbered design decisions, two architecture decision records with
+  status pills, and a requirements-to-components traceability matrix.%
+}
+
+\begin{document}
+\makedoctocpage
+
+\section{Scope}
+This specification covers the runtime render pipeline of the AetherForge
+Engine: the order of stages, the data each stage consumes and produces,
+and the constraints under which the design must operate on both the
+native (OpenGL ES 3.0) and web (WebGL 2.0) backends.
+
+\section{Requirements}
+\Req{REQ-RP-001}{The pipeline shall produce identical rendered output
+                 (within tolerance) on the native and WebGL backends for
+                 the reference scene set.}
+\Req{REQ-RP-002}{The pipeline shall scale from a single directional
+                 light to at least 256 dynamic point lights without
+                 exceeding 16~ms of GPU time on the reference hardware.}
+\Req{REQ-RP-003}{The pipeline shall produce a deterministic frame for a
+                 given input state, suitable for visual regression tests.}
+\Req{REQ-RP-004}{The pipeline shall be implementable on the WebGL 2.0
+                 feature set without compute shaders.}
+
+\section{Architectural decision records}
+
+\begin{adr}{Forward + tile-binned lighting over deferred shading}{Accepted}
+  \ADRContext{%
+    Two viable approaches were considered for many-light support:
+    deferred shading and forward + tile-binned lighting. WebGL 2.0
+    lacks compute shaders, which would limit a deferred design to
+    fragment-shader light culling. The render-target memory cost of a
+    deferred G-buffer is also significant on integrated GPUs targeted
+    by the WebGL build.%
+  }
+  \ADRDecision{%
+    Adopt forward + tile-binned lighting. CPU-side tile binning produces
+    a per-tile light list, uploaded once per frame. The fragment shader
+    iterates only the lights touching its tile.%
+  }
+  \ADRConsequences{%
+    Native and WebGL backends share a single shading model. Memory
+    footprint stays modest. The CPU bin step adds ~0.4~ms on the
+    reference scene, well within budget.%
+  }
+\end{adr}
+
+\begin{adr}{Use linear-space lighting end-to-end}{Accepted}
+  \ADRContext{%
+    Mixed-space lighting (sRGB inputs, linear shading, sRGB output) is a
+    common source of subtle rendering bugs. WebGL 2.0 supports
+    \texttt{EXT\_sRGB} on textures and framebuffers; the native backend
+    has had this support since OpenGL ES 3.0.%
+  }
+  \ADRDecision{%
+    Author all colour textures in sRGB space; the GPU converts to linear
+    on sample. Shading happens in linear space; final output is written
+    to an sRGB framebuffer.%
+  }
+  \ADRConsequences{%
+    Output matches across backends. \Component{ContentLoader} must mark
+    colour textures with the sRGB internal format; this is enforced by a
+    validation pass at content-build time.%
+  }
+\end{adr}
+
+\section{Numbered design decisions}
+
+\DesignDecision{Tile size}{%
+  Tiles are 16x16 pixels. Smaller tiles reduce wasted shading from
+  light-count overestimation; 16x16 is the empirical sweet spot on the
+  reference hardware and aligns with WebGL2 fragment-derivative
+  granularity.}
+
+\DesignDecision{Light list upload}{%
+  Per-tile light lists are uploaded as a single buffer texture each
+  frame. Buffer textures avoid the per-tile uniform setup that would
+  otherwise cost a CPU-side draw-call dispatch.}
+
+\DesignDecision{Shadow map cascading}{%
+  Directional shadows use four cascades; the cascade split distances
+  are computed once per frame on the CPU and uploaded as a uniform.
+  Per-pixel cascade selection happens in the fragment shader.}
+
+\section{Components}
+
+\Component{Frame Graph} -- the orchestration layer that sequences passes
+and tracks their resource dependencies.\\
+\Component{Tile Binner} -- CPU-side per-frame stage that produces the
+per-tile light list.\\
+\Component{Shadow Pipeline} -- the cascaded directional and point-light
+shadow maps producer.\\
+\Component{Forward Shader} -- the per-fragment shader that consumes the
+tile light list and shadow maps to produce the final colour.
+
+\section{Traceability}
+
+\begin{traceability}
+  \Trace{REQ-RP-001}{Backend output parity}%
+        {Frame Graph, Forward Shader}{TC-PARITY-{01..06}}
+  \Trace{REQ-RP-002}{Many-light scalability}%
+        {Tile Binner, Forward Shader}{TC-LIGHTS-{01,02,03}}
+  \Trace{REQ-RP-003}{Frame determinism}%
+        {Frame Graph}{TC-DET-{01,02}}
+  \Trace{REQ-RP-004}{WebGL 2.0 implementability}%
+        {Tile Binner, Forward Shader}{TC-WEB-{01,02}}
+\end{traceability}
+
+\end{document}

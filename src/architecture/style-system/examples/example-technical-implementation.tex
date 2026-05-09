@@ -1,0 +1,113 @@
+% =============================================================================
+% example-technical-implementation.tex
+% Style: latex-docs-technical-implementation
+% Build: pdflatex via latexmk; minted-aware with listings fallback.
+% =============================================================================
+\documentclass[11pt]{article}
+\usepackage{latex-docs-technical-implementation}
+
+\setDocTitle{Tile Binner -- Implementation Guidance}
+\setDocSubtitle{CPU-side per-frame light culling for the forward
+                tile-binned pipeline}
+\setDocVersion{v0.2}
+\setDocStatus{Draft}
+\setDocOwner{Engine Architecture}
+\setDocAuthor{Jordan Suber}
+\setDocDate{May 8, 2026}
+\setDocSummary{%
+  Reference implementation guidance demonstrating the implementation
+  subtype: API contracts with structured Inputs / Outputs / Errors /
+  Side effects, inline source-code references, and a numbered
+  walkthrough.%
+}
+
+\begin{document}
+\makedoctocpage
+
+\section{Component overview}
+The \Module{TileBinner} runs once per frame on the CPU. It consumes
+the view-frustum and the active light set, and produces a per-tile
+light list. The list is uploaded to GPU as a single buffer texture
+and consumed by the forward shader stage. The component is
+implemented in \CodeRef{src/render/tile\_binner.c}{1}{file header},
+and is invoked by the frame graph at the start of the lighting pass.
+
+\section{Public API}
+
+\begin{apicontract}{tilebinner\_run}{C function}
+  \Inputs A populated \TypeName{tb\_input\_t}: view-projection matrix,
+          tile dimensions, viewport size, and the active
+          \TypeName{light\_list\_t}.
+  \Outputs A \TypeName{tb\_output\_t}: a flat \texttt{uint32\_t} buffer
+          of per-tile light index lists, prefixed by per-tile counts.
+  \Errors  Returns \TypeName{TB\_ERR\_OOM} if the per-tile arena cannot
+           grow; \TypeName{TB\_ERR\_INVAL} if the input is malformed.
+           Both errors are non-fatal; the caller may render a previous
+           frame's bins.
+  \SideEffects Allocates from the per-frame arena passed in
+           \TypeName{tb\_input\_t.arena}; never allocates from the
+           global heap. Logs a debug counter via
+           \Function{rdr\_metrics\_inc} when binning exceeds budget.
+\end{apicontract}
+
+\begin{apicontract}{tilebinner\_upload}{C function}
+  \Inputs A \TypeName{tb\_output\_t} produced by
+          \Function{tilebinner\_run} and a \TypeName{tb\_gpu\_handles\_t}.
+  \Outputs Updates the buffer-texture handle in
+          \TypeName{tb\_gpu\_handles\_t.light\_indices}; safe to call
+          from the render thread.
+  \Errors  Returns \TypeName{TB\_ERR\_GPU} if the buffer-texture
+           upload fails; the caller should retry next frame.
+  \SideEffects None on the CPU side beyond the GPU upload.
+\end{apicontract}
+
+\section{Walkthrough}
+
+\begin{walkthrough}{One frame of binning}
+  \WStep{The frame graph calls \Function{tilebinner\_run} immediately
+         after the visibility query completes; see
+         \CodeRef{src/render/frame\_graph.c}{142}{the binning hook}.}
+  \WStep{For each light, the binner computes the screen-space bounding
+         rectangle of the light's volume of effect; see
+         \CodeRef{src/render/tile\_binner.c}{38}{\Function{light\_screen\_bbox}}.}
+  \WStep{For each tile the rectangle overlaps, the binner appends the
+         light's index to that tile's per-frame list. The list lives in
+         the per-frame arena; no heap allocation in the hot path.}
+  \WStep{When binning is complete, \Function{tilebinner\_compact}
+         flattens the per-tile lists into the contiguous output buffer
+         by writing the per-tile counts as a prefix; see
+         \CodeRef{src/render/tile\_binner.c}{211}{the compaction step}.}
+  \WStep{The frame graph calls \Function{tilebinner\_upload}, which
+         binds the buffer texture and uploads it as a single
+         \Function{glBufferSubData} call. \Constraint{This is the only
+         CPU-to-GPU upload path the binner uses}; do not introduce
+         additional uploads without revisiting the per-frame budget.}
+\end{walkthrough}
+
+\section{Performance notes}
+
+\begin{infobox}[Where the time goes]
+On the reference scene with 128 active lights, the binner takes
+0.34~ms (\Function{tilebinner\_run}) plus 0.06~ms for the GPU upload
+(\Function{tilebinner\_upload}). Per-tile light iteration in the
+fragment shader costs an additional 0.5~ms on the reference GPU.
+Total tile-binning overhead is therefore around 1~ms of a 16~ms frame
+budget.
+\end{infobox}
+
+\section{What not to do}
+
+\begin{cautionbox}[Common pitfalls]
+\begin{itemize}
+  \item Do \emph{not} allocate per-tile lists from the global heap; the
+        per-frame arena is mandatory.
+  \item Do \emph{not} run the binner on the render thread; the CPU
+        cost belongs to the simulation thread per the frame-graph
+        contract.
+  \item Do \emph{not} cache binner output across frames. Determinism is
+        a requirement of the design (REQ-RP-003); a cached bin breaks
+        the visual regression suite.
+\end{itemize}
+\end{cautionbox}
+
+\end{document}

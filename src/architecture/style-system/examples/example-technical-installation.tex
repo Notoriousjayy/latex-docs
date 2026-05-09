@@ -1,0 +1,124 @@
+% =============================================================================
+% example-technical-installation.tex
+% Style: latex-docs-technical-installation
+% Build: pdflatex via latexmk; minted-aware with listings fallback.
+% =============================================================================
+\documentclass[11pt]{article}
+\usepackage{latex-docs-technical-installation}
+
+\setDocTitle{AetherForge Engine -- Linux Installation Runbook}
+\setDocSubtitle{Ubuntu 22.04 / 24.04 -- native build with WebAssembly target}
+\setDocVersion{v1.1}
+\setDocStatus{Released}
+\setDocOwner{Documentation}
+\setDocAuthor{Jordan Suber}
+\setDocDate{May 8, 2026}
+\setDocSummary{%
+  Reference installation runbook demonstrating the installation
+  subtype: a prerequisites checklist, ordered installation steps each
+  with verification and rollback notes, and a top-level rollback
+  callout for failed installations.%
+}
+
+\begin{document}
+\makedoctocpage
+
+\section{Overview}
+This runbook installs the AetherForge Engine from source on a fresh
+Ubuntu 22.04 or 24.04 system, builds both the native and WebAssembly
+targets, and verifies the install with a sample render.
+
+\begin{prerequisites}
+  \Prereq{Ubuntu 22.04 LTS or 24.04 LTS, with sudo access.}
+  \Prereq{At least 8~GB of free disk space (build artifacts and
+          texture caches).}
+  \Prereq{Network access to GitHub and PyPI for source and toolchain
+          fetches.}
+  \Prereq{Required system packages:
+          \texttt{build-essential cmake ninja-build clang-15
+          libsdl3-dev libgles-dev pkg-config python3-pip}.}
+  \Prereq{For WebAssembly target only: Emscripten 3.1.51+ on the
+          \EnvVar{PATH}.}
+\end{prerequisites}
+
+\section{Steps}
+
+\IStep{Clone the repository}{%
+\Cmdline{git clone https://github.com/example/aetherforge.git \&\& cd aetherforge}
+\Verify{The directory \filename{aetherforge/} contains a
+        \filename{CMakePresets.json} at the top level.}
+\RollbackNote{If the clone failed midway, delete the partial directory
+              and retry: \Cmdline{rm -rf aetherforge}.}
+}
+
+\IStep{Install Python tooling}{%
+The build system uses several Python helpers (texture pipeline, shader
+preprocessor, validation passes).
+\Cmdline{python3 -m pip install --user -r tools/requirements.txt}
+\Verify{\Cmdline{aetherforge-tooling --version} prints the version
+        matching the repository's \filename{tools/VERSION} file.}
+\RollbackNote{Uninstall: \Cmdline{python3 -m pip uninstall aetherforge-tooling}.}
+}
+
+\IStep{Configure the native build}{%
+\Cmdline{cmake --preset native}
+\Verify{The configuration step completes with a final line containing
+        \texttt{Configuration: native, OpenGL ES 3.0}.}
+\RollbackNote{Remove the build directory: \Cmdline{rm -rf build/native}.}
+}
+
+\IStep{Build the engine}{%
+\Cmdline{cmake --build --preset native -j}
+\Verify{The build completes without errors, producing
+        \filename{build/native/bin/aetherforge}. The expected build time
+        on the reference 8-core machine is ~3~minutes.}
+\RollbackNote{Re-run with verbose output to capture diagnostics:
+              \Cmdline{cmake --build --preset native -v}.}
+}
+
+\IStep{Run the sample}{%
+\Cmdline{build/native/bin/aetherforge --scene samples/hello.afs --render-once}
+\Verify{The process exits with status 0 and writes
+        \filename{first-frame.png} to the current directory. Open the
+        PNG: it should show a textured cube on a neutral background.}
+\RollbackNote{If the sample fails, run with diagnostic logging:
+              \Cmdline{AETHERFORGE\_LOG=debug build/native/bin/aetherforge --scene samples/hello.afs --render-once}.}
+}
+
+\IStep{Configure and build the WebAssembly target (optional)}{%
+\Cmdline{source /path/to/emsdk/emsdk\_env.sh \&\& cmake --preset wasm \&\& cmake --build --preset wasm -j}
+\Verify{The build produces \filename{build/wasm/web/aetherforge.html}.
+        Serve the directory and open the HTML file in a recent browser;
+        the same textured cube should render in the canvas.}
+\RollbackNote{Remove the WASM build directory:
+              \Cmdline{rm -rf build/wasm}.}
+}
+
+\section{If installation fails partway through}
+
+\begin{rollback}[Failed installation -- full rollback]
+If installation fails irrecoverably and you wish to start clean:
+
+\begin{enumerate}
+  \item Run the \emph{Rollback} action of every step you completed, in
+        reverse order.
+  \item Remove the working directory:
+        \Cmdline{cd .. \&\& rm -rf aetherforge}.
+  \item Uninstall the Python tooling:
+        \Cmdline{python3 -m pip uninstall aetherforge-tooling}.
+\end{enumerate}
+
+If the failure is reproducible, file an issue at
+\filename{aetherforge/issues} including the output of \Cmdline{cmake --version},
+\Cmdline{clang --version}, and the failing step's verbose log.
+\end{rollback}
+
+\section{What's next}
+\begin{itemize}
+  \item Read the user manual to learn the editor.
+  \item Read the design specification to understand the render
+        pipeline.
+  \item Run the test suite: \Cmdline{ctest --preset native}.
+\end{itemize}
+
+\end{document}

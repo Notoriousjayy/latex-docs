@@ -1,0 +1,410 @@
+% =============================================================================
+% style-module-architecture.tex
+% Style: latex-docs-technical-design-spec (which transitively loads
+%        latex-docs-technical -> latex-docs-base -> latex-docs-style).
+% Build: pdflatex via latexmk; minted-aware with listings fallback.
+% =============================================================================
+\documentclass[11pt]{article}
+\usepackage{latex-docs-technical-design-spec}
+
+\setDocTitle{Modular LaTeX style-module architecture}
+\setDocSubtitle{Inheritance-oriented design for the \texttt{latex-docs} repository}
+\setDocVersion{v1.0}
+\setDocStatus{Accepted}
+\setDocOwner{Tooling \& Documentation}
+\setDocAuthor{Jordan Suber}
+\setDocSummary{%
+  A reusable, hierarchical LaTeX style system organised by document
+  function. A single parent module owns shared presentation foundations;
+  family modules (legal, financial, business / administrative, HR,
+  personal / official, and an abstract technical) generalise from the
+  parent; five technical subtypes generalise from the abstract technical
+  module. The system preserves backward compatibility with the existing
+  canonical house style and is designed for long-term reuse.%
+}
+
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,fit,backgrounds}
+
+\begin{document}
+\makedoctocpage
+
+% =============================================================================
+\section{Proposed style-module hierarchy}
+
+The hierarchy is a single-rooted tree with one abstract intermediate node
+(the technical family). Every concrete document module is a leaf; every
+non-leaf is either the parent or the abstract intermediate. Backward
+compatibility with the canonical house style is preserved at the parent
+level by delegation.
+
+\begin{center}
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  node distance=4mm and 8mm,
+  every node/.style={font=\small},
+  abs/.style    ={draw=Steel, dashed, fill=Soft,    rounded corners=2pt,
+                  inner sep=4pt, minimum width=44mm, align=center},
+  fam/.style    ={draw=Navy,           fill=Soft,    rounded corners=2pt,
+                  inner sep=4pt, minimum width=44mm, align=center},
+  sub/.style    ={draw=Teal,           fill=white,   rounded corners=2pt,
+                  inner sep=3pt, minimum width=58mm, align=center},
+  tech/.style   ={draw=Steel, dashed, fill=Soft!80, rounded corners=2pt,
+                  inner sep=4pt, minimum width=44mm, align=center},
+  edge/.style   ={-{Latex[length=2mm]}, Steel, line width=0.5pt}
+]
+% Parent
+\node[abs]                                                       (root) {%
+  \textbf{latex-docs-base}\\\scriptsize\itshape parent (abstract)};
+
+% Family row
+\node[fam, below=12mm of root, xshift=-72mm] (legal)            {legal};
+\node[fam, right=2mm of legal]              (fin)               {financial};
+\node[fam, right=2mm of fin]                (biz)               {business-admin};
+\node[fam, below=4mm of legal, xshift=24mm]  (hr)                {hr};
+\node[fam, right=2mm of hr]                 (po)                {personal-official};
+\node[tech, right=2mm of po]                (tech)              {%
+  \textbf{technical}\\\scriptsize\itshape abstract intermediate};
+
+% Edges parent -> families
+\foreach \n in {legal, fin, biz, hr, po, tech}
+  \draw[edge] (root.south) -- ($(\n.north)+(0,1pt)$);
+
+% Subtype row
+\node[sub, below=14mm of tech, xshift=-46mm]      (um)  {technical-user-manual};
+\node[sub, right=1mm of um]                      (ds)   {technical-design-spec};
+\node[sub, below=2mm of um, xshift=22mm]         (impl) {technical-implementation};
+\node[sub, below=2mm of impl, xshift=-30mm]      (inst) {technical-installation};
+\node[sub, right=1mm of inst]                    (test) {technical-testing};
+
+% Edges technical -> subtypes
+\foreach \n in {um, ds, impl, inst, test}
+  \draw[edge] (tech.south) -- (\n.north);
+
+\end{tikzpicture}%
+}
+\end{center}
+
+\Constraint{Inheritance is single, semantic, and one-way:} children
+generalise from one parent. Documents never load \Module{latex-docs-base}
+directly and never load two sibling modules simultaneously.
+
+% =============================================================================
+\section{Parent module responsibilities}
+
+\Module{latex-docs-base.sty} is the abstract root of the hierarchy.
+Concretely it is responsible for:
+
+\begin{itemize}
+  \item \textbf{Foundation delegation.} It \texttt{\textbackslash RequirePackage}s the
+        canonical house style \Module{latex-docs-style.sty} once. Page
+        geometry, font selection, microtypography, the colour palette
+        (Navy / Steel / Teal / Brick on Soft), tables / lists / floats,
+        the standard tcolorbox callouts (note / tip / warn / info / view),
+        hyperlinks, code rendering, metadata API, page style, and
+        section-heading typography all come from there. Family modules
+        inherit them transitively, never re-declare them.
+  \item \textbf{Module-classification registry.}
+        \Function{LdsRegisterModule} sets two macros every consumer can
+        read: \Module{LdsCurrentModuleKey} and \Module{LdsCurrentModuleName}.
+        Subtypes call it after their parent's call, so the deepest module
+        wins.
+  \item \textbf{\Module{DocClass} metadata.} A new metadata field carrying
+        the document's functional class. It flows automatically into the
+        title-block meta line and the running header via
+        \Function{LdsExtraHeader}.
+  \item \textbf{Title and header extension hooks.}
+        \Function{LdsExtraTitleMeta} and \Function{LdsExtraHeader} let
+        children augment the title block and header without
+        re-implementing them.
+  \item \textbf{Generic counter factory.} \Function{NewLdsCounter} declares
+        a counter, configures \Module{cleveref} singular / plural names,
+        and registers a \Function{LdsRefCounter} accessor. Every family
+        uses it; no family redefines counter glue from scratch.
+  \item \textbf{Labeled-block environment factory.}
+        \Function{NewLdsLabeledBlock} stamps out a tcolorbox-backed,
+        counter-driven, optionally-titled environment in a single line.
+        Three legal callouts, four installation steps, an ADR header,
+        and the test-case header all use the same factory.
+  \item \textbf{Shared signature primitive.} \Function{LdsSignatureLine}
+        is composed by legal, HR, and personal-official modules.
+        Composition over re-implementation.
+  \item \textbf{Hairline-overfull tolerance.} A modest
+        \Module{emergencystretch} so headings combining bold + small caps +
+        colour absorb tight measure without warning.
+\end{itemize}
+
+\begin{notebox}[Inheritance vs. Composition]
+The shared signature primitive deserves a note. Three families need a
+signature line: legal, HR (offer letters, performance reviews),
+and personal-official (certificates). They are not a single inheritance
+chain; the right primitive is therefore \emph{composed in} from the
+parent and re-used. Inheritance models specialisation; composition
+models a shared-but-orthogonal capability. The architecture uses both.
+\end{notebox}
+
+% =============================================================================
+\section{Function-class module responsibilities}
+
+Each top-level family module owns the structures that ALL documents in
+its functional class use, and nothing more. The litmus test for adding
+behaviour to a family module: ``Will every document of this kind want
+this, or only some?'' If only some, the behaviour belongs in the
+document, not the module.
+
+\begin{traceability}
+  \Trace{Legal}{Articles, clauses, recitals, parties, definitions, signatures.}{latex-docs-legal}{example-legal-contract}
+  \Trace{Financial}{Currency, line items, summary rows, ledger, invoice header.}{latex-docs-financial}{example-financial-invoice}
+  \Trace{Business / Admin}{Memo header, attendees, agenda, decisions, action items, policies, procedures.}{latex-docs-business-admin}{example-business-memo}
+  \Trace{HR}{Job descriptions, applicant records, training schedules, performance rubrics, PII redaction.}{latex-docs-hr}{example-hr-job-description}
+  \Trace{Personal / Official}{Certificate page, ID-card layout, single-signature primitive.}{latex-docs-personal-official}{example-personal-certificate}
+  \Trace{Technical (abstract)}{Requirements, long commands, hazard / caution callouts, step-result tables, semantic tagging.}{latex-docs-technical}{(intermediate; loaded transitively)}
+\end{traceability}
+
+% =============================================================================
+\section{Technical-document specialization model}
+
+The technical family is the only one with internal structure. Modelling
+the five technical subtypes as siblings under a shared abstract module
+captures the empirical reality that user manuals, design specs,
+implementation guides, installation runbooks, and test plans share a
+substantial substrate -- requirement IDs, command rendering, hazard
+callouts, step-and-expected-outcome tables -- while each adds genuinely
+distinct structures.
+
+\begin{adr}{Make \texttt{latex-docs-technical} an abstract intermediate}{Accepted}
+  \ADRContext{%
+    Five technical document subtypes need shared substrate but each adds
+    distinct structures. Two designs were considered: (a) flatten all
+    five as direct children of the parent, with shared substrate
+    duplicated in each; (b) introduce an abstract intermediate technical
+    module that owns the substrate, with concrete subtypes generalising
+    from it.%
+  }
+  \ADRDecision{%
+    Adopt (b). The abstract \Module{latex-docs-technical} is loadable on
+    its own (so a generic technical document still has a home) but the
+    recommended endpoint for a real document is one of the five concrete
+    subtypes. The intermediate is the natural place for any future
+    addition (e.g.\ release notes, architecture overview) that fits the
+    technical family but does not match an existing subtype.%
+  }
+  \ADRConsequences{%
+    The hierarchy gains one node, a small price for substantial
+    code reuse. Subtype implementation is a few dozen lines instead of
+    several hundred. Adding a new technical subtype is a 30-minute task,
+    not a 4-hour task.%
+  }
+\end{adr}
+
+\subsection{What each subtype contributes}
+
+\begin{description}
+  \item[\Module{technical-user-manual}] \texttt{task} and \texttt{tutorial}
+    environments, GUI semantics (\Function{Menu}, \Function{Button},
+    \Function{Field}, \Function{Tab}, \Function{Window}),
+    \texttt{troubleshooting} Q/A table, reading-level-tuned note wrappers.
+  \item[\Module{technical-design-spec}] \Function{ADR} header with status
+    pill, \texttt{adr} environment with Context / Decision / Consequences,
+    \texttt{traceability} matrix, numbered \Function{DesignDecision}
+    callouts.
+  \item[\Module{technical-implementation}] \texttt{apicontract} environment
+    with Inputs / Outputs / Errors / Side effects, \Function{CodeRef}
+    inline source pointers, \texttt{walkthrough} narrative environment,
+    semantic source-element typography (\Function{Module},
+    \Function{Function}, \Function{TypeName}).
+  \item[\Module{technical-installation}] \texttt{prerequisites} checklist,
+    \Function{IStep} step blocks, \Function{Verify} and
+    \Function{RollbackNote} step-local secondary fields, top-level
+    \texttt{rollback} callout, \Function{EnvVar} typography.
+  \item[\Module{technical-testing}] \Function{TestCase} header,
+    \texttt{testcase} environment, status glyphs (\Function{Pass},
+    \Function{Fail}, \Function{Skip}, \Function{Block}),
+    \texttt{teststeps} table, \texttt{coverage} requirements-to-tests
+    matrix.
+\end{description}
+
+% =============================================================================
+\section{Recommended file / folder structure}
+
+\begin{minted}[fontsize=\footnotesize]{text}
+tooling/latex/
+  latex-docs-style.sty              # canonical house style (UNCHANGED)
+  styles/
+    README.md                       # quick reference
+    latex-docs-base.sty             # parent / hierarchy root
+    latex-docs-legal.sty
+    latex-docs-financial.sty
+    latex-docs-business-admin.sty
+    latex-docs-hr.sty
+    latex-docs-personal-official.sty
+    latex-docs-technical.sty                   # abstract intermediate
+    latex-docs-technical-user-manual.sty
+    latex-docs-technical-design-spec.sty
+    latex-docs-technical-implementation.sty
+    latex-docs-technical-installation.sty
+    latex-docs-technical-testing.sty
+
+src/architecture/style-system/
+  style-module-architecture.tex     # this document
+  examples/
+    example-legal-contract.tex
+    example-financial-invoice.tex
+    example-business-memo.tex
+    example-hr-job-description.tex
+    example-personal-certificate.tex
+    example-technical-user-manual.tex
+    example-technical-design-spec.tex
+    example-technical-implementation.tex
+    example-technical-installation.tex
+    example-technical-testing.tex
+\end{minted}
+
+\subsection{Naming convention}
+
+Every module file is \Module{latex-docs-<segment>[-<segment>]*.sty} so all
+modules sort together in \cmd{kpsewhich -all}, in IDE autocomplete, and in
+the \texttt{texmf} tree. Module identifiers (the argument passed to
+\Function{LdsRegisterModule}) are kebab-case and match the file stem
+without the prefix: \texttt{technical-user-manual},
+\texttt{technical-installation}, etc.
+
+The repo's \texttt{Makefile} exports
+\Cmdline{TEXINPUTS=\$(abspath tooling/latex)//:\$(TEXINPUTS)}
+where the trailing \texttt{//:} makes \texttt{kpathsea} search recursively.
+Files under \texttt{tooling/latex/styles/} are therefore discovered
+automatically; no \texttt{Makefile} change is needed when new modules are
+added.
+
+% =============================================================================
+\section{Sample \texttt{.sty} skeletons}
+
+The canonical skeletons are the actual modules in
+\Cmdline{tooling/latex/styles/}. Reading those is the authoritative
+source. The shape of any new family module is:
+
+\begin{minted}[fontsize=\footnotesize]{latex}
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{latex-docs-<family>}%
+  [<YYYY/MM/DD> v<n> latex-docs <family> family module]
+\RequirePackage{latex-docs-base}
+\LdsRegisterModule{<family>}{<Display Name>}
+
+% Counters via the parent factory; no manual cleveref / refstepcounter glue.
+\NewLdsCounter{<Short>}{<crefnameplural>}{<crefname>}
+
+% Labeled-block environments via the parent factory.
+\NewLdsLabeledBlock{<envname>}{<counterShort>}{<word>}{<frame colour>}
+
+% Family-specific environments and macros.
+\newenvironment{<env>}{...}{...}
+\newcommand{\<Macro>}[<n>]{...}
+
+\endinput
+\end{minted}
+
+The shape of a technical subtype is identical except its first non-comment
+line is \Cmdline{\textbackslash RequirePackage\{latex-docs-technical\}}
+instead of \Cmdline{\textbackslash RequirePackage\{latex-docs-base\}}.
+
+% =============================================================================
+\section{Sample \texttt{.tex} usage examples}
+
+Ten examples ship in \Cmdline{src/architecture/style-system/examples/}, one
+per concrete module. Each is a complete, compilable, single-file document.
+The canonical pattern is:
+
+\begin{minted}[fontsize=\footnotesize]{latex}
+\documentclass[11pt]{article}
+\usepackage{latex-docs-<family-or-subtype>}
+
+\setDocTitle{...}        \setDocSubtitle{...}
+\setDocVersion{...}      \setDocStatus{...}
+\setDocOwner{...}        \setDocAuthor{...}
+\setDocDate{\today}      \setDocSummary{...}
+
+\begin{document}
+\makedoctocpage  % or \makedoctitle alone for short documents
+% ...content using the family's specialised environments...
+\end{document}
+\end{minted}
+
+\Function{DocClass} is set automatically by the loaded module; documents
+need not set it. To override (e.g.\ to refine a subtype label), call
+\Cmdline{\textbackslash setDocClass\{Technical / Installation -- Cluster v3\}}
+in the preamble.
+
+% =============================================================================
+\section{Design rationale and extension guidance}
+
+\subsection{What belongs at each level}
+
+\begin{description}
+  \item[Parent] Anything genuinely shared by ALL function families.
+    The litmus test: ``If we removed family X, would the parent still
+    need this?'' If yes, it belongs in the parent. If no, it does not.
+  \item[Family module] Anything genuinely shared by ALL documents of a
+    function class -- the structures that define the class. If only a
+    subset of documents in the class uses it, it does not belong here;
+    push it to a subtype or to the document.
+  \item[Subtype] Structures unique to the subtype. ADR shape lives only
+    in design-spec. Test-case status glyphs live only in testing. The
+    subtype is also the right home for narrowly-scoped typographic
+    conventions (\Function{Menu} / \Function{Button} only make sense
+    in user manuals, not in test plans).
+\end{description}
+
+\subsection{Avoiding duplication and fragile inheritance}
+
+\begin{itemize}
+  \item \textbf{Use factories, not copy-paste.} \Function{NewLdsCounter} and
+        \Function{NewLdsLabeledBlock} are deliberately generic so families
+        do not re-implement counter / cleveref / tcolorbox glue.
+  \item \textbf{Use composition for cross-family capability.}
+        \Function{LdsSignatureLine} is composed in by legal, HR, and
+        personal-official because signatures are not a single inheritance
+        chain. Inheritance models specialisation; composition models a
+        shared-but-orthogonal capability.
+  \item \textbf{Never override foundations.} A child module never
+        \Function{renewcommand}s a foundation macro from
+        \Module{latex-docs-style}. Children extend through the hooks
+        (\Function{LdsExtraTitleMeta}, \Function{LdsExtraHeader}); they
+        never reach across the hierarchy to mutate ancestors.
+  \item \textbf{One module per document.} Loading two sibling family
+        modules at once is unsupported. If a document genuinely sits at
+        the intersection of two families (e.g.\ a legal-financial
+        addendum), prefer the dominant family's module and add the
+        secondary structures inline; do not stack modules to combine
+        them.
+\end{itemize}
+
+\subsection{Adding a new function class}
+
+\begin{enumerate}
+  \item Create \Cmdline{tooling/latex/styles/latex-docs-<family>.sty}.
+  \item First non-comment line:
+        \Cmdline{\textbackslash RequirePackage\{latex-docs-base\}}.
+  \item Register: \Cmdline{\textbackslash LdsRegisterModule\{<key>\}\{<Display Name>\}}.
+  \item Add only behaviour shared by ALL documents in this family.
+  \item Use \Function{NewLdsCounter} and \Function{NewLdsLabeledBlock}
+        for counters and labeled blocks.
+  \item Add an example to \Cmdline{src/architecture/style-system/examples/}.
+  \item Verify: \Cmdline{cd src/.../examples \&\& latexmk -pdf example-<family>.tex}.
+\end{enumerate}
+
+\subsection{Adding a new technical subtype}
+
+Identical to adding a family, except step 2 is
+\Cmdline{\textbackslash RequirePackage\{latex-docs-technical\}}, and the
+subtype inherits the technical substrate (requirements, hazards, step
+results, semantic tagging) without re-declaring it.
+
+\subsection{Backward compatibility}
+
+The canonical house style \Module{latex-docs-style.sty} is unchanged; the
+roughly two-hundred existing documents that load it directly continue to
+work. The new hierarchy is additive. The parent module loads the canonical
+style; family modules load the parent. Concrete documents see one
+\Function{usepackage} line, no different in effort from before.
+
+\end{document}
