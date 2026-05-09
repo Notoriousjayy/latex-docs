@@ -1,0 +1,135 @@
+% =============================================================================
+% latex-docs-technical.sty
+% =============================================================================
+% Role in the hierarchy: ABSTRACT INTERMEDIATE MODULE.
+% Generalizes from: latex-docs-base (the parent / hierarchy root).
+% Generalized by:    latex-docs-technical-user-manual
+%                    latex-docs-technical-design-spec
+%                    latex-docs-technical-implementation
+%                    latex-docs-technical-installation
+%                    latex-docs-technical-testing
+%
+% This module is "abstract" in the inheritance sense: it is loadable on its
+% own (so a generic technical document that does not fit a specific subtype
+% has a home) but is NOT the recommended endpoint. Any technical document
+% that fits a subtype should load that subtype, which inherits everything
+% defined here AND adds its own specialization.
+%
+% Functional class served (at this level):
+%   The shared substrate that user manuals, design specs, implementation
+%   guides, installation instructions, and testing procedures all need.
+%
+% Specialization contributed beyond the parent:
+%   * Numbered, label-able requirement IDs: \Req{REQ-Login-001}{The system
+%     shall...}, with cross-referencing via \cref.
+%   * \Cmdline{...}: a multi-line, monospace, framed long-command listing
+%     for terminal commands too long for inline \cmd{...}.
+%   * `hazardbox` and `cautionbox` semantic callouts (in addition to the
+%     parent-supplied notebox/tipbox/warnbox/infobox), distinguishing safety
+%     hazards from generic warnings.
+%   * `stepresult` two-column table environment (Step / Expected outcome)
+%     -- ubiquitous across user manuals, installation guides, and tests.
+%   * Convention helpers: \Component{name}, \Interface{name}, \Constraint{id}
+%     for cross-document semantic tagging.
+%   * Appendix A/B convention: \technicalappendix{Title} sets up an
+%     appendix entry that integrates with the bookmarks tree.
+%
+% The module sets \DocClass = "Technical" by default; subtypes overwrite this.
+% =============================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{latex-docs-technical}%
+  [2026/05/08 v1.0 latex-docs technical (abstract) family module]
+
+\RequirePackage{latex-docs-base}
+\LdsRegisterModule{technical}{Technical}
+
+% -----------------------------------------------------------------------------
+% 1. Requirement IDs (\Req{REQ-001}{Statement})
+% -----------------------------------------------------------------------------
+% Requirements are explicitly identified by a stable, document-supplied ID,
+% rather than auto-numbered, because requirement IDs typically outlive
+% documents. We keep an internal counter only for "implicit" requirements.
+\NewLdsCounter{Req}{requirements}{requirement}
+
+\newcommand{\Req}[2]{%
+  \refstepcounter{LdsReq}%
+  \par\noindent\textbf{\textcolor{Navy}{#1}}\quad #2\par\smallskip
+}
+
+% -----------------------------------------------------------------------------
+% 2. \Cmdline -- long-form terminal command rendering
+% -----------------------------------------------------------------------------
+% Inline \cmd{...} (provided by the parent's house style) is for short
+% commands that flow in a paragraph. \Cmdline{...} renders a single, framed,
+% breakable command in its own block. \raggedright is essential -- monospace
+% commands rarely break on a justified line, so the final line would
+% otherwise underfull and warn.
+\newcommand{\Cmdline}[1]{%
+  \begin{tcolorbox}[colback=gray!4,colframe=Steel!50,boxrule=0.4pt,
+                    arc=1.5pt,left=3mm,right=3mm,top=1.5mm,bottom=1.5mm]%
+    \raggedright\ttfamily\small #1
+  \end{tcolorbox}
+}
+
+% -----------------------------------------------------------------------------
+% 3. Safety callouts: hazardbox, cautionbox
+% -----------------------------------------------------------------------------
+% notebox/tipbox/warnbox/infobox/viewbox come from the canonical house style.
+% At the technical level we add SAFETY-graded callouts.
+% hazard = "may cause personal injury or equipment damage", the strongest.
+% caution = "may cause incorrect results or rework if ignored", lighter.
+\@ifundefined{hazardbox}{%
+  \newtcolorbox{hazardbox}[1][Hazard]{title=\textbf{#1},colframe=Brick,
+    colback=Soft,coltitle=white,fonttitle=\bfseries,
+    leftrule=4pt}%
+}{}
+\@ifundefined{cautionbox}{%
+  \newtcolorbox{cautionbox}[1][Caution]{title=\textbf{#1},colframe=Brick!60,
+    colback=Soft,coltitle=white,fonttitle=\bfseries}%
+}{}
+
+% -----------------------------------------------------------------------------
+% 4. stepresult environment
+% -----------------------------------------------------------------------------
+% \begin{stepresult}
+%   \SR{Run \cmd{kubectl get pods}}{Two pods reach STATUS=Running.}
+%   \SR{Open the dashboard}{HTTP 200; greeting header is visible.}
+% \end{stepresult}
+\NewLdsCounter{TechStep}{steps}{step}
+\newenvironment{stepresult}{%
+  \setcounter{LdsTechStep}{0}%
+  \par
+  \begin{longtable}{@{}l>{\raggedright\arraybackslash}p{0.42\linewidth}%
+                       >{\raggedright\arraybackslash}p{0.38\linewidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Action} & \textbf{Expected outcome}\\
+    \midrule
+    \endhead
+    \bottomrule
+    \endfoot
+}{%
+  \end{longtable}\par
+}
+\newcommand{\SR}[2]{%
+  \refstepcounter{LdsTechStep}%
+  \theLdsTechStep & #1 & #2\\
+}
+
+% -----------------------------------------------------------------------------
+% 5. Semantic tagging macros
+% -----------------------------------------------------------------------------
+\providecommand{\Component}[1]{\textsc{\textcolor{Navy}{#1}}}
+\providecommand{\Interface}[1]{\texttt{\textcolor{Teal}{#1}}}
+\providecommand{\Constraint}[1]{\textbf{\textcolor{Brick}{#1}}}
+
+% -----------------------------------------------------------------------------
+% 6. Appendix helper
+% -----------------------------------------------------------------------------
+% Standard LaTeX \appendix already changes \section numbering to A, B, ...;
+% the helper below also pushes a bookmark at the appropriate level.
+\newcommand{\technicalappendix}[1]{%
+  \section{#1}%
+  \pdfbookmark[1]{#1}{appx-\theLdsTechStep-\theLdsReq}%
+}
+
+\endinput

@@ -1,0 +1,162 @@
+% =============================================================================
+% latex-docs-financial.sty
+% =============================================================================
+% Role in the hierarchy: CONCRETE FAMILY MODULE.
+% Generalizes from: latex-docs-base.
+%
+% Functional class served:
+%   Invoices, receipts, ledgers, balance sheets, income statements, expense
+%   records, purchase orders, statements of account, and related financial
+%   artifacts.
+%
+% Specialization contributed beyond the parent:
+%   * Currency typesetting: \Money{1234.50} / \MoneyN{...}{EUR} -- right-aligned
+%     decimal-aligned, locale-configurable via \LdsCurrencySymbol.
+%   * `lineitems` longtable environment with a fixed schema (#, Description,
+%     Qty, Unit, Amount).
+%   * \Subtotal / \TaxLine / \GrandTotal: pre-formatted summary rows that pair
+%     with `lineitems` and right-align consistently.
+%   * `ledger` environment for double-entry-style debit/credit listings.
+%   * `invoiceheader` block: from / to / invoice number / due date in a tcolorbox
+%     pair across the page.
+%
+% The module sets \DocClass = "Financial Document".
+% =============================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{latex-docs-financial}%
+  [2026/05/08 v1.0 latex-docs financial family module]
+
+\RequirePackage{latex-docs-base}
+\RequirePackage{siunitx}
+\sisetup{
+  group-separator={,},
+  group-minimum-digits=4,
+  output-decimal-marker={.},
+  detect-weight=true
+}
+\LdsRegisterModule{financial}{Financial Document}
+
+% -----------------------------------------------------------------------------
+% 1. Currency typesetting
+% -----------------------------------------------------------------------------
+\providecommand{\LdsCurrencySymbol}{\$}
+
+% \Money{1234.50}  -> $1,234.50   (uses default symbol)
+% \MoneyN{1234.50}{EUR}  -> EUR\,1,234.50
+\newcommand{\Money}[1]{\LdsCurrencySymbol\num[round-mode=places,round-precision=2]{#1}}
+\newcommand{\MoneyN}[2]{#2\,\num[round-mode=places,round-precision=2]{#1}}
+
+% Right-aligned decimal-aligned column type for line-item tables. siunitx
+% S-columns make decimal alignment robust without hard-coded widths.
+\newcolumntype{M}{S[
+  table-format=6.2,
+  table-number-alignment=right,
+  table-text-alignment=right,
+  round-mode=places,
+  round-precision=2
+]}
+
+% -----------------------------------------------------------------------------
+% 2. Invoice header
+% -----------------------------------------------------------------------------
+% \invoiceheader
+%   {From: Acme Inc.\\123 Main St.}
+%   {To: Beta Co.\\456 Park Ave.}
+%   {INV-2026-001}
+%   {Due 2026-06-08}
+\newcommand{\invoiceheader}[4]{%
+  \par\noindent
+  \begin{minipage}[t]{0.46\linewidth}%
+    \begin{viewbox}\small #1\end{viewbox}%
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.46\linewidth}%
+    \begin{viewbox}\small #2\end{viewbox}%
+  \end{minipage}%
+  \par\medskip
+  \noindent\textbf{Invoice:} #3\hfill\textbf{Status:} #4\par
+}
+
+% -----------------------------------------------------------------------------
+% 3. lineitems environment
+% -----------------------------------------------------------------------------
+% Usage:
+%   \begin{lineitems}
+%     \LineItem{Consulting (May)}{40}{hr}{125.00}{5000.00}
+%     \LineItem{Onsite travel}{1}{trip}{812.40}{812.40}
+%   \end{lineitems}
+%   \Subtotal{5812.40}
+%   \TaxLine{Sales tax (8.5\%)}{494.05}
+%   \GrandTotal{6306.45}
+\newenvironment{lineitems}{%
+  \par
+  \begin{longtable}{@{}l>{\raggedright\arraybackslash}p{0.32\linewidth}rlMM@{}}%
+    \toprule
+    \textbf{\#} & \textbf{Description} & \textbf{Qty} & \textbf{Unit} &
+    {\textbf{Rate}} & {\textbf{Amount}}\\
+    \midrule
+    \endfirsthead
+    \toprule
+    \textbf{\#} & \textbf{Description} & \textbf{Qty} & \textbf{Unit} &
+    {\textbf{Rate}} & {\textbf{Amount}}\\
+    \midrule
+    \endhead
+    \bottomrule
+    \endfoot
+    \refstepcounter{LdsLineItem}%
+}{%
+  \end{longtable}\par
+}
+\NewLdsCounter{LineItem}{line items}{line item}
+
+\newcommand{\LineItem}[5]{%
+  \refstepcounter{LdsLineItem}%
+  \theLdsLineItem & #1 & #2 & #3 & #4 & #5\\
+}
+
+% -----------------------------------------------------------------------------
+% 4. Summary rows
+%
+% Each summary row right-aligns a small (label, amount) tabular within a
+% flushright block whose own width is bounded to 0.5\linewidth, so even a
+% wide M column plus its label can never overflow \linewidth.
+% -----------------------------------------------------------------------------
+\newcommand{\Subtotal}[1]{%
+  \par\noindent\hfill
+  \begin{minipage}{0.5\linewidth}\raggedleft
+    \begin{tabular}{@{}lM@{}}\textbf{Subtotal} & #1\\\end{tabular}%
+  \end{minipage}\par
+}
+\newcommand{\TaxLine}[2]{%
+  \par\noindent\hfill
+  \begin{minipage}{0.5\linewidth}\raggedleft
+    \begin{tabular}{@{}lM@{}}#1 & #2\\\end{tabular}%
+  \end{minipage}\par
+}
+\newcommand{\GrandTotal}[1]{%
+  \par\noindent\hfill
+  \begin{minipage}{0.5\linewidth}\raggedleft
+    \begin{tabular}{@{}lM@{}}%
+      \textbf{\textcolor{Navy}{Grand total}} & \bfseries #1\\
+    \end{tabular}%
+  \end{minipage}\par
+}
+
+% -----------------------------------------------------------------------------
+% 5. Ledger environment (debit / credit / balance)
+% -----------------------------------------------------------------------------
+\newenvironment{ledger}{%
+  \par
+  \begin{longtable}{@{}l>{\raggedright\arraybackslash}p{0.30\linewidth}MMM@{}}%
+    \toprule
+    \textbf{Date} & \textbf{Account / Memo} &
+    {\textbf{Debit}} & {\textbf{Credit}} & {\textbf{Balance}}\\
+    \midrule
+    \endhead
+    \bottomrule
+    \endfoot
+}{%
+  \end{longtable}\par
+}
+\newcommand{\LedgerLine}[5]{#1 & #2 & #3 & #4 & #5\\}
+
+\endinput

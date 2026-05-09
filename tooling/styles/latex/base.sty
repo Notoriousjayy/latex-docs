@@ -1,0 +1,257 @@
+% =============================================================================
+% latex-docs-base.sty
+% =============================================================================
+% Role in the hierarchy: ABSTRACT PARENT (a.k.a. ParentStyleModule).
+%
+% This module is the formal root of the modular style-module hierarchy:
+%
+%     latex-docs-base
+%       |- latex-docs-legal
+%       |- latex-docs-financial
+%       |- latex-docs-business-admin
+%       |- latex-docs-hr
+%       |- latex-docs-personal-official
+%       \- latex-docs-technical                       (abstract; intermediate)
+%            |- latex-docs-technical-user-manual
+%            |- latex-docs-technical-design-spec
+%            |- latex-docs-technical-implementation
+%            |- latex-docs-technical-installation
+%            \- latex-docs-technical-testing
+%
+% Documents NEVER load latex-docs-base directly: they always load a concrete
+% family or subtype module (e.g. \usepackage{latex-docs-legal}). Family
+% modules \RequirePackage{latex-docs-base}, which in turn delegates ALL
+% presentation foundations to the canonical house style
+% tooling/latex/latex-docs-style.sty (page geometry, fonts, palette, callouts,
+% metadata, code rendering, page style, sectioning).
+%
+% latex-docs-base contributes the hierarchy contract on top of the house style:
+%   * a registration protocol so child modules announce their classification,
+%   * extension hooks (\LdsExtraTitleMeta, \LdsExtraHeader) for child-module
+%     contributions to the title block and running header,
+%   * a generic semantic numbering counter (\NewLdsCounter / \LdsRefCounter),
+%   * an environment factory (\NewLdsLabeledBlock) used by every family to
+%     declare its own labeled block environments without re-implementing the
+%     tcolorbox + counter + label glue,
+%   * \DocClass metadata, automatically appended to the title meta line and
+%     header so every classified document carries its functional family
+%     in its presentation.
+%
+% Maintenance contract:
+%   * Anything genuinely shared by ALL function families belongs here. If only
+%     one family needs it, it does NOT belong here. If two families happen to
+%     share something but they are unrelated by domain, prefer composition
+%     (a tiny utility .sty they both load) over hoisting it into the root.
+%   * Every public macro must respect documents that override it; use
+%     \providecommand or \@ifundefined, never \renewcommand on a public name.
+%   * Zero compiler warnings are a hard requirement; \PassOptionsToPackage
+%     before \RequirePackage to avoid option clashes when this module is
+%     pulled in by a family that itself loads upstream packages.
+% =============================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{latex-docs-base}%
+  [2026/05/08 v1.0 latex-docs base parent module (hierarchy root)]
+
+% Note: LaTeX's \RequirePackage is itself idempotent (it short-circuits on a
+% second load), so no manual guard is needed here. An \@ifpackageloaded check
+% inside this file would mis-fire on the first load because LaTeX registers
+% the package name BEFORE executing the file body.
+
+% -----------------------------------------------------------------------------
+% 1. Foundation delegation
+% -----------------------------------------------------------------------------
+% The canonical house style owns geometry, fonts, palette, callouts, metadata,
+% code rendering, page style, and sectioning. We inherit ALL of it by loading
+% it here; child modules and concrete documents never need to load it again.
+\RequirePackage{latex-docs-style}
+
+% -----------------------------------------------------------------------------
+% 2. Module-classification registry
+%
+% Every concrete child module calls \LdsRegisterModule{<key>}{<display name>}
+% during its own load. The most-recently-registered module wins, so a subtype
+% (e.g. technical-user-manual) overwrites the value previously registered by
+% its parent (technical) when both are loaded.
+%
+%     \LdsCurrentModuleKey   -- machine-readable id, e.g. technical-user-manual
+%     \LdsCurrentModuleName  -- display label,        e.g. "Technical / User Manual"
+%
+% These are reserved for module use; documents can read them but should not
+% write them directly (use \DocClass for one-off overrides instead).
+% -----------------------------------------------------------------------------
+\providecommand{\LdsCurrentModuleKey}{base}
+\providecommand{\LdsCurrentModuleName}{}
+
+\newcommand{\LdsRegisterModule}[2]{%
+  \def\LdsCurrentModuleKey{#1}%
+  \def\LdsCurrentModuleName{#2}%
+}
+
+% -----------------------------------------------------------------------------
+% 3. \DocClass metadata
+%
+% Public metadata field carrying the document's functional class. By default,
+% a child module registration sets it; documents may override it (e.g. to
+% append a refinement: "Technical / Installation -- v3 cluster").
+% -----------------------------------------------------------------------------
+\providecommand{\DocClass}{}
+\providecommand{\setDocClass}[1]{\def\DocClass{#1}}
+
+% Re-evaluate \DocClass once at \begin{document}: if the document has not
+% explicitly set it, fall back to the active module's display name.
+\AtBeginDocument{%
+  \edef\lds@dc@cur{\DocClass}%
+  \ifx\lds@dc@cur\@empty
+    \edef\lds@dc@mod{\LdsCurrentModuleName}%
+    \ifx\lds@dc@mod\@empty\else
+      \let\DocClass\LdsCurrentModuleName
+    \fi
+  \fi
+}
+
+% -----------------------------------------------------------------------------
+% 4. Title-block and header extension hooks
+%
+% latex-docs-style ships a fixed title block and header. Children participate
+% by \renewcommand-ing these two hooks; documents may also override them for
+% one-off tweaks.
+%
+%   \LdsExtraTitleMeta -- emitted INSIDE the title-block meta line, after
+%                         the standard fields. Default: empty.
+%   \LdsExtraHeader    -- emitted INSIDE the right-hand running header, after
+%                         \DocVersion. Default: \DocClass when non-empty.
+% -----------------------------------------------------------------------------
+\providecommand{\LdsExtraTitleMeta}{}
+\providecommand{\LdsExtraHeader}{%
+  \edef\lds@hdr@cls{\DocClass}%
+  \ifx\lds@hdr@cls\@empty\else\quad\textbar\quad\DocClass\fi
+}
+
+% Wrap the existing \makedoctitle so the meta line absorbs \LdsExtraTitleMeta
+% without re-implementing the macro. Behaviour with no-op hooks is identical
+% to the canonical house style.
+\let\lds@base@orig@makedoctitle\makedoctitle
+\renewcommand{\makedoctitle}{%
+  \lds@base@orig@makedoctitle
+  \edef\lds@etm{\LdsExtraTitleMeta}%
+  \ifx\lds@etm\@empty\else
+    \begin{center}\small\color{Meta}\LdsExtraTitleMeta\end{center}%
+    \vspace{-0.4em}%
+  \fi
+}
+
+% Inject \LdsExtraHeader into the right-hand header after \DocVersion. We
+% redefine the head explicitly so the hook is honoured even if a document
+% later calls \fancyhead[R]{...} itself (its override wins, by design).
+\fancyhead[R]{\small\color{Steel}\DocVersion\LdsExtraHeader}
+
+% -----------------------------------------------------------------------------
+% 5. Generic semantic counter factory
+%
+% Every family (legal clauses, requirement IDs, test cases, line items, ...)
+% needs a numbered, labelable, cross-referenceable artifact. Rather than each
+% family redefining the counter + cleveref + label-emit boilerplate, this
+% factory produces it.
+%
+%     \NewLdsCounter{<short>}{<crefnameplural>}{<crefname>}
+%
+% After \NewLdsCounter{Clause}{clauses}{clause}, family modules can:
+%   * \refstepcounter{LdsClause} to advance,
+%   * \theLdsClause to render the number,
+%   * \cref{<lbl>} to reference it,
+%   * \LdsRefCounter{Clause} as a convenience getter.
+% -----------------------------------------------------------------------------
+\newcommand{\NewLdsCounter}[3]{%
+  \@ifundefined{c@Lds#1}{%
+    \newcounter{Lds#1}%
+    \expandafter\renewcommand\csname theLds#1\endcsname{\arabic{Lds#1}}%
+    \crefname{Lds#1}{#3}{#2}%
+    \Crefname{Lds#1}{#3}{#2}%
+  }{}%
+}
+\newcommand{\LdsRefCounter}[1]{\csname theLds#1\endcsname}
+
+% -----------------------------------------------------------------------------
+% 6. Environment factory: labeled, numbered, optionally-titled callout block
+%
+% Many family modules want an environment shaped like:
+%
+%     \begin{<envname>}[Optional Inline Title]
+%        ...body...
+%     \end{<envname>}
+%
+% which renders as a tcolorbox titled "<Familyword> N -- Optional Inline Title"
+% backed by a counter named LdsX. \NewLdsLabeledBlock encapsulates the entire
+% pattern so every family declares one in a single line.
+%
+%     \NewLdsLabeledBlock{<envname>}{<counter>}{<word>}{<frame color>}
+%
+%   - <envname>  : the LaTeX environment name (e.g. clausebox)
+%   - <counter>  : counter short name as used by \NewLdsCounter (e.g. Clause)
+%   - <word>     : the prefix word in the title bar (e.g. "Clause")
+%   - <frame>    : a colour name from the house palette (Navy / Steel / ...)
+%
+% The factory is ALSO idempotent under multiple module loads: re-declaring an
+% environment via this factory is silently rejected.
+% -----------------------------------------------------------------------------
+\newcommand{\NewLdsLabeledBlock}[4]{%
+  \@ifundefined{#1}{%
+    \NewLdsCounter{#2}{#3s}{#3}%
+    \newtcolorbox[auto counter,number within=section]{#1}[1][]{%
+      enhanced jigsaw,breakable,colback=Soft,colframe=#4,
+      coltitle=white,fonttitle=\bfseries,
+      title={#3~\protect\refstepcounter{Lds#2}\protect\theLds#2%
+             \ifstrempty{##1}{}{\space\textendash\space ##1}}%
+    }%
+  }{}%
+}
+% \ifstrempty is provided by tcolorbox/etoolbox; etoolbox is a tcolorbox
+% transitive dep, so it is already in scope without extra \RequirePackage.
+
+% -----------------------------------------------------------------------------
+% 7. Cross-family helper: signature line
+%
+% Legal, HR, and personal-official documents all need signature lines. Rather
+% than scattering near-identical macros across three modules, define a single
+% reusable primitive here. Family-specific signature blocks can compose it.
+% -----------------------------------------------------------------------------
+\providecommand{\LdsSignatureLine}[2]{%
+  % #1: width (e.g. 0.45\linewidth)
+  % #2: caption beneath the rule (e.g. "Signature -- Director")
+  \begin{minipage}[t]{#1}%
+    \rule{#1}{0.5pt}\\[-2pt]%
+    {\footnotesize\color{Meta} #2}%
+  \end{minipage}%
+}
+
+% -----------------------------------------------------------------------------
+% 8. Hierarchy self-test (debug)
+%
+% Documents may invoke \LdsHierarchyDump in the body to print a small
+% diagnostic block showing which module is active. This is opt-in and never
+% emitted automatically.
+% -----------------------------------------------------------------------------
+\newcommand{\LdsHierarchyDump}{%
+  \begin{viewbox}\small
+  \textbf{Style hierarchy diagnostic.}\\
+  Active module key:  \texttt{\LdsCurrentModuleKey}\\
+  Active module name: \LdsCurrentModuleName\\
+  Document class field: \DocClass\\
+  Doc title: \DocTitle\\
+  Doc version: \DocVersion
+  \end{viewbox}%
+}
+
+% -----------------------------------------------------------------------------
+% 9. Hairline-overfull tolerance
+%
+% Some content combinations -- bold + small caps + colour in a heading,
+% non-breakable jargon in narrow paragraphs -- create one-off overfull hboxes
+% of a few points despite well-tuned column widths. \emergencystretch grants
+% LaTeX a small amount of additional glue stretch to absorb such hairline
+% overfulls, eliminating the warning without visibly affecting normal text.
+% 2em is the conventional, conservative value used by memoir/koma-script.
+% -----------------------------------------------------------------------------
+\setlength{\emergencystretch}{2em}
+
+\endinput
