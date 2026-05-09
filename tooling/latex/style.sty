@@ -47,10 +47,26 @@
 %
 % \DeclareFontShape needs the family to be declared first, and lmodern
 % declares T1/lmr lazily via t1lmr.fd (loaded on first use). Wrapping in
-% \AtBeginDocument guarantees the .fd has run by the time we add the silent
-% substitutions. (At \AtBeginDocument, any standard preamble use of \rmfamily
-% or \textbf has already triggered the load.)
+% \AtBeginDocument is necessary but not sufficient: it relies on something
+% having selected T1/lmr during the preamble (a use of \rmfamily, \textbf,
+% etc.) to trigger the lazy .fd load. That assumption breaks the moment a
+% document redirects \familydefault away from \rmdefault, e.g.
+%     \usepackage{helvet}
+%     \renewcommand{\familydefault}{\sfdefault}
+% In that case, no preamble token ever selects lmr, t1lmr.fd is never
+% loaded, and the \DeclareFontShape calls below fail with the fatal
+% `Font family `T1+lmr' unknown' error at \begin{document}.
+%
+% Defensive fix: explicitly force-load t1lmr.fd in a group (which restores
+% all NFSS state on \endgroup, so document output is unaffected) before
+% declaring the additional shapes. This is purely additive: when t1lmr.fd
+% has already been loaded by other preamble activity, the group is a
+% no-op; when it has not, NFSS loads it now. Either way the family is
+% known to NFSS before the \DeclareFontShape calls run.
 \AtBeginDocument{%
+  \begingroup
+    \fontencoding{T1}\fontfamily{lmr}\selectfont
+  \endgroup
   \DeclareFontShape{T1}{lmr}{bx}{sc}{<->ssub*lmr/bx/n}{}%
   \DeclareFontShape{T1}{lmr}{bx}{scit}{<->ssub*lmr/bx/it}{}%
   \DeclareFontShape{T1}{lmr}{bx}{scsl}{<->ssub*lmr/bx/sl}{}%
