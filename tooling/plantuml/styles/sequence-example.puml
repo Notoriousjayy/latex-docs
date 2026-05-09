@@ -1,0 +1,41 @@
+' --------------------------------------------------------------
+' Diagram   : Checkout payment sequence
+' Type      : Sequence
+' Owns      : Synchronous call chain at order-confirmation time.
+' Author    : framework demo
+' Status    : draft
+' --------------------------------------------------------------
+@startuml checkout-sequence
+
+!include ../styles/interaction/sequence-diagram-style.iuml
+
+title Checkout -- Payment Sequence
+
+SEQ_ACTOR(C, "Customer")
+SEQ_BOUNDARY(UI, "Checkout UI")
+SEQ_CONTROL(SVC, "OrderService")
+SEQ_ENTITY(PAY, "PaymentService")
+SEQ_DATABASE(DB, "OrderDB")
+
+INTER_SYNC(C, UI, "Confirm order")
+INTER_SYNC(UI, SVC, "placeOrder(cart)")
+INTER_ACTIVATE(SVC)
+
+INTER_SYNC(SVC, PAY, "charge(total)")
+INTER_ACTIVATE(PAY)
+
+INTER_FRAGMENT_ALT("payment ok")
+  INTER_RETURN(PAY, SVC, "Receipt")
+  INTER_DEACTIVATE(PAY)
+  INTER_SYNC(SVC, DB, "persist(order, receipt)")
+  INTER_RETURN(SVC, UI, "OrderConfirmation")
+INTER_FRAGMENT_ELSE("payment declined")
+  INTER_RETURN(PAY, SVC, "DeclinedError")
+  INTER_DEACTIVATE(PAY)
+  INTER_RETURN(SVC, UI, "PaymentFailedError")
+INTER_FRAGMENT_END()
+
+INTER_DEACTIVATE(SVC)
+INTER_RETURN(UI, C, "Show result")
+
+@enduml
