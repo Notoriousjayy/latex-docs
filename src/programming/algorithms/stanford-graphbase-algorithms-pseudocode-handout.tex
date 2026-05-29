@@ -1,0 +1,2433 @@
+
+\documentclass[11pt]{article}
+
+\usepackage[letterpaper,margin=0.72in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{calc}
+\usepackage{amsmath,amssymb}
+\usepackage{listings}
+\usepackage{textcomp}
+\usepackage{upquote}
+\usepackage[most]{tcolorbox}
+\usepackage{etoolbox}
+
+\definecolor{SGBBlue}{HTML}{1F4E79}
+\definecolor{SGBLightBlue}{HTML}{EAF3F8}
+\definecolor{SGBGray}{HTML}{F7F7F7}
+\definecolor{SGBDarkGray}{HTML}{444444}
+\definecolor{SGBRule}{HTML}{B7C9D6}
+\definecolor{SGBAccent}{HTML}{355C7D}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=SGBBlue,
+  urlcolor=SGBBlue,
+  citecolor=SGBBlue,
+  pdftitle={Stanford GraphBase Algorithms as C-like Pseudocode},
+  pdfauthor={Jordan Suber / ChatGPT},
+  pdfsubject={Algorithmic pseudocode handout based on Donald E. Knuth's Stanford GraphBase},
+  pdfkeywords={Stanford GraphBase, Knuth, CWEB, graph algorithms, pseudocode, combinatorial computing, Dijkstra, Tarjan, MST, Hungarian algorithm}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textit{Stanford GraphBase} Algorithm Handout}
+\rhead{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\headheight}{14pt}
+
+\titleformat{\section}{\Large\bfseries\color{SGBBlue}}{}{0pt}{}
+\titleformat{\subsection}{\large\bfseries\color{SGBBlue}}{}{0pt}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{SGBDarkGray}}{}{0pt}{}
+\titlespacing*{\section}{0pt}{1.35em}{0.5em}
+\titlespacing*{\subsection}{0pt}{0.95em}{0.35em}
+\titlespacing*{\subsubsection}{0pt}{0.75em}{0.25em}
+
+\setcounter{secnumdepth}{0}
+\setcounter{tocdepth}{2}
+\setlist[itemize]{leftmargin=1.4em,itemsep=0.2em,topsep=0.2em}
+\setlist[enumerate]{leftmargin=1.6em,itemsep=0.25em,topsep=0.25em}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.52em}
+\setlength{\LTpre}{0.35em}
+\setlength{\LTpost}{0.35em}
+\emergencystretch=4em
+\sloppy
+
+\lstdefinestyle{sgbstyle}{
+  language=C,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\bfseries\color{SGBBlue},
+  commentstyle=\itshape\color{SGBDarkGray},
+  stringstyle=\color{SGBBlue},
+  numbers=left,
+  numberstyle=\tiny\color{SGBDarkGray},
+  stepnumber=1,
+  numbersep=0.7em,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  tabsize=4,
+  showstringspaces=false,
+  frame=single,
+  framerule=0.3pt,
+  rulecolor=\color{SGBRule},
+  backgroundcolor=\color{SGBGray},
+  xleftmargin=1.0em,
+  framexleftmargin=0.8em,
+  framexrightmargin=0.35em,
+  framesep=0.42em,
+  aboveskip=0.55em,
+  belowskip=0.55em,
+  morekeywords={type,bool,true,false,NULL,enum,foreach,repeat,until,continue,break,Graph,Vertex,Arc,Area,SeqNr,FrameKind,Event}
+}
+\lstset{style=sgbstyle}
+
+\newtcolorbox{scopebox}{
+  enhanced,
+  colback=SGBLightBlue,
+  colframe=SGBBlue,
+  boxrule=0.5pt,
+  arc=2mm,
+  left=1em,
+  right=1em,
+  top=0.7em,
+  bottom=0.7em
+}
+
+\newtcolorbox{methodbox}{
+  enhanced,
+  colback=SGBGray,
+  colframe=SGBRule,
+  boxrule=0.4pt,
+  arc=2mm,
+  left=0.9em,
+  right=0.9em,
+  top=0.6em,
+  bottom=0.6em
+}
+
+% Pandoc compatibility helpers
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\passthrough}[1]{#1}
+\AtBeginEnvironment{longtable}{\small}
+\renewcommand{\arraystretch}{1.14}
+
+\begin{document}
+\hypersetup{pageanchor=false}
+\pagenumbering{gobble}
+
+\begin{titlepage}
+  \centering
+  \vspace*{2.0cm}
+  {\Huge\bfseries\color{SGBBlue}Stanford GraphBase\par}
+  \vspace{0.45cm}
+  {\LARGE Algorithms as C-like Pseudocode\par}
+  \vspace{1.2cm}
+  \begin{scopebox}
+  This handout reorganizes algorithmic material from Donald E. Knuth's \textit{The Stanford GraphBase: A Platform for Combinatorial Computing} and the Stanford GraphBase CWEB source distribution into an implementation-study guide. It collects the executable algorithm families and rewrites them as structured C-like pseudocode.
+  \end{scopebox}
+  \vspace{0.85cm}
+  \begin{methodbox}
+  \textbf{Source basis:} uploaded overview PDF plus Stanford GraphBase CWEB source modules, including kernel routines, graph generators, demonstration programs, and support utilities.\\
+  \textbf{Use case:} implementation study, algorithm review, CWEB/literate-programming analysis, graph-algorithm design notes, and combinatorial-computing reference.\\
+  \textbf{Boundary:} this is not a verbatim reproduction of the book or source. It is a normalized pseudocode abstraction that preserves operational structure, state fields, traversal loops, and update rules.
+  \end{methodbox}
+  \vfill
+  {\large Prepared May 28, 2026\par}
+\end{titlepage}
+
+\hypersetup{pageanchor=true}
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\begin{scopebox}
+\textbf{Scope.} The document treats an ``algorithm'' as a repeatable state transition, traversal, data-structure update, graph constructor, optimization loop, simulator step, or protocol-like service routine present in the Stanford GraphBase source. Formatting, command-line parsing, and diagnostic printing are summarized unless they directly affect algorithm semantics.
+\end{scopebox}
+\section{1. Source Inventory and Algorithm Families}\label{source-inventory-and-algorithm-families}
+
+The Stanford GraphBase is organized around three layers:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Kernel modules}: graph representation, memory areas, data-file parsing, random numbers, sorting, and graph serialization.
+\item
+  \textbf{Graph generators}: routines that construct graphs or matrices from standard datasets and mathematical models.
+\item
+  \textbf{Demonstration programs}: executable examples of graph algorithms, optimization heuristics, and combinational-circuit simulation.
+\end{enumerate}
+
+\subsection{1.1 Kernel Modules}\label{kernel-modules}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Source module
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Algorithmic role
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\passthrough{\lstinline!gb\_graph.w!} & Graph records, vertex/arc records, area allocation, string saving, graph creation, graph recycling, arc/edge insertion. \\
+\passthrough{\lstinline!gb\_io.w!} & Portable data-file line input, canonical character mapping, checksum validation, integer/string scanning. \\
+\passthrough{\lstinline!gb\_flip.w!} & System-independent subtractive random-number generator and unbiased bounded random integers. \\
+\passthrough{\lstinline!gb\_sort.w!} & Linked-list radix sort with randomized tie-breaking. \\
+\passthrough{\lstinline!gb\_save.w!} & Machine-independent save/restore of graph structures. \\
+\passthrough{\lstinline!gb\_dijk.w!} & Dijkstra shortest paths with an optional admissible potential/heuristic and pluggable priority queues. \\
+\end{longtable}
+
+\subsection{1.2 Graph Generator Modules}\label{graph-generator-modules}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Source module
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Algorithmic role
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\passthrough{\lstinline!gb\_basic.w!} & Standard graph constructors: boards, simplices, subsets, permutations, partitions, binary trees, complements, unions, intersections, line graphs, products, induced subgraphs. \\
+\passthrough{\lstinline!gb\_words.w!} & Word-ladder graph generation from five-letter English words. \\
+\passthrough{\lstinline!gb\_roget.w!} & Directed graph generation from Roget cross-references. \\
+\passthrough{\lstinline!gb\_books.w!} & Character co-occurrence graphs from literary works. \\
+\passthrough{\lstinline!gb\_econ.w!} & Economic-sector flow graphs and aggregated input-output matrices. \\
+\passthrough{\lstinline!gb\_games.w!} & College football score graphs. \\
+\passthrough{\lstinline!gb\_gates.w!} & Boolean-gate graphs, RISC circuits, multiplication circuits, gate evaluation, partial evaluation, RISC execution. \\
+\passthrough{\lstinline!gb\_lisa.w!} & Matrix generation from Mona Lisa pixel regions. \\
+\passthrough{\lstinline!gb\_miles.w!} & City-distance graphs from mileage and city metadata. \\
+\passthrough{\lstinline!gb\_plane.w!} & Planar graph constructors. \\
+\passthrough{\lstinline!gb\_raman.w!} & Ramanujan graph constructors. \\
+\passthrough{\lstinline!gb\_rand.w!} & Random graph, random bipartite graph, random arc-length assignment. \\
+\end{longtable}
+
+\subsection{1.3 Demonstration Programs}\label{demonstration-programs}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Program
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Principal algorithm
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\passthrough{\lstinline!word\_components.w!} & Incremental connected components with circular component lists. \\
+\passthrough{\lstinline!ladders.w!} & Word-ladder shortest paths using \passthrough{\lstinline!gb\_dijk!}. \\
+\passthrough{\lstinline!roget\_components.w!} & Tarjan strong components using explicit DFS state. \\
+\passthrough{\lstinline!book\_components.w!} & Hopcroft-Tarjan biconnected components using explicit DFS state. \\
+\passthrough{\lstinline!econ\_order.w!} & Local-search heuristic for near-triangular matrix ordering. \\
+\passthrough{\lstinline!football.w!} & Greedy and stratified heuristic search for long simple paths. \\
+\passthrough{\lstinline!miles\_span.w!} & Minimum spanning tree comparisons: Kruskal/radix sort, Jarnik-Prim with binary heap, Jarnik-Prim with Fibonacci heap, Cheriton-Tarjan-Karp/Boruvka-style fragments. \\
+\passthrough{\lstinline!assign\_lisa.w!} & Assignment problem / weighted bipartite matching via Hungarian-style primal-dual improvement. \\
+\passthrough{\lstinline!girth.w!} & Girth and diameter computation on Ramanujan graphs. \\
+\passthrough{\lstinline!multiply.w!} & Circuit simulation for multiplication using \passthrough{\lstinline!prod!} and \passthrough{\lstinline!gate\_eval!}. \\
+\passthrough{\lstinline!take\_risc.w!} & RISC-machine simulation using \passthrough{\lstinline!risc!} and \passthrough{\lstinline!run\_risc!}. \\
+\passthrough{\lstinline!queen.w!} & Graph construction/traversal demo using board graphs, graph union, and save/restore. \\
+\passthrough{\lstinline!test\_sample.w!} & Installation and regression-test orchestration. \\
+\end{longtable}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{2. Core Data Structures}\label{core-data-structures}
+
+\subsection{2.1 Graph, Vertex, Arc, and Utility Fields}\label{graph-vertex-arc-and-utility-fields}
+
+\begin{lstlisting}[language=C]
+type Util = union {
+    Vertex* V;
+    Arc*    A;
+    Graph*  G;
+    char*   S;
+    long    I;
+};
+
+type Arc = struct {
+    Vertex* tip;       // destination vertex
+    Arc*    next;      // next outgoing arc from same source
+    long    len;       // arc length or weight
+    Util    a, b;      // algorithm-specific utility fields
+};
+
+type Vertex = struct {
+    Arc*  arcs;        // outgoing adjacency list
+    char* name;        // symbolic name
+    Util  u, v, w, x, y, z;
+};
+
+type Graph = struct {
+    Vertex* vertices;
+    long    n;         // number of vertices
+    long    m;         // number of arcs
+    char    id[];
+    Area    data;
+    Area    aux_data;
+    Util    uu, vv, ww, xx, yy, zz;
+    char    util_types[15];
+};
+\end{lstlisting}
+
+\textbf{Design point:} Every algorithm reuses the utility fields with local macros such as \passthrough{\lstinline!rank!}, \passthrough{\lstinline!parent!}, \passthrough{\lstinline!dist!}, \passthrough{\lstinline!backlink!}, \passthrough{\lstinline!marked!}, \passthrough{\lstinline!master!}, or \passthrough{\lstinline!size!}. This avoids allocating per-algorithm wrapper structures.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{3. Kernel Algorithms}\label{kernel-algorithms}
+
+\subsection{\texorpdfstring{3.1 Memory Areas (\texttt{gb\_graph.w})}{3.1 Memory Areas (gb\_graph.w)}}\label{memory-areas-gb_graph.w}
+
+\subsubsection{Algorithm: Allocate a Block in an Area}\label{algorithm-allocate-a-block-in-an-area}
+
+\begin{lstlisting}[language=C]
+char* gb_alloc(long n, Area s) {
+    if (n <= 0 || n > MAX_ALLOC) {
+        gb_trouble_code |= ILLEGAL_REQUEST;
+        return NULL;
+    }
+
+    n = round_up_to_pointer_multiple(n);
+    long block_size = round_up_to_256(n + 2 * sizeof(char*));
+    char* loc = calloc(block_size, 1);
+
+    if (loc == NULL) {
+        gb_trouble_code |= ALLOCATION_FAILED;
+        return NULL;
+    }
+
+    AreaNode* header = (AreaNode*)(loc + n);
+    header->first = loc;
+    header->next  = s.head;
+    s.head = header;
+
+    return loc;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Free an Area}\label{algorithm-free-an-area}
+
+\begin{lstlisting}[language=C]
+void gb_free(Area s) {
+    while (s.head != NULL) {
+        AreaNode* next = s.head->next;
+        free(s.head->first);
+        s.head = next;
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Create a New Graph}\label{algorithm-create-a-new-graph}
+
+\begin{lstlisting}[language=C]
+Graph* gb_new_graph(long n) {
+    Graph* g = allocate_zeroed_graph_record();
+    if (g == NULL) return NULL;
+
+    init_area(g->data);
+    init_area(g->aux_data);
+    g->n = n;
+    g->m = 0;
+
+    if (n > 0) {
+        g->vertices = gb_typed_alloc(n + EXTRA_VERTICES, Vertex, g->data);
+        if (g->vertices == NULL) {
+            gb_recycle(g);
+            return NULL;
+        }
+    }
+
+    set_default_id_and_util_types(g);
+    return g;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Insert a Directed Arc}\label{algorithm-insert-a-directed-arc}
+
+\begin{lstlisting}[language=C]
+Arc* gb_new_arc(Vertex* u, Vertex* v, long len) {
+    Arc* a = allocate_arc_from_current_arc_block();
+    if (a == NULL) return NULL;
+
+    a->tip  = v;
+    a->len  = len;
+    a->next = u->arcs;
+    u->arcs = a;
+    current_graph->m++;
+
+    return a;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Insert an Undirected Edge}\label{algorithm-insert-an-undirected-edge}
+
+\begin{lstlisting}[language=C]
+void gb_new_edge(Vertex* u, Vertex* v, long len) {
+    Arc* a = gb_new_arc(u, v, len);
+    Arc* b = gb_new_arc(v, u, len);
+
+    // GraphBase relies on paired arcs being adjacent in memory
+    // for several algorithms that update both copies of an edge.
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{3.2 Portable Input and Checksums (\texttt{gb\_io.w})}{3.2 Portable Input and Checksums (gb\_io.w)}}\label{portable-input-and-checksums-gb_io.w}
+
+\subsubsection{Algorithm: Fill the Input Buffer and Strip Trailing Blanks}\label{algorithm-fill-the-input-buffer-and-strip-trailing-blanks}
+
+\begin{lstlisting}[language=C]
+void fill_buf(void) {
+    if (fgets(buffer, sizeof(buffer), cur_file) == NULL) {
+        io_errors |= FILE_ENDED_PREMATURELY;
+        buffer[0] = '\0';
+        more_data = false;
+        return;
+    }
+
+    char* p = first_null(buffer) - 1;
+
+    if (p < buffer || *p != '\n') {
+        io_errors |= MISSING_NEWLINE;
+        p++;
+    }
+
+    while (p >= buffer && *p == ' ') {
+        p--;
+    }
+
+    *++p = '\n';
+    *++p = '\0';
+    cur_pos = buffer;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Compute a Data-File Checksum}\label{algorithm-compute-a-data-file-checksum}
+
+\begin{lstlisting}[language=C]
+long new_checksum(char* s, long old_checksum) {
+    long a = old_checksum;
+
+    for (char* p = s; *p != '\0'; p++) {
+        a = (2 * a + imap_ord(*p)) % CHECKSUM_PRIME;
+    }
+
+    return a;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Read the Next Checked Data Line}\label{algorithm-read-the-next-checked-data-line}
+
+\begin{lstlisting}[language=C]
+void gb_newline(void) {
+    line_no++;
+    if (line_no > total_lines) {
+        more_data = false;
+        return;
+    }
+
+    if (more_data) {
+        fill_buf();
+        if (buffer[0] != '*') {
+            magic = new_checksum(buffer, magic);
+        }
+    }
+}
+\end{lstlisting}
+
+\subsubsection{\texorpdfstring{Algorithm: Parse a Radix-\texttt{d} Number}{Algorithm: Parse a Radix-d Number}}\label{algorithm-parse-a-radix-d-number}
+
+\begin{lstlisting}[language=C]
+unsigned long gb_number(int d) {
+    unsigned long a = 0;
+
+    while (imap_ord(*cur_pos) < d) {
+        a = a * d + icode[*cur_pos];
+        cur_pos++;
+    }
+
+    return a;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{3.3 Random Number Generation (\texttt{gb\_flip.w})}{3.3 Random Number Generation (gb\_flip.w)}}\label{random-number-generation-gb_flip.w}
+
+\subsubsection{Algorithm: Subtractive Random Cycle}\label{algorithm-subtractive-random-cycle}
+
+\begin{lstlisting}[language=C]
+long gb_flip_cycle(void) {
+    for (i = 1, j = 32; j <= 55; i++, j++) {
+        A[i] = (A[i] - A[j]) mod 2^31;
+    }
+
+    for (j = 1; i <= 55; i++, j++) {
+        A[i] = (A[i] - A[j]) mod 2^31;
+    }
+
+    gb_fptr = &A[54];
+    return A[55];
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Initialize Random State}\label{algorithm-initialize-random-state}
+
+\begin{lstlisting}[language=C]
+void gb_init_rand(long seed) {
+    seed = seed mod 2^31;
+
+    long prev = seed;
+    long next = 1;
+    A[55] = prev;
+
+    for (i = 21; i != 0; i = (i + 21) % 55) {
+        A[i] = next;
+        next = (prev - next) mod 2^31;
+        seed = cyclic_shift_right_31_bit(seed, 1);
+        next = (next - seed) mod 2^31;
+        prev = A[i];
+    }
+
+    // Warm up transient state.
+    for (k = 0; k < 5; k++) gb_flip_cycle();
+}
+\end{lstlisting}
+
+\subsubsection{\texorpdfstring{Algorithm: Unbiased Uniform Integer in \texttt{{[}0,\ m)}}{Algorithm: Unbiased Uniform Integer in {[}0, m)}}\label{algorithm-unbiased-uniform-integer-in-0-m}
+
+\begin{lstlisting}[language=C]
+long gb_unif_rand(long m) {
+    unsigned long t = 2^31 - (2^31 % m);
+    long r;
+
+    do {
+        r = gb_next_rand();
+    } while ((unsigned long)r >= t);
+
+    return r % m;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{3.4 Linked-List Radix Sort (\texttt{gb\_sort.w})}{3.4 Linked-List Radix Sort (gb\_sort.w)}}\label{linked-list-radix-sort-gb_sort.w}
+
+\subsubsection{Algorithm: Randomized Stable-Enough Radix Distribution}\label{algorithm-randomized-stable-enough-radix-distribution}
+
+\begin{lstlisting}[language=C]
+void gb_linksort(Node* list) {
+    clear_lists(alt_sorted, 256);
+
+    // Two random passes: equal-key items are pseudo-randomized.
+    for (p = list; p != NULL; p = q) {
+        q = p->link;
+        k = high8(gb_next_rand());
+        push(&alt_sorted[k], p);
+    }
+
+    clear_lists(gb_sorted, 256);
+    redistribute_random(alt_sorted, gb_sorted);
+
+    // Four byte passes over the nonnegative key.
+    redistribute_by_byte(gb_sorted, alt_sorted, 0);   // low byte
+    redistribute_by_byte(alt_sorted, gb_sorted, 8);   // next byte
+    redistribute_by_byte(gb_sorted, alt_sorted, 16);  // next byte
+    redistribute_by_byte(alt_sorted, gb_sorted, 24);  // high byte
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Redistribute by Key Byte}\label{algorithm-redistribute-by-key-byte}
+
+\begin{lstlisting}[language=C]
+void redistribute_by_byte(Node* source[256], Node* dest[256], int shift) {
+    clear_lists(dest, 256);
+
+    for (bucket in traversal_order_for_this_pass) {
+        for (p = source[bucket]; p != NULL; p = q) {
+            q = p->link;
+            k = (p->key >> shift) & 0xff;
+            push(&dest[k], p);
+        }
+    }
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{3.5 Graph Save and Restore (\texttt{gb\_save.w})}{3.5 Graph Save and Restore (gb\_save.w)}}\label{graph-save-and-restore-gb_save.w}
+
+\subsubsection{Algorithm: Restore a Graph from Symbolic Format}\label{algorithm-restore-a-graph-from-symbolic-format}
+
+\begin{lstlisting}[language=C]
+Graph* restore_graph(char* filename) {
+    open_raw_data_file(filename);
+    if (io_errors) fail(EARLY_DATA_FAULT);
+
+    parse_header_line(&util_types, &vertex_count, &arc_count);
+
+    Graph* g = gb_new_graph(0);
+    replace_default_storage(g);
+    g->vertices = allocate_vertex_block(vertex_count, g->data);
+    Arc* arcs   = allocate_arc_block(arc_count, g->data);
+
+    parse_graph_record_fields(g, util_types);
+    expect_section("* Vertices");
+    for (i = 0; i < vertex_count; i++) {
+        parse_vertex_record(&g->vertices[i], util_types);
+    }
+
+    expect_section("* Arcs");
+    for (i = 0; i < arc_count; i++) {
+        parse_arc_record(&arcs[i], util_types);
+    }
+
+    verify_checksum();
+    close_raw_data_file();
+    return g;
+
+fail:
+    close_raw_data_file();
+    gb_recycle(g);
+    return NULL;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Fill One Serialized Field}\label{algorithm-fill-one-serialized-field}
+
+\begin{lstlisting}[language=C]
+bool fill_field(Util* field, char type_code) {
+    if (type_code != 'Z' && comma_expected) {
+        require_comma_or_fail();
+    }
+
+    switch (type_code) {
+        case 'I': field->I = parse_signed_integer(); break;
+        case 'V': field->V = parse_vertex_pointer_or_constant(); break;
+        case 'A': field->A = parse_arc_pointer_or_null(); break;
+        case 'S': field->S = parse_quoted_string(); break;
+        case 'Z': skip_field(); break;
+    }
+
+    return success;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Save a Graph}\label{algorithm-save-a-graph}
+
+\begin{lstlisting}[language=C]
+long save_graph(Graph* g, char* filename) {
+    verify_graph_conforms_to_save_restrictions(g);
+
+    FILE* out = fopen(filename, "wb");
+    if (out == NULL) return CANT_OPEN_FILE;
+
+    canonicalize_vertex_and_arc_blocks(g);
+    write_header(g);
+    write_graph_record(g);
+    write_vertex_records(g);
+    write_arc_records(g);
+    write_checksum_line();
+
+    return close_file_and_status(out);
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{3.6 Dijkstra Shortest Paths (\texttt{gb\_dijk.w})}{3.6 Dijkstra Shortest Paths (gb\_dijk.w)}}\label{dijkstra-shortest-paths-gb_dijk.w}
+
+\subsubsection{Algorithm: Dijkstra with Optional Potential Function}\label{algorithm-dijkstra-with-optional-potential-function}
+
+\begin{lstlisting}[language=C]
+long dijkstra(Vertex* source, Vertex* target, Graph* g, long (*h)(Vertex*)) {
+    if (h == NULL) h = zero_heuristic;
+
+    for (v in g->vertices) {
+        v->backlink = NULL;       // unseen
+    }
+
+    source->backlink = source;
+    source->dist = 0;
+    source->hh_val = h(source);
+    init_queue(0);
+
+    Vertex* t = source;
+
+    while (t != target) {
+        long base = t->dist - t->hh_val;
+
+        for (Arc* a = t->arcs; a != NULL; a = a->next) {
+            Vertex* v = a->tip;
+            long candidate;
+
+            if (v->backlink != NULL) {
+                candidate = base + a->len + v->hh_val;
+                if (candidate < v->dist) {
+                    v->backlink = t;
+                    requeue(v, candidate);
+                }
+            } else {
+                v->hh_val = h(v);
+                v->backlink = t;
+                enqueue(v, base + a->len + v->hh_val);
+            }
+        }
+
+        t = del_min();
+        if (t == NULL) return -1;
+    }
+
+    return target->dist - target->hh_val + source->hh_val;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Default Doubly Linked Priority Queue}\label{algorithm-default-doubly-linked-priority-queue}
+
+\begin{lstlisting}[language=C]
+void init_dlist(long d) {
+    head.left = &head;
+    head.right = &head;
+    head.dist = d - 1;
+}
+
+void enlist(Vertex* v, long d) {
+    v->dist = d;
+
+    // Insert so that following left links from head gives decreasing keys;
+    // the minimum is therefore near the right/front deletion end.
+    Vertex* p = find_position_from_tail(d);
+    insert_after(p, v);
+}
+
+void reenlist(Vertex* v, long smaller_d) {
+    remove_from_dlist(v);
+    enlist(v, smaller_d);
+}
+
+Vertex* del_first(void) {
+    if (head.right == &head) return NULL;
+    Vertex* v = head.right;
+    remove_from_dlist(v);
+    return v;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Print and Restore Shortest Path Backlinks}\label{algorithm-print-and-restore-shortest-path-backlinks}
+
+\begin{lstlisting}[language=C]
+void print_dijkstra_result(Vertex* target) {
+    if (target->backlink == NULL) {
+        print_unreachable(target);
+        return;
+    }
+
+    // Reverse backlink chain from target to source.
+    Vertex* reversed = NULL;
+    Vertex* p = target;
+    do {
+        Vertex* q = p->backlink;
+        p->backlink = reversed;
+        reversed = p;
+        p = q;
+    } while (reversed != p);
+
+    Vertex* source = p;
+    for (Vertex* v = source; v != NULL; v = v->backlink) {
+        print_true_distance_and_name(v, source);
+    }
+
+    // Restore original backlink chain.
+    restore_backlinks(source, target);
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{4. Generator Algorithms}\label{generator-algorithms}
+
+\subsection{\texorpdfstring{4.1 Standard Graph Constructors (\texttt{gb\_basic.w})}{4.1 Standard Graph Constructors (gb\_basic.w)}}\label{standard-graph-constructors-gb_basic.w}
+
+\subsubsection{Algorithm: Generalized Board Graph}\label{algorithm-generalized-board-graph}
+
+\begin{lstlisting}[language=C]
+Graph* board(n1, n2, n3, n4, piece, wrap_mask, directed) {
+    dims = normalize_dimensions(n1, n2, n3, n4);
+    n = product(dims);
+    Graph* g = gb_new_graph(n);
+
+    for (i = 0; i < n; i++) {
+        coord = decode_index(i, dims);
+        g->vertices[i].name = format_coordinate(coord);
+    }
+
+    displacements = all_integer_delta_vectors_with_sum_squares(abs(piece));
+
+    for (each vertex u with coordinate x) {
+        for (each displacement delta) {
+            for (scale = 1; ; scale++) {
+                y = x + scale * delta;
+                if (wrap_mask) y = wrap_enabled_coordinates(y, dims, wrap_mask);
+                if (!inside_board(y, dims)) break;
+
+                v = vertex_at_coordinate(y);
+                if (directed && !directed_order_allows(x, y)) continue;
+
+                length = (piece > 0) ? 1 : scale;
+                if (directed) gb_new_arc(u, v, length);
+                else          gb_new_edge(u, v, length);
+
+                if (piece > 0) break;
+            }
+        }
+    }
+
+    return g;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Complement Graph}\label{algorithm-complement-graph}
+
+\begin{lstlisting}[language=C]
+Graph* complement(Graph* g, long copy_lengths, long directed) {
+    Graph* h = create_graph_with_same_vertices(g);
+
+    mark_all_existing_arcs(g);
+
+    for (u in h->vertices) {
+        for (v in h->vertices) {
+            if (u == v) continue;
+            if (!arc_exists_in_g(u, v)) {
+                gb_new_arc(u, v, default_or_copied_length(copy_lengths));
+            }
+        }
+    }
+
+    if (!directed) remove_or_pair_duplicate_edges(h);
+    return h;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Union / Intersection of Graphs}\label{algorithm-union-intersection-of-graphs}
+
+\begin{lstlisting}[language=C]
+Graph* gunion(Graph* g, Graph* h, long multi, long directed) {
+    Graph* r = create_vertexwise_combined_graph(g, h);
+    copy_all_arcs_from(g, r);
+
+    for (arc in h) {
+        if (multi || !corresponding_arc_exists(r, arc)) {
+            copy_arc_to_result(arc, r);
+        }
+    }
+
+    return r;
+}
+
+Graph* intersection(Graph* g, Graph* h, long directed) {
+    Graph* r = create_vertexwise_combined_graph(g, h);
+
+    mark_arcs_of(h);
+    for (arc in g) {
+        if (marked_in_h(arc)) copy_arc_to_result(arc, r);
+    }
+
+    return r;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Line Graph}\label{algorithm-line-graph}
+
+\begin{lstlisting}[language=C]
+Graph* lines(Graph* g, long directed) {
+    // One vertex in result per selected edge/arc of g.
+    Graph* L = new_graph(number_of_represented_edges_or_arcs(g));
+    map_each_original_arc_to_line_vertex(g, L);
+
+    for (each represented arc/edge e1 in g) {
+        for (each represented arc/edge e2 in g) {
+            if (e1 and e2 are incident or composable) {
+                insert_line_graph_adjacency(L, e1, e2);
+            }
+        }
+    }
+
+    return L;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Product Graph}\label{algorithm-product-graph}
+
+\begin{lstlisting}[language=C]
+Graph* product(Graph* g, Graph* h, long type, long directed) {
+    Graph* p = gb_new_graph(g->n * h->n);
+
+    for (u in g->vertices) {
+        for (x in h->vertices) {
+            vertex(p, u, x).name = pair_name(u->name, x->name);
+        }
+    }
+
+    for (u in g->vertices) {
+        for (x in h->vertices) {
+            add_product_arcs_from((u, x), according_to_product_type);
+        }
+    }
+
+    return p;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{4.2 Word Graph Generation (\texttt{gb\_words.w})}{4.2 Word Graph Generation (gb\_words.w)}}\label{word-graph-generation-gb_words.w}
+
+\subsubsection{Algorithm: Generate a Word-Ladder Graph}\label{algorithm-generate-a-word-ladder-graph}
+
+\begin{lstlisting}[language=C]
+Graph* words(n, weight_vector, threshold, seed) {
+    records = read_words_dat();
+
+    for (record in records) {
+        record.weight = compute_weight(record.frequency_profile, weight_vector);
+    }
+
+    gb_init_rand(seed);
+    records = gb_linksort_by_decreasing_weight_random_ties(records);
+    selected = take_records(records, n, threshold);
+
+    Graph* g = gb_new_graph(count(selected));
+    assign_vertex_names_and_weights(g, selected);
+
+    build_pattern_index_for_five_letter_words(selected);
+
+    for (each word w in selected) {
+        for (position = 0; position < 5; position++) {
+            pattern = w with position wildcarded;
+            for (each word v previously indexed under pattern) {
+                gb_new_edge(vertex(w), vertex(v), 1);
+                store_changed_position_in_arc_util_fields();
+            }
+        }
+    }
+
+    return g;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Find a Word and Visit Adjacent Known Words}\label{algorithm-find-a-word-and-visit-adjacent-known-words}
+
+\begin{lstlisting}[language=C]
+Vertex* find_word(char word[5], void (*visit_adjacent)(Vertex*)) {
+    Vertex* exact = lookup_word(word);
+    if (exact != NULL) return exact;
+
+    for (position = 0; position < 5; position++) {
+        pattern = wildcard(word, position);
+        for (v in pattern_index[pattern]) {
+            visit_adjacent(v);
+        }
+    }
+
+    return NULL;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{4.3 Roget Directed Graphs (\texttt{gb\_roget.w})}{4.3 Roget Directed Graphs (gb\_roget.w)}}\label{roget-directed-graphs-gb_roget.w}
+
+\subsubsection{Algorithm: Generate a Roget Cross-Reference Graph}\label{algorithm-generate-a-roget-cross-reference-graph}
+
+\begin{lstlisting}[language=C]
+Graph* roget(n, min_distance, reject_probability, seed) {
+    categories = read_roget_dat();
+    selected = first_n_or_all_categories(categories, n);
+
+    Graph* g = gb_new_graph(count(selected));
+    assign_category_names_and_numbers(g, selected);
+
+    gb_init_rand(seed);
+
+    for (category c in selected) {
+        for (reference r in c.cross_references) {
+            if (!selected_contains(r)) continue;
+            if (abs(c.number - r.number) < min_distance) continue;
+            if (random_reject(reject_probability)) continue;
+
+            gb_new_arc(vertex(c), vertex(r), 1);
+        }
+    }
+
+    return g;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{4.4 Book Character Graphs (\texttt{gb\_books.w})}{4.4 Book Character Graphs (gb\_books.w)}}\label{book-character-graphs-gb_books.w}
+
+\subsubsection{Algorithm: Generate a Character Co-occurrence Graph}\label{algorithm-generate-a-character-co-occurrence-graph}
+
+\begin{lstlisting}[language=C]
+Graph* book(title, n, exclude_top, first_chapter, last_chapter,
+            in_weight, out_weight, seed) {
+    chapters = read_book_data(title);
+    characters = collect_character_records(chapters);
+
+    for (character c in characters) {
+        c.weight = in_weight  * appearances_in_selected_chapters(c)
+                 + out_weight * appearances_outside_selected_chapters(c);
+    }
+
+    gb_init_rand(seed);
+    sorted = sort_by_weight_random_ties(characters);
+    selected = take_after_excluding_top(sorted, exclude_top, n);
+
+    Graph* g = gb_new_graph(count(selected));
+    assign_character_vertex_metadata(g, selected);
+
+    for (chapter in selected_chapter_range) {
+        for (encounter in chapter.encounters) {
+            participants = selected_characters_in(encounter);
+            for (each unordered pair (u, v) in participants) {
+                add_or_increment_edge(g, u, v, encounter_weight);
+            }
+        }
+    }
+
+    return g;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{4.5 Economic Flow Graphs (\texttt{gb\_econ.w})}{4.5 Economic Flow Graphs (gb\_econ.w)}}\label{economic-flow-graphs-gb_econ.w}
+
+\subsubsection{Algorithm: Generate an Economic Sector Graph}\label{algorithm-generate-an-economic-sector-graph}
+
+\begin{lstlisting}[language=C]
+Graph* econ(n, matrix_mode, threshold, seed) {
+    base = read_79_sector_input_output_table();
+
+    if (n < 79) {
+        groups = combine_related_sectors(base, n, seed);
+        matrix = aggregate_sector_matrix(base, groups);
+    } else {
+        matrix = base.matrix;
+    }
+
+    Graph* g = gb_new_graph(n);
+    name_vertices_by_sector_groups(g, groups);
+
+    for (i = 0; i < n; i++) {
+        for (j = 0; j < n; j++) {
+            if (matrix[i][j] > threshold) {
+                Arc* a = gb_new_arc(vertex(i), vertex(j), matrix[i][j]);
+                a->flow = matrix[i][j];
+            }
+        }
+    }
+
+    return g;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{4.6 Games Graphs (\texttt{gb\_games.w})}{4.6 Games Graphs (gb\_games.w)}}\label{games-graphs-gb_games.w}
+
+\subsubsection{Algorithm: Generate a College Football Graph}\label{algorithm-generate-a-college-football-graph}
+
+\begin{lstlisting}[language=C]
+Graph* games(filters..., seed) {
+    records = read_games_dat();
+    teams = collect_teams(records, filters);
+
+    Graph* g = gb_new_graph(count(teams));
+    assign_team_names_nicknames_and_metadata(g, teams);
+
+    for (game in records) {
+        if (!game_passes_filters(game, filters)) continue;
+
+        Vertex* home_or_team_a = vertex_for(game.team_a);
+        Vertex* team_b         = vertex_for(game.team_b);
+
+        Arc* a = gb_new_arc(home_or_team_a, team_b, game.score_a);
+        Arc* b = gb_new_arc(team_b, home_or_team_a, game.score_b);
+
+        a->date = b->date = game.date;
+        a->venue_or_meta = b->venue_or_meta = game.metadata;
+    }
+
+    return g;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{4.7 Gate Graphs (\texttt{gb\_gates.w})}{4.7 Gate Graphs (gb\_gates.w)}}\label{gate-graphs-gb_gates.w}
+
+\subsubsection{Algorithm: Evaluate a Gate Graph}\label{algorithm-evaluate-a-gate-graph}
+
+\begin{lstlisting}[language=C]
+long gate_eval(Graph* g, char* in_vec, char* out_vec) {
+    if (g == NULL) return -2;
+
+    Vertex* v = g->vertices;
+
+    if (in_vec != NULL) {
+        while (*in_vec != '\0' && v < g->vertices + g->n) {
+            v->val = *in_vec - '0';
+            v++;
+            in_vec++;
+        }
+    }
+
+    for (; v < g->vertices + g->n; v++) {
+        switch (v->typ) {
+            case 'I':
+                continue;
+
+            case 'L':
+                v->val = v->alt->val;
+                break;
+
+            case '&':
+                t = 1;
+                for (a = v->arcs; a != NULL; a = a->next) t &= a->tip->val;
+                v->val = t;
+                break;
+
+            case '|':
+                t = 0;
+                for (a = v->arcs; a != NULL; a = a->next) t |= a->tip->val;
+                v->val = t;
+                break;
+
+            case '^':
+                t = 0;
+                for (a = v->arcs; a != NULL; a = a->next) t ^= a->tip->val;
+                v->val = t;
+                break;
+
+            case '~':
+                v->val = 1 - v->arcs->tip->val;
+                break;
+
+            default:
+                return -1;
+        }
+    }
+
+    if (out_vec != NULL) {
+        for (Arc* a = g->outs; a != NULL; a = a->next) {
+            *out_vec++ = '0' + value_of_output_tip(a->tip);
+        }
+        *out_vec = '\0';
+    }
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Partial Gate Evaluation and Reduction}\label{algorithm-partial-gate-evaluation-and-reduction}
+
+\begin{lstlisting}[language=C]
+Graph* partial_gates(Graph* g, long fixed_input_count, long start,
+                     long seed, char* fixed_bits_out) {
+    gb_init_rand(seed);
+
+    for (i = start; i < start + fixed_input_count; i++) {
+        bit = gb_unif_rand(2);
+        g->vertices[i].val = bit;
+        append_bit(fixed_bits_out, bit);
+    }
+
+    propagate_constants_through_topological_gate_order(g);
+    mark_gates_that_still_influence_outputs(g);
+    Graph* reduced = copy_marked_subgraph_and_constant_outputs(g);
+
+    return reduced;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Run a RISC Gate Network}\label{algorithm-run-a-risc-gate-network}
+
+\begin{lstlisting}[language=C]
+long run_risc(Graph* risc_graph, unsigned long memory[], long memory_size,
+              long trace_count) {
+    clear_risc_state();
+
+    while (true) {
+        address = extract_address_outputs_from_previous_cycle();
+        instruction = (address < memory_size) ? memory[address] : 0;
+        in_vec = encode_run_bit_and_instruction_bits(instruction);
+
+        status = gate_eval(risc_graph, in_vec, out_vec);
+        if (status < 0) return status;
+
+        update_risc_state_from_latches_and_outputs(risc_graph);
+        if (trace_count > 0) print_register_trace(trace_count);
+        if (halt_condition_reached()) break;
+    }
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Generate a Parallel Multiplication Circuit}\label{algorithm-generate-a-parallel-multiplication-circuit}
+
+\begin{lstlisting}[language=C]
+Graph* prod(long m, long n) {
+    create_input_gates_for_m_and_n_bits();
+
+    // Form partial products.
+    for (i = 0; i < m; i++) {
+        for (j = 0; j < n; j++) {
+            pp[i][j] = AND(x[i], y[j]);
+        }
+    }
+
+    // Sum shifted partial products with half/full adders.
+    carry = zero;
+    for (diagonal = 0; diagonal < m + n - 1; diagonal++) {
+        bits = all_partial_products_on_this_diagonal(diagonal);
+        bits += incoming_carry_bits;
+        output_bit[diagonal] = reduce_bits_by_adder_tree(bits, &next_carries);
+    }
+
+    attach_outputs_in_product_bit_order();
+    return gate_graph;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{4.8 Mona Lisa Matrix Generation (\texttt{gb\_lisa.w})}{4.8 Mona Lisa Matrix Generation (gb\_lisa.w)}}\label{mona-lisa-matrix-generation-gb_lisa.w}
+
+\subsubsection{Algorithm: Generate a Scaled Pixel Matrix}\label{algorithm-generate-a-scaled-pixel-matrix}
+
+\begin{lstlisting}[language=C]
+long* lisa(m, n, d, m0, m1, n0, n1, d0, d1, Area work) {
+    apply_default_region_and_resolution_values();
+    raw_pixels = read_lisa_dat();
+
+    long* matrix = allocate_m_by_n_matrix(work);
+
+    for (row = 0; row < m; row++) {
+        for (col = 0; col < n; col++) {
+            raw_sum = sum_pixels_in_corresponding_source_rectangle(
+                raw_pixels, row, col, m0, m1, n0, n1, m, n);
+
+            if (raw_sum <= d0) value = 0;
+            else if (raw_sum >= d1) value = d;
+            else value = floor((raw_sum - d0) * d / (d1 - d0));
+
+            matrix[row*n + col] = value;
+        }
+    }
+
+    return matrix;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{4.9 Miles Graph Generation (\texttt{gb\_miles.w})}{4.9 Miles Graph Generation (gb\_miles.w)}}\label{miles-graph-generation-gb_miles.w}
+
+\subsubsection{Algorithm: Generate a City-Distance Graph}\label{algorithm-generate-a-city-distance-graph}
+
+\begin{lstlisting}[language=C]
+Graph* miles(n, north_weight, west_weight, pop_weight,
+             min_distance, max_degree, seed) {
+    cities = read_miles_dat();
+
+    for (city in cities) {
+        city.weight = north_weight * city.latitude_rank
+                    + west_weight  * city.longitude_rank
+                    + pop_weight   * city.population_rank;
+    }
+
+    gb_init_rand(seed);
+    selected = choose_top_or_random_tie_cities(cities, n);
+
+    Graph* g = gb_new_graph(count(selected));
+    assign_city_names_coordinates_population(g, selected);
+
+    for (each city u in selected) {
+        candidates = cities_sorted_by_distance_from(u);
+        degree = 0;
+
+        for (city v in candidates) {
+            if (distance(u, v) < min_distance) continue;
+            if (degree >= max_degree) break;
+            add_undirected_edge_with_mileage(g, u, v);
+            degree++;
+        }
+    }
+
+    return g;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{4.10 Planar Graph Generation (\texttt{gb\_plane.w})}{4.10 Planar Graph Generation (gb\_plane.w)}}\label{planar-graph-generation-gb_plane.w}
+
+\subsubsection{Algorithm: Construct a Planar Graph from Points and Visibility Rules}\label{algorithm-construct-a-planar-graph-from-points-and-visibility-rules}
+
+\begin{lstlisting}[language=C]
+Graph* plane(parameters...) {
+    points = generate_or_select_planar_points(parameters);
+    Graph* g = gb_new_graph(points.count);
+    assign_point_coordinates(g, points);
+
+    candidate_edges = generate_geometric_candidate_edges(points);
+    sort_candidate_edges_by_geometric_priority(candidate_edges);
+
+    for (edge in candidate_edges) {
+        if (!crosses_existing_edge(edge, g)) {
+            gb_new_edge(edge.u, edge.v, length_or_unit(edge));
+        }
+    }
+
+    return g;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{4.11 Ramanujan Graph Generation (\texttt{gb\_raman.w})}{4.11 Ramanujan Graph Generation (gb\_raman.w)}}\label{ramanujan-graph-generation-gb_raman.w}
+
+\subsubsection{Algorithm: Generate a Ramanujan Graph}\label{algorithm-generate-a-ramanujan-graph}
+
+\begin{lstlisting}[language=C]
+Graph* raman(long p, long q, long type, long reduce) {
+    validate_distinct_prime_parameters(p, q);
+    determine_bipartite_status_by_quadratic_residue(p, q);
+
+    vertices = construct_projective_or_group_vertices_mod_q(q, bipartite);
+    generators = construct_quaternion_generators_of_norm_p(p, q);
+
+    Graph* g = gb_new_graph(count(vertices));
+    assign_vertex_names_from_modular_coordinates(g, vertices);
+
+    for (vertex x in vertices) {
+        for (generator s in generators) {
+            y = apply_generator_mod_q(s, x);
+            if (reduce) y = canonical_representative(y);
+            gb_new_arc(vertex(x), vertex(y), 1);
+        }
+    }
+
+    return g;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{4.12 Random Graphs (\texttt{gb\_rand.w})}{4.12 Random Graphs (gb\_rand.w)}}\label{random-graphs-gb_rand.w}
+
+\subsubsection{Algorithm: Random Graph with Optional Distributions}\label{algorithm-random-graph-with-optional-distributions}
+
+\begin{lstlisting}[language=C]
+Graph* random_graph(n, m, multi, self, directed,
+                    dist_from, dist_to, min_len, max_len, seed) {
+    validate_parameters(n, m, min_len, max_len, dist_from, dist_to);
+    gb_init_rand(seed);
+
+    Graph* g = gb_new_graph(n);
+    name_vertices_as_numbers(g);
+
+    AliasTable* from_table = dist_from ? build_walker_alias(dist_from, n) : NULL;
+    AliasTable* to_table   = dist_to   ? build_walker_alias(dist_to, n)   : NULL;
+
+    while (m > 0) {
+        Vertex* u = from_table ? sample_alias(from_table) : random_vertex(g);
+        Vertex* v = to_table   ? sample_alias(to_table)   : random_vertex(g);
+
+        if (u == v && !self) continue;
+
+        if (!multi) {
+            if (arc_or_edge_exists(g, u, v, directed)) continue;
+        }
+
+        len = uniform_integer(min_len, max_len);
+
+        if (multi < 0 && arc_or_edge_exists(g, u, v, directed)) {
+            reduce_existing_length_to_minimum(g, u, v, len, directed);
+        } else if (directed) {
+            gb_new_arc(u, v, len);
+        } else {
+            gb_new_edge(u, v, len);
+        }
+
+        m--;
+    }
+
+    return g;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Walker Alias Table Setup}\label{algorithm-walker-alias-table-setup}
+
+\begin{lstlisting}[language=C]
+AliasTable* build_walker_alias(long prob[], long n) {
+    nn = next_power_of_two(n);
+    scale probabilities to table size;
+
+    small = list of entries with scaled probability < 1;
+    large = list of entries with scaled probability >= 1;
+
+    while (small and large) {
+        s = pop(small);
+        l = pop(large);
+
+        table[s].prob = scaled_prob[s];
+        table[s].alias = l;
+
+        scaled_prob[l] = scaled_prob[l] - (1 - scaled_prob[s]);
+        move l to small or large according to new value;
+    }
+
+    fill_remaining_entries_as_certain_events();
+    return table;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Randomize Existing Arc Lengths}\label{algorithm-randomize-existing-arc-lengths}
+
+\begin{lstlisting}[language=C]
+long random_lengths(Graph* g, long directed, long min_len, long max_len, long seed) {
+    gb_init_rand(seed);
+
+    for (u in g->vertices) {
+        for (a = u->arcs; a != NULL; a = a->next) {
+            if (!directed && already_processed_mate(a)) continue;
+            len = uniform_integer(min_len, max_len);
+            a->len = len;
+            if (!directed) mate(a)->len = len;
+        }
+    }
+
+    return 0;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{5. Demonstration Algorithms}\label{demonstration-algorithms}
+
+\subsection{\texorpdfstring{5.1 Connected Components in Word Graphs (\texttt{word\_components.w})}{5.1 Connected Components in Word Graphs (word\_components.w)}}\label{connected-components-in-word-graphs-word_components.w}
+
+\subsubsection{Algorithm: Incremental Circular-List Components}\label{algorithm-incremental-circular-list-components}
+
+\begin{lstlisting}[language=C]
+void word_components(void) {
+    Graph* g = words(0, 0, 0, 0);
+
+    n = comp = isol = m = 0;
+
+    for (v in g->vertices in decreasing word frequency order) {
+        n++;
+        make_singleton_component(v);
+
+        // Only connect to earlier vertices; skip future neighbors.
+        Arc* a = v->arcs;
+        while (a != NULL && a->tip > v) a = a->next;
+
+        if (a == NULL) {
+            report_isolated(v);
+        } else {
+            for (; a != NULL; a = a->next) {
+                m++;
+                merge_components_if_different(a->tip, v);
+            }
+            report_final_component(v);
+        }
+
+        report_counts(comp, isol, m);
+    }
+
+    print_nonisolated_nongiant_components(g);
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Merge Two Circular-List Components}\label{algorithm-merge-two-circular-list-components}
+
+\begin{lstlisting}[language=C]
+void merge_components_if_different(Vertex* u, Vertex* v) {
+    Vertex* mu = u->master;
+    Vertex* mv = v->master;
+
+    if (mu == mv) return;
+
+    // Change master of smaller component.
+    if (mu->size < mv->size) {
+        mv->size += mu->size;
+        if (mu->size == 1) isol--;
+        for (t = mu->link; t != mu; t = t->link) t->master = mv;
+        mu->master = mv;
+    } else {
+        if (mu->size == 1) isol--;
+        mu->size += mv->size;
+        if (mv->size == 1) isol--;
+        for (t = mv->link; t != mv; t = t->link) t->master = mu;
+        mv->master = mu;
+    }
+
+    // Splice circular lists.
+    t = mu->link;
+    mu->link = mv->link;
+    mv->link = t;
+
+    comp--;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{5.2 Word Ladders (\texttt{ladders.w})}{5.2 Word Ladders (ladders.w)}}\label{word-ladders-ladders.w}
+
+\subsubsection{Algorithm: Interactive Minimal Word Ladder}\label{algorithm-interactive-minimal-word-ladder}
+
+\begin{lstlisting}[language=C]
+void ladders(options) {
+    Graph* g = words(n, selected_weight_vector, 0, seed);
+    modify_edge_lengths_if_needed(g, alphabetic_mode, frequency_mode);
+    configure_dijkstra_priority_queue_if_needed();
+
+    while (read_start_and_goal_words(start, goal)) {
+        Graph* gg = clone_graph_header_borrowing_vertices(g);
+
+        Vertex* uu = ensure_word_vertex(gg, start);
+        Vertex* vv = ensure_word_vertex(gg, goal);
+
+        if (both_new_and_adjacent(start, goal)) {
+            plant_new_edge_between(uu, vv);
+        }
+
+        long distance = dijkstra(uu, vv, gg, heuristic_mode ? lower_bound : NULL);
+        if (distance < 0) print_no_ladder();
+        else print_dijkstra_result(vv);
+
+        gb_recycle(gg);
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Word-Ladder Heuristic Lower Bound}\label{algorithm-word-ladder-heuristic-lower-bound}
+
+\begin{lstlisting}[language=C]
+long word_ladder_lower_bound(Vertex* v) {
+    if (alphabetic_mode) {
+        return alphabetic_distance(v->name, goal_word);
+    }
+
+    // Unit-cost lower bound: at least one step for each differing position.
+    count = 0;
+    for (i = 0; i < 5; i++) {
+        if (v->name[i] != goal_word[i]) count++;
+    }
+    return count;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{5.3 Strong Components (\texttt{roget\_components.w})}{5.3 Strong Components (roget\_components.w)}}\label{strong-components-roget_components.w}
+
+\subsubsection{Algorithm: Nonrecursive Tarjan Strong Components}\label{algorithm-nonrecursive-tarjan-strong-components}
+
+\begin{lstlisting}[language=C]
+void strong_components(Graph* g) {
+    for (v in g->vertices) {
+        v->rank = 0;              // unseen
+        v->untagged = v->arcs;    // next outgoing arc to inspect
+    }
+
+    active_stack = NULL;
+    settled_stack = NULL;
+    nn = 0;
+
+    for (root in g->vertices) {
+        if (root->rank == 0) {
+            dfs_tarjan_from(root);
+        }
+    }
+
+    print_component_dag_arcs(g);
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Explicit DFS for Tarjan SCC}\label{algorithm-explicit-dfs-for-tarjan-scc}
+
+\begin{lstlisting}[language=C]
+void dfs_tarjan_from(Vertex* root) {
+    Vertex* v = root;
+    v->parent = NULL;
+    make_active(v);
+
+    while (v != NULL) {
+        Arc* a = v->untagged;
+
+        if (a != NULL) {
+            Vertex* u = a->tip;
+            v->untagged = a->next;   // tag arc
+
+            if (u->rank != 0) {
+                if (u->rank < v->min->rank) {
+                    v->min = u;
+                }
+            } else {
+                u->parent = v;
+                v = u;
+                make_active(v);
+            }
+        } else {
+            Vertex* u = v->parent;
+
+            if (v->min == v) {
+                settle_component_rooted_at(v);
+            } else if (v->min->rank < u->min->rank) {
+                u->min = v->min;
+            }
+
+            v = u;
+        }
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Settle One Strong Component}\label{algorithm-settle-one-strong-component}
+
+\begin{lstlisting}[language=C]
+void settle_component_rooted_at(Vertex* root) {
+    do {
+        Vertex* x = pop(&active_stack);
+        x->rank = INF;
+        x->parent = root;          // representative
+        push(&settled_stack, x);
+    } while (x != root);
+
+    print_component(root);
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{5.4 Biconnected Components (\texttt{book\_components.w})}{5.4 Biconnected Components (book\_components.w)}}\label{biconnected-components-book_components.w}
+
+\subsubsection{Algorithm: Hopcroft-Tarjan Bicomponents}\label{algorithm-hopcroft-tarjan-bicomponents}
+
+\begin{lstlisting}[language=C]
+void bicomponents(Graph* g) {
+    for (v in g->vertices) {
+        v->rank = 0;
+        v->untagged = v->arcs;
+    }
+
+    active_stack = NULL;
+    nn = 0;
+    dummy.rank = 0;
+
+    for (root in g->vertices) {
+        if (root->rank == 0) {
+            root->parent = &dummy;
+            make_active(root);
+
+            v = root;
+            while (v != &dummy) {
+                explore_bicomponent_step(&v);
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: One DFS Step for Bicomponents}\label{algorithm-one-dfs-step-for-bicomponents}
+
+\begin{lstlisting}[language=C]
+void explore_bicomponent_step(Vertex** current) {
+    Vertex* v = *current;
+    Arc* a = v->untagged;
+
+    if (a != NULL) {
+        Vertex* u = a->tip;
+        v->untagged = a->next;
+
+        if (u->rank == 0) {
+            u->parent = v;
+            *current = u;
+            make_active(u);
+        } else if (u != v->parent && u->rank < v->min->rank) {
+            v->min = u;
+        }
+    } else {
+        Vertex* u = v->parent;
+
+        if (v->min == u) {
+            output_bicomponent_containing_subtree(v, u);
+            remove_subtree_vertices_from_active_stack(v);
+        } else if (v->min->rank < u->min->rank) {
+            u->min = v->min;
+        }
+
+        *current = u;
+    }
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{5.5 Near-Triangular Economic Ordering (\texttt{econ\_order.w})}{5.5 Near-Triangular Economic Ordering (econ\_order.w)}}\label{near-triangular-economic-ordering-econ_order.w}
+
+\subsubsection{Algorithm: Local Search for Sector Ordering}\label{algorithm-local-search-for-sector-ordering}
+
+\begin{lstlisting}[language=C]
+void econ_order(long repetitions, bool greedy) {
+    Graph* g = econ(n, 2, 0, seed_s);
+    mat = graph_to_matrix(g);
+    del[j][k] = mat[j][k] - mat[k][j];
+
+    print_trivial_lower_bound(mat);
+
+    gb_init_rand(seed_t);
+
+    while (repetitions-- > 0) {
+        mapping = random_permutation(n);
+        score = below_diagonal_sum(mat, mapping);
+        steps = 0;
+
+        while (true) {
+            best = find_best_single_move(mapping, del, greedy);
+            if (best.improvement <= 0) break;
+
+            move_item(mapping, best.from, best.to);
+            score -= best.improvement;
+            steps++;
+        }
+
+        report_local_minimum(mapping, score, steps);
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Find Best Relocation Move}\label{algorithm-find-best-relocation-move}
+
+\begin{lstlisting}[language=C]
+Move find_best_single_move(long mapping[], long del[][], bool greedy) {
+    best.improvement = greedy ? 0 : INF;
+    best.from = -1;
+
+    for (k = 0; k < n; k++) {
+        d = 0;
+        for (j = k - 1; j >= 0; j--) {
+            d += del[mapping[k]][mapping[j]];
+            consider_move(k, j, d, greedy, &best);
+        }
+
+        d = 0;
+        for (j = k + 1; j < n; j++) {
+            d += del[mapping[j]][mapping[k]];
+            consider_move(k, j, d, greedy, &best);
+        }
+    }
+
+    return best;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{5.6 Football Long-Path Heuristics (\texttt{football.w})}{5.6 Football Long-Path Heuristics (football.w)}}\label{football-long-path-heuristics-football.w}
+
+\subsubsection{Algorithm: Simple Greedy Chain}\label{algorithm-simple-greedy-chain}
+
+\begin{lstlisting}[language=C]
+void greedy_football_chain(Vertex* start, Vertex* goal) {
+    clear_blocked_and_valid_flags(g);
+    cur_node = NULL;
+
+    for (v = start; v != goal; v = cur_node->game->tip) {
+        v->blocked = true;
+        cur_node = new_node(cur_node, 0);
+
+        mark_vertices_that_can_still_reach_goal(v, goal);
+
+        best_arc = NULL;
+        last_resort_goal_arc = NULL;
+        best_margin = NEG_INF;
+
+        for (a = v->arcs; a != NULL; a = a->next) {
+            if (a->tip->valid != v) continue;
+
+            if (a->tip == goal) {
+                last_resort_goal_arc = a;
+            } else if (a->del > best_margin) {
+                best_arc = a;
+                best_margin = a->del;
+            }
+        }
+
+        cur_node->game = (best_arc != NULL) ? best_arc : last_resort_goal_arc;
+        cur_node->tot_len += cur_node->game->del;
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Mark Valid Continuations}\label{algorithm-mark-valid-continuations}
+
+\begin{lstlisting}[language=C]
+void mark_vertices_that_can_still_reach_goal(Vertex* current, Vertex* goal) {
+    stack = [goal];
+    goal->valid = current;
+
+    while (!empty(stack)) {
+        Vertex* u = pop(stack);
+        for (incoming_or_reverse_arc into u) {
+            Vertex* w = predecessor;
+            if (!w->blocked && w->valid != current) {
+                w->valid = current;
+                push(stack, w);
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Stratified Heuristic Search}\label{algorithm-stratified-heuristic-search}
+
+\begin{lstlisting}[language=C]
+void stratified_football_search(Vertex* start, Vertex* goal, long width) {
+    strata[0] = list containing empty path at start;
+
+    for (depth = 0; ; depth++) {
+        candidates = expand_each_node_in_current_stratum(strata[depth]);
+        discard_paths_that_repeat_vertices_or_cannot_reach_goal(candidates);
+        score_candidates_by_total_margin_and_promise(candidates);
+        strata[depth + 1] = keep_best_width_candidates(candidates, width);
+
+        if (best_candidate_reaches_goal(strata[depth + 1])) {
+            cur_node = best_goal_candidate;
+            return;
+        }
+    }
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{5.7 Minimum Spanning Trees (\texttt{miles\_span.w})}{5.7 Minimum Spanning Trees (miles\_span.w)}}\label{minimum-spanning-trees-miles_span.w}
+
+\subsubsection{Algorithm: Kruskal with Radix-Sorted Edges}\label{algorithm-kruskal-with-radix-sorted-edges}
+
+\begin{lstlisting}[language=C]
+unsigned long krusk(Graph* g) {
+    edges = collect_each_undirected_edge_once(g);
+    radix_sort_edges_by_length(edges);
+
+    make_each_vertex_a_union_find_singleton();
+    total = 0;
+    chosen = 0;
+
+    for (edge in edges in increasing length) {
+        if (find(edge.u) != find(edge.v)) {
+            union_by_size_or_rank(edge.u, edge.v);
+            total += edge.length;
+            chosen++;
+            if (chosen == g->n - 1) return total;
+        }
+    }
+
+    return INFINITY;   // disconnected
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Jarnik-Prim with Priority Queue}\label{algorithm-jarnik-prim-with-priority-queue}
+
+\begin{lstlisting}[language=C]
+unsigned long jar_pr(Graph* g, PriorityQueue pq) {
+    for (v in g->vertices) {
+        v->dist = INFINITY;
+        v->parent = NULL;
+        v->known = false;
+    }
+
+    root = g->vertices[0];
+    root->dist = 0;
+    pq.insert(root, 0);
+    total = 0;
+
+    while (!pq.empty()) {
+        v = pq.delete_min();
+        if (v->known) continue;
+        v->known = true;
+        total += v->dist;
+
+        for (a = v->arcs; a != NULL; a = a->next) {
+            u = a->tip;
+            if (!u->known && a->len < u->dist) {
+                u->dist = a->len;
+                u->parent = v;
+                pq.decrease_key_or_insert(u, a->len);
+            }
+        }
+    }
+
+    if (some vertex is unknown) return INFINITY;
+    return total;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Binary Heap Priority Queue}\label{algorithm-binary-heap-priority-queue}
+
+\begin{lstlisting}[language=C]
+void heap_decrease_key(Vertex* v, long key) {
+    if (v not in heap) append_to_heap(v);
+    v->dist = key;
+
+    i = v->heap_index;
+    while (i > 1 && heap[parent(i)]->dist > heap[i]->dist) {
+        swap(heap[i], heap[parent(i)]);
+        i = parent(i);
+    }
+}
+
+Vertex* heap_delete_min(void) {
+    min = heap[1];
+    heap[1] = heap[size--];
+    sift_down(1);
+    return min;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Fibonacci Heap Operations Used by Prim}\label{algorithm-fibonacci-heap-operations-used-by-prim}
+
+\begin{lstlisting}[language=C]
+void fib_insert(Vertex* v, long key) {
+    v->dist = key;
+    v->degree = 0;
+    v->parent = NULL;
+    v->child = NULL;
+    v->mark = false;
+    add_to_root_list(v);
+    if (v->dist < min_root->dist) min_root = v;
+}
+
+void fib_decrease_key(Vertex* v, long key) {
+    v->dist = key;
+    Vertex* p = v->parent;
+
+    if (p != NULL && v->dist < p->dist) {
+        cut(v, p);
+        cascading_cut(p);
+    }
+
+    if (v->dist < min_root->dist) min_root = v;
+}
+
+Vertex* fib_delete_min(void) {
+    z = min_root;
+    move_children_of_z_to_root_list(z);
+    remove_z_from_root_list(z);
+    consolidate_roots_by_degree();
+    return z;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Cheriton-Tarjan-Karp / Boruvka-Style MST}\label{algorithm-cheriton-tarjan-karp-boruvka-style-mst}
+
+\begin{lstlisting}[language=C]
+unsigned long cher_tar_kar(Graph* g) {
+    initialize_each_vertex_as_fragment();
+    total = 0;
+
+    while (more_than_one_fragment_exists()) {
+        for (fragment F) {
+            F.best_edge = cheapest_edge_leaving(F);
+        }
+
+        for (fragment F) {
+            e = F.best_edge;
+            if (e != NULL && find(e.u) != find(e.v)) {
+                union_fragments(e.u, e.v);
+                total += e.length;
+            }
+        }
+
+        compress_fragment_representatives();
+    }
+
+    return total;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{5.8 Assignment Problem (\texttt{assign\_lisa.w})}{5.8 Assignment Problem (assign\_lisa.w)}}\label{assignment-problem-assign_lisa.w}
+
+\subsubsection{Algorithm: Hungarian-Style Assignment Solver}\label{algorithm-hungarian-style-assignment-solver}
+
+\begin{lstlisting}[language=C]
+void solve_assignment(long* matrix, long m, long n, bool maximize) {
+    if (maximize) convert_to_minimization_costs(matrix);
+    if (m != n) pad_to_square_with_zero_or_neutral_costs();
+
+    // Dual variables: sigma for rows, tau for columns.
+    initialize_row_and_column_potentials_so_reduced_costs_nonnegative();
+
+    matching = empty;
+
+    while (matching_size < n) {
+        build_zero_graph_from_reduced_costs();
+
+        augmenting_path = find_augmenting_path_from_unmatched_row();
+        if (augmenting_path exists) {
+            augment_matching_along_path(augmenting_path);
+            continue;
+        }
+
+        cover = minimum_line_cover_of_current_zero_graph(matching);
+        delta = smallest_uncovered_reduced_cost(cover);
+
+        // Adjust dual variables to create new zeroes without making costs negative.
+        for (uncovered row r) sigma[r] += delta;
+        for (covered column c) tau[c] += delta;
+    }
+
+    report_assignment_and_weight(matching);
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Alternating Search in Zero Graph}\label{algorithm-alternating-search-in-zero-graph}
+
+\begin{lstlisting}[language=C]
+Path find_augmenting_path_from_unmatched_row(void) {
+    queue = all_unmatched_rows;
+    mark_rows(queue);
+
+    while (!queue.empty()) {
+        row = pop(queue);
+        for (col where reduced_cost[row][col] == 0) {
+            if (!marked_col[col]) {
+                parent_col[col] = row;
+                mark_col(col);
+
+                if (col is unmatched) {
+                    return reconstruct_augmenting_path(col);
+                }
+
+                matched_row = row_matched_to(col);
+                parent_row[matched_row] = col;
+                mark_row(matched_row);
+                push(queue, matched_row);
+            }
+        }
+    }
+
+    return NONE;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{5.9 Girth and Diameter (\texttt{girth.w})}{5.9 Girth and Diameter (girth.w)}}\label{girth-and-diameter-girth.w}
+
+\subsubsection{Algorithm: Compute Girth and Diameter by BFS from Every Vertex}\label{algorithm-compute-girth-and-diameter-by-bfs-from-every-vertex}
+
+\begin{lstlisting}[language=C]
+void compute_girth_and_diameter(Graph* g) {
+    global_girth = INFINITY;
+    diameter = 0;
+
+    for (root in g->vertices) {
+        for (v in g->vertices) {
+            v->dist = -1;
+            v->parent = NULL;
+        }
+
+        queue.clear();
+        root->dist = 0;
+        enqueue(root);
+
+        while (!queue.empty()) {
+            v = dequeue();
+
+            for (a = v->arcs; a != NULL; a = a->next) {
+                u = a->tip;
+
+                if (u->dist < 0) {
+                    u->dist = v->dist + 1;
+                    u->parent = v;
+                    enqueue(u);
+                } else if (u != v->parent) {
+                    cycle_length = v->dist + u->dist + 1;
+                    if (cycle_length < global_girth) {
+                        global_girth = cycle_length;
+                    }
+                }
+            }
+        }
+
+        eccentricity = max_dist_reached_from(root);
+        if (eccentricity > diameter) diameter = eccentricity;
+    }
+
+    print(global_girth, diameter);
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Theoretical Bound Computation}\label{algorithm-theoretical-bound-computation}
+
+\begin{lstlisting}[language=C]
+void compute_regular_graph_bounds(long p, long n, bool bipartite) {
+    // Lower bound on diameter and upper bound on girth by tree expansion.
+    s = p + 2;
+    dl = 1;
+    pp = p;
+    gu = 3;
+
+    while (s < n) {
+        s += pp;
+        if (s <= n) gu++;
+        dl++;
+        pp *= p;
+        s += pp;
+        if (s <= n) gu++;
+    }
+
+    gl = number_theoretic_lower_bound_on_ramanujan_girth(p, q, bipartite);
+    du = ramanujan_upper_bound_on_diameter(p, n, bipartite);
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{5.10 Circuit Multiplication (\texttt{multiply.w})}{5.10 Circuit Multiplication (multiply.w)}}\label{circuit-multiplication-multiply.w}
+
+\subsubsection{Algorithm: Decimal String to Little-Endian Binary}\label{algorithm-decimal-string-to-little-endian-binary}
+
+\begin{lstlisting}[language=C]
+void decimal_to_binary(char* decimal, char* bits, long bit_count) {
+    for (k = 0; k < bit_count; k++) {
+        if (decimal_is_empty(decimal)) {
+            bits[k] = '0';
+        } else {
+            remainder = divide_decimal_string_by_2_in_place(decimal);
+            bits[k] = '0' + remainder;
+        }
+    }
+    bits[bit_count] = '\0';
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Multiply by Gate Simulation}\label{algorithm-multiply-by-gate-simulation}
+
+\begin{lstlisting}[language=C]
+void multiply_interactive(long m, long n, optional seed) {
+    Graph* g = prod(m, n);
+
+    if (seed_is_present) {
+        g = partial_gates(g, n, m, seed, fixed_multiplier_bits);
+        y = binary_string_to_decimal(fixed_multiplier_bits);
+    }
+
+    while (read_decimal_operands(x, y)) {
+        decimal_to_binary(x, input_bits, m);
+        if (x_not_fully_consumed) reject_too_large();
+
+        if (!seed_is_present) {
+            decimal_to_binary(y, input_bits + m, n);
+            if (y_not_fully_consumed) reject_too_large();
+        }
+
+        gate_eval(g, input_bits, output_bits);
+        z = binary_string_to_decimal(output_bits);
+        print(x, y, z);
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Binary String to Decimal String}\label{algorithm-binary-string-to-decimal-string}
+
+\begin{lstlisting}[language=C]
+char* binary_string_to_decimal(char* bits) {
+    z = "0";
+
+    for (bit in bits from most_significant_to_least_or_output_order) {
+        z = decimal_string_times_2_plus_bit(z, bit);
+    }
+
+    return z;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{5.11 RISC Simulation (\texttt{take\_risc.w})}{5.11 RISC Simulation (take\_risc.w)}}\label{risc-simulation-take_risc.w}
+
+\subsubsection{Algorithm: Run MicroRISC Program for Product and Quotient}\label{algorithm-run-microrisc-program-for-product-and-quotient}
+
+\begin{lstlisting}[language=C]
+void take_risc(void) {
+    Graph* g = risc(8);
+
+    while (read_positive_15_bit_numbers(&m, &n)) {
+        memory[1] = m;
+        memory[3] = n;
+
+        memory[5] = MULT_ROUTINE_ADDRESS;
+        run_risc(g, memory, MEMORY_SIZE, trace);
+        product = risc_state[4];
+        overflow = risc_state[16] & 1;
+        print_product(product, overflow);
+
+        memory[5] = DIV_ROUTINE_ADDRESS;
+        run_risc(g, memory, MEMORY_SIZE, trace);
+        quotient  = risc_state[4];
+        remainder = (risc_state[2] + n) & 0x7fff;
+        print_quotient_and_remainder(quotient, remainder);
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Algorithm: Ternary Multiply/Divide Subroutine Executed by RISC}\label{algorithm-ternary-multiplydivide-subroutine-executed-by-risc}
+
+\begin{lstlisting}[language=C]
+// Computes x * floor(y / z) using shift/subtract logic.
+long tri(long x, long y, long z) {
+    result = 0;
+    shift_count = 0;
+    overflow_flag = false;
+
+    y -= z;
+    while (y >= 0) {
+        z <<= 1;
+        x <<= 1;
+        if (overflow(x)) overflow_flag = true;
+        shift_count++;
+        y -= z;
+    }
+
+    while (shift_count >= 0) {
+        z >>= 1;
+        x >>= 1;
+        y += z;
+
+        if (y >= 0) {
+            result += x;
+            if (overflow(result)) overflow_flag = true;
+            y -= z;
+        }
+
+        shift_count--;
+    }
+
+    if (overflow_flag) force_overflow_status();
+    return result;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{5.12 Queen Graph Demo (\texttt{queen.w})}{5.12 Queen Graph Demo (queen.w)}}\label{queen-graph-demo-queen.w}
+
+\subsubsection{Algorithm: Build and Save a Queen-Move Graph}\label{algorithm-build-and-save-a-queen-move-graph}
+
+\begin{lstlisting}[language=C]
+void queen(void) {
+    Graph* rook   = board(3, 4, 0, 0, -1, 0, false);
+    Graph* bishop = board(3, 4, 0, 0, -2, 0, false);
+    Graph* queen  = gunion(rook, bishop, false, false);
+
+    save_graph(queen, "queen.gb");
+
+    for (v in queen->vertices) {
+        print(v->name);
+        for (a = v->arcs; a != NULL; a = a->next) {
+            print("  ->", a->tip->name, "length", a->len);
+        }
+    }
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{5.13 Installation Sample (\texttt{test\_sample.w})}{5.13 Installation Sample (test\_sample.w)}}\label{installation-sample-test_sample.w}
+
+\subsubsection{Algorithm: Regression Test Orchestration}\label{algorithm-regression-test-orchestration}
+
+\begin{lstlisting}[language=C]
+void test_sample(void) {
+    generate_or_load_standard_graphs();
+    run_selected_generators_with_known_parameters();
+    save_graph_to_test_file();
+    restore_graph_from_test_file();
+    compare_structural_and_checksum_properties();
+    print_expected_sample_output();
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{6. Cross-Cutting Algorithmic Patterns}\label{cross-cutting-algorithmic-patterns}
+
+\subsection{6.1 Explicit Recursion Elimination}\label{explicit-recursion-elimination}
+
+\passthrough{\lstinline!roget\_components.w!} and \passthrough{\lstinline!book\_components.w!} both avoid relying on the C runtime stack. Their DFS algorithms store recursion state inside vertex utility fields:
+
+\begin{lstlisting}[language=C]
+while (current != NULL) {
+    if (current has untagged outgoing arc) {
+        inspect_or_descend();
+    } else {
+        mature_current_vertex();
+        current = current->parent;
+    }
+}
+\end{lstlisting}
+
+This is a deliberate portability strategy: the source avoids deep recursive calls on systems with small or inefficient stacks.
+
+\subsection{6.2 Utility-Field Rebinding}\label{utility-field-rebinding}
+
+The same six \passthrough{\lstinline!Vertex!} utility fields and two \passthrough{\lstinline!Arc!} utility fields are rebound repeatedly:
+
+\begin{lstlisting}[language=C]
+#define dist      z.I
+#define backlink  y.V
+#define rank      z.I
+#define parent    y.V
+#define link      w.V
+#define min       v.V
+#define master    y.V
+#define size      x.I
+\end{lstlisting}
+
+This pattern keeps graph records compact and lets algorithms annotate graphs without external hash maps.
+
+\subsection{6.3 Canonical Randomness}\label{canonical-randomness}
+
+The GraphBase random-number layer supports repeatable experiments:
+
+\begin{lstlisting}[language=C]
+gb_init_rand(seed);
+experiment_graph = generator(parameters, seed);
+run_algorithm(experiment_graph);
+\end{lstlisting}
+
+The same seed and parameters are intended to produce the same graph across machines.
+
+\subsection{6.4 Source-Level Performance Instrumentation}\label{source-level-performance-instrumentation}
+
+Several demonstrations count \passthrough{\lstinline!mems!}, a machine-independent approximation to memory references:
+
+\begin{lstlisting}[language=C]
+#define o    mems++
+#define oo   mems += 2
+#define ooo  mems += 3
+\end{lstlisting}
+
+The algorithm itself is manually annotated, allowing comparative measurements independent of compiler and CPU timing noise.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{7. Algorithm Coverage Checklist}\label{algorithm-coverage-checklist}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.4286}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5714}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Area
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Covered
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Graph allocation and recycling & Yes \\
+Arc and edge insertion & Yes \\
+Input parsing and checksums & Yes \\
+Random number generation and unbiased sampling & Yes \\
+Radix sorting linked records & Yes \\
+Save/restore graph serialization & Yes \\
+Dijkstra shortest paths & Yes \\
+Graph constructors and transformations & Yes \\
+Word, Roget, books, economy, games, gates, Lisa, miles, plane, Ramanujan, random graph generation & Yes \\
+Connected components & Yes \\
+Strong components & Yes \\
+Biconnected components & Yes \\
+Near-triangular ordering heuristic & Yes \\
+Long-path heuristic search & Yes \\
+Minimum spanning tree algorithms & Yes \\
+Assignment/Hungarian algorithm & Yes \\
+Girth and diameter & Yes \\
+Gate simulation & Yes \\
+RISC simulation & Yes \\
+Demo graph traversal and persistence & Yes \\
+\end{longtable}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{8. Practical Reading Order}\label{practical-reading-order}
+
+For implementation study, read the source algorithms in this order:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \passthrough{\lstinline!gb\_graph.w!} -- understand the graph memory model.
+\item
+  \passthrough{\lstinline!gb\_io.w!}, \passthrough{\lstinline!gb\_flip.w!}, \passthrough{\lstinline!gb\_sort.w!} -- understand portable data, randomness, and weighted selection.
+\item
+  \passthrough{\lstinline!gb\_basic.w!}, \passthrough{\lstinline!gb\_rand.w!}, \passthrough{\lstinline!gb\_words.w!}, \passthrough{\lstinline!gb\_miles.w!} -- understand graph generation patterns.
+\item
+  \passthrough{\lstinline!gb\_dijk.w!}, \passthrough{\lstinline!word\_components.w!}, \passthrough{\lstinline!roget\_components.w!}, \passthrough{\lstinline!book\_components.w!} -- understand fundamental graph algorithms.
+\item
+  \passthrough{\lstinline!miles\_span.w!}, \passthrough{\lstinline!assign\_lisa.w!}, \passthrough{\lstinline!econ\_order.w!}, \passthrough{\lstinline!football.w!} -- study optimization algorithms and heuristics.
+\item
+  \passthrough{\lstinline!gb\_gates.w!}, \passthrough{\lstinline!multiply.w!}, \passthrough{\lstinline!take\_risc.w!} -- study graph-based circuit representation and simulation.
+\item
+  \passthrough{\lstinline!gb\_save.w!}, \passthrough{\lstinline!queen.w!}, \passthrough{\lstinline!test\_sample.w!} -- study persistence, traversal, and regression testing.
+\end{enumerate}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{9. Notes on Fidelity}\label{notes-on-fidelity}
+
+This handout does not reproduce the CWEB source verbatim. It extracts the algorithms and rewrites them into normalized C-like pseudocode. The pseudocode preserves the operational structure of the source routines: state fields, initialization, loop structure, queue/stack behavior, graph traversal, and update rules. Error-message formatting, command-line parsing details, printing details, and CWEB documentation scaffolding are summarized unless they directly affect algorithm semantics.
+
+
+\end{document}

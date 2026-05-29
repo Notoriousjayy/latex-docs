@@ -1,0 +1,1740 @@
+
+\documentclass[11pt]{article}
+
+\usepackage[letterpaper,margin=0.72in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{calc}
+\usepackage{amsmath,amssymb}
+\usepackage{textcomp}
+\usepackage{upquote}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{etoolbox}
+
+\definecolor{POEAABlue}{HTML}{1F4E79}
+\definecolor{POEAALightBlue}{HTML}{EAF3F8}
+\definecolor{POEAAGold}{HTML}{B8860B}
+\definecolor{POEAAGoldLight}{HTML}{FFF8E6}
+\definecolor{POEAAGreen}{HTML}{2E6F40}
+\definecolor{POEAAPurple}{HTML}{5B4B8A}
+\definecolor{POEAARule}{HTML}{B7C9D6}
+\definecolor{POEAAGrey}{HTML}{F7F7F7}
+\definecolor{POEAADarkGrey}{HTML}{444444}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=POEAABlue,
+  urlcolor=POEAABlue,
+  citecolor=POEAABlue,
+  pdftitle={Patterns of Enterprise Application Architecture Algorithms as C-like Pseudocode},
+  pdfauthor={Jordan Suber / ChatGPT},
+  pdfsubject={Pseudocode handout based on Martin Fowler's Patterns of Enterprise Application Architecture},
+  pdfkeywords={enterprise application architecture, patterns, pseudocode, data mapper, unit of work, identity map, lazy load, service layer, MVC, concurrency, session state}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textit{Patterns of Enterprise Application Architecture} Pseudocode}
+\rhead{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\headheight}{14pt}
+
+\titleformat{\section}{\Large\bfseries\color{POEAABlue}}{}{0pt}{}
+\titleformat{\subsection}{\large\bfseries\color{POEAABlue}}{}{0pt}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{POEAADarkGrey}}{}{0pt}{}
+\titlespacing*{\section}{0pt}{1.35em}{0.5em}
+\titlespacing*{\subsection}{0pt}{0.95em}{0.35em}
+\titlespacing*{\subsubsection}{0pt}{0.75em}{0.25em}
+
+\setcounter{secnumdepth}{0}
+\setcounter{tocdepth}{2}
+\setlist[itemize]{leftmargin=1.4em,itemsep=0.2em,topsep=0.2em}
+\setlist[enumerate]{leftmargin=1.6em,itemsep=0.25em,topsep=0.25em}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.52em}
+\setlength{\LTpre}{0.35em}
+\setlength{\LTpost}{0.35em}
+\emergencystretch=4em
+\sloppy
+
+\lstdefinestyle{poeaacode}{
+  language=C,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\bfseries\color{POEAABlue},
+  commentstyle=\itshape\color{POEAADarkGrey},
+  stringstyle=\color{POEAAGreen},
+  numbers=left,
+  numberstyle=\tiny\color{POEAADarkGrey},
+  stepnumber=1,
+  numbersep=0.7em,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  tabsize=4,
+  showstringspaces=false,
+  frame=single,
+  framerule=0.3pt,
+  rulecolor=\color{POEAARule},
+  backgroundcolor=\color{POEAAGrey},
+  xleftmargin=1.0em,
+  framexleftmargin=0.8em,
+  framexrightmargin=0.35em,
+  framesep=0.42em,
+  aboveskip=0.55em,
+  belowskip=0.55em,
+  morekeywords={type,bool,true,false,NULL,size_t,uintptr_t,int64_t,uint64_t,try,catch,catch_any,throw,foreach,repeat,until,continue,break,raise,assert,alloc,free,copy,zero,length,push,pop,enqueue,dequeue,hash,resize,commit,rollback,begin_transaction,commit_transaction,rollback_transaction,Request,Response,ResultSet,Row,List,Map,Transaction,DomainObject,ObjectState,Money,Date,Id,CLEAN,NEW,DIRTY,REMOVED,GHOST,LOADED,Strategy,Gateway,Mapper,Repository,Controller,View,DTO,Lock,Session,Registry,Plugin,RecordSet}
+}
+\lstset{style=poeaacode}
+
+\newtcolorbox{scopebox}{
+  enhanced,
+  colback=POEAALightBlue,
+  colframe=POEAABlue,
+  boxrule=0.5pt,
+  arc=2mm,
+  left=1em,
+  right=1em,
+  top=0.7em,
+  bottom=0.7em
+}
+
+\newtcolorbox{methodbox}{
+  enhanced,
+  colback=POEAAGrey,
+  colframe=POEAARule,
+  boxrule=0.4pt,
+  arc=2mm,
+  left=0.9em,
+  right=0.9em,
+  top=0.6em,
+  bottom=0.6em
+}
+
+\newtcolorbox{warningbox}{
+  enhanced,
+  colback=POEAAGoldLight,
+  colframe=POEAAGold,
+  boxrule=0.45pt,
+  arc=2mm,
+  left=0.9em,
+  right=0.9em,
+  top=0.6em,
+  bottom=0.6em
+}
+
+% Pandoc compatibility helpers
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\passthrough}[1]{#1}
+\AtBeginEnvironment{longtable}{\small}
+\renewcommand{\arraystretch}{1.14}
+
+\begin{document}
+\hypersetup{pageanchor=false}
+\pagenumbering{gobble}
+
+\begin{titlepage}
+  \centering
+  \vspace*{1.45cm}
+  {\Huge\bfseries\color{POEAABlue}Patterns of Enterprise\\Application Architecture\par}
+  \vspace{0.35cm}
+  {\LARGE Algorithms as C-like Pseudocode\par}
+  \vspace{0.25cm}
+  {\large Based on Martin Fowler et al., \textit{Patterns of Enterprise Application Architecture}\par}
+  \vspace{0.95cm}
+  \begin{scopebox}
+  This handout reorganizes the book's enterprise-architecture patterns into implementation-oriented pseudocode. It focuses on the control algorithms behind domain logic, relational mapping, change tracking, identity management, lazy loading, request dispatch, view rendering, remote DTO assembly, offline locking, session-state movement, and supporting base patterns.
+  \end{scopebox}
+  \vspace{0.75cm}
+  \begin{methodbox}
+  \textbf{Method.} The routines are rewritten as independent C-like pseudocode from the book's pattern explanations and Java/C\# examples. The result is intended for architecture study, implementation planning, and cross-language translation; it is not a source-code transcription.
+  \end{methodbox}
+  \vfill
+  {\large Generated handout\par}
+\end{titlepage}
+
+\clearpage
+\tableofcontents
+\clearpage
+\hypersetup{pageanchor=true}
+\pagenumbering{arabic}
+
+\textbf{Source analyzed:} \emph{Patterns of Enterprise Application
+Architecture} by Martin Fowler et al.\\
+\textbf{Purpose:} collect the algorithmic behavior expressed by the
+book's pattern implementations and Java/C\# examples, then rewrite it as
+independent C-like pseudocode.
+
+This is not a source-code transcription. The original book is
+pattern-oriented rather than algorithm-textbook-oriented; its
+``algorithms'' are enterprise control procedures: persistence mapping,
+identity management, change tracking, lazy loading, request dispatch,
+view rendering, remote DTO assembly, offline locking, and session-state
+movement.
+
+\section{Shared notation}\label{shared-notation}
+
+\begin{lstlisting}[language=C]
+typedef long Id;
+typedef struct Date Date;
+typedef struct Money Money;
+typedef struct Request Request;
+typedef struct Response Response;
+typedef struct ResultSet ResultSet;
+typedef struct Row Row;
+typedef struct List List;
+typedef struct Map Map;
+typedef struct Transaction Transaction;
+
+typedef enum { CLEAN, NEW, DIRTY, REMOVED, GHOST, LOADED } ObjectState;
+
+typedef struct DomainObject {
+    Id id;
+    int version;
+    ObjectState state;
+} DomainObject;
+
+ResultSet *db_query(const char *sql, Map *params);
+int db_execute(const char *sql, Map *params);
+Id db_next_id(const char *name);
+Transaction *begin_transaction(void);
+void commit_transaction(Transaction *tx);
+void rollback_transaction(Transaction *tx);
+void throw_error(const char *message);
+void assert_true(int condition, const char *message);
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{1. Domain Logic Patterns}\label{domain-logic-patterns}
+
+\subsection{1.1 Transaction Script}\label{transaction-script}
+
+A transaction script is one procedure per business action. It obtains
+data, applies validation/calculation rules, writes results, and returns
+response data.
+
+\begin{lstlisting}[language=C]
+void calculate_revenue_recognitions(Id contract_id) {
+    Transaction *tx = begin_transaction();
+    try {
+        Row contract = contract_gateway_find(contract_id);
+        Row product  = product_gateway_find(row_id(contract, "product_id"));
+        Money revenue = row_money(contract, "revenue");
+        Date signed_on = row_date(contract, "signed_on");
+
+        if (row_equals(product, "type", "word_processor")) {
+            recognition_gateway_insert(contract_id, revenue, signed_on);
+        }
+        else if (row_equals(product, "type", "spreadsheet")) {
+            Money part = money_divide(revenue, 3);
+            recognition_gateway_insert(contract_id, part, signed_on);
+            recognition_gateway_insert(contract_id, part, date_add_days(signed_on, 60));
+            recognition_gateway_insert(contract_id,
+                money_subtract(revenue, money_times(part, 2)),
+                date_add_days(signed_on, 90));
+        }
+        else if (row_equals(product, "type", "database")) {
+            Money part = money_divide(revenue, 3);
+            recognition_gateway_insert(contract_id, part, signed_on);
+            recognition_gateway_insert(contract_id, part, date_add_days(signed_on, 30));
+            recognition_gateway_insert(contract_id,
+                money_subtract(revenue, money_times(part, 2)),
+                date_add_days(signed_on, 60));
+        }
+        else {
+            throw_error("unknown product type");
+        }
+        commit_transaction(tx);
+    }
+    catch_any {
+        rollback_transaction(tx);
+        throw;
+    }
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=C]
+Money recognized_revenue(Id contract_id, Date as_of) {
+    ResultSet *rows = recognition_gateway_find_for_contract(contract_id);
+    Money total = money_zero();
+
+    while (resultset_next(rows)) {
+        if (date_less_equal(row_date(current_row(rows), "date"), as_of)) {
+            total = money_add(total, row_money(current_row(rows), "amount"));
+        }
+    }
+    return total;
+}
+\end{lstlisting}
+
+\subsection{1.2 Domain Model}\label{domain-model}
+
+A domain model distributes behavior across objects instead of
+concentrating it in a single transaction procedure.
+
+\begin{lstlisting}[language=C]
+typedef struct RecognitionStrategy RecognitionStrategy;
+struct RecognitionStrategy {
+    void (*calculate)(RecognitionStrategy *self, struct Contract *contract);
+};
+
+typedef struct Product {
+    Id id;
+    char *name;
+    RecognitionStrategy *recognition_strategy;
+} Product;
+
+typedef struct Contract {
+    DomainObject base;
+    Product *product;
+    Money revenue;
+    Date signed_on;
+    List *recognitions;
+} Contract;
+
+void contract_calculate_recognitions(Contract *c) {
+    c->product->recognition_strategy->calculate(c->product->recognition_strategy, c);
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=C]
+void complete_recognition_calculate(RecognitionStrategy *s, Contract *c) {
+    contract_add_recognition(c, c->revenue, c->signed_on);
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=C]
+typedef struct ThreeWayStrategy {
+    RecognitionStrategy base;
+    int first_delay_days;
+    int second_delay_days;
+} ThreeWayStrategy;
+
+void three_way_recognition_calculate(RecognitionStrategy *base, Contract *c) {
+    ThreeWayStrategy *s = (ThreeWayStrategy *)base;
+    Money part = money_divide(c->revenue, 3);
+    Money last = money_subtract(c->revenue, money_times(part, 2));
+
+    contract_add_recognition(c, part, c->signed_on);
+    contract_add_recognition(c, part, date_add_days(c->signed_on, s->first_delay_days));
+    contract_add_recognition(c, last, date_add_days(c->signed_on, s->second_delay_days));
+}
+\end{lstlisting}
+
+\subsection{1.3 Table Module}\label{table-module}
+
+A table module places behavior in one object per logical table or record
+set, not one object per row.
+
+\begin{lstlisting}[language=C]
+typedef struct ContractModule { ResultSet *contracts; } ContractModule;
+typedef struct ProductModule { ResultSet *products; } ProductModule;
+typedef struct RecognitionModule { ResultSet *recognitions; } RecognitionModule;
+
+void contract_module_calculate_recognitions(ContractModule *cm,
+                                            ProductModule *pm,
+                                            RecognitionModule *rm,
+                                            Id contract_id) {
+    Row contract = resultset_find_by_id(cm->contracts, contract_id);
+    Row product = resultset_find_by_id(pm->products, row_id(contract, "product_id"));
+    Money revenue = row_money(contract, "revenue");
+    Date signed_on = row_date(contract, "signed_on");
+
+    if (row_equals(product, "type", "word_processor")) {
+        recognition_module_insert(rm, contract_id, revenue, signed_on);
+    }
+    else {
+        int d1 = row_equals(product, "type", "spreadsheet") ? 60 : 30;
+        int d2 = row_equals(product, "type", "spreadsheet") ? 90 : 60;
+        Money part = money_divide(revenue, 3);
+        recognition_module_insert(rm, contract_id, part, signed_on);
+        recognition_module_insert(rm, contract_id, part, date_add_days(signed_on, d1));
+        recognition_module_insert(rm, contract_id,
+            money_subtract(revenue, money_times(part, 2)), date_add_days(signed_on, d2));
+    }
+}
+\end{lstlisting}
+
+\subsection{1.4 Service Layer}\label{service-layer}
+
+A service layer defines an application API and centralizes
+transaction/security handling.
+
+\begin{lstlisting}[language=C]
+Response service_execute(Request *req,
+                         const char *permission,
+                         void (*operation)(Request *req, Response *res)) {
+    authorize(permission);
+    Transaction *tx = begin_transaction();
+    unit_of_work_start();
+    Response res = response_new();
+
+    try {
+        operation(req, &res);
+        unit_of_work_commit(current_uow());
+        commit_transaction(tx);
+        return res;
+    }
+    catch_any {
+        rollback_transaction(tx);
+        response_set_error(&res, current_error());
+        return res;
+    }
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{2. Data Source Architectural
+Patterns}\label{data-source-architectural-patterns}
+
+\subsection{2.1 Table Data Gateway}\label{table-data-gateway}
+
+A table data gateway has one object/class per table. Methods wrap SQL
+and return record sets or scalar results.
+
+\begin{lstlisting}[language=C]
+ResultSet *person_gateway_find_all(void) {
+    return db_query("select id, lastname, firstname, number_of_dependents from person", map_empty());
+}
+
+ResultSet *person_gateway_find_by_last_name(char *last_name) {
+    Map *p = map_new();
+    map_put_string(p, "last", last_name);
+    return db_query("select id, lastname, firstname, number_of_dependents "
+                    "from person where lastname = :last", p);
+}
+
+Id person_gateway_insert(char *last, char *first, int dependents) {
+    Id id = db_next_id("person_id");
+    Map *p = map_new();
+    map_put_id(p, "id", id);
+    map_put_string(p, "last", last);
+    map_put_string(p, "first", first);
+    map_put_int(p, "deps", dependents);
+    db_execute("insert into person(id, lastname, firstname, number_of_dependents) "
+               "values(:id, :last, :first, :deps)", p);
+    return id;
+}
+
+void person_gateway_update(Id id, char *last, char *first, int dependents) {
+    Map *p = map_new();
+    map_put_id(p, "id", id);
+    map_put_string(p, "last", last);
+    map_put_string(p, "first", first);
+    map_put_int(p, "deps", dependents);
+    db_execute("update person set lastname = :last, firstname = :first, "
+               "number_of_dependents = :deps where id = :id", p);
+}
+
+void person_gateway_delete(Id id) {
+    Map *p = map_new();
+    map_put_id(p, "id", id);
+    db_execute("delete from person where id = :id", p);
+}
+\end{lstlisting}
+
+\subsection{2.2 Row Data Gateway}\label{row-data-gateway}
+
+A row data gateway has one object per database row. It stores field data
+and knows how to update or insert that row.
+
+\begin{lstlisting}[language=C]
+typedef struct PersonRow {
+    Id id;
+    char *last_name;
+    char *first_name;
+    int number_of_dependents;
+} PersonRow;
+
+void person_row_update(PersonRow *r) {
+    Map *p = map_new();
+    map_put_id(p, "id", r->id);
+    map_put_string(p, "last", r->last_name);
+    map_put_string(p, "first", r->first_name);
+    map_put_int(p, "deps", r->number_of_dependents);
+    db_execute("update people set lastname = :last, firstname = :first, "
+               "number_of_dependents = :deps where id = :id", p);
+}
+
+Id person_row_insert(PersonRow *r) {
+    r->id = db_next_id("people_id");
+    Map *p = map_new();
+    map_put_id(p, "id", r->id);
+    map_put_string(p, "last", r->last_name);
+    map_put_string(p, "first", r->first_name);
+    map_put_int(p, "deps", r->number_of_dependents);
+    db_execute("insert into people(id, lastname, firstname, number_of_dependents) "
+               "values(:id, :last, :first, :deps)", p);
+    identity_registry_add("PersonRow", r->id, r);
+    return r->id;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=C]
+PersonRow *person_finder_find(Id id) {
+    PersonRow *cached = identity_registry_get("PersonRow", id);
+    if (cached != NULL) return cached;
+
+    Map *p = map_new();
+    map_put_id(p, "id", id);
+    ResultSet *rs = db_query("select * from people where id = :id", p);
+    if (!resultset_next(rs)) return NULL;
+
+    PersonRow *r = person_row_from_row(resultset_current(rs));
+    identity_registry_add("PersonRow", r->id, r);
+    return r;
+}
+\end{lstlisting}
+
+\subsection{2.3 Active Record}\label{active-record}
+
+Active Record combines domain behavior and persistence behavior in the
+same object.
+
+\begin{lstlisting}[language=C]
+typedef struct PersonAR {
+    DomainObject base;
+    char *last_name;
+    char *first_name;
+    int number_of_dependents;
+} PersonAR;
+
+void person_ar_save(PersonAR *p) {
+    if (p->base.state == NEW) {
+        person_ar_insert(p);
+        p->base.state = CLEAN;
+    }
+    else if (p->base.state == DIRTY) {
+        person_ar_update(p);
+        p->base.state = CLEAN;
+    }
+}
+
+PersonAR *person_ar_find(Id id) {
+    PersonAR *cached = identity_map_get(current_identity_map(), "Person", id);
+    if (cached != NULL) return cached;
+
+    Map *params = map_new();
+    map_put_id(params, "id", id);
+    ResultSet *rs = db_query("select * from people where id = :id", params);
+    if (!resultset_next(rs)) return NULL;
+
+    PersonAR *p = person_ar_load(resultset_current(rs));
+    identity_map_put(current_identity_map(), "Person", p->base.id, p);
+    return p;
+}
+\end{lstlisting}
+
+\subsection{2.4 Data Mapper}\label{data-mapper}
+
+A data mapper keeps domain objects independent of database tables and
+SQL.
+
+\begin{lstlisting}[language=C]
+typedef struct Mapper Mapper;
+struct Mapper {
+    char *class_name;
+    char *table_name;
+    DomainObject *(*load)(Mapper *m, Row row);
+    void (*insert)(Mapper *m, DomainObject *obj);
+    void (*update)(Mapper *m, DomainObject *obj);
+    void (*remove)(Mapper *m, DomainObject *obj);
+};
+
+DomainObject *mapper_find(Mapper *m, Id id) {
+    DomainObject *cached = identity_map_get(current_identity_map(), m->class_name, id);
+    if (cached != NULL) return cached;
+
+    Map *p = map_new();
+    map_put_id(p, "id", id);
+    ResultSet *rs = db_query(format("select * from %s where id = :id", m->table_name), p);
+    if (!resultset_next(rs)) return NULL;
+
+    DomainObject *obj = m->load(m, resultset_current(rs));
+    identity_map_put(current_identity_map(), m->class_name, obj->id, obj);
+    unit_of_work_register_clean(current_uow(), obj);
+    return obj;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=C]
+void person_mapper_update(Mapper *m, DomainObject *obj) {
+    Person *p = (Person *)obj;
+    Map *params = map_new();
+    map_put_id(params, "id", p->base.id);
+    map_put_string(params, "last", p->last_name);
+    map_put_string(params, "first", p->first_name);
+    db_execute("update people set lastname = :last, firstname = :first where id = :id", params);
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{3. Object-Relational Behavioral
+Patterns}\label{object-relational-behavioral-patterns}
+
+\subsection{3.1 Unit of Work}\label{unit-of-work}
+
+Unit of Work tracks all changed objects in a business transaction and
+writes them in one commit.
+
+\begin{lstlisting}[language=C]
+typedef struct UnitOfWork {
+    List *new_objects;
+    List *dirty_objects;
+    List *removed_objects;
+    List *read_records;
+    IdentityMap *identity_map;
+} UnitOfWork;
+
+void uow_register_new(UnitOfWork *uow, DomainObject *obj) {
+    assert_true(obj != NULL, "object required");
+    assert_true(obj->id != 0, "id required");
+    assert_true(!list_contains(uow->dirty_objects, obj), "new object cannot be dirty");
+    assert_true(!list_contains(uow->removed_objects, obj), "new object cannot be removed");
+    assert_true(!list_contains(uow->new_objects, obj), "already new");
+    list_add(uow->new_objects, obj);
+    identity_map_put(uow->identity_map, object_class(obj), obj->id, obj);
+}
+
+void uow_register_dirty(UnitOfWork *uow, DomainObject *obj) {
+    assert_true(obj != NULL, "object required");
+    assert_true(obj->id != 0, "id required");
+    assert_true(!list_contains(uow->removed_objects, obj), "removed object cannot be dirty");
+    if (!list_contains(uow->dirty_objects, obj) && !list_contains(uow->new_objects, obj)) {
+        list_add(uow->dirty_objects, obj);
+    }
+}
+
+void uow_register_removed(UnitOfWork *uow, DomainObject *obj) {
+    assert_true(obj != NULL, "object required");
+    assert_true(obj->id != 0, "id required");
+    if (list_contains(uow->new_objects, obj)) {
+        list_remove(uow->new_objects, obj);
+        identity_map_remove(uow->identity_map, object_class(obj), obj->id);
+        return;
+    }
+    list_remove(uow->dirty_objects, obj);
+    if (!list_contains(uow->removed_objects, obj)) list_add(uow->removed_objects, obj);
+    identity_map_remove(uow->identity_map, object_class(obj), obj->id);
+}
+
+void uow_register_clean(UnitOfWork *uow, DomainObject *obj) {
+    assert_true(obj != NULL, "object required");
+    assert_true(obj->id != 0, "id required");
+    identity_map_put(uow->identity_map, object_class(obj), obj->id, obj);
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=C]
+void uow_commit(UnitOfWork *uow) {
+    Transaction *tx = begin_transaction();
+    try {
+        for_each(obj, uow->new_objects) {
+            Mapper *m = mapper_registry_get(object_class(obj));
+            m->insert(m, obj);
+        }
+        for_each(obj, uow->dirty_objects) {
+            Mapper *m = mapper_registry_get(object_class(obj));
+            m->update(m, obj);
+        }
+        for_each(obj, uow->removed_objects) {
+            Mapper *m = mapper_registry_get(object_class(obj));
+            m->remove(m, obj);
+        }
+        commit_transaction(tx);
+        uow_clear(uow);
+    }
+    catch_any {
+        rollback_transaction(tx);
+        throw;
+    }
+}
+\end{lstlisting}
+
+\subsection{3.2 Identity Map}\label{identity-map}
+
+Identity Map guarantees that each database row is represented by only
+one in-memory object in a business transaction.
+
+\begin{lstlisting}[language=C]
+typedef struct IdentityMap { Map *objects; } IdentityMap;
+
+char *identity_key(char *class_name, Id id) {
+    return format("%s:%ld", class_name, id);
+}
+
+void *identity_map_get(IdentityMap *m, char *class_name, Id id) {
+    return map_get(m->objects, identity_key(class_name, id));
+}
+
+void identity_map_put(IdentityMap *m, char *class_name, Id id, void *obj) {
+    char *key = identity_key(class_name, id);
+    void *existing = map_get(m->objects, key);
+    if (existing != NULL && existing != obj) throw_error("duplicate identity");
+    map_put(m->objects, key, obj);
+}
+\end{lstlisting}
+
+\subsection{3.3 Lazy Load}\label{lazy-load}
+
+Lazy Load delays loading an association or expensive field until the
+field is needed.
+
+\begin{lstlisting}[language=C]
+typedef struct Order {
+    DomainObject base;
+    Id customer_id;
+    Customer *customer;
+} Order;
+
+Customer *order_get_customer(Order *o) {
+    if (o->customer == NULL) {
+        o->customer = customer_mapper_find(o->customer_id);
+    }
+    return o->customer;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=C]
+typedef struct ValueHolder {
+    int loaded;
+    void *value;
+    void *context;
+    void *(*loader)(void *context);
+} ValueHolder;
+
+void *value_holder_get(ValueHolder *h) {
+    if (!h->loaded) {
+        h->value = h->loader(h->context);
+        h->loaded = 1;
+    }
+    return h->value;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=C]
+typedef struct CustomerGhost {
+    Customer base;
+    int loaded;
+} CustomerGhost;
+
+void customer_ghost_load_if_needed(CustomerGhost *g) {
+    if (!g->loaded) {
+        Row row = customer_mapper_find_row(g->base.base.id);
+        g->base.name = row_string(row, "name");
+        g->base.address = address_from_row(row);
+        g->loaded = 1;
+        g->base.base.state = LOADED;
+    }
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{4. Object-Relational Structural
+Patterns}\label{object-relational-structural-patterns}
+
+\subsection{4.1 Identity Field}\label{identity-field}
+
+\begin{lstlisting}[language=C]
+void assign_identity_if_needed(DomainObject *obj, char *sequence_name) {
+    if (obj->id == 0) obj->id = db_next_id(sequence_name);
+}
+
+int same_database_identity(DomainObject *a, DomainObject *b) {
+    return a != NULL && b != NULL &&
+           a->id != 0 && b->id != 0 &&
+           strcmp(object_class(a), object_class(b)) == 0 &&
+           a->id == b->id;
+}
+\end{lstlisting}
+
+\subsection{4.2 Foreign Key Mapping}\label{foreign-key-mapping}
+
+\begin{lstlisting}[language=C]
+void album_load_artist(Album *album, Row row) {
+    Id artist_id = row_id(row, "artist_id");
+    album->artist = artist_id == 0 ? NULL : artist_mapper_find(artist_id);
+}
+
+void album_save_artist_key(Album *album, Map *params) {
+    Id artist_id = album->artist == NULL ? 0 : album->artist->base.id;
+    map_put_id(params, "artist_id", artist_id);
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=C]
+List *track_mapper_find_for_album(Id album_id) {
+    Map *p = map_new();
+    map_put_id(p, "album_id", album_id);
+    ResultSet *rs = db_query("select * from tracks where album_id = :album_id order by position", p);
+    List *tracks = list_new();
+    while (resultset_next(rs)) list_add(tracks, track_mapper_load(resultset_current(rs)));
+    return tracks;
+}
+\end{lstlisting}
+
+\subsection{4.3 Association Table
+Mapping}\label{association-table-mapping}
+
+\begin{lstlisting}[language=C]
+List *employee_find_skills(Id employee_id) {
+    Map *p = map_new();
+    map_put_id(p, "employee_id", employee_id);
+    ResultSet *rs = db_query(
+        "select s.* from skills s join employee_skill es on es.skill_id = s.id "
+        "where es.employee_id = :employee_id", p);
+    List *skills = list_new();
+    while (resultset_next(rs)) list_add(skills, skill_mapper_load(resultset_current(rs)));
+    return skills;
+}
+
+void employee_save_skills(Employee *e) {
+    association_delete_all("employee_skill", "employee_id", e->base.id);
+    for_each(skill, e->skills) {
+        association_insert("employee_skill", "employee_id", e->base.id, "skill_id", skill->base.id);
+    }
+}
+\end{lstlisting}
+
+\subsection{4.4 Dependent Mapping}\label{dependent-mapping}
+
+\begin{lstlisting}[language=C]
+void album_save_tracks(Album *album) {
+    db_execute_with_id("delete from tracks where album_id = :id", album->base.id);
+    int position = 0;
+    for_each(track, album->tracks) {
+        position++;
+        Map *p = map_new();
+        map_put_id(p, "album_id", album->base.id);
+        map_put_int(p, "position", position);
+        map_put_string(p, "title", track->title);
+        db_execute("insert into tracks(album_id, position, title) values(:album_id, :position, :title)", p);
+    }
+}
+\end{lstlisting}
+
+\subsection{4.5 Embedded Value}\label{embedded-value}
+
+\begin{lstlisting}[language=C]
+Money money_from_columns(Row row, char *amount_col, char *currency_col) {
+    Money m;
+    m.amount = row_decimal(row, amount_col);
+    m.currency = row_string(row, currency_col);
+    return m;
+}
+
+void bind_money(Map *params, char *prefix, Money m) {
+    map_put_decimal(params, format("%s_amount", prefix), m.amount);
+    map_put_string(params, format("%s_currency", prefix), m.currency);
+}
+\end{lstlisting}
+
+\subsection{4.6 Serialized LOB}\label{serialized-lob}
+
+\begin{lstlisting}[language=C]
+void customer_save_preferences(Customer *c) {
+    char *xml = serialize_preferences(c->preferences);
+    Map *p = map_new();
+    map_put_id(p, "id", c->base.id);
+    map_put_string(p, "preferences", xml);
+    db_execute("update customer set preferences_xml = :preferences where id = :id", p);
+}
+
+void customer_load_preferences(Customer *c, Row row) {
+    char *xml = row_string(row, "preferences_xml");
+    c->preferences = xml == NULL ? preferences_default() : deserialize_preferences(xml);
+}
+\end{lstlisting}
+
+\subsection{4.7 Single Table
+Inheritance}\label{single-table-inheritance}
+
+\begin{lstlisting}[language=C]
+Player *player_load_single_table(Row row) {
+    char *type = row_string(row, "type");
+    Player *p;
+
+    if (strcmp(type, "footballer") == 0) {
+        Footballer *f = footballer_new();
+        f->club = row_string(row, "club");
+        p = (Player *)f;
+    }
+    else if (strcmp(type, "cricketer") == 0) {
+        Cricketer *c = cricketer_new();
+        c->batting_average = row_decimal(row, "batting_average");
+        p = (Player *)c;
+    }
+    else if (strcmp(type, "bowler") == 0) {
+        Bowler *b = bowler_new();
+        b->bowling_average = row_decimal(row, "bowling_average");
+        p = (Player *)b;
+    }
+    else throw_error("unknown subtype");
+
+    p->base.id = row_id(row, "id");
+    p->name = row_string(row, "name");
+    return p;
+}
+\end{lstlisting}
+
+\subsection{4.8 Class Table Inheritance}\label{class-table-inheritance}
+
+\begin{lstlisting}[language=C]
+Bowler *bowler_find_class_table(Id id) {
+    Map *p = map_new();
+    map_put_id(p, "id", id);
+    ResultSet *rs = db_query(
+        "select pl.id, pl.name, cr.batting_average, bw.bowling_average "
+        "from players pl join cricketers cr on cr.id = pl.id "
+        "join bowlers bw on bw.id = pl.id where pl.id = :id", p);
+    if (!resultset_next(rs)) return NULL;
+
+    Bowler *b = bowler_new();
+    b->base.base.id = row_id(resultset_current(rs), "id");
+    b->base.name = row_string(resultset_current(rs), "name");
+    b->base.batting_average = row_decimal(resultset_current(rs), "batting_average");
+    b->bowling_average = row_decimal(resultset_current(rs), "bowling_average");
+    return b;
+}
+\end{lstlisting}
+
+\subsection{4.9 Concrete Table
+Inheritance}\label{concrete-table-inheritance}
+
+\begin{lstlisting}[language=C]
+List *player_find_all_concrete(void) {
+    List *players = list_new();
+    ResultSet *footballers = db_query("select id, name, club, 'footballer' as type from footballers", map_empty());
+    while (resultset_next(footballers)) list_add(players, footballer_load(resultset_current(footballers)));
+
+    ResultSet *bowlers = db_query("select id, name, batting_average, bowling_average, 'bowler' as type from bowlers", map_empty());
+    while (resultset_next(bowlers)) list_add(players, bowler_load(resultset_current(bowlers)));
+
+    return players;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{5. Metadata Mapping, Query Object, and
+Repository}\label{metadata-mapping-query-object-and-repository}
+
+\subsection{5.1 Metadata Mapping}\label{metadata-mapping}
+
+\begin{lstlisting}[language=C]
+typedef struct FieldMapping {
+    char *field_name;
+    char *column_name;
+    char *target_class;
+    char *relationship_kind;   // scalar, foreign_key, embedded, collection
+    void (*set)(void *obj, void *value);
+    void *(*get)(void *obj);
+} FieldMapping;
+
+typedef struct ClassMapping {
+    char *class_name;
+    char *table_name;
+    FieldMapping *fields;
+    int field_count;
+    void *(*allocate)(void);
+} ClassMapping;
+
+void *metadata_load(ClassMapping *cm, Row row) {
+    Id id = row_id(row, "id");
+    void *cached = identity_map_get(current_identity_map(), cm->class_name, id);
+    if (cached != NULL) return cached;
+
+    void *obj = cm->allocate();
+    set_domain_id(obj, id);
+    identity_map_put(current_identity_map(), cm->class_name, id, obj);
+
+    for (int i = 0; i < cm->field_count; i++) {
+        FieldMapping *fm = &cm->fields[i];
+        if (strcmp(fm->relationship_kind, "scalar") == 0) {
+            fm->set(obj, row_value(row, fm->column_name));
+        }
+        else if (strcmp(fm->relationship_kind, "foreign_key") == 0) {
+            Id target_id = row_id(row, fm->column_name);
+            fm->set(obj, mapper_find_by_class(fm->target_class, target_id));
+        }
+        else if (strcmp(fm->relationship_kind, "embedded") == 0) {
+            fm->set(obj, embedded_value_from_row(fm, row));
+        }
+    }
+    return obj;
+}
+\end{lstlisting}
+
+\subsection{5.2 Query Object}\label{query-object}
+
+\begin{lstlisting}[language=C]
+typedef enum { Q_EQ, Q_GT, Q_AND, Q_OR } QueryKind;
+
+typedef struct QueryExpr {
+    QueryKind kind;
+    char *field;
+    void *value;
+    struct QueryExpr *left;
+    struct QueryExpr *right;
+} QueryExpr;
+
+char *query_to_sql(ClassMapping *cm, QueryExpr *q, Map *params) {
+    if (q->kind == Q_EQ) {
+        FieldMapping *fm = class_mapping_field(cm, q->field);
+        char *param = unique_param(q->field);
+        map_put(params, param, q->value);
+        return format("%s = :%s", fm->column_name, param);
+    }
+    if (q->kind == Q_GT) {
+        FieldMapping *fm = class_mapping_field(cm, q->field);
+        char *param = unique_param(q->field);
+        map_put(params, param, q->value);
+        return format("%s > :%s", fm->column_name, param);
+    }
+    if (q->kind == Q_AND) return format("(%s and %s)", query_to_sql(cm, q->left, params), query_to_sql(cm, q->right, params));
+    if (q->kind == Q_OR)  return format("(%s or %s)", query_to_sql(cm, q->left, params), query_to_sql(cm, q->right, params));
+    throw_error("unknown query expression");
+}
+
+List *query_execute(ClassMapping *cm, QueryExpr *where) {
+    Map *params = map_new();
+    char *sql_where = query_to_sql(cm, where, params);
+    ResultSet *rs = db_query(format("select * from %s where %s", cm->table_name, sql_where), params);
+    List *out = list_new();
+    while (resultset_next(rs)) list_add(out, metadata_load(cm, resultset_current(rs)));
+    return out;
+}
+\end{lstlisting}
+
+\subsection{5.3 Repository}\label{repository}
+
+\begin{lstlisting}[language=C]
+typedef struct Repository { ClassMapping *mapping; } Repository;
+
+void *repository_find(Repository *r, Id id) {
+    return mapper_find_by_class(r->mapping->class_name, id);
+}
+
+List *repository_matching(Repository *r, QueryExpr *criteria) {
+    return query_execute(r->mapping, criteria);
+}
+
+void repository_add(Repository *r, DomainObject *obj) {
+    unit_of_work_register_new(current_uow(), obj);
+}
+
+void repository_remove(Repository *r, DomainObject *obj) {
+    unit_of_work_register_removed(current_uow(), obj);
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{6. Web Presentation Patterns}\label{web-presentation-patterns}
+
+\subsection{6.1 Model View Controller}\label{model-view-controller}
+
+\begin{lstlisting}[language=C]
+Response mvc_handle(Request *req) {
+    Controller *controller = route_to_controller(req);
+    ModelResult model = controller_handle(controller, req);
+    View *view = select_view(controller, model);
+    return view_render(view, model);
+}
+\end{lstlisting}
+
+\subsection{6.2 Page Controller}\label{page-controller}
+
+\begin{lstlisting}[language=C]
+Response customer_page_controller(Request *req) {
+    Id id = request_id(req, "id");
+    if (request_is_post(req)) {
+        customer_service_update_name(id, request_param(req, "name"));
+        return redirect(format("/customer?id=%ld", id));
+    }
+
+    Customer *c = customer_repository_find(id);
+    Map *model = map_new();
+    map_put(model, "customer", c);
+    return render_template("customer.html", model);
+}
+\end{lstlisting}
+
+\subsection{6.3 Front Controller}\label{front-controller}
+
+\begin{lstlisting}[language=C]
+Response front_controller_handle(Request *req) {
+    try {
+        authenticate(req);
+        char *command_name = parse_command_name(request_path(req));
+        Command *cmd = command_registry_get(command_name);
+        if (cmd == NULL) return response_status(404);
+        return cmd->execute(req);
+    }
+    catch_any {
+        return error_response(current_error());
+    }
+}
+\end{lstlisting}
+
+\subsection{6.4 Template View}\label{template-view}
+
+\begin{lstlisting}[language=C]
+Response template_view_render(char *template_name, Map *model) {
+    Template *t = template_cache_get(template_name);
+    StringBuilder *out = sb_new();
+
+    for_each(token, t->tokens) {
+        if (token.kind == TEXT) sb_append(out, token.text);
+        else if (token.kind == VARIABLE) sb_append(out, html_escape(to_string(map_get(model, token.name))));
+        else if (token.kind == INCLUDE) sb_append(out, template_view_render(token.name, model).body);
+        else if (token.kind == LOOP) {
+            List *items = map_get(model, token.list_name);
+            for_each(item, items) {
+                map_put(model, token.item_name, item);
+                sb_append(out, template_fragment_render(token.fragment, model));
+            }
+        }
+    }
+    return html_response(sb_to_string(out));
+}
+\end{lstlisting}
+
+\subsection{6.5 Transform View}\label{transform-view}
+
+\begin{lstlisting}[language=C]
+Response transform_view_render(ModelResult model, char *stylesheet_name) {
+    char *xml = model_to_xml(model);
+    Transform *xform = transform_cache_get(stylesheet_name);
+    char *html = transform_apply(xform, xml);
+    return html_response(html);
+}
+\end{lstlisting}
+
+\subsection{6.6 Two Step View}\label{two-step-view}
+
+\begin{lstlisting}[language=C]
+Response two_step_view_render(ModelResult model,
+                              LogicalScreen *(*first_stage)(ModelResult),
+                              char *(*second_stage)(LogicalScreen *)) {
+    LogicalScreen *screen = first_stage(model);
+    char *output = second_stage(screen);
+    return html_response(output);
+}
+\end{lstlisting}
+
+\subsection{6.7 Application Controller}\label{application-controller}
+
+\begin{lstlisting}[language=C]
+Response application_controller_handle(ApplicationController *ac, Request *req) {
+    char *action = request_param(req, "action");
+    Command *cmd = map_get(ac->commands, action);
+    if (cmd == NULL) return response_status(404);
+
+    CommandResult result = cmd->execute(req);
+    char *view_name = map_get(ac->views_by_outcome, result.outcome);
+    return render_template(view_name, result.model);
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{7. Distribution Patterns}\label{distribution-patterns}
+
+\subsection{7.1 Remote Facade}\label{remote-facade}
+
+\begin{lstlisting}[language=C]
+OrderDTO *order_facade_get_order(Id order_id) {
+    Transaction *tx = begin_transaction();
+    try {
+        Order *o = order_repository_find(order_id);
+        OrderDTO *dto = order_assembler_to_dto(o);
+        commit_transaction(tx);
+        return dto;
+    }
+    catch_any {
+        rollback_transaction(tx);
+        throw;
+    }
+}
+
+void order_facade_update_order(OrderDTO *dto) {
+    Transaction *tx = begin_transaction();
+    unit_of_work_start();
+    try {
+        Order *o = order_repository_find(dto->id);
+        order_assembler_apply_dto(o, dto);
+        unit_of_work_commit(current_uow());
+        commit_transaction(tx);
+    }
+    catch_any {
+        rollback_transaction(tx);
+        throw;
+    }
+}
+\end{lstlisting}
+
+\subsection{7.2 Data Transfer Object}\label{data-transfer-object}
+
+\begin{lstlisting}[language=C]
+OrderDTO *order_assembler_to_dto(Order *o) {
+    OrderDTO *dto = order_dto_new();
+    dto->id = o->base.id;
+    dto->customer_name = strdup(customer_get_name(o->customer));
+    dto->total = order_total(o);
+    dto->line_items = list_new();
+
+    for_each(line, o->line_items) {
+        LineItemDTO *li = line_item_dto_new();
+        li->product_name = strdup(line->product->name);
+        li->quantity = line->quantity;
+        li->price = line->price;
+        list_add(dto->line_items, li);
+    }
+    return dto;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{8. Offline Concurrency
+Patterns}\label{offline-concurrency-patterns}
+
+\subsection{8.1 Optimistic Offline Lock}\label{optimistic-offline-lock}
+
+Optimistic locking detects conflict during commit by comparing the
+version read earlier with the current database version.
+
+\begin{lstlisting}[language=C]
+void mapper_update_with_optimistic_lock(DomainObject *obj, char *table, Map *values) {
+    map_put_id(values, "id", obj->id);
+    map_put_int(values, "old_version", obj->version);
+    map_put_int(values, "new_version", obj->version + 1);
+
+    int rows = db_execute(build_update_sql_with_version(table, values), values);
+    if (rows != 1) throw_error("optimistic lock failure");
+    obj->version++;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=C]
+typedef struct ReadRecord { char *class_name; Id id; int version; } ReadRecord;
+
+void uow_validate_read_set(UnitOfWork *uow) {
+    for_each(r, uow->read_records) {
+        int current = db_select_version(class_table(r->class_name), r->id);
+        if (current != r->version) throw_error("inconsistent read detected");
+    }
+}
+
+void uow_commit_optimistic(UnitOfWork *uow) {
+    Transaction *tx = begin_transaction();
+    try {
+        uow_validate_read_set(uow);
+        uow_insert_new(uow);
+        uow_update_dirty(uow);
+        uow_delete_removed(uow);
+        commit_transaction(tx);
+    }
+    catch_any {
+        rollback_transaction(tx);
+        throw;
+    }
+}
+\end{lstlisting}
+
+\subsection{8.2 Pessimistic Offline
+Lock}\label{pessimistic-offline-lock}
+
+Pessimistic locking prevents conflict by acquiring an application lock
+before edit.
+
+\begin{lstlisting}[language=C]
+int lock_try_acquire(char *type, Id id, Id owner_id) {
+    Transaction *tx = begin_transaction();
+    try {
+        OfflineLock *existing = lock_table_find(type, id);
+        if (existing == NULL) {
+            lock_table_insert(type, id, owner_id, now());
+            commit_transaction(tx);
+            return 1;
+        }
+        if (existing->owner_id == owner_id) {
+            commit_transaction(tx);
+            return 1;
+        }
+        if (lock_expired(existing)) {
+            lock_table_replace(type, id, owner_id, now());
+            commit_transaction(tx);
+            return 1;
+        }
+        rollback_transaction(tx);
+        return 0;
+    }
+    catch_any {
+        rollback_transaction(tx);
+        throw;
+    }
+}
+
+void lock_release(char *type, Id id, Id owner_id) {
+    OfflineLock *existing = lock_table_find(type, id);
+    if (existing != NULL && existing->owner_id == owner_id) lock_table_delete(type, id);
+}
+\end{lstlisting}
+
+\subsection{8.3 Coarse-Grained Lock}\label{coarse-grained-lock}
+
+\begin{lstlisting}[language=C]
+typedef struct LockRoot { char *type; Id id; } LockRoot;
+
+LockRoot lock_root_for(DomainObject *obj) {
+    if (is_order_line(obj)) return (LockRoot){ "Order", ((OrderLine *)obj)->order->base.id };
+    if (is_order(obj)) return (LockRoot){ "Order", obj->id };
+    return (LockRoot){ object_class(obj), obj->id };
+}
+
+int coarse_lock_acquire(DomainObject *obj, Id owner_id) {
+    LockRoot root = lock_root_for(obj);
+    return lock_try_acquire(root.type, root.id, owner_id);
+}
+\end{lstlisting}
+
+\subsection{8.4 Implicit Lock}\label{implicit-lock}
+
+\begin{lstlisting}[language=C]
+DomainObject *repository_find_for_edit(Repository *r, Id id, Id owner_id) {
+    DomainObject *obj = repository_find(r, id);
+    if (obj == NULL) return NULL;
+    if (!coarse_lock_acquire(obj, owner_id)) throw_error("locked by another owner");
+    return obj;
+}
+
+void domain_mark_dirty_implicit_lock(DomainObject *obj) {
+    if (!coarse_lock_acquire(obj, current_user_id())) throw_error("cannot acquire lock");
+    unit_of_work_register_dirty(current_uow(), obj);
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{9. Session State Patterns}\label{session-state-patterns}
+
+\subsection{9.1 Client Session State}\label{client-session-state}
+
+\begin{lstlisting}[language=C]
+Response render_with_client_state(char *template, Map *model, SessionState *state) {
+    char *serialized = serialize_state(state);
+    char *protected_state = sign_and_encode(serialized, server_secret());
+    map_put_string(model, "_session_state", protected_state);
+    return render_template(template, model);
+}
+
+SessionState *restore_client_state(Request *req) {
+    char *protected_state = request_param(req, "_session_state");
+    if (protected_state == NULL) return session_state_new();
+
+    char *serialized = verify_and_decode(protected_state, server_secret());
+    if (serialized == NULL) throw_error("tampered session state");
+    return deserialize_state(serialized);
+}
+\end{lstlisting}
+
+\subsection{9.2 Server Session State}\label{server-session-state}
+
+\begin{lstlisting}[language=C]
+SessionState *restore_server_state(Request *req) {
+    Id session_id = request_session_id(req);
+    SessionState *state = server_cache_get(session_id);
+    if (state == NULL) state = session_store_load(session_id);
+    if (state == NULL) state = session_state_new();
+    return state;
+}
+
+void save_server_state(Request *req, SessionState *state) {
+    Id session_id = request_session_id(req);
+    server_cache_put(session_id, state);
+    if (state_should_persist(state)) session_store_save(session_id, state);
+}
+\end{lstlisting}
+
+\subsection{9.3 Database Session State}\label{database-session-state}
+
+\begin{lstlisting}[language=C]
+SessionState *db_session_load(Id session_id) {
+    Map *p = map_new();
+    map_put_id(p, "session_id", session_id);
+    ResultSet *rs = db_query("select state_blob from session_state where session_id = :session_id", p);
+    if (!resultset_next(rs)) return session_state_new();
+    return deserialize_state(row_string(resultset_current(rs), "state_blob"));
+}
+
+void db_session_save(Id session_id, SessionState *state) {
+    char *blob = serialize_state(state);
+    Map *p = map_new();
+    map_put_id(p, "session_id", session_id);
+    map_put_string(p, "state_blob", blob);
+    int rows = db_execute("update session_state set state_blob = :state_blob where session_id = :session_id", p);
+    if (rows == 0) db_execute("insert into session_state(session_id, state_blob) values(:session_id, :state_blob)", p);
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{10. Base Patterns}\label{base-patterns}
+
+\subsection{10.1 Gateway}\label{gateway}
+
+\begin{lstlisting}[language=C]
+PaymentResult payment_gateway_authorize(PaymentGateway *g, PaymentRequest *req) {
+    HttpRequest *http = http_post(g->endpoint, payment_request_to_json(req));
+    HttpResponse *res = http_send(http);
+    if (res->status != 200) throw_error("payment gateway error");
+    return payment_result_from_json(res->body);
+}
+\end{lstlisting}
+
+\subsection{10.2 Mapper}\label{mapper}
+
+\begin{lstlisting}[language=C]
+void *map_representation(void *source,
+                         void *(*allocate_target)(void),
+                         void (*map_fields)(void *source, void *target)) {
+    void *target = allocate_target();
+    map_fields(source, target);
+    return target;
+}
+\end{lstlisting}
+
+\subsection{10.3 Layer Supertype}\label{layer-supertype}
+
+\begin{lstlisting}[language=C]
+void domain_mark_new(DomainObject *obj) {
+    obj->state = NEW;
+    unit_of_work_register_new(current_uow(), obj);
+}
+
+void domain_mark_dirty(DomainObject *obj) {
+    if (obj->state != NEW) {
+        obj->state = DIRTY;
+        unit_of_work_register_dirty(current_uow(), obj);
+    }
+}
+
+void domain_mark_removed(DomainObject *obj) {
+    obj->state = REMOVED;
+    unit_of_work_register_removed(current_uow(), obj);
+}
+\end{lstlisting}
+
+\subsection{10.4 Separated Interface}\label{separated-interface}
+
+\begin{lstlisting}[language=C]
+typedef struct TaxService TaxService;
+struct TaxService { Money (*calculate)(TaxService *self, TaxRequest *req); };
+
+TaxService *tax_service(void) {
+    return registry_get("TaxService");
+}
+
+Money checkout_tax(Order *order) {
+    TaxRequest *req = tax_request_from_order(order);
+    return tax_service()->calculate(tax_service(), req);
+}
+\end{lstlisting}
+
+\subsection{10.5 Registry}\label{registry}
+
+\begin{lstlisting}[language=C]
+void registry_put_scoped(Scope scope, char *key, void *value) {
+    map_put(registry_map(scope), key, value);
+}
+
+void *registry_get_scoped(Scope scope, char *key) {
+    void *value = map_get(registry_map(scope), key);
+    if (value == NULL) throw_error("registry key not found");
+    return value;
+}
+\end{lstlisting}
+
+\subsection{10.6 Value Object and Money}\label{value-object-and-money}
+
+\begin{lstlisting}[language=C]
+int date_range_equals(DateRange a, DateRange b) {
+    return date_equal(a.start, b.start) && date_equal(a.end, b.end);
+}
+
+Money money_add(Money a, Money b) {
+    if (!string_equal(a.currency, b.currency)) b = exchange_convert(b, a.currency);
+    Money result;
+    result.currency = a.currency;
+    result.amount = decimal_add(a.amount, b.amount);
+    return result;
+}
+
+List *money_allocate(Money total, int *ratios, int n) {
+    int ratio_sum = sum_ints(ratios, n);
+    long cents = money_to_cents(total);
+    long remainder = cents;
+    List *parts = list_new();
+
+    for (int i = 0; i < n; i++) {
+        long share = cents * ratios[i] / ratio_sum;
+        remainder -= share;
+        list_add(parts, money_from_cents(share, total.currency));
+    }
+    for (int i = 0; remainder > 0; i = (i + 1) % n, remainder--) {
+        money_increment_cent(list_get(parts, i));
+    }
+    return parts;
+}
+\end{lstlisting}
+
+\subsection{10.7 Special Case}\label{special-case}
+
+\begin{lstlisting}[language=C]
+Customer *customer_find_or_unknown(Id id) {
+    Customer *c = customer_repository_find(id);
+    return c != NULL ? c : unknown_customer_singleton();
+}
+
+char *unknown_customer_name(Customer *c) {
+    return "Unknown Customer";
+}
+\end{lstlisting}
+
+\subsection{10.8 Plugin}\label{plugin}
+
+\begin{lstlisting}[language=C]
+void *plugin_load(char *interface_name) {
+    char *implementation = config_get(interface_name);
+    PluginFactory *factory = plugin_factory_find(implementation);
+    if (factory == NULL) throw_error("plugin factory not found");
+    return factory->create();
+}
+\end{lstlisting}
+
+\subsection{10.9 Service Stub}\label{service-stub}
+
+\begin{lstlisting}[language=C]
+typedef struct TaxServiceStub {
+    TaxService base;
+    Money canned_result;
+    List *requests_seen;
+} TaxServiceStub;
+
+Money tax_stub_calculate(TaxService *svc, TaxRequest *req) {
+    TaxServiceStub *stub = (TaxServiceStub *)svc;
+    list_add(stub->requests_seen, clone_tax_request(req));
+    return stub->canned_result;
+}
+\end{lstlisting}
+
+\subsection{10.10 Record Set}\label{record-set}
+
+\begin{lstlisting}[language=C]
+void *recordset_get(RecordSet *rs, int row_index, char *column_name) {
+    int col = recordset_column_index(rs, column_name);
+    Row *row = list_get(rs->rows, row_index);
+    return row_get_by_index(row, col);
+}
+
+RecordSet *recordset_from_resultset(ResultSet *rs) {
+    RecordSet *out = recordset_new(resultset_columns(rs));
+    while (resultset_next(rs)) {
+        Row *r = row_new();
+        for_each(col, out->columns) row_set(r, col.name, resultset_get(rs, col.name));
+        recordset_add_row(out, r);
+    }
+    return out;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{11. Cross-Pattern Enterprise
+Algorithms}\label{cross-pattern-enterprise-algorithms}
+
+\subsection{11.1
+Connection-per-transaction}\label{connection-per-transaction}
+
+\begin{lstlisting}[language=C]
+void execute_in_transaction(void (*work)(void)) {
+    Connection *c = connection_pool_acquire();
+    registry_put_scoped(THREAD_SCOPE, "db.connection", c);
+    Transaction *tx = db_begin(c);
+    try {
+        work();
+        db_commit(tx);
+    }
+    catch_any {
+        db_rollback(tx);
+        throw;
+    }
+    finally {
+        registry_remove(THREAD_SCOPE, "db.connection");
+        connection_pool_release(c);
+    }
+}
+\end{lstlisting}
+
+\subsection{11.2 Referential write
+ordering}\label{referential-write-ordering}
+
+\begin{lstlisting}[language=C]
+List *topological_sort_writes(List *write_ops) {
+    Graph *g = graph_new();
+    for_each(op, write_ops) {
+        graph_add_node(g, op);
+        for_each(dep_table, op->depends_on_tables) {
+            for_each(dep_op, writes_for_table(write_ops, dep_table)) {
+                graph_add_edge(g, dep_op, op);
+            }
+        }
+    }
+    return graph_topological_sort(g);
+}
+
+void execute_ordered_writes(List *write_ops) {
+    List *ordered = topological_sort_writes(write_ops);
+    for_each(op, ordered) op->execute(op);
+}
+\end{lstlisting}
+
+\subsection{11.3 Full enterprise request
+skeleton}\label{full-enterprise-request-skeleton}
+
+\begin{lstlisting}[language=C]
+Response enterprise_request(Request *req) {
+    authenticate(req);
+    authorize_request(req);
+    unit_of_work_start();
+
+    Transaction *tx = begin_transaction();
+    try {
+        Command *cmd = route_to_command(req);
+        ModelResult model = cmd->execute(req);
+        unit_of_work_commit(current_uow());
+        commit_transaction(tx);
+
+        View *view = select_view(model);
+        return view_render(view, model);
+    }
+    catch_any {
+        rollback_transaction(tx);
+        return error_response(current_error());
+    }
+    finally {
+        unit_of_work_clear_current();
+    }
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{12. Pattern Selection Heuristics as
+Algorithms}\label{pattern-selection-heuristics-as-algorithms}
+
+\begin{lstlisting}[language=C]
+Pattern choose_domain_logic_pattern(int domain_complexity,
+                                    int recordset_tooling_strength,
+                                    int team_domain_model_skill) {
+    if (domain_complexity <= 3) {
+        return recordset_tooling_strength >= 7 ? TABLE_MODULE : TRANSACTION_SCRIPT;
+    }
+    if (domain_complexity <= 6) {
+        if (recordset_tooling_strength >= 7) return TABLE_MODULE;
+        if (team_domain_model_skill >= 6) return DOMAIN_MODEL;
+        return TRANSACTION_SCRIPT;
+    }
+    return DOMAIN_MODEL;
+}
+
+Pattern choose_data_source_pattern(Pattern domain_pattern,
+                                   int object_table_match,
+                                   int mapping_complexity) {
+    if (domain_pattern == TRANSACTION_SCRIPT) return TABLE_DATA_GATEWAY;
+    if (domain_pattern == TABLE_MODULE) return TABLE_DATA_GATEWAY;
+    if (domain_pattern == DOMAIN_MODEL && object_table_match && mapping_complexity <= 3) return ACTIVE_RECORD;
+    if (domain_pattern == DOMAIN_MODEL) return DATA_MAPPER;
+    return TABLE_DATA_GATEWAY;
+}
+
+Pattern choose_offline_lock_pattern(int conflict_frequency,
+                                    int conflict_cost,
+                                    int liveness_priority) {
+    if (conflict_frequency <= LOW && liveness_priority >= MEDIUM) return OPTIMISTIC_OFFLINE_LOCK;
+    if (conflict_cost >= HIGH) return PESSIMISTIC_OFFLINE_LOCK;
+    return OPTIMISTIC_OFFLINE_LOCK;
+}
+
+Pattern choose_session_state_pattern(int state_size,
+                                     int state_sensitivity,
+                                     int cluster_migration_required) {
+    if (state_size <= SMALL && state_sensitivity == LOW) return CLIENT_SESSION_STATE;
+    if (cluster_migration_required) return DATABASE_SESSION_STATE;
+    return SERVER_SESSION_STATE;
+}
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{13. Summary}\label{summary}
+
+The implementation algorithms in \emph{Patterns of Enterprise
+Application Architecture} are less about numerical computation and more
+about preserving boundaries in mutable, persistent, concurrent
+enterprise systems. The core reusable algorithms are:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Route requests through controllers into domain/application services.
+\item
+  Keep domain logic out of views and SQL plumbing.
+\item
+  Encapsulate table access with gateways or isolate object persistence
+  with mappers.
+\item
+  Preserve in-memory identity with Identity Map.
+\item
+  Track writes with Unit of Work.
+\item
+  Use Lazy Load to balance object graph completeness against database
+  round trips.
+\item
+  Map associations, inheritance, and value objects explicitly.
+\item
+  Use metadata and query objects to remove repetitive mapping code.
+\item
+  Use DTOs and Remote Facades to reduce remote-call chatiness.
+\item
+  Use optimistic or pessimistic offline locks when business transactions
+  span system transactions.
+\item
+  Store session state deliberately: client, server, or database.
+\item
+  Use base patterns---Gateway, Mapper, Registry, Value Object, Special
+  Case, Plugin, Service Stub, and Record Set---to localize variability
+  and integration complexity.
+\end{enumerate}
+
+
+\end{document}

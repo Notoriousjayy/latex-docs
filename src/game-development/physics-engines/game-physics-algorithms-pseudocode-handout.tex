@@ -1,0 +1,2159 @@
+
+\documentclass[10pt,letterpaper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.72in,headheight=14pt]{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{ragged2e}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{microtype}
+\usepackage{listings}
+\usepackage{needspace}
+\usepackage{tocloft}
+\usepackage{upquote}
+\definecolor{HouseBlue}{HTML}{1F4E79}
+\definecolor{HouseGray}{HTML}{4F5B62}
+\definecolor{HouseLight}{HTML}{EAF2F8}
+\definecolor{CodeBack}{HTML}{F7F8FA}
+\definecolor{CodeFrame}{HTML}{C9D1D9}
+\definecolor{CodeKeyword}{HTML}{1F4E79}
+\definecolor{CodeComment}{HTML}{5F6F7A}
+\definecolor{CodeString}{HTML}{8A3B12}
+\hypersetup{colorlinks=true,linkcolor=HouseBlue,urlcolor=HouseBlue,citecolor=HouseBlue,pdfauthor={ChatGPT},pdftitle={Game Physics: Algorithms as C-like Pseudocode}}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Game Physics --- Algorithms as C-like Pseudocode}
+\rhead{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlist[itemize]{leftmargin=1.25em,itemsep=2pt,topsep=2pt}
+\setlist[enumerate]{leftmargin=1.5em,itemsep=2pt,topsep=2pt}
+\titleformat{\section}{\Large\bfseries\color{HouseBlue}}{}{0pt}{}
+\titleformat{\subsection}{\large\bfseries\color{HouseGray}}{}{0pt}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{HouseGray}}{}{0pt}{}
+\titlespacing*{\section}{0pt}{2.2ex plus .4ex minus .2ex}{1.0ex}
+\titlespacing*{\subsection}{0pt}{1.8ex plus .3ex minus .2ex}{0.7ex}
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\lstdefinelanguage{PseudoC}{
+  morekeywords={typedef,enum,struct,union,return,if,else,for,while,do,case,switch,break,continue,bool,true,false,NULL,void,int,long,char,float,double,string,const,static,foreach,in,new,delete,insert,remove,push,pop,emit,try,catch,throw,private,public,Vec2,Vec3,Vec4,Mat3,Mat4,Quat,Interval,AABB,OBB,Sphere,Triangle,Plane,RigidBody,Particle,Spring,Mesh,MassProperties,Contact,Manifold,Constraint,BodyPair,Grid2D,Grid3D,Node,Edge,Graph,Queue,Stack,PriorityQueue,List,Set,Map,Matrix,Vector},
+  sensitive=true,
+  morecomment=[l]{//},
+  morestring=[b]",
+}
+\lstset{
+  language=PseudoC,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\bfseries\color{CodeKeyword},
+  commentstyle=\itshape\color{CodeComment},
+  stringstyle=\color{CodeString},
+  backgroundcolor=\color{CodeBack},
+  frame=single,
+  rulecolor=\color{CodeFrame},
+  framerule=0.35pt,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  tabsize=4,
+  xleftmargin=0.6em,
+  xrightmargin=0.3em,
+  aboveskip=0.7em,
+  belowskip=0.7em,
+}
+\newcommand{\handouttitle}{Game Physics: Algorithms as C-like Pseudocode}
+\sloppy
+\begin{document}
+\pagenumbering{gobble}
+\begin{titlepage}
+\centering
+\vspace*{0.85in}
+{\Huge\bfseries\color{HouseBlue}\handouttitle\par}
+\vspace{0.22in}
+{\Large Systematic Algorithm Extraction and Reconstruction\par}
+\vspace{0.34in}
+{\large Source analyzed: David H. Eberly, \emph{Game Physics}, Second Edition, Morgan Kaufmann / Elsevier, 2010\par}
+\vfill
+\begin{minipage}{0.88\textwidth}
+\small
+This handout rewrites the algorithmic content from the uploaded game-physics text as independent C-like pseudocode. It is organized as an implementation-oriented reference for rigid-body state integration, mass properties, deformable bodies, spline and NURBS evaluation, implicit-surface extraction, fluid simulation, collision culling, SAT and GJK collision detection, collision response, numerical integration, and linear-complementarity / mathematical-programming support. The pseudocode is normalized for study, architecture review, engine design, and implementation planning; it is not a source-code clone.
+\end{minipage}
+\vfill
+{\large Generated \today\par}
+\end{titlepage}
+\clearpage
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+
+\textbf{Source analyzed:} David H. Eberly, \emph{Game Physics}, Second Edition, Morgan Kaufmann / Elsevier, 2010.
+\textbf{Output purpose:} implementation-oriented study reference for physics-engine design, collision detection, deformable simulation, fluid simulation, numerical integration, and mathematical-programming support.
+\textbf{Method:} algorithmic descriptions, pseudocode sections, equations that imply executable procedures, and source-code references in the uploaded book were reduced to independent C-like pseudocode. This document is not a transcription of the book or its CD-ROM source. It normalizes naming, types, and control flow for C/C++-style implementation planning.
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{0. Shared Types and Utility Routines}
+\addcontentsline{toc}{subsection}{0. Shared Types and Utility Routines}
+
+\begin{lstlisting}
+typedef struct Vec2 { float x, y; } Vec2;
+typedef struct Vec3 { float x, y, z; } Vec3;
+typedef struct Vec4 { float x, y, z, w; } Vec4;
+
+typedef struct Mat3 { float m[3][3]; } Mat3;
+typedef struct Mat4 { float m[4][4]; } Mat4;
+
+typedef struct Quat {
+    float w, x, y, z;
+} Quat;
+
+typedef struct Interval {
+    float min, max;
+} Interval;
+
+typedef struct AABB {
+    Vec3 min;
+    Vec3 max;
+} AABB;
+
+typedef struct OBB {
+    Vec3 center;
+    Vec3 axis[3];       // orthonormal directions
+    float extent[3];    // positive half-lengths
+} OBB;
+
+typedef struct Sphere {
+    Vec3 center;
+    float radius;
+} Sphere;
+
+typedef struct Triangle {
+    Vec3 p[3];
+} Triangle;
+
+typedef struct Plane {
+    Vec3 normal;
+    float offset;       // dot(normal, x) = offset
+} Plane;
+
+typedef struct RigidBody {
+    Vec3 position;
+    Quat orientation;
+    Vec3 linearVelocity;
+    Vec3 angularVelocity;
+    Vec3 force;
+    Vec3 torque;
+    float inverseMass;
+    Mat3 bodyInvInertia;
+    Mat3 worldInvInertia;
+    float restitution;
+    float friction;
+    bool sleeping;
+} RigidBody;
+
+typedef struct Particle {
+    Vec3 position;
+    Vec3 velocity;
+    Vec3 force;
+    float inverseMass;
+    bool fixed;
+} Particle;
+
+typedef struct Spring {
+    int a, b;
+    float restLength;
+    float stiffness;
+    float damping;
+} Spring;
+
+typedef struct Mesh {
+    Vec3 *vertices;
+    Vec3 *normals;
+    int vertexCount;
+    int *indices;
+    int indexCount;
+} Mesh;
+
+float dot3(Vec3 a, Vec3 b);
+Vec3 cross3(Vec3 a, Vec3 b);
+Vec3 add3(Vec3 a, Vec3 b);
+Vec3 sub3(Vec3 a, Vec3 b);
+Vec3 scale3(Vec3 v, float s);
+float length3(Vec3 v);
+Vec3 normalize3(Vec3 v);
+float clampf(float x, float lo, float hi);
+float absf(float x);
+float maxf(float a, float b);
+float minf(float a, float b);
+Mat3 mat3Mul(Mat3 a, Mat3 b);
+Vec3 mat3Vec(Mat3 a, Vec3 v);
+Mat3 mat3Transpose(Mat3 a);
+Mat3 mat3Identity(void);
+Quat quatNormalize(Quat q);
+Quat quatMul(Quat a, Quat b);
+Mat3 quatToMat3(Quat q);
+\end{lstlisting}
+
+\begin{lstlisting}
+Vec3 clearVec3(void) {
+    Vec3 v = {0.0f, 0.0f, 0.0f};
+    return v;
+}
+
+void clearForces(RigidBody *b) {
+    b->force = clearVec3();
+    b->torque = clearVec3();
+}
+
+void addForceAtPoint(RigidBody *b, Vec3 force, Vec3 worldPoint) {
+    Vec3 r = sub3(worldPoint, b->position);
+    b->force = add3(b->force, force);
+    b->torque = add3(b->torque, cross3(r, force));
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part I -- Mechanics, Mass Properties, and Rigid-Body State}
+\addcontentsline{toc}{section}{Part I -- Mechanics, Mass Properties, and Rigid-Body State}
+
+\Needspace{5\baselineskip}
+\subsection*{1. Particle Kinematics and Newtonian Step}
+\addcontentsline{toc}{subsection}{1. Particle Kinematics and Newtonian Step}
+
+\begin{lstlisting}
+void integrateParticleExplicitEuler(Particle *p, float dt) {
+    if (p->fixed || p->inverseMass == 0.0f) return;
+
+    Vec3 acceleration = scale3(p->force, p->inverseMass);
+    p->position = add3(p->position, scale3(p->velocity, dt));
+    p->velocity = add3(p->velocity, scale3(acceleration, dt));
+    p->force = clearVec3();
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{2. Rigid-Body World Inertia Update}
+\addcontentsline{toc}{subsection}{2. Rigid-Body World Inertia Update}
+
+\begin{lstlisting}
+void updateRigidBodyDerivedData(RigidBody *b) {
+    b->orientation = quatNormalize(b->orientation);
+    Mat3 R = quatToMat3(b->orientation);
+    b->worldInvInertia = mat3Mul(mat3Mul(R, b->bodyInvInertia), mat3Transpose(R));
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{3. Quaternion Orientation Integration}
+\addcontentsline{toc}{subsection}{3. Quaternion Orientation Integration}
+
+\begin{lstlisting}
+void integrateOrientation(RigidBody *b, float dt) {
+    Quat omega = {0.0f, b->angularVelocity.x, b->angularVelocity.y, b->angularVelocity.z};
+    Quat dq = quatMul(omega, b->orientation);
+
+    b->orientation.w += 0.5f * dq.w * dt;
+    b->orientation.x += 0.5f * dq.x * dt;
+    b->orientation.y += 0.5f * dq.y * dt;
+    b->orientation.z += 0.5f * dq.z * dt;
+    b->orientation = quatNormalize(b->orientation);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{4. Unconstrained Rigid-Body Motion Step}
+\addcontentsline{toc}{subsection}{4. Unconstrained Rigid-Body Motion Step}
+
+\begin{lstlisting}
+void integrateRigidBody(RigidBody *b, Vec3 gravity, float dt) {
+    if (b->sleeping) return;
+
+    updateRigidBodyDerivedData(b);
+
+    Vec3 linearAcceleration = gravity;
+    if (b->inverseMass > 0.0f) {
+        linearAcceleration = add3(linearAcceleration, scale3(b->force, b->inverseMass));
+    }
+
+    Vec3 angularAcceleration = mat3Vec(b->worldInvInertia, b->torque);
+
+    b->position = add3(b->position, scale3(b->linearVelocity, dt));
+    integrateOrientation(b, dt);
+
+    b->linearVelocity = add3(b->linearVelocity, scale3(linearAcceleration, dt));
+    b->angularVelocity = add3(b->angularVelocity, scale3(angularAcceleration, dt));
+
+    clearForces(b);
+    updateRigidBodyDerivedData(b);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{5. Center of Mass for Discrete Particles}
+\addcontentsline{toc}{subsection}{5. Center of Mass for Discrete Particles}
+
+\begin{lstlisting}
+Vec3 centerOfMassParticles(Vec3 *position, float *mass, int count) {
+    Vec3 weighted = clearVec3();
+    float totalMass = 0.0f;
+
+    for (int i = 0; i < count; ++i) {
+        weighted = add3(weighted, scale3(position[i], mass[i]));
+        totalMass += mass[i];
+    }
+
+    if (totalMass == 0.0f) return clearVec3();
+    return scale3(weighted, 1.0f / totalMass);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{6. Surface-Integral Mass Properties for a Closed Triangle Polyhedron}
+\addcontentsline{toc}{subsection}{6. Surface-Integral Mass Properties for a Closed Triangle Polyhedron}
+
+This is a C-like reconstruction of the book's closed-polyhedron mass-property procedure: accumulate polynomial volume integrals over oriented triangles, then convert them to mass, center of mass, and inertia.
+
+\begin{lstlisting}
+typedef struct MassProperties {
+    float mass;
+    Vec3 centerOfMass;
+    Mat3 inertiaAboutCenter;
+} MassProperties;
+
+typedef struct PolyIntegrals {
+    float I[10]; // 1, x, y, z, x^2, y^2, z^2, xy, yz, zx
+} PolyIntegrals;
+
+static void subexpressions(float w0, float w1, float w2,
+                           float *f1, float *f2, float *f3,
+                           float *g0, float *g1, float *g2) {
+    float t0 = w0 + w1;
+    *f1 = t0 + w2;
+
+    float t1 = w0 * w0;
+    float t2 = t1 + w1 * t0;
+    *f2 = t2 + w2 * (*f1);
+
+    *f3 = w0 * t1 + w1 * t2 + w2 * (*f2);
+    *g0 = (*f2) + w0 * ((*f1) + w0);
+    *g1 = (*f2) + w1 * ((*f1) + w1);
+    *g2 = (*f2) + w2 * ((*f1) + w2);
+}
+
+MassProperties computePolyhedronMass(Vec3 *v, int *tri, int triangleCount, float density) {
+    const float C1 = 1.0f / 6.0f;
+    const float C2 = 1.0f / 24.0f;
+    const float C3 = 1.0f / 60.0f;
+    const float C4 = 1.0f / 120.0f;
+
+    PolyIntegrals P = {0};
+
+    for (int t = 0; t < triangleCount; ++t) {
+        Vec3 p0 = v[tri[3*t + 0]];
+        Vec3 p1 = v[tri[3*t + 1]];
+        Vec3 p2 = v[tri[3*t + 2]];
+
+        Vec3 e1 = sub3(p1, p0);
+        Vec3 e2 = sub3(p2, p0);
+        Vec3 n  = cross3(e1, e2);       // oriented area vector, not normalized
+
+        float f1x, f2x, f3x, g0x, g1x, g2x;
+        float f1y, f2y, f3y, g0y, g1y, g2y;
+        float f1z, f2z, f3z, g0z, g1z, g2z;
+
+        subexpressions(p0.x, p1.x, p2.x, &f1x, &f2x, &f3x, &g0x, &g1x, &g2x);
+        subexpressions(p0.y, p1.y, p2.y, &f1y, &f2y, &f3y, &g0y, &g1y, &g2y);
+        subexpressions(p0.z, p1.z, p2.z, &f1z, &f2z, &f3z, &g0z, &g1z, &g2z);
+
+        P.I[0] += n.x * f1x;
+        P.I[1] += n.x * f2x;
+        P.I[2] += n.y * f2y;
+        P.I[3] += n.z * f2z;
+        P.I[4] += n.x * f3x;
+        P.I[5] += n.y * f3y;
+        P.I[6] += n.z * f3z;
+        P.I[7] += n.x * (p0.y*g0x + p1.y*g1x + p2.y*g2x);
+        P.I[8] += n.y * (p0.z*g0y + p1.z*g1y + p2.z*g2y);
+        P.I[9] += n.z * (p0.x*g0z + p1.x*g1z + p2.x*g2z);
+    }
+
+    P.I[0] *= C1;
+    P.I[1] *= C2; P.I[2] *= C2; P.I[3] *= C2;
+    P.I[4] *= C3; P.I[5] *= C3; P.I[6] *= C3;
+    P.I[7] *= C4; P.I[8] *= C4; P.I[9] *= C4;
+
+    MassProperties out;
+    out.mass = density * P.I[0];
+    out.centerOfMass.x = P.I[1] / P.I[0];
+    out.centerOfMass.y = P.I[2] / P.I[0];
+    out.centerOfMass.z = P.I[3] / P.I[0];
+
+    Mat3 I = {0};
+    I.m[0][0] = density * (P.I[5] + P.I[6]);
+    I.m[1][1] = density * (P.I[4] + P.I[6]);
+    I.m[2][2] = density * (P.I[4] + P.I[5]);
+    I.m[0][1] = I.m[1][0] = -density * P.I[7];
+    I.m[1][2] = I.m[2][1] = -density * P.I[8];
+    I.m[2][0] = I.m[0][2] = -density * P.I[9];
+
+    out.inertiaAboutCenter = shiftInertiaToCenter(I, out.mass, out.centerOfMass);
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{7. Parallel-Axis Shift of Inertia Tensor}
+\addcontentsline{toc}{subsection}{7. Parallel-Axis Shift of Inertia Tensor}
+
+\begin{lstlisting}
+Mat3 shiftInertiaToCenter(Mat3 inertiaAboutOrigin, float mass, Vec3 c) {
+    float cx = c.x, cy = c.y, cz = c.z;
+    Mat3 S = {0};
+
+    S.m[0][0] = mass * (cy*cy + cz*cz);
+    S.m[1][1] = mass * (cx*cx + cz*cz);
+    S.m[2][2] = mass * (cx*cx + cy*cy);
+    S.m[0][1] = S.m[1][0] = -mass * cx * cy;
+    S.m[0][2] = S.m[2][0] = -mass * cx * cz;
+    S.m[1][2] = S.m[2][1] = -mass * cy * cz;
+
+    return mat3Sub(inertiaAboutOrigin, S);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part II -- Deformable Bodies}
+\addcontentsline{toc}{section}{Part II -- Deformable Bodies}
+
+\Needspace{5\baselineskip}
+\subsection*{8. Hooke Spring Force with Damping}
+\addcontentsline{toc}{subsection}{8. Hooke Spring Force with Damping}
+
+\begin{lstlisting}
+Vec3 springForce(Particle *a, Particle *b, float restLength, float stiffness, float damping) {
+    Vec3 delta = sub3(b->position, a->position);
+    float length = length3(delta);
+    if (length == 0.0f) return clearVec3();
+
+    Vec3 dir = scale3(delta, 1.0f / length);
+    Vec3 relVel = sub3(b->velocity, a->velocity);
+
+    float stretch = length - restLength;
+    float speedAlongSpring = dot3(relVel, dir);
+    float magnitude = stiffness * stretch + damping * speedAlongSpring;
+
+    return scale3(dir, magnitude);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{9. Mass-Spring System Step}
+\addcontentsline{toc}{subsection}{9. Mass-Spring System Step}
+
+\begin{lstlisting}
+void simulateMassSpringSystem(Particle *p, int particleCount,
+                              Spring *s, int springCount,
+                              Vec3 gravity, float dt) {
+    for (int i = 0; i < particleCount; ++i) {
+        p[i].force = p[i].fixed ? clearVec3() : scale3(gravity, 1.0f / p[i].inverseMass);
+    }
+
+    for (int k = 0; k < springCount; ++k) {
+        Particle *a = &p[s[k].a];
+        Particle *b = &p[s[k].b];
+        Vec3 f = springForce(a, b, s[k].restLength, s[k].stiffness, s[k].damping);
+        if (!a->fixed) a->force = add3(a->force, f);
+        if (!b->fixed) b->force = sub3(b->force, f);
+    }
+
+    for (int i = 0; i < particleCount; ++i) {
+        integrateParticleExplicitEuler(&p[i], dt);
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{10. Build Linear, Cloth, or Volume Spring Neighborhoods}
+\addcontentsline{toc}{subsection}{10. Build Linear, Cloth, or Volume Spring Neighborhoods}
+
+\begin{lstlisting}
+void addGridSprings3D(SpringList *out, int nx, int ny, int nz,
+                      float spacing, float stiffness, float damping,
+                      bool structural, bool shear, bool bend) {
+    int offsets[32][3];
+    int count = 0;
+
+    if (structural) {
+        addOffset(offsets, &count, 1,0,0); addOffset(offsets, &count, 0,1,0); addOffset(offsets, &count, 0,0,1);
+    }
+    if (shear) {
+        addOffset(offsets, &count, 1,1,0); addOffset(offsets, &count, 1,-1,0);
+        addOffset(offsets, &count, 1,0,1); addOffset(offsets, &count, 1,0,-1);
+        addOffset(offsets, &count, 0,1,1); addOffset(offsets, &count, 0,1,-1);
+        addOffset(offsets, &count, 1,1,1); addOffset(offsets, &count, 1,1,-1);
+        addOffset(offsets, &count, 1,-1,1); addOffset(offsets, &count, 1,-1,-1);
+    }
+    if (bend) {
+        addOffset(offsets, &count, 2,0,0); addOffset(offsets, &count, 0,2,0); addOffset(offsets, &count, 0,0,2);
+    }
+
+    for (int z = 0; z < nz; ++z)
+    for (int y = 0; y < ny; ++y)
+    for (int x = 0; x < nx; ++x) {
+        int a = gridIndex3(x, y, z, nx, ny);
+        for (int k = 0; k < count; ++k) {
+            int x2 = x + offsets[k][0];
+            int y2 = y + offsets[k][1];
+            int z2 = z + offsets[k][2];
+            if (!inside3(x2, y2, z2, nx, ny, nz)) continue;
+
+            int b = gridIndex3(x2, y2, z2, nx, ny);
+            float rest = spacing * sqrtf((float)(offsets[k][0]*offsets[k][0] + offsets[k][1]*offsets[k][1] + offsets[k][2]*offsets[k][2]));
+            springListPush(out, a, b, rest, stiffness, damping);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{11. Recursive B-Spline Basis Function}
+\addcontentsline{toc}{subsection}{11. Recursive B-Spline Basis Function}
+
+\begin{lstlisting}
+float bsplineBasisRecursive(int i, int degree, float u, float *knot) {
+    if (degree == 0) {
+        return (knot[i] <= u && u < knot[i + 1]) ? 1.0f : 0.0f;
+    }
+
+    float left = 0.0f;
+    float denom0 = knot[i + degree] - knot[i];
+    if (denom0 != 0.0f) {
+        left = ((u - knot[i]) / denom0) * bsplineBasisRecursive(i, degree - 1, u, knot);
+    }
+
+    float right = 0.0f;
+    float denom1 = knot[i + degree + 1] - knot[i + 1];
+    if (denom1 != 0.0f) {
+        right = ((knot[i + degree + 1] - u) / denom1) * bsplineBasisRecursive(i + 1, degree - 1, u, knot);
+    }
+
+    return left + right;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{12. Dynamic-Programming B-Spline Basis Evaluation}
+\addcontentsline{toc}{subsection}{12. Dynamic-Programming B-Spline Basis Evaluation}
+
+\begin{lstlisting}
+int bsplineBasisDP(float u, int n, int degree, float *knot, float *outBasis) {
+    float basis[MAX_DEGREE + 1][MAX_KNOTS] = {0};
+    int key = -1;
+
+    for (int i = 0; i <= n + degree; ++i) {
+        if (knot[i] <= u && u < knot[i + 1]) {
+            basis[0][i] = 1.0f;
+            key = i;
+        }
+    }
+
+    for (int j = 1; j <= degree; ++j) {
+        for (int i = 0; i <= n + degree - j; ++i) {
+            float left = 0.0f, right = 0.0f;
+            float d0 = knot[i + j] - knot[i];
+            float d1 = knot[i + j + 1] - knot[i + 1];
+            if (d0 != 0.0f) left = ((u - knot[i]) / d0) * basis[j - 1][i];
+            if (d1 != 0.0f) right = ((knot[i + j + 1] - u) / d1) * basis[j - 1][i + 1];
+            basis[j][i] = left + right;
+        }
+    }
+
+    for (int i = 0; i <= n; ++i) outBasis[i] = basis[degree][i];
+    return key;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{13. B-Spline Curve Evaluation}
+\addcontentsline{toc}{subsection}{13. B-Spline Curve Evaluation}
+
+\begin{lstlisting}
+Vec3 evaluateBSplineCurve(float u, Vec3 *control, int n, int degree, float *knot) {
+    float N[MAX_CONTROL] = {0};
+    bsplineBasisDP(u, n, degree, knot, N);
+
+    Vec3 x = clearVec3();
+    for (int i = 0; i <= n; ++i) {
+        x = add3(x, scale3(control[i], N[i]));
+    }
+    return x;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{14. NURBS Curve Evaluation}
+\addcontentsline{toc}{subsection}{14. NURBS Curve Evaluation}
+
+\begin{lstlisting}
+Vec3 evaluateNURBSCurve(float u, Vec3 *control, float *weight,
+                        int n, int degree, float *knot) {
+    float N[MAX_CONTROL] = {0};
+    bsplineBasisDP(u, n, degree, knot, N);
+
+    Vec3 numerator = clearVec3();
+    float denominator = 0.0f;
+
+    for (int i = 0; i <= n; ++i) {
+        float b = N[i] * weight[i];
+        numerator = add3(numerator, scale3(control[i], b));
+        denominator += b;
+    }
+
+    if (denominator == 0.0f) return clearVec3();
+    return scale3(numerator, 1.0f / denominator);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{15. B-Spline Surface Evaluation}
+\addcontentsline{toc}{subsection}{15. B-Spline Surface Evaluation}
+
+\begin{lstlisting}
+Vec3 evaluateBSplineSurface(float u, float v,
+                            Vec3 control[MAX_U][MAX_V],
+                            int nu, int nv,
+                            int du, int dv,
+                            float *knotU, float *knotV) {
+    float Nu[MAX_U] = {0};
+    float Nv[MAX_V] = {0};
+    bsplineBasisDP(u, nu, du, knotU, Nu);
+    bsplineBasisDP(v, nv, dv, knotV, Nv);
+
+    Vec3 x = clearVec3();
+    for (int i = 0; i <= nu; ++i)
+    for (int j = 0; j <= nv; ++j) {
+        x = add3(x, scale3(control[i][j], Nu[i] * Nv[j]));
+    }
+    return x;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{16. Tessellate a Parametric Surface Patch}
+\addcontentsline{toc}{subsection}{16. Tessellate a Parametric Surface Patch}
+
+\begin{lstlisting}
+Mesh tessellateSurface(int nx, int ny, SurfaceEvaluator eval) {
+    Mesh mesh = allocateMesh(nx * ny, 6 * (nx - 1) * (ny - 1));
+
+    int k = 0;
+    for (int j = 0; j < ny; ++j) {
+        float v = (float)j / (float)(ny - 1);
+        for (int i = 0; i < nx; ++i) {
+            float u = (float)i / (float)(nx - 1);
+            mesh.vertices[k] = eval.position(u, v);
+            mesh.normals[k]  = eval.normal(u, v);
+            ++k;
+        }
+    }
+
+    k = 0;
+    for (int j = 0; j < ny - 1; ++j)
+    for (int i = 0; i < nx - 1; ++i) {
+        int v0 = i + nx * j;
+        int v1 = v0 + 1;
+        int v2 = v1 + nx;
+        int v3 = v0 + nx;
+        mesh.indices[k++] = v0; mesh.indices[k++] = v1; mesh.indices[k++] = v2;
+        mesh.indices[k++] = v0; mesh.indices[k++] = v2; mesh.indices[k++] = v3;
+    }
+
+    return mesh;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{17. Free-Form Deformation by B-Spline Volume}
+\addcontentsline{toc}{subsection}{17. Free-Form Deformation by B-Spline Volume}
+
+\begin{lstlisting}
+Vec3 evaluateBSplineVolume(float u, float v, float w,
+                           Vec3 control[MAX_U][MAX_V][MAX_W],
+                           int nu, int nv, int nw,
+                           int du, int dv, int dw,
+                           float *knotU, float *knotV, float *knotW) {
+    float Nu[MAX_U] = {0}, Nv[MAX_V] = {0}, Nw[MAX_W] = {0};
+    bsplineBasisDP(u, nu, du, knotU, Nu);
+    bsplineBasisDP(v, nv, dv, knotV, Nv);
+    bsplineBasisDP(w, nw, dw, knotW, Nw);
+
+    Vec3 x = clearVec3();
+    for (int i = 0; i <= nu; ++i)
+    for (int j = 0; j <= nv; ++j)
+    for (int k = 0; k <= nw; ++k) {
+        float b = Nu[i] * Nv[j] * Nw[k];
+        x = add3(x, scale3(control[i][j][k], b));
+    }
+    return x;
+}
+
+void deformMeshWithVolume(Mesh *mesh, Vec3 *original,
+                          Vec3 control[MAX_U][MAX_V][MAX_W],
+                          Param3 *storedParam,
+                          VolumeSpec spec) {
+    for (int i = 0; i < mesh->vertexCount; ++i) {
+        float u = storedParam[i].u;
+        float v = storedParam[i].v;
+        float w = storedParam[i].w;
+        mesh->vertices[i] = evaluateBSplineVolume(u, v, w, control,
+                                                  spec.nu, spec.nv, spec.nw,
+                                                  spec.du, spec.dv, spec.dw,
+                                                  spec.knotU, spec.knotV, spec.knotW);
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{18. Implicit Surface Deformation Update}
+\addcontentsline{toc}{subsection}{18. Implicit Surface Deformation Update}
+
+\begin{lstlisting}
+void applyImplicitDeformation(Grid3 *phi, DeformationField d, AABB affectedRegion) {
+    for (int z = affectedRegion.min.z; z <= affectedRegion.max.z; ++z)
+    for (int y = affectedRegion.min.y; y <= affectedRegion.max.y; ++y)
+    for (int x = affectedRegion.min.x; x <= affectedRegion.max.x; ++x) {
+        Vec3 p = grid3Position(phi, x, y, z);
+        phi->value[x][y][z] += d.evaluate(p);
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{19. Marching Squares with Ambiguity Resolution}
+\addcontentsline{toc}{subsection}{19. Marching Squares with Ambiguity Resolution}
+
+\begin{lstlisting}
+void extractIsocurve2D(Grid2 *image, float level, SegmentList *segments) {
+    for (int y = 0; y < image->height - 1; ++y)
+    for (int x = 0; x < image->width - 1; ++x) {
+        float g00 = image->value[x][y] - level;
+        float g10 = image->value[x+1][y] - level;
+        float g01 = image->value[x][y+1] - level;
+        float g11 = image->value[x+1][y+1] - level;
+
+        int mask = signBit(g00) | (signBit(g10) << 1) | (signBit(g11) << 2) | (signBit(g01) << 3);
+        if (mask == 0 || mask == 15) continue;
+
+        Vec2 edgePoint[4];
+        bool has[4] = {false,false,false,false};
+        if (differentSign(g00,g10)) { edgePoint[0] = interpolateEdge2(x,y, x+1,y, g00,g10); has[0] = true; }
+        if (differentSign(g10,g11)) { edgePoint[1] = interpolateEdge2(x+1,y, x+1,y+1, g10,g11); has[1] = true; }
+        if (differentSign(g11,g01)) { edgePoint[2] = interpolateEdge2(x+1,y+1, x,y+1, g11,g01); has[2] = true; }
+        if (differentSign(g01,g00)) { edgePoint[3] = interpolateEdge2(x,y+1, x,y, g01,g00); has[3] = true; }
+
+        if (!isAmbiguousMarchingSquare(mask)) {
+            connectOnlyTwoIntersections(edgePoint, has, segments);
+        } else {
+            float center = bilinearAtCenter(g00, g10, g01, g11);
+            connectAmbiguousByCenterSign(edgePoint, has, center, segments);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{20. Marching Cubes-Style Isosurface Extraction}
+\addcontentsline{toc}{subsection}{20. Marching Cubes-Style Isosurface Extraction}
+
+\begin{lstlisting}
+Mesh extractIsosurface3D(Grid3 *image, float level) {
+    MeshBuilder out = meshBuilderCreate();
+
+    for (int z = 0; z < image->depth - 1; ++z)
+    for (int y = 0; y < image->height - 1; ++y)
+    for (int x = 0; x < image->width - 1; ++x) {
+        float g[8];
+        Vec3 corner[8];
+        loadVoxelCorners(image, x, y, z, corner, g, level);
+
+        int mask = 0;
+        for (int i = 0; i < 8; ++i) {
+            if (g[i] < 0.0f) mask |= (1 << i);
+        }
+        if (mask == 0 || mask == 255) continue;
+
+        Vec3 edgeVertex[12];
+        bool edgeHit[12] = {0};
+        for (int e = 0; e < 12; ++e) {
+            int a = voxelEdge[e][0];
+            int b = voxelEdge[e][1];
+            if (differentSign(g[a], g[b])) {
+                edgeVertex[e] = interpolateVec3(corner[a], corner[b], g[a], g[b]);
+                edgeHit[e] = true;
+            }
+        }
+
+        if (useLookupTable) {
+            emitTrianglesFromTable(&out, mask, edgeVertex);
+        } else {
+            EdgeMesh poly = buildFaceEdgeMesh(edgeVertex, edgeHit, g);
+            triangulateVoxelEdgeMesh(&out, &poly);
+        }
+    }
+
+    return meshBuilderFinish(&out);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part III -- Fluids and Gases}
+\addcontentsline{toc}{section}{Part III -- Fluids and Gases}
+
+\Needspace{5\baselineskip}
+\subsection*{21. Grid Boundary Handling}
+\addcontentsline{toc}{subsection}{21. Grid Boundary Handling}
+
+\begin{lstlisting}
+void setScalarBoundary(Grid2 *x, BoundaryMode mode) {
+    int n = x->width;
+    int m = x->height;
+
+    for (int i = 1; i < n - 1; ++i) {
+        x->value[i][0]     = (mode == BOUNDARY_Y) ? -x->value[i][1]     : x->value[i][1];
+        x->value[i][m-1]   = (mode == BOUNDARY_Y) ? -x->value[i][m-2]   : x->value[i][m-2];
+    }
+    for (int j = 1; j < m - 1; ++j) {
+        x->value[0][j]     = (mode == BOUNDARY_X) ? -x->value[1][j]     : x->value[1][j];
+        x->value[n-1][j]   = (mode == BOUNDARY_X) ? -x->value[n-2][j]   : x->value[n-2][j];
+    }
+
+    x->value[0][0]       = 0.5f * (x->value[1][0]     + x->value[0][1]);
+    x->value[0][m-1]     = 0.5f * (x->value[1][m-1]   + x->value[0][m-2]);
+    x->value[n-1][0]     = 0.5f * (x->value[n-2][0]   + x->value[n-1][1]);
+    x->value[n-1][m-1]   = 0.5f * (x->value[n-2][m-1] + x->value[n-1][m-2]);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{22. Add Sources or Sinks to a Scalar Field}
+\addcontentsline{toc}{subsection}{22. Add Sources or Sinks to a Scalar Field}
+
+\begin{lstlisting}
+void addScalarSource(Grid2 *dst, Grid2 *src, float dt) {
+    for (int j = 0; j < dst->height; ++j)
+    for (int i = 0; i < dst->width; ++i) {
+        dst->value[i][j] += dt * src->value[i][j];
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{23. Diffuse Scalar Field by Iterative Linear Solve}
+\addcontentsline{toc}{subsection}{23. Diffuse Scalar Field by Iterative Linear Solve}
+
+\begin{lstlisting}
+void diffuseScalar(Grid2 *x, Grid2 *x0, float diffusion, float dt, int iterations) {
+    int n = x->width;
+    int m = x->height;
+    float a = dt * diffusion * (n - 2) * (m - 2);
+
+    for (int iter = 0; iter < iterations; ++iter) {
+        for (int j = 1; j < m - 1; ++j)
+        for (int i = 1; i < n - 1; ++i) {
+            x->value[i][j] = (x0->value[i][j] + a * (
+                x->value[i-1][j] + x->value[i+1][j] +
+                x->value[i][j-1] + x->value[i][j+1])) / (1.0f + 4.0f * a);
+        }
+        setScalarBoundary(x, BOUNDARY_NONE);
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{24. Semi-Lagrangian Advection}
+\addcontentsline{toc}{subsection}{24. Semi-Lagrangian Advection}
+
+\begin{lstlisting}
+void advectScalar(Grid2 *dst, Grid2 *src, Grid2 *u, Grid2 *v, float dt) {
+    int n = dst->width;
+    int m = dst->height;
+    float dtX = dt * (n - 2);
+    float dtY = dt * (m - 2);
+
+    for (int j = 1; j < m - 1; ++j)
+    for (int i = 1; i < n - 1; ++i) {
+        float x = i - dtX * u->value[i][j];
+        float y = j - dtY * v->value[i][j];
+
+        x = clampf(x, 0.5f, n - 1.5f);
+        y = clampf(y, 0.5f, m - 1.5f);
+
+        int i0 = (int)floorf(x), i1 = i0 + 1;
+        int j0 = (int)floorf(y), j1 = j0 + 1;
+        float sx = x - i0;
+        float sy = y - j0;
+
+        dst->value[i][j] = bilerp(src->value[i0][j0], src->value[i1][j0],
+                                  src->value[i0][j1], src->value[i1][j1], sx, sy);
+    }
+
+    setScalarBoundary(dst, BOUNDARY_NONE);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{25. Velocity Projection for Incompressibility}
+\addcontentsline{toc}{subsection}{25. Velocity Projection for Incompressibility}
+
+\begin{lstlisting}
+void projectVelocity(Grid2 *u, Grid2 *v, Grid2 *pressure, Grid2 *divergence, int iterations) {
+    int n = u->width;
+    int m = u->height;
+
+    for (int j = 1; j < m - 1; ++j)
+    for (int i = 1; i < n - 1; ++i) {
+        divergence->value[i][j] = -0.5f * (
+            u->value[i+1][j] - u->value[i-1][j] +
+            v->value[i][j+1] - v->value[i][j-1]) / (float)(n - 2);
+        pressure->value[i][j] = 0.0f;
+    }
+
+    setScalarBoundary(divergence, BOUNDARY_NONE);
+    setScalarBoundary(pressure, BOUNDARY_NONE);
+
+    for (int iter = 0; iter < iterations; ++iter) {
+        for (int j = 1; j < m - 1; ++j)
+        for (int i = 1; i < n - 1; ++i) {
+            pressure->value[i][j] = (divergence->value[i][j] +
+                pressure->value[i-1][j] + pressure->value[i+1][j] +
+                pressure->value[i][j-1] + pressure->value[i][j+1]) / 4.0f;
+        }
+        setScalarBoundary(pressure, BOUNDARY_NONE);
+    }
+
+    for (int j = 1; j < m - 1; ++j)
+    for (int i = 1; i < n - 1; ++i) {
+        u->value[i][j] -= 0.5f * (pressure->value[i+1][j] - pressure->value[i-1][j]) * (n - 2);
+        v->value[i][j] -= 0.5f * (pressure->value[i][j+1] - pressure->value[i][j-1]) * (m - 2);
+    }
+
+    setScalarBoundary(u, BOUNDARY_X);
+    setScalarBoundary(v, BOUNDARY_Y);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{26. Complete 2D Fluid Step}
+\addcontentsline{toc}{subsection}{26. Complete 2D Fluid Step}
+
+\begin{lstlisting}
+void simulateFluid2D(Fluid2D *f, float viscosity, float diffusion, float dt, int iterations) {
+    addScalarSource(&f->u, &f->uSource, dt);
+    addScalarSource(&f->v, &f->vSource, dt);
+
+    swapGrid(&f->uPrev, &f->u);
+    diffuseScalar(&f->u, &f->uPrev, viscosity, dt, iterations);
+
+    swapGrid(&f->vPrev, &f->v);
+    diffuseScalar(&f->v, &f->vPrev, viscosity, dt, iterations);
+
+    projectVelocity(&f->u, &f->v, &f->pressure, &f->divergence, iterations);
+
+    swapGrid(&f->uPrev, &f->u);
+    swapGrid(&f->vPrev, &f->v);
+    advectScalar(&f->u, &f->uPrev, &f->uPrev, &f->vPrev, dt);
+    advectScalar(&f->v, &f->vPrev, &f->uPrev, &f->vPrev, dt);
+
+    projectVelocity(&f->u, &f->v, &f->pressure, &f->divergence, iterations);
+
+    addScalarSource(&f->density, &f->densitySource, dt);
+    swapGrid(&f->densityPrev, &f->density);
+    diffuseScalar(&f->density, &f->densityPrev, diffusion, dt, iterations);
+    swapGrid(&f->densityPrev, &f->density);
+    advectScalar(&f->density, &f->densityPrev, &f->u, &f->v, dt);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{27. Vorticity Confinement Force}
+\addcontentsline{toc}{subsection}{27. Vorticity Confinement Force}
+
+\begin{lstlisting}
+void addVorticityConfinement2D(Fluid2D *f, float epsilon, float dt) {
+    Grid2 omega = allocateLike(&f->density);
+    Grid2 mag = allocateLike(&f->density);
+
+    for (int j = 1; j < f->height - 1; ++j)
+    for (int i = 1; i < f->width - 1; ++i) {
+        omega.value[i][j] = 0.5f * ((f->v.value[i+1][j] - f->v.value[i-1][j]) -
+                                    (f->u.value[i][j+1] - f->u.value[i][j-1]));
+        mag.value[i][j] = absf(omega.value[i][j]);
+    }
+
+    for (int j = 2; j < f->height - 2; ++j)
+    for (int i = 2; i < f->width - 2; ++i) {
+        Vec2 grad = {0.5f * (mag.value[i+1][j] - mag.value[i-1][j]),
+                     0.5f * (mag.value[i][j+1] - mag.value[i][j-1])};
+        float len = sqrtf(grad.x*grad.x + grad.y*grad.y);
+        if (len == 0.0f) continue;
+        grad.x /= len;
+        grad.y /= len;
+
+        float vort = omega.value[i][j];
+        f->u.value[i][j] += dt * epsilon * grad.y * vort;
+        f->v.value[i][j] -= dt * epsilon * grad.x * vort;
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part IV -- Collision Culling and Collision Detection}
+\addcontentsline{toc}{section}{Part IV -- Collision Culling and Collision Detection}
+
+\Needspace{5\baselineskip}
+\subsection*{28. Physics Tick Structure}
+\addcontentsline{toc}{subsection}{28. Physics Tick Structure}
+
+\begin{lstlisting}
+void physicsTick(World *world, float dt) {
+    applyExternalForces(world, dt);
+    broadPhaseFindPotentialPairs(world);
+    narrowPhaseGenerateContacts(world);
+    solveContactsAndConstraints(world, dt);
+    integrateBodies(world, dt);
+    updateCollisionProxies(world);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{29. Bounding-Sphere Pair Culling}
+\addcontentsline{toc}{subsection}{29. Bounding-Sphere Pair Culling}
+
+\begin{lstlisting}
+bool spheresOverlap(Sphere a, Sphere b) {
+    float r = a.radius + b.radius;
+    return dot3(sub3(a.center, b.center), sub3(a.center, b.center)) <= r * r;
+}
+
+void broadPhaseSpheres(BodyProxy *proxy, int count, PairSet *pairs) {
+    pairSetClear(pairs);
+    for (int i = 0; i < count; ++i)
+    for (int j = i + 1; j < count; ++j) {
+        if (spheresOverlap(proxy[i].sphere, proxy[j].sphere)) {
+            pairSetAdd(pairs, proxy[i].id, proxy[j].id);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{30. Spatial Hash Culling for Spheres or AABBs}
+\addcontentsline{toc}{subsection}{30. Spatial Hash Culling for Spheres or AABBs}
+
+\begin{lstlisting}
+void broadPhaseSpatialHash(BodyProxy *proxy, int count, SpatialHash *hash, PairSet *pairs) {
+    spatialHashClear(hash);
+    pairSetClear(pairs);
+
+    for (int i = 0; i < count; ++i) {
+        CellRange range = cellsCoveredByAABB(proxy[i].aabb, hash->cellSize);
+        forEachCell(range, cell) {
+            spatialHashInsert(hash, cell, proxy[i].id);
+        }
+    }
+
+    forEachOccupiedCell(hash, cell) {
+        IntList ids = hash->bucket[cell];
+        for (int a = 0; a < ids.count; ++a)
+        for (int b = a + 1; b < ids.count; ++b) {
+            int id0 = ids.data[a], id1 = ids.data[b];
+            if (id0 == id1) continue;
+            if (aabbOverlap(proxyById(id0)->aabb, proxyById(id1)->aabb)) {
+                pairSetAddCanonical(pairs, id0, id1);
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{31. AABB Overlap}
+\addcontentsline{toc}{subsection}{31. AABB Overlap}
+
+\begin{lstlisting}
+bool aabbOverlap(AABB a, AABB b) {
+    if (a.max.x < b.min.x || b.max.x < a.min.x) return false;
+    if (a.max.y < b.min.y || b.max.y < a.min.y) return false;
+    if (a.max.z < b.min.z || b.max.z < a.min.z) return false;
+    return true;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{32. Sweep-and-Prune Broad Phase}
+\addcontentsline{toc}{subsection}{32. Sweep-and-Prune Broad Phase}
+
+\begin{lstlisting}
+typedef struct Endpoint {
+    float value;
+    int objectId;
+    bool isMin;
+} Endpoint;
+
+void sweepAndPrune(Endpoint *xEnd, int endpointCount,
+                   AABB *boxById, PairSet *pairs) {
+    sortEndpointsByValue(xEnd, endpointCount);
+    ActiveSet active = activeSetCreate();
+    pairSetClear(pairs);
+
+    for (int k = 0; k < endpointCount; ++k) {
+        Endpoint e = xEnd[k];
+        if (e.isMin) {
+            forEachActive(active, otherId) {
+                if (overlap1D(boxById[e.objectId].min.y, boxById[e.objectId].max.y,
+                              boxById[otherId].min.y, boxById[otherId].max.y) &&
+                    overlap1D(boxById[e.objectId].min.z, boxById[e.objectId].max.z,
+                              boxById[otherId].min.z, boxById[otherId].max.z)) {
+                    pairSetAddCanonical(pairs, e.objectId, otherId);
+                }
+            }
+            activeSetInsert(&active, e.objectId);
+        } else {
+            activeSetRemove(&active, e.objectId);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{33. Incremental Endpoint Update for Coherent AABBs}
+\addcontentsline{toc}{subsection}{33. Incremental Endpoint Update for Coherent AABBs}
+
+\begin{lstlisting}
+void updateEndpointOrderByInsertionSort(Endpoint *endpoints, int count, PairSet *pairs, AABB *boxById) {
+    for (int i = 1; i < count; ++i) {
+        int j = i;
+        while (j > 0 && endpoints[j].value < endpoints[j - 1].value) {
+            Endpoint a = endpoints[j - 1];
+            Endpoint b = endpoints[j];
+
+            updatePairForEndpointSwap(a, b, pairs, boxById);
+            endpoints[j - 1] = b;
+            endpoints[j] = a;
+            --j;
+        }
+    }
+}
+
+void updatePairForEndpointSwap(Endpoint left, Endpoint right, PairSet *pairs, AABB *boxById) {
+    if (left.objectId == right.objectId) return;
+
+    if (left.isMin && !right.isMin) {
+        pairSetRemoveCanonical(pairs, left.objectId, right.objectId);
+    } else if (!left.isMin && right.isMin) {
+        int a = left.objectId, b = right.objectId;
+        if (overlapOtherAxes(boxById[a], boxById[b], X_AXIS)) {
+            pairSetAddCanonical(pairs, a, b);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{34. Project Convex Polyhedron onto an Axis}
+\addcontentsline{toc}{subsection}{34. Project Convex Polyhedron onto an Axis}
+
+\begin{lstlisting}
+Interval projectPoints(Vec3 *p, int count, Vec3 axis) {
+    float first = dot3(axis, p[0]);
+    Interval out = { first, first };
+    for (int i = 1; i < count; ++i) {
+        float q = dot3(axis, p[i]);
+        out.min = minf(out.min, q);
+        out.max = maxf(out.max, q);
+    }
+    return out;
+}
+
+bool intervalsOverlap(Interval a, Interval b) {
+    return !(a.max < b.min || b.max < a.min);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{35. Separating-Axis Test for Convex Polyhedra}
+\addcontentsline{toc}{subsection}{35. Separating-Axis Test for Convex Polyhedra}
+
+\begin{lstlisting}
+bool convexPolyhedraOverlap(Polyhedron *a, Polyhedron *b) {
+    AxisList axes = collectPotentialSeparatingAxes(a, b);
+
+    for (int k = 0; k < axes.count; ++k) {
+        Vec3 axis = axes.data[k];
+        if (length3(axis) == 0.0f) continue;
+        axis = normalize3(axis);
+
+        Interval ia = projectPoints(a->worldVertex, a->vertexCount, axis);
+        Interval ib = projectPoints(b->worldVertex, b->vertexCount, axis);
+        if (!intervalsOverlap(ia, ib)) return false;
+    }
+
+    return true;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{36. OBB Separating-Axis Test}
+\addcontentsline{toc}{subsection}{36. OBB Separating-Axis Test}
+
+\begin{lstlisting}
+bool obbOverlap(OBB A, OBB B) {
+    Vec3 axes[15];
+    int count = 0;
+
+    for (int i = 0; i < 3; ++i) axes[count++] = A.axis[i];
+    for (int i = 0; i < 3; ++i) axes[count++] = B.axis[i];
+    for (int i = 0; i < 3; ++i)
+    for (int j = 0; j < 3; ++j) axes[count++] = cross3(A.axis[i], B.axis[j]);
+
+    Vec3 AV[8], BV[8];
+    obbVertices(A, AV);
+    obbVertices(B, BV);
+
+    for (int k = 0; k < count; ++k) {
+        if (length3(axes[k]) < 1e-6f) continue;
+        Vec3 axis = normalize3(axes[k]);
+        if (!intervalsOverlap(projectPoints(AV, 8, axis), projectPoints(BV, 8, axis))) {
+            return false;
+        }
+    }
+    return true;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{37. Moving Interval Contact Time Along One Axis}
+\addcontentsline{toc}{subsection}{37. Moving Interval Contact Time Along One Axis}
+
+\begin{lstlisting}
+bool movingIntervalsOverlapTime(Interval a, float va,
+                                Interval b, float vb,
+                                float tMax,
+                                float *enter, float *leave) {
+    float v = vb - va;
+
+    if (v == 0.0f) {
+        if (!intervalsOverlap(a, b)) return false;
+        *enter = 0.0f;
+        *leave = tMax;
+        return true;
+    }
+
+    float t0 = (a.min - b.max) / v;
+    float t1 = (a.max - b.min) / v;
+    if (t0 > t1) swapFloat(&t0, &t1);
+
+    *enter = maxf(*enter, t0);
+    *leave = minf(*leave, t1);
+    return *enter <= *leave && *leave >= 0.0f && *enter <= tMax;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{38. Continuous SAT for Constant Linear Velocity}
+\addcontentsline{toc}{subsection}{38. Continuous SAT for Constant Linear Velocity}
+
+\begin{lstlisting}
+bool movingConvexContactTime(Polyhedron *a, Vec3 va,
+                             Polyhedron *b, Vec3 vb,
+                             float tMax, float *timeOfImpact) {
+    float enter = 0.0f;
+    float leave = tMax;
+    AxisList axes = collectPotentialSeparatingAxes(a, b);
+    Vec3 rel = sub3(vb, va);
+
+    for (int k = 0; k < axes.count; ++k) {
+        Vec3 axis = normalize3(axes.data[k]);
+        Interval ia = projectPoints(a->worldVertex, a->vertexCount, axis);
+        Interval ib = projectPoints(b->worldVertex, b->vertexCount, axis);
+        float speed = dot3(rel, axis);
+
+        if (!movingIntervalsOverlapTime(ia, 0.0f, ib, speed, tMax, &enter, &leave)) {
+            return false;
+        }
+    }
+
+    *timeOfImpact = maxf(enter, 0.0f);
+    return true;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{39. Support Mapping for GJK}
+\addcontentsline{toc}{subsection}{39. Support Mapping for GJK}
+
+\begin{lstlisting}
+Vec3 supportPoint(ConvexShape *shape, Vec3 dir) {
+    Vec3 best = shape->vertex[0];
+    float bestDot = dot3(best, dir);
+    for (int i = 1; i < shape->vertexCount; ++i) {
+        float d = dot3(shape->vertex[i], dir);
+        if (d > bestDot) {
+            bestDot = d;
+            best = shape->vertex[i];
+        }
+    }
+    return best;
+}
+
+Vec3 supportMinkowski(ConvexShape *a, ConvexShape *b, Vec3 dir) {
+    return sub3(supportPoint(a, dir), supportPoint(b, scale3(dir, -1.0f)));
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{40. GJK Intersection Test}
+\addcontentsline{toc}{subsection}{40. GJK Intersection Test}
+
+\begin{lstlisting}
+bool gjkIntersect(ConvexShape *a, ConvexShape *b) {
+    Simplex simplex = simplexCreate();
+    Vec3 dir = sub3(b->center, a->center);
+    if (length3(dir) == 0.0f) dir = (Vec3){1,0,0};
+
+    Vec3 p = supportMinkowski(a, b, dir);
+    simplexAdd(&simplex, p);
+    dir = scale3(p, -1.0f);
+
+    for (int iter = 0; iter < MAX_GJK_ITERS; ++iter) {
+        p = supportMinkowski(a, b, dir);
+        if (dot3(p, dir) < 0.0f) return false;
+
+        simplexAdd(&simplex, p);
+        if (updateSimplexAndDirection(&simplex, &dir)) return true;
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{41. GJK Distance Approximation}
+\addcontentsline{toc}{subsection}{41. GJK Distance Approximation}
+
+\begin{lstlisting}
+float gjkDistance(ConvexShape *a, ConvexShape *b) {
+    Simplex simplex = simplexCreate();
+    Vec3 dir = sub3(b->center, a->center);
+    if (length3(dir) == 0.0f) dir = (Vec3){1,0,0};
+
+    Vec3 lastClosest = {FLT_MAX, FLT_MAX, FLT_MAX};
+
+    for (int iter = 0; iter < MAX_GJK_ITERS; ++iter) {
+        Vec3 w = supportMinkowski(a, b, scale3(dir, -1.0f));
+        simplexAdd(&simplex, w);
+
+        Vec3 closest = closestPointToOriginOnSimplex(&simplex);
+        reduceSimplexToClosestFeature(&simplex, closest);
+
+        if (length3(sub3(closest, lastClosest)) < GJK_EPSILON) {
+            return length3(closest);
+        }
+
+        lastClosest = closest;
+        dir = closest;
+        if (length3(dir) < GJK_EPSILON) return 0.0f;
+    }
+
+    return length3(lastClosest);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part V -- Collision Response and Constraint Solving}
+\addcontentsline{toc}{section}{Part V -- Collision Response and Constraint Solving}
+
+\Needspace{5\baselineskip}
+\subsection*{42. Contact Point Data}
+\addcontentsline{toc}{subsection}{42. Contact Point Data}
+
+\begin{lstlisting}
+typedef struct Contact {
+    RigidBody *a;
+    RigidBody *b;
+    Vec3 point;
+    Vec3 normal;       // points from a to b
+    float penetration;
+    float restitution;
+    float friction;
+} Contact;
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{43. Classify Contact by Normal Velocity}
+\addcontentsline{toc}{subsection}{43. Classify Contact by Normal Velocity}
+
+\begin{lstlisting}
+ContactType classifyContact(Contact *c) {
+    Vec3 ra = sub3(c->point, c->a->position);
+    Vec3 rb = sub3(c->point, c->b->position);
+
+    Vec3 va = add3(c->a->linearVelocity, cross3(c->a->angularVelocity, ra));
+    Vec3 vb = add3(c->b->linearVelocity, cross3(c->b->angularVelocity, rb));
+    float vn = dot3(sub3(vb, va), c->normal);
+
+    if (vn < -COLLIDING_EPSILON) return CONTACT_COLLIDING;
+    if (absf(vn) <= RESTING_EPSILON) return CONTACT_RESTING;
+    return CONTACT_SEPARATING;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{44. Single-Contact Normal Impulse}
+\addcontentsline{toc}{subsection}{44. Single-Contact Normal Impulse}
+
+\begin{lstlisting}
+void resolveContactImpulse(Contact *c) {
+    RigidBody *A = c->a;
+    RigidBody *B = c->b;
+
+    Vec3 ra = sub3(c->point, A->position);
+    Vec3 rb = sub3(c->point, B->position);
+
+    Vec3 va = add3(A->linearVelocity, cross3(A->angularVelocity, ra));
+    Vec3 vb = add3(B->linearVelocity, cross3(B->angularVelocity, rb));
+    Vec3 rel = sub3(vb, va);
+
+    float vn = dot3(rel, c->normal);
+    if (vn > 0.0f) return;
+
+    Vec3 raCrossN = cross3(ra, c->normal);
+    Vec3 rbCrossN = cross3(rb, c->normal);
+
+    float denom = A->inverseMass + B->inverseMass;
+    denom += dot3(cross3(mat3Vec(A->worldInvInertia, raCrossN), ra), c->normal);
+    denom += dot3(cross3(mat3Vec(B->worldInvInertia, rbCrossN), rb), c->normal);
+
+    float e = minf(A->restitution, B->restitution);
+    float j = -(1.0f + e) * vn / denom;
+    if (j < 0.0f) j = 0.0f;
+
+    Vec3 impulse = scale3(c->normal, j);
+    applyImpulse(A, scale3(impulse, -1.0f), ra);
+    applyImpulse(B, impulse, rb);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{45. Tangential Friction Impulse}
+\addcontentsline{toc}{subsection}{45. Tangential Friction Impulse}
+
+\begin{lstlisting}
+void resolveFrictionImpulse(Contact *c, float normalImpulse) {
+    RigidBody *A = c->a;
+    RigidBody *B = c->b;
+    Vec3 ra = sub3(c->point, A->position);
+    Vec3 rb = sub3(c->point, B->position);
+
+    Vec3 va = add3(A->linearVelocity, cross3(A->angularVelocity, ra));
+    Vec3 vb = add3(B->linearVelocity, cross3(B->angularVelocity, rb));
+    Vec3 rel = sub3(vb, va);
+
+    Vec3 tangent = sub3(rel, scale3(c->normal, dot3(rel, c->normal)));
+    if (length3(tangent) < 1e-6f) return;
+    tangent = normalize3(tangent);
+
+    Vec3 raCrossT = cross3(ra, tangent);
+    Vec3 rbCrossT = cross3(rb, tangent);
+    float denom = A->inverseMass + B->inverseMass;
+    denom += dot3(cross3(mat3Vec(A->worldInvInertia, raCrossT), ra), tangent);
+    denom += dot3(cross3(mat3Vec(B->worldInvInertia, rbCrossT), rb), tangent);
+
+    float jt = -dot3(rel, tangent) / denom;
+    float mu = sqrtf(A->friction * B->friction);
+    jt = clampf(jt, -mu * normalImpulse, mu * normalImpulse);
+
+    Vec3 impulse = scale3(tangent, jt);
+    applyImpulse(A, scale3(impulse, -1.0f), ra);
+    applyImpulse(B, impulse, rb);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{46. Sequential Impulse Solver for Multiple Contacts}
+\addcontentsline{toc}{subsection}{46. Sequential Impulse Solver for Multiple Contacts}
+
+\begin{lstlisting}
+void solveContactsSequential(Contact *contacts, int count, int iterations) {
+    initializeContactAccumulatedImpulses(contacts, count);
+
+    for (int iter = 0; iter < iterations; ++iter) {
+        for (int i = 0; i < count; ++i) {
+            Contact *c = &contacts[i];
+            float oldImpulse = c->accumulatedNormalImpulse;
+            float delta = computeNormalImpulseDelta(c);
+
+            c->accumulatedNormalImpulse = maxf(oldImpulse + delta, 0.0f);
+            delta = c->accumulatedNormalImpulse - oldImpulse;
+
+            Vec3 impulse = scale3(c->normal, delta);
+            applyImpulse(c->a, scale3(impulse, -1.0f), sub3(c->point, c->a->position));
+            applyImpulse(c->b, impulse, sub3(c->point, c->b->position));
+
+            solveFrictionForContact(c);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{47. Resting Contact as Linear Complementarity Problem}
+\addcontentsline{toc}{subsection}{47. Resting Contact as Linear Complementarity Problem}
+
+\begin{lstlisting}
+void buildContactLCP(Contact *contacts, int count, Matrix *A, Vector *b) {
+    for (int i = 0; i < count; ++i) {
+        Contact *ci = &contacts[i];
+        b->data[i] = computeNormalAccelerationWithoutContactForce(ci);
+
+        for (int j = 0; j < count; ++j) {
+            Contact *cj = &contacts[j];
+            A->data[i][j] = normalAccelerationAtContactDueToUnitForce(ci, cj);
+        }
+    }
+}
+
+Vector solveRestingContactForces(Contact *contacts, int count) {
+    Matrix A;
+    Vector b;
+    buildContactLCP(contacts, count, &A, &b);
+
+    // Find f >= 0, a = A f + b >= 0, and f_i * a_i = 0.
+    return solveLCP_LemkeOrProjectedGaussSeidel(&A, &b);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{48. Velocity-Based Constraint Row}
+\addcontentsline{toc}{subsection}{48. Velocity-Based Constraint Row}
+
+\begin{lstlisting}
+typedef struct ConstraintRow {
+    RigidBody *a;
+    RigidBody *b;
+    Vec3 jaLinear;
+    Vec3 jaAngular;
+    Vec3 jbLinear;
+    Vec3 jbAngular;
+    float bias;
+    float lowerLimit;
+    float upperLimit;
+    float accumulatedImpulse;
+} ConstraintRow;
+
+float effectiveMass(ConstraintRow *r) {
+    float k = 0.0f;
+    k += r->a->inverseMass * dot3(r->jaLinear, r->jaLinear);
+    k += dot3(r->jaAngular, mat3Vec(r->a->worldInvInertia, r->jaAngular));
+    if (r->b) {
+        k += r->b->inverseMass * dot3(r->jbLinear, r->jbLinear);
+        k += dot3(r->jbAngular, mat3Vec(r->b->worldInvInertia, r->jbAngular));
+    }
+    return (k > 0.0f) ? 1.0f / k : 0.0f;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{49. Projected Gauss-Seidel Constraint Solver}
+\addcontentsline{toc}{subsection}{49. Projected Gauss-Seidel Constraint Solver}
+
+\begin{lstlisting}
+void solveConstraintRows(ConstraintRow *rows, int rowCount, int iterations) {
+    for (int iter = 0; iter < iterations; ++iter) {
+        for (int i = 0; i < rowCount; ++i) {
+            ConstraintRow *r = &rows[i];
+            float jv = dotConstraintVelocity(r);
+            float lambda = -(jv + r->bias) * effectiveMass(r);
+
+            float old = r->accumulatedImpulse;
+            r->accumulatedImpulse = clampf(old + lambda, r->lowerLimit, r->upperLimit);
+            lambda = r->accumulatedImpulse - old;
+
+            applyConstraintImpulse(r, lambda);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{50. Baumgarte-Style Position Bias}
+\addcontentsline{toc}{subsection}{50. Baumgarte-Style Position Bias}
+
+\begin{lstlisting}
+float computePositionBias(float penetration, float allowedPenetration,
+                          float beta, float dt) {
+    float error = maxf(0.0f, penetration - allowedPenetration);
+    return beta * error / dt;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part VI -- Linear Algebra, Quaternions, and Numerical Methods}
+\addcontentsline{toc}{section}{Part VI -- Linear Algebra, Quaternions, and Numerical Methods}
+
+\Needspace{5\baselineskip}
+\subsection*{51. Gaussian Elimination with Partial Pivoting}
+\addcontentsline{toc}{subsection}{51. Gaussian Elimination with Partial Pivoting}
+
+\begin{lstlisting}
+bool gaussianElimination(Matrix *A, Vector *b, Vector *x) {
+    int n = A->rows;
+
+    for (int k = 0; k < n; ++k) {
+        int pivot = k;
+        float best = absf(A->data[k][k]);
+        for (int i = k + 1; i < n; ++i) {
+            float candidate = absf(A->data[i][k]);
+            if (candidate > best) { best = candidate; pivot = i; }
+        }
+        if (best == 0.0f) return false;
+
+        swapRows(A, k, pivot);
+        swapVectorEntries(b, k, pivot);
+
+        for (int i = k + 1; i < n; ++i) {
+            float factor = A->data[i][k] / A->data[k][k];
+            A->data[i][k] = 0.0f;
+            for (int j = k + 1; j < n; ++j) {
+                A->data[i][j] -= factor * A->data[k][j];
+            }
+            b->data[i] -= factor * b->data[k];
+        }
+    }
+
+    for (int i = n - 1; i >= 0; --i) {
+        float sum = b->data[i];
+        for (int j = i + 1; j < n; ++j) sum -= A->data[i][j] * x->data[j];
+        x->data[i] = sum / A->data[i][i];
+    }
+    return true;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{52. LU Decomposition without Pivoting}
+\addcontentsline{toc}{subsection}{52. LU Decomposition without Pivoting}
+
+\begin{lstlisting}
+bool luDecompose(Matrix *A, Matrix *L, Matrix *U) {
+    int n = A->rows;
+    matrixZero(L); matrixZero(U);
+
+    for (int i = 0; i < n; ++i) L->data[i][i] = 1.0f;
+
+    for (int j = 0; j < n; ++j) {
+        for (int i = 0; i <= j; ++i) {
+            float sum = 0.0f;
+            for (int k = 0; k < i; ++k) sum += L->data[i][k] * U->data[k][j];
+            U->data[i][j] = A->data[i][j] - sum;
+        }
+        if (U->data[j][j] == 0.0f) return false;
+        for (int i = j + 1; i < n; ++i) {
+            float sum = 0.0f;
+            for (int k = 0; k < j; ++k) sum += L->data[i][k] * U->data[k][j];
+            L->data[i][j] = (A->data[i][j] - sum) / U->data[j][j];
+        }
+    }
+    return true;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{53. Gauss-Seidel Iteration}
+\addcontentsline{toc}{subsection}{53. Gauss-Seidel Iteration}
+
+\begin{lstlisting}
+void gaussSeidel(Matrix *A, Vector *b, Vector *x, int iterations) {
+    int n = A->rows;
+    for (int iter = 0; iter < iterations; ++iter) {
+        for (int i = 0; i < n; ++i) {
+            float sum = b->data[i];
+            for (int j = 0; j < n; ++j) {
+                if (j != i) sum -= A->data[i][j] * x->data[j];
+            }
+            x->data[i] = sum / A->data[i][i];
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{54. Gram-Schmidt Orthonormalization}
+\addcontentsline{toc}{subsection}{54. Gram-Schmidt Orthonormalization}
+
+\begin{lstlisting}
+int gramSchmidt(Vec3 *v, int count, Vec3 *basis) {
+    int out = 0;
+
+    for (int i = 0; i < count; ++i) {
+        Vec3 w = v[i];
+        for (int j = 0; j < out; ++j) {
+            w = sub3(w, scale3(basis[j], dot3(w, basis[j])));
+        }
+        float len = length3(w);
+        if (len > 1e-6f) {
+            basis[out++] = scale3(w, 1.0f / len);
+        }
+    }
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{55. Triangle Barycentric Coordinates}
+\addcontentsline{toc}{subsection}{55. Triangle Barycentric Coordinates}
+
+\begin{lstlisting}
+Vec3 barycentricTriangle(Vec3 p, Vec3 a, Vec3 b, Vec3 c) {
+    Vec3 v0 = sub3(b, a);
+    Vec3 v1 = sub3(c, a);
+    Vec3 v2 = sub3(p, a);
+
+    float d00 = dot3(v0, v0);
+    float d01 = dot3(v0, v1);
+    float d11 = dot3(v1, v1);
+    float d20 = dot3(v2, v0);
+    float d21 = dot3(v2, v1);
+    float denom = d00 * d11 - d01 * d01;
+
+    float v = (d11 * d20 - d01 * d21) / denom;
+    float w = (d00 * d21 - d01 * d20) / denom;
+    float u = 1.0f - v - w;
+    return (Vec3){u, v, w};
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{56. Quaternion From Axis-Angle}
+\addcontentsline{toc}{subsection}{56. Quaternion From Axis-Angle}
+
+\begin{lstlisting}
+Quat quatFromAxisAngle(Vec3 axis, float angle) {
+    Vec3 n = normalize3(axis);
+    float half = 0.5f * angle;
+    float s = sinf(half);
+    Quat q = { cosf(half), n.x * s, n.y * s, n.z * s };
+    return q;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{57. Spherical Linear Interpolation}
+\addcontentsline{toc}{subsection}{57. Spherical Linear Interpolation}
+
+\begin{lstlisting}
+Quat slerp(Quat q0, Quat q1, float t) {
+    float cosTheta = quatDot(q0, q1);
+    if (cosTheta < 0.0f) {
+        q1 = quatNeg(q1);
+        cosTheta = -cosTheta;
+    }
+
+    if (cosTheta > 0.9995f) {
+        return quatNormalize(quatAdd(quatScale(q0, 1.0f - t), quatScale(q1, t)));
+    }
+
+    float theta = acosf(cosTheta);
+    float sinTheta = sinf(theta);
+    float a = sinf((1.0f - t) * theta) / sinTheta;
+    float b = sinf(t * theta) / sinTheta;
+    return quatAdd(quatScale(q0, a), quatScale(q1, b));
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{58. Explicit Euler ODE Solver}
+\addcontentsline{toc}{subsection}{58. Explicit Euler ODE Solver}
+
+\begin{lstlisting}
+void eulerStep(State *x, float t, float dt, DerivativeFunction f) {
+    State dx = f(*x, t);
+    *x = stateAdd(*x, stateScale(dx, dt));
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{59. Implicit Euler Fixed-Point Iteration}
+\addcontentsline{toc}{subsection}{59. Implicit Euler Fixed-Point Iteration}
+
+\begin{lstlisting}
+void implicitEulerStep(State *x, float t, float dt, DerivativeFunction f, int iterations) {
+    State old = *x;
+    State guess = *x;
+
+    for (int k = 0; k < iterations; ++k) {
+        State dx = f(guess, t + dt);
+        guess = stateAdd(old, stateScale(dx, dt));
+    }
+
+    *x = guess;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{60. Runge-Kutta Fourth Order}
+\addcontentsline{toc}{subsection}{60. Runge-Kutta Fourth Order}
+
+\begin{lstlisting}
+void rk4Step(State *x, float t, float dt, DerivativeFunction f) {
+    State k1 = f(*x, t);
+    State k2 = f(stateAdd(*x, stateScale(k1, 0.5f * dt)), t + 0.5f * dt);
+    State k3 = f(stateAdd(*x, stateScale(k2, 0.5f * dt)), t + 0.5f * dt);
+    State k4 = f(stateAdd(*x, stateScale(k3, dt)), t + dt);
+
+    State sum = stateAdd(k1, stateScale(k2, 2.0f));
+    sum = stateAdd(sum, stateScale(k3, 2.0f));
+    sum = stateAdd(sum, k4);
+    *x = stateAdd(*x, stateScale(sum, dt / 6.0f));
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{61. Standard Verlet Integration}
+\addcontentsline{toc}{subsection}{61. Standard Verlet Integration}
+
+\begin{lstlisting}
+void verletStep(Vec3 *xPrev, Vec3 *x, Vec3 acceleration, float dt) {
+    Vec3 next = add3(sub3(scale3(*x, 2.0f), *xPrev), scale3(acceleration, dt * dt));
+    *xPrev = *x;
+    *x = next;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{62. Velocity Verlet Integration}
+\addcontentsline{toc}{subsection}{62. Velocity Verlet Integration}
+
+\begin{lstlisting}
+void velocityVerletStep(Vec3 *x, Vec3 *v, float dt, AccelerationFunction accel) {
+    Vec3 a0 = accel(*x, *v);
+    *x = add3(add3(*x, scale3(*v, dt)), scale3(a0, 0.5f * dt * dt));
+    Vec3 a1 = accel(*x, *v);
+    *v = add3(*v, scale3(add3(a0, a1), 0.5f * dt));
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{63. Leapfrog Integration}
+\addcontentsline{toc}{subsection}{63. Leapfrog Integration}
+
+\begin{lstlisting}
+void leapfrogStep(Vec3 *x, Vec3 *vHalf, float dt, AccelerationFunction accel) {
+    Vec3 a = accel(*x, *vHalf);
+    *vHalf = add3(*vHalf, scale3(a, dt));
+    *x = add3(*x, scale3(*vHalf, dt));
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{64. Predictor-Corrector Skeleton}
+\addcontentsline{toc}{subsection}{64. Predictor-Corrector Skeleton}
+
+\begin{lstlisting}
+void predictorCorrectorStep(StateHistory *hist, float t, float dt,
+                            DerivativeFunction f) {
+    State predicted = adamsBashforthPredict(hist, dt);
+    State derivativeAtPredicted = f(predicted, t + dt);
+    State corrected = adamsMoultonCorrect(hist, derivativeAtPredicted, dt);
+    historyPush(hist, corrected, derivativeAtPredicted);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{65. Richardson Extrapolation Table}
+\addcontentsline{toc}{subsection}{65. Richardson Extrapolation Table}
+
+\begin{lstlisting}
+float richardsonExtrapolate(float estimate[MAX_LEVELS][MAX_LEVELS], int level, int order) {
+    for (int k = 1; k <= level; ++k) {
+        float factor = powf(2.0f, order * k);
+        estimate[level][k] = (factor * estimate[level][k - 1] - estimate[level - 1][k - 1]) / (factor - 1.0f);
+    }
+    return estimate[level][level];
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{66. Modified Midpoint Method}
+\addcontentsline{toc}{subsection}{66. Modified Midpoint Method}
+
+\begin{lstlisting}
+State modifiedMidpoint(State x0, float t, float H, int n, DerivativeFunction f) {
+    float h = H / (float)n;
+    State z0 = x0;
+    State z1 = stateAdd(z0, stateScale(f(z0, t), h));
+
+    for (int m = 1; m < n; ++m) {
+        State dz = f(z1, t + m * h);
+        State z2 = stateAdd(z0, stateScale(dz, 2.0f * h));
+        z0 = z1;
+        z1 = z2;
+    }
+
+    State endDerivative = f(z1, t + H);
+    return stateScale(stateAdd(stateAdd(z0, z1), stateScale(endDerivative, h)), 0.5f);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{67. Bulirsch-Stoer Step Skeleton}
+\addcontentsline{toc}{subsection}{67. Bulirsch-Stoer Step Skeleton}
+
+\begin{lstlisting}
+State bulirschStoerStep(State x, float t, float H, DerivativeFunction f, float tolerance) {
+    State table[MAX_LEVELS][MAX_LEVELS];
+    int sequence[MAX_LEVELS] = {2, 4, 6, 8, 10, 12, 14, 16};
+
+    for (int k = 0; k < MAX_LEVELS; ++k) {
+        table[k][0] = modifiedMidpoint(x, t, H, sequence[k], f);
+
+        for (int j = 1; j <= k; ++j) {
+            table[k][j] = rationalOrPolynomialExtrapolate(table, k, j, sequence);
+        }
+
+        if (k > 0 && stateError(table[k][k], table[k-1][k-1]) < tolerance) {
+            return table[k][k];
+        }
+    }
+    return table[MAX_LEVELS-1][MAX_LEVELS-1];
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part VII -- Mathematical Programming and Complementarity}
+\addcontentsline{toc}{section}{Part VII -- Mathematical Programming and Complementarity}
+
+\Needspace{5\baselineskip}
+\subsection*{68. 2D Linear Programming by Pairwise Intersections}
+\addcontentsline{toc}{subsection}{68. 2D Linear Programming by Pairwise Intersections}
+
+\begin{lstlisting}
+bool solveLinearProgram2D(HalfPlane *constraint, int count, Vec2 objective, Vec2 *best) {
+    bool found = false;
+    float bestValue = -FLT_MAX;
+
+    for (int i = 0; i < count; ++i)
+    for (int j = i + 1; j < count; ++j) {
+        Vec2 x;
+        if (!intersectBoundaryLines(constraint[i], constraint[j], &x)) continue;
+        if (!satisfiesAllHalfPlanes(x, constraint, count)) continue;
+
+        float value = dot2(objective, x);
+        if (!found || value > bestValue) {
+            found = true;
+            bestValue = value;
+            *best = x;
+        }
+    }
+
+    return found;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{69. Simplex-Style Dictionary Pivot}
+\addcontentsline{toc}{subsection}{69. Simplex-Style Dictionary Pivot}
+
+\begin{lstlisting}
+bool simplex(Dictionary *D) {
+    while (true) {
+        int entering = choosePositiveReducedCost(D);
+        if (entering < 0) return true;
+
+        int leaving = chooseMinimumRatio(D, entering);
+        if (leaving < 0) return false; // unbounded
+
+        pivotDictionary(D, leaving, entering);
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{70. Lemke Algorithm Skeleton for LCP}
+\addcontentsline{toc}{subsection}{70. Lemke Algorithm Skeleton for LCP}
+
+Find \texttt{z >= 0}, \texttt{w = M z + q >= 0}, and \texttt{z\_i w\_i = 0}.
+
+\begin{lstlisting}
+bool lemkeLCP(Matrix *M, Vector *q, Vector *z) {
+    if (allNonnegative(q)) {
+        vectorZero(z);
+        return true;
+    }
+
+    Dictionary D = buildInitialLemkeDictionary(M, q);
+    int leaving = rowWithMostNegativeConstant(&D);
+    int entering = ARTIFICIAL_VARIABLE;
+    pivotDictionary(&D, leaving, entering);
+
+    entering = complementOf(D.basic[leaving]);
+
+    for (int iter = 0; iter < MAX_LEMKE_ITERS; ++iter) {
+        leaving = minimumRatioLeavingRow(&D, entering);
+        if (leaving < 0) return false;
+
+        int leavingVar = D.basic[leaving];
+        pivotDictionary(&D, leaving, entering);
+
+        if (leavingVar == ARTIFICIAL_VARIABLE) {
+            extractLcpSolution(&D, z);
+            return true;
+        }
+
+        entering = complementOf(leavingVar);
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{71. Projected Gauss-Seidel for LCP}
+\addcontentsline{toc}{subsection}{71. Projected Gauss-Seidel for LCP}
+
+\begin{lstlisting}
+void projectedGaussSeidelLCP(Matrix *M, Vector *q, Vector *z, int iterations) {
+    int n = q->count;
+    vectorZero(z);
+
+    for (int iter = 0; iter < iterations; ++iter) {
+        for (int i = 0; i < n; ++i) {
+            float sum = q->data[i];
+            for (int j = 0; j < n; ++j) {
+                if (j != i) sum += M->data[i][j] * z->data[j];
+            }
+            float candidate = -sum / M->data[i][i];
+            z->data[i] = maxf(0.0f, candidate);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{72. Active-Set Convex Quadratic Programming Skeleton}
+\addcontentsline{toc}{subsection}{72. Active-Set Convex Quadratic Programming Skeleton}
+
+\begin{lstlisting}
+bool solveConvexQP(QPProblem *qp, Vector *x) {
+    ActiveSet active = initialFeasibleActiveSet(qp, x);
+
+    for (int iter = 0; iter < MAX_QP_ITERS; ++iter) {
+        KKTSystem kkt = buildKKT(qp, &active, *x);
+        Vector step, lambda;
+        if (!solveKKT(&kkt, &step, &lambda)) return false;
+
+        if (norm(step) < QP_EPSILON) {
+            int bad = mostNegativeMultiplier(lambda, &active);
+            if (bad < 0) return true;
+            activeSetRemove(&active, bad);
+            continue;
+        }
+
+        float alpha = largestFeasibleStep(qp, *x, step, &active);
+        *x = vectorAdd(*x, vectorScale(step, alpha));
+        addNewlyActiveConstraints(qp, *x, &active);
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{73. Distance Between Convex Sets as Constrained Minimization}
+\addcontentsline{toc}{subsection}{73. Distance Between Convex Sets as Constrained Minimization}
+
+\begin{lstlisting}
+float convexDistanceByQP(ConvexShape *a, ConvexShape *b, Vec3 *pa, Vec3 *pb) {
+    QPProblem qp = buildClosestPointQP(a, b);
+    Vector x = initialBarycentricGuess(a, b);
+
+    if (!solveConvexQP(&qp, &x)) return FLT_MAX;
+
+    *pa = reconstructPointOnShape(a, x.aWeights);
+    *pb = reconstructPointOnShape(b, x.bWeights);
+    return length3(sub3(*pa, *pb));
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part VIII -- Implementation Checklist}
+\addcontentsline{toc}{section}{Part VIII -- Implementation Checklist}
+
+\Needspace{5\baselineskip}
+\subsection*{Algorithm Families Captured}
+\addcontentsline{toc}{subsection}{Algorithm Families Captured}
+
+\begin{itemize}
+\item \textbf{Mass and inertia:} center of mass, polyhedron mass properties, inertia tensor shifting.
+\item \textbf{Rigid-body dynamics:} force accumulation, quaternion orientation update, unconstrained motion.
+\item \textbf{Deformable bodies:} spring networks, B-spline/NURBS curves and surfaces, volume FFD, implicit deformation, level set extraction.
+\item \textbf{Fluid simulation:} diffusion, advection, source/sink update, projection, vorticity confinement, 2D step orchestration.
+\item \textbf{Collision detection:} bounding spheres, AABBs, sweep-and-prune, SAT for convex bodies and OBBs, continuous SAT, GJK.
+\item \textbf{Collision response:} normal impulses, friction impulses, multi-contact iteration, LCP resting contact, velocity-based constraints.
+\item \textbf{Numerical methods:} Gaussian elimination, LU, Gauss-Seidel, RK4, Verlet variants, predictor-corrector, extrapolation, Bulirsch-Stoer.
+\item \textbf{Optimization:} linear programming, simplex pivoting, Lemke LCP, projected Gauss-Seidel LCP, active-set QP.
+\end{itemize}
+
+\Needspace{5\baselineskip}
+\subsection*{Practical C/C++ Porting Notes}
+\addcontentsline{toc}{subsection}{Practical C/C++ Porting Notes}
+
+\begin{enumerate}
+\item Treat every matrix, quaternion, and vector routine as a tested primitive before implementing the physics algorithms.
+\item Use robust tolerances for geometric predicates; exact comparison to zero is unsafe in collision detection.
+\item Keep collision broad phase, narrow phase, and response separated. This makes profiling and debugging tractable.
+\item Prefer stable fixed time steps for gameplay physics. Use interpolation for rendering rather than variable-step dynamics.
+\item Validate mass properties using simple primitives before using arbitrary triangle meshes.
+\item Build diagnostic visualizers for AABBs, contact normals, impulses, constraint rows, and centers of mass.
+\item Keep a reference implementation of RK4 or velocity Verlet for comparing custom integrators.
+\item For real-time engines, use iterative solvers for large contact sets and reserve exact LCP-style solvers for small or diagnostic cases.
+\end{enumerate}
+
+\clearpage
+\section*{Document Control Notes}
+\phantomsection
+\addcontentsline{toc}{section}{Document Control Notes}
+\begin{itemize}
+\item The algorithms are independent C-like reconstructions intended for study, architecture review, physics-engine design, and implementation planning.
+\item The notation normalizes mechanics, collision detection, numerical integration, deformable simulation, fluid simulation, and mathematical-programming routines into a consistent C/C++-oriented style.
+\item For production use, each pseudocode routine should be paired with unit tests, conservation-law checks, deterministic regression scenes, broad-phase/narrow-phase benchmarks, numerical-stability analysis, and debug visualizations.
+\end{itemize}
+\end{document}

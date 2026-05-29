@@ -1,0 +1,3652 @@
+
+\documentclass[10pt,letterpaper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.72in,headheight=14pt]{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{ragged2e}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{microtype}
+\usepackage{listings}
+\usepackage{needspace}
+\usepackage{tocloft}
+\definecolor{HouseBlue}{HTML}{1F4E79}
+\definecolor{HouseGray}{HTML}{4F5B62}
+\definecolor{CodeBack}{HTML}{F7F8FA}
+\definecolor{CodeFrame}{HTML}{C9D1D9}
+\definecolor{CodeKeyword}{HTML}{1F4E79}
+\definecolor{CodeComment}{HTML}{5F6F7A}
+\definecolor{CodeString}{HTML}{8A3B12}
+\hypersetup{colorlinks=true,linkcolor=HouseBlue,urlcolor=HouseBlue,citecolor=HouseBlue,pdfauthor={ChatGPT},pdftitle={Engineering a Compiler: Algorithms as C-like Pseudocode}}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Engineering a Compiler --- Algorithms as C-like Pseudocode}
+\rhead{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlist[itemize]{leftmargin=1.25em,itemsep=2pt,topsep=2pt}
+\setlist[enumerate]{leftmargin=1.5em,itemsep=2pt,topsep=2pt}
+\titleformat{\section}{\Large\bfseries\color{HouseBlue}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{HouseGray}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{HouseGray}}{\thesubsubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{2.2ex plus .4ex minus .2ex}{1.0ex}
+\titlespacing*{\subsection}{0pt}{1.8ex plus .3ex minus .2ex}{0.7ex}
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\lstdefinelanguage{PseudoC}{
+  morekeywords={function,return,if,else,for,while,do,case,switch,break,continue,struct,true,false,NULL,enum,bool,int,char,const,void,static,foreach,in,new,delete},
+  sensitive=true,
+  morecomment=[l]{//},
+  morestring=[b]",
+}
+\lstset{
+  language=PseudoC,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\bfseries\color{CodeKeyword},
+  commentstyle=\itshape\color{CodeComment},
+  stringstyle=\color{CodeString},
+  backgroundcolor=\color{CodeBack},
+  frame=single,
+  rulecolor=\color{CodeFrame},
+  framerule=0.35pt,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  tabsize=4,
+  xleftmargin=0.6em,
+  xrightmargin=0.3em,
+  aboveskip=0.7em,
+  belowskip=0.7em,
+}
+\newcommand{\handouttitle}{Engineering a Compiler: Algorithms as C-like Pseudocode}
+\begin{document}
+\pagenumbering{gobble}
+\begin{titlepage}
+\centering
+\vspace*{1.0in}
+{\Huge\bfseries\color{HouseBlue}\handouttitle\par}
+\vspace{0.25in}
+{\Large Systematic Algorithm Extraction and Reconstruction\par}
+\vspace{0.35in}
+{\large Source analyzed: Keith D. Cooper and Linda Torczon, \emph{Engineering a Compiler}, Third Edition\par}
+\vfill
+\begin{minipage}{0.86\textwidth}
+\small
+This handout rewrites the algorithmic content from the uploaded compiler-construction text as independent C-like pseudocode. It is intended as an implementation-oriented study guide for compiler engineers: each algorithm is normalized around explicit data structures, worklists, fixed-point loops, pass boundaries, and compiler IR contracts. It is not a source-code clone and does not reproduce the book's algorithm boxes verbatim.
+\end{minipage}
+\vfill
+{\large Generated \today\par}
+\end{titlepage}
+\clearpage
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\clearpage
+\section*{Engineering a Compiler: Algorithms as C-like Pseudocode}
+\addcontentsline{toc}{section}{Engineering a Compiler: Algorithms as C-like Pseudocode}
+
+\textbf{Source analyzed:} Keith D. Cooper and Linda Torczon, \emph{Engineering a Compiler}, Third Edition, uploaded PDF.
+
+\Needspace{5\baselineskip}
+\subsection*{Scope and reconstruction rules}
+\addcontentsline{toc}{subsection}{Scope and reconstruction rules}
+
+This document extracts the algorithmic content from the uploaded compiler-construction text and rewrites it as \textbf{independent C-like pseudocode}. The book presents many algorithms as mathematical pseudocode, diagrams, code shapes, and compiler-pass sketches rather than as one continuous source program. This handout therefore treats ``source code'' broadly: scanner/parser skeletons, table-construction algorithms, data-flow solvers, SSA algorithms, optimization passes, instruction-selection routines, scheduling procedures, register allocators, runtime optimization procedures, and core data-structure algorithms.
+
+The output is \textbf{not a source-code clone} and does not reproduce the book's algorithm boxes verbatim. It preserves the algorithmic intent while standardizing names, data structures, and control flow into a C-like style.
+
+\Needspace{5\baselineskip}
+\subsection*{High-level algorithm inventory}
+\addcontentsline{toc}{subsection}{High-level algorithm inventory}
+
+\begin{longtable}{L{0.27\textwidth}L{0.66\textwidth}}
+\toprule
+Compiler area & Algorithms reconstructed \\
+\midrule\endfirsthead
+\toprule
+Compiler area & Algorithms reconstructed \\
+\midrule\endhead
+Compiler pipeline & Front-end, optimizer, and back-end pass orchestration \\
+Scanning & DFA simulation, Thompson RE-to-NFA construction, subset construction, DFA minimization, maximal-munch scanner, direct-coded scanner, buffering, rollback, transition-table compression, DFA-to-RE, Brzozowski minimization \\
+Parsing & Top-down parsing, indirect left-recursion removal, FIRST/FOLLOW computation, recursive descent, LL(1) parser, LL(1) table generation, shift-reduce parser, LR(1) skeleton, LR(1) closure/goto, canonical collection, LR(1) table filling, conflict handling, table reduction \\
+IR and CFGs & AST construction, three-address-code emission, CFG construction from linear code, dependence graph building, symbol-table lookup and insertion, SSA naming concepts \\
+Syntax-driven translation & Parser action support, expression translation, control-flow translation, lexical-scope resolution, inheritance lookup, type inference, storage layout, array address computation, alignment padding \\
+Runtime support & Activation record setup, access links, global display, object layout dispatch, procedure linkage, first-fit heap allocation, mark phase of garbage collection \\
+Code shape & Expression treewalk generation, Sethi-Ullman-style register-demand reduction, boolean/control-flow code generation, loop schemas, case dispatch by linear search, jump table, and binary search, string operations, call sequence generation \\
+Introductory optimization & Local value numbering, value-number algebraic simplification, tree-height balancing, superlocal value numbering, loop unrolling, live analysis, hot-path building, code layout, inline substitution heuristic, procedure placement \\
+Data-flow and SSA & Iterative dominance, live-variable analysis, generic data-flow framework, dominance-frontier computation, phi insertion, SSA renaming, out-of-SSA translation, sparse simple constant propagation, call-graph construction, interprocedural constant propagation, reducibility-aware dominance \\
+Scalar optimization & Useless-code elimination, useless-control-flow cleanup, lazy code motion, code hoisting, tail-call optimization, leaf-call optimization, parameter promotion, dominator-based value numbering, loop unswitching, sparse conditional constant propagation, strength reduction, test replacement \\
+Instruction selection & Peephole expand/simplify/match, tree-pattern tiling, all-tilings computation, low-cost dynamic-programming tiling, rule emission \\
+Scheduling & Dependence graph construction, latency annotation, priority computation, list scheduling, forward/backward scheduling, trace construction, context cloning, modulo/software pipelining \\
+Register allocation & Local allocation with live ranges, register renaming, interference construction, copy coalescing, spill-cost estimation, graph-coloring simplify/select, spill insertion, overlapping register classes \\
+Runtime optimization & Hot-trace compilation, trace linking, hot-method compilation, mixed-mode dispatch, on-stack replacement, code-cache management \\
+Supporting data structures & Ordered-list sets, bit-vector sets, sparse sets, hash tables with chaining, open addressing, flexible symbol tables \\
+\bottomrule
+\end{longtable}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section{Whole-Compiler Control Structure}
+
+\Needspace{5\baselineskip}
+\subsection*{1.1 Compile a translation unit}
+\addcontentsline{toc}{subsection}{1.1 Compile a translation unit}
+
+\begin{lstlisting}
+function COMPILE_TRANSLATION_UNIT(sourceFile, targetMachine, options):
+    input = OPEN_SOURCE(sourceFile)
+
+    tokens = SCAN_STREAM(input)
+    astOrParse = PARSE(tokens)
+    if astOrParse.hasSyntaxErrors:
+        REPORT_ERRORS(astOrParse.errors)
+        return FAILURE
+
+    ir = ELABORATE_AND_TRANSLATE(astOrParse)
+    if ir.hasSemanticErrors:
+        REPORT_ERRORS(ir.errors)
+        return FAILURE
+
+    if options.enableOptimization:
+        ir = RUN_OPTIMIZER_PIPELINE(ir, options)
+
+    code = RUN_BACKEND(ir, targetMachine, options)
+    objectFile = EMIT_OBJECT(code, targetMachine)
+    return objectFile
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{1.2 Optimizer pipeline driver}
+\addcontentsline{toc}{subsection}{1.2 Optimizer pipeline driver}
+
+\begin{lstlisting}
+function RUN_OPTIMIZER_PIPELINE(ir, options):
+    for pass in SELECT_OPTIMIZATION_PASSES(options):
+        if pass.requiresAnalysis:
+            facts = RUN_ANALYSIS(pass.analysis, ir)
+        else:
+            facts = NULL
+
+        if pass.isProfitable(ir, facts, options):
+            ir = pass.transform(ir, facts)
+            VERIFY_IR(ir)
+
+    return ir
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{1.3 Back-end pipeline driver}
+\addcontentsline{toc}{subsection}{1.3 Back-end pipeline driver}
+
+\begin{lstlisting}
+function RUN_BACKEND(ir, machine, options):
+    lowIR = LOWER_TO_MACHINE_ORIENTED_IR(ir, machine)
+    selected = INSTRUCTION_SELECT(lowIR, machine)
+
+    if options.scheduleBeforeAllocation:
+        selected = SCHEDULE_PROCEDURES(selected, machine)
+
+    allocated = REGISTER_ALLOCATE(selected, machine)
+
+    if options.scheduleAfterAllocation:
+        allocated = SCHEDULE_PROCEDURES(allocated, machine)
+
+    assembled = EMIT_ASSEMBLY_OR_MACHINE_CODE(allocated, machine)
+    return assembled
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section{Scanners and Finite Automata}
+
+\Needspace{5\baselineskip}
+\subsection*{2.1 DFA word recognizer}
+\addcontentsline{toc}{subsection}{2.1 DFA word recognizer}
+
+\begin{lstlisting}
+function RUN_DFA(dfa, input):
+    state = dfa.start
+
+    while input.hasNext():
+        c = input.next()
+        state = dfa.transition[state][c]
+        if state == dfa.error:
+            return REJECT
+
+    if dfa.isAccepting[state]:
+        return ACCEPT
+    return REJECT
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{2.2 Thompson construction: build NFA from regular expression}
+\addcontentsline{toc}{subsection}{2.2 Thompson construction: build NFA from regular expression}
+
+\begin{lstlisting}
+function THOMPSON(regex):
+    switch regex.kind:
+        case LITERAL:
+            start = NEW_STATE()
+            finish = NEW_STATE()
+            ADD_EDGE(start, regex.character, finish)
+            return NFA(start, finish)
+
+        case CONCAT:
+            left = THOMPSON(regex.left)
+            right = THOMPSON(regex.right)
+            ADD_EPSILON(left.finish, right.start)
+            return NFA(left.start, right.finish)
+
+        case ALTERNATE:
+            start = NEW_STATE()
+            finish = NEW_STATE()
+            left = THOMPSON(regex.left)
+            right = THOMPSON(regex.right)
+            ADD_EPSILON(start, left.start)
+            ADD_EPSILON(start, right.start)
+            ADD_EPSILON(left.finish, finish)
+            ADD_EPSILON(right.finish, finish)
+            return NFA(start, finish)
+
+        case KLEENE_STAR:
+            start = NEW_STATE()
+            finish = NEW_STATE()
+            inner = THOMPSON(regex.inner)
+            ADD_EPSILON(start, inner.start)
+            ADD_EPSILON(start, finish)
+            ADD_EPSILON(inner.finish, inner.start)
+            ADD_EPSILON(inner.finish, finish)
+            return NFA(start, finish)
+
+        case EMPTY_STRING:
+            start = NEW_STATE()
+            finish = NEW_STATE()
+            ADD_EPSILON(start, finish)
+            return NFA(start, finish)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{2.3 Epsilon closure}
+\addcontentsline{toc}{subsection}{2.3 Epsilon closure}
+
+\begin{lstlisting}
+function EPSILON_CLOSURE(states):
+    closure = COPY_SET(states)
+    stack = STACK_FROM(states)
+
+    while !stack.empty():
+        s = stack.pop()
+        for t in EPSILON_SUCCESSORS(s):
+            if !closure.contains(t):
+                closure.add(t)
+                stack.push(t)
+
+    return closure
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{2.4 Move on one character}
+\addcontentsline{toc}{subsection}{2.4 Move on one character}
+
+\begin{lstlisting}
+function MOVE(states, c):
+    result = EMPTY_SET()
+    for s in states:
+        for t in CHARACTER_SUCCESSORS(s, c):
+            result.add(t)
+    return result
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{2.5 Subset construction: NFA to DFA}
+\addcontentsline{toc}{subsection}{2.5 Subset construction: NFA to DFA}
+
+\begin{lstlisting}
+function SUBSET_CONSTRUCTION(nfa, alphabet):
+    startSet = EPSILON_CLOSURE({ nfa.start })
+    dfa = NEW_DFA()
+    startD = dfa.internState(startSet)
+    dfa.start = startD
+
+    worklist = QUEUE()
+    worklist.push(startSet)
+
+    while !worklist.empty():
+        currentSet = worklist.pop()
+        currentD = dfa.lookupState(currentSet)
+
+        for c in alphabet:
+            nextCore = MOVE(currentSet, c)
+            nextSet = EPSILON_CLOSURE(nextCore)
+            if nextSet.empty():
+                continue
+
+            if !dfa.hasState(nextSet):
+                nextD = dfa.internState(nextSet)
+                if nextSet.intersects(nfa.acceptingStates):
+                    dfa.markAccepting(nextD, CATEGORY_FOR(nextSet))
+                worklist.push(nextSet)
+            else:
+                nextD = dfa.lookupState(nextSet)
+
+            dfa.transition[currentD][c] = nextD
+
+    return dfa
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{2.6 Merge lexical categories without losing token identity}
+\addcontentsline{toc}{subsection}{2.6 Merge lexical categories without losing token identity}
+
+\begin{lstlisting}
+function BUILD_SCANNER_DFA(rules):
+    // Each rule has regex, tokenCategory, and precedence.
+    combined = NEW_NFA()
+    combined.start = NEW_STATE()
+
+    for rule in rules:
+        nfa = THOMPSON(rule.regex)
+        MARK_ACCEPT(nfa.finish, rule.tokenCategory, rule.precedence)
+        ADD_EPSILON(combined.start, nfa.start)
+        combined.absorb(nfa)
+
+    dfa = SUBSET_CONSTRUCTION(combined, GLOBAL_ALPHABET(rules))
+    for d in dfa.states:
+        if d.nfaSet contains multiple accepting NFA states:
+            d.tokenCategory = HIGHEST_PRECEDENCE_CATEGORY(d.nfaSet)
+
+    return MINIMIZE_DFA_BY_CATEGORY(dfa)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{2.7 Hopcroft-style DFA minimization}
+\addcontentsline{toc}{subsection}{2.7 Hopcroft-style DFA minimization}
+
+\begin{lstlisting}
+function MINIMIZE_DFA(dfa, alphabet):
+    partition = INITIAL_PARTITION_BY_ACCEPTANCE_AND_TOKEN(dfa)
+    worklist = COPY(partition)
+
+    while !worklist.empty():
+        splitter = worklist.removeOne()
+
+        for c in alphabet:
+            image = EMPTY_SET()
+            for state in dfa.states:
+                if dfa.transition[state][c] in splitter:
+                    image.add(state)
+
+            for block in partition.blocksIntersecting(image):
+                left = INTERSECT(block, image)
+                right = DIFFERENCE(block, left)
+                if right.empty():
+                    continue
+
+                partition.replace(block, left, right)
+
+                if worklist.contains(block):
+                    worklist.remove(block)
+                    worklist.add(left)
+                    worklist.add(right)
+                else:
+                    worklist.add(SMALLER(left, right))
+
+    return BUILD_DFA_FROM_PARTITION(dfa, partition)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{2.8 Table-driven scanner}
+\addcontentsline{toc}{subsection}{2.8 Table-driven scanner}
+
+\begin{lstlisting}
+function NEXT_TOKEN_TABLE_DRIVEN(scanner):
+    state = scanner.dfa.start
+    lexemeStart = scanner.input.position
+    stack.clear()
+    stack.push(BAD_STATE, lexemeStart)
+
+    while state != ERROR_STATE:
+        c = scanner.input.nextChar()
+        lexemeAppend(c)
+
+        if scanner.dfa.isAccepting[state]:
+            stack.clear()
+            stack.push(state, scanner.input.position)
+
+        col = scanner.charClass[c]
+        state = scanner.transition[state][col]
+
+    while !stack.empty():
+        state, pos = stack.pop()
+        if state == BAD_STATE:
+            break
+        scanner.input.rollbackTo(pos)
+        if scanner.dfa.isAccepting[state]:
+            lexeme = scanner.input.slice(lexemeStart, pos)
+            return TOKEN(scanner.tokenType[state], lexeme)
+
+    scanner.input.rollbackTo(lexemeStart + 1)
+    return INVALID_TOKEN(scanner.input.slice(lexemeStart, scanner.input.position))
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{2.9 Maximal-munch scanner with failed transition memoization}
+\addcontentsline{toc}{subsection}{2.9 Maximal-munch scanner with failed transition memoization}
+
+\begin{lstlisting}
+function NEXT_TOKEN_MAXIMAL_MUNCH(scanner):
+    state = scanner.dfa.start
+    start = scanner.input.position
+    stack.clear()
+    stack.push(BAD_STATE, start)
+
+    while state != ERROR_STATE:
+        pos = scanner.input.position
+        if scanner.failed[state][pos]:
+            state, rollbackPos = stack.pop()
+            scanner.input.rollbackTo(rollbackPos)
+            break
+
+        c = scanner.input.nextChar()
+
+        if scanner.dfa.isAccepting[state]:
+            stack.clear()
+            stack.push(state, pos)
+
+        state = scanner.transition[state][scanner.charClass[c]]
+
+    while !stack.empty():
+        if state != ERROR_STATE:
+            scanner.failed[state][scanner.input.position] = true
+
+        state, pos = stack.pop()
+        scanner.input.rollbackTo(pos)
+
+        if state == BAD_STATE:
+            return INVALID_TOKEN(scanner.input.slice(start, start + 1))
+
+        if scanner.dfa.isAccepting[state]:
+            return TOKEN(scanner.tokenType[state], scanner.input.slice(start, pos))
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{2.10 Direct-coded scanner generation}
+\addcontentsline{toc}{subsection}{2.10 Direct-coded scanner generation}
+
+\begin{lstlisting}
+function EMIT_DIRECT_CODED_SCANNER(dfa):
+    EMIT("goto state_%d;", dfa.start.id)
+
+    for state in dfa.states:
+        EMIT_LABEL("state_%d", state.id)
+        EMIT("c = nextChar();")
+        if dfa.isAccepting[state]:
+            EMIT("rememberAcceptingState(%d, inputPosition());", state.id)
+
+        groups = GROUP_OUTGOING_TRANSITIONS_BY_TARGET(state)
+        for group in groups:
+            EMIT("if (c in %s) goto state_%d;", group.characters, group.target.id)
+        EMIT("goto scanner_exit;")
+
+    EMIT_LABEL("scanner_exit")
+    EMIT("return rollbackToLastAcceptingStateOrError();")
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{2.11 Buffered input and rollback}
+\addcontentsline{toc}{subsection}{2.11 Buffered input and rollback}
+
+\begin{lstlisting}
+struct InputBuffer {
+    char buffer[2 * N]
+    int input
+    int fence
+}
+
+function INITIALIZE_BUFFER(b, file):
+    b.input = 0
+    b.fence = 0
+    FILL(file, b.buffer[0 .. N-1])
+
+function NEXT_CHAR(b, file):
+    c = b.buffer[b.input]
+    if c != EOF:
+        b.input = (b.input + 1) % (2 * N)
+        if b.input % N == 0:
+            FILL(file, b.buffer[b.input .. b.input + N - 1])
+            b.fence = (b.input + N) % (2 * N)
+    return c
+
+function ROLLBACK_CHAR(b):
+    if b.input == b.fence:
+        ERROR("rollback exceeded buffer history")
+    b.input = (b.input - 1 + 2 * N) % (2 * N)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{2.12 Transition-table column compression}
+\addcontentsline{toc}{subsection}{2.12 Transition-table column compression}
+
+\begin{lstlisting}
+function COMPRESS_DFA_COLUMNS(transition, alphabet):
+    classes = EMPTY_LIST()
+    classOfChar = MAP()
+
+    for c in alphabet:
+        found = false
+        for cls in classes:
+            if COLUMN_EQUALS(transition, c, cls.representative):
+                cls.members.add(c)
+                classOfChar[c] = cls.index
+                found = true
+                break
+        if !found:
+            cls = NEW_CLASS(c)
+            classes.add(cls)
+            classOfChar[c] = cls.index
+
+    compressed = NEW_TABLE(numStates(transition), classes.size())
+    for state in STATES(transition):
+        for cls in classes:
+            compressed[state][cls.index] = transition[state][cls.representative]
+
+    return compressed, classOfChar
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{2.13 DFA-to-regular-expression state elimination}
+\addcontentsline{toc}{subsection}{2.13 DFA-to-regular-expression state elimination}
+
+\begin{lstlisting}
+function DFA_TO_REGEX(dfa):
+    automaton = ADD_UNIQUE_START_AND_ACCEPT(dfa)
+
+    for q in automaton.states excluding {automaton.start, automaton.accept}:
+        for i in PREDECESSORS(q):
+            for j in SUCCESSORS(q):
+                throughQ = CONCAT(label(i, q), STAR(label(q, q)), label(q, j))
+                label(i, j) = ALTERNATE(label(i, j), throughQ)
+        REMOVE_STATE_AND_INCIDENT_EDGES(q)
+
+    return label(automaton.start, automaton.accept)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{2.14 Brzozowski-style minimization by reversal and determinization}
+\addcontentsline{toc}{subsection}{2.14 Brzozowski-style minimization by reversal and determinization}
+
+\begin{lstlisting}
+function BRZOZOWSKI_MINIMIZE(dfa, alphabet):
+    nfa1 = REVERSE_AUTOMATON(dfa)
+    dfa1 = SUBSET_CONSTRUCTION(nfa1, alphabet)
+    nfa2 = REVERSE_AUTOMATON(dfa1)
+    dfa2 = SUBSET_CONSTRUCTION(nfa2, alphabet)
+    return dfa2
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section{Parsers}
+
+\Needspace{5\baselineskip}
+\subsection*{3.1 General leftmost top-down parser with backtracking/oracle}
+\addcontentsline{toc}{subsection}{3.1 General leftmost top-down parser with backtracking/oracle}
+
+\begin{lstlisting}
+function PARSE_TOP_DOWN(grammar, tokens):
+    stack = STACK([grammar.startSymbol])
+    cursor = 0
+
+    while !stack.empty():
+        symbol = stack.pop()
+
+        if IS_TERMINAL(symbol):
+            if tokens[cursor].kind == symbol:
+                cursor++
+            else:
+                return FAILURE
+        else:
+            production = CHOOSE_PRODUCTION(symbol, tokens, cursor)
+            if production == NONE:
+                return FAILURE
+            PUSH_REVERSED(stack, production.rhs)
+
+    return cursor == tokens.length ? SUCCESS : FAILURE
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{3.2 Eliminate indirect and direct left recursion}
+\addcontentsline{toc}{subsection}{3.2 Eliminate indirect and direct left recursion}
+
+\begin{lstlisting}
+function REMOVE_LEFT_RECURSION(grammar):
+    nonterms = ORDER_NONTERMINALS(grammar)
+
+    for i = 0; i < nonterms.count; i++:
+        Ai = nonterms[i]
+
+        for j = 0; j < i; j++:
+            Aj = nonterms[j]
+            newRules = []
+            for rule in grammar.rulesFor(Ai):
+                if rule.rhs.startsWith(Aj):
+                    suffix = rule.rhs.withoutFirstSymbol()
+                    for beta in grammar.rhsListFor(Aj):
+                        newRules.add(PRODUCTION(Ai, beta + suffix))
+                else:
+                    newRules.add(rule)
+            grammar.replaceRules(Ai, newRules)
+
+        REMOVE_DIRECT_LEFT_RECURSION(grammar, Ai)
+
+    return grammar
+
+function REMOVE_DIRECT_LEFT_RECURSION(grammar, A):
+    recursive = []
+    nonrecursive = []
+
+    for rule in grammar.rulesFor(A):
+        if rule.rhs.startsWith(A):
+            recursive.add(rule.rhs.withoutFirstSymbol())
+        else:
+            nonrecursive.add(rule.rhs)
+
+    if recursive.empty():
+        return
+
+    Aprime = NEW_NONTERMINAL(A.name + "_tail")
+    grammar.removeRules(A)
+
+    for beta in nonrecursive:
+        grammar.add(A -> beta Aprime)
+    for alpha in recursive:
+        grammar.add(Aprime -> alpha Aprime)
+    grammar.add(Aprime -> EPSILON)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{3.3 Compute nullable nonterminals}
+\addcontentsline{toc}{subsection}{3.3 Compute nullable nonterminals}
+
+\begin{lstlisting}
+function COMPUTE_NULLABLE(grammar):
+    nullable = EMPTY_SET()
+    changed = true
+
+    while changed:
+        changed = false
+        for rule in grammar.productions:
+            if all symbols in rule.rhs are EPSILON or in nullable:
+                if nullable.add(rule.lhs):
+                    changed = true
+
+    return nullable
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{3.4 Compute FIRST sets}
+\addcontentsline{toc}{subsection}{3.4 Compute FIRST sets}
+
+\begin{lstlisting}
+function COMPUTE_FIRST(grammar):
+    first = MAP_SYMBOL_TO_SET()
+
+    for terminal in grammar.terminals:
+        first[terminal].add(terminal)
+
+    changed = true
+    while changed:
+        changed = false
+        for rule in grammar.productions:
+            A = rule.lhs
+            canContinue = true
+
+            for X in rule.rhs while canContinue:
+                before = first[A].size()
+                first[A].addAll(first[X] without EPSILON)
+                changed |= first[A].size() != before
+
+                if EPSILON not in first[X]:
+                    canContinue = false
+
+            if canContinue:
+                changed |= first[A].add(EPSILON)
+
+    return first
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{3.5 FIRST of a symbol sequence}
+\addcontentsline{toc}{subsection}{3.5 FIRST of a symbol sequence}
+
+\begin{lstlisting}
+function FIRST_SEQUENCE(seq, first):
+    result = EMPTY_SET()
+    nullablePrefix = true
+
+    for X in seq while nullablePrefix:
+        result.addAll(first[X] without EPSILON)
+        if EPSILON not in first[X]:
+            nullablePrefix = false
+
+    if nullablePrefix:
+        result.add(EPSILON)
+
+    return result
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{3.6 Compute FOLLOW sets}
+\addcontentsline{toc}{subsection}{3.6 Compute FOLLOW sets}
+
+\begin{lstlisting}
+function COMPUTE_FOLLOW(grammar, first):
+    follow = MAP_NONTERMINAL_TO_SET()
+    follow[grammar.startSymbol].add(EOF)
+
+    changed = true
+    while changed:
+        changed = false
+        for rule in grammar.productions:
+            A = rule.lhs
+            rhs = rule.rhs
+
+            for i = 0; i < rhs.length; i++:
+                B = rhs[i]
+                if !IS_NONTERMINAL(B):
+                    continue
+
+                beta = rhs[i+1 .. end]
+                fb = FIRST_SEQUENCE(beta, first)
+
+                changed |= follow[B].addAll(fb without EPSILON)
+                if EPSILON in fb or beta.empty():
+                    changed |= follow[B].addAll(follow[A])
+
+    return follow
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{3.7 Compute START set for a production}
+\addcontentsline{toc}{subsection}{3.7 Compute START set for a production}
+
+\begin{lstlisting}
+function START_SET(rule, first, follow):
+    start = FIRST_SEQUENCE(rule.rhs, first)
+    if EPSILON in start:
+        start.remove(EPSILON)
+        start.addAll(follow[rule.lhs])
+    return start
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{3.8 Recursive-descent expression parser}
+\addcontentsline{toc}{subsection}{3.8 Recursive-descent expression parser}
+
+\begin{lstlisting}
+function PARSE_EXPR():
+    left = PARSE_TERM()
+    while lookahead in {PLUS, MINUS}:
+        op = lookahead
+        MATCH(op)
+        right = PARSE_TERM()
+        left = AST_BINARY(op, left, right)
+    return left
+
+function PARSE_TERM():
+    left = PARSE_FACTOR()
+    while lookahead in {TIMES, DIVIDE}:
+        op = lookahead
+        MATCH(op)
+        right = PARSE_FACTOR()
+        left = AST_BINARY(op, left, right)
+    return left
+
+function PARSE_FACTOR():
+    if lookahead == NUMBER:
+        n = lookahead.lexeme
+        MATCH(NUMBER)
+        return AST_NUMBER(n)
+
+    if lookahead == IDENTIFIER:
+        name = lookahead.lexeme
+        MATCH(IDENTIFIER)
+        return AST_NAME(name)
+
+    if lookahead == LPAREN:
+        MATCH(LPAREN)
+        expr = PARSE_EXPR()
+        MATCH(RPAREN)
+        return expr
+
+    ERROR("expected factor")
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{3.9 LL(1) parse table construction}
+\addcontentsline{toc}{subsection}{3.9 LL(1) parse table construction}
+
+\begin{lstlisting}
+function BUILD_LL1_TABLE(grammar, first, follow):
+    table = MAP_PAIR_TO_PRODUCTION()
+
+    for rule in grammar.productions:
+        starts = START_SET(rule, first, follow)
+        for terminal in starts:
+            if table[rule.lhs, terminal] already assigned:
+                REPORT_LL1_CONFLICT(rule.lhs, terminal)
+            table[rule.lhs, terminal] = rule
+
+    return table
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{3.10 Table-driven LL(1) parser}
+\addcontentsline{toc}{subsection}{3.10 Table-driven LL(1) parser}
+
+\begin{lstlisting}
+function PARSE_LL1(tokens, grammar, table):
+    stack = STACK([EOF, grammar.startSymbol])
+    lookahead = tokens.next()
+
+    while stack.top() != EOF:
+        X = stack.pop()
+
+        if IS_TERMINAL(X):
+            if X == lookahead.kind:
+                lookahead = tokens.next()
+            else:
+                REPORT_SYNTAX_ERROR(X, lookahead)
+                RECOVER_LL1(stack, tokens)
+        else:
+            rule = table[X, lookahead.kind]
+            if rule == NONE:
+                REPORT_SYNTAX_ERROR(X, lookahead)
+                RECOVER_LL1(stack, tokens)
+            else:
+                PUSH_REVERSED(stack, rule.rhs excluding EPSILON)
+
+    return lookahead.kind == EOF
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{3.11 Shift-reduce parser skeleton}
+\addcontentsline{toc}{subsection}{3.11 Shift-reduce parser skeleton}
+
+\begin{lstlisting}
+function SHIFT_REDUCE_PARSE(tokens, action, gotoTable):
+    stack = STACK([STATE(0)])
+    lookahead = tokens.next()
+
+    while true:
+        s = stack.topState()
+        act = action[s, lookahead.kind]
+
+        switch act.kind:
+            case SHIFT:
+                stack.push(lookahead)
+                stack.push(STATE(act.nextState))
+                lookahead = tokens.next()
+
+            case REDUCE:
+                rule = act.production
+                POP_2_TIMES_RHS_LENGTH(stack, rule)
+                t = stack.topState()
+                stack.push(rule.lhs)
+                stack.push(STATE(gotoTable[t, rule.lhs]))
+                PERFORM_REDUCTION_ACTION(rule)
+
+            case ACCEPT:
+                return SUCCESS
+
+            case ERROR:
+                REPORT_PARSE_ERROR(lookahead)
+                RECOVER_LR(stack, tokens)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{3.12 LR(1) item closure}
+\addcontentsline{toc}{subsection}{3.12 LR(1) item closure}
+
+\begin{lstlisting}
+function LR1_CLOSURE(items, grammar, first):
+    closure = COPY_SET(items)
+    changed = true
+
+    while changed:
+        changed = false
+        for item in COPY_SET(closure):
+            // item form: A -> alpha . B beta, lookahead a
+            B = item.symbolAfterDot()
+            if !IS_NONTERMINAL(B):
+                continue
+
+            betaA = item.symbolsAfter(B) + [item.lookahead]
+            lookaheads = FIRST_SEQUENCE(betaA, first)
+
+            for production in grammar.rulesFor(B):
+                for b in lookaheads:
+                    newItem = ITEM(production, dot = 0, lookahead = b)
+                    if closure.add(newItem):
+                        changed = true
+
+    return closure
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{3.13 LR(1) goto}
+\addcontentsline{toc}{subsection}{3.13 LR(1) goto}
+
+\begin{lstlisting}
+function LR1_GOTO(items, symbol, grammar, first):
+    moved = EMPTY_SET()
+
+    for item in items:
+        if item.symbolAfterDot() == symbol:
+            moved.add(item.advanceDot())
+
+    return LR1_CLOSURE(moved, grammar, first)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{3.14 Canonical collection of LR(1) item sets}
+\addcontentsline{toc}{subsection}{3.14 Canonical collection of LR(1) item sets}
+
+\begin{lstlisting}
+function BUILD_LR1_COLLECTION(grammar):
+    augmented = AUGMENT_GRAMMAR(grammar)
+    first = COMPUTE_FIRST(augmented)
+
+    startItem = ITEM(augmented.startRule, dot = 0, lookahead = EOF)
+    I0 = LR1_CLOSURE({startItem}, augmented, first)
+
+    C = INTERNED_SET_COLLECTION()
+    C.add(I0)
+    worklist = QUEUE([I0])
+
+    while !worklist.empty():
+        I = worklist.pop()
+        for X in augmented.terminals union augmented.nonterminals:
+            J = LR1_GOTO(I, X, augmented, first)
+            if J.empty():
+                continue
+            if !C.contains(J):
+                C.add(J)
+                worklist.push(J)
+            RECORD_LR_TRANSITION(I, X, C.lookup(J))
+
+    return C
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{3.15 LR(1) table filling}
+\addcontentsline{toc}{subsection}{3.15 LR(1) table filling}
+
+\begin{lstlisting}
+function BUILD_LR1_TABLES(grammar):
+    C = BUILD_LR1_COLLECTION(grammar)
+    action = EMPTY_ACTION_TABLE()
+    gotoTable = EMPTY_GOTO_TABLE()
+
+    for I in C.states:
+        for item in I.items:
+            X = item.symbolAfterDot()
+
+            if IS_TERMINAL(X):
+                J = LR1_GOTO(I, X, grammar, COMPUTE_FIRST(grammar))
+                SET_ACTION(action, I, X, SHIFT(C.lookup(J)))
+
+            else if IS_NONTERMINAL(X):
+                J = LR1_GOTO(I, X, grammar, COMPUTE_FIRST(grammar))
+                gotoTable[I, X] = C.lookup(J)
+
+            else if item.dotAtEnd():
+                if item.production == grammar.augmentedStartRule:
+                    SET_ACTION(action, I, EOF, ACCEPT)
+                else:
+                    SET_ACTION(action, I, item.lookahead, REDUCE(item.production))
+
+    return action, gotoTable
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{3.16 Panic-mode parser recovery}
+\addcontentsline{toc}{subsection}{3.16 Panic-mode parser recovery}
+
+\begin{lstlisting}
+function PANIC_RECOVER(tokens, synchronizingTokens):
+    while tokens.current.kind not in synchronizingTokens and tokens.current.kind != EOF:
+        tokens.advance()
+    return tokens.current.kind != EOF
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{3.17 Reduce LR(1) tables by merging compatible states}
+\addcontentsline{toc}{subsection}{3.17 Reduce LR(1) tables by merging compatible states}
+
+\begin{lstlisting}
+function MERGE_LR_STATES_BY_CORE(collection):
+    groups = MAP_CORE_TO_STATES(collection)
+    merged = NEW_COLLECTION()
+
+    for core, states in groups:
+        M = UNION_ITEMS_WITH_SAME_CORE(states)
+        merged.add(M)
+
+    tables = BUILD_TABLES_FROM_MERGED_COLLECTION(merged)
+    if tables.hasReduceReduceOrShiftReduceConflict:
+        REPORT_MERGE_CONFLICTS(tables)
+    return tables
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section{Intermediate Representations and CFGs}
+
+\Needspace{5\baselineskip}
+\subsection*{4.1 Build an AST during reductions}
+\addcontentsline{toc}{subsection}{4.1 Build an AST during reductions}
+
+\begin{lstlisting}
+function REDUCE_WITH_AST(rule, semanticStack):
+    switch rule.pattern:
+        case "Expr -> Expr PLUS Term":
+            right = semanticStack.popNode()
+            op = semanticStack.popToken()
+            left = semanticStack.popNode()
+            semanticStack.pushNode(AST_BINARY(op, left, right))
+
+        case "Expr -> Term":
+            semanticStack.pushNode(semanticStack.popNode())
+
+        case "Factor -> NUMBER":
+            token = semanticStack.popToken()
+            semanticStack.pushNode(AST_NUMBER(token.value))
+
+        default:
+            APPLY_RULE_SPECIFIC_ACTION(rule, semanticStack)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{4.2 Emit three-address code for expression tree}
+\addcontentsline{toc}{subsection}{4.2 Emit three-address code for expression tree}
+
+\begin{lstlisting}
+function EMIT_EXPR(node):
+    if node.kind == CONST:
+        r = NEW_TEMP()
+        EMIT("loadI", node.value, "=>", r)
+        return r
+
+    if node.kind == NAME:
+        r = NEW_TEMP()
+        EMIT("load", ADDRESS_OF(node.name), "=>", r)
+        return r
+
+    if node.kind == BINARY:
+        left = EMIT_EXPR(node.left)
+        right = EMIT_EXPR(node.right)
+        result = NEW_TEMP()
+        EMIT(OPCODE(node.op), left, right, "=>", result)
+        return result
+
+    if node.kind == ASSIGN:
+        value = EMIT_EXPR(node.value)
+        EMIT("store", value, "=>", ADDRESS_OF(node.name))
+        return value
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{4.3 Build control-flow graph from linear code}
+\addcontentsline{toc}{subsection}{4.3 Build control-flow graph from linear code}
+
+\begin{lstlisting}
+function BUILD_CFG(instructions):
+    leaders = SET({ instructions[0] })
+
+    for i = 0; i < instructions.length; i++:
+        inst = instructions[i]
+        if inst.hasLabel():
+            leaders.add(inst)
+        if inst.isBranch():
+            leaders.add(INSTRUCTION_WITH_LABEL(inst.targetLabel))
+            if i + 1 < instructions.length:
+                leaders.add(instructions[i + 1])
+
+    blocks = SPLIT_AT_LEADERS(instructions, leaders)
+    cfg = NEW_GRAPH(blocks)
+
+    for block in blocks:
+        last = block.lastInstruction()
+        if last.isConditionalBranch():
+            cfg.addEdge(block, blockWithLabel(last.trueTarget))
+            cfg.addEdge(block, blockWithLabel(last.falseTarget))
+        else if last.isUnconditionalBranch():
+            cfg.addEdge(block, blockWithLabel(last.target))
+        else if !last.isReturn() and block.hasFallthroughSuccessor():
+            cfg.addEdge(block, block.nextBlock())
+
+    return cfg
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{4.4 Build a dependence graph for a basic block}
+\addcontentsline{toc}{subsection}{4.4 Build a dependence graph for a basic block}
+
+\begin{lstlisting}
+function BUILD_DEPENDENCE_GRAPH(block):
+    graph = NEW_DAG()
+    lastDef = MAP_REGISTER_TO_NODE()
+    lastUses = MAP_REGISTER_TO_LIST()
+    memoryBarrier = NULL
+
+    for inst in block.instructions in program order:
+        n = graph.addNode(inst)
+
+        for r in inst.uses:
+            if lastDef.contains(r):
+                graph.addEdge(lastDef[r], n, TRUE_DEPENDENCE)
+            lastUses[r].append(n)
+
+        for r in inst.defs:
+            if lastDef.contains(r):
+                graph.addEdge(lastDef[r], n, OUTPUT_DEPENDENCE)
+            for u in lastUses[r]:
+                graph.addEdge(u, n, ANTI_DEPENDENCE)
+            lastUses[r].clear()
+            lastDef[r] = n
+
+        if inst.mayReadOrWriteMemory():
+            if memoryBarrier != NULL:
+                graph.addEdge(memoryBarrier, n, MEMORY_ORDER)
+            if inst.mayWriteMemory():
+                memoryBarrier = n
+
+    return graph
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{4.5 Symbol-table lookup through lexical scopes}
+\addcontentsline{toc}{subsection}{4.5 Symbol-table lookup through lexical scopes}
+
+\begin{lstlisting}
+function RESOLVE_NAME(name, currentScope):
+    scope = currentScope
+    while scope != NULL:
+        entry = scope.table.lookup(name)
+        if entry != NULL:
+            return entry
+        scope = scope.parent
+    return NOT_FOUND
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{4.6 Insert into a scoped symbol table}
+\addcontentsline{toc}{subsection}{4.6 Insert into a scoped symbol table}
+
+\begin{lstlisting}
+function DECLARE_NAME(scope, name, attributes):
+    if scope.table.contains(name):
+        ERROR("duplicate declaration in same scope")
+    entry = SYMBOL(name, attributes)
+    scope.table.insert(name, entry)
+    return entry
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section{Syntax-Driven Translation}
+
+\Needspace{5\baselineskip}
+\subsection*{5.1 LR parser with translation actions}
+\addcontentsline{toc}{subsection}{5.1 LR parser with translation actions}
+
+\begin{lstlisting}
+function PARSE_WITH_TRANSLATION(tokens, action, gotoTable):
+    parseStack = STACK([STATE(0)])
+    valueStack = STACK()
+    lookahead = tokens.next()
+
+    while true:
+        s = parseStack.topState()
+        act = action[s, lookahead.kind]
+
+        if act.kind == SHIFT:
+            parseStack.push(lookahead)
+            parseStack.push(STATE(act.nextState))
+            valueStack.push(SEMANTIC_VALUE(lookahead))
+            lookahead = tokens.next()
+
+        else if act.kind == REDUCE:
+            rule = act.production
+            args = valueStack.pop(rule.rhs.length)
+            POP_2_TIMES_RHS_LENGTH(parseStack, rule)
+            result = EXECUTE_TRANSLATION_ACTION(rule, args)
+            valueStack.push(result)
+            parseStack.push(rule.lhs)
+            parseStack.push(STATE(gotoTable[parseStack.previousState(), rule.lhs]))
+
+        else if act.kind == ACCEPT:
+            return valueStack.top()
+
+        else:
+            ERROR("syntax error")
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{5.2 Translate assignment statement}
+\addcontentsline{toc}{subsection}{5.2 Translate assignment statement}
+
+\begin{lstlisting}
+function TRANSLATE_ASSIGNMENT(nameNode, exprNode):
+    entry = RESOLVE_NAME(nameNode.name, CURRENT_SCOPE())
+    if entry == NOT_FOUND:
+        ERROR("undefined variable")
+
+    valueReg = TRANSLATE_EXPRESSION(exprNode)
+    address = ADDRESS_OF_SYMBOL(entry)
+    EMIT("store", valueReg, "=>", address)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{5.3 Translate short-circuit Boolean expression}
+\addcontentsline{toc}{subsection}{5.3 Translate short-circuit Boolean expression}
+
+\begin{lstlisting}
+function TRANSLATE_BOOL(expr, trueLabel, falseLabel):
+    switch expr.kind:
+        case RELATION:
+            left = TRANSLATE_EXPRESSION(expr.left)
+            right = TRANSLATE_EXPRESSION(expr.right)
+            EMIT("cmp" + expr.op, left, right, "=>", trueLabel, falseLabel)
+
+        case AND:
+            mid = NEW_LABEL()
+            TRANSLATE_BOOL(expr.left, mid, falseLabel)
+            EMIT_LABEL(mid)
+            TRANSLATE_BOOL(expr.right, trueLabel, falseLabel)
+
+        case OR:
+            mid = NEW_LABEL()
+            TRANSLATE_BOOL(expr.left, trueLabel, mid)
+            EMIT_LABEL(mid)
+            TRANSLATE_BOOL(expr.right, trueLabel, falseLabel)
+
+        case NOT:
+            TRANSLATE_BOOL(expr.child, falseLabel, trueLabel)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{5.4 Translate if-then-else}
+\addcontentsline{toc}{subsection}{5.4 Translate if-then-else}
+
+\begin{lstlisting}
+function TRANSLATE_IF(cond, thenStmt, elseStmt):
+    Lthen = NEW_LABEL()
+    Lelse = NEW_LABEL()
+    Ldone = NEW_LABEL()
+
+    TRANSLATE_BOOL(cond, Lthen, Lelse)
+
+    EMIT_LABEL(Lthen)
+    TRANSLATE_STATEMENT(thenStmt)
+    EMIT("jumpI", "=>", Ldone)
+
+    EMIT_LABEL(Lelse)
+    if elseStmt != NULL:
+        TRANSLATE_STATEMENT(elseStmt)
+
+    EMIT_LABEL(Ldone)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{5.5 Translate while loop}
+\addcontentsline{toc}{subsection}{5.5 Translate while loop}
+
+\begin{lstlisting}
+function TRANSLATE_WHILE(cond, body):
+    Ltest = NEW_LABEL()
+    Lbody = NEW_LABEL()
+    Ldone = NEW_LABEL()
+
+    EMIT_LABEL(Ltest)
+    TRANSLATE_BOOL(cond, Lbody, Ldone)
+
+    EMIT_LABEL(Lbody)
+    TRANSLATE_STATEMENT(body)
+    EMIT("jumpI", "=>", Ltest)
+
+    EMIT_LABEL(Ldone)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{5.6 Compile-time name resolution in lexical hierarchy}
+\addcontentsline{toc}{subsection}{5.6 Compile-time name resolution in lexical hierarchy}
+
+\begin{lstlisting}
+function RESOLVE_LEXICAL(name, currentBlock):
+    depth = 0
+    block = currentBlock
+
+    while block != NULL:
+        entry = block.symbols.lookup(name)
+        if entry != NULL:
+            entry.lexicalDepthDifference = depth
+            return entry
+        block = block.parent
+        depth++
+
+    ERROR("name not visible")
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{5.7 Lookup in inheritance hierarchy}
+\addcontentsline{toc}{subsection}{5.7 Lookup in inheritance hierarchy}
+
+\begin{lstlisting}
+function RESOLVE_MEMBER(classType, memberName):
+    c = classType
+    while c != NULL:
+        member = c.memberTable.lookup(memberName)
+        if member != NULL:
+            return member
+        c = c.superclass
+    return NOT_FOUND
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{5.8 Type inference for expression tree}
+\addcontentsline{toc}{subsection}{5.8 Type inference for expression tree}
+
+\begin{lstlisting}
+function INFER_TYPE(expr):
+    switch expr.kind:
+        case CONST_INT:
+            expr.type = INT_TYPE
+        case CONST_REAL:
+            expr.type = REAL_TYPE
+        case NAME:
+            expr.type = RESOLVE_NAME(expr.name, CURRENT_SCOPE()).type
+        case BINARY:
+            leftType = INFER_TYPE(expr.left)
+            rightType = INFER_TYPE(expr.right)
+            expr.type = RESULT_TYPE(expr.op, leftType, rightType)
+            if expr.type == TYPE_ERROR:
+                ERROR("illegal operand types")
+        case CALL:
+            proc = RESOLVE_NAME(expr.functionName, CURRENT_SCOPE())
+            CHECK_ACTUALS_AGAINST_FORMALS(expr.args, proc.formals)
+            expr.type = proc.returnType
+    return expr.type
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{5.9 Storage assignment within a data area}
+\addcontentsline{toc}{subsection}{5.9 Storage assignment within a data area}
+
+\begin{lstlisting}
+function ASSIGN_STORAGE(symbols, baseOffset):
+    offset = baseOffset
+    for sym in symbols in declaration order:
+        alignment = ALIGNMENT_OF(sym.type)
+        offset = ROUND_UP(offset, alignment)
+        sym.offset = offset
+        offset += SIZE_OF(sym.type)
+    return offset
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{5.10 Row-major array address calculation}
+\addcontentsline{toc}{subsection}{5.10 Row-major array address calculation}
+
+\begin{lstlisting}
+function ADDRESS_ROW_MAJOR(array, subscripts):
+    offset = 0
+    stride = ELEMENT_SIZE(array.elementType)
+
+    for dim = array.rank - 1 downto 0:
+        index = subscripts[dim] - array.lowerBound[dim]
+        offset += index * stride
+        stride *= array.extent[dim]
+
+    base = ADDRESS_OF_SYMBOL(array.symbol)
+    return base + offset
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{5.11 Column-major array address calculation}
+\addcontentsline{toc}{subsection}{5.11 Column-major array address calculation}
+
+\begin{lstlisting}
+function ADDRESS_COLUMN_MAJOR(array, subscripts):
+    offset = 0
+    stride = ELEMENT_SIZE(array.elementType)
+
+    for dim = 0 to array.rank - 1:
+        index = subscripts[dim] - array.lowerBound[dim]
+        offset += index * stride
+        stride *= array.extent[dim]
+
+    return ADDRESS_OF_SYMBOL(array.symbol) + offset
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{5.12 Runtime type check for arithmetic operation}
+\addcontentsline{toc}{subsection}{5.12 Runtime type check for arithmetic operation}
+
+\begin{lstlisting}
+function EMIT_CHECKED_ADD(x, y):
+    if STATIC_TYPE(x) == INT and STATIC_TYPE(y) == INT:
+        return EMIT_INT_ADD(x, y)
+
+    tx = EMIT_TYPE_TAG_LOAD(x)
+    ty = EMIT_TYPE_TAG_LOAD(y)
+    ok = NEW_LABEL()
+    fail = NEW_LABEL()
+
+    EMIT_COMPARE_TAGS(tx, ty, ok, fail)
+    EMIT_LABEL(ok)
+    return EMIT_ADD_BY_RUNTIME_TAG(x, y, tx)
+
+    EMIT_LABEL(fail)
+    EMIT_RUNTIME_ERROR("type mismatch in addition")
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section{Procedures and Runtime Support}
+
+\Needspace{5\baselineskip}
+\subsection*{6.1 Procedure-call sequence}
+\addcontentsline{toc}{subsection}{6.1 Procedure-call sequence}
+
+\begin{lstlisting}
+function EMIT_CALL(callee, actuals):
+    for actual in actuals in evaluation order:
+        value = TRANSLATE_EXPRESSION(actual)
+        EMIT_PARAM(value)
+
+    EMIT_SAVE_CALLER_SAVE_REGISTERS()
+    EMIT_BUILD_ACTIVATION_RECORD(callee)
+    EMIT("call", callee.label)
+    EMIT_RESTORE_CALLER_SAVE_REGISTERS()
+
+    return REGISTER_HOLDING_RETURN_VALUE()
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{6.2 Procedure prologue}
+\addcontentsline{toc}{subsection}{6.2 Procedure prologue}
+
+\begin{lstlisting}
+function EMIT_PROLOGUE(proc):
+    EMIT_LABEL(proc.entryLabel)
+    EMIT_SAVE_RETURN_ADDRESS()
+    EMIT_SAVE_OLD_FRAME_POINTER()
+    EMIT_SET_NEW_FRAME_POINTER()
+    EMIT_ALLOCATE_LOCAL_STORAGE(proc.frameSize)
+    EMIT_SAVE_CALLEE_SAVE_REGISTERS(proc.usedCalleeSaveRegs)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{6.3 Procedure epilogue}
+\addcontentsline{toc}{subsection}{6.3 Procedure epilogue}
+
+\begin{lstlisting}
+function EMIT_EPILOGUE(proc):
+    EMIT_LABEL(proc.exitLabel)
+    EMIT_RESTORE_CALLEE_SAVE_REGISTERS(proc.usedCalleeSaveRegs)
+    EMIT_DEALLOCATE_LOCAL_STORAGE(proc.frameSize)
+    EMIT_RESTORE_OLD_FRAME_POINTER()
+    EMIT_RESTORE_RETURN_ADDRESS()
+    EMIT_RETURN()
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{6.4 Access-link traversal for nonlocal variables}
+\addcontentsline{toc}{subsection}{6.4 Access-link traversal for nonlocal variables}
+
+\begin{lstlisting}
+function ADDRESS_NONLOCAL_BY_ACCESS_LINK(currentFrame, lexicalDepthDelta, offset):
+    frame = currentFrame
+    for i = 0; i < lexicalDepthDelta; i++:
+        frame = LOAD(frame.accessLink)
+    return frame + offset
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{6.5 Global display lookup}
+\addcontentsline{toc}{subsection}{6.5 Global display lookup}
+
+\begin{lstlisting}
+function ADDRESS_NONLOCAL_BY_DISPLAY(display, definingLevel, offset):
+    frame = display[definingLevel]
+    return frame + offset
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{6.6 Update display on procedure entry}
+\addcontentsline{toc}{subsection}{6.6 Update display on procedure entry}
+
+\begin{lstlisting}
+function ENTER_PROCEDURE_WITH_DISPLAY(proc, currentFrame, display):
+    old = display[proc.lexicalLevel]
+    STORE(currentFrame.savedDisplaySlot, old)
+    display[proc.lexicalLevel] = currentFrame
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{6.7 Restore display on procedure exit}
+\addcontentsline{toc}{subsection}{6.7 Restore display on procedure exit}
+
+\begin{lstlisting}
+function EXIT_PROCEDURE_WITH_DISPLAY(proc, currentFrame, display):
+    display[proc.lexicalLevel] = LOAD(currentFrame.savedDisplaySlot)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{6.8 Object method dispatch through class metadata}
+\addcontentsline{toc}{subsection}{6.8 Object method dispatch through class metadata}
+
+\begin{lstlisting}
+function EMIT_VIRTUAL_CALL(receiver, methodName, actuals):
+    objReg = TRANSLATE_EXPRESSION(receiver)
+    classPtr = EMIT_LOAD(objReg + OFFSET_CLASS_POINTER)
+    methodSlot = LOOKUP_METHOD_SLOT(receiver.staticType, methodName)
+    target = EMIT_LOAD(classPtr + methodSlot.offset)
+
+    EMIT_PARAM(objReg)     // self/this
+    for arg in actuals:
+        EMIT_PARAM(TRANSLATE_EXPRESSION(arg))
+    EMIT_INDIRECT_CALL(target)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{6.9 First-fit heap allocation}
+\addcontentsline{toc}{subsection}{6.9 First-fit heap allocation}
+
+\begin{lstlisting}
+function FIRST_FIT_ALLOCATE(heap, requestedBytes):
+    size = ROUND_UP(requestedBytes + HEADER_SIZE, ALIGNMENT)
+    prev = NULL
+    block = heap.freeList
+
+    while block != NULL:
+        if block.size >= size:
+            if block.size - size >= MIN_SPLIT_SIZE:
+                remainder = SPLIT_BLOCK(block, size)
+                REPLACE_IN_FREE_LIST(heap, prev, block, remainder)
+            else:
+                REMOVE_FROM_FREE_LIST(heap, prev, block)
+            MARK_ALLOCATED(block)
+            return PAYLOAD_ADDRESS(block)
+
+        prev = block
+        block = block.next
+
+    return OUT_OF_MEMORY
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{6.10 Free and coalesce heap block}
+\addcontentsline{toc}{subsection}{6.10 Free and coalesce heap block}
+
+\begin{lstlisting}
+function FREE_BLOCK(heap, payload):
+    block = HEADER_FROM_PAYLOAD(payload)
+    MARK_FREE(block)
+    INSERT_IN_ADDRESS_ORDER(heap.freeList, block)
+
+    if block.next != NULL and END_ADDRESS(block) == ADDRESS(block.next):
+        MERGE(block, block.next)
+
+    prev = PREVIOUS_BLOCK_IN_FREE_LIST(heap.freeList, block)
+    if prev != NULL and END_ADDRESS(prev) == ADDRESS(block):
+        MERGE(prev, block)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{6.11 Mark phase of tracing garbage collection}
+\addcontentsline{toc}{subsection}{6.11 Mark phase of tracing garbage collection}
+
+\begin{lstlisting}
+function MARK_FROM_ROOTS(rootSet):
+    stack = STACK()
+    for root in rootSet:
+        obj = LOAD_POINTER(root)
+        if obj != NULL and !obj.marked:
+            obj.marked = true
+            stack.push(obj)
+
+    while !stack.empty():
+        obj = stack.pop()
+        for field in POINTER_FIELDS(obj):
+            child = LOAD_POINTER(field)
+            if child != NULL and !child.marked:
+                child.marked = true
+                stack.push(child)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{6.12 Sweep phase}
+\addcontentsline{toc}{subsection}{6.12 Sweep phase}
+
+\begin{lstlisting}
+function SWEEP_HEAP(heap):
+    for block in heap.blocks:
+        if block.allocated:
+            if block.marked:
+                block.marked = false
+            else:
+                FREE_BLOCK(heap, block.payload)
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section{Code Shape}
+
+\Needspace{5\baselineskip}
+\subsection*{7.1 Simple treewalk code generator for expressions}
+\addcontentsline{toc}{subsection}{7.1 Simple treewalk code generator for expressions}
+
+\begin{lstlisting}
+function GENERATE_EXPR(node):
+    if node.kind == LEAF:
+        return ENSURE_IN_REGISTER(node.value)
+
+    left = GENERATE_EXPR(node.left)
+    right = GENERATE_EXPR(node.right)
+    result = NEW_REGISTER()
+    EMIT(OPCODE(node.op), left, right, "=>", result)
+    return result
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{7.2 Compute register demand for expression tree}
+\addcontentsline{toc}{subsection}{7.2 Compute register demand for expression tree}
+
+\begin{lstlisting}
+function REGISTER_NEED(node):
+    if node.isLeaf():
+        node.need = 1
+    else:
+        left = REGISTER_NEED(node.left)
+        right = REGISTER_NEED(node.right)
+        if left == right:
+            node.need = left + 1
+        else:
+            node.need = MAX(left, right)
+    return node.need
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{7.3 Generate expression in low-register order}
+\addcontentsline{toc}{subsection}{7.3 Generate expression in low-register order}
+
+\begin{lstlisting}
+function GENERATE_EXPR_LOW_REG(node):
+    if node.isLeaf():
+        return ENSURE_IN_REGISTER(node.value)
+
+    if node.left.need >= node.right.need:
+        first = GENERATE_EXPR_LOW_REG(node.left)
+        second = GENERATE_EXPR_LOW_REG(node.right)
+        return EMIT_BINARY(node.op, first, second)
+    else:
+        first = GENERATE_EXPR_LOW_REG(node.right)
+        second = GENERATE_EXPR_LOW_REG(node.left)
+        if COMMUTATIVE(node.op):
+            return EMIT_BINARY(node.op, first, second)
+        else:
+            return EMIT_BINARY_WITH_ORDER(node.op, second, first)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{7.4 Scalar variable access}
+\addcontentsline{toc}{subsection}{7.4 Scalar variable access}
+
+\begin{lstlisting}
+function LOAD_SCALAR(symbol):
+    r = NEW_REGISTER()
+    addr = FRAME_POINTER() + symbol.offset
+    EMIT("loadAI", FRAME_POINTER(), symbol.offset, "=>", r)
+    return r
+
+function STORE_SCALAR(symbol, valueReg):
+    EMIT("storeAI", valueReg, "=>", FRAME_POINTER(), symbol.offset)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{7.5 Array reference with bounds check}
+\addcontentsline{toc}{subsection}{7.5 Array reference with bounds check}
+
+\begin{lstlisting}
+function LOAD_ARRAY_ELEMENT(array, subscripts):
+    for dim in 0 .. array.rank-1:
+        idx = TRANSLATE_EXPRESSION(subscripts[dim])
+        EMIT_BOUNDS_CHECK(idx, array.lowerBound[dim], array.upperBound[dim])
+
+    addr = COMPUTE_ARRAY_ADDRESS(array, subscripts)
+    r = NEW_REGISTER()
+    EMIT("load", addr, "=>", r)
+    return r
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{7.6 Emit range check}
+\addcontentsline{toc}{subsection}{7.6 Emit range check}
+
+\begin{lstlisting}
+function EMIT_BOUNDS_CHECK(indexReg, low, high):
+    ok1 = NEW_LABEL()
+    ok2 = NEW_LABEL()
+    fail = RUNTIME_BOUNDS_ERROR_LABEL()
+
+    EMIT("cmp_GE", indexReg, low, "=>", ok1, fail)
+    EMIT_LABEL(ok1)
+    EMIT("cmp_LE", indexReg, high, "=>", ok2, fail)
+    EMIT_LABEL(ok2)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{7.7 Conditional execution schema}
+\addcontentsline{toc}{subsection}{7.7 Conditional execution schema}
+
+\begin{lstlisting}
+function EMIT_CONDITIONAL(cond, thenBlock, elseBlock):
+    Lthen = NEW_LABEL()
+    Lelse = NEW_LABEL()
+    Ldone = NEW_LABEL()
+
+    EMIT_CONDITION_BRANCH(cond, Lthen, Lelse)
+    EMIT_LABEL(Lthen)
+    EMIT_BLOCK(thenBlock)
+    EMIT("jumpI", "=>", Ldone)
+    EMIT_LABEL(Lelse)
+    EMIT_BLOCK(elseBlock)
+    EMIT_LABEL(Ldone)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{7.8 For-loop layout schema}
+\addcontentsline{toc}{subsection}{7.8 For-loop layout schema}
+
+\begin{lstlisting}
+function EMIT_FOR_LOOP(index, initial, limit, step, body):
+    Ltest = NEW_LABEL()
+    Lbody = NEW_LABEL()
+    Ldone = NEW_LABEL()
+
+    STORE_SCALAR(index, TRANSLATE_EXPRESSION(initial))
+    limitReg = TRANSLATE_EXPRESSION(limit)
+    stepReg = TRANSLATE_EXPRESSION(step)
+
+    EMIT_LABEL(Ltest)
+    idxReg = LOAD_SCALAR(index)
+    EMIT("cmp_LE", idxReg, limitReg, "=>", Lbody, Ldone)
+
+    EMIT_LABEL(Lbody)
+    EMIT_BLOCK(body)
+    idxReg = LOAD_SCALAR(index)
+    next = EMIT_BINARY("add", idxReg, stepReg)
+    STORE_SCALAR(index, next)
+    EMIT("jumpI", "=>", Ltest)
+
+    EMIT_LABEL(Ldone)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{7.9 Case statement by linear search}
+\addcontentsline{toc}{subsection}{7.9 Case statement by linear search}
+
+\begin{lstlisting}
+function EMIT_CASE_LINEAR(expr, cases, defaultLabel):
+    value = TRANSLATE_EXPRESSION(expr)
+    for case in cases:
+        next = NEW_LABEL()
+        EMIT("cmp_EQ", value, case.constant, "=>", case.label, next)
+        EMIT_LABEL(next)
+    EMIT("jumpI", "=>", defaultLabel)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{7.10 Case statement by direct address computation}
+\addcontentsline{toc}{subsection}{7.10 Case statement by direct address computation}
+
+\begin{lstlisting}
+function EMIT_CASE_JUMP_TABLE(expr, cases, defaultLabel):
+    value = TRANSLATE_EXPRESSION(expr)
+    minVal = MIN_CASE_VALUE(cases)
+    maxVal = MAX_CASE_VALUE(cases)
+
+    fail = defaultLabel
+    inRange = NEW_LABEL()
+    EMIT("cmp_GE", value, minVal, "=>", inRange, fail)
+    EMIT_LABEL(inRange)
+    ok = NEW_LABEL()
+    EMIT("cmp_LE", value, maxVal, "=>", ok, fail)
+
+    EMIT_LABEL(ok)
+    index = EMIT_BINARY_IMM("subI", value, minVal)
+    target = EMIT_LOAD_FROM_TABLE(CASE_TABLE(cases, defaultLabel), index)
+    EMIT_INDIRECT_JUMP(target)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{7.11 Case statement by binary search}
+\addcontentsline{toc}{subsection}{7.11 Case statement by binary search}
+
+\begin{lstlisting}
+function EMIT_CASE_BINARY_SEARCH(valueReg, sortedCases, defaultLabel):
+    function emitRange(lo, hi):
+        if lo > hi:
+            EMIT("jumpI", "=>", defaultLabel)
+            return
+
+        mid = (lo + hi) / 2
+        less = NEW_LABEL()
+        greater = NEW_LABEL()
+
+        EMIT("cmp_EQ", valueReg, sortedCases[mid].constant, "=>", sortedCases[mid].label, greater)
+        EMIT_LABEL(greater)
+        EMIT("cmp_GT", valueReg, sortedCases[mid].constant, "=>", greater, less)
+
+        EMIT_LABEL(less)
+        emitRange(lo, mid - 1)
+
+        EMIT_LABEL(greater)
+        emitRange(mid + 1, hi)
+
+    emitRange(0, sortedCases.count - 1)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{7.12 String length loop}
+\addcontentsline{toc}{subsection}{7.12 String length loop}
+
+\begin{lstlisting}
+function EMIT_STRING_LENGTH(ptrReg):
+    len = NEW_REGISTER()
+    p = NEW_REGISTER()
+    loop = NEW_LABEL()
+    done = NEW_LABEL()
+
+    EMIT("loadI", 0, "=>", len)
+    EMIT("i2i", ptrReg, "=>", p)
+
+    EMIT_LABEL(loop)
+    c = EMIT_LOAD_BYTE(p)
+    EMIT("cmp_EQ", c, 0, "=>", done, loop + "_body")
+    EMIT_LABEL(loop + "_body")
+    EMIT("addI", len, 1, "=>", len)
+    EMIT("addI", p, 1, "=>", p)
+    EMIT("jumpI", "=>", loop)
+
+    EMIT_LABEL(done)
+    return len
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{7.13 String copy loop}
+\addcontentsline{toc}{subsection}{7.13 String copy loop}
+
+\begin{lstlisting}
+function EMIT_STRING_ASSIGN(dstReg, srcReg):
+    loop = NEW_LABEL()
+    done = NEW_LABEL()
+    d = COPY_REGISTER(dstReg)
+    s = COPY_REGISTER(srcReg)
+
+    EMIT_LABEL(loop)
+    c = EMIT_LOAD_BYTE(s)
+    EMIT_STORE_BYTE(c, d)
+    EMIT("addI", s, 1, "=>", s)
+    EMIT("addI", d, 1, "=>", d)
+    EMIT("cmp_EQ", c, 0, "=>", done, loop)
+    EMIT_LABEL(done)
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section{Introductory Optimization}
+
+\Needspace{5\baselineskip}
+\subsection*{8.1 Local value numbering}
+\addcontentsline{toc}{subsection}{8.1 Local value numbering}
+
+\begin{lstlisting}
+function LOCAL_VALUE_NUMBER(block):
+    table = HASH_MAP()          // expression key -> value number
+    nameToValue = MAP()
+    nextValue = 1
+
+    for inst in block.instructions:
+        if inst.isCopy():
+            nameToValue[inst.dest] = VALUE_OF(inst.src, nameToValue, &nextValue)
+            continue
+
+        key = CANONICAL_EXPRESSION_KEY(inst.op, inst.operands, nameToValue)
+
+        if table.contains(key):
+            existingValue = table[key]
+            replacement = REPRESENTATIVE_NAME(existingValue)
+            REWRITE_AS_COPY(inst, replacement, inst.dest)
+            nameToValue[inst.dest] = existingValue
+        else:
+            value = nextValue++
+            table[key] = value
+            nameToValue[inst.dest] = value
+            SET_REPRESENTATIVE(value, inst.dest)
+
+    return block
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{8.2 Value numbering with algebraic simplification}
+\addcontentsline{toc}{subsection}{8.2 Value numbering with algebraic simplification}
+
+\begin{lstlisting}
+function CANONICAL_EXPRESSION_KEY(op, operands, nameToValue):
+    values = [VALUE_OF(x, nameToValue) for x in operands]
+
+    if op is COMMUTATIVE:
+        SORT(values)
+
+    if MATCHES_IDENTITY(op, values):
+        return KEY_FOR_IDENTITY_RESULT(op, values)
+
+    if MATCHES_CONSTANT_FOLD(op, operands):
+        return KEY_CONSTANT(EVALUATE_CONSTANT(op, operands))
+
+    return KEY(op, values)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{8.3 Tree-height balancing: driver}
+\addcontentsline{toc}{subsection}{8.3 Tree-height balancing: driver}
+
+\begin{lstlisting}
+function TREE_HEIGHT_BALANCE(root):
+    if !IS_ASSOCIATIVE_AND_COMMUTATIVE(root.op):
+        for child in root.children:
+            TREE_HEIGHT_BALANCE(child)
+        return root
+
+    terms = []
+    FLATTEN(root, root.op, terms)
+    SORT_BY_WEIGHT_DESCENDING(terms)
+    return REBUILD_BALANCED(root.op, terms)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{8.4 Flatten associative tree}
+\addcontentsline{toc}{subsection}{8.4 Flatten associative tree}
+
+\begin{lstlisting}
+function FLATTEN(node, op, terms):
+    if node.kind == BINARY and node.op == op:
+        FLATTEN(node.left, op, terms)
+        FLATTEN(node.right, op, terms)
+    else:
+        terms.add(node)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{8.5 Rebuild balanced expression tree}
+\addcontentsline{toc}{subsection}{8.5 Rebuild balanced expression tree}
+
+\begin{lstlisting}
+function REBUILD_BALANCED(op, terms):
+    queue = PRIORITY_QUEUE_BY_HEIGHT()
+    for t in terms:
+        queue.insert(t, HEIGHT(t))
+
+    while queue.size() > 1:
+        a = queue.extractMinHeight()
+        b = queue.extractMinHeight()
+        parent = AST_BINARY(op, a, b)
+        queue.insert(parent, HEIGHT(parent))
+
+    return queue.extractOnly()
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{8.6 Superlocal value numbering over extended basic block}
+\addcontentsline{toc}{subsection}{8.6 Superlocal value numbering over extended basic block}
+
+\begin{lstlisting}
+function SUPERLOCAL_VALUE_NUMBER(rootBlock):
+    function visit(block, inheritedState):
+        state = COPY_VALUE_NUMBER_STATE(inheritedState)
+        LOCAL_VALUE_NUMBER_WITH_STATE(block, state)
+
+        for child in DOMINATED_SUCCESSORS_WITH_SINGLE_PREDECESSOR(block):
+            visit(child, state)
+
+    visit(rootBlock, EMPTY_VALUE_NUMBER_STATE())
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{8.7 Loop unrolling}
+\addcontentsline{toc}{subsection}{8.7 Loop unrolling}
+
+\begin{lstlisting}
+function UNROLL_COUNTED_LOOP(loop, factor):
+    if !IS_SAFE_COUNTED_LOOP(loop):
+        return loop
+
+    preheader = loop.preheader
+    body = loop.body
+    remainder = CREATE_REMAINDER_LOOP(loop, factor)
+
+    newBody = []
+    for k = 0; k < factor; k++:
+        clone = CLONE_BODY(body)
+        RENAME_TEMPORARIES(clone, suffix = k)
+        ADJUST_INDUCTION_REFERENCES(clone, k)
+        newBody.append(clone)
+
+    loop.body = CONCATENATE(newBody)
+    loop.step *= factor
+    INSERT_REMAINDER_AFTER(loop, remainder)
+    return loop
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{8.8 Iterative live analysis}
+\addcontentsline{toc}{subsection}{8.8 Iterative live analysis}
+
+\begin{lstlisting}
+function LIVE_VARIABLE_ANALYSIS(cfg):
+    for b in cfg.blocks:
+        liveIn[b] = EMPTY_SET()
+        liveOut[b] = EMPTY_SET()
+
+    changed = true
+    while changed:
+        changed = false
+        for b in cfg.blocks in reversePostorderReverse:
+            oldIn = liveIn[b]
+            oldOut = liveOut[b]
+
+            liveOut[b] = UNION(liveIn[s] for s in cfg.successors(b))
+            liveIn[b] = USE[b] union (liveOut[b] - DEF[b])
+
+            changed |= (liveIn[b] != oldIn) or (liveOut[b] != oldOut)
+
+    return liveIn, liveOut
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{8.9 Build hot path from weighted CFG}
+\addcontentsline{toc}{subsection}{8.9 Build hot path from weighted CFG}
+
+\begin{lstlisting}
+function BUILD_HOT_PATH(cfg, start):
+    path = []
+    visited = SET()
+    b = start
+
+    while b != NULL and !visited.contains(b):
+        path.add(b)
+        visited.add(b)
+
+        best = NULL
+        bestWeight = 0
+        for s in cfg.successors(b):
+            if EDGE_WEIGHT(b, s) > bestWeight and !visited.contains(s):
+                best = s
+                bestWeight = EDGE_WEIGHT(b, s)
+        b = best
+
+    return path
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{8.10 Code layout by hot paths}
+\addcontentsline{toc}{subsection}{8.10 Code layout by hot paths}
+
+\begin{lstlisting}
+function LAYOUT_CODE(cfg):
+    unplaced = SET(cfg.blocks)
+    layout = []
+
+    while !unplaced.empty():
+        start = HIGHEST_FREQUENCY_BLOCK(unplaced)
+        path = BUILD_HOT_PATH_IN_SET(cfg, start, unplaced)
+        for b in path:
+            layout.append(b)
+            unplaced.remove(b)
+
+    FIX_BRANCHES_AND_FALLTHROUGHS(layout, cfg)
+    return layout
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{8.11 Inline substitution decision heuristic}
+\addcontentsline{toc}{subsection}{8.11 Inline substitution decision heuristic}
+
+\begin{lstlisting}
+function SHOULD_INLINE(callSite, callee, profile, options):
+    benefit = profile.frequency(callSite) * ESTIMATED_CALL_OVERHEAD(callee)
+    benefit += ESTIMATED_OPTIMIZATION_EXPOSURE(callSite, callee)
+
+    cost = ESTIMATED_CODE_SIZE(callee)
+    cost += ESTIMATED_REGISTER_PRESSURE_INCREASE(callSite, callee)
+
+    if callee.isRecursive and !options.allowRecursiveInlining:
+        return false
+    if ESTIMATED_CODE_GROWTH_AFTER_INLINE(callSite, callee) > options.maxGrowth:
+        return false
+
+    return benefit > options.inlineThreshold * cost
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{8.12 Inline substitution transform}
+\addcontentsline{toc}{subsection}{8.12 Inline substitution transform}
+
+\begin{lstlisting}
+function INLINE_CALL(callSite, caller, callee):
+    clone = CLONE_CFG(callee.cfg)
+    RENAME_LOCALS_AND_TEMPORARIES(clone)
+
+    BIND_FORMALS_TO_ACTUALS(clone.entry, callee.formals, callSite.actuals)
+    REPLACE_RETURNS_WITH_JUMPS(clone, continuation = callSite.nextBlock)
+    SPLICE_CLONE_AT_CALLSITE(caller.cfg, callSite, clone)
+    UPDATE_CALL_GRAPH_AFTER_INLINE(caller, callee)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{8.13 Procedure placement analysis}
+\addcontentsline{toc}{subsection}{8.13 Procedure placement analysis}
+
+\begin{lstlisting}
+function ANALYZE_PROCEDURE_AFFINITY(callGraph, profile):
+    affinity = MAP_PAIR_TO_WEIGHT()
+    for edge in callGraph.edges:
+        caller = edge.caller
+        callee = edge.callee
+        affinity[caller, callee] += profile.callFrequency(edge)
+        affinity[callee, caller] += profile.callFrequency(edge)
+    return affinity
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{8.14 Procedure placement}
+\addcontentsline{toc}{subsection}{8.14 Procedure placement}
+
+\begin{lstlisting}
+function PLACE_PROCEDURES(procedures, affinity):
+    chains = MAKE_SINGLETON_CHAINS(procedures)
+    edges = SORT_PAIRS_BY_DECREASING_WEIGHT(affinity)
+
+    for (p, q, weight) in edges:
+        cp = CHAIN_OF(p)
+        cq = CHAIN_OF(q)
+        if cp != cq and CAN_MERGE_CHAINS(cp, cq, p, q):
+            MERGE_CHAINS(cp, cq, p, q)
+
+    return CONCATENATE_CHAINS(chains)
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section{Data-Flow Analysis and SSA}
+
+\Needspace{5\baselineskip}
+\subsection*{9.1 Generic iterative data-flow solver}
+\addcontentsline{toc}{subsection}{9.1 Generic iterative data-flow solver}
+
+\begin{lstlisting}
+function SOLVE_DATAFLOW(cfg, direction, meet, transfer, boundary, initial):
+    for b in cfg.blocks:
+        in[b] = initial
+        out[b] = initial
+    APPLY_BOUNDARY_CONDITION(in, out, boundary)
+
+    worklist = QUEUE(cfg.blocks)
+    while !worklist.empty():
+        b = worklist.pop()
+        oldIn = in[b]
+        oldOut = out[b]
+
+        if direction == FORWARD:
+            in[b] = MEET(out[p] for p in cfg.predecessors(b), meet)
+            out[b] = transfer(b, in[b])
+            if out[b] != oldOut:
+                worklist.addAll(cfg.successors(b))
+        else:
+            out[b] = MEET(in[s] for s in cfg.successors(b), meet)
+            in[b] = transfer(b, out[b])
+            if in[b] != oldIn:
+                worklist.addAll(cfg.predecessors(b))
+
+    return in, out
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{9.2 Iterative dominance solver}
+\addcontentsline{toc}{subsection}{9.2 Iterative dominance solver}
+
+\begin{lstlisting}
+function COMPUTE_DOMINATORS(cfg):
+    entry = cfg.entry
+    allBlocks = SET(cfg.blocks)
+
+    for b in cfg.blocks:
+        dom[b] = allBlocks.copy()
+    dom[entry] = { entry }
+
+    changed = true
+    while changed:
+        changed = false
+        for b in cfg.blocks excluding entry in reversePostorder:
+            newDom = { b } union INTERSECTION(dom[p] for p in cfg.predecessors(b))
+            if newDom != dom[b]:
+                dom[b] = newDom
+                changed = true
+
+    return dom
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{9.3 Immediate dominators from dominator sets}
+\addcontentsline{toc}{subsection}{9.3 Immediate dominators from dominator sets}
+
+\begin{lstlisting}
+function COMPUTE_IDOM(dom, cfg):
+    idom = MAP()
+    for b in cfg.blocks excluding cfg.entry:
+        candidates = dom[b] - { b }
+        idom[b] = candidate d in candidates such that
+                  no other c in candidates is dominated by d and c != d
+    idom[cfg.entry] = NULL
+    return idom
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{9.4 Dominance frontier computation}
+\addcontentsline{toc}{subsection}{9.4 Dominance frontier computation}
+
+\begin{lstlisting}
+function COMPUTE_DOMINANCE_FRONTIERS(cfg, idom):
+    for b in cfg.blocks:
+        DF[b] = EMPTY_SET()
+
+    for b in cfg.blocks:
+        if cfg.predecessors(b).count >= 2:
+            for p in cfg.predecessors(b):
+                runner = p
+                while runner != idom[b]:
+                    DF[runner].add(b)
+                    runner = idom[runner]
+
+    return DF
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{9.5 Insert phi functions}
+\addcontentsline{toc}{subsection}{9.5 Insert phi functions}
+
+\begin{lstlisting}
+function INSERT_PHI_FUNCTIONS(cfg, variables, defsites, DF):
+    for v in variables:
+        work = QUEUE(defsites[v])
+        hasAlready = EMPTY_SET()
+
+        while !work.empty():
+            n = work.pop()
+            for y in DF[n]:
+                if !hasAlready.contains(y):
+                    INSERT_PHI(y, v)
+                    hasAlready.add(y)
+                    if y not in defsites[v]:
+                        work.push(y)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{9.6 Rename variables after phi insertion}
+\addcontentsline{toc}{subsection}{9.6 Rename variables after phi insertion}
+
+\begin{lstlisting}
+function RENAME_SSA(cfg, dominatorTree, variables):
+    stack = MAP_VAR_TO_STACK()
+    counter = MAP_VAR_TO_INT(default = 0)
+
+    for v in variables:
+        stack[v].push(NEW_NAME(v, counter[v]++))
+
+    function renameBlock(b):
+        pushed = []
+
+        for phi in b.phis:
+            v = phi.originalVariable
+            newName = NEW_NAME(v, counter[v]++)
+            phi.result = newName
+            stack[v].push(newName)
+            pushed.append(v)
+
+        for inst in b.instructions:
+            for use in inst.uses:
+                use.name = stack[use.originalVariable].top()
+            for def in inst.defs:
+                v = def.originalVariable
+                newName = NEW_NAME(v, counter[v]++)
+                def.name = newName
+                stack[v].push(newName)
+                pushed.append(v)
+
+        for succ in cfg.successors(b):
+            index = PREDECESSOR_INDEX(succ, b)
+            for phi in succ.phis:
+                v = phi.originalVariable
+                phi.argument[index] = stack[v].top()
+
+        for child in dominatorTree.children(b):
+            renameBlock(child)
+
+        for v in REVERSE(pushed):
+            stack[v].pop()
+
+    renameBlock(cfg.entry)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{9.7 Insert copies for out-of-SSA translation}
+\addcontentsline{toc}{subsection}{9.7 Insert copies for out-of-SSA translation}
+
+\begin{lstlisting}
+function INSERT_COPIES_FOR_PHI(cfg):
+    for block in cfg.blocks:
+        for phi in block.phis:
+            dest = phi.result
+            for i = 0; i < phi.argument.count; i++:
+                pred = block.predecessors[i]
+                src = phi.argument[i]
+                INSERT_COPY_ON_EDGE(pred, block, dest, src)
+        block.removeAllPhis()
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{9.8 Parallel-copy sequentialization}
+\addcontentsline{toc}{subsection}{9.8 Parallel-copy sequentialization}
+
+\begin{lstlisting}
+function LOWER_PARALLEL_COPIES(copies):
+    // copies are assignments dst <- src that conceptually occur simultaneously.
+    result = []
+
+    while copies not empty:
+        progress = false
+        for copy in COPY_LIST(copies):
+            if copy.dst not in SOURCES(copies):
+                result.append(copy)
+                copies.remove(copy)
+                progress = true
+
+        if progress:
+            continue
+
+        cycleCopy = copies.first()
+        temp = NEW_TEMP()
+        result.append(COPY(temp, cycleCopy.src))
+        REPLACE_SOURCE(copies, cycleCopy.src, temp)
+
+    return result
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{9.9 Sparse simple constant propagation}
+\addcontentsline{toc}{subsection}{9.9 Sparse simple constant propagation}
+
+\begin{lstlisting}
+enum LatticeValue { UNDEF, CONST(value), TOP }
+
+function SPARSE_CONSTANT_PROPAGATION(ssa):
+    value = MAP_NAME_TO_LATTICE(default = UNDEF)
+    worklist = QUEUE(ssa.definitions)
+
+    while !worklist.empty():
+        def = worklist.pop()
+        old = value[def.result]
+        new = EVALUATE_DEFINITION(def, value)
+        joined = MEET_CONSTANTS(old, new)
+
+        if joined != old:
+            value[def.result] = joined
+            for use in USES_OF(def.result):
+                worklist.push(use.containingDefinition)
+
+    return value
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{9.10 Sparse conditional constant propagation}
+\addcontentsline{toc}{subsection}{9.10 Sparse conditional constant propagation}
+
+\begin{lstlisting}
+function SCCP(ssaCfg):
+    value = MAP_NAME_TO_LATTICE(default = UNDEF)
+    executableEdge = SET()
+    flowWork = QUEUE([ssaCfg.entry])
+    ssaWork = QUEUE()
+
+    MARK_BLOCK_EXECUTABLE(ssaCfg.entry, flowWork)
+
+    while !flowWork.empty() or !ssaWork.empty():
+        while !flowWork.empty():
+            b = flowWork.pop()
+            for phi in b.phis:
+                PROCESS_PHI(phi, value, executableEdge, ssaWork)
+            for inst in b.instructions:
+                PROCESS_INSTRUCTION(inst, value, executableEdge, flowWork, ssaWork)
+
+        while !ssaWork.empty():
+            inst = ssaWork.pop()
+            if BLOCK_EXECUTABLE(inst.block):
+                PROCESS_INSTRUCTION(inst, value, executableEdge, flowWork, ssaWork)
+
+    REWRITE_CONSTANTS_AND_REMOVE_UNREACHABLE(ssaCfg, value, executableEdge)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{9.11 Build call graph with function-valued parameters}
+\addcontentsline{toc}{subsection}{9.11 Build call graph with function-valued parameters}
+
+\begin{lstlisting}
+function BUILD_CALL_GRAPH(program):
+    graph = NEW_CALL_GRAPH()
+
+    for proc in program.procedures:
+        for call in proc.calls:
+            targets = RESOLVE_DIRECT_TARGETS(call)
+            if call.targetIsFunctionValuedParameter:
+                targets.addAll(POSSIBLE_BINDINGS(call.target, proc))
+            for target in targets:
+                graph.addEdge(proc, target, call)
+
+    return graph
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{9.12 Iterative interprocedural constant propagation}
+\addcontentsline{toc}{subsection}{9.12 Iterative interprocedural constant propagation}
+
+\begin{lstlisting}
+function INTERPROCEDURAL_CONSTANT_PROP(program):
+    graph = BUILD_CALL_GRAPH(program)
+    summary = INITIALIZE_PROCEDURE_SUMMARIES(program)
+    worklist = QUEUE(program.procedures)
+
+    while !worklist.empty():
+        p = worklist.pop()
+        inFacts = MEET_CALLER_FACTS(graph.inEdges(p), summary)
+        newSummary = ANALYZE_PROCEDURE_WITH_CONSTANTS(p, inFacts)
+
+        if newSummary != summary[p]:
+            summary[p] = newSummary
+            for edge in graph.outEdges(p):
+                worklist.push(edge.callee)
+
+    APPLY_INTERPROCEDURAL_CONSTANTS(program, summary)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{9.13 Reducibility-aware dominator update sketch}
+\addcontentsline{toc}{subsection}{9.13 Reducibility-aware dominator update sketch}
+
+\begin{lstlisting}
+function MODIFIED_ITERATIVE_DOMINANCE(cfg):
+    order = CHOOSE_ORDER_USING_REDUCIBILITY_AND_RPO(cfg)
+    dom = INITIALIZE_DOMINATORS(cfg)
+
+    changed = true
+    while changed:
+        changed = false
+        for b in order:
+            if b == cfg.entry:
+                continue
+            newDom = {b} union INTERSECTION(dom[p] for p in cfg.predecessors(b))
+            if newDom != dom[b]:
+                dom[b] = newDom
+                changed = true
+
+    return dom
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section{Scalar Optimization}
+
+\Needspace{5\baselineskip}
+\subsection*{10.1 Useless-code elimination}
+\addcontentsline{toc}{subsection}{10.1 Useless-code elimination}
+
+\begin{lstlisting}
+function ELIMINATE_USELESS_CODE(cfg):
+    live = LIVE_VARIABLE_ANALYSIS(cfg)
+
+    for b in cfg.blocks:
+        liveNow = live.out[b].copy()
+        for inst in b.instructions in reverse order:
+            if inst.hasNoSideEffects() and inst.defs disjoint liveNow:
+                REMOVE(inst)
+            else:
+                liveNow.removeAll(inst.defs)
+                liveNow.addAll(inst.uses)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{10.2 Clean unreachable and empty control flow}
+\addcontentsline{toc}{subsection}{10.2 Clean unreachable and empty control flow}
+
+\begin{lstlisting}
+function CLEAN_CFG(cfg):
+    REMOVE_UNREACHABLE_BLOCKS(cfg)
+
+    changed = true
+    while changed:
+        changed = false
+
+        for b in COPY_LIST(cfg.blocks):
+            if b.isEmpty() and b.hasSingleSuccessor():
+                REDIRECT_PREDECESSORS(b, b.onlySuccessor())
+                REMOVE_BLOCK(cfg, b)
+                changed = true
+
+        for b in cfg.blocks:
+            if b.endsWithBranchToNextBlock():
+                REMOVE_TRAILING_BRANCH(b)
+                changed = true
+
+    return cfg
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{10.3 Lazy code motion framework}
+\addcontentsline{toc}{subsection}{10.3 Lazy code motion framework}
+
+\begin{lstlisting}
+function LAZY_CODE_MOTION(cfg, expressionUniverse):
+    anticipated = COMPUTE_ANTICIPATED_EXPRESSIONS(cfg, expressionUniverse)
+    available = COMPUTE_AVAILABLE_EXPRESSIONS(cfg, expressionUniverse)
+    postponable = COMPUTE_POSTPONABLE_EXPRESSIONS(cfg, anticipated, available)
+    earliest = COMPUTE_EARLIEST_PLACEMENTS(cfg, anticipated, available)
+    latest = COMPUTE_LATEST_PLACEMENTS(cfg, earliest, postponable)
+
+    for edge in cfg.edges:
+        for expr in latest[edge]:
+            temp = INSERT_COMPUTATION_ON_EDGE(edge, expr)
+            REPLACE_LATER_OCCURRENCES_DOMINATED_BY(edge, expr, temp)
+
+    return cfg
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{10.4 Code hoisting from dominated region}
+\addcontentsline{toc}{subsection}{10.4 Code hoisting from dominated region}
+
+\begin{lstlisting}
+function HOIST_INVARIANT_TO_DOMINATOR(cfg, dominatorTree):
+    for b in cfg.blocks in dominatorTree postorder:
+        for inst in b.instructions:
+            if CAN_HOIST(inst, b, dominatorTree):
+                target = NEAREST_SAFE_DOMINATOR(inst, b, dominatorTree)
+                MOVE_BEFORE_TERMINATOR(inst, target)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{10.5 Tail-call optimization}
+\addcontentsline{toc}{subsection}{10.5 Tail-call optimization}
+
+\begin{lstlisting}
+function TAIL_CALL_OPTIMIZE(proc):
+    for call in proc.calls:
+        if call.isImmediatelyReturned() and ABI_COMPATIBLE(proc, call.callee):
+            MOVE_ACTUALS_INTO_FORMAL_LOCATIONS(call)
+            RESTORE_CALLER_FRAME_FOR_TAIL_CALL(proc)
+            REPLACE_CALL_AND_RETURN_WITH_JUMP(call, call.callee.entryLabel)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{10.6 Leaf-call optimization}
+\addcontentsline{toc}{subsection}{10.6 Leaf-call optimization}
+
+\begin{lstlisting}
+function LEAF_CALL_OPTIMIZE(proc):
+    if proc.containsCalls():
+        return
+    OMIT_CALLER_SAVE_AREA_IF_ABI_ALLOWS(proc)
+    USE_FAST_PROLOGUE_EPILOGUE(proc)
+    KEEP_RETURN_ADDRESS_IN_REGISTER_IF_SAFE(proc)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{10.7 Parameter promotion}
+\addcontentsline{toc}{subsection}{10.7 Parameter promotion}
+
+\begin{lstlisting}
+function PARAMETER_PROMOTION(proc):
+    for formal in proc.formals:
+        if formal.isAddressTaken:
+            continue
+        if FORMAL_ALWAYS_RECEIVES_SAME_CONSTANT_OR_GLOBAL(formal):
+            promoted = CREATE_SPECIALIZED_FORMAL_VALUE(formal)
+            REWRITE_USES(proc, formal, promoted)
+            UPDATE_CALL_SITES(proc, formal, promoted)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{10.8 Dominator-based value numbering}
+\addcontentsline{toc}{subsection}{10.8 Dominator-based value numbering}
+
+\begin{lstlisting}
+function DOMINATOR_VALUE_NUMBER(cfg, domTree):
+    state = EMPTY_VALUE_NUMBER_STATE()
+
+    function visit(b):
+        checkpoint = state.save()
+        LOCAL_VALUE_NUMBER_WITH_STATE(b, state)
+        for child in domTree.children(b):
+            visit(child)
+        state.restore(checkpoint)
+
+    visit(cfg.entry)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{10.9 Loop unswitching}
+\addcontentsline{toc}{subsection}{10.9 Loop unswitching}
+
+\begin{lstlisting}
+function LOOP_UNSWITCH(loop, condition):
+    if !IS_LOOP_INVARIANT(condition, loop):
+        return loop
+    if CODE_GROWTH_TOO_LARGE(loop):
+        return loop
+
+    trueLoop = CLONE_LOOP(loop)
+    falseLoop = CLONE_LOOP(loop)
+    ASSUME_CONDITION(trueLoop, condition, true)
+    ASSUME_CONDITION(falseLoop, condition, false)
+
+    preheader = loop.preheader
+    REPLACE_LOOP_WITH_BRANCH(preheader, condition, trueLoop.entry, falseLoop.entry)
+    SIMPLIFY_CFG(trueLoop)
+    SIMPLIFY_CFG(falseLoop)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{10.10 Strength reduction on SSA graph}
+\addcontentsline{toc}{subsection}{10.10 Strength reduction on SSA graph}
+
+\begin{lstlisting}
+function STRENGTH_REDUCTION(ssa):
+    induction = FIND_INDUCTION_VARIABLES(ssa)
+
+    for expr in ssa.expressions:
+        if IS_LINEAR_FUNCTION_OF_INDUCTION(expr, induction):
+            lf = DESCRIBE_LINEAR_FUNCTION(expr)
+            replacement = GET_OR_CREATE_REDUCED_VARIABLE(lf)
+            REPLACE_EXPRESSION(expr, replacement)
+
+    INSERT_UPDATES_FOR_REDUCED_VARIABLES(ssa, induction)
+    REMOVE_NOW_DEAD_EXPRESSIONS(ssa)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{10.11 Rewrite step for strength reduction}
+\addcontentsline{toc}{subsection}{10.11 Rewrite step for strength reduction}
+
+\begin{lstlisting}
+function INSERT_UPDATES_FOR_REDUCED_VARIABLES(ssa, induction):
+    for loop in ssa.loops:
+        for reduced in loop.reducedVariables:
+            initValue = COMPUTE_INITIAL_LINEAR_VALUE(reduced)
+            INSERT_BEFORE_LOOP(loop, reduced.name + " = " + initValue)
+
+            update = COMPUTE_LINEAR_UPDATE(reduced, loop.inductionStep)
+            INSERT_AT_LOOP_BACKEDGE(loop, reduced.name + " = " + reduced.name + " + " + update)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{10.12 Linear-function test replacement}
+\addcontentsline{toc}{subsection}{10.12 Linear-function test replacement}
+
+\begin{lstlisting}
+function LINEAR_FUNCTION_TEST_REPLACEMENT(loop):
+    for branch in loop.branches:
+        if branch.condition uses expensiveLinearFunctionOfInduction:
+            reduced = FIND_REDUCED_VARIABLE(branch.condition.expression)
+            REWRITE_CONDITION_TO_USE(branch, reduced)
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section{Instruction Selection}
+
+\Needspace{5\baselineskip}
+\subsection*{11.1 Peephole optimizer driver}
+\addcontentsline{toc}{subsection}{11.1 Peephole optimizer driver}
+
+\begin{lstlisting}
+function PEEPHOLE_SELECT(ir):
+    window = NEW_WINDOW()
+    output = []
+
+    for inst in ir.instructions:
+        window.push(EXPAND_TO_TARGET_LIKE_SEQUENCE(inst))
+        SIMPLIFY_WINDOW(window)
+        while MATCH_READY_PREFIX(window):
+            output.append(EMIT_MATCHED_TARGET_INSTRUCTION(window))
+            window.removeMatchedPrefix()
+
+    FLUSH_REMAINING_WINDOW(window, output)
+    return output
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{11.2 Peephole simplifier}
+\addcontentsline{toc}{subsection}{11.2 Peephole simplifier}
+
+\begin{lstlisting}
+function SIMPLIFY_WINDOW(window):
+    changed = true
+    while changed:
+        changed = false
+        for rule in SIMPLIFICATION_RULES:
+            match = FIND_MATCH(window, rule.pattern)
+            if match != NONE:
+                APPLY_REWRITE(window, match, rule.replacement)
+                changed = true
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{11.3 Peephole matcher}
+\addcontentsline{toc}{subsection}{11.3 Peephole matcher}
+
+\begin{lstlisting}
+function MATCH_READY_PREFIX(window):
+    for rule in TARGET_INSTRUCTION_RULES:
+        match = MATCH_PATTERN_AT_WINDOW_START(rule.pattern, window)
+        if match != NONE and OPERANDS_AVAILABLE(match):
+            RECORD_SELECTED_RULE(match, rule)
+            return true
+    return false
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{11.4 Compute all tree-pattern matches}
+\addcontentsline{toc}{subsection}{11.4 Compute all tree-pattern matches}
+
+\begin{lstlisting}
+function TILE_ALL(node, rules):
+    matches[node] = []
+
+    for child in node.children:
+        TILE_ALL(child, rules)
+
+    for rule in rules:
+        if PATTERN_MATCHES(rule.pattern, node):
+            childMatches = MATCH_CHILDREN(rule.pattern, node, matches)
+            for combination in CARTESIAN_PRODUCT(childMatches):
+                matches[node].add(TILING(rule, combination, rule.cost + SUM_COST(combination)))
+
+    return matches[node]
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{11.5 Dynamic-programming low-cost tiling}
+\addcontentsline{toc}{subsection}{11.5 Dynamic-programming low-cost tiling}
+
+\begin{lstlisting}
+function TILE_MIN_COST(node, rules):
+    for child in node.children:
+        TILE_MIN_COST(child, rules)
+
+    best[node] = INFINITY
+    bestRule[node] = NULL
+
+    for rule in rules:
+        if PATTERN_MATCHES(rule.pattern, node):
+            cost = rule.cost
+            for frontierNode in FRONTIER_NODES(rule.pattern, node):
+                cost += best[frontierNode]
+            if cost < best[node]:
+                best[node] = cost
+                bestRule[node] = rule
+
+    return best[node]
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{11.6 Emit code from selected tiling}
+\addcontentsline{toc}{subsection}{11.6 Emit code from selected tiling}
+
+\begin{lstlisting}
+function EMIT_TILING(node):
+    rule = bestRule[node]
+    for frontier in FRONTIER_NODES(rule.pattern, node):
+        EMIT_TILING(frontier)
+    EMIT_INSTRUCTION_FOR_RULE(rule, node)
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section{Instruction Scheduling}
+
+\Needspace{5\baselineskip}
+\subsection*{12.1 Rename registers before scheduling}
+\addcontentsline{toc}{subsection}{12.1 Rename registers before scheduling}
+
+\begin{lstlisting}
+function RENAME_FOR_SCHEDULING(block):
+    current = MAP_ORIGINAL_TO_CURRENT()
+
+    for inst in block.instructions:
+        for use in inst.uses:
+            use.reg = current.get(use.reg, use.reg)
+        for def in inst.defs:
+            newReg = NEW_VIRTUAL_REGISTER()
+            current[def.reg] = newReg
+            def.reg = newReg
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{12.2 Build dependence graph with latencies}
+\addcontentsline{toc}{subsection}{12.2 Build dependence graph with latencies}
+
+\begin{lstlisting}
+function BUILD_SCHEDULING_DAG(block, machine):
+    dag = BUILD_DEPENDENCE_GRAPH(block)
+    for edge in dag.edges:
+        edge.latency = LATENCY(edge.producer.inst, edge.consumer.inst, edge.type, machine)
+    return dag
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{12.3 Compute scheduling priorities}
+\addcontentsline{toc}{subsection}{12.3 Compute scheduling priorities}
+
+\begin{lstlisting}
+function COMPUTE_PRIORITIES(dag):
+    for n in dag.nodes in reverseTopologicalOrder:
+        if dag.successors(n).empty():
+            priority[n] = LATENCY(n.inst)
+        else:
+            priority[n] = LATENCY(n.inst) + MAX(priority[s] + EDGE_LATENCY(n, s) for s in dag.successors(n))
+    return priority
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{12.4 Forward list scheduling}
+\addcontentsline{toc}{subsection}{12.4 Forward list scheduling}
+
+\begin{lstlisting}
+function LIST_SCHEDULE(block, machine):
+    dag = BUILD_SCHEDULING_DAG(block, machine)
+    priority = COMPUTE_PRIORITIES(dag)
+    ready = PRIORITY_QUEUE_BY(priority)
+    unscheduledPreds = COUNT_PREDECESSORS(dag)
+
+    for n in dag.nodes:
+        if unscheduledPreds[n] == 0:
+            ready.insert(n)
+
+    cycle = 0
+    schedule = []
+
+    while schedule.count < dag.nodes.count:
+        issued = 0
+        while issued < machine.issueWidth and !ready.empty():
+            n = ready.extractMax()
+            if RESOURCES_AVAILABLE(machine, n.inst, cycle):
+                SCHEDULE_AT(schedule, n.inst, cycle)
+                RESERVE_RESOURCES(machine, n.inst, cycle)
+                issued++
+                for s in dag.successors(n):
+                    MARK_PREDECESSOR_SCHEDULED(s, n, cycle)
+                    if ALL_PREDECESSORS_READY(s, cycle):
+                        ready.insert(s)
+            else:
+                DEFER(n)
+        cycle++
+        RESTORE_DEFERRED_READY_NODES(ready)
+
+    return schedule
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{12.5 Backward list scheduling}
+\addcontentsline{toc}{subsection}{12.5 Backward list scheduling}
+
+\begin{lstlisting}
+function BACKWARD_LIST_SCHEDULE(block, machine):
+    dag = BUILD_SCHEDULING_DAG(block, machine)
+    ready = NODES_WITH_NO_SUCCESSORS(dag)
+    cycle = ESTIMATE_LAST_CYCLE(dag)
+
+    while unscheduled nodes remain:
+        for slot in machine.issueSlots:
+            n = SELECT_HIGHEST_PRIORITY_NODE_THAT_FITS(ready, cycle, slot)
+            if n != NULL:
+                PLACE_AT(n, cycle, slot)
+                for p in dag.predecessors(n):
+                    if all successors of p are scheduled:
+                        ready.add(p)
+        cycle--
+
+    return ORDER_BY_CYCLE_AND_SLOT()
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{12.6 Trace construction for regional scheduling}
+\addcontentsline{toc}{subsection}{12.6 Trace construction for regional scheduling}
+
+\begin{lstlisting}
+function BUILD_TRACE(cfg, entry):
+    trace = []
+    b = entry
+    visited = SET()
+
+    while b != NULL and !visited.contains(b):
+        trace.add(b)
+        visited.add(b)
+        b = MOST_LIKELY_SUCCESSOR_NOT_VISITED(b, visited)
+
+    return trace
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{12.7 Clone side entrance for trace scheduling}
+\addcontentsline{toc}{subsection}{12.7 Clone side entrance for trace scheduling}
+
+\begin{lstlisting}
+function CLONE_FOR_TRACE_CONTEXT(trace):
+    for block in trace:
+        for pred in block.predecessors:
+            if pred not in trace and block != trace.first:
+                clone = CLONE_SUFFIX_FROM(block, trace)
+                REDIRECT_EDGE(pred, block, clone.entry)
+                ADD_COMPENSATION_CODE_IF_NEEDED(pred, block, clone)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{12.8 Modulo scheduling sketch}
+\addcontentsline{toc}{subsection}{12.8 Modulo scheduling sketch}
+
+\begin{lstlisting}
+function MODULO_SCHEDULE(loop, machine):
+    dag = BUILD_LOOP_DEPENDENCE_GRAPH(loop)
+    II = LOWER_BOUND_INITIATION_INTERVAL(dag, machine)
+
+    while true:
+        schedule = EMPTY_MODULO_RESERVATION_TABLE(II, machine)
+        if PLACE_ALL_OPERATIONS_MODULO(dag, schedule, II, machine):
+            kernel = BUILD_SOFTWARE_PIPELINE_KERNEL(loop, schedule, II)
+            prologue = BUILD_PIPELINE_PROLOGUE(loop, schedule)
+            epilogue = BUILD_PIPELINE_EPILOGUE(loop, schedule)
+            return CONCAT(prologue, kernel, epilogue)
+        II++
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section{Register Allocation}
+
+\Needspace{5\baselineskip}
+\subsection*{13.1 Discover live ranges in a basic block}
+\addcontentsline{toc}{subsection}{13.1 Discover live ranges in a basic block}
+
+\begin{lstlisting}
+function LOCAL_LIVE_RANGES(block):
+    ranges = []
+    currentRange = MAP_REGISTER_TO_RANGE()
+
+    for pos, inst in enumerate(block.instructions):
+        for r in inst.uses:
+            if !currentRange.contains(r):
+                currentRange[r] = NEW_RANGE(r, start = block.entry)
+            currentRange[r].end = pos
+
+        for r in inst.defs:
+            if currentRange.contains(r):
+                ranges.add(currentRange[r])
+            currentRange[r] = NEW_RANGE(r, start = pos)
+
+    for range in currentRange.values():
+        ranges.add(range)
+    return ranges
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{13.2 Local register allocation with next-use information}
+\addcontentsline{toc}{subsection}{13.2 Local register allocation with next-use information}
+
+\begin{lstlisting}
+function LOCAL_REGISTER_ALLOCATE(block, physicalRegs):
+    nextUse = COMPUTE_NEXT_USES(block)
+    regDesc = MAP_PHYS_TO_VALUE()
+    locDesc = MAP_VALUE_TO_LOCATION()
+
+    for i = 0; i < block.instructions.length; i++:
+        inst = block.instructions[i]
+
+        for operand in inst.uses:
+            ENSURE_IN_REGISTER(operand, i, nextUse, regDesc, locDesc, physicalRegs)
+
+        for def in inst.defs:
+            r = CHOOSE_REGISTER_FOR_DEF(def, i, nextUse, regDesc, locDesc, physicalRegs)
+            REWRITE_DEF_TO_REGISTER(inst, def, r)
+            UPDATE_DESCRIPTORS_FOR_DEF(def, r, regDesc, locDesc)
+
+        EMIT(inst)
+        RELEASE_DEAD_VALUES_AFTER(inst, i, nextUse, regDesc, locDesc)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{13.3 Choose spill victim for local allocator}
+\addcontentsline{toc}{subsection}{13.3 Choose spill victim for local allocator}
+
+\begin{lstlisting}
+function CHOOSE_SPILL_VICTIM(regDesc, nextUse, position):
+    bestReg = NULL
+    farthest = -1
+
+    for reg, value in regDesc:
+        use = nextUse[value][position]
+        if use == NEVER_USED_AGAIN:
+            return reg
+        if use > farthest:
+            farthest = use
+            bestReg = reg
+
+    return bestReg
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{13.4 Find global live ranges}
+\addcontentsline{toc}{subsection}{13.4 Find global live ranges}
+
+\begin{lstlisting}
+function FIND_GLOBAL_LIVE_RANGES(cfg):
+    liveIn, liveOut = LIVE_VARIABLE_ANALYSIS(cfg)
+    ranges = UNION_FIND()
+
+    for block in cfg.blocks:
+        live = liveOut[block].copy()
+        for inst in block.instructions in reverse order:
+            for d in inst.defs:
+                ranges.addOccurrence(d, inst)
+                live.remove(d)
+            for u in inst.uses:
+                ranges.addOccurrence(u, inst)
+                live.add(u)
+        for v in live:
+            ranges.markLiveThrough(block, v)
+
+    return ranges.components()
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{13.5 Build interference graph}
+\addcontentsline{toc}{subsection}{13.5 Build interference graph}
+
+\begin{lstlisting}
+function BUILD_INTERFERENCE_GRAPH(cfg, liveRanges):
+    graph = NEW_UNDIRECTED_GRAPH(liveRanges)
+    liveIn, liveOut = LIVE_VARIABLE_ANALYSIS(cfg)
+
+    for block in cfg.blocks:
+        live = liveOut[block].copy()
+        for inst in block.instructions in reverse order:
+            for d in inst.defs:
+                for v in live:
+                    if v != d:
+                        graph.addEdge(RANGE(d), RANGE(v))
+                live.remove(d)
+            live.addAll(inst.uses)
+
+    return graph
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{13.6 Coalesce copy-related live ranges}
+\addcontentsline{toc}{subsection}{13.6 Coalesce copy-related live ranges}
+
+\begin{lstlisting}
+function COALESCE_COPIES(graph, copies, K):
+    for copy in copies:
+        a = RANGE(copy.src)
+        b = RANGE(copy.dst)
+        if a == b:
+            REMOVE(copy)
+            continue
+        if graph.hasEdge(a, b):
+            continue
+        if COALESCE_IS_SAFE(graph, a, b, K):
+            merged = MERGE_NODES(graph, a, b)
+            REDIRECT_USES_AND_DEFS(a, b, merged)
+            REMOVE(copy)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{13.7 Estimate spill costs}
+\addcontentsline{toc}{subsection}{13.7 Estimate spill costs}
+
+\begin{lstlisting}
+function ESTIMATE_SPILL_COSTS(liveRanges, loopDepth):
+    for r in liveRanges:
+        cost = 0
+        for use in r.uses:
+            cost += WEIGHT(loopDepth[use.block])
+        for def in r.defs:
+            cost += WEIGHT(loopDepth[def.block])
+        r.spillCost = cost / MAX(1, DEGREE(r))
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{13.8 Graph coloring: simplify and select}
+\addcontentsline{toc}{subsection}{13.8 Graph coloring: simplify and select}
+
+\begin{lstlisting}
+function COLOR_GRAPH(graph, K):
+    stack = STACK()
+    work = COPY_GRAPH(graph)
+
+    while work.hasNodes():
+        n = FIND_NODE_WITH_DEGREE_LESS_THAN(work, K)
+        if n == NULL:
+            n = CHOOSE_LOWEST_SPILL_COST_NODE(work)
+            n.markPotentialSpill = true
+        stack.push(n)
+        work.removeNode(n)
+
+    coloring = MAP()
+    spills = SET()
+
+    while !stack.empty():
+        n = stack.pop()
+        forbidden = SET(coloring[m] for m in graph.neighbors(n) if coloring.contains(m))
+        color = FIRST_AVAILABLE_COLOR(K, forbidden, n.registerClass)
+        if color == NONE:
+            spills.add(n)
+        else:
+            coloring[n] = color
+
+    return coloring, spills
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{13.9 Insert spill and restore code}
+\addcontentsline{toc}{subsection}{13.9 Insert spill and restore code}
+
+\begin{lstlisting}
+function INSERT_SPILL_CODE(proc, spilledRanges):
+    for range in spilledRanges:
+        slot = ASSIGN_SPILL_SLOT(range)
+
+        for use in range.uses:
+            temp = NEW_VIRTUAL_REGISTER()
+            INSERT_BEFORE(use.inst, LOAD_SPILL(slot, temp))
+            REWRITE_USE(use, temp)
+
+        for def in range.defs:
+            temp = NEW_VIRTUAL_REGISTER()
+            REWRITE_DEF(def, temp)
+            INSERT_AFTER(def.inst, STORE_SPILL(temp, slot))
+
+    REBUILD_CFG_AND_LIVE_INFO(proc)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{13.10 Full Chaitin-Briggs-style allocator driver}
+\addcontentsline{toc}{subsection}{13.10 Full Chaitin-Briggs-style allocator driver}
+
+\begin{lstlisting}
+function GLOBAL_COLORING_ALLOCATE(proc, K):
+    while true:
+        ranges = FIND_GLOBAL_LIVE_RANGES(proc.cfg)
+        graph = BUILD_INTERFERENCE_GRAPH(proc.cfg, ranges)
+        COALESCE_COPIES(graph, proc.copyInstructions, K)
+        ESTIMATE_SPILL_COSTS(graph.nodes, LOOP_DEPTHS(proc.cfg))
+        coloring, spills = COLOR_GRAPH(graph, K)
+
+        if spills.empty():
+            APPLY_COLORING(proc, coloring)
+            REMOVE_REDUNDANT_COPIES(proc)
+            return proc
+
+        INSERT_SPILL_CODE(proc, spills)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{13.11 Handle overlapping register classes}
+\addcontentsline{toc}{subsection}{13.11 Handle overlapping register classes}
+
+\begin{lstlisting}
+function AVAILABLE_COLORS_FOR_NODE(node, assignedColors, registerClass):
+    available = SET(registerClass.physicalRegisters)
+    for neighbor in node.neighbors:
+        if assignedColors.contains(neighbor):
+            available.removeAll(OVERLAPPING_REGISTERS(assignedColors[neighbor]))
+    return available
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section{Runtime Optimization and JIT Compilation}
+
+\Needspace{5\baselineskip}
+\subsection*{14.1 Runtime optimizer execution loop}
+\addcontentsline{toc}{subsection}{14.1 Runtime optimizer execution loop}
+
+\begin{lstlisting}
+function EXECUTE_WITH_JIT(program):
+    while program.running:
+        unit = DISPATCH_NEXT_UNIT(program)
+        EXECUTE_INTERPRETED_OR_COMPILED(unit)
+        UPDATE_PROFILING_COUNTERS(unit)
+
+        if SHOULD_COMPILE(unit):
+            compiled = JIT_COMPILE(unit)
+            INSTALL_COMPILED_CODE(unit, compiled)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{14.2 Hot trace detection}
+\addcontentsline{toc}{subsection}{14.2 Hot trace detection}
+
+\begin{lstlisting}
+function TRACE_MONITOR(edge):
+    edge.counter++
+    if edge.counter >= TRACE_THRESHOLD and !edge.traceCompiled:
+        trace = BUILD_RUNTIME_TRACE(edge.target)
+        code = COMPILE_TRACE(trace)
+        LINK_TRACE_ENTRY(edge, code)
+        edge.traceCompiled = true
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{14.3 Build a runtime trace}
+\addcontentsline{toc}{subsection}{14.3 Build a runtime trace}
+
+\begin{lstlisting}
+function BUILD_RUNTIME_TRACE(startBlock):
+    trace = []
+    b = startBlock
+
+    while true:
+        trace.add(b)
+        if b.endsWithReturn() or trace.length >= MAX_TRACE_LENGTH:
+            break
+        next = MOST_FREQUENT_SUCCESSOR_AT_RUNTIME(b)
+        if next == NULL or next in trace:
+            break
+        b = next
+
+    return trace
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{14.4 Compile a hot trace with guards}
+\addcontentsline{toc}{subsection}{14.4 Compile a hot trace with guards}
+
+\begin{lstlisting}
+function COMPILE_TRACE(trace):
+    ir = LINEARIZE_TRACE(trace)
+
+    for sideExit in TRACE_SIDE_EXITS(trace):
+        INSERT_GUARD(ir, sideExit.condition, sideExit.target)
+
+    OPTIMIZE_TRACE_IR(ir)
+    code = GENERATE_MACHINE_CODE(ir)
+    REGISTER_SIDE_EXIT_STUBS(code, trace)
+    return code
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{14.5 Link traces}
+\addcontentsline{toc}{subsection}{14.5 Link traces}
+
+\begin{lstlisting}
+function LINK_TRACE_EXIT(exitStub, targetTrace):
+    if targetTrace.compiledCode != NULL:
+        PATCH_BRANCH(exitStub, targetTrace.compiledCode.entry)
+    else:
+        PATCH_BRANCH(exitStub, INTERPRETER_ENTRY_FOR(exitStub.targetBlock))
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{14.6 Hot-method compilation in mixed-mode runtime}
+\addcontentsline{toc}{subsection}{14.6 Hot-method compilation in mixed-mode runtime}
+
+\begin{lstlisting}
+function METHOD_ENTRY(method):
+    if method.compiledCode != NULL:
+        JUMP(method.compiledCode.entry)
+
+    method.invocationCounter++
+    if method.invocationCounter >= METHOD_THRESHOLD:
+        method.compiledCode = JIT_COMPILE_METHOD(method)
+        JUMP(method.compiledCode.entry)
+
+    INTERPRET(method.bytecodes)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{14.7 On-stack replacement}
+\addcontentsline{toc}{subsection}{14.7 On-stack replacement}
+
+\begin{lstlisting}
+function ON_STACK_REPLACEMENT(interpreterFrame, osrPoint):
+    method = interpreterFrame.method
+    compiled = ENSURE_OSR_VERSION(method, osrPoint)
+
+    compiledFrame = MAP_INTERPRETER_STATE_TO_COMPILED_FRAME(interpreterFrame, osrPoint)
+    SWITCH_STACK_FRAME(interpreterFrame, compiledFrame)
+    JUMP(compiled.osrEntry[osrPoint])
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{14.8 Code-cache management}
+\addcontentsline{toc}{subsection}{14.8 Code-cache management}
+
+\begin{lstlisting}
+function MANAGE_CODE_CACHE(cache):
+    if cache.freeSpace >= cache.lowWaterMark:
+        return
+
+    candidates = SORT_BY_COLDNESS(cache.compiledUnits)
+    for unit in candidates:
+        if unit.isCurrentlyExecuting:
+            continue
+        UNLINK_INCOMING_BRANCHES(unit)
+        REMOVE_COMPILED_CODE(cache, unit)
+        if cache.freeSpace >= cache.targetFreeSpace:
+            break
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section{Supporting Data Structures}
+
+\Needspace{5\baselineskip}
+\subsection*{15.1 Ordered-list set union}
+\addcontentsline{toc}{subsection}{15.1 Ordered-list set union}
+
+\begin{lstlisting}
+function ORDERED_SET_UNION(a, b):
+    i = 0
+    j = 0
+    result = []
+
+    while i < a.length and j < b.length:
+        if a[i] == b[j]:
+            result.append(a[i])
+            i++; j++
+        else if a[i] < b[j]:
+            result.append(a[i])
+            i++
+        else:
+            result.append(b[j])
+            j++
+
+    APPEND_REST(result, a, i)
+    APPEND_REST(result, b, j)
+    return result
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{15.2 Bit-vector set union and intersection}
+\addcontentsline{toc}{subsection}{15.2 Bit-vector set union and intersection}
+
+\begin{lstlisting}
+function BITSET_UNION(dst, a, b):
+    for i = 0; i < a.wordCount; i++:
+        dst.word[i] = a.word[i] | b.word[i]
+
+function BITSET_INTERSECT(dst, a, b):
+    for i = 0; i < a.wordCount; i++:
+        dst.word[i] = a.word[i] & b.word[i]
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{15.3 Sparse set insertion and membership}
+\addcontentsline{toc}{subsection}{15.3 Sparse set insertion and membership}
+
+\begin{lstlisting}
+struct SparseSet {
+    int dense[MAX]
+    int sparse[UNIVERSE]
+    int count
+}
+
+function SPARSE_CONTAINS(s, x):
+    i = s.sparse[x]
+    return 0 <= i and i < s.count and s.dense[i] == x
+
+function SPARSE_INSERT(s, x):
+    if SPARSE_CONTAINS(s, x):
+        return
+    s.sparse[x] = s.count
+    s.dense[s.count] = x
+    s.count++
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{15.4 Hash table with chaining}
+\addcontentsline{toc}{subsection}{15.4 Hash table with chaining}
+
+\begin{lstlisting}
+function CHAINED_HASH_LOOKUP(table, key):
+    bucket = HASH(key) % table.bucketCount
+    node = table.bucket[bucket]
+    while node != NULL:
+        if EQUAL(node.key, key):
+            return node.value
+        node = node.next
+    return NOT_FOUND
+
+function CHAINED_HASH_INSERT(table, key, value):
+    bucket = HASH(key) % table.bucketCount
+    node = NEW_NODE(key, value, table.bucket[bucket])
+    table.bucket[bucket] = node
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{15.5 Open-addressed hash lookup}
+\addcontentsline{toc}{subsection}{15.5 Open-addressed hash lookup}
+
+\begin{lstlisting}
+function OPEN_ADDRESS_LOOKUP(table, key):
+    h = HASH(key) % table.size
+    for probe = 0; probe < table.size; probe++:
+        i = PROBE_INDEX(h, probe, table.size)
+        if table.slot[i].empty:
+            return NOT_FOUND
+        if !table.slot[i].deleted and EQUAL(table.slot[i].key, key):
+            return table.slot[i].value
+    return NOT_FOUND
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{15.6 Open-addressed hash insert}
+\addcontentsline{toc}{subsection}{15.6 Open-addressed hash insert}
+
+\begin{lstlisting}
+function OPEN_ADDRESS_INSERT(table, key, value):
+    h = HASH(key) % table.size
+    firstDeleted = NONE
+
+    for probe = 0; probe < table.size; probe++:
+        i = PROBE_INDEX(h, probe, table.size)
+        if table.slot[i].deleted and firstDeleted == NONE:
+            firstDeleted = i
+        else if table.slot[i].empty:
+            target = (firstDeleted != NONE) ? firstDeleted : i
+            table.slot[target] = ENTRY(key, value)
+            return
+        else if EQUAL(table.slot[i].key, key):
+            table.slot[i].value = value
+            return
+
+    RESIZE_AND_REINSERT(table)
+    OPEN_ADDRESS_INSERT(table, key, value)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{15.7 Two-dimensional symbol table lookup}
+\addcontentsline{toc}{subsection}{15.7 Two-dimensional symbol table lookup}
+
+\begin{lstlisting}
+function LOOKUP_SYMBOL_2D(name, namespace, table):
+    bucket = HASH_PAIR(name, namespace) % table.bucketCount
+    for entry in table.bucket[bucket]:
+        if entry.name == name and entry.namespace == namespace:
+            return entry
+    return NOT_FOUND
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section{Implementation Notes for a C Project}
+
+\Needspace{5\baselineskip}
+\subsection*{16.1 Common C-like data model}
+\addcontentsline{toc}{subsection}{16.1 Common C-like data model}
+
+\begin{lstlisting}
+struct BasicBlock {
+    Vector<Instruction*> instructions;
+    Vector<BasicBlock*> preds;
+    Vector<BasicBlock*> succs;
+};
+
+struct Instruction {
+    Opcode op;
+    Vector<Value*> uses;
+    Vector<Value*> defs;
+    bool hasSideEffects;
+};
+
+struct CFG {
+    BasicBlock* entry;
+    Vector<BasicBlock*> blocks;
+};
+
+struct Function {
+    Symbol* name;
+    CFG* cfg;
+    FrameLayout frame;
+};
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{16.2 Pass interface}
+\addcontentsline{toc}{subsection}{16.2 Pass interface}
+
+\begin{lstlisting}
+struct Pass {
+    const char* name;
+    bool (*requires)(Function* f);
+    void (*run)(Function* f, AnalysisCache* cache);
+};
+
+function RUN_FUNCTION_PASSES(functions, passes):
+    for f in functions:
+        cache = NEW_ANALYSIS_CACHE(f)
+        for pass in passes:
+            if pass.requires == NULL or pass.requires(f):
+                pass.run(f, cache)
+                INVALIDATE_ANALYSES_AFFECTED_BY(pass, cache)
+                VERIFY_FUNCTION(f)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{16.3 Worklist pattern used throughout the compiler}
+\addcontentsline{toc}{subsection}{16.3 Worklist pattern used throughout the compiler}
+
+\begin{lstlisting}
+function WORKLIST_FIXED_POINT(initialItems, process):
+    worklist = QUEUE(initialItems)
+    inQueue = SET(initialItems)
+
+    while !worklist.empty():
+        item = worklist.pop()
+        inQueue.remove(item)
+
+        changedItems = process(item)
+        for next in changedItems:
+            if !inQueue.contains(next):
+                worklist.push(next)
+                inQueue.add(next)
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{16.4 Safety checks for pass development}
+\addcontentsline{toc}{subsection}{16.4 Safety checks for pass development}
+
+\begin{lstlisting}
+function VERIFY_FUNCTION(f):
+    VERIFY_CFG_REACHABILITY(f.cfg)
+    VERIFY_DEF_USE_CHAINS(f)
+    VERIFY_DOMINATOR_TREE_IF_PRESENT(f)
+    VERIFY_SSA_IF_PRESENT(f)
+    VERIFY_REGISTER_CLASSES_IF_ALLOCATED(f)
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section{Practical Reading Order for Implementation}
+
+For an implementation project, the algorithms above compose naturally into four build milestones:
+
+\begin{enumerate}
+\item \textbf{Front end:} scanner generation or hand scanner; recursive descent or generated parser; AST and symbol table; basic type checking.
+\item \textbf{IR and flow:} three-address IR, basic-block formation, CFG construction, expression and statement translation.
+\item \textbf{Optimization:} data-flow framework, dominance, SSA construction, local value numbering, dead-code elimination, SCCP, strength reduction.
+\item \textbf{Back end:} instruction selection by tiling or peephole matching, list scheduling, local then global register allocation, final assembly emission.
+\end{enumerate}
+
+The book's central engineering lesson is that these algorithms are not isolated tricks. Each pass chooses an IR contract for later passes. Good compiler engineering comes from keeping those contracts explicit, verifying them between passes, and choosing algorithmic precision that fits the compile-time budget.
+
+\clearpage
+\section*{Document Control Notes}
+\phantomsection
+\addcontentsline{toc}{section}{Document Control Notes}
+\begin{itemize}
+\item The pseudocode is normalized for readability and implementation planning; names and helper routines are intentionally consistent across compiler phases.
+\item The extraction emphasizes algorithms, pass contracts, and data structures rather than page-by-page commentary.
+\item For a production compiler, each routine should be paired with invariants, verification checks, unit tests, and IR serialization for debugging.
+\end{itemize}
+\end{document}

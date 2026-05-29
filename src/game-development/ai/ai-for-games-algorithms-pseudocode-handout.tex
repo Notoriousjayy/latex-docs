@@ -1,0 +1,2616 @@
+
+\documentclass[10pt,letterpaper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.72in,headheight=14pt]{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{ragged2e}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{microtype}
+\usepackage{listings}
+\usepackage{needspace}
+\usepackage{tocloft}
+\usepackage{upquote}
+\definecolor{HouseBlue}{HTML}{1F4E79}
+\definecolor{HouseGray}{HTML}{4F5B62}
+\definecolor{HouseLight}{HTML}{EAF2F8}
+\definecolor{CodeBack}{HTML}{F7F8FA}
+\definecolor{CodeFrame}{HTML}{C9D1D9}
+\definecolor{CodeKeyword}{HTML}{1F4E79}
+\definecolor{CodeComment}{HTML}{5F6F7A}
+\definecolor{CodeString}{HTML}{8A3B12}
+\hypersetup{colorlinks=true,linkcolor=HouseBlue,urlcolor=HouseBlue,citecolor=HouseBlue,pdfauthor={ChatGPT},pdftitle={AI for Games: Algorithms as C-like Pseudocode}}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small AI for Games --- Algorithms as C-like Pseudocode}
+\rhead{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlist[itemize]{leftmargin=1.25em,itemsep=2pt,topsep=2pt}
+\setlist[enumerate]{leftmargin=1.5em,itemsep=2pt,topsep=2pt}
+\titleformat{\section}{\Large\bfseries\color{HouseBlue}}{}{0pt}{}
+\titleformat{\subsection}{\large\bfseries\color{HouseGray}}{}{0pt}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{HouseGray}}{}{0pt}{}
+\titlespacing*{\section}{0pt}{2.2ex plus .4ex minus .2ex}{1.0ex}
+\titlespacing*{\subsection}{0pt}{1.8ex plus .3ex minus .2ex}{0.7ex}
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\lstdefinelanguage{PseudoC}{
+  morekeywords={typedef,enum,struct,union,return,if,else,for,while,do,case,switch,break,continue,bool,true,false,NULL,void,int,long,char,float,double,string,const,static,foreach,in,new,delete,insert,remove,push,pop,emit,try,catch,throw,private,public,Map,List,Set,Queue,Stack,PriorityQueue,Vec2,Vec3,Vector,Matrix,Node,Edge,Graph,Path,State,Action,Goal,Behavior,Task,Status,Success,Failure,Running,GameState,Character,Decision,Rule,Condition,Event,Sensor,Region,Value},
+  sensitive=true,
+  morecomment=[l]{//},
+  morestring=[b]",
+}
+\lstset{
+  language=PseudoC,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\bfseries\color{CodeKeyword},
+  commentstyle=\itshape\color{CodeComment},
+  stringstyle=\color{CodeString},
+  backgroundcolor=\color{CodeBack},
+  frame=single,
+  rulecolor=\color{CodeFrame},
+  framerule=0.35pt,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  tabsize=4,
+  xleftmargin=0.6em,
+  xrightmargin=0.3em,
+  aboveskip=0.7em,
+  belowskip=0.7em,
+}
+\newcommand{\handouttitle}{AI for Games: Algorithms as C-like Pseudocode}
+\sloppy
+\begin{document}
+\pagenumbering{gobble}
+\begin{titlepage}
+\centering
+\vspace*{0.85in}
+{\Huge\bfseries\color{HouseBlue}\handouttitle\par}
+\vspace{0.22in}
+{\Large Systematic Algorithm Extraction and Reconstruction\par}
+\vspace{0.34in}
+{\large Source analyzed: Ian Millington, \emph{AI for Games}, Third Edition, CRC Press, 2019\par}
+\vfill
+\begin{minipage}{0.88\textwidth}
+\small
+This handout rewrites the algorithmic content from the uploaded game-AI text as independent C-like pseudocode. It is organized as an implementation-oriented reference for movement, steering behaviors, pathfinding, decision making, tactical and strategic AI, learning, procedural content generation, board-game search, execution management, event handling, polling, and sense management. The pseudocode is normalized for study, code review, engine design, and implementation planning; it is not a source-code clone.
+\end{minipage}
+\vfill
+{\large Generated \today\par}
+\end{titlepage}
+\clearpage
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+
+\textbf{Source analyzed:} Ian Millington, \emph{AI for Games}, Third Edition, CRC Press, 2019.
+\textbf{Output purpose:} compact algorithm-study reference for implementation planning, code review, and engine design.
+\textbf{Method:} algorithms, pseudo-code sections, and code-like data structures were systematically reduced to independent C-like pseudocode. This is not a transcription of the book's source listings; names and control flow are normalized for C/C++-style implementation.
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{0. Shared Data Structures and Utility Routines}
+\addcontentsline{toc}{subsection}{0. Shared Data Structures and Utility Routines}
+
+\begin{lstlisting}
+typedef struct Vec3 {
+    float x, y, z;
+} Vec3;
+
+typedef struct Kinematic {
+    Vec3 position;
+    float orientation;      // yaw in radians for 2.5D movement
+    Vec3 velocity;
+    float rotation;         // angular velocity
+} Kinematic;
+
+typedef struct SteeringOutput {
+    Vec3 linear;
+    float angular;
+    bool valid;
+} SteeringOutput;
+
+typedef struct KinematicOutput {
+    Vec3 velocity;
+    float rotation;
+    bool valid;
+} KinematicOutput;
+
+float length(Vec3 v);
+Vec3 normalize(Vec3 v);
+Vec3 add(Vec3 a, Vec3 b);
+Vec3 sub(Vec3 a, Vec3 b);
+Vec3 scale(Vec3 v, float s);
+float dot(Vec3 a, Vec3 b);
+float random01(void);           // [0, 1)
+float randomSigned(void);       // [-1, 1]
+float clamp(float x, float lo, float hi);
+float wrapPi(float radians);    // normalize angle to [-pi, pi]
+\end{lstlisting}
+
+\begin{lstlisting}
+float randomBinomial(void) {
+    return random01() - random01();
+}
+
+Vec3 orientationAsVector(float orientation) {
+    Vec3 v = { sinf(orientation), 0.0f, cosf(orientation) };
+    return v;
+}
+
+float newOrientation(float current, Vec3 velocity) {
+    if (length(velocity) <= 0.0f) return current;
+    return atan2f(velocity.x, velocity.z);
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+void updateKinematic(Kinematic *k, SteeringOutput s, float dt) {
+    if (!s.valid) return;
+    k->position = add(k->position, scale(k->velocity, dt));
+    k->orientation += k->rotation * dt;
+    k->velocity = add(k->velocity, scale(s.linear, dt));
+    k->rotation += s.angular * dt;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part I -- Movement Algorithms}
+\addcontentsline{toc}{section}{Part I -- Movement Algorithms}
+
+\Needspace{5\baselineskip}
+\subsection*{1. Kinematic Seek}
+\addcontentsline{toc}{subsection}{1. Kinematic Seek}
+
+\begin{lstlisting}
+KinematicOutput kinematicSeek(Kinematic character, Kinematic target, float maxSpeed) {
+    KinematicOutput out = {0};
+    Vec3 direction = sub(target.position, character.position);
+    if (length(direction) <= 0.0f) return out;
+    out.velocity = scale(normalize(direction), maxSpeed);
+    out.rotation = 0.0f;
+    out.valid = true;
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{2. Kinematic Flee}
+\addcontentsline{toc}{subsection}{2. Kinematic Flee}
+
+\begin{lstlisting}
+KinematicOutput kinematicFlee(Kinematic character, Kinematic target, float maxSpeed) {
+    KinematicOutput out = {0};
+    Vec3 direction = sub(character.position, target.position);
+    if (length(direction) <= 0.0f) return out;
+    out.velocity = scale(normalize(direction), maxSpeed);
+    out.rotation = 0.0f;
+    out.valid = true;
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{3. Kinematic Arrive}
+\addcontentsline{toc}{subsection}{3. Kinematic Arrive}
+
+\begin{lstlisting}
+KinematicOutput kinematicArrive(
+    Kinematic character,
+    Kinematic target,
+    float maxSpeed,
+    float radius,
+    float timeToTarget
+) {
+    KinematicOutput out = {0};
+    Vec3 direction = sub(target.position, character.position);
+    float distance = length(direction);
+    if (distance < radius) return out;
+
+    Vec3 desired = scale(direction, 1.0f / timeToTarget);
+    if (length(desired) > maxSpeed) desired = scale(normalize(desired), maxSpeed);
+
+    out.velocity = desired;
+    out.rotation = 0.0f;
+    out.valid = true;
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{4. Kinematic Wander}
+\addcontentsline{toc}{subsection}{4. Kinematic Wander}
+
+\begin{lstlisting}
+KinematicOutput kinematicWander(Kinematic character, float maxSpeed, float maxRotation) {
+    KinematicOutput out = {0};
+    out.velocity = scale(orientationAsVector(character.orientation), maxSpeed);
+    out.rotation = randomBinomial() * maxRotation;
+    out.valid = true;
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{5. Dynamic Seek}
+\addcontentsline{toc}{subsection}{5. Dynamic Seek}
+
+\begin{lstlisting}
+SteeringOutput seek(Kinematic character, Kinematic target, float maxAccel) {
+    SteeringOutput out = {0};
+    Vec3 direction = sub(target.position, character.position);
+    if (length(direction) <= 0.0f) return out;
+    out.linear = scale(normalize(direction), maxAccel);
+    out.angular = 0.0f;
+    out.valid = true;
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{6. Dynamic Flee}
+\addcontentsline{toc}{subsection}{6. Dynamic Flee}
+
+\begin{lstlisting}
+SteeringOutput flee(Kinematic character, Kinematic target, float maxAccel) {
+    SteeringOutput out = {0};
+    Vec3 direction = sub(character.position, target.position);
+    if (length(direction) <= 0.0f) return out;
+    out.linear = scale(normalize(direction), maxAccel);
+    out.angular = 0.0f;
+    out.valid = true;
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{7. Arrive Steering}
+\addcontentsline{toc}{subsection}{7. Arrive Steering}
+
+\begin{lstlisting}
+SteeringOutput arrive(
+    Kinematic character,
+    Kinematic target,
+    float maxSpeed,
+    float maxAccel,
+    float targetRadius,
+    float slowRadius,
+    float timeToTarget
+) {
+    SteeringOutput out = {0};
+    Vec3 direction = sub(target.position, character.position);
+    float distance = length(direction);
+    if (distance < targetRadius) return out;
+
+    float targetSpeed = (distance > slowRadius)
+        ? maxSpeed
+        : maxSpeed * distance / slowRadius;
+
+    Vec3 targetVelocity = scale(normalize(direction), targetSpeed);
+    out.linear = scale(sub(targetVelocity, character.velocity), 1.0f / timeToTarget);
+    if (length(out.linear) > maxAccel) out.linear = scale(normalize(out.linear), maxAccel);
+    out.angular = 0.0f;
+    out.valid = true;
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{8. Align Steering}
+\addcontentsline{toc}{subsection}{8. Align Steering}
+
+\begin{lstlisting}
+SteeringOutput align(
+    Kinematic character,
+    Kinematic target,
+    float maxRotation,
+    float maxAngularAccel,
+    float targetRadius,
+    float slowRadius,
+    float timeToTarget
+) {
+    SteeringOutput out = {0};
+    float rotation = wrapPi(target.orientation - character.orientation);
+    float rotationSize = fabsf(rotation);
+    if (rotationSize < targetRadius) return out;
+
+    float targetRotation = (rotationSize > slowRadius)
+        ? maxRotation
+        : maxRotation * rotationSize / slowRadius;
+    targetRotation *= rotation / rotationSize;
+
+    out.angular = (targetRotation - character.rotation) / timeToTarget;
+    out.angular = clamp(out.angular, -maxAngularAccel, maxAngularAccel);
+    out.linear = (Vec3){0,0,0};
+    out.valid = true;
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{9. Velocity Matching}
+\addcontentsline{toc}{subsection}{9. Velocity Matching}
+
+\begin{lstlisting}
+SteeringOutput velocityMatch(Kinematic character, Kinematic target, float maxAccel, float timeToTarget) {
+    SteeringOutput out = {0};
+    out.linear = scale(sub(target.velocity, character.velocity), 1.0f / timeToTarget);
+    if (length(out.linear) > maxAccel) out.linear = scale(normalize(out.linear), maxAccel);
+    out.angular = 0.0f;
+    out.valid = true;
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{10. Pursue and Evade}
+\addcontentsline{toc}{subsection}{10. Pursue and Evade}
+
+\begin{lstlisting}
+Kinematic predictTarget(Kinematic character, Kinematic target, float maxPrediction) {
+    Vec3 direction = sub(target.position, character.position);
+    float distance = length(direction);
+    float speed = length(character.velocity);
+    float prediction = (speed <= distance / maxPrediction) ? maxPrediction : distance / speed;
+    target.position = add(target.position, scale(target.velocity, prediction));
+    return target;
+}
+
+SteeringOutput pursue(Kinematic character, Kinematic target, float maxPrediction, float maxAccel) {
+    Kinematic future = predictTarget(character, target, maxPrediction);
+    return seek(character, future, maxAccel);
+}
+
+SteeringOutput evade(Kinematic character, Kinematic target, float maxPrediction, float maxAccel) {
+    Kinematic future = predictTarget(character, target, maxPrediction);
+    return flee(character, future, maxAccel);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{11. Face and Look-Where-You-Are-Going}
+\addcontentsline{toc}{subsection}{11. Face and Look-Where-You-Are-Going}
+
+\begin{lstlisting}
+SteeringOutput face(
+    Kinematic character,
+    Kinematic target,
+    float maxRotation,
+    float maxAngularAccel,
+    float targetRadius,
+    float slowRadius,
+    float timeToTarget
+) {
+    Vec3 direction = sub(target.position, character.position);
+    SteeringOutput out = {0};
+    if (length(direction) <= 0.0f) return out;
+
+    Kinematic orientationTarget = target;
+    orientationTarget.orientation = atan2f(direction.x, direction.z);
+    return align(character, orientationTarget, maxRotation, maxAngularAccel,
+                 targetRadius, slowRadius, timeToTarget);
+}
+
+SteeringOutput lookWhereGoing(
+    Kinematic character,
+    float maxRotation,
+    float maxAngularAccel,
+    float targetRadius,
+    float slowRadius,
+    float timeToTarget
+) {
+    Kinematic target = character;
+    if (length(character.velocity) <= 0.0f) return (SteeringOutput){0};
+    target.orientation = atan2f(character.velocity.x, character.velocity.z);
+    return align(character, target, maxRotation, maxAngularAccel,
+                 targetRadius, slowRadius, timeToTarget);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{12. Dynamic Wander}
+\addcontentsline{toc}{subsection}{12. Dynamic Wander}
+
+\begin{lstlisting}
+typedef struct WanderState {
+    float wanderOrientation;
+} WanderState;
+
+SteeringOutput wander(
+    Kinematic character,
+    WanderState *state,
+    float wanderOffset,
+    float wanderRadius,
+    float wanderRate,
+    float maxAccel
+) {
+    state->wanderOrientation += randomBinomial() * wanderRate;
+    float targetOrientation = state->wanderOrientation + character.orientation;
+
+    Kinematic target = {0};
+    target.position = add(character.position, scale(orientationAsVector(character.orientation), wanderOffset));
+    target.position = add(target.position, scale(orientationAsVector(targetOrientation), wanderRadius));
+    return face(character, target, /*maxRotation*/9999, /*maxAngularAccel*/9999,
+                /*targetRadius*/0.01f, /*slowRadius*/1.0f, /*timeToTarget*/0.1f);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{13. Path Following}
+\addcontentsline{toc}{subsection}{13. Path Following}
+
+\begin{lstlisting}
+typedef struct Path {
+    float (*getParam)(struct Path *p, Vec3 position, float lastParam);
+    Vec3  (*getPosition)(struct Path *p, float param);
+} Path;
+
+SteeringOutput followPath(
+    Kinematic character,
+    Path *path,
+    float *pathParam,
+    float pathOffset,
+    float maxAccel
+) {
+    *pathParam = path->getParam(path, character.position, *pathParam);
+    float targetParam = *pathParam + pathOffset;
+    Kinematic target = {0};
+    target.position = path->getPosition(path, targetParam);
+    return seek(character, target, maxAccel);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{14. Separation}
+\addcontentsline{toc}{subsection}{14. Separation}
+
+\begin{lstlisting}
+SteeringOutput separation(
+    Kinematic character,
+    Kinematic *targets,
+    int count,
+    float threshold,
+    float decayCoefficient,
+    float maxAccel
+) {
+    SteeringOutput out = {0};
+    for (int i = 0; i < count; ++i) {
+        Vec3 direction = sub(character.position, targets[i].position);
+        float distance = length(direction);
+        if (distance <= 0.0f || distance >= threshold) continue;
+        float strength = fminf(decayCoefficient / (distance * distance), maxAccel);
+        out.linear = add(out.linear, scale(normalize(direction), strength));
+    }
+    out.angular = 0.0f;
+    out.valid = length(out.linear) > 0.0f;
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{15. Collision Avoidance}
+\addcontentsline{toc}{subsection}{15. Collision Avoidance}
+
+\begin{lstlisting}
+SteeringOutput collisionAvoidance(
+    Kinematic character,
+    Kinematic *targets,
+    int count,
+    float radius,
+    float maxAccel
+) {
+    float shortestTime = INFINITY;
+    int first = -1;
+    Vec3 firstRelativePos = {0}, firstRelativeVel = {0};
+
+    for (int i = 0; i < count; ++i) {
+        Vec3 relPos = sub(targets[i].position, character.position);
+        Vec3 relVel = sub(targets[i].velocity, character.velocity);
+        float relSpeed2 = dot(relVel, relVel);
+        if (relSpeed2 <= 0.0f) continue;
+
+        float time = -dot(relPos, relVel) / relSpeed2;
+        float distanceAtClosest = length(add(relPos, scale(relVel, time)));
+        if (time > 0.0f && distanceAtClosest < 2.0f * radius && time < shortestTime) {
+            shortestTime = time;
+            first = i;
+            firstRelativePos = relPos;
+            firstRelativeVel = relVel;
+        }
+    }
+
+    SteeringOutput out = {0};
+    if (first < 0) return out;
+    Vec3 avoidDirection = add(firstRelativePos, scale(firstRelativeVel, shortestTime));
+    out.linear = scale(normalize(scale(avoidDirection, -1.0f)), maxAccel);
+    out.valid = true;
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{16. Obstacle and Wall Avoidance}
+\addcontentsline{toc}{subsection}{16. Obstacle and Wall Avoidance}
+
+\begin{lstlisting}
+typedef struct Collision {
+    bool hit;
+    Vec3 position;
+    Vec3 normal;
+} Collision;
+
+typedef struct CollisionDetector {
+    Collision (*raycast)(struct CollisionDetector *detector, Vec3 start, Vec3 end);
+} CollisionDetector;
+
+SteeringOutput obstacleAvoidance(
+    Kinematic character,
+    CollisionDetector *detector,
+    float avoidDistance,
+    float lookahead,
+    float maxAccel
+) {
+    SteeringOutput out = {0};
+    Vec3 ray = scale(normalize(character.velocity), lookahead);
+    Collision c = detector->raycast(detector, character.position, add(character.position, ray));
+    if (!c.hit) return out;
+
+    Kinematic target = {0};
+    target.position = add(c.position, scale(c.normal, avoidDistance));
+    return seek(character, target, maxAccel);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{17. Weighted Blended Steering}
+\addcontentsline{toc}{subsection}{17. Weighted Blended Steering}
+
+\begin{lstlisting}
+typedef SteeringOutput (*SteeringBehavior)(void *ctx);
+
+typedef struct WeightedBehavior {
+    SteeringBehavior behavior;
+    void *ctx;
+    float weight;
+} WeightedBehavior;
+
+SteeringOutput blendedSteering(WeightedBehavior *items, int count, float maxAccel, float maxAngularAccel) {
+    SteeringOutput out = {0};
+    for (int i = 0; i < count; ++i) {
+        SteeringOutput s = items[i].behavior(items[i].ctx);
+        if (!s.valid) continue;
+        out.linear = add(out.linear, scale(s.linear, items[i].weight));
+        out.angular += s.angular * items[i].weight;
+        out.valid = true;
+    }
+    if (length(out.linear) > maxAccel) out.linear = scale(normalize(out.linear), maxAccel);
+    out.angular = clamp(out.angular, -maxAngularAccel, maxAngularAccel);
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{18. Priority Steering}
+\addcontentsline{toc}{subsection}{18. Priority Steering}
+
+\begin{lstlisting}
+SteeringOutput prioritySteering(WeightedBehavior *groups, int count, float epsilon) {
+    for (int i = 0; i < count; ++i) {
+        SteeringOutput s = groups[i].behavior(groups[i].ctx);
+        if (s.valid && (length(s.linear) > epsilon || fabsf(s.angular) > epsilon)) return s;
+    }
+    return (SteeringOutput){0};
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{19. Steering Pipeline}
+\addcontentsline{toc}{subsection}{19. Steering Pipeline}
+
+\begin{lstlisting}
+typedef struct Goal { Vec3 position; float orientation; } Goal;
+typedef bool (*ConstraintCheck)(Goal g, void *ctx);
+typedef Goal (*ConstraintSuggest)(Goal g, void *ctx);
+typedef Goal (*Targeter)(void *ctx);
+typedef Goal (*Decomposer)(Goal g, void *ctx);
+typedef SteeringOutput (*Actuator)(Goal g, void *ctx);
+
+SteeringOutput steeringPipeline(
+    Targeter targeter,
+    Decomposer decomposer,
+    ConstraintCheck *checks,
+    ConstraintSuggest *suggestions,
+    void **constraintCtx,
+    int constraintCount,
+    Actuator actuator,
+    void *ctx
+) {
+    Goal goal = targeter(ctx);
+    goal = decomposer(goal, ctx);
+
+    for (int i = 0; i < constraintCount; ++i) {
+        if (checks[i](goal, constraintCtx[i])) {
+            goal = suggestions[i](goal, constraintCtx[i]);
+            i = -1; // restart constraint validation after a repair
+        }
+    }
+    return actuator(goal, ctx);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{20. Ballistic Firing Solution}
+\addcontentsline{toc}{subsection}{20. Ballistic Firing Solution}
+
+\begin{lstlisting}
+bool firingSolution(Vec3 shooter, Vec3 target, float projectileSpeed, Vec3 gravity, Vec3 *velocityOut) {
+    Vec3 delta = sub(target, shooter);
+    float g = length(gravity);
+    float xz = sqrtf(delta.x * delta.x + delta.z * delta.z);
+    float y = delta.y;
+    float v2 = projectileSpeed * projectileSpeed;
+    float root = v2 * v2 - g * (g * xz * xz + 2.0f * y * v2);
+    if (root < 0.0f) return false;
+
+    float angle = atan2f(v2 - sqrtf(root), g * xz); // lower arc
+    Vec3 horizontal = normalize((Vec3){delta.x, 0.0f, delta.z});
+    *velocityOut = add(scale(horizontal, cosf(angle) * projectileSpeed),
+                       (Vec3){0.0f, sinf(angle) * projectileSpeed, 0.0f});
+    return true;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{21. Iterative Targeting for Moving Targets}
+\addcontentsline{toc}{subsection}{21. Iterative Targeting for Moving Targets}
+
+\begin{lstlisting}
+bool iterativeTargeting(
+    Vec3 shooter,
+    Kinematic target,
+    float projectileSpeed,
+    Vec3 gravity,
+    int maxIterations,
+    Vec3 *velocityOut
+) {
+    Vec3 aimPoint = target.position;
+    for (int i = 0; i < maxIterations; ++i) {
+        Vec3 v;
+        if (!firingSolution(shooter, aimPoint, projectileSpeed, gravity, &v)) return false;
+        float t = length(sub(aimPoint, shooter)) / projectileSpeed;
+        aimPoint = add(target.position, scale(target.velocity, t));
+        *velocityOut = v;
+    }
+    return true;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{22. Jump Planning}
+\addcontentsline{toc}{subsection}{22. Jump Planning}
+
+\begin{lstlisting}
+typedef struct JumpPoint {
+    Vec3 takeoff;
+    Vec3 landing;
+    float jumpTime;
+    Vec3 takeoffVelocity;
+} JumpPoint;
+
+bool calculateJump(Kinematic character, JumpPoint *jump, Vec3 gravity) {
+    Vec3 delta = sub(jump->landing, jump->takeoff);
+    float t = jump->jumpTime;
+    if (t <= 0.0f) return false;
+    jump->takeoffVelocity = sub(scale(delta, 1.0f / t), scale(gravity, 0.5f * t));
+    return true;
+}
+
+SteeringOutput jumpSteering(Kinematic character, JumpPoint jump, float maxAccel) {
+    Kinematic target = character;
+    target.position = jump.takeoff;
+    return arrive(character, target, length(jump.takeoffVelocity), maxAccel,
+                  0.05f, 1.0f, 0.1f);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{23. Formation Slot Assignment}
+\addcontentsline{toc}{subsection}{23. Formation Slot Assignment}
+
+\begin{lstlisting}
+typedef struct FormationSlot { int slotId; Vec3 relativePosition; float relativeOrientation; } FormationSlot;
+typedef struct CharacterSlot { int characterId; int slotId; float cost; } CharacterSlot;
+
+float slotCost(Kinematic c, FormationSlot s, Kinematic anchor) {
+    Vec3 worldSlot = add(anchor.position, s.relativePosition);
+    return length(sub(c.position, worldSlot));
+}
+
+void greedyAssignSlots(Kinematic *characters, int n, FormationSlot *slots, int m, int *slotForCharacter) {
+    bool usedSlot[1024] = {0};
+    for (int i = 0; i < n; ++i) slotForCharacter[i] = -1;
+
+    for (int assigned = 0; assigned < n && assigned < m; ++assigned) {
+        float best = INFINITY;
+        int bestC = -1, bestS = -1;
+        for (int c = 0; c < n; ++c) if (slotForCharacter[c] < 0) {
+            for (int s = 0; s < m; ++s) if (!usedSlot[s]) {
+                float cost = slotCost(characters[c], slots[s], characters[0]);
+                if (cost < best) { best = cost; bestC = c; bestS = s; }
+            }
+        }
+        slotForCharacter[bestC] = bestS;
+        usedSlot[bestS] = true;
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{24. Formation Anchor and Drift Correction}
+\addcontentsline{toc}{subsection}{24. Formation Anchor and Drift Correction}
+
+\begin{lstlisting}
+Kinematic formationAnchor(Kinematic *members, int n, FormationSlot *slots, int *slotForCharacter) {
+    Vec3 sum = {0,0,0};
+    int count = 0;
+    for (int i = 0; i < n; ++i) {
+        int s = slotForCharacter[i];
+        if (s < 0) continue;
+        sum = add(sum, sub(members[i].position, slots[s].relativePosition));
+        ++count;
+    }
+    Kinematic anchor = {0};
+    if (count > 0) anchor.position = scale(sum, 1.0f / count);
+    return anchor;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part II -- Pathfinding Algorithms}
+\addcontentsline{toc}{section}{Part II -- Pathfinding Algorithms}
+
+\Needspace{5\baselineskip}
+\subsection*{25. Graph Interfaces}
+\addcontentsline{toc}{subsection}{25. Graph Interfaces}
+
+\begin{lstlisting}
+typedef struct Node Node;
+
+typedef struct Connection {
+    Node *from;
+    Node *to;
+    float cost;
+} Connection;
+
+typedef struct Graph {
+    Connection *(*connections)(struct Graph *g, Node *node, int *countOut);
+} Graph;
+
+typedef struct NodeRecord {
+    Node *node;
+    Connection *connection;
+    float costSoFar;
+    float estimatedTotal;
+} NodeRecord;
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{26. Dijkstra Pathfinding}
+\addcontentsline{toc}{subsection}{26. Dijkstra Pathfinding}
+
+\begin{lstlisting}
+Path dijkstra(Graph *graph, Node *start, Node *goal) {
+    PriorityQueue open = pqCreate();
+    Set closed = setCreate();
+    Map records = mapCreate();
+
+    NodeRecord startRec = { start, NULL, 0.0f, 0.0f };
+    pqPush(&open, startRec, 0.0f);
+    mapPut(&records, start, startRec);
+
+    while (!pqEmpty(&open)) {
+        NodeRecord current = pqPopMin(&open);
+        if (current.node == goal) return reconstructPath(current, records);
+
+        int edgeCount = 0;
+        Connection *edges = graph->connections(graph, current.node, &edgeCount);
+        for (int i = 0; i < edgeCount; ++i) {
+            Node *end = edges[i].to;
+            float endCost = current.costSoFar + edges[i].cost;
+            if (setContains(&closed, end)) continue;
+
+            NodeRecord old;
+            bool seen = mapGet(&records, end, &old);
+            if (!seen || endCost < old.costSoFar) {
+                NodeRecord nr = { end, &edges[i], endCost, endCost };
+                mapPut(&records, end, nr);
+                pqUpsert(&open, nr, endCost);
+            }
+        }
+        setAdd(&closed, current.node);
+    }
+    return emptyPath();
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{27. A\textsuperscript{*} Pathfinding}
+\addcontentsline{toc}{subsection}{27. A\textsuperscript{*} Pathfinding}
+
+\begin{lstlisting}
+typedef float (*Heuristic)(Node *a, Node *goal);
+
+Path astar(Graph *graph, Node *start, Node *goal, Heuristic h) {
+    PriorityQueue open = pqCreate();
+    Set closed = setCreate();
+    Map records = mapCreate();
+
+    NodeRecord startRec = { start, NULL, 0.0f, h(start, goal) };
+    pqPush(&open, startRec, startRec.estimatedTotal);
+    mapPut(&records, start, startRec);
+
+    while (!pqEmpty(&open)) {
+        NodeRecord current = pqPopMin(&open);
+        if (current.node == goal) return reconstructPath(current, records);
+
+        int edgeCount = 0;
+        Connection *edges = graph->connections(graph, current.node, &edgeCount);
+        for (int i = 0; i < edgeCount; ++i) {
+            Node *end = edges[i].to;
+            float g = current.costSoFar + edges[i].cost;
+            if (setContains(&closed, end)) {
+                NodeRecord old = mapAt(&records, end);
+                if (old.costSoFar <= g) continue;
+                setRemove(&closed, end);
+            }
+
+            NodeRecord old;
+            bool seen = mapGet(&records, end, &old);
+            if (!seen || g < old.costSoFar) {
+                NodeRecord nr = { end, &edges[i], g, g + h(end, goal) };
+                mapPut(&records, end, nr);
+                pqUpsert(&open, nr, nr.estimatedTotal);
+            }
+        }
+        setAdd(&closed, current.node);
+    }
+    return emptyPath();
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{28. Node-Array A\textsuperscript{*}}
+\addcontentsline{toc}{subsection}{28. Node-Array A\textsuperscript{*}}
+
+\begin{lstlisting}
+Path astarNodeArray(Graph *graph, int nodeCount, int startId, int goalId, HeuristicById h) {
+    NodeRecord *records = calloc(nodeCount, sizeof(NodeRecord));
+    uint8_t *state = calloc(nodeCount, sizeof(uint8_t)); // 0 unseen, 1 open, 2 closed
+    BinaryHeap open = heapCreate();
+
+    records[startId] = (NodeRecord){ nodeById(startId), NULL, 0.0f, h(startId, goalId) };
+    state[startId] = 1;
+    heapPush(&open, startId, records[startId].estimatedTotal);
+
+    while (!heapEmpty(&open)) {
+        int currentId = heapPopMin(&open);
+        if (currentId == goalId) return reconstructArrayPath(records, startId, goalId);
+        state[currentId] = 2;
+
+        int n = 0;
+        Connection *edges = graphConnectionsById(graph, currentId, &n);
+        for (int i = 0; i < n; ++i) {
+            int to = idOf(edges[i].to);
+            float g = records[currentId].costSoFar + edges[i].cost;
+            if (state[to] == 2 && records[to].costSoFar <= g) continue;
+            if (state[to] == 0 || g < records[to].costSoFar) {
+                records[to] = (NodeRecord){ edges[i].to, &edges[i], g, g + h(to, goalId) };
+                state[to] = 1;
+                heapUpsert(&open, to, records[to].estimatedTotal);
+            }
+        }
+    }
+    return emptyPath();
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{29. Path Smoothing}
+\addcontentsline{toc}{subsection}{29. Path Smoothing}
+
+\begin{lstlisting}
+Path smoothPath(Path raw, bool (*hasLineOfSight)(Vec3 a, Vec3 b)) {
+    Path out = pathCreate();
+    int anchor = 0;
+    pathAppend(&out, raw.points[0]);
+
+    while (anchor < raw.count - 1) {
+        int farthest = anchor + 1;
+        for (int i = raw.count - 1; i > anchor; --i) {
+            if (hasLineOfSight(raw.points[anchor], raw.points[i])) {
+                farthest = i;
+                break;
+            }
+        }
+        pathAppend(&out, raw.points[farthest]);
+        anchor = farthest;
+    }
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{30. Hierarchical Pathfinding}
+\addcontentsline{toc}{subsection}{30. Hierarchical Pathfinding}
+
+\begin{lstlisting}
+Path hierarchicalPathfind(Hierarchy *h, Node *start, Node *goal, Heuristic heuristic) {
+    int top = h->levelCount - 1;
+    Node *abstractStart = h->abstractNode(start, top);
+    Node *abstractGoal = h->abstractNode(goal, top);
+    Path abstractPath = astar(h->graph[top], abstractStart, abstractGoal, heuristic);
+
+    Path refined = emptyPath();
+    Node *localStart = start;
+    for (int i = 1; i < abstractPath.count; ++i) {
+        Node *entry = h->entryNode(abstractPath.nodes[i-1], abstractPath.nodes[i]);
+        Path segment = astar(h->graph[0], localStart, entry, heuristic);
+        pathConcat(&refined, segment);
+        localStart = entry;
+    }
+    pathConcat(&refined, astar(h->graph[0], localStart, goal, heuristic));
+    return refined;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{31. Continuous-Time A\textsuperscript{*}}
+\addcontentsline{toc}{subsection}{31. Continuous-Time A\textsuperscript{*}}
+
+\begin{lstlisting}
+typedef struct TimeNode { Vec3 position; float time; } TimeNode;
+
+Path continuousTimeAStar(TimeGraph *graph, TimeNode start, TimeNode goal, HeuristicTime h) {
+    PriorityQueue open = pqCreate();
+    Map records = mapCreate();
+    pqPushTime(&open, start, h(start, goal));
+
+    while (!pqEmpty(&open)) {
+        TimeNode current = pqPopTime(&open);
+        if (timeNodeGoalReached(current, goal)) return reconstructTimePath(current, records);
+
+        int n = 0;
+        TimeConnection *moves = graph->connections(graph, current, &n);
+        for (int i = 0; i < n; ++i) {
+            TimeNode next = moves[i].to;
+            if (!graph->isCollisionFree(graph, current, next)) continue;
+            float g = recordCost(records, current) + moves[i].cost;
+            if (recordBetter(records, next, g)) continue;
+            storeRecord(records, next, current, moves[i], g, g + h(next, goal));
+            pqUpsertTime(&open, next, g + h(next, goal));
+        }
+    }
+    return emptyPath();
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{32. Movement Planning over Action Graphs}
+\addcontentsline{toc}{subsection}{32. Movement Planning over Action Graphs}
+
+\begin{lstlisting}
+typedef struct MovementAction {
+    bool (*precondition)(WorldState s);
+    WorldState (*apply)(WorldState s);
+    float cost;
+} MovementAction;
+
+Plan movementPlan(WorldState start, bool (*goal)(WorldState), MovementAction *actions, int actionCount) {
+    SearchNode root = { start, NULL, NULL, 0.0f };
+    PriorityQueue open = pqCreate();
+    pqPush(&open, root, 0.0f);
+
+    while (!pqEmpty(&open)) {
+        SearchNode cur = pqPopMin(&open);
+        if (goal(cur.state)) return reconstructPlan(cur);
+        for (int i = 0; i < actionCount; ++i) {
+            if (!actions[i].precondition(cur.state)) continue;
+            WorldState next = actions[i].apply(cur.state);
+            SearchNode child = { next, &cur, &actions[i], cur.cost + actions[i].cost };
+            pqPush(&open, child, child.cost);
+        }
+    }
+    return emptyPlan();
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part III -- Decision-Making Algorithms}
+\addcontentsline{toc}{section}{Part III -- Decision-Making Algorithms}
+
+\Needspace{5\baselineskip}
+\subsection*{33. Decision Tree Evaluation}
+\addcontentsline{toc}{subsection}{33. Decision Tree Evaluation}
+
+\begin{lstlisting}
+typedef struct DecisionNode DecisionNode;
+
+typedef struct DecisionNode {
+    bool isLeaf;
+    Action action;
+    bool (*test)(GameState *s, struct DecisionNode *self);
+    DecisionNode *trueBranch;
+    DecisionNode *falseBranch;
+} DecisionNode;
+
+Action decide(DecisionNode *node, GameState *state) {
+    while (!node->isLeaf) {
+        node = node->test(state, node) ? node->trueBranch : node->falseBranch;
+    }
+    return node->action;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{34. Random Decision Node}
+\addcontentsline{toc}{subsection}{34. Random Decision Node}
+
+\begin{lstlisting}
+Action randomDecision(Action *actions, float *weights, int count) {
+    float total = 0.0f;
+    for (int i = 0; i < count; ++i) total += weights[i];
+    float r = random01() * total;
+    for (int i = 0; i < count; ++i) {
+        r -= weights[i];
+        if (r <= 0.0f) return actions[i];
+    }
+    return actions[count - 1];
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{35. Finite State Machine Update}
+\addcontentsline{toc}{subsection}{35. Finite State Machine Update}
+
+\begin{lstlisting}
+typedef struct Transition {
+    bool (*triggered)(GameState *s, void *ctx);
+    int targetState;
+    Action *actions;
+    int actionCount;
+    void *ctx;
+} Transition;
+
+typedef struct State {
+    Action *actions;
+    int actionCount;
+    Transition *transitions;
+    int transitionCount;
+    Action *entryActions;
+    int entryCount;
+    Action *exitActions;
+    int exitCount;
+} State;
+
+void updateFSM(StateMachine *fsm, GameState *state) {
+    State *cur = &fsm->states[fsm->current];
+    for (int i = 0; i < cur->transitionCount; ++i) {
+        Transition *t = &cur->transitions[i];
+        if (t->triggered(state, t->ctx)) {
+            executeActions(cur->exitActions, cur->exitCount, state);
+            executeActions(t->actions, t->actionCount, state);
+            fsm->current = t->targetState;
+            executeActions(fsm->states[fsm->current].entryActions,
+                           fsm->states[fsm->current].entryCount, state);
+            return;
+        }
+    }
+    executeActions(cur->actions, cur->actionCount, state);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{36. Hierarchical State Machine Update}
+\addcontentsline{toc}{subsection}{36. Hierarchical State Machine Update}
+
+\begin{lstlisting}
+UpdateResult updateHSM(HSMState *state, GameState *world) {
+    for (int i = 0; i < state->transitionCount; ++i) {
+        Transition *t = &state->transitions[i];
+        if (t->triggered(world, t->ctx)) return (UpdateResult){ .transition = t, .handled = true };
+    }
+    if (state->child) {
+        UpdateResult r = updateHSM(state->child, world);
+        if (r.handled) return r;
+    }
+    executeActions(state->actions, state->actionCount, world);
+    return (UpdateResult){0};
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{37. Behavior Tree Selector and Sequence}
+\addcontentsline{toc}{subsection}{37. Behavior Tree Selector and Sequence}
+
+\begin{lstlisting}
+typedef enum BTStatus { BT_SUCCESS, BT_FAILURE, BT_RUNNING } BTStatus;
+typedef BTStatus (*BTNodeRun)(void *node, GameState *s);
+
+BTStatus selectorRun(BTNode **children, int count, GameState *s) {
+    for (int i = 0; i < count; ++i) {
+        BTStatus r = children[i]->run(children[i], s);
+        if (r != BT_FAILURE) return r;
+    }
+    return BT_FAILURE;
+}
+
+BTStatus sequenceRun(BTNode **children, int count, GameState *s) {
+    for (int i = 0; i < count; ++i) {
+        BTStatus r = children[i]->run(children[i], s);
+        if (r != BT_SUCCESS) return r;
+    }
+    return BT_SUCCESS;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{38. Behavior Tree Random and Non-Deterministic Composites}
+\addcontentsline{toc}{subsection}{38. Behavior Tree Random and Non-Deterministic Composites}
+
+\begin{lstlisting}
+BTStatus randomSelectorRun(BTNode **children, float *weights, int count, GameState *s) {
+    int start = weightedRandomIndex(weights, count);
+    for (int k = 0; k < count; ++k) {
+        int i = (start + k) % count;
+        BTStatus r = children[i]->run(children[i], s);
+        if (r != BT_FAILURE) return r;
+    }
+    return BT_FAILURE;
+}
+
+BTStatus shuffledSequenceRun(BTNode **children, int count, GameState *s) {
+    int order[MAX_CHILDREN];
+    randomPermutation(order, count);
+    for (int k = 0; k < count; ++k) {
+        BTStatus r = children[order[k]]->run(children[order[k]], s);
+        if (r != BT_SUCCESS) return r;
+    }
+    return BT_SUCCESS;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{39. Behavior Tree Decorators}
+\addcontentsline{toc}{subsection}{39. Behavior Tree Decorators}
+
+\begin{lstlisting}
+BTStatus inverterRun(BTNode *child, GameState *s) {
+    BTStatus r = child->run(child, s);
+    if (r == BT_SUCCESS) return BT_FAILURE;
+    if (r == BT_FAILURE) return BT_SUCCESS;
+    return BT_RUNNING;
+}
+
+BTStatus limitRun(LimitNode *node, GameState *s) {
+    if (node->used >= node->limit) return BT_FAILURE;
+    BTStatus r = node->child->run(node->child, s);
+    if (r == BT_SUCCESS || r == BT_FAILURE) node->used++;
+    return r;
+}
+
+BTStatus untilFailRun(BTNode *child, GameState *s) {
+    while (true) {
+        BTStatus r = child->run(child, s);
+        if (r == BT_FAILURE) return BT_SUCCESS;
+        if (r == BT_RUNNING) return BT_RUNNING;
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{40. Parallel Behavior Tree}
+\addcontentsline{toc}{subsection}{40. Parallel Behavior Tree}
+
+\begin{lstlisting}
+BTStatus parallelRun(BTNode **children, int count, int successThreshold, int failureThreshold, GameState *s) {
+    int successes = 0, failures = 0;
+    for (int i = 0; i < count; ++i) {
+        BTStatus r = children[i]->run(children[i], s);
+        if (r == BT_SUCCESS) successes++;
+        else if (r == BT_FAILURE) failures++;
+    }
+    if (successes >= successThreshold) return BT_SUCCESS;
+    if (failures >= failureThreshold) return BT_FAILURE;
+    return BT_RUNNING;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{41. Blackboard Behavior Tree Lookup}
+\addcontentsline{toc}{subsection}{41. Blackboard Behavior Tree Lookup}
+
+\begin{lstlisting}
+BTStatus blackboardTaskRun(Blackboard *bb, const char *key, BTNode *child, GameState *s) {
+    void *value = blackboardGet(bb, key);
+    if (value == NULL) return BT_FAILURE;
+    pushTaskContext(s, value);
+    BTStatus r = child->run(child, s);
+    popTaskContext(s);
+    return r;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{42. Fuzzy Decision Making}
+\addcontentsline{toc}{subsection}{42. Fuzzy Decision Making}
+
+\begin{lstlisting}
+typedef float (*Membership)(float x);
+
+typedef struct FuzzyRule {
+    Membership inputSet;
+    float (*outputValue)(GameState *s);
+    float weight;
+} FuzzyRule;
+
+float fuzzyDecision(FuzzyRule *rules, int count, float observed, GameState *s) {
+    float weighted = 0.0f;
+    float total = 0.0f;
+    for (int i = 0; i < count; ++i) {
+        float dom = rules[i].inputSet(observed) * rules[i].weight;
+        weighted += dom * rules[i].outputValue(s);
+        total += dom;
+    }
+    return (total > 0.0f) ? weighted / total : 0.0f;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{43. Fuzzy State Machine}
+\addcontentsline{toc}{subsection}{43. Fuzzy State Machine}
+
+\begin{lstlisting}
+void updateFuzzyStateMachine(FuzzyFSM *fsm, GameState *s) {
+    for (int i = 0; i < fsm->stateCount; ++i) fsm->nextDom[i] = 0.0f;
+
+    for (int i = 0; i < fsm->stateCount; ++i) {
+        float dom = fsm->dom[i];
+        if (dom <= 0.0f) continue;
+        executeWeightedActions(fsm->states[i].actions, dom, s);
+        for (int t = 0; t < fsm->states[i].transitionCount; ++t) {
+            FuzzyTransition *tr = &fsm->states[i].transitions[t];
+            float triggered = tr->membership(s) * dom;
+            fsm->nextDom[tr->target] = fmaxf(fsm->nextDom[tr->target], triggered);
+        }
+    }
+    normalizeArray(fsm->nextDom, fsm->stateCount);
+    memcpy(fsm->dom, fsm->nextDom, sizeof(float) * fsm->stateCount);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{44. Markov State Machine}
+\addcontentsline{toc}{subsection}{44. Markov State Machine}
+
+\begin{lstlisting}
+int markovNextState(float *transitionRow, int count) {
+    float r = random01();
+    float cumulative = 0.0f;
+    for (int i = 0; i < count; ++i) {
+        cumulative += transitionRow[i];
+        if (r <= cumulative) return i;
+    }
+    return count - 1;
+}
+
+void updateMarkovStateMachine(MarkovFSM *fsm, GameState *s) {
+    executeActions(fsm->states[fsm->current].actions, fsm->states[fsm->current].actionCount, s);
+    fsm->current = markovNextState(fsm->transition[fsm->current], fsm->stateCount);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{45. Goal-Oriented Behavior Selection}
+\addcontentsline{toc}{subsection}{45. Goal-Oriented Behavior Selection}
+
+\begin{lstlisting}
+typedef struct Goal { float value; float insistence; } GoalValue;
+typedef struct ActionModel { float duration; float *goalDelta; bool (*canRun)(GameState *s); } ActionModel;
+
+float discontentment(GoalValue *goals, int count) {
+    float d = 0.0f;
+    for (int i = 0; i < count; ++i) d += goals[i].insistence * goals[i].value * goals[i].value;
+    return d;
+}
+
+ActionModel *chooseGoalAction(ActionModel *actions, int actionCount, GoalValue *goals, int goalCount, GameState *s) {
+    float best = INFINITY;
+    ActionModel *bestAction = NULL;
+    for (int a = 0; a < actionCount; ++a) {
+        if (!actions[a].canRun(s)) continue;
+        GoalValue simulated[MAX_GOALS];
+        memcpy(simulated, goals, sizeof(GoalValue) * goalCount);
+        for (int g = 0; g < goalCount; ++g) simulated[g].value += actions[a].goalDelta[g];
+        float score = discontentment(simulated, goalCount);
+        if (score < best) { best = score; bestAction = &actions[a]; }
+    }
+    return bestAction;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{46. Depth-Limited GOAP Planning}
+\addcontentsline{toc}{subsection}{46. Depth-Limited GOAP Planning}
+
+\begin{lstlisting}
+Plan planActionDFS(WorldModel world, ActionModel *actions, int actionCount, int maxDepth) {
+    float bestScore = worldDiscontentment(world);
+    Plan best = emptyPlan();
+    dfsPlan(world, actions, actionCount, maxDepth, emptyPlan(), &best, &bestScore);
+    return best;
+}
+
+void dfsPlan(WorldModel world, ActionModel *actions, int n, int depth, Plan prefix, Plan *best, float *bestScore) {
+    float score = worldDiscontentment(world);
+    if (score < *bestScore) { *bestScore = score; *best = prefix; }
+    if (depth == 0) return;
+
+    for (int i = 0; i < n; ++i) {
+        if (!actionCanRun(actions[i], world)) continue;
+        WorldModel next = applyAction(world, actions[i]);
+        Plan extended = appendPlan(prefix, actions[i]);
+        dfsPlan(next, actions, n, depth - 1, extended, best, bestScore);
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{47. GOAP with Iterative Deepening A\textsuperscript{*}}
+\addcontentsline{toc}{subsection}{47. GOAP with Iterative Deepening A\textsuperscript{*}}
+
+\begin{lstlisting}
+Plan goapIDAStar(WorldModel start, ActionModel *actions, int actionCount, float (*heuristic)(WorldModel)) {
+    float bound = heuristic(start);
+    Plan path = emptyPlan();
+    while (true) {
+        float t = idaSearch(start, actions, actionCount, 0.0f, bound, &path);
+        if (t == FOUND) return path;
+        if (t == INFINITY) return emptyPlan();
+        bound = t;
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{48. Rule-Based System Iteration}
+\addcontentsline{toc}{subsection}{48. Rule-Based System Iteration}
+
+\begin{lstlisting}
+typedef struct Rule {
+    bool (*matches)(Database *db, Bindings *out);
+    void (*act)(Bindings b, Database *db, GameState *s);
+    int priority;
+} Rule;
+
+void ruleBasedIteration(Rule *rules, int count, Database *db, GameState *s) {
+    Candidate candidates[MAX_RULES];
+    int n = 0;
+    for (int i = 0; i < count; ++i) {
+        Bindings b;
+        if (rules[i].matches(db, &b)) candidates[n++] = (Candidate){ &rules[i], b };
+    }
+    if (n == 0) return;
+    Candidate chosen = arbitrateRule(candidates, n);
+    chosen.rule->act(chosen.bindings, db, s);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{49. Pattern Matching with Bindings}
+\addcontentsline{toc}{subsection}{49. Pattern Matching with Bindings}
+
+\begin{lstlisting}
+bool matchDatum(Pattern p, Datum d, Bindings *b) {
+    if (p.kind != d.kind) return false;
+    for (int i = 0; i < p.fieldCount; ++i) {
+        if (p.fields[i].isVariable) {
+            if (!bindOrCheck(b, p.fields[i].name, d.fields[i])) return false;
+        } else if (!valueEquals(p.fields[i].literal, d.fields[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{50. Rete-Style Fact Propagation}
+\addcontentsline{toc}{subsection}{50. Rete-Style Fact Propagation}
+
+\begin{lstlisting}
+void reteAddFact(ReteNetwork *net, Datum fact) {
+    for (int i = 0; i < net->patternCount; ++i) {
+        PatternNode *p = &net->patterns[i];
+        Bindings b;
+        if (matchDatum(p->pattern, fact, &b)) {
+            Match m = { fact, b };
+            patternStore(p, m);
+            forEachOutput(p, propagateMatch, &m);
+        }
+    }
+}
+
+void reteRemoveFact(ReteNetwork *net, Datum fact) {
+    for (int i = 0; i < net->patternCount; ++i) {
+        if (patternContains(&net->patterns[i], fact)) {
+            patternRemove(&net->patterns[i], fact);
+            propagateRemoval(&net->patterns[i], fact);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{51. Blackboard Iteration}
+\addcontentsline{toc}{subsection}{51. Blackboard Iteration}
+
+\begin{lstlisting}
+void blackboardIteration(Blackboard *bb, Expert *experts, int count, GameState *s) {
+    float best = -INFINITY;
+    Expert *chosen = NULL;
+    for (int i = 0; i < count; ++i) {
+        float insistence = experts[i].getInsistence(bb, s);
+        if (insistence > best) { best = insistence; chosen = &experts[i]; }
+    }
+    if (chosen != NULL) chosen->run(bb, s);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{52. Action Execution Manager}
+\addcontentsline{toc}{subsection}{52. Action Execution Manager}
+
+\begin{lstlisting}
+bool scheduleAction(ActionManager *mgr, Action *a) {
+    for (int i = 0; i < mgr->activeCount; ++i) {
+        Action *other = mgr->active[i];
+        if (!a->canDoBoth(a, other)) {
+            if (!other->interrupt(other)) return false;
+            removeActive(mgr, i--);
+        }
+    }
+    mgr->active[mgr->activeCount++] = a;
+    return true;
+}
+
+void executeActionsManaged(ActionManager *mgr, GameState *s, float dt) {
+    for (int i = 0; i < mgr->activeCount; ++i) {
+        mgr->active[i]->execute(mgr->active[i], s, dt);
+        if (mgr->active[i]->isComplete(mgr->active[i])) removeActive(mgr, i--);
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part IV -- Tactical and Strategic AI}
+\addcontentsline{toc}{section}{Part IV -- Tactical and Strategic AI}
+
+\Needspace{5\baselineskip}
+\subsection*{53. Cover Quality Evaluation}
+\addcontentsline{toc}{subsection}{53. Cover Quality Evaluation}
+
+\begin{lstlisting}
+float coverQuality(Vec3 cover, Vec3 enemy, Vec3 self, World *world) {
+    float visibilityPenalty = worldLineOfSight(world, enemy, cover) ? 1.0f : 0.0f;
+    float distanceScore = 1.0f / (1.0f + length(sub(self, cover)));
+    float attackScore = worldLineOfSight(world, cover, enemy) ? 1.0f : 0.25f;
+    return 2.0f * attackScore + distanceScore - 3.0f * visibilityPenalty;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{54. Waypoint Condensation}
+\addcontentsline{toc}{subsection}{54. Waypoint Condensation}
+
+\begin{lstlisting}
+void condenseWaypoints(WaypointList *list, float mergeDistance) {
+    listSortByImportanceDescending(list);
+    for (Waypoint *w = listFirst(list); w != NULL; w = listNext(list, w)) {
+        Waypoint **nearby = listNearby(list, w->position, mergeDistance);
+        for (int i = 0; nearby[i] != NULL; ++i) {
+            if (nearby[i] == w) continue;
+            if (nearby[i]->importance <= w->importance) {
+                mergeWaypointData(w, nearby[i]);
+                listRemove(list, nearby[i]);
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{55. Influence Map Flooding}
+\addcontentsline{toc}{subsection}{55. Influence Map Flooding}
+
+\begin{lstlisting}
+void mapFloodDijkstra(Map *map, Location *sources, float *sourceStrengths, int sourceCount) {
+    PriorityQueue open = pqCreate();
+    for (int i = 0; i < sourceCount; ++i) {
+        sources[i].influence = sourceStrengths[i];
+        pqPush(&open, sources[i], -sourceStrengths[i]);
+    }
+
+    while (!pqEmpty(&open)) {
+        Location cur = pqPopMin(&open);
+        int n = 0;
+        Location *neighbors = map->neighbors(map, cur, &n);
+        for (int i = 0; i < n; ++i) {
+            float candidate = cur.influence * attenuation(cur, neighbors[i]);
+            if (candidate > neighbors[i].influence) {
+                neighbors[i].influence = candidate;
+                pqUpsert(&open, neighbors[i], -candidate);
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{56. Convolution Filter}
+\addcontentsline{toc}{subsection}{56. Convolution Filter}
+
+\begin{lstlisting}
+void convolve(float **src, float **dst, int width, int height, float **kernel, int radius) {
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            float sum = 0.0f;
+            for (int ky = -radius; ky <= radius; ++ky) {
+                for (int kx = -radius; kx <= radius; ++kx) {
+                    int sx = clampInt(x + kx, 0, width - 1);
+                    int sy = clampInt(y + ky, 0, height - 1);
+                    sum += src[sy][sx] * kernel[ky + radius][kx + radius];
+                }
+            }
+            dst[y][x] = sum;
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{57. Separable Convolution}
+\addcontentsline{toc}{subsection}{57. Separable Convolution}
+
+\begin{lstlisting}
+void separableConvolve(float **src, float **dst, int width, int height, float *kernel, int radius) {
+    float **tmp = allocateGrid(width, height);
+    for (int y = 0; y < height; ++y)
+        for (int x = 0; x < width; ++x) {
+            float sum = 0.0f;
+            for (int k = -radius; k <= radius; ++k)
+                sum += src[y][clampInt(x+k,0,width-1)] * kernel[k+radius];
+            tmp[y][x] = sum;
+        }
+
+    for (int y = 0; y < height; ++y)
+        for (int x = 0; x < width; ++x) {
+            float sum = 0.0f;
+            for (int k = -radius; k <= radius; ++k)
+                sum += tmp[clampInt(y+k,0,height-1)][x] * kernel[k+radius];
+            dst[y][x] = sum;
+        }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{58. Cellular Automata Update}
+\addcontentsline{toc}{subsection}{58. Cellular Automata Update}
+
+\begin{lstlisting}
+void cellularAutomataStep(Grid *grid, Grid *next, CellRule rule) {
+    for (int y = 0; y < grid->height; ++y) {
+        for (int x = 0; x < grid->width; ++x) {
+            Neighborhood n = collectNeighborhood(grid, x, y);
+            next->cell[y][x] = rule(grid->cell[y][x], n);
+        }
+    }
+    swapGridContents(grid, next);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{59. Tactical Path Cost Blending}
+\addcontentsline{toc}{subsection}{59. Tactical Path Cost Blending}
+
+\begin{lstlisting}
+float tacticalEdgeCost(Connection c, TacticalMap *maps, float *weights, int count) {
+    float cost = c.cost;
+    Vec3 p = c.to->position;
+    for (int i = 0; i < count; ++i) cost += weights[i] * sampleTacticalMap(&maps[i], p);
+    return fmaxf(cost, 0.001f);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part V -- Learning Algorithms}
+\addcontentsline{toc}{section}{Part V -- Learning Algorithms}
+
+\Needspace{5\baselineskip}
+\subsection*{60. Parameter Optimization Driver}
+\addcontentsline{toc}{subsection}{60. Parameter Optimization Driver}
+
+\begin{lstlisting}
+Parameters optimizeParameters(Parameters start, float (*fitness)(Parameters), OptimizerStep step, int iterations) {
+    Parameters p = start;
+    float best = fitness(p);
+    for (int i = 0; i < iterations; ++i) {
+        Parameters q = step(p, i);
+        float score = fitness(q);
+        if (score > best) { p = q; best = score; }
+    }
+    return p;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{61. Hill Climbing}
+\addcontentsline{toc}{subsection}{61. Hill Climbing}
+
+\begin{lstlisting}
+Parameters hillClimb(Parameters p, float stepSize, float (*fitness)(Parameters), int iterations) {
+    float best = fitness(p);
+    for (int i = 0; i < iterations; ++i) {
+        Parameters candidate = p;
+        int dim = randomInt(0, p.count - 1);
+        candidate.value[dim] += randomSigned() * stepSize;
+        float score = fitness(candidate);
+        if (score > best) { p = candidate; best = score; }
+    }
+    return p;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{62. Simulated Annealing}
+\addcontentsline{toc}{subsection}{62. Simulated Annealing}
+
+\begin{lstlisting}
+Parameters anneal(Parameters p, float (*fitness)(Parameters), int iterations, float startTemp, float cooling) {
+    float current = fitness(p);
+    float temp = startTemp;
+    for (int i = 0; i < iterations; ++i) {
+        Parameters q = randomNeighbor(p);
+        float score = fitness(q);
+        float delta = score - current;
+        if (delta > 0.0f || random01() < expf(delta / temp)) {
+            p = q;
+            current = score;
+        }
+        temp *= cooling;
+    }
+    return p;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{63. N-Gram Action Prediction}
+\addcontentsline{toc}{subsection}{63. N-Gram Action Prediction}
+
+\begin{lstlisting}
+typedef struct NGramPredictor { Map counts; int n; } NGramPredictor;
+
+void ngramRegister(NGramPredictor *p, ActionSymbol *sequence, int length) {
+    for (int i = 0; i + p->n <= length; ++i) {
+        Key k = makeKey(&sequence[i], p->n - 1);
+        ActionSymbol next = sequence[i + p->n - 1];
+        incrementCount(&p->counts, k, next);
+    }
+}
+
+ActionSymbol ngramPredict(NGramPredictor *p, ActionSymbol *history) {
+    Key k = makeKey(history, p->n - 1);
+    return mostFrequentNext(&p->counts, k);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{64. Hierarchical N-Gram Prediction}
+\addcontentsline{toc}{subsection}{64. Hierarchical N-Gram Prediction}
+
+\begin{lstlisting}
+ActionSymbol hierarchicalNgramPredict(NGramPredictor *predictors, int levels, ActionSymbol *history) {
+    for (int level = levels - 1; level >= 0; --level) {
+        ActionSymbol a;
+        if (tryNgramPredict(&predictors[level], history, &a)) return a;
+    }
+    return defaultAction();
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{65. Naive Bayes Classifier}
+\addcontentsline{toc}{subsection}{65. Naive Bayes Classifier}
+
+\begin{lstlisting}
+void nbUpdate(NaiveBayes *nb, FeatureVector x, int classId) {
+    nb->classCount[classId]++;
+    for (int f = 0; f < x.count; ++f) incrementFeatureCount(nb, classId, f, x.value[f]);
+}
+
+int nbPredict(NaiveBayes *nb, FeatureVector x) {
+    float best = -INFINITY;
+    int bestClass = -1;
+    for (int c = 0; c < nb->classTotal; ++c) {
+        float logp = logf(prior(nb, c));
+        for (int f = 0; f < x.count; ++f) logp += logf(likelihood(nb, c, f, x.value[f]));
+        if (logp > best) { best = logp; bestClass = c; }
+    }
+    return bestClass;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{66. ID3 Decision Tree Learning}
+\addcontentsline{toc}{subsection}{66. ID3 Decision Tree Learning}
+
+\begin{lstlisting}
+DecisionNode *makeID3Tree(Example *examples, int exampleCount, Attribute *attributes, int attributeCount) {
+    if (allSameClass(examples, exampleCount)) return leafNode(examples[0].classId);
+    if (attributeCount == 0) return leafNode(majorityClass(examples, exampleCount));
+
+    int bestAttr = chooseMaxInformationGain(examples, exampleCount, attributes, attributeCount);
+    DecisionNode *node = testNode(attributes[bestAttr]);
+
+    forEachValue(attributes[bestAttr], value) {
+        Example subset[MAX_EXAMPLES];
+        int n = filterExamples(examples, exampleCount, attributes[bestAttr], value, subset);
+        if (n == 0) node->branch[value] = leafNode(majorityClass(examples, exampleCount));
+        else node->branch[value] = makeID3Tree(subset, n, removeAttr(attributes, attributeCount, bestAttr), attributeCount - 1);
+    }
+    return node;
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+float entropy(ClassCounts counts) {
+    float total = countTotal(counts);
+    float h = 0.0f;
+    for (int c = 0; c < counts.count; ++c) {
+        float p = counts.value[c] / total;
+        if (p > 0.0f) h -= p * log2f(p);
+    }
+    return h;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{67. Continuous Attribute Split Selection}
+\addcontentsline{toc}{subsection}{67. Continuous Attribute Split Selection}
+
+\begin{lstlisting}
+float bestContinuousSplit(Example *examples, int n, int attr, float *thresholdOut) {
+    sortExamplesByAttribute(examples, n, attr);
+    float bestGain = -INFINITY;
+    for (int i = 1; i < n; ++i) {
+        float threshold = 0.5f * (examples[i-1].value[attr] + examples[i].value[attr]);
+        Split s = splitByThreshold(examples, n, attr, threshold);
+        float gain = informationGain(s);
+        if (gain > bestGain) { bestGain = gain; *thresholdOut = threshold; }
+    }
+    return bestGain;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{68. Q-Learning}
+\addcontentsline{toc}{subsection}{68. Q-Learning}
+
+\begin{lstlisting}
+void qLearningTrain(ReinforcementProblem *problem, QTable *q, int episodes, float alpha, float gamma, float rho) {
+    for (int e = 0; e < episodes; ++e) {
+        State s = problem->randomState(problem);
+        while (!problem->terminal(problem, s)) {
+            Action a = (random01() < rho) ? problem->randomAction(problem, s) : qBestAction(q, s);
+            StepResult r = problem->takeAction(problem, s, a);
+            float old = qGet(q, s, a);
+            float future = qBestValue(q, r.nextState);
+            float updated = (1.0f - alpha) * old + alpha * (r.reward + gamma * future);
+            qSet(q, s, a, updated);
+            s = r.nextState;
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{69. Multilayer Perceptron Feedforward and Backpropagation}
+\addcontentsline{toc}{subsection}{69. Multilayer Perceptron Feedforward and Backpropagation}
+
+\begin{lstlisting}
+void mlpFeedForward(MLP *net, float *input) {
+    copy(net->layer[0].value, input, net->layer[0].count);
+    for (int l = 1; l < net->layerCount; ++l) {
+        for (int j = 0; j < net->layer[l].count; ++j) {
+            float sum = net->layer[l].bias[j];
+            for (int i = 0; i < net->layer[l-1].count; ++i)
+                sum += net->weight[l][i][j] * net->layer[l-1].value[i];
+            net->layer[l].value[j] = sigmoid(sum);
+        }
+    }
+}
+
+void mlpBackprop(MLP *net, float *target, float rate) {
+    int last = net->layerCount - 1;
+    for (int j = 0; j < net->layer[last].count; ++j) {
+        float out = net->layer[last].value[j];
+        net->layer[last].delta[j] = (target[j] - out) * out * (1.0f - out);
+    }
+    for (int l = last - 1; l > 0; --l) {
+        for (int i = 0; i < net->layer[l].count; ++i) {
+            float sum = 0.0f;
+            for (int j = 0; j < net->layer[l+1].count; ++j) sum += net->weight[l+1][i][j] * net->layer[l+1].delta[j];
+            float out = net->layer[l].value[i];
+            net->layer[l].delta[i] = sum * out * (1.0f - out);
+        }
+    }
+    for (int l = 1; l < net->layerCount; ++l)
+        for (int i = 0; i < net->layer[l-1].count; ++i)
+            for (int j = 0; j < net->layer[l].count; ++j)
+                net->weight[l][i][j] += rate * net->layer[l].delta[j] * net->layer[l-1].value[i];
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part VI -- Procedural Content Generation Algorithms}
+\addcontentsline{toc}{section}{Part VI -- Procedural Content Generation Algorithms}
+
+\Needspace{5\baselineskip}
+\subsection*{70. Numeric Mixing for Game Seeds}
+\addcontentsline{toc}{subsection}{70. Numeric Mixing for Game Seeds}
+
+\begin{lstlisting}
+uint64_t mix64(uint64_t x) {
+    x ^= x >> 33;
+    x *= 0xff51afd7ed558ccdULL;
+    x ^= x >> 33;
+    x *= 0xc4ceb9fe1a85ec53ULL;
+    x ^= x >> 33;
+    return x;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{71. Halton Sequence}
+\addcontentsline{toc}{subsection}{71. Halton Sequence}
+
+\begin{lstlisting}
+float halton1D(int index, int base) {
+    float result = 0.0f;
+    float fraction = 1.0f / base;
+    while (index > 0) {
+        result += fraction * (index % base);
+        index /= base;
+        fraction /= base;
+    }
+    return result;
+}
+
+Vec3 halton2D(int index) {
+    return (Vec3){ halton1D(index, 2), 0.0f, halton1D(index, 3) };
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{72. Phyllotaxic Placement}
+\addcontentsline{toc}{subsection}{72. Phyllotaxic Placement}
+
+\begin{lstlisting}
+Vec3 phyllotaxicPoint(int i, float scale) {
+    const float goldenAngle = 2.39996323f;
+    float r = scale * sqrtf((float)i);
+    float theta = i * goldenAngle;
+    return (Vec3){ r * cosf(theta), 0.0f, r * sinf(theta) };
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{73. Poisson Disk Sampling}
+\addcontentsline{toc}{subsection}{73. Poisson Disk Sampling}
+
+\begin{lstlisting}
+PointList poissonDisk(Rect bounds, float radius, int attempts) {
+    Grid grid = gridForRadius(bounds, radius);
+    ActiveList active = activeCreate();
+    PointList points = pointListCreate();
+
+    Vec3 first = randomPoint(bounds);
+    addSample(&grid, &points, &active, first);
+
+    while (!activeEmpty(&active)) {
+        Vec3 p = activeRandom(&active);
+        bool found = false;
+        for (int k = 0; k < attempts; ++k) {
+            Vec3 q = randomPointInAnnulus(p, radius, 2.0f * radius);
+            if (inside(bounds, q) && noNeighborWithin(&grid, q, radius)) {
+                addSample(&grid, &points, &active, q);
+                found = true;
+                break;
+            }
+        }
+        if (!found) activeRemove(&active, p);
+    }
+    return points;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{74. Lindenmayer System Expansion}
+\addcontentsline{toc}{subsection}{74. Lindenmayer System Expansion}
+
+\begin{lstlisting}
+String lSystem(String axiom, Rule *rules, int ruleCount, int iterations) {
+    String current = axiom;
+    for (int it = 0; it < iterations; ++it) {
+        String next = emptyString();
+        for (int i = 0; i < current.length; ++i) {
+            bool replaced = false;
+            for (int r = 0; r < ruleCount; ++r) {
+                if (rules[r].matches(current, i)) {
+                    appendString(&next, rules[r].replacement);
+                    replaced = true;
+                    break;
+                }
+            }
+            if (!replaced) appendChar(&next, current.data[i]);
+        }
+        current = next;
+    }
+    return current;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{75. Perlin-Style Octave Noise}
+\addcontentsline{toc}{subsection}{75. Perlin-Style Octave Noise}
+
+\begin{lstlisting}
+float octaveNoise(Vec3 p, int octaves, float persistence, float lacunarity) {
+    float total = 0.0f;
+    float amplitude = 1.0f;
+    float frequency = 1.0f;
+    float norm = 0.0f;
+    for (int i = 0; i < octaves; ++i) {
+        total += amplitude * gradientNoise(scale(p, frequency));
+        norm += amplitude;
+        amplitude *= persistence;
+        frequency *= lacunarity;
+    }
+    return total / norm;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{76. Fault Modifier for Terrain}
+\addcontentsline{toc}{subsection}{76. Fault Modifier for Terrain}
+
+\begin{lstlisting}
+void applyFault(float **height, int width, int heightN, float displacement) {
+    Vec3 p = randomPoint2D(width, heightN);
+    Vec3 normal = randomUnit2D();
+    for (int y = 0; y < heightN; ++y) {
+        for (int x = 0; x < width; ++x) {
+            Vec3 q = {x, 0, y};
+            float side = dot(sub(q, p), normal);
+            height[y][x] += (side > 0.0f) ? displacement : -displacement;
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{77. Thermal Erosion}
+\addcontentsline{toc}{subsection}{77. Thermal Erosion}
+
+\begin{lstlisting}
+void thermalErosion(float **h, int w, int n, float talus, float fraction, int iterations) {
+    for (int it = 0; it < iterations; ++it) {
+        float **delta = zeroGrid(w, n);
+        for (int y = 1; y < n-1; ++y) for (int x = 1; x < w-1; ++x) {
+            forEachNeighbor4(x, y, nx, ny) {
+                float diff = h[y][x] - h[ny][nx];
+                if (diff > talus) {
+                    float amount = fraction * (diff - talus);
+                    delta[y][x] -= amount;
+                    delta[ny][nx] += amount;
+                }
+            }
+        }
+        addGrid(h, delta, w, n);
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{78. Hydraulic Erosion}
+\addcontentsline{toc}{subsection}{78. Hydraulic Erosion}
+
+\begin{lstlisting}
+void hydraulicErosion(Terrain *t, int iterations, float rain, float solubility, float evaporation) {
+    for (int it = 0; it < iterations; ++it) {
+        addRain(t, rain);
+        computeWaterFlow(t);
+        forEachCell(t, x, y) {
+            float capacity = t->water[y][x] * t->flowSpeed[y][x] * solubility;
+            if (t->sediment[y][x] > capacity) deposit(t, x, y, t->sediment[y][x] - capacity);
+            else erode(t, x, y, capacity - t->sediment[y][x]);
+        }
+        moveWaterAndSediment(t);
+        evaporateWater(t, evaporation);
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{79. Maze by Depth-First Backtracking}
+\addcontentsline{toc}{subsection}{79. Maze by Depth-First Backtracking}
+
+\begin{lstlisting}
+void carveMaze(GridMaze *maze, Cell start) {
+    Stack stack = stackCreate();
+    markVisited(maze, start);
+    stackPush(&stack, start);
+
+    while (!stackEmpty(&stack)) {
+        Cell c = stackPeek(&stack);
+        Cell choices[4];
+        int n = unvisitedNeighbors(maze, c, choices);
+        if (n == 0) { stackPop(&stack); continue; }
+        Cell next = choices[randomInt(0, n-1)];
+        removeWallBetween(maze, c, next);
+        markVisited(maze, next);
+        stackPush(&stack, next);
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{80. Dungeon Generate-and-Test Skeleton}
+\addcontentsline{toc}{subsection}{80. Dungeon Generate-and-Test Skeleton}
+
+\begin{lstlisting}
+Dungeon generateAndTestDungeon(int maxAttempts, bool (*valid)(Dungeon *)) {
+    for (int i = 0; i < maxAttempts; ++i) {
+        Dungeon d = randomDungeonCandidate();
+        if (valid(&d)) return d;
+    }
+    return repairDungeon(randomDungeonCandidate());
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{81. Prim Minimum Spanning Tree}
+\addcontentsline{toc}{subsection}{81. Prim Minimum Spanning Tree}
+
+\begin{lstlisting}
+EdgeList primMST(Graph *g, Node *start) {
+    Set visited = setCreate();
+    PriorityQueue edges = pqCreate();
+    EdgeList tree = edgeListCreate();
+
+    setAdd(&visited, start);
+    pushOutgoingEdges(g, start, &edges);
+
+    while (!pqEmpty(&edges) && setSize(&visited) < graphNodeCount(g)) {
+        Edge e = pqPopMin(&edges);
+        if (setContains(&visited, e.to)) continue;
+        edgeListAdd(&tree, e);
+        setAdd(&visited, e.to);
+        pushOutgoingEdges(g, e.to, &edges);
+    }
+    return tree;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{82. Recursive Subdivision Dungeon/Maze}
+\addcontentsline{toc}{subsection}{82. Recursive Subdivision Dungeon/Maze}
+
+\begin{lstlisting}
+void subdivide(Space space, int minSize) {
+    if (!canSplit(space, minSize)) return;
+    Split s = chooseSplit(space);
+    Space a, b;
+    splitSpace(space, s, &a, &b);
+    Corridor c = connectSpaces(a, b);
+    addCorridor(c);
+    subdivide(a, minSize);
+    subdivide(b, minSize);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{83. Shape Grammar Execution}
+\addcontentsline{toc}{subsection}{83. Shape Grammar Execution}
+
+\begin{lstlisting}
+void runShapeGrammar(Grammar *grammar, ObjectList *objects, int maxSteps) {
+    for (int step = 0; step < maxSteps; ++step) {
+        RuleApplication apps[MAX_RULES];
+        int n = triggeredRules(grammar, objects, apps);
+        if (n == 0) break;
+        RuleApplication chosen = chooseApplication(apps, n);
+        chosen.rule->fire(chosen.rule, objects, chosen.target);
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{84. Shape Grammar Planning}
+\addcontentsline{toc}{subsection}{84. Shape Grammar Planning}
+
+\begin{lstlisting}
+Plan planGrammar(Grammar *grammar, ObjectList start, bool (*complete)(ObjectList), int maxDepth) {
+    Queue q = queueCreate();
+    queuePush(&q, (GrammarState){ start, emptyPlan(), 0 });
+    while (!queueEmpty(&q)) {
+        GrammarState s = queuePop(&q);
+        if (complete(s.objects)) return s.plan;
+        if (s.depth >= maxDepth) continue;
+        RuleApplication apps[MAX_RULES];
+        int n = triggeredRules(grammar, &s.objects, apps);
+        for (int i = 0; i < n; ++i) {
+            ObjectList next = cloneObjects(s.objects);
+            apps[i].rule->fire(apps[i].rule, &next, apps[i].target);
+            queuePush(&q, (GrammarState){ next, appendPlan(s.plan, apps[i]), s.depth + 1 });
+        }
+    }
+    return emptyPlan();
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part VII -- Board-Game Algorithms}
+\addcontentsline{toc}{section}{Part VII -- Board-Game Algorithms}
+
+\Needspace{5\baselineskip}
+\subsection*{85. Minimax}
+\addcontentsline{toc}{subsection}{85. Minimax}
+
+\begin{lstlisting}
+float minimax(Board b, int depth, bool maximizing, Move *bestMove) {
+    if (depth == 0 || boardGameOver(b)) return boardEvaluate(b);
+
+    Move moves[MAX_MOVES];
+    int n = boardMoves(b, moves);
+    float best = maximizing ? -INFINITY : INFINITY;
+
+    for (int i = 0; i < n; ++i) {
+        Board child = boardMakeMove(b, moves[i]);
+        float score = minimax(child, depth - 1, !maximizing, NULL);
+        if ((maximizing && score > best) || (!maximizing && score < best)) {
+            best = score;
+            if (bestMove) *bestMove = moves[i];
+        }
+    }
+    return best;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{86. Negamax}
+\addcontentsline{toc}{subsection}{86. Negamax}
+
+\begin{lstlisting}
+float negamax(Board b, int depth, Move *bestMove) {
+    if (depth == 0 || boardGameOver(b)) return boardEvaluateCurrentPlayer(b);
+
+    Move moves[MAX_MOVES];
+    int n = boardMoves(b, moves);
+    float best = -INFINITY;
+    for (int i = 0; i < n; ++i) {
+        Board child = boardMakeMove(b, moves[i]);
+        float score = -negamax(child, depth - 1, NULL);
+        if (score > best) {
+            best = score;
+            if (bestMove) *bestMove = moves[i];
+        }
+    }
+    return best;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{87. Alpha-Beta Negamax}
+\addcontentsline{toc}{subsection}{87. Alpha-Beta Negamax}
+
+\begin{lstlisting}
+float alphaBetaNegamax(Board b, int depth, float alpha, float beta, Move *bestMove) {
+    if (depth == 0 || boardGameOver(b)) return boardEvaluateCurrentPlayer(b);
+
+    Move moves[MAX_MOVES];
+    int n = orderedBoardMoves(b, moves);
+    for (int i = 0; i < n; ++i) {
+        Board child = boardMakeMove(b, moves[i]);
+        float score = -alphaBetaNegamax(child, depth - 1, -beta, -alpha, NULL);
+        if (score > alpha) {
+            alpha = score;
+            if (bestMove) *bestMove = moves[i];
+        }
+        if (alpha >= beta) break;
+    }
+    return alpha;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{88. Aspiration Search}
+\addcontentsline{toc}{subsection}{88. Aspiration Search}
+
+\begin{lstlisting}
+float aspirationSearch(Board b, int depth, float guess, float window, Move *best) {
+    while (true) {
+        float alpha = guess - window;
+        float beta = guess + window;
+        float score = alphaBetaNegamax(b, depth, alpha, beta, best);
+        if (score <= alpha) { guess = score; window *= 2.0f; continue; }
+        if (score >= beta)  { guess = score; window *= 2.0f; continue; }
+        return score;
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{89. Negascout / Principal Variation Search}
+\addcontentsline{toc}{subsection}{89. Negascout / Principal Variation Search}
+
+\begin{lstlisting}
+float negascout(Board b, int depth, float alpha, float beta) {
+    if (depth == 0 || boardGameOver(b)) return boardEvaluateCurrentPlayer(b);
+    Move moves[MAX_MOVES];
+    int n = orderedBoardMoves(b, moves);
+    float bWindow = beta;
+
+    for (int i = 0; i < n; ++i) {
+        Board child = boardMakeMove(b, moves[i]);
+        float score = -negascout(child, depth - 1, -bWindow, -alpha);
+        if (score > alpha && score < beta && i > 0)
+            score = -negascout(child, depth - 1, -beta, -score);
+        alpha = fmaxf(alpha, score);
+        if (alpha >= beta) break;
+        bWindow = alpha + 1.0f;
+    }
+    return alpha;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{90. Zobrist Hashing}
+\addcontentsline{toc}{subsection}{90. Zobrist Hashing}
+
+\begin{lstlisting}
+uint64_t zobristHash(Board b, uint64_t table[MAX_SQUARES][MAX_PIECES]) {
+    uint64_t h = 0;
+    for (int sq = 0; sq < MAX_SQUARES; ++sq) {
+        int piece = boardPieceAt(b, sq);
+        if (piece != EMPTY) h ^= table[sq][piece];
+    }
+    if (boardSideToMove(b) == BLACK) h ^= SIDE_TO_MOVE_KEY;
+    return h;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{91. Transposition Table Lookup and Store}
+\addcontentsline{toc}{subsection}{91. Transposition Table Lookup and Store}
+
+\begin{lstlisting}
+bool ttLookup(TranspositionTable *tt, uint64_t hash, int depth, float alpha, float beta, float *scoreOut) {
+    TTEntry *e = tableFind(tt, hash);
+    if (!e || e->depth < depth) return false;
+    if (e->kind == EXACT) { *scoreOut = e->score; return true; }
+    if (e->kind == LOWER_BOUND && e->score >= beta) { *scoreOut = e->score; return true; }
+    if (e->kind == UPPER_BOUND && e->score <= alpha) { *scoreOut = e->score; return true; }
+    return false;
+}
+
+void ttStore(TranspositionTable *tt, uint64_t hash, int depth, float score, BoundKind kind, Move best) {
+    TTEntry e = { hash, depth, score, kind, best };
+    tableReplace(tt, e);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{92. MTD(f)}
+\addcontentsline{toc}{subsection}{92. MTD(f)}
+
+\begin{lstlisting}
+float mtdf(Board b, int depth, float firstGuess) {
+    float g = firstGuess;
+    float upper = INFINITY;
+    float lower = -INFINITY;
+    while (lower < upper) {
+        float beta = (g == lower) ? g + 1.0f : g;
+        g = alphaBetaNegamax(b, depth, beta - 1.0f, beta, NULL);
+        if (g < beta) upper = g;
+        else lower = g;
+    }
+    return g;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{93. Monte Carlo Tree Search}
+\addcontentsline{toc}{subsection}{93. Monte Carlo Tree Search}
+
+\begin{lstlisting}
+typedef struct MCTSNode {
+    Board board;
+    struct MCTSNode *parent;
+    struct MCTSNode **children;
+    int childCount;
+    int visits;
+    float wins;
+    Move move;
+} MCTSNode;
+
+Move mcts(Board rootBoard, int iterations, float exploration) {
+    MCTSNode *root = newMCTSNode(rootBoard, NULL, nullMove());
+    for (int i = 0; i < iterations; ++i) {
+        MCTSNode *leaf = treePolicy(root, exploration);
+        float result = defaultPolicy(leaf->board);
+        backup(leaf, result);
+    }
+    return bestVisitedChild(root)->move;
+}
+
+MCTSNode *treePolicy(MCTSNode *node, float c) {
+    while (!boardGameOver(node->board)) {
+        if (!fullyExpanded(node)) return expand(node);
+        node = bestUCTChild(node, c);
+    }
+    return node;
+}
+
+float uctScore(MCTSNode *child, float c) {
+    if (child->visits == 0) return INFINITY;
+    float exploit = child->wins / child->visits;
+    float explore = c * sqrtf(logf(child->parent->visits) / child->visits);
+    return exploit + explore;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{94. Iterative Deepening Search}
+\addcontentsline{toc}{subsection}{94. Iterative Deepening Search}
+
+\begin{lstlisting}
+Move iterativeDeepening(Board b, float timeLimitSeconds) {
+    Move best = nullMove();
+    float guess = 0.0f;
+    double start = nowSeconds();
+    for (int depth = 1; nowSeconds() - start < timeLimitSeconds; ++depth) {
+        Move candidate;
+        guess = alphaBetaNegamax(b, depth, -INFINITY, INFINITY, &candidate);
+        if (nowSeconds() - start < timeLimitSeconds) best = candidate;
+    }
+    return best;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part VIII -- Execution Management and World Interfacing}
+\addcontentsline{toc}{section}{Part VIII -- Execution Management and World Interfacing}
+
+\Needspace{5\baselineskip}
+\subsection*{95. Frequency Scheduler}
+\addcontentsline{toc}{subsection}{95. Frequency Scheduler}
+
+\begin{lstlisting}
+void runFrequencyScheduler(FrequencyScheduler *sched, GameState *s, float dt) {
+    sched->accumulator += dt;
+    while (sched->accumulator >= sched->period) {
+        sched->accumulator -= sched->period;
+        BehaviorRecord *r = &sched->records[sched->cursor];
+        r->behavior->run(r->behavior, s, sched->period);
+        sched->cursor = (sched->cursor + 1) % sched->recordCount;
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{96. Load-Balancing Scheduler}
+\addcontentsline{toc}{subsection}{96. Load-Balancing Scheduler}
+
+\begin{lstlisting}
+void runLoadBalancingScheduler(LoadScheduler *sched, GameState *s, float budgetMs) {
+    double start = nowMilliseconds();
+    while (nowMilliseconds() - start < budgetMs && sched->hasWork(sched)) {
+        BehaviorRecord *r = schedNextBehavior(sched);
+        r->behavior->run(r->behavior, s, r->sliceSeconds);
+        updateEstimatedCost(sched, r, nowMilliseconds() - start);
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{97. Priority Scheduler}
+\addcontentsline{toc}{subsection}{97. Priority Scheduler}
+
+\begin{lstlisting}
+void runPriorityScheduler(PriorityScheduler *sched, GameState *s, float budgetMs) {
+    double start = nowMilliseconds();
+    rebuildPriorityQueue(sched);
+    while (!pqEmpty(&sched->queue) && nowMilliseconds() - start < budgetMs) {
+        BehaviorRecord *r = pqPopMax(&sched->queue);
+        r->behavior->run(r->behavior, s, r->allocatedTime);
+        r->lastRunTime = nowSeconds();
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{98. Behavioral Level of Detail}
+\addcontentsline{toc}{subsection}{98. Behavioral Level of Detail}
+
+\begin{lstlisting}
+void runBehaviorLOD(BehaviorLOD *lod, GameState *s, Character *c, float dt) {
+    float importance = computeImportance(c, s);
+    for (int i = 0; i < lod->levelCount; ++i) {
+        if (importance >= lod->levels[i].enterAt && importance <= lod->levels[i].exitBelow) {
+            if (lod->current != i) {
+                if (lod->current >= 0) lod->levels[lod->current].exit(c, s);
+                lod->current = i;
+                lod->levels[i].enter(c, s);
+            }
+            lod->levels[i].behavior->run(lod->levels[i].behavior, s, dt);
+            return;
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{99. Event Manager}
+\addcontentsline{toc}{subsection}{99. Event Manager}
+
+\begin{lstlisting}
+void dispatchEvents(EventManager *mgr, GameState *s) {
+    while (!queueEmpty(&mgr->events)) {
+        Event e = queuePop(&mgr->events);
+        for (int i = 0; i < mgr->listenerCount; ++i) {
+            ListenerRegistration *r = &mgr->listeners[i];
+            if (r->type == e.type && r->filter(&e, r->ctx)) r->listener->notify(r->listener, &e, s);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{100. Polling Station with Cached Tasks}
+\addcontentsline{toc}{subsection}{100. Polling Station with Cached Tasks}
+
+\begin{lstlisting}
+void pollStation(PollingStation *station, GameState *s, float now) {
+    for (int i = 0; i < station->taskCount; ++i) {
+        PollingTask *t = &station->tasks[i];
+        if (now - t->lastUpdate >= t->refreshInterval) {
+            t->cachedValue = t->compute(s, t->ctx);
+            t->lastUpdate = now;
+        }
+    }
+}
+
+Value pollingGet(PollingStation *station, int taskId, GameState *s, float now) {
+    PollingTask *t = &station->tasks[taskId];
+    if (now - t->lastUpdate >= t->refreshInterval) {
+        t->cachedValue = t->compute(s, t->ctx);
+        t->lastUpdate = now;
+    }
+    return t->cachedValue;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{101. Regional Sense Manager}
+\addcontentsline{toc}{subsection}{101. Regional Sense Manager}
+
+\begin{lstlisting}
+void addSenseSignal(RegionalSenseManager *mgr, Signal sig) {
+    Region *r = regionForPosition(mgr, sig.position);
+    regionSignalListAdd(r, sig);
+}
+
+void sendSenseSignals(RegionalSenseManager *mgr, Sensor *sensors, int sensorCount) {
+    for (int i = 0; i < sensorCount; ++i) {
+        RegionSet nearby = regionsNear(mgr, sensors[i].position, sensors[i].range);
+        forEachRegion(nearby, r) {
+            forEachSignal(r->signals, sig) {
+                if (sensors[i].detects(&sensors[i], sig.modality) && modalityExtraChecks(sig, sensors[i])) {
+                    sensors[i].notify(&sensors[i], sig);
+                }
+            }
+        }
+    }
+    clearExpiredSignals(mgr);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Implementation Notes}
+\addcontentsline{toc}{section}{Implementation Notes}
+
+\begin{enumerate}
+\item \textbf{Game AI favors controllability over theoretical purity.} Many algorithms above are intentionally approximate; their job is to produce believable behavior under frame-time constraints.
+\item \textbf{Data representation matters as much as the algorithm.} Pathfinding, perception, and tactical analysis depend on world representations such as tile graphs, navmeshes, waypoint graphs, influence grids, and region partitions.
+\item \textbf{Scheduling is part of the AI algorithm.} Expensive algorithms should be interruptible, cached, distributed across frames, or degraded by level of detail.
+\item \textbf{Composition is the normal production pattern.} Steering outputs are blended or prioritized; decisions are layered through FSMs, behavior trees, utility selectors, blackboards, and planners; pathfinding is coupled to tactical costs and movement controllers.
+\item \textbf{Learning is usually offline or constrained.} The learning algorithms are valuable, but production games often use them selectively because online learning can reduce designer control and introduce unstable behavior.
+\end{enumerate}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Algorithm Index}
+\addcontentsline{toc}{section}{Algorithm Index}
+
+\begin{longtable}{L{0.24\textwidth}L{0.68\textwidth}}
+\toprule
+Area & Algorithms \\
+\midrule\endfirsthead
+\toprule
+Area & Algorithms \\
+\midrule\endhead
+Movement & Kinematic seek/flee/arrive/wander; dynamic seek/flee/arrive/align/velocity match; pursue/evade; face/look-where-going; wander; path following; separation; collision avoidance; obstacle avoidance; blended steering; priority steering; steering pipeline; firing solution; iterative targeting; jumping; formation slots; 3D orientation variants. \\
+Pathfinding & Dijkstra; A\textsuperscript{*}; node-array A\textsuperscript{*}; path smoothing; hierarchical pathfinding; instanced-geometry reuse; continuous-time pathfinding; movement planning. \\
+Decision Making & Decision trees; FSM; HSM; behavior trees; decorators; parallel behavior trees; fuzzy logic; fuzzy FSM; Markov FSM; goal-oriented behavior; GOAP; rule systems; Rete; blackboard; action manager. \\
+Tactical AI & Cover scoring; waypoint condensation; influence maps; map flooding; convolution; separable filters; cellular automata; tactical path-cost blending. \\
+Learning & Hill climbing; simulated annealing; N-grams; hierarchical N-grams; Naive Bayes; ID3; continuous splits; Q-learning; MLP feedforward/backpropagation. \\
+PCG & Seed mixing; Halton sequence; phyllotaxis; Poisson disk; L-systems; octave noise; terrain faults; thermal erosion; hydraulic erosion; DFS maze; generate-and-test; Prim MST; recursive subdivision; shape grammars; grammar planning. \\
+Board Games & Minimax; negamax; alpha-beta; aspiration windows; negascout/PVS; Zobrist hashing; transposition tables; MTD(f); MCTS; iterative deepening. \\
+Infrastructure & Frequency scheduler; load-balancing scheduler; priority scheduler; behavioral LOD; event manager; polling station; regional sense manager. \\
+\bottomrule
+\end{longtable}
+
+\clearpage
+\section*{Document Control Notes}
+\phantomsection
+\addcontentsline{toc}{section}{Document Control Notes}
+\begin{itemize}
+\item The algorithms are independent C-like reconstructions intended for study, architecture review, engine design, and implementation planning.
+\item The notation normalizes game-AI vocabulary across movement, steering, pathfinding, decision making, tactical analysis, learning, procedural generation, game-tree search, scheduling, and world-interface systems.
+\item For production use, each pseudocode routine should be paired with deterministic tests, frame-budget measurements, data-representation validation, debug visualizations, and gameplay-tuning hooks.
+\end{itemize}
+\end{document}

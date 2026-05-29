@@ -1,0 +1,2469 @@
+
+\documentclass[10pt,letterpaper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.72in,headheight=14pt]{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{ragged2e}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{microtype}
+\usepackage{listings}
+\usepackage{needspace}
+\usepackage{tocloft}
+\usepackage{upquote}
+\definecolor{HouseBlue}{HTML}{1F4E79}
+\definecolor{HouseGray}{HTML}{4F5B62}
+\definecolor{HouseLight}{HTML}{EAF2F8}
+\definecolor{CodeBack}{HTML}{F7F8FA}
+\definecolor{CodeFrame}{HTML}{C9D1D9}
+\definecolor{CodeKeyword}{HTML}{1F4E79}
+\definecolor{CodeComment}{HTML}{5F6F7A}
+\definecolor{CodeString}{HTML}{8A3B12}
+\hypersetup{colorlinks=true,linkcolor=HouseBlue,urlcolor=HouseBlue,citecolor=HouseBlue,pdfauthor={ChatGPT},pdftitle={Patterns of Distributed Systems: Algorithms as C-like Pseudocode}}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Patterns of Distributed Systems --- Algorithms as C-like Pseudocode}
+\rhead{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlist[itemize]{leftmargin=1.25em,itemsep=2pt,topsep=2pt}
+\setlist[enumerate]{leftmargin=1.5em,itemsep=2pt,topsep=2pt}
+\titleformat{\section}{\Large\bfseries\color{HouseBlue}}{}{0pt}{}
+\titleformat{\subsection}{\large\bfseries\color{HouseGray}}{}{0pt}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{HouseGray}}{}{0pt}{}
+\titlespacing*{\section}{0pt}{2.2ex plus .4ex minus .2ex}{1.0ex}
+\titlespacing*{\subsection}{0pt}{1.8ex plus .3ex minus .2ex}{0.7ex}
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\lstdefinelanguage{PseudoC}{
+  morekeywords={typedef,enum,struct,return,if,else,for,while,do,case,switch,break,continue,bool,true,false,NULL,void,int,long,char,string,const,static,foreach,in,new,delete,insert,remove,push,pop,emit,try,catch,throw,private,public,Map,List,Set,Queue,Bytes,Status,Role,Index,Term,TimeNanos},
+  sensitive=true,
+  morecomment=[l]{//},
+  morestring=[b]",
+}
+\lstset{
+  language=PseudoC,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\bfseries\color{CodeKeyword},
+  commentstyle=\itshape\color{CodeComment},
+  stringstyle=\color{CodeString},
+  backgroundcolor=\color{CodeBack},
+  frame=single,
+  rulecolor=\color{CodeFrame},
+  framerule=0.35pt,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  tabsize=4,
+  xleftmargin=0.6em,
+  xrightmargin=0.3em,
+  aboveskip=0.7em,
+  belowskip=0.7em,
+}
+\newcommand{\handouttitle}{Patterns of Distributed Systems: Algorithms as C-like Pseudocode}
+\sloppy
+\begin{document}
+\pagenumbering{gobble}
+\begin{titlepage}
+\centering
+\vspace*{0.85in}
+{\Huge\bfseries\color{HouseBlue}\handouttitle\par}
+\vspace{0.22in}
+{\Large Systematic Algorithm Extraction and Reconstruction\par}
+\vspace{0.34in}
+{\large Source analyzed: Unmesh Joshi, \emph{Patterns of Distributed Systems}, Addison-Wesley Signature Series\par}
+\vfill
+\begin{minipage}{0.88\textwidth}
+\small
+This handout rewrites the algorithmic content from the uploaded distributed-systems patterns text as independent C-like pseudocode. It is organized as an implementation-oriented reference for durable logs, leader-based replication, quorums, consensus, request processing, follower reads, version metadata, partitioning, distributed transactions, logical clocks, cluster management, leases, watches, gossip, emergent leadership, and network communication. The pseudocode is normalized for study, design review, and implementation planning; it is not a source-code clone.
+\end{minipage}
+\vfill
+{\large Generated \today\par}
+\end{titlepage}
+\clearpage
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+
+\textbf{Source analyzed:} Unmesh Joshi, \emph{Patterns of Distributed Systems}, Addison-Wesley Signature Series, uploaded PDF.
+
+\Needspace{5\baselineskip}
+\subsection*{Scope and reconstruction rules}
+\addcontentsline{toc}{subsection}{Scope and reconstruction rules}
+
+This document systematically extracts the algorithmic content implied by the book's Java-oriented source examples and pattern implementations, then rewrites it as \textbf{independent C-like pseudocode}. The source text presents most algorithms through compact classes, methods, diagrams, and implementation sketches. This handout normalizes those ideas into consistent data structures, function names, and control flow.
+
+The output is \textbf{not a source-code clone}. It avoids reproducing the book's code verbatim and instead captures the operational algorithms: log management, replication, leader election, quorum decisions, consensus, request queues, idempotency, partition routing, two-phase commit, logical clocks, leases, watches, gossip, and network communication helpers.
+
+\Needspace{5\baselineskip}
+\subsection*{High-level algorithm inventory}
+\addcontentsline{toc}{subsection}{High-level algorithm inventory}
+
+\begin{longtable}{L{0.29\textwidth}L{0.64\textwidth}}
+\toprule
+Area & Algorithms reconstructed \\
+\midrule\endfirsthead
+\toprule
+Area & Algorithms reconstructed \\
+\midrule\endhead
+Durable replication foundations & Write-ahead log, segmented log, low-water mark, snapshot log cleaning, time-based log cleaning \\
+Leader-based replication & leader election, vote handling, heartbeat failure detection, generation clock, high-water mark, truncation, replicated log, no-op commit after election \\
+Consensus & single-decree Paxos, Paxos per-key store, Paxos read through no-op, flexible quorum rule \\
+Request processing & singular update queue, request waiting list, idempotent receiver, backpressure, duplicate-request handling \\
+Read models and versioning & follower reads, read-your-writes, linearizable follower reads, versioned values, MVCC reads, version vector comparison and merge \\
+Partitioning & fixed partitions, hash-to-partition routing, partition rebalance, key-range partition lookup, range splitting \\
+Distributed transactions & two-phase commit coordinator, participant prepare, commit, rollback, lock-based transaction isolation, recovery \\
+Distributed time & Lamport clock, hybrid logical clock, clock-bound commit wait, read restart \\
+Cluster management & consistent core, lease creation/refresh/expiration, state watch, gossip dissemination, emergent leader \\
+Communication & single-socket channel, request batching, request pipeline, correlation IDs, timeout cleanup \\
+\bottomrule
+\end{longtable}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{0. Common Data Model}
+\addcontentsline{toc}{section}{0. Common Data Model}
+
+\begin{lstlisting}
+typedef long Index;
+typedef long Term;      // also called generation or epoch
+typedef long TimeNanos;
+
+typedef enum { OK, ERROR, STALE_TERM, NOT_LEADER, TIMEOUT } Status;
+typedef enum { FOLLOWER, CANDIDATE, LEADER, LOOKING_FOR_LEADER } Role;
+typedef enum { DATA, NO_OP, CONFIG, CLIENT_REGISTRATION } EntryType;
+
+typedef struct LogEntry {
+    Index index;
+    Term term;
+    EntryType type;
+    Bytes payload;
+    TimeNanos timestamp;
+    uint32_t crc;
+} LogEntry;
+
+typedef struct Response {
+    Status status;
+    Bytes payload;
+    string error;
+} Response;
+
+typedef struct Request {
+    string clientId;
+    long requestNo;
+    Bytes command;
+} Request;
+
+typedef struct NodeId {
+    int value;
+} NodeId;
+
+typedef struct ServerState {
+    NodeId self;
+    Role role;
+    Term currentTerm;
+    NodeId leader;
+    Index highWaterMark;
+    Index lastApplied;
+    Map<NodeId, Index> matchIndex;
+    Map<NodeId, Index> nextIndex;
+} ServerState;
+\end{lstlisting}
+
+Helper conventions:
+
+\begin{lstlisting}
+int quorum_size(int n) { return n / 2 + 1; }
+bool majority_reached(int votes, int n) { return votes >= quorum_size(n); }
+TimeNanos now_nanos();
+void sleep_millis(int ms);
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part I -- Durable Log Algorithms}
+\addcontentsline{toc}{section}{Part I -- Durable Log Algorithms}
+
+\Needspace{5\baselineskip}
+\subsection*{1. Write-Ahead Log}
+\addcontentsline{toc}{subsection}{1. Write-Ahead Log}
+
+\Needspace{4\baselineskip}
+\subsubsection*{1.1 Append a durable command before mutating in-memory state}
+\addcontentsline{toc}{subsubsection}{1.1 Append a durable command before mutating in-memory state}
+
+\begin{lstlisting}
+Response kv_put_with_wal(KVStore *store, string key, string value) {
+    Command cmd = make_set_value_command(key, value);
+    Bytes bytes = serialize_command(cmd);
+
+    Index index = wal_append(store->wal, DATA, bytes);
+    if (index < 0) {
+        return error_response("log append failed");
+    }
+
+    map_put(store->memtable, key, value);
+    return ok_response(index);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{1.2 Append log entry with checksum and forced durability policy}
+\addcontentsline{toc}{subsubsection}{1.2 Append log entry with checksum and forced durability policy}
+
+\begin{lstlisting}
+Index wal_append(WAL *wal, EntryType type, Bytes payload) {
+    LogEntry e;
+    e.index = wal->lastIndex + 1;
+    e.term = wal->currentTerm;
+    e.type = type;
+    e.payload = payload;
+    e.timestamp = now_nanos();
+    e.crc = crc32(payload);
+
+    if (!file_append(wal->openFile, encode_log_entry(e))) {
+        return -1;
+    }
+
+    if (wal->syncPolicy == SYNC_EVERY_WRITE) {
+        file_fsync(wal->openFile);
+    }
+
+    wal->lastIndex = e.index;
+    return e.index;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{1.3 Recover state by replaying the log}
+\addcontentsline{toc}{subsubsection}{1.3 Recover state by replaying the log}
+
+\begin{lstlisting}
+void kv_recover_from_wal(KVStore *store) {
+    Vector<LogEntry> entries = wal_read_all(store->wal);
+
+    for (int i = 0; i < entries.length; i++) {
+        LogEntry e = entries[i];
+        if (!valid_crc(e)) {
+            wal_truncate_at(store->wal, e.index);
+            break;
+        }
+
+        Command cmd = deserialize_command(e.payload);
+        apply_command_to_store(store, cmd);
+    }
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{1.4 Apply an atomic batch as a single log record}
+\addcontentsline{toc}{subsubsection}{1.4 Apply an atomic batch as a single log record}
+
+\begin{lstlisting}
+Response kv_apply_batch(KVStore *store, Vector<Command> commands) {
+    Bytes batch = serialize_command_batch(commands);
+    Index index = wal_append(store->wal, DATA, batch);
+    if (index < 0) return error_response("batch not durable");
+
+    for (int i = 0; i < commands.length; i++) {
+        apply_command_to_store(store, commands[i]);
+    }
+    return ok_response(index);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{2. Segmented Log}
+\addcontentsline{toc}{subsection}{2. Segmented Log}
+
+\Needspace{4\baselineskip}
+\subsubsection*{2.1 Roll the active segment when it reaches the configured size}
+\addcontentsline{toc}{subsubsection}{2.1 Roll the active segment when it reaches the configured size}
+
+\begin{lstlisting}
+Index segmented_wal_append(SegmentedWAL *wal, EntryType type, Bytes payload) {
+    if (segment_size(wal->openSegment) >= wal->maxSegmentBytes) {
+        segment_flush(wal->openSegment);
+        vector_push(&wal->closedSegments, wal->openSegment);
+
+        Index nextBase = wal->openSegment.lastIndex + 1;
+        wal->openSegment = open_new_segment(wal->directory, nextBase);
+    }
+
+    LogEntry e = make_log_entry(wal->lastIndex + 1, wal->term, type, payload);
+    segment_append(wal->openSegment, e);
+    wal->lastIndex = e.index;
+    return e.index;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{2.2 Map a log index to candidate segments}
+\addcontentsline{toc}{subsubsection}{2.2 Map a log index to candidate segments}
+
+\begin{lstlisting}
+Vector<Segment*> segments_containing_or_after(SegmentedWAL *wal, Index start) {
+    Vector<Segment*> result;
+
+    for (int i = wal->closedSegments.length - 1; i >= 0; i--) {
+        Segment *s = wal->closedSegments[i];
+        vector_prepend(&result, s);
+        if (s->baseIndex <= start) break;
+    }
+
+    if (wal->openSegment.baseIndex <= start) {
+        vector_push(&result, &wal->openSegment);
+    }
+
+    return result;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{2.3 Read log entries from an arbitrary index}
+\addcontentsline{toc}{subsubsection}{2.3 Read log entries from an arbitrary index}
+
+\begin{lstlisting}
+Vector<LogEntry> wal_read_from(SegmentedWAL *wal, Index start) {
+    Vector<LogEntry> out;
+    Vector<Segment*> segments = segments_containing_or_after(wal, start);
+
+    for (int i = 0; i < segments.length; i++) {
+        Vector<LogEntry> entries = segment_read_from(segments[i], start);
+        vector_extend(&out, entries);
+    }
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{3. Low-Water Mark and Log Cleaning}
+\addcontentsline{toc}{subsection}{3. Low-Water Mark and Log Cleaning}
+
+\Needspace{4\baselineskip}
+\subsubsection*{3.1 Periodic log cleaner}
+\addcontentsline{toc}{subsubsection}{3.1 Periodic log cleaner}
+
+\begin{lstlisting}
+void log_cleaner_loop(LogCleaner *cleaner) {
+    while (!cleaner->shutdown) {
+        sleep_millis(cleaner->intervalMs);
+
+        Index lwm = cleaner->compute_low_water_mark(cleaner);
+        Vector<Segment*> old = wal_segments_before(cleaner->wal, lwm);
+
+        for (int i = 0; i < old.length; i++) {
+            wal_remove_and_delete_segment(cleaner->wal, old[i]);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{3.2 Snapshot-based low-water mark}
+\addcontentsline{toc}{subsubsection}{3.2 Snapshot-based low-water mark}
+
+\begin{lstlisting}
+Snapshot take_snapshot(KVStore *store) {
+    Snapshot s;
+    s.stateBytes = serialize_kv_map(store->memtable);
+    s.lastIncludedIndex = store->wal.lastIndex;
+    persist_snapshot(s);
+    return s;
+}
+
+Index snapshot_low_water_mark(LogCleaner *cleaner) {
+    return cleaner->latestSnapshot.lastIncludedIndex;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{3.3 Time-based low-water mark}
+\addcontentsline{toc}{subsubsection}{3.3 Time-based low-water mark}
+
+\begin{lstlisting}
+Vector<Segment*> segments_older_than(SegmentedWAL *wal, long maxAgeMillis) {
+    Vector<Segment*> deletable;
+    TimeNanos now = now_nanos();
+
+    for (int i = 0; i < wal->closedSegments.length; i++) {
+        Segment *s = wal->closedSegments[i];
+        if (millis_between(s->lastEntryTimestamp, now) > maxAgeMillis) {
+            vector_push(&deletable, s);
+        }
+    }
+    return deletable;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part II -- Leader-Based Replication}
+\addcontentsline{toc}{section}{Part II -- Leader-Based Replication}
+
+\Needspace{5\baselineskip}
+\subsection*{4. Leader and Followers}
+\addcontentsline{toc}{subsection}{4. Leader and Followers}
+
+\Needspace{4\baselineskip}
+\subsubsection*{4.1 Start an election}
+\addcontentsline{toc}{subsubsection}{4.1 Start an election}
+
+\begin{lstlisting}
+void start_leader_election(Server *s) {
+    s->state.role = CANDIDATE;
+    s->state.currentTerm++;
+    s->voteTracker.votedFor = s->state.self;
+    s->voteTracker.voteCount = 1;
+
+    VoteRequest req;
+    req.term = s->state.currentTerm;
+    req.candidate = s->state.self;
+    req.lastLogTerm = wal_last_term(&s->wal);
+    req.lastLogIndex = wal_last_index(&s->wal);
+
+    broadcast_vote_request(s, req);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{4.2 Handle a vote request}
+\addcontentsline{toc}{subsubsection}{4.2 Handle a vote request}
+
+\begin{lstlisting}
+VoteResponse handle_vote_request(Server *s, VoteRequest req) {
+    if (req.term > s->state.currentTerm) {
+        become_follower(s, UNKNOWN_NODE, req.term);
+    }
+
+    if (req.term < s->state.currentTerm) {
+        return reject_vote(s->state.currentTerm);
+    }
+
+    if (s->state.leader.value != UNKNOWN_NODE.value) {
+        return reject_vote(s->state.currentTerm);
+    }
+
+    bool candidateOK = log_is_at_least_as_up_to_date(
+        req.lastLogTerm, req.lastLogIndex,
+        wal_last_term(&s->wal), wal_last_index(&s->wal));
+
+    bool notYetVoted = (s->voteTracker.votedFor.value == UNKNOWN_NODE.value);
+    bool sameCandidate = (s->voteTracker.votedFor.value == req.candidate.value);
+
+    if (candidateOK && (notYetVoted || sameCandidate)) {
+        s->voteTracker.votedFor = req.candidate;
+        return grant_vote(s->state.currentTerm);
+    }
+
+    return reject_vote(s->state.currentTerm);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{4.3 Become leader after quorum votes}
+\addcontentsline{toc}{subsubsection}{4.3 Become leader after quorum votes}
+
+\begin{lstlisting}
+void handle_vote_response(Server *s, VoteResponse r) {
+    if (r.term > s->state.currentTerm) {
+        become_follower(s, UNKNOWN_NODE, r.term);
+        return;
+    }
+
+    if (s->state.role != CANDIDATE || !r.granted) return;
+
+    s->voteTracker.voteCount++;
+    if (majority_reached(s->voteTracker.voteCount, s->clusterSize)) {
+        s->state.role = LEADER;
+        s->state.leader = s->state.self;
+        initialize_replication_indexes(s);
+        append_no_op_after_election(s);
+        send_heartbeats(s);
+    }
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{4.4 Leader election through a consistent core}
+\addcontentsline{toc}{subsubsection}{4.4 Leader election through a consistent core}
+
+\begin{lstlisting}
+void elect_using_consistent_core(Server *s, CoreClient *core) {
+    Lease lease = core_create_lease(core, s->electionTtlMs);
+    bool created = core_compare_and_set_if_absent(core, "/leader", s->id, lease);
+
+    if (created) {
+        s->state.role = LEADER;
+        periodically_refresh_lease(core, lease);
+    } else {
+        s->state.role = FOLLOWER;
+        s->state.leader = core_get(core, "/leader");
+        core_watch(core, "/leader", on_leader_key_changed);
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{5. HeartBeat and Failure Detection}
+\addcontentsline{toc}{subsection}{5. HeartBeat and Failure Detection}
+
+\Needspace{4\baselineskip}
+\subsubsection*{5.1 Send periodic heartbeats}
+\addcontentsline{toc}{subsubsection}{5.1 Send periodic heartbeats}
+
+\begin{lstlisting}
+void heartbeat_sender_loop(Server *leader) {
+    while (leader->state.role == LEADER) {
+        Heartbeat hb;
+        hb.term = leader->state.currentTerm;
+        hb.leader = leader->state.self;
+        hb.highWaterMark = leader->state.highWaterMark;
+        broadcast_heartbeat(leader, hb);
+        sleep_millis(leader->heartbeatIntervalMs);
+    }
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{5.2 Receive heartbeat and reset timeout}
+\addcontentsline{toc}{subsubsection}{5.2 Receive heartbeat and reset timeout}
+
+\begin{lstlisting}
+void handle_heartbeat(Server *s, Heartbeat hb) {
+    if (hb.term < s->state.currentTerm) {
+        send_stale_term_response(s, hb.leader);
+        return;
+    }
+
+    if (hb.term > s->state.currentTerm || s->state.role != FOLLOWER) {
+        become_follower(s, hb.leader, hb.term);
+    }
+
+    s->lastHeartbeatFromLeader = now_nanos();
+    update_high_water_mark_from_leader(s, hb.highWaterMark);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{5.3 Timeout-based failure detector}
+\addcontentsline{toc}{subsubsection}{5.3 Timeout-based failure detector}
+
+\begin{lstlisting}
+void failure_detector_tick(Server *s) {
+    if (s->state.role == LEADER) return;
+
+    TimeNanos elapsed = now_nanos() - s->lastHeartbeatFromLeader;
+    if (elapsed >= millis_to_nanos(s->electionTimeoutMs)) {
+        start_leader_election(s);
+    }
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{5.4 Suspicion-style failure detector for large clusters}
+\addcontentsline{toc}{subsubsection}{5.4 Suspicion-style failure detector for large clusters}
+
+\begin{lstlisting}
+void update_suspicion(FailureDetector *fd, NodeId node, bool heardFromNode) {
+    if (heardFromNode) {
+        fd->suspicion[node] = 0.0;
+        mark_node_up(fd, node);
+    } else {
+        fd->suspicion[node] = recompute_suspicion(fd->history[node]);
+        if (fd->suspicion[node] >= fd->failureThreshold) {
+            mark_node_down(fd, node);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{6. Majority Quorum}
+\addcontentsline{toc}{subsection}{6. Majority Quorum}
+
+\Needspace{4\baselineskip}
+\subsubsection*{6.1 Compute quorum size}
+\addcontentsline{toc}{subsubsection}{6.1 Compute quorum size}
+
+\begin{lstlisting}
+int majority_quorum(int clusterSize) {
+    return clusterSize / 2 + 1;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{6.2 Check quorum intersection for flexible quorum choices}
+\addcontentsline{toc}{subsubsection}{6.2 Check quorum intersection for flexible quorum choices}
+
+\begin{lstlisting}
+bool quorums_intersect(int clusterSize, int phaseOneQuorum, int phaseTwoQuorum) {
+    return phaseOneQuorum + phaseTwoQuorum > clusterSize;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{6.3 Select cluster size for tolerated failures}
+\addcontentsline{toc}{subsubsection}{6.3 Select cluster size for tolerated failures}
+
+\begin{lstlisting}
+int cluster_size_for_failures(int toleratedFailures) {
+    return 2 * toleratedFailures + 1;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{7. Generation Clock}
+\addcontentsline{toc}{subsection}{7. Generation Clock}
+
+\Needspace{4\baselineskip}
+\subsubsection*{7.1 Initialize generation from durable log}
+\addcontentsline{toc}{subsubsection}{7.1 Initialize generation from durable log}
+
+\begin{lstlisting}
+void initialize_generation(Server *s) {
+    s->state.currentTerm = wal_last_term(&s->wal);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{7.2 Reject stale leader requests}
+\addcontentsline{toc}{subsubsection}{7.2 Reject stale leader requests}
+
+\begin{lstlisting}
+ReplicationResponse guard_term(Server *s, ReplicationRequest req) {
+    if (req.term < s->state.currentTerm) {
+        return replication_failed(STALE_TERM, s->state.currentTerm, wal_last_index(&s->wal));
+    }
+    if (req.term > s->state.currentTerm) {
+        become_follower(s, req.leader, req.term);
+    }
+    return replication_ok(s->state.currentTerm, wal_last_index(&s->wal));
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{7.3 Old leader steps down on higher-generation response}
+\addcontentsline{toc}{subsubsection}{7.3 Old leader steps down on higher-generation response}
+
+\begin{lstlisting}
+void handle_replication_response(Server *leader, ReplicationResponse r) {
+    if (r.status == STALE_TERM && r.term > leader->state.currentTerm) {
+        become_follower(leader, UNKNOWN_NODE, r.term);
+        return;
+    }
+
+    if (r.status == OK) {
+        update_match_index(leader, r.from, r.lastReplicatedIndex);
+        maybe_advance_high_water_mark(leader);
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{8. High-Water Mark}
+\addcontentsline{toc}{subsection}{8. High-Water Mark}
+
+\Needspace{4\baselineskip}
+\subsubsection*{8.1 Append locally and replicate to followers}
+\addcontentsline{toc}{subsubsection}{8.1 Append locally and replicate to followers}
+
+\begin{lstlisting}
+Index leader_append_and_replicate(Server *leader, Bytes command) {
+    Index idx = wal_append(&leader->wal, DATA, command);
+
+    for_each_follower(leader, f) {
+        send_replication_from_next_index(leader, f);
+    }
+    return idx;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{8.2 Follower handles append entries}
+\addcontentsline{toc}{subsubsection}{8.2 Follower handles append entries}
+
+\begin{lstlisting}
+ReplicationResponse follower_append_entries(Server *f, ReplicationRequest req) {
+    ReplicationResponse termCheck = guard_term(f, req);
+    if (termCheck.status != OK) return termCheck;
+
+    if (!previous_log_position_matches(&f->wal, req.prevIndex, req.prevTerm)) {
+        return replication_failed(ERROR, f->state.currentTerm, wal_last_index(&f->wal));
+    }
+
+    for (int i = 0; i < req.entries.length; i++) {
+        LogEntry e = req.entries[i];
+        if (wal_has_conflicting_entry(&f->wal, e.index, e.term)) {
+            wal_truncate_at(&f->wal, e.index);
+        }
+        if (!wal_contains(&f->wal, e.index)) {
+            wal_write_entry(&f->wal, e);
+        }
+    }
+
+    update_high_water_mark_from_leader(f, req.highWaterMark);
+    return replication_ok(f->state.currentTerm, wal_last_index(&f->wal));
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{8.3 Compute high-water mark from match indexes}
+\addcontentsline{toc}{subsubsection}{8.3 Compute high-water mark from match indexes}
+
+\begin{lstlisting}
+Index compute_high_water_mark(Vector<Index> replicatedIndexes, int clusterSize) {
+    sort_ascending(&replicatedIndexes);
+    return replicatedIndexes[clusterSize / 2];
+}
+
+void maybe_advance_high_water_mark(Server *leader) {
+    Vector<Index> indexes = all_match_indexes_plus_leader(leader);
+    Index candidate = compute_high_water_mark(indexes, leader->clusterSize);
+
+    if (candidate > leader->state.highWaterMark &&
+        wal_term_at(&leader->wal, candidate) == leader->state.currentTerm) {
+        apply_log_entries(leader, leader->state.highWaterMark + 1, candidate);
+        leader->state.highWaterMark = candidate;
+    }
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{8.4 Read only committed entries}
+\addcontentsline{toc}{subsubsection}{8.4 Read only committed entries}
+
+\begin{lstlisting}
+LogEntry read_committed_log_entry(Server *s, Index idx) {
+    if (idx > s->state.highWaterMark) {
+        panic("entry is not committed yet");
+    }
+    return wal_read_at(&s->wal, idx);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{8.5 Truncate conflicting log suffix}
+\addcontentsline{toc}{subsubsection}{8.5 Truncate conflicting log suffix}
+
+\begin{lstlisting}
+void truncate_conflicts(WAL *wal, Vector<LogEntry> incoming) {
+    for (int i = 0; i < incoming.length; i++) {
+        LogEntry e = incoming[i];
+        if (wal_contains(wal, e.index) && wal_term_at(wal, e.index) != e.term) {
+            wal_truncate_at(wal, e.index);
+            return;
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{9. Replicated Log}
+\addcontentsline{toc}{subsection}{9. Replicated Log}
+
+\Needspace{4\baselineskip}
+\subsubsection*{9.1 Full leader-driven replication loop}
+\addcontentsline{toc}{subsubsection}{9.1 Full leader-driven replication loop}
+
+\begin{lstlisting}
+void send_replication_from_next_index(Server *leader, NodeId follower) {
+    Index next = leader->state.nextIndex[follower];
+
+    ReplicationRequest req;
+    req.term = leader->state.currentTerm;
+    req.leader = leader->state.self;
+    req.prevIndex = next - 1;
+    req.prevTerm = wal_term_at_or_zero(&leader->wal, req.prevIndex);
+    req.entries = wal_read_from(&leader->wal, next);
+    req.highWaterMark = leader->state.highWaterMark;
+
+    async_send_append_entries(follower, req);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{9.2 Handle replication response and retry with lower next index}
+\addcontentsline{toc}{subsubsection}{9.2 Handle replication response and retry with lower next index}
+
+\begin{lstlisting}
+void leader_handle_append_response(Server *leader, NodeId follower, ReplicationResponse r) {
+    if (r.term > leader->state.currentTerm) {
+        become_follower(leader, UNKNOWN_NODE, r.term);
+        return;
+    }
+
+    if (r.status == OK) {
+        leader->state.matchIndex[follower] = r.lastReplicatedIndex;
+        leader->state.nextIndex[follower] = r.lastReplicatedIndex + 1;
+        maybe_advance_high_water_mark(leader);
+    } else {
+        leader->state.nextIndex[follower] = max(1, leader->state.nextIndex[follower] - 1);
+        send_replication_from_next_index(leader, follower);
+    }
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{9.3 Apply committed log entries in order}
+\addcontentsline{toc}{subsubsection}{9.3 Apply committed log entries in order}
+
+\begin{lstlisting}
+void apply_log_entries(Server *s, Index from, Index to) {
+    for (Index i = from; i <= to; i++) {
+        LogEntry e = wal_read_at(&s->wal, i);
+        Response r = state_machine_apply(&s->stateMachine, e.payload);
+        complete_waiting_request_if_any(s, i, r);
+        s->state.lastApplied = i;
+    }
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{9.4 Commit no-op after leader election}
+\addcontentsline{toc}{subsubsection}{9.4 Commit no-op after leader election}
+
+\begin{lstlisting}
+void append_no_op_after_election(Server *leader) {
+    Bytes empty = empty_bytes();
+    Index idx = wal_append(&leader->wal, NO_OP, empty);
+    leader->state.matchIndex[leader->state.self] = idx;
+    leader->state.nextIndex[leader->state.self] = idx + 1;
+    replicate_to_all_followers(leader);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{9.5 Push missing entries until every follower converges}
+\addcontentsline{toc}{subsubsection}{9.5 Push missing entries until every follower converges}
+
+\begin{lstlisting}
+void catch_up_follower(Server *leader, NodeId follower) {
+    while (!follower_log_matches(leader, follower)) {
+        send_replication_from_next_index(leader, follower);
+        ReplicationResponse r = wait_for_replication_response(follower);
+        leader_handle_append_response(leader, follower, r);
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part III -- Consensus Algorithms}
+\addcontentsline{toc}{section}{Part III -- Consensus Algorithms}
+
+\Needspace{5\baselineskip}
+\subsection*{10. Paxos}
+\addcontentsline{toc}{subsection}{10. Paxos}
+
+\Needspace{4\baselineskip}
+\subsubsection*{10.1 Prepare phase}
+\addcontentsline{toc}{subsubsection}{10.1 Prepare phase}
+
+\begin{lstlisting}
+Vector<PrepareResponse> paxos_prepare(Proposer *p, string key) {
+    p->proposalId = next_monotonic_id(p->lastProposalId, p->nodeId);
+
+    PrepareRequest req;
+    req.key = key;
+    req.proposalId = p->proposalId;
+
+    Vector<PrepareResponse> responses;
+    for_each_acceptor(p, a) {
+        PrepareResponse r = send_prepare(a, req);
+        if (r.promised) vector_push(&responses, r);
+    }
+    return responses;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{10.2 Acceptor handles prepare}
+\addcontentsline{toc}{subsubsection}{10.2 Acceptor handles prepare}
+
+\begin{lstlisting}
+PrepareResponse acceptor_prepare(Acceptor *a, PrepareRequest req) {
+    if (id_less(req.proposalId, a->promisedId)) {
+        return prepare_reject(a->acceptedId, a->acceptedValue);
+    }
+
+    a->promisedId = req.proposalId;
+    persist_acceptor_state(a);
+    return prepare_promise(a->acceptedId, a->acceptedValue);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{10.3 Choose proposed value from promises}
+\addcontentsline{toc}{subsubsection}{10.3 Choose proposed value from promises}
+
+\begin{lstlisting}
+Bytes choose_value(Vector<PrepareResponse> promises, Bytes defaultValue) {
+    PrepareResponse best = response_with_highest_accepted_id(promises);
+    if (best.hasAcceptedValue) return best.acceptedValue;
+    return defaultValue;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{10.4 Accept phase}
+\addcontentsline{toc}{subsubsection}{10.4 Accept phase}
+
+\begin{lstlisting}
+bool paxos_accept(Proposer *p, string key, Bytes value) {
+    AcceptRequest req;
+    req.key = key;
+    req.proposalId = p->proposalId;
+    req.value = value;
+
+    int accepted = 0;
+    for_each_acceptor(p, a) {
+        if (send_accept(a, req).accepted) accepted++;
+    }
+    return majority_reached(accepted, p->clusterSize);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{10.5 Acceptor handles accept}
+\addcontentsline{toc}{subsubsection}{10.5 Acceptor handles accept}
+
+\begin{lstlisting}
+AcceptResponse acceptor_accept(Acceptor *a, AcceptRequest req) {
+    if (id_less(req.proposalId, a->promisedId)) {
+        return accept_reject(a->promisedId);
+    }
+
+    a->promisedId = req.proposalId;
+    a->acceptedId = req.proposalId;
+    a->acceptedValue = req.value;
+    persist_acceptor_state(a);
+    return accept_ok();
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{10.6 Commit phase}
+\addcontentsline{toc}{subsubsection}{10.6 Commit phase}
+
+\begin{lstlisting}
+void paxos_commit(Proposer *p, string key, Bytes value) {
+    CommitRequest req;
+    req.key = key;
+    req.proposalId = p->proposalId;
+    req.value = value;
+
+    for_each_acceptor(p, a) {
+        send_commit(a, req);
+    }
+}
+
+void acceptor_commit(Acceptor *a, CommitRequest req) {
+    a->committedId = req.proposalId;
+    a->committedValue = req.value;
+    apply_committed_value(a->store, req.key, req.value);
+    reset_transient_paxos_state(a);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{10.7 Complete single-value Paxos with bounded retries}
+\addcontentsline{toc}{subsubsection}{10.7 Complete single-value Paxos with bounded retries}
+
+\begin{lstlisting}
+bool run_paxos(Proposer *p, string key, Bytes requestedValue) {
+    for (int attempt = 0; attempt < p->maxAttempts; attempt++) {
+        Vector<PrepareResponse> promises = paxos_prepare(p, key);
+        if (!majority_reached(promises.length, p->clusterSize)) {
+            random_backoff();
+            continue;
+        }
+
+        Bytes proposal = choose_value(promises, requestedValue);
+        if (paxos_accept(p, key, proposal)) {
+            paxos_commit(p, key, proposal);
+            return bytes_equal(proposal, requestedValue);
+        }
+
+        random_backoff();
+    }
+    return false;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{10.8 Paxos read using a no-op command}
+\addcontentsline{toc}{subsubsection}{10.8 Paxos read using a no-op command}
+
+\begin{lstlisting}
+Response paxos_get(PaxosKV *kv, string key) {
+    Bytes noOp = make_no_op_read_command(key);
+    bool chosen = run_paxos(&kv->proposer, key, noOp);
+    if (!chosen) return error_response("read contention");
+    return ok_response(kv_local_get(kv, key));
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{10.9 Flexible Paxos quorum rule}
+\addcontentsline{toc}{subsubsection}{10.9 Flexible Paxos quorum rule}
+
+\begin{lstlisting}
+bool flexible_paxos_safe(int n, int prepareQuorum, int acceptQuorum) {
+    return prepareQuorum + acceptQuorum > n;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part IV -- Request Processing Patterns}
+\addcontentsline{toc}{section}{Part IV -- Request Processing Patterns}
+
+\Needspace{5\baselineskip}
+\subsection*{11. Singular Update Queue}
+\addcontentsline{toc}{subsection}{11. Singular Update Queue}
+
+\Needspace{4\baselineskip}
+\subsubsection*{11.1 Enqueue client work without mutating shared state}
+\addcontentsline{toc}{subsubsection}{11.1 Enqueue client work without mutating shared state}
+
+\begin{lstlisting}
+void submit_to_update_queue(UpdateQueue *q, WorkItem item) {
+    if (!bounded_queue_offer(q->items, item)) {
+        fail_fast_or_apply_backpressure(item);
+    }
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{11.2 Single-threaded state update loop}
+\addcontentsline{toc}{subsubsection}{11.2 Single-threaded state update loop}
+
+\begin{lstlisting}
+void update_queue_loop(Server *s) {
+    while (!s->shutdown) {
+        WorkItem item = blocking_queue_take(s->updateQueue.items);
+
+        switch (item.kind) {
+            case CLIENT_COMMAND:
+                handle_client_command_on_update_thread(s, item.request);
+                break;
+            case REPLICATION_RESPONSE:
+                leader_handle_append_response(s, item.follower, item.replicationResponse);
+                break;
+            case HEARTBEAT:
+                handle_heartbeat(s, item.heartbeat);
+                break;
+            case TIMER:
+                run_periodic_tasks(s);
+                break;
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{11.3 Backpressure by queue capacity}
+\addcontentsline{toc}{subsubsection}{11.3 Backpressure by queue capacity}
+
+\begin{lstlisting}
+bool enqueue_with_backpressure(UpdateQueue *q, WorkItem item, long timeoutMs) {
+    if (queue_size(q->items) >= q->capacity) {
+        return wait_until_space_then_offer(q->items, item, timeoutMs);
+    }
+    queue_push(q->items, item);
+    return true;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{12. Request Waiting List}
+\addcontentsline{toc}{subsection}{12. Request Waiting List}
+
+\Needspace{4\baselineskip}
+\subsubsection*{12.1 Register a waiting request by log index}
+\addcontentsline{toc}{subsubsection}{12.1 Register a waiting request by log index}
+
+\begin{lstlisting}
+void register_waiting_request(Server *s, Index logIndex, Request req, Callback cb) {
+    WaitingRequest w;
+    w.request = req;
+    w.callback = cb;
+    w.deadline = now_nanos() + millis_to_nanos(s->requestTimeoutMs);
+    map_put(s->waitingByLogIndex, logIndex, w);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{12.2 Complete request after committed execution}
+\addcontentsline{toc}{subsubsection}{12.2 Complete request after committed execution}
+
+\begin{lstlisting}
+void complete_waiting_request_if_any(Server *s, Index logIndex, Response r) {
+    if (!map_contains(s->waitingByLogIndex, logIndex)) return;
+
+    WaitingRequest w = map_get(s->waitingByLogIndex, logIndex);
+    callback_invoke(w.callback, r);
+    map_remove(s->waitingByLogIndex, logIndex);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{12.3 Expire long-pending requests}
+\addcontentsline{toc}{subsubsection}{12.3 Expire long-pending requests}
+
+\begin{lstlisting}
+void expire_waiting_requests(Server *s) {
+    TimeNanos now = now_nanos();
+    for_each_entry(s->waitingByLogIndex, idx, w) {
+        if (w.deadline <= now) {
+            callback_invoke(w.callback, error_response("request timed out"));
+            map_remove(s->waitingByLogIndex, idx);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{13. Idempotent Receiver}
+\addcontentsline{toc}{subsection}{13. Idempotent Receiver}
+
+\Needspace{4\baselineskip}
+\subsubsection*{13.1 Register a client}
+\addcontentsline{toc}{subsubsection}{13.1 Register a client}
+
+\begin{lstlisting}
+Response register_client(Server *s, string proposedClientName) {
+    string clientId = allocate_client_id(s, proposedClientName);
+    ClientRecord rec;
+    rec.clientId = clientId;
+    rec.lastCompletedRequestNo = 0;
+    rec.responses = empty_map();
+
+    Bytes command = serialize_client_registration(rec);
+    Index idx = leader_append_and_replicate(s, command);
+    register_waiting_request(s, idx, make_internal_request(command), current_callback());
+    return pending_response();
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{13.2 Execute request at most once per client request number}
+\addcontentsline{toc}{subsubsection}{13.2 Execute request at most once per client request number}
+
+\begin{lstlisting}
+Response handle_idempotent_request(Server *s, Request req) {
+    ClientRecord *rec = map_get_ptr(s->clientTable, req.clientId);
+    if (rec == NULL) return error_response("unknown client");
+
+    if (map_contains(rec->responses, req.requestNo)) {
+        return map_get(rec->responses, req.requestNo);
+    }
+
+    Index idx = leader_append_and_replicate(s, serialize_request(req));
+    register_waiting_request(s, idx, req, current_callback());
+    return pending_response();
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{13.3 Record response during state-machine application}
+\addcontentsline{toc}{subsubsection}{13.3 Record response during state-machine application}
+
+\begin{lstlisting}
+Response apply_client_command(StateMachine *sm, Request req) {
+    ClientRecord *rec = map_get_ptr(sm->clientTable, req.clientId);
+
+    if (map_contains(rec->responses, req.requestNo)) {
+        return map_get(rec->responses, req.requestNo);
+    }
+
+    Response r = apply_business_command(sm, req.command);
+    map_put(rec->responses, req.requestNo, r);
+    rec->lastCompletedRequestNo = max(rec->lastCompletedRequestNo, req.requestNo);
+    return r;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{13.4 Expire saved duplicate-detection records}
+\addcontentsline{toc}{subsubsection}{13.4 Expire saved duplicate-detection records}
+
+\begin{lstlisting}
+void expire_client_responses(ClientTable *table, long retentionMillis) {
+    TimeNanos cutoff = now_nanos() - millis_to_nanos(retentionMillis);
+    for_each_client(table, rec) {
+        for_each_response(rec.responses, requestNo, saved) {
+            if (saved.completedAt < cutoff) {
+                map_remove(rec.responses, requestNo);
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part V -- Reads, Versions, and Conflict Metadata}
+\addcontentsline{toc}{section}{Part V -- Reads, Versions, and Conflict Metadata}
+
+\Needspace{5\baselineskip}
+\subsection*{14. Follower Reads}
+\addcontentsline{toc}{subsection}{14. Follower Reads}
+
+\Needspace{4\baselineskip}
+\subsubsection*{14.1 Choose nearest readable replica}
+\addcontentsline{toc}{subsubsection}{14.1 Choose nearest readable replica}
+
+\begin{lstlisting}
+NodeId choose_nearest_replica(Client *c, Key key) {
+    Vector<NodeId> replicas = metadata_replicas_for_key(c->metadata, key);
+    sort_by_observed_latency(&replicas, c->latencyStats);
+    return replicas[0];
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{14.2 Read-your-writes from a follower}
+\addcontentsline{toc}{subsubsection}{14.2 Read-your-writes from a follower}
+
+\begin{lstlisting}
+Response follower_read_at_version(Server *f, Key key, Version minVersion) {
+    while (local_version_for_key(f, key) < minVersion) {
+        if (wait_for_replication_or_timeout(f) == TIMEOUT) {
+            return error_response("replica is too stale");
+        }
+    }
+    return ok_response(kv_get(f->store, key));
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{14.3 Linearizable follower read through leader confirmation}
+\addcontentsline{toc}{subsubsection}{14.3 Linearizable follower read through leader confirmation}
+
+\begin{lstlisting}
+Response linearizable_follower_read(Server *f, Key key) {
+    Index required = ask_leader_for_current_commit_index(f->leader);
+    if (required < 0) return error_response("leader unavailable");
+
+    while (f->state.highWaterMark < required) {
+        if (wait_for_replication_or_timeout(f) == TIMEOUT) {
+            return error_response("cannot satisfy linearizable read");
+        }
+    }
+    return ok_response(kv_get(f->store, key));
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{15. Versioned Value and MVCC}
+\addcontentsline{toc}{subsection}{15. Versioned Value and MVCC}
+
+\Needspace{4\baselineskip}
+\subsubsection*{15.1 Store a new value version}
+\addcontentsline{toc}{subsubsection}{15.1 Store a new value version}
+
+\begin{lstlisting}
+void put_versioned_value(VersionedStore *s, Key key, Value value, Version version) {
+    VersionedValue vv;
+    vv.key = key;
+    vv.value = value;
+    vv.version = version;
+    append_to_version_chain(s, key, vv);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{15.2 Read latest visible version}
+\addcontentsline{toc}{subsubsection}{15.2 Read latest visible version}
+
+\begin{lstlisting}
+Optional<Value> read_latest_version(VersionedStore *s, Key key) {
+    Vector<VersionedValue> chain = get_version_chain(s, key);
+    if (chain.length == 0) return none();
+    return some(chain[chain.length - 1].value);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{15.3 Read a snapshot as of a version}
+\addcontentsline{toc}{subsubsection}{15.3 Read a snapshot as of a version}
+
+\begin{lstlisting}
+Optional<Value> read_as_of(VersionedStore *s, Key key, Version readVersion) {
+    Vector<VersionedValue> chain = get_version_chain(s, key);
+
+    for (int i = chain.length - 1; i >= 0; i--) {
+        if (version_leq(chain[i].version, readVersion)) {
+            return some(chain[i].value);
+        }
+    }
+    return none();
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{15.4 MVCC write conflict check}
+\addcontentsline{toc}{subsubsection}{15.4 MVCC write conflict check}
+
+\begin{lstlisting}
+bool mvcc_can_commit(Transaction *tx, VersionedStore *s) {
+    for_each_key(tx->writeSet, key) {
+        Version latest = latest_version(s, key);
+        if (version_gt(latest, tx->readTimestamp)) {
+            return false;
+        }
+    }
+    return true;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{16. Version Vector}
+\addcontentsline{toc}{subsection}{16. Version Vector}
+
+\Needspace{4\baselineskip}
+\subsubsection*{16.1 Increment local component before write}
+\addcontentsline{toc}{subsubsection}{16.1 Increment local component before write}
+
+\begin{lstlisting}
+VersionVector vv_increment(VersionVector vv, NodeId node) {
+    vv.counter[node] = vv.counter[node] + 1;
+    return vv;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{16.2 Compare version vectors}
+\addcontentsline{toc}{subsubsection}{16.2 Compare version vectors}
+
+\begin{lstlisting}
+typedef enum { VV_EQUAL, VV_BEFORE, VV_AFTER, VV_CONCURRENT } VVOrder;
+
+VVOrder compare_version_vectors(VersionVector a, VersionVector b) {
+    bool aLess = false;
+    bool bLess = false;
+
+    Set<NodeId> nodes = union_keys(a.counter, b.counter);
+    for_each(nodes, node) {
+        long av = map_get_or_default(a.counter, node, 0);
+        long bv = map_get_or_default(b.counter, node, 0);
+        if (av < bv) aLess = true;
+        if (bv < av) bLess = true;
+    }
+
+    if (!aLess && !bLess) return VV_EQUAL;
+    if (aLess && !bLess) return VV_BEFORE;
+    if (!aLess && bLess) return VV_AFTER;
+    return VV_CONCURRENT;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{16.3 Merge version vectors}
+\addcontentsline{toc}{subsubsection}{16.3 Merge version vectors}
+
+\begin{lstlisting}
+VersionVector merge_version_vectors(VersionVector a, VersionVector b) {
+    VersionVector out;
+    Set<NodeId> nodes = union_keys(a.counter, b.counter);
+    for_each(nodes, node) {
+        out.counter[node] = max(map_get_or_default(a.counter, node, 0),
+                                map_get_or_default(b.counter, node, 0));
+    }
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{16.4 Store concurrent versions instead of overwriting blindly}
+\addcontentsline{toc}{subsubsection}{16.4 Store concurrent versions instead of overwriting blindly}
+
+\begin{lstlisting}
+void kv_put_with_version_vector(KVReplica *r, Key key, Value value, VersionVector clientVV) {
+    VersionVector next = merge_version_vectors(clientVV, r->localClock);
+    next = vv_increment(next, r->nodeId);
+
+    Vector<VersionedValue> existing = get_siblings(r, key);
+    Vector<VersionedValue> kept;
+
+    for (int i = 0; i < existing.length; i++) {
+        VVOrder ord = compare_version_vectors(existing[i].vv, next);
+        if (ord == VV_AFTER || ord == VV_CONCURRENT) {
+            vector_push(&kept, existing[i]);
+        }
+    }
+
+    vector_push(&kept, make_versioned_value(value, next));
+    set_siblings(r, key, kept);
+    r->localClock = next;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part VI -- Partitioning Algorithms}
+\addcontentsline{toc}{section}{Part VI -- Partitioning Algorithms}
+
+\Needspace{5\baselineskip}
+\subsection*{17. Fixed Partitions}
+\addcontentsline{toc}{subsection}{17. Fixed Partitions}
+
+\Needspace{4\baselineskip}
+\subsubsection*{17.1 Route key to fixed logical partition}
+\addcontentsline{toc}{subsubsection}{17.1 Route key to fixed logical partition}
+
+\begin{lstlisting}
+int partition_for_key(Key key, int partitionCount) {
+    uint64_t h = stable_hash(key.bytes);
+    return h % partitionCount;
+}
+
+NodeId owner_for_key(ClusterMetadata *m, Key key) {
+    int p = partition_for_key(key, m->partitionCount);
+    return m->partitionOwner[p];
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{17.2 Client-side request routing}
+\addcontentsline{toc}{subsubsection}{17.2 Client-side request routing}
+
+\begin{lstlisting}
+Response client_put(Client *c, Key key, Value value) {
+    NodeId owner = owner_for_key(&c->metadata, key);
+    Response r = send_put(owner, key, value);
+
+    if (r.status == NOT_LEADER || r.status == ERROR_STALE_METADATA) {
+        c->metadata = fetch_cluster_metadata(c);
+        owner = owner_for_key(&c->metadata, key);
+        r = send_put(owner, key, value);
+    }
+    return r;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{17.3 Rebalance partitions when adding a node}
+\addcontentsline{toc}{subsubsection}{17.3 Rebalance partitions when adding a node}
+
+\begin{lstlisting}
+void rebalance_fixed_partitions(ClusterMetadata *m, NodeId newNode) {
+    vector_push(&m->nodes, newNode);
+
+    Map<NodeId, int> load = count_partitions_per_node(m);
+    int target = ceil_div(m->partitionCount, m->nodes.length);
+
+    while (load[newNode] < target) {
+        NodeId donor = node_with_highest_partition_count(load);
+        int partition = choose_partition_to_move(m, donor);
+        m->partitionOwner[partition] = newNode;
+        load[donor]--;
+        load[newNode]++;
+        schedule_partition_transfer(donor, newNode, partition);
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{18. Key-Range Partitions}
+\addcontentsline{toc}{subsection}{18. Key-Range Partitions}
+
+\Needspace{4\baselineskip}
+\subsubsection*{18.1 Lookup partition by ordered key range}
+\addcontentsline{toc}{subsubsection}{18.1 Lookup partition by ordered key range}
+
+\begin{lstlisting}
+PartitionId range_partition_for_key(RangeTable *rt, Key key) {
+    int lo = 0, hi = rt->ranges.length - 1;
+    while (lo <= hi) {
+        int mid = (lo + hi) / 2;
+        Range r = rt->ranges[mid];
+        if (key_less(key, r.start)) hi = mid - 1;
+        else if (key_geq(key, r.end)) lo = mid + 1;
+        else return r.partitionId;
+    }
+    panic("no range covers key");
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{18.2 Route range query only to intersecting partitions}
+\addcontentsline{toc}{subsubsection}{18.2 Route range query only to intersecting partitions}
+
+\begin{lstlisting}
+Vector<PartitionId> partitions_for_range(RangeTable *rt, Key start, Key end) {
+    Vector<PartitionId> out;
+    for (int i = 0; i < rt->ranges.length; i++) {
+        Range r = rt->ranges[i];
+        if (ranges_intersect(start, end, r.start, r.end)) {
+            vector_push(&out, r.partitionId);
+        }
+    }
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{18.3 Auto-split an oversized range}
+\addcontentsline{toc}{subsubsection}{18.3 Auto-split an oversized range}
+
+\begin{lstlisting}
+void split_range_partition(RangeTable *rt, PartitionId p, Key splitKey) {
+    Range old = find_range_by_partition(rt, p);
+    assert(key_gt(splitKey, old.start) && key_lt(splitKey, old.end));
+
+    PartitionId p2 = allocate_partition_id(rt);
+    Range left = make_range(old.start, splitKey, p, old.owner);
+    Range right = make_range(splitKey, old.end, p2, choose_owner_for_new_range(rt));
+
+    replace_range(rt, old, left, right);
+    schedule_range_data_migration(left.owner, right.owner, right);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part VII -- Distributed Transactions}
+\addcontentsline{toc}{section}{Part VII -- Distributed Transactions}
+
+\Needspace{5\baselineskip}
+\subsection*{19. Two-Phase Commit}
+\addcontentsline{toc}{subsection}{19. Two-Phase Commit}
+
+\Needspace{4\baselineskip}
+\subsubsection*{19.1 Coordinator begins transaction}
+\addcontentsline{toc}{subsubsection}{19.1 Coordinator begins transaction}
+
+\begin{lstlisting}
+Response two_phase_commit(Coordinator *c, Transaction tx) {
+    TxId id = allocate_tx_id(c);
+    wal_append(c->wal, DATA, serialize_tx_state(id, TX_STARTED, tx));
+
+    Vector<Participant> participants = participants_for(tx);
+    bool allPrepared = true;
+
+    for (int i = 0; i < participants.length; i++) {
+        PrepareResponse r = send_prepare_tx(participants[i], id, tx.partFor(participants[i]));
+        if (r.status != OK) {
+            allPrepared = false;
+            break;
+        }
+    }
+
+    if (allPrepared) {
+        wal_append(c->wal, DATA, serialize_tx_state(id, TX_COMMITTED, tx));
+        for_each(participants, p) send_commit_tx(p, id);
+        return ok_response(id);
+    } else {
+        wal_append(c->wal, DATA, serialize_tx_state(id, TX_ABORTED, tx));
+        for_each(participants, p) send_rollback_tx(p, id);
+        return error_response("transaction aborted");
+    }
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{19.2 Participant prepare with locks and undo information}
+\addcontentsline{toc}{subsubsection}{19.2 Participant prepare with locks and undo information}
+
+\begin{lstlisting}
+PrepareResponse participant_prepare(Participant *p, TxId id, TxFragment frag) {
+    if (!try_acquire_locks(p->lockTable, id, frag.keys, p->lockTimeoutMs)) {
+        return prepare_reject("lock timeout");
+    }
+
+    UndoRecord undo = capture_before_images(p->store, frag.writes);
+    wal_append(p->wal, DATA, serialize_participant_state(id, PREPARED, frag, undo));
+
+    p->prepared[id] = make_prepared_tx(frag, undo);
+    return prepare_ok();
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{19.3 Participant commit}
+\addcontentsline{toc}{subsubsection}{19.3 Participant commit}
+
+\begin{lstlisting}
+void participant_commit(Participant *p, TxId id) {
+    PreparedTx tx = map_get(p->prepared, id);
+
+    for_each_write(tx.fragment.writes, w) {
+        kv_put(p->store, w.key, w.value);
+    }
+
+    wal_append(p->wal, DATA, serialize_participant_state(id, COMMITTED, tx.fragment, tx.undo));
+    release_locks(p->lockTable, id);
+    map_remove(p->prepared, id);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{19.4 Participant rollback}
+\addcontentsline{toc}{subsubsection}{19.4 Participant rollback}
+
+\begin{lstlisting}
+void participant_rollback(Participant *p, TxId id) {
+    PreparedTx tx = map_get(p->prepared, id);
+
+    restore_before_images(p->store, tx.undo);
+    wal_append(p->wal, DATA, serialize_participant_state(id, ABORTED, tx.fragment, tx.undo));
+    release_locks(p->lockTable, id);
+    map_remove(p->prepared, id);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{19.5 Coordinator recovery after crash}
+\addcontentsline{toc}{subsubsection}{19.5 Coordinator recovery after crash}
+
+\begin{lstlisting}
+void coordinator_recover(Coordinator *c) {
+    Map<TxId, TxState> states = replay_coordinator_log(c->wal);
+
+    for_each_entry(states, id, state) {
+        if (state.status == TX_COMMITTED) {
+            for_each(state.participants, p) send_commit_tx(p, id);
+        } else if (state.status == TX_ABORTED) {
+            for_each(state.participants, p) send_rollback_tx(p, id);
+        } else if (state.status == TX_STARTED) {
+            for_each(state.participants, p) send_rollback_tx(p, id);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{19.6 Transaction read/write with versioned values}
+\addcontentsline{toc}{subsubsection}{19.6 Transaction read/write with versioned values}
+
+\begin{lstlisting}
+bool validate_and_commit_mvcc(Transaction *tx, VersionedStore *s, Timestamp commitTs) {
+    for_each_key(tx->readSet, key) {
+        if (latest_version(s, key) > tx->readTimestamp && key_not_in(tx->writeSet, key)) {
+            return false;
+        }
+    }
+
+    for_each_write(tx->writeSet, w) {
+        put_versioned_value(s, w.key, w.value, commitTs);
+    }
+    return true;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part VIII -- Distributed Time}
+\addcontentsline{toc}{section}{Part VIII -- Distributed Time}
+
+\Needspace{5\baselineskip}
+\subsection*{20. Lamport Clock}
+\addcontentsline{toc}{subsection}{20. Lamport Clock}
+
+\Needspace{4\baselineskip}
+\subsubsection*{20.1 Local event}
+\addcontentsline{toc}{subsubsection}{20.1 Local event}
+
+\begin{lstlisting}
+long lamport_on_local_event(LamportClock *c) {
+    c->value = c->value + 1;
+    return c->value;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{20.2 Send event}
+\addcontentsline{toc}{subsubsection}{20.2 Send event}
+
+\begin{lstlisting}
+Message attach_lamport_timestamp(LamportClock *c, Message m) {
+    m.lamport = lamport_on_local_event(c);
+    return m;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{20.3 Receive event}
+\addcontentsline{toc}{subsubsection}{20.3 Receive event}
+
+\begin{lstlisting}
+long lamport_on_receive(LamportClock *c, Message m) {
+    c->value = max(c->value, m.lamport) + 1;
+    return c->value;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{20.4 Version values with Lamport timestamps}
+\addcontentsline{toc}{subsubsection}{20.4 Version values with Lamport timestamps}
+
+\begin{lstlisting}
+Response lamport_kv_put(Node *n, Key key, Value value, Optional<long> clientClock) {
+    if (clientClock.exists) {
+        n->clock.value = max(n->clock.value, clientClock.value);
+    }
+    Version v = lamport_on_local_event(&n->clock);
+    put_versioned_value(&n->store, key, value, v);
+    return ok_response(v);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{21. Hybrid Logical Clock}
+\addcontentsline{toc}{subsection}{21. Hybrid Logical Clock}
+
+\begin{lstlisting}
+typedef struct HybridTime {
+    long physicalMillis;
+    long logicalCounter;
+} HybridTime;
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{21.1 Generate timestamp for local event}
+\addcontentsline{toc}{subsubsection}{21.1 Generate timestamp for local event}
+
+\begin{lstlisting}
+HybridTime hlc_now(HybridClock *c) {
+    long physical = system_millis();
+
+    if (physical > c->last.physicalMillis) {
+        c->last.physicalMillis = physical;
+        c->last.logicalCounter = 0;
+    } else {
+        c->last.logicalCounter++;
+    }
+    return c->last;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{21.2 Merge received timestamp}
+\addcontentsline{toc}{subsubsection}{21.2 Merge received timestamp}
+
+\begin{lstlisting}
+HybridTime hlc_receive(HybridClock *c, HybridTime remote) {
+    long physical = system_millis();
+    long maxPhysical = max(physical, max(c->last.physicalMillis, remote.physicalMillis));
+
+    long logical;
+    if (maxPhysical == c->last.physicalMillis && maxPhysical == remote.physicalMillis) {
+        logical = max(c->last.logicalCounter, remote.logicalCounter) + 1;
+    } else if (maxPhysical == c->last.physicalMillis) {
+        logical = c->last.logicalCounter + 1;
+    } else if (maxPhysical == remote.physicalMillis) {
+        logical = remote.logicalCounter + 1;
+    } else {
+        logical = 0;
+    }
+
+    c->last = (HybridTime){ maxPhysical, logical };
+    return c->last;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{21.3 Store MVCC value with hybrid timestamp}
+\addcontentsline{toc}{subsubsection}{21.3 Store MVCC value with hybrid timestamp}
+
+\begin{lstlisting}
+Response hybrid_kv_put(Node *n, Key key, Value value, Optional<HybridTime> incoming) {
+    HybridTime ts = incoming.exists ? hlc_receive(&n->hybridClock, incoming.value)
+                                    : hlc_now(&n->hybridClock);
+    put_versioned_value(&n->store, key, value, ts);
+    return ok_response(ts);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{22. Clock-Bound Wait}
+\addcontentsline{toc}{subsection}{22. Clock-Bound Wait}
+
+\Needspace{4\baselineskip}
+\subsubsection*{22.1 Commit wait until uncertainty bound passes}
+\addcontentsline{toc}{subsubsection}{22.1 Commit wait until uncertainty bound passes}
+
+\begin{lstlisting}
+void clock_bound_commit_wait(ClockBoundAPI *clock, HybridTime commitTs) {
+    ClockInterval interval;
+    do {
+        interval = clock_now_with_bounds(clock);
+        if (interval.earliest > commitTs.physicalMillis) return;
+        sleep_millis(1);
+    } while (true);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{22.2 Write with commit wait}
+\addcontentsline{toc}{subsubsection}{22.2 Write with commit wait}
+
+\begin{lstlisting}
+Response write_with_commit_wait(Node *n, Key key, Value value) {
+    HybridTime ts = hlc_now(&n->hybridClock);
+    clock_bound_commit_wait(n->clockBound, ts);
+    put_versioned_value(&n->store, key, value, ts);
+    return ok_response(ts);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{22.3 Read restart when uncertainty is detected}
+\addcontentsline{toc}{subsubsection}{22.3 Read restart when uncertainty is detected}
+
+\begin{lstlisting}
+Response read_with_restart(Node *n, Key key, HybridTime readTs) {
+    while (true) {
+        ReadResult r = mvcc_read_with_uncertainty(&n->store, key, readTs);
+        if (!r.uncertain) return ok_response(r.value);
+
+        readTs = max_hybrid_time(readTs, r.observedFutureTimestamp);
+        if (readTs.physicalMillis - system_millis() > n->maxClockSkewMillis) {
+            return error_response("clock uncertainty too large");
+        }
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part IX -- Cluster Management}
+\addcontentsline{toc}{section}{Part IX -- Cluster Management}
+
+\Needspace{5\baselineskip}
+\subsection*{23. Consistent Core}
+\addcontentsline{toc}{subsection}{23. Consistent Core}
+
+\Needspace{4\baselineskip}
+\subsubsection*{23.1 Store metadata through replicated log}
+\addcontentsline{toc}{subsubsection}{23.1 Store metadata through replicated log}
+
+\begin{lstlisting}
+Response core_put(CoreServer *leader, Key key, Value value) {
+    Command cmd = make_core_put_command(key, value);
+    Index idx = leader_append_and_replicate(&leader->replicatedLog, serialize_command(cmd));
+    register_waiting_request(&leader->replicatedLog, idx, make_request(cmd), current_callback());
+    return pending_response();
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{23.2 Client locates current leader}
+\addcontentsline{toc}{subsubsection}{23.2 Client locates current leader}
+
+\begin{lstlisting}
+CoreServer* find_core_leader(CoreClient *c) {
+    for (int i = 0; i < c->knownCoreServers.length; i++) {
+        Response r = send_leader_query(c->knownCoreServers[i]);
+        if (r.status == OK) return server_by_id(r.payload.leaderId);
+    }
+    return NULL;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{23.3 Assign partitions from metadata}
+\addcontentsline{toc}{subsubsection}{23.3 Assign partitions from metadata}
+
+\begin{lstlisting}
+void assign_partitions(CoreState *core, Vector<NodeId> dataNodes, int partitionCount) {
+    for (int p = 0; p < partitionCount; p++) {
+        NodeId owner = dataNodes[p % dataNodes.length];
+        core->partitionOwner[p] = owner;
+    }
+    persist_metadata_change(core);
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{24. Lease}
+\addcontentsline{toc}{subsection}{24. Lease}
+
+\Needspace{4\baselineskip}
+\subsubsection*{24.1 Create lease with expiration}
+\addcontentsline{toc}{subsubsection}{24.1 Create lease with expiration}
+
+\begin{lstlisting}
+LeaseId create_lease(LeaseManager *lm, NodeId owner, long ttlMillis) {
+    Lease lease;
+    lease.id = next_lease_id(lm);
+    lease.owner = owner;
+    lease.ttlMillis = ttlMillis;
+    lease.expiresAt = now_nanos() + millis_to_nanos(ttlMillis);
+
+    replicated_put(lm->core, lease_key(lease.id), serialize_lease(lease));
+    return lease.id;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{24.2 Refresh lease}
+\addcontentsline{toc}{subsubsection}{24.2 Refresh lease}
+
+\begin{lstlisting}
+Status refresh_lease(LeaseManager *lm, LeaseId id, NodeId owner) {
+    Lease lease = read_lease(lm, id);
+    if (lease.owner.value != owner.value) return ERROR;
+
+    lease.expiresAt = now_nanos() + millis_to_nanos(lease.ttlMillis);
+    replicated_put(lm->core, lease_key(id), serialize_lease(lease));
+    return OK;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{24.3 Expire leases in leader loop}
+\addcontentsline{toc}{subsubsection}{24.3 Expire leases in leader loop}
+
+\begin{lstlisting}
+void expire_leases(LeaseManager *lm) {
+    TimeNanos now = now_nanos();
+    Vector<Lease> leases = all_leases(lm);
+
+    for (int i = 0; i < leases.length; i++) {
+        if (leases[i].expiresAt <= now) {
+            replicated_delete(lm->core, lease_key(leases[i].id));
+            notify_watchers(lm->core, lease_key(leases[i].id), DELETED);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{24.4 Attach lease to key and delete key on expiration}
+\addcontentsline{toc}{subsubsection}{24.4 Attach lease to key and delete key on expiration}
+
+\begin{lstlisting}
+void put_key_with_lease(CoreState *core, Key key, Value value, LeaseId lease) {
+    core->kv[key] = value;
+    core->keyLease[key] = lease;
+    core->leaseKeys[lease].add(key);
+}
+
+void expire_lease_keys(CoreState *core, LeaseId lease) {
+    Vector<Key> keys = core->leaseKeys[lease];
+    for (int i = 0; i < keys.length; i++) {
+        map_remove(core->kv, keys[i]);
+        notify_watchers(core, keys[i], DELETED);
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{25. State Watch}
+\addcontentsline{toc}{subsection}{25. State Watch}
+
+\Needspace{4\baselineskip}
+\subsubsection*{25.1 Client registers watch}
+\addcontentsline{toc}{subsubsection}{25.1 Client registers watch}
+
+\begin{lstlisting}
+void client_watch(CoreClient *c, Key key, WatchCallback cb) {
+    c->watchCallbacks[key] = cb;
+    Request req = make_watch_request(key, c->lastWatchedIndex);
+    pipeline_send(&c->connection, req);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{25.2 Server stores watch by connection and key}
+\addcontentsline{toc}{subsubsection}{25.2 Server stores watch by connection and key}
+
+\begin{lstlisting}
+void server_register_watch(CoreServer *s, Connection *conn, Key key) {
+    s->watchByKey[key].add(conn);
+    s->keysByConnection[conn].add(key);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{25.3 Notify watchers on state change}
+\addcontentsline{toc}{subsubsection}{25.3 Notify watchers on state change}
+
+\begin{lstlisting}
+void notify_watchers(CoreServer *s, Key key, WatchEventType type) {
+    WatchEvent ev;
+    ev.key = key;
+    ev.type = type;
+    ev.index = s->state.lastAppliedIndex;
+
+    Vector<Connection*> conns = s->watchByKey[key];
+    for (int i = 0; i < conns.length; i++) {
+        pipeline_send_event(conns[i], ev);
+    }
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{25.4 Reconnect and catch up missed watch events}
+\addcontentsline{toc}{subsubsection}{25.4 Reconnect and catch up missed watch events}
+
+\begin{lstlisting}
+void client_reconnect_watch(CoreClient *c) {
+    reconnect(&c->connection);
+    for_each_entry(c->watchCallbacks, key, cb) {
+        Request req = make_watch_request(key, c->lastWatchedIndex);
+        pipeline_send(&c->connection, req);
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{26. Gossip Dissemination}
+\addcontentsline{toc}{subsection}{26. Gossip Dissemination}
+
+\Needspace{4\baselineskip}
+\subsubsection*{26.1 Periodic gossip loop}
+\addcontentsline{toc}{subsubsection}{26.1 Periodic gossip loop}
+
+\begin{lstlisting}
+void gossip_loop(GossipNode *n) {
+    while (!n->shutdown) {
+        NodeId peer = select_gossip_peer(n);
+        GossipDigest digest = make_digest(n->membership);
+        send_gossip(peer, digest);
+        sleep_millis(n->gossipIntervalMs);
+    }
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{26.2 Merge received gossip state}
+\addcontentsline{toc}{subsubsection}{26.2 Merge received gossip state}
+
+\begin{lstlisting}
+void handle_gossip(GossipNode *n, GossipMessage msg) {
+    for_each_entry(msg.membership, node, remoteState) {
+        LocalMemberState local = n->membership[node];
+        if (remoteState.generation > local.generation ||
+            (remoteState.generation == local.generation && remoteState.version > local.version)) {
+            n->membership[node] = remoteState;
+            mark_dirty_for_future_gossip(n, node);
+        }
+    }
+
+    GossipMessage delta = compute_state_delta(n, msg.digest);
+    send_gossip_reply(msg.from, delta);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{26.3 Avoid unnecessary state exchange with digests}
+\addcontentsline{toc}{subsubsection}{26.3 Avoid unnecessary state exchange with digests}
+
+\begin{lstlisting}
+GossipMessage compute_state_delta(GossipNode *n, GossipDigest remoteDigest) {
+    GossipMessage delta;
+    for_each_entry(n->membership, node, localState) {
+        Version remoteVersion = digest_version(remoteDigest, node);
+        if (localState.version > remoteVersion) {
+            delta.membership[node] = localState;
+        }
+    }
+    return delta;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{26.4 Select peer for gossip}
+\addcontentsline{toc}{subsubsection}{26.4 Select peer for gossip}
+
+\begin{lstlisting}
+NodeId select_gossip_peer(GossipNode *n) {
+    Vector<NodeId> candidates = live_members_except_self(n);
+    if (n->preferUncontacted) {
+        candidates = prioritize_nodes_not_contacted_recently(candidates, n->lastGossipedAt);
+    }
+    return random_choice(candidates);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{26.5 Handle node restart with generation number}
+\addcontentsline{toc}{subsubsection}{26.5 Handle node restart with generation number}
+
+\begin{lstlisting}
+void merge_member_generation(GossipNode *n, NodeId node, MemberState remote) {
+    MemberState local = n->membership[node];
+
+    if (remote.generation > local.generation) {
+        discard_old_per_node_state(n, node);
+        n->membership[node] = remote;
+        request_full_state_from(node);
+    } else if (remote.generation == local.generation && remote.version > local.version) {
+        n->membership[node] = remote;
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{27. Emergent Leader}
+\addcontentsline{toc}{subsection}{27. Emergent Leader}
+
+\Needspace{4\baselineskip}
+\subsubsection*{27.1 Choose oldest or highest-ranked member as leader}
+\addcontentsline{toc}{subsubsection}{27.1 Choose oldest or highest-ranked member as leader}
+
+\begin{lstlisting}
+NodeId emergent_leader(MembershipView view) {
+    Vector<Member> live = live_members(view);
+    sort_by_join_time_then_node_id(&live);
+    return live[0].nodeId;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{27.2 Recompute leader after membership update}
+\addcontentsline{toc}{subsubsection}{27.2 Recompute leader after membership update}
+
+\begin{lstlisting}
+void on_membership_update(EmergentCluster *c, MembershipView newView) {
+    c->view = newView;
+    NodeId leader = emergent_leader(newView);
+
+    if (leader.value == c->self.value) {
+        c->isCoordinator = true;
+        start_coordinator_duties(c);
+    } else {
+        c->isCoordinator = false;
+        c->coordinator = leader;
+    }
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{27.3 Disseminate membership update to known members}
+\addcontentsline{toc}{subsubsection}{27.3 Disseminate membership update to known members}
+
+\begin{lstlisting}
+void broadcast_membership_update(EmergentCluster *c, MemberChange change) {
+    apply_change(&c->view, change);
+    for_each_member(c->view, m) {
+        if (m.nodeId.value != c->self.value) {
+            send_membership_update(m.nodeId, change, c->view.version);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{27.4 Detect possible split-brain}
+\addcontentsline{toc}{subsubsection}{27.4 Detect possible split-brain}
+
+\begin{lstlisting}
+bool split_brain_possible(EmergentCluster *c) {
+    int reachable = count_reachable_members(c->view);
+    return reachable < quorum_size(c->view.totalKnownMembers);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part X -- Communication Algorithms}
+\addcontentsline{toc}{section}{Part X -- Communication Algorithms}
+
+\Needspace{5\baselineskip}
+\subsection*{28. Single-Socket Channel}
+\addcontentsline{toc}{subsection}{28. Single-Socket Channel}
+
+\Needspace{4\baselineskip}
+\subsubsection*{28.1 Open framed socket channel}
+\addcontentsline{toc}{subsubsection}{28.1 Open framed socket channel}
+
+\begin{lstlisting}
+SingleSocketChannel open_single_socket(Address address, int heartbeatIntervalMs) {
+    SingleSocketChannel ch;
+    ch.socket = socket_connect(address, heartbeatIntervalMs);
+    socket_set_read_timeout(ch.socket, heartbeatIntervalMs * 10);
+    ch.in = socket_input(ch.socket);
+    ch.out = socket_output(ch.socket);
+    return ch;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{28.2 Blocking framed send}
+\addcontentsline{toc}{subsubsection}{28.2 Blocking framed send}
+
+\begin{lstlisting}
+Response blocking_send(SingleSocketChannel *ch, Request req) {
+    Bytes body = serialize_request(req);
+    write_int(ch->out, body.length);
+    write_bytes(ch->out, body);
+    flush(ch->out);
+
+    int len = read_int(ch->in);
+    Bytes resp = read_exact(ch->in, len);
+    return deserialize_response(resp);
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{28.3 Keep channel alive with heartbeats}
+\addcontentsline{toc}{subsubsection}{28.3 Keep channel alive with heartbeats}
+
+\begin{lstlisting}
+void channel_heartbeat_loop(SingleSocketChannel *ch, NodeId self) {
+    while (!ch->closed) {
+        Request hb = make_heartbeat_request(self);
+        send_without_blocking_application(ch, hb);
+        sleep_millis(ch->heartbeatIntervalMs);
+    }
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{29. Request Batch}
+\addcontentsline{toc}{subsection}{29. Request Batch}
+
+\Needspace{4\baselineskip}
+\subsubsection*{29.1 Queue requests for batching}
+\addcontentsline{toc}{subsubsection}{29.1 Queue requests for batching}
+
+\begin{lstlisting}
+Future enqueue_batched_request(BatchClient *c, Request req) {
+    Future f = new_future();
+    BatchEntry e = { req, f, now_nanos() };
+    queue_push(c->pending, e);
+    return f;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{29.2 Flush batch by size or time}
+\addcontentsline{toc}{subsubsection}{29.2 Flush batch by size or time}
+
+\begin{lstlisting}
+void batch_sender_loop(BatchClient *c) {
+    while (!c->shutdown) {
+        Vector<BatchEntry> batch;
+        TimeNanos start = now_nanos();
+
+        while (batch.length < c->maxBatchSize &&
+               now_nanos() - start < millis_to_nanos(c->maxBatchDelayMs)) {
+            Optional<BatchEntry> e = queue_poll(c->pending, c->maxBatchDelayMs);
+            if (e.exists) vector_push(&batch, e.value);
+        }
+
+        if (batch.length > 0) send_batch(c, batch);
+    }
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{29.3 Process a batch on server}
+\addcontentsline{toc}{subsubsection}{29.3 Process a batch on server}
+
+\begin{lstlisting}
+BatchResponse handle_request_batch(Server *s, BatchRequest batch) {
+    BatchResponse out;
+    for (int i = 0; i < batch.requests.length; i++) {
+        Response r = handle_single_request(s, batch.requests[i]);
+        vector_push(&out.responses, r);
+    }
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{30. Request Pipeline}
+\addcontentsline{toc}{subsection}{30. Request Pipeline}
+
+\Needspace{4\baselineskip}
+\subsubsection*{30.1 Send requests without waiting for previous responses}
+\addcontentsline{toc}{subsubsection}{30.1 Send requests without waiting for previous responses}
+
+\begin{lstlisting}
+Future pipeline_send(PipelinedConnection *p, Request req) {
+    long id = p->nextCorrelationId++;
+    req.correlationId = id;
+
+    Future f = new_future();
+    p->inFlight[id] = f;
+
+    write_framed_message(p->channel, serialize_request(req));
+    return f;
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{30.2 Receiver completes futures by correlation ID}
+\addcontentsline{toc}{subsubsection}{30.2 Receiver completes futures by correlation ID}
+
+\begin{lstlisting}
+void pipeline_receiver_loop(PipelinedConnection *p) {
+    while (!p->closed) {
+        Bytes bytes = read_framed_message(p->channel);
+        Response r = deserialize_response(bytes);
+
+        if (r.kind == WATCH_EVENT) {
+            dispatch_watch_event(p, r);
+            continue;
+        }
+
+        Future f = p->inFlight[r.correlationId];
+        future_complete(f, r);
+        map_remove(p->inFlight, r.correlationId);
+    }
+}
+\end{lstlisting}
+
+\Needspace{4\baselineskip}
+\subsubsection*{30.3 Timeout in-flight requests}
+\addcontentsline{toc}{subsubsection}{30.3 Timeout in-flight requests}
+
+\begin{lstlisting}
+void pipeline_timeout_loop(PipelinedConnection *p) {
+    while (!p->closed) {
+        TimeNanos now = now_nanos();
+        for_each_entry(p->inFlight, id, f) {
+            if (f.createdAt + millis_to_nanos(p->requestTimeoutMs) <= now) {
+                future_complete(f, error_response("pipeline request timed out"));
+                map_remove(p->inFlight, id);
+            }
+        }
+        sleep_millis(p->timeoutCheckIntervalMs);
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{31. Cross-Pattern Composition Templates}
+\addcontentsline{toc}{section}{31. Cross-Pattern Composition Templates}
+
+\Needspace{5\baselineskip}
+\subsection*{31.1 Strongly consistent replicated key-value write}
+\addcontentsline{toc}{subsection}{31.1 Strongly consistent replicated key-value write}
+
+\begin{lstlisting}
+Response strongly_consistent_put(Server *leader, Request req) {
+    if (leader->state.role != LEADER) return redirect_to_leader(leader->state.leader);
+
+    Response cached = check_idempotent_cache(leader, req);
+    if (cached.status == OK) return cached;
+
+    Bytes command = serialize_request(req);
+    Index idx = leader_append_and_replicate(leader, command);
+    register_waiting_request(leader, idx, req, current_callback());
+    return pending_response();
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{31.2 Follower applies committed replicated command}
+\addcontentsline{toc}{subsection}{31.2 Follower applies committed replicated command}
+
+\begin{lstlisting}
+void follower_commit_from_high_water_mark(Server *f, Index leaderHwm) {
+    if (leaderHwm <= f->state.highWaterMark) return;
+
+    Index from = f->state.highWaterMark + 1;
+    Index to = min(leaderHwm, wal_last_index(&f->wal));
+    apply_log_entries(f, from, to);
+    f->state.highWaterMark = to;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{31.3 Partitioned, replicated write path}
+\addcontentsline{toc}{subsection}{31.3 Partitioned, replicated write path}
+
+\begin{lstlisting}
+Response partitioned_replicated_put(Client *c, Key key, Value value) {
+    PartitionId p = partition_for_key(key, c->metadata.partitionCount);
+    ReplicaSet replicas = c->metadata.replicas[p];
+    NodeId leader = replicas.leader;
+
+    Request req = make_put_request(c->clientId, next_request_no(c), key, value);
+    Response r = send_to_node(leader, req);
+
+    if (r.status == NOT_LEADER || r.status == ERROR_STALE_METADATA) {
+        c->metadata = fetch_cluster_metadata(c);
+        return partitioned_replicated_put(c, key, value);
+    }
+    return r;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{31.4 Transaction across partition leaders}
+\addcontentsline{toc}{subsection}{31.4 Transaction across partition leaders}
+
+\begin{lstlisting}
+Response partitioned_transaction(Client *c, Transaction tx) {
+    Map<PartitionId, TxFragment> fragments = split_by_partition(c->metadata, tx);
+    PartitionId coordinatorPartition = first_key_partition(tx);
+    NodeId coordinator = c->metadata.replicas[coordinatorPartition].leader;
+
+    return send_transaction_to_coordinator(coordinator, fragments);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{32. Implementation Checklist}
+\addcontentsline{toc}{section}{32. Implementation Checklist}
+
+\begin{lstlisting}
+bool validate_distributed_system_design(Design d) {
+    require(d.log.hasChecksums);
+    require(d.log.hasSegmenting);
+    require(d.log.hasCleaningOrSnapshots);
+    require(d.replication.usesGenerationClock);
+    require(d.replication.usesMajorityQuorum);
+    require(d.replication.exposesOnlyHighWaterMark);
+    require(d.replication.truncatesConflictingUncommittedSuffixes);
+    require(d.clientProtocol.hasTimeouts);
+    require(d.clientProtocol.hasDuplicateDetectionForRetries);
+    require(d.partitioning.hasStableKeyToPartitionMapping);
+    require(d.clusterMetadata.hasConsistentCoreOrGossipConvergencePlan);
+    require(d.timeModel.doesNotAssumeWallClockMonotonicity);
+    return true;
+}
+\end{lstlisting}
+
+\Needspace{5\baselineskip}
+\subsection*{Closing note}
+\addcontentsline{toc}{subsection}{Closing note}
+
+The book's value is that it names and composes implementation patterns that repeatedly occur in systems such as Kafka, ZooKeeper, Cassandra, etcd, CockroachDB, MongoDB, and Raft-based services. The pseudocode above intentionally focuses on the reusable mechanics behind those implementations: durable logs, quorum intersection, term-based leadership, committed-prefix visibility, deduplication, partition metadata, leases, watches, gossip, and pipelined communication.
+
+\clearpage
+\section*{Document Control Notes}
+\phantomsection
+\addcontentsline{toc}{section}{Document Control Notes}
+\begin{itemize}
+\item The algorithms are independent C-like reconstructions intended for study, architecture review, and implementation planning.
+\item The notation normalizes distributed-systems vocabulary across log, quorum, consensus, partitioning, transaction, time, cluster-management, and communication patterns.
+\item For production use, each pseudocode routine should be paired with safety invariants, failure-injection tests, timeout tuning, persistent-storage validation, metrics, and recovery tests.
+\end{itemize}
+\end{document}

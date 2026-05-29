@@ -1,0 +1,507 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=0.8in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue,
+  citecolor=black,
+  pdftitle={Vector vs Dynamic Array in C, C++, and Rust},
+  pdfauthor={Jordan Suber},
+  pdfsubject={Fact-checked programming handout},
+  pdfkeywords={C, C++, std::vector, Rust Vec, dynamic array, memory management}
+}
+
+\setlength{\headheight}{14pt}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Vector vs. Dynamic Array}
+\rhead{Fact-Checked Handout}
+\cfoot{\thepage}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlist[itemize]{topsep=0.2em,itemsep=0.2em,parsep=0pt}
+\setlist[enumerate]{topsep=0.2em,itemsep=0.2em,parsep=0pt}
+\renewcommand{\arraystretch}{1.18}
+
+\lstdefinestyle{code}{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  frame=single,
+  framerule=0.3pt,
+  xleftmargin=0.5em,
+  xrightmargin=0.5em,
+  aboveskip=0.7em,
+  belowskip=0.7em,
+  commentstyle=\itshape,
+  keywordstyle=\bfseries
+}
+
+\lstset{style=code}
+
+\title{\textbf{Vector vs. Dynamic Array in C, C++, and Rust}\\
+\large Fact-Checked Notes with a Generic Macro-Based Vector in Modern C}
+\author{Prepared for Jordan Suber}
+\date{May 28, 2026}
+
+\begin{document}
+\maketitle
+
+\section*{Executive Verdict}
+
+The original explanation is broadly directionally correct: \texttt{std::vector} is the modern default C++ container for a resizable contiguous sequence, and a raw heap-allocated array requires explicit allocation, resizing, and deallocation. The main corrections are terminological and engineering-focused:
+
+\begin{itemize}
+  \item In modern C++, say \textbf{C++ Standard Library container} rather than only \textbf{STL}. The STL is a historical/design lineage term; \texttt{std::vector} is standardized as part of the C++ Standard Library.
+  \item \texttt{std::vector} is not merely an implementation detail for a dynamic array. It is a sequence container with specified semantics, including contiguous element storage and allocator support. Exact object representation is implementation-defined.
+  \item \texttt{std::vector::at()} performs bounds checking; \texttt{operator[]} does not provide required runtime bounds checking.
+  \item Rust's \texttt{Vec<T>} is accurately described by the Rust standard library as a contiguous growable array.
+  \item C has built-in arrays, but the C standard library does \emph{not} provide a built-in resizable vector/container abstraction comparable to C++ \texttt{std::vector}. In C, dynamic arrays are normally built from pointers plus explicit length/capacity bookkeeping and allocation functions.
+\end{itemize}
+
+\section{Fact-Check Table}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.29\linewidth}>{\raggedright\arraybackslash}p{0.17\linewidth}>{\raggedright\arraybackslash}p{0.44\linewidth}}
+\toprule
+\textbf{Original Claim} & \textbf{Verdict} & \textbf{Correction / Precise Version} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Original Claim} & \textbf{Verdict} & \textbf{Correction / Precise Version} \\
+\midrule
+\endhead
+A vector is a specific implementation of a dynamic array provided by the C++ STL. & Mostly correct, imprecise & In C++, \texttt{std::vector} is a C++ Standard Library sequence container. It behaves like a resizable contiguous array, but the standard specifies interface and semantic guarantees, not a single fixed internal implementation. \cite{cppref-vector} \\
+\addlinespace
+A vector automatically resizes when full. & Correct with nuance & Adding elements can cause reallocation when size would exceed capacity. Calling \texttt{reserve()} can prevent reallocation until insertions exceed the reserved capacity. Reallocation invalidates pointers, references, and iterators to elements. \cite{cppref-reserve} \\
+\addlinespace
+Raw dynamic arrays require manual \texttt{delete[]} in C++. & Correct for \texttt{new[]} & A C++ array allocated with \texttt{new[]} must be released with \texttt{delete[]}. Modern C++ guidance strongly discourages naked \texttt{new}/\texttt{delete} in ordinary application code; prefer resource-managing types such as containers and smart pointers. \cite{cpp-core-guidelines} \\
+\addlinespace
+\texttt{std::vector} includes bounds-checking safety. & Partly correct & \texttt{std::vector::at()} is bounds-checked and throws \texttt{std::out\_of\_range}; \texttt{operator[]} is not required to check bounds. \cite{cppref-at} \\
+\addlinespace
+Raw arrays have minimal overhead; vectors store extra metadata. & Generally true, non-normative & A raw pointer alone stores no length or capacity. A usable dynamic array abstraction needs at least pointer, size, and often capacity. Common \texttt{std::vector} implementations store pointer/size/capacity or equivalent information, but the standard does not mandate an exact object layout. \\
+\addlinespace
+Vector performance is usually negligible compared with raw arrays. & Too broad & A better claim is: \texttt{std::vector} has contiguous storage and no per-element node overhead, so it is usually performance-competitive for sequential/random access. Real performance depends on allocation strategy, growth, initialization, bounds checks, cache behavior, and whether \texttt{reserve()} is used. \cite{cpp-core-guidelines} \\
+\addlinespace
+C requires pointers and manual memory management for a vector-like container. & Correct & Standard C has arrays and dynamic allocation functions, but not a built-in resizable vector class. A vector-like C abstraction normally combines a pointer, \texttt{size\_t size}, \texttt{size\_t capacity}, and calls to \texttt{malloc}, \texttt{realloc}, and \texttt{free}. \cite{cppref-malloc,cppref-realloc} \\
+\addlinespace
+Modern C can use macros, flexible array members, and \texttt{\_Generic}. & Correct with nuance & C11 introduced generic selections with \texttt{\_Generic}. Flexible array members are a C99 feature. These features help build type-specific or type-dispatched APIs, but they do not create C++-style templates or destructors. \cite{cppref-generic,cppref-struct} \\
+\bottomrule
+\end{longtable}
+
+\section{Correct Conceptual Model}
+
+\subsection*{Dynamic array}
+
+A dynamic array is a data-structure pattern: keep elements in contiguous storage and grow the backing allocation when more capacity is needed. A robust dynamic array usually tracks three pieces of state:
+
+\begin{itemize}
+  \item \textbf{data}: pointer to the contiguous element storage;
+  \item \textbf{size}: number of initialized/live elements;
+  \item \textbf{capacity}: number of elements that fit in the current allocation.
+\end{itemize}
+
+Growth normally uses a multiplicative policy such as doubling capacity. This makes append operations amortized constant time, while an individual append can still be linear when it reallocates and copies/moves existing elements.
+
+\subsection*{C++ \texttt{std::vector}}
+
+\texttt{std::vector<T>} is the C++ Standard Library's default resizable contiguous sequence container. Its elements are stored contiguously, which means a pointer to an element can be used where a pointer to an array element is expected. \cite{cppref-vector}
+
+Use \texttt{std::vector} when:
+\begin{itemize}
+  \item the number of elements can change at runtime;
+  \item contiguous layout and random access are useful;
+  \item you want RAII-based memory management rather than manual \texttt{new[]} / \texttt{delete[]} handling;
+  \item you can tolerate pointer/reference/iterator invalidation after reallocation.
+\end{itemize}
+
+Use \texttt{std::array<T, N>} or a plain automatic array only when the length is truly fixed and known at compile time. The C++ Core Guidelines summarize this as preferring \texttt{array} or \texttt{vector} over C arrays, and preferring \texttt{vector} by default unless there is a reason to use another container. \cite{cpp-core-guidelines}
+
+\subsection*{Rust \texttt{Vec<T>}}
+
+Rust's standard library describes \texttt{Vec<T>} as a ``contiguous growable array type.'' It is the closest Rust analogue to C++ \texttt{std::vector<T>} for ordinary growable contiguous storage. \cite{rust-vec}
+
+\subsection*{C dynamic arrays}
+
+C has arrays, pointers, and allocation functions, but no standard \texttt{vector} container. A C vector-like abstraction must explicitly handle:
+
+\begin{itemize}
+  \item allocation failure;
+  \item integer overflow in capacity calculations;
+  \item pointer invalidation after \texttt{realloc};
+  \item explicit cleanup with \texttt{free};
+  \item element lifetime conventions, especially for structs containing owned pointers or handles.
+\end{itemize}
+
+\section{C++: Raw Dynamic Array vs. \texttt{std::vector}}
+
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{0.21\linewidth}XX}
+\toprule
+\textbf{Feature} & \textbf{Raw C++ Heap Array} & \textbf{\texttt{std::vector<T>}} \\
+\midrule
+Allocation & \texttt{new T[n]} or C allocation APIs & Constructor, \texttt{push\_back}, \texttt{emplace\_back}, \texttt{reserve}, allocator-aware storage \\
+Resizing & Manual: allocate new storage, copy/move elements, release old storage & Managed by the container when operations exceed capacity \\
+Cleanup & Manual \texttt{delete[]} if allocated by \texttt{new[]} & Automatic through RAII when the vector object is destroyed \\
+Bounds & No inherent length metadata in pointer & \texttt{size()} available; \texttt{at()} checks bounds; \texttt{operator[]} is unchecked by standard requirement \\
+Layout & Contiguous element storage & Contiguous element storage \\
+Invalidation & Manual design responsibility & Reallocation invalidates element pointers/references/iterators \\
+Recommended default & Avoid in most application code & Preferred default for growable contiguous sequences \\
+\bottomrule
+\end{tabularx}
+
+\section{A Safer Int-Only Dynamic Array in C}
+
+The simple implementation below is intentionally small, but fixes the most important issues in the original snippet: it checks allocation failures, uses \texttt{size\_t}, uses a temporary pointer for \texttt{realloc}, checks multiplication overflow, and returns error status instead of calling \texttt{exit()} from library-like functions.
+
+\begin{lstlisting}[language=C]
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
+
+typedef struct {
+    int *data;
+    size_t size;
+    size_t capacity;
+} IntVector;
+
+static void IntVector_init(IntVector *v) {
+    if (v == NULL) {
+        return;
+    }
+    v->data = NULL;
+    v->size = 0;
+    v->capacity = 0;
+}
+
+static bool IntVector_reserve(IntVector *v, size_t min_capacity) {
+    if (v == NULL) {
+        return false;
+    }
+    if (min_capacity <= v->capacity) {
+        return true;
+    }
+
+    size_t new_capacity = v->capacity == 0 ? 4 : v->capacity;
+    while (new_capacity < min_capacity) {
+        if (new_capacity > SIZE_MAX / 2) {
+            new_capacity = min_capacity;
+            break;
+        }
+        new_capacity *= 2;
+    }
+
+    if (new_capacity > SIZE_MAX / sizeof *(v->data)) {
+        return false;
+    }
+
+    void *new_data = realloc(v->data, new_capacity * sizeof *(v->data));
+    if (new_data == NULL) {
+        return false;
+    }
+
+    v->data = new_data;
+    v->capacity = new_capacity;
+    return true;
+}
+
+static bool IntVector_push(IntVector *v, int value) {
+    if (v == NULL || v->size == SIZE_MAX) {
+        return false;
+    }
+    if (v->size == v->capacity && !IntVector_reserve(v, v->size + 1)) {
+        return false;
+    }
+    v->data[v->size++] = value;
+    return true;
+}
+
+static void IntVector_free(IntVector *v) {
+    if (v == NULL) {
+        return;
+    }
+    free(v->data);
+    v->data = NULL;
+    v->size = 0;
+    v->capacity = 0;
+}
+\end{lstlisting}
+
+\section{Generic Macro-Based Vector for Modern C}
+
+The most practical portable way to build a reusable, type-safe vector-like abstraction in C is to generate a separate typed vector API with macros. This approach is not the same as C++ templates: each generated vector type has its own concrete struct and concrete functions.
+
+\subsection*{Header-Style Macro}
+
+\begin{lstlisting}[language=C]
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
+
+#define VEC_DEFINE(TYPE, NAME)                                                \
+    typedef struct {                                                          \
+        TYPE *data;                                                           \
+        size_t size;                                                          \
+        size_t capacity;                                                      \
+    } NAME;                                                                   \
+                                                                              \
+    static void NAME##_init(NAME *v) {                                         \
+        if (v == NULL) {                                                       \
+            return;                                                           \
+        }                                                                     \
+        v->data = NULL;                                                       \
+        v->size = 0;                                                          \
+        v->capacity = 0;                                                      \
+    }                                                                         \
+                                                                              \
+    static bool NAME##_reserve(NAME *v, size_t min_capacity) {                 \
+        if (v == NULL) {                                                       \
+            return false;                                                     \
+        }                                                                     \
+        if (min_capacity <= v->capacity) {                                     \
+            return true;                                                      \
+        }                                                                     \
+        size_t new_capacity = v->capacity == 0 ? 4 : v->capacity;             \
+        while (new_capacity < min_capacity) {                                  \
+            if (new_capacity > SIZE_MAX / 2) {                                 \
+                new_capacity = min_capacity;                                   \
+                break;                                                        \
+            }                                                                 \
+            new_capacity *= 2;                                                \
+        }                                                                     \
+        if (new_capacity > SIZE_MAX / sizeof *(v->data)) {                    \
+            return false;                                                     \
+        }                                                                     \
+        void *new_data = realloc(v->data, new_capacity * sizeof *(v->data));  \
+        if (new_data == NULL) {                                                \
+            return false;                                                     \
+        }                                                                     \
+        v->data = new_data;                                                   \
+        v->capacity = new_capacity;                                           \
+        return true;                                                          \
+    }                                                                         \
+                                                                              \
+    static bool NAME##_push(NAME *v, TYPE value) {                             \
+        if (v == NULL || v->size == SIZE_MAX) {                                \
+            return false;                                                     \
+        }                                                                     \
+        if (v->size == v->capacity && !NAME##_reserve(v, v->size + 1)) {       \
+            return false;                                                     \
+        }                                                                     \
+        v->data[v->size++] = value;                                           \
+        return true;                                                          \
+    }                                                                         \
+                                                                              \
+    static TYPE *NAME##_at(NAME *v, size_t index) {                            \
+        if (v == NULL || index >= v->size) {                                   \
+            return NULL;                                                      \
+        }                                                                     \
+        return &v->data[index];                                               \
+    }                                                                         \
+                                                                              \
+    static const TYPE *NAME##_cat(const NAME *v, size_t index) {               \
+        if (v == NULL || index >= v->size) {                                   \
+            return NULL;                                                      \
+        }                                                                     \
+        return &v->data[index];                                               \
+    }                                                                         \
+                                                                              \
+    static void NAME##_free(NAME *v) {                                         \
+        if (v == NULL) {                                                       \
+            return;                                                           \
+        }                                                                     \
+        free(v->data);                                                        \
+        v->data = NULL;                                                       \
+        v->size = 0;                                                          \
+        v->capacity = 0;                                                      \
+    }
+\end{lstlisting}
+
+\subsection*{Example Usage with Multiple Types}
+
+\begin{lstlisting}[language=C]
+VEC_DEFINE(int, IntVector)
+VEC_DEFINE(double, DoubleVector)
+
+typedef struct {
+    int id;
+    const char *name;
+} Person;
+
+VEC_DEFINE(Person, PersonVector)
+
+#define vec_push(v, value) _Generic((v),                                      \
+    IntVector *: IntVector_push,                                               \
+    DoubleVector *: DoubleVector_push,                                         \
+    PersonVector *: PersonVector_push                                          \
+)(v, value)
+
+int main(void) {
+    IntVector numbers;
+    DoubleVector measurements;
+    PersonVector people;
+
+    IntVector_init(&numbers);
+    DoubleVector_init(&measurements);
+    PersonVector_init(&people);
+
+    int status = EXIT_FAILURE;
+
+    for (int i = 0; i < 5; ++i) {
+        if (!vec_push(&numbers, i * 10)) {
+            fprintf(stderr, "failed to append number\n");
+            goto cleanup;
+        }
+    }
+
+    if (!vec_push(&measurements, 3.14) || !vec_push(&measurements, 2.71)) {
+        fprintf(stderr, "failed to append measurement\n");
+        goto cleanup;
+    }
+
+    if (!vec_push(&people, ((Person){ .id = 1, .name = "Ada" })) ||
+        !vec_push(&people, ((Person){ .id = 2, .name = "Grace" }))) {
+        fprintf(stderr, "failed to append person\n");
+        goto cleanup;
+    }
+
+    int *first_number = IntVector_at(&numbers, 0);
+    if (first_number != NULL) {
+        *first_number = 99;
+    }
+
+    double *first_measurement = DoubleVector_at(&measurements, 0);
+    if (first_measurement != NULL) {
+        *first_measurement = 6.28;
+    }
+
+    Person *first_person = PersonVector_at(&people, 0);
+    if (first_person != NULL) {
+        first_person->name = "Ada Lovelace";
+    }
+
+    puts("numbers:");
+    for (size_t i = 0; i < numbers.size; ++i) {
+        const int *value = IntVector_cat(&numbers, i);
+        if (value != NULL) {
+            printf("  %d\n", *value);
+        }
+    }
+
+    puts("measurements:");
+    for (size_t i = 0; i < measurements.size; ++i) {
+        const double *value = DoubleVector_cat(&measurements, i);
+        if (value != NULL) {
+            printf("  %.2f\n", *value);
+        }
+    }
+
+    puts("people:");
+    for (size_t i = 0; i < people.size; ++i) {
+        const Person *p = PersonVector_cat(&people, i);
+        if (p != NULL) {
+            printf("  id=%d, name=%s\n", p->id, p->name);
+        }
+    }
+
+    status = EXIT_SUCCESS;
+
+cleanup:
+    PersonVector_free(&people);
+    DoubleVector_free(&measurements);
+    IntVector_free(&numbers);
+    return status;
+}
+\end{lstlisting}
+
+\subsection*{Build Command}
+
+For C11:
+
+\begin{lstlisting}[language=bash]
+gcc -std=c11 -Wall -Wextra -Wpedantic -o generic_vector generic_vector.c
+\end{lstlisting}
+
+For GCC C23 mode, use GCC's documented C23 flag:
+
+\begin{lstlisting}[language=bash]
+gcc -std=c23 -Wall -Wextra -Wpedantic -o generic_vector generic_vector.c
+\end{lstlisting}
+
+GCC documents \texttt{-std=c23} and \texttt{-std=iso9899:2024} for C23; older compiler versions may still use \texttt{-std=c2x}. \cite{gcc-standards}
+
+\section{Design Notes for Production C}
+
+\begin{enumerate}
+  \item \textbf{Keep ownership explicit.} This vector owns its backing element array, but it does not automatically own memory reachable from elements. For example, \texttt{Person.name} points to string literals in the example; if it pointed to heap strings, you would need an element-specific cleanup function.
+  \item \textbf{Treat \texttt{realloc} as invalidating aliases.} When \texttt{realloc} moves storage, existing pointers into the old storage become invalid. Store indexes, not element pointers, across operations that might grow the vector.
+  \item \textbf{Do not overwrite the original pointer with \texttt{realloc} directly.} Assign the result to a temporary pointer first. If \texttt{realloc} fails, the original allocation remains valid and must still be freed. \cite{cppref-realloc}
+  \item \textbf{Check capacity arithmetic.} Always check multiplication overflow before allocating \texttt{capacity * sizeof(element)} bytes.
+  \item \textbf{Separate library behavior from application behavior.} Library-style vector functions should return failure status rather than calling \texttt{exit()}.
+  \item \textbf{Document invalidation rules.} A C vector should explicitly state when append, reserve, shrink, or erase operations invalidate element pointers.
+\end{enumerate}
+
+\section{Practical Recommendation}
+
+\textbf{For C++}: use \texttt{std::vector<T>} by default for growable contiguous storage. Use \texttt{std::array<T, N>} when the size is compile-time fixed. Avoid naked \texttt{new[]} and \texttt{delete[]} in normal application code.
+
+\textbf{For Rust}: use \texttt{Vec<T>} for ordinary growable contiguous storage.
+
+\textbf{For C}: build a small, explicit abstraction like the one above, use \texttt{size\_t}, check allocation errors, check overflow, and define ownership/lifetime policy. Macros can generate type-safe APIs, and \texttt{\_Generic} can provide ergonomic dispatch among a known set of generated vector types.
+
+\begin{thebibliography}{9}
+
+\bibitem{cppref-vector}
+cppreference.com. ``\texttt{std::vector}.'' \url{https://en.cppreference.com/w/cpp/container/vector}
+
+\bibitem{cppref-reserve}
+cppreference.com. ``\texttt{std::vector::reserve}.'' \url{https://en.cppreference.com/w/cpp/container/vector/reserve}
+
+\bibitem{cppref-at}
+cppreference.com. ``\texttt{std::vector::at}.'' \url{https://en.cppreference.com/w/cpp/container/vector/at}
+
+\bibitem{cpp-core-guidelines}
+Bjarne Stroustrup, Herb Sutter, et al. ``C++ Core Guidelines.'' \url{https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines}
+
+\bibitem{rust-vec}
+The Rust Project. ``Struct \texttt{std::vec::Vec}.'' \url{https://doc.rust-lang.org/std/vec/struct.Vec.html}
+
+\bibitem{cppref-malloc}
+cppreference.com. ``\texttt{malloc}.'' \url{https://en.cppreference.com/w/c/memory/malloc}
+
+\bibitem{cppref-realloc}
+cppreference.com. ``\texttt{realloc}.'' \url{https://en.cppreference.com/w/c/memory/realloc}
+
+\bibitem{cppref-generic}
+cppreference.com. ``Generic selection since C11.'' \url{https://en.cppreference.com/w/c/language/generic}
+
+\bibitem{cppref-struct}
+cppreference.com. ``Structure declaration: flexible array members.'' \url{https://en.cppreference.com/w/c/language/struct}
+
+\bibitem{gcc-standards}
+GNU Compiler Collection. ``Language Standards Supported by GCC.'' \url{https://gcc.gnu.org/onlinedocs/gcc/Standards.html}
+
+\end{thebibliography}
+
+\end{document}

@@ -1,0 +1,467 @@
+\documentclass[11pt]{article}
+
+\usepackage[letterpaper,margin=0.75in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+\definecolor{titleblue}{HTML}{1F4E79}
+\definecolor{sectionblue}{HTML}{245B8A}
+\definecolor{lightblue}{HTML}{EAF3FA}
+\definecolor{lightgray}{HTML}{F6F8FA}
+\definecolor{codeframe}{HTML}{D0D7DE}
+\definecolor{darkgray}{HTML}{333333}
+\definecolor{green}{HTML}{116329}
+\definecolor{red}{HTML}{A40E26}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=titleblue,
+  urlcolor=titleblue,
+  citecolor=titleblue,
+  pdftitle={Point vs. Vertex in C: Use Composition, Not Inheritance},
+  pdfauthor={Jordan Suber}
+}
+
+\setlength{\headheight}{14pt}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Point vs. Vertex in C}
+\rhead{Composition over Inheritance}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\titleformat{\section}{\Large\bfseries\color{sectionblue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\large\bfseries\color{darkgray}}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{darkgray}}{}{0em}{}
+
+\setlist[itemize]{leftmargin=*,topsep=3pt,itemsep=2pt}
+\setlist[enumerate]{leftmargin=*,topsep=3pt,itemsep=2pt}
+\renewcommand{\arraystretch}{1.2}
+
+\lstdefinestyle{cstyle}{
+  language=C,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{titleblue}\bfseries,
+  commentstyle=\color{green},
+  stringstyle=\color{red},
+  numbers=left,
+  numberstyle=\tiny\color{darkgray},
+  stepnumber=1,
+  numbersep=8pt,
+  showstringspaces=false,
+  breaklines=true,
+  breakatwhitespace=false,
+  frame=single,
+  rulecolor=\color{codeframe},
+  backgroundcolor=\color{lightgray},
+  tabsize=4,
+  columns=fullflexible,
+  keepspaces=true,
+  captionpos=b
+}
+\lstset{style=cstyle}
+
+\newtcolorbox{decisionbox}{
+  colback=lightblue,
+  colframe=titleblue,
+  boxrule=0.6pt,
+  arc=2pt,
+  left=8pt,
+  right=8pt,
+  top=6pt,
+  bottom=6pt
+}
+
+\newtcolorbox{warningbox}{
+  colback=red!5,
+  colframe=red,
+  boxrule=0.6pt,
+  arc=2pt,
+  left=8pt,
+  right=8pt,
+  top=6pt,
+  bottom=6pt
+}
+
+\newtcolorbox{checkbox}{
+  colback=green!5,
+  colframe=green,
+  boxrule=0.6pt,
+  arc=2pt,
+  left=8pt,
+  right=8pt,
+  top=6pt,
+  bottom=6pt
+}
+
+\begin{document}
+
+\begin{center}
+  {\Huge\bfseries\color{titleblue} Point vs. Vertex in C}\\[4pt]
+  {\Large Use Composition, Not Inheritance}\\[8pt]
+  {\normalsize A design handout for computational geometry, graph algorithms, and mesh data structures}
+\end{center}
+
+\vspace{0.5em}
+
+\begin{decisionbox}
+\textbf{Core design rule:} A \texttt{Point} models geometry. A \texttt{Vertex} models topology. Do not put them in an inheritance hierarchy. Use separate data types for pure geometry and pure graph algorithms. Use composition when a topological vertex needs a geometric position.
+\end{decisionbox}
+
+\section{Purpose}
+
+This handout updates the earlier \texttt{Point} versus \texttt{Vertex} guidance with C-style examples aligned to two algorithm families:
+
+\begin{itemize}
+  \item \textbf{Computational geometry style:} points are coordinate value types used by predicates such as orientation, sidedness, equality, intersection, and convex hull logic.
+  \item \textbf{Stanford GraphBase style:} vertices and arcs form adjacency-list graph structures used by traversal and graph algorithms.
+\end{itemize}
+
+The goal is to preserve a clean separation between \textbf{geometry} and \textbf{topology} while still supporting hybrid programs such as pathfinding visualizers, mesh kernels, graph drawing tools, GIS systems, and computational-geometry applications.
+
+\section{The Conceptual Boundary}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.18\textwidth} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Type} & \textbf{Primary Concern} & \textbf{Typical Fields} \\
+\midrule
+\texttt{Point2}, \texttt{Point3} & Geometry: where something is & \texttt{x}, \texttt{y}, \texttt{z}; no adjacency list \\
+\texttt{Vertex} & Graph topology: how nodes connect & \texttt{arcs}, \texttt{name}, labels, marks, traversal state \\
+\texttt{Arc} / \texttt{Edge} & Connectivity between vertices & destination pointer, next pointer, weight, incident faces \\
+\texttt{Face} & Mesh topology and surface structure & vertices, edges, visibility flag, orientation metadata \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{warningbox}
+\textbf{Do not model this as inheritance.} In C, inheritance is not native, but the same design mistake appears when one structure embeds another to pretend it is a subtype. Avoid designs that imply \texttt{Point IS-A Vertex} or \texttt{Vertex IS-A Point}.
+\end{warningbox}
+
+\section{Option 1: Keep Geometry and Topology Separate}
+
+Use separate types when your program has pure geometry algorithms and pure graph algorithms that should not depend on each other.
+
+\subsection{Geometry-Only Point Types}
+
+A point is coordinate data. It should not know about neighbors, arcs, incident edges, traversal marks, or graph labels.
+
+\begin{lstlisting}[caption={Coordinate value types for 2D and 3D geometry}]
+typedef struct Point2 {
+    double x;
+    double y;
+} Point2;
+
+typedef struct Point3 {
+    double x;
+    double y;
+    double z;
+} Point3;
+\end{lstlisting}
+
+Geometry functions should operate directly on points:
+
+\begin{lstlisting}[caption={A 2D orientation predicate based on twice-signed area}]
+double area2(Point2 a, Point2 b, Point2 c) {
+    return (b.x - a.x) * (c.y - a.y)
+         - (c.x - a.x) * (b.y - a.y);
+}
+
+int left(Point2 a, Point2 b, Point2 c) {
+    return area2(a, b, c) > 0.0;
+}
+\end{lstlisting}
+
+This design keeps geometric predicates compact, reusable, and independent of graph storage.
+
+\subsection{Topology-Only Graph Types}
+
+A graph vertex represents connectivity. It does not require geometric coordinates.
+
+\begin{lstlisting}[caption={Graph adjacency-list structures in C style}]
+typedef struct Arc Arc;
+typedef struct Vertex Vertex;
+
+struct Arc {
+    Vertex *tip;      /* destination vertex */
+    Arc    *next;     /* next outgoing arc from same source */
+    long    len;      /* arc length, cost, or weight */
+};
+
+struct Vertex {
+    Arc  *arcs;       /* outgoing adjacency list */
+    char *name;       /* symbolic graph name */
+};
+\end{lstlisting}
+
+Graph traversal should operate on adjacency, not coordinates:
+
+\begin{lstlisting}[caption={Traversing outgoing neighbors through an adjacency list}]
+void visit_neighbors(Vertex *u) {
+    for (Arc *a = u->arcs; a != NULL; a = a->next) {
+        Vertex *v = a->tip;
+        /* process neighbor v */
+    }
+}
+\end{lstlisting}
+
+This model supports graph algorithms where vertices may represent servers, tasks, users, cities, modules, applications, dependency nodes, or abstract states.
+
+\section{Option 2: Use Composition for Geometric Graphs}
+
+Use composition when a graph vertex must also have a geometric location. This is common in graph drawing, GIS, games, pathfinding, computational geometry, and visualization systems.
+
+\begin{lstlisting}[caption={A geometric graph vertex composed from topology plus a point}]
+typedef struct GeoVertex GeoVertex;
+typedef struct GeoArc GeoArc;
+
+typedef struct Point2 {
+    double x;
+    double y;
+} Point2;
+
+struct GeoArc {
+    GeoVertex *tip;
+    GeoArc    *next;
+    double     weight;
+};
+
+struct GeoVertex {
+    char    *name;
+    Point2   position;   /* GeoVertex HAS-A Point2 */
+    GeoArc  *arcs;       /* graph topology */
+    int      mark;       /* traversal or algorithm state */
+};
+\end{lstlisting}
+
+\begin{decisionbox}
+\textbf{Correct relationship:}
+\begin{center}
+\texttt{GeoVertex HAS-A Point2} \\[-1pt]
+\texttt{GeoVertex IS-NOT-A Point2} \\[-1pt]
+\texttt{Point2 IS-NOT-A GeoVertex}
+\end{center}
+\end{decisionbox}
+
+The geometry side can extract the position field:
+
+\begin{lstlisting}[caption={Applying a geometric predicate to positioned vertices}]
+int is_left_of_edge(GeoVertex *a, GeoVertex *b, GeoVertex *q) {
+    return left(a->position, b->position, q->position);
+}
+\end{lstlisting}
+
+The graph side can still traverse neighbors:
+
+\begin{lstlisting}[caption={Traversing neighbors in a geometric graph}]
+void visit_geo_neighbors(GeoVertex *u) {
+    for (GeoArc *a = u->arcs; a != NULL; a = a->next) {
+        GeoVertex *v = a->tip;
+        /* process neighbor v */
+    }
+}
+\end{lstlisting}
+
+This design allows graph algorithms and geometry algorithms to share data without collapsing into one overloaded type.
+
+\section{Option 3: Use Mesh-Oriented Composition for 3D Geometry}
+
+For 3D computational geometry, a vertex often owns a point but also participates in edges and faces. The point stores coordinates; the vertex stores mesh membership and algorithm metadata.
+
+\begin{lstlisting}[caption={3D mesh structures using composition}]
+typedef struct Point3 {
+    double x;
+    double y;
+    double z;
+} Point3;
+
+typedef struct Vertex3 Vertex3;
+typedef struct Edge3   Edge3;
+typedef struct Face3   Face3;
+
+struct Vertex3 {
+    Point3 p;          /* Vertex3 HAS-A Point3 */
+    int    onHull;
+    int    markDelete;
+};
+
+struct Edge3 {
+    Vertex3 *a;
+    Vertex3 *b;
+    Face3   *adj[2];
+    Face3   *newFace;
+    int      markDelete;
+};
+
+struct Face3 {
+    Vertex3 *v[3];
+    Edge3   *e[3];
+    int      visible;
+};
+\end{lstlisting}
+
+This is not inheritance. \texttt{Vertex3} is a topological mesh element that owns a \texttt{Point3}. A \texttt{Point3} remains a plain coordinate value.
+
+\subsection{Example: Face Visibility Predicate}
+
+A visibility predicate should extract points from vertices before applying geometric operations.
+
+\begin{lstlisting}[caption={Point-vector operations for a 3D visibility test}]
+double dot3(Point3 a, Point3 b) {
+    return a.x*b.x + a.y*b.y + a.z*b.z;
+}
+
+Point3 sub3(Point3 a, Point3 b) {
+    Point3 r = { a.x - b.x, a.y - b.y, a.z - b.z };
+    return r;
+}
+
+Point3 cross3(Point3 a, Point3 b) {
+    Point3 r = {
+        a.y*b.z - a.z*b.y,
+        a.z*b.x - a.x*b.z,
+        a.x*b.y - a.y*b.x
+    };
+    return r;
+}
+
+double volume6(Point3 a, Point3 b, Point3 c, Point3 d) {
+    return dot3(cross3(sub3(b, a), sub3(c, a)), sub3(d, a));
+}
+
+int face_visible_from_point(Face3 *f, Point3 p) {
+    Point3 a = f->v[0]->p;
+    Point3 b = f->v[1]->p;
+    Point3 c = f->v[2]->p;
+
+    return volume6(a, b, c, p) > 0.0;
+}
+\end{lstlisting}
+
+The algorithm works because it respects the boundary between mesh topology and coordinate geometry.
+
+\section{Why Avoid Inheritance?}
+
+\subsection{1. It Violates the Domain Model}
+
+A raw coordinate point does not naturally have outgoing arcs, incident edges, labels, traversal marks, or graph metadata.
+
+A graph vertex does not always have coordinates. In a pure graph, a vertex may represent a word, task, server, city, dependency, application, security control, or abstract state.
+
+\subsection{2. It Breaks Algorithm Boundaries}
+
+A geometric predicate should not need graph fields:
+
+\begin{lstlisting}[caption={Geometry should remain geometry}]
+double area2(Point2 a, Point2 b, Point2 c);
+\end{lstlisting}
+
+A graph traversal should not need coordinate fields:
+
+\begin{lstlisting}[caption={Graph traversal should remain topology-driven}]
+for (Arc *a = u->arcs; a != NULL; a = a->next) {
+    Vertex *v = a->tip;
+}
+\end{lstlisting}
+
+Mixing these concerns makes both algorithm families harder to reuse.
+
+\subsection{3. It Causes Unnecessary Memory Coupling}
+
+If every \texttt{Vertex} carries coordinate fields, pure graph programs pay for unused geometry data.
+
+If every \texttt{Point} carries graph fields, pure geometry programs pay for unused adjacency and traversal data.
+
+\subsection{4. Composition Handles Hybrid Cases Cleanly}
+
+When topology needs geometry, embed or reference the point as a field:
+
+\begin{lstlisting}[caption={The preferred pattern for a geometric graph node}]
+struct GeoVertex {
+    Point2 position;
+    ArcList adjacency;
+};
+\end{lstlisting}
+
+For mesh kernels, use the same idea:
+
+\begin{lstlisting}[caption={The preferred pattern for a 3D mesh vertex}]
+struct Vertex3 {
+    Point3 p;
+    Edge3 *incident_edges;
+    Face3 *incident_faces;
+};
+\end{lstlisting}
+
+This gives you a clean \textbf{has-a} relationship without pretending that one concept is a subtype of the other.
+
+\section{Decision Table}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.25\textwidth} >{\raggedright\arraybackslash}p{0.30\textwidth} >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Use Case} & \textbf{Recommended Type Design} & \textbf{Reason} \\
+\midrule
+Pure computational geometry & \texttt{Point2}, \texttt{Point3}, \texttt{Segment2}, \texttt{Polygon} & Algorithms depend on coordinates and predicates, not graph adjacency. \\
+Pure graph analysis & \texttt{Graph}, \texttt{Vertex}, \texttt{Arc} & Algorithms depend on connectivity, weights, labels, and traversal state. \\
+Pathfinding on a map & \texttt{GeoVertex} with \texttt{Point2 position} and adjacency list & The vertex has both a spatial location and neighbors. \\
+Graph drawing & \texttt{Vertex} plus optional layout position & Layout is geometry attached to topology; it should be replaceable. \\
+3D mesh processing & \texttt{Vertex3} has \texttt{Point3}; edges/faces reference vertices & Mesh topology and coordinate geometry are related but not identical. \\
+Game engine navigation mesh & Vertices own/refer to points; faces/edges store topology & Geometry supports spatial queries; topology supports traversal. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Implementation Checklist}
+
+\begin{checkbox}
+Use this checklist when designing a C data model for geometry, graphs, or meshes.
+\begin{enumerate}
+  \item Define \texttt{Point2} and \texttt{Point3} as coordinate value types.
+  \item Keep geometric predicates independent of graph fields.
+  \item Define graph \texttt{Vertex} and \texttt{Arc} structures around adjacency and traversal needs.
+  \item Add \texttt{Point2 position} or \texttt{Point3 p} only when the topological object needs physical location.
+  \item Avoid pretending that embedding means subtype inheritance.
+  \item Keep algorithm-specific metadata localized to the structure that actually needs it.
+  \item Write conversion or adapter functions when a graph algorithm needs positions for cost or heuristic calculations.
+\end{enumerate}
+\end{checkbox}
+
+\section{Final Rule}
+
+Use \texttt{Point2} and \texttt{Point3} for geometric coordinates and predicates.
+
+Use \texttt{Vertex}, \texttt{Arc}, \texttt{Edge}, and \texttt{Face} for graph or mesh topology.
+
+Use composition when topology needs geometry:
+
+\begin{decisionbox}
+\begin{center}
+\texttt{Vertex HAS-A Point} \\[2pt]
+\texttt{Point is not a Vertex} \\[2pt]
+\texttt{Vertex is not necessarily a Point}
+\end{center}
+\end{decisionbox}
+
+\section*{Referenced Input Handouts}
+
+This handout was prepared from the design guidance developed in the conversation and aligned with the uploaded source handouts:
+
+\begin{itemize}
+  \item \texttt{stanford-graphbase-algorithms-pseudocode-handout.tex}
+  \item \texttt{computational-geometry-in-c-algorithms-pseudocode-handout.tex}
+\end{itemize}
+
+\end{document}

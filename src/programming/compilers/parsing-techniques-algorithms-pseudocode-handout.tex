@@ -1,0 +1,3954 @@
+
+\documentclass[10pt,letterpaper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.72in,headheight=14pt]{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{ragged2e}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{microtype}
+\usepackage{listings}
+\usepackage{needspace}
+\usepackage{tocloft}
+\usepackage{upquote}
+\definecolor{HouseBlue}{HTML}{1F4E79}
+\definecolor{HouseGray}{HTML}{4F5B62}
+\definecolor{HouseLight}{HTML}{EAF2F8}
+\definecolor{CodeBack}{HTML}{F7F8FA}
+\definecolor{CodeFrame}{HTML}{C9D1D9}
+\definecolor{CodeKeyword}{HTML}{1F4E79}
+\definecolor{CodeComment}{HTML}{5F6F7A}
+\definecolor{CodeString}{HTML}{8A3B12}
+\hypersetup{colorlinks=true,linkcolor=HouseBlue,urlcolor=HouseBlue,citecolor=HouseBlue,pdfauthor={ChatGPT},pdftitle={Parsing Techniques: Algorithms as C-like Pseudocode}}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Parsing Techniques --- Algorithms as C-like Pseudocode}
+\rhead{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlist[itemize]{leftmargin=1.25em,itemsep=2pt,topsep=2pt}
+\setlist[enumerate]{leftmargin=1.5em,itemsep=2pt,topsep=2pt}
+\titleformat{\section}{\Large\bfseries\color{HouseBlue}}{}{0pt}{}
+\titleformat{\subsection}{\large\bfseries\color{HouseGray}}{}{0pt}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{HouseGray}}{}{0pt}{}
+\titlespacing*{\section}{0pt}{2.2ex plus .4ex minus .2ex}{1.0ex}
+\titlespacing*{\subsection}{0pt}{1.8ex plus .3ex minus .2ex}{0.7ex}
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\lstdefinelanguage{PseudoC}{
+  morekeywords={typedef,enum,struct,return,if,else,for,while,do,case,switch,break,continue,bool,true,false,NULL,void,int,char,string,const,static,foreach,in,new,delete,continue,insert,remove,push,pop,emit},
+  sensitive=true,
+  morecomment=[l]{//},
+  morestring=[b]",
+}
+\lstset{
+  language=PseudoC,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\bfseries\color{CodeKeyword},
+  commentstyle=\itshape\color{CodeComment},
+  stringstyle=\color{CodeString},
+  backgroundcolor=\color{CodeBack},
+  frame=single,
+  rulecolor=\color{CodeFrame},
+  framerule=0.35pt,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  tabsize=4,
+  xleftmargin=0.6em,
+  xrightmargin=0.3em,
+  aboveskip=0.7em,
+  belowskip=0.7em,
+}
+\newcommand{\handouttitle}{Parsing Techniques: Algorithms as C-like Pseudocode}
+\sloppy
+\begin{document}
+\pagenumbering{gobble}
+\begin{titlepage}
+\centering
+\vspace*{0.9in}
+{\Huge\bfseries\color{HouseBlue}\handouttitle\par}
+\vspace{0.22in}
+{\Large Systematic Algorithm Extraction and Reconstruction\par}
+\vspace{0.34in}
+{\large Source analyzed: Dick Grune and Ceriel J. H. Jacobs, \emph{Parsing Techniques: A Practical Guide}, Second Edition\par}
+\vfill
+\begin{minipage}{0.88\textwidth}
+\small
+This handout rewrites the algorithmic content from the uploaded parsing-techniques text as independent C-like pseudocode. It is organized as an implementation-oriented reference for grammar generation, grammar hygiene, context-free recognition, top-down and bottom-up parsing, finite-state methods, deterministic parser families, generalized parsers, substring parsing, parsing by intersection, parallel parsing, non-Chomsky systems, error recovery, and practical parser construction. The pseudocode is normalized for study and implementation planning; it is not a source-code clone.
+\end{minipage}
+\vfill
+{\large Generated \today\par}
+\end{titlepage}
+\clearpage
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+
+\textbf{Source analyzed:} Dick Grune and Ceriel J. H. Jacobs, \emph{Parsing Techniques: A Practical Guide}, Second Edition.
+\textbf{Scope:} This handout systematically reconstructs the parsing algorithms, grammar transformations, parser-building methods, parser execution procedures, error-handling procedures, and practical parser-program structures discussed in the book. The result is written as independent C-like pseudocode rather than a transcription of the book's prose or source listings.
+
+\begin{quote}
+\textbf{Copyright note.} The book contains copyrighted text and a small number of actual programs. The routines below are independent algorithmic reconstructions intended for study, implementation planning, and architecture review. They avoid verbatim reproduction of the book's code.
+\end{quote}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{0. Common Data Model}
+\addcontentsline{toc}{subsection}{0. Common Data Model}
+
+The pseudocode uses one compact internal representation for all parser families.
+
+\begin{lstlisting}
+typedef enum { TERMINAL, NONTERMINAL, EPSILON, END_MARKER } SymbolKind;
+
+typedef struct Symbol {
+    SymbolKind kind;
+    string name;
+} Symbol;
+
+typedef struct Rule {
+    Symbol lhs;           // nonterminal
+    Vector<Symbol> rhs;   // possibly empty for epsilon
+    int id;
+} Rule;
+
+typedef struct Grammar {
+    Set<Symbol> terminals;
+    Set<Symbol> nonterminals;
+    Vector<Rule> rules;
+    Symbol start;
+} Grammar;
+
+typedef struct Span {
+    int i;        // start index, inclusive
+    int j;        // end index, exclusive
+} Span;
+
+typedef struct ForestRule {
+    Symbol lhs;
+    Vector<Symbol> rhs;
+} ForestRule;
+
+typedef struct ParseForestGrammar {
+    Symbol start;
+    Set<Symbol> nonterminals;
+    Set<Symbol> terminals;
+    Vector<ForestRule> rules;
+} ParseForestGrammar;
+\end{lstlisting}
+
+Conventions:
+
+\begin{lstlisting}
+bool is_terminal(Symbol x);
+bool is_nonterminal(Symbol x);
+bool nullable(Symbol x);              // true if x =>* epsilon
+Vector<Rule> rules_for(Grammar G, Symbol A);
+Vector<Symbol> input;                 // token sequence
+int n = input.length;
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part I -- Grammar Generation, Hygiene, and Foundations}
+\addcontentsline{toc}{section}{Part I -- Grammar Generation, Hygiene, and Foundations}
+
+\Needspace{5\baselineskip}
+\subsection*{1. Breadth-First Generation from a Phrase-Structure Grammar}
+\addcontentsline{toc}{subsection}{1. Breadth-First Generation from a Phrase-Structure Grammar}
+
+Purpose: enumerate sentences produced by a grammar by maintaining a queue of sentential forms. This is the constructive view of a grammar as a finite recipe.
+
+\begin{lstlisting}
+void generate_sentences_breadth_first(Grammar G, int maxOutput) {
+    Queue<Vector<Symbol>> q;
+    int produced = 0;
+
+    q.push(vector(G.start));
+
+    while (!q.empty() && produced < maxOutput) {
+        Vector<Symbol> form = q.pop();
+
+        if (contains_only_terminals(form)) {
+            emit(form);
+            produced++;
+            continue;
+        }
+
+        for (int pos = 0; pos < form.length; pos++) {
+            for (Rule r : G.rules) {
+                if (matches_at(form, pos, r.lhs_or_pattern)) {
+                    Vector<Symbol> next = replace_at(form, pos, r.lhs_or_pattern, r.rhs);
+                    q.push(next);
+                }
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+For a context-free grammar, the left-hand side is a single nonterminal; the replacement loop can restrict itself to nonterminal positions.
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{2. Leftmost and Rightmost Derivation Enumeration for CFGs}
+\addcontentsline{toc}{subsection}{2. Leftmost and Rightmost Derivation Enumeration for CFGs}
+
+\begin{lstlisting}
+void enumerate_leftmost_derivations(Grammar G, int maxDepth) {
+    enumerate_cfg_derivations(G, vector(G.start), LEFTMOST, 0, maxDepth);
+}
+
+void enumerate_rightmost_derivations(Grammar G, int maxDepth) {
+    enumerate_cfg_derivations(G, vector(G.start), RIGHTMOST, 0, maxDepth);
+}
+
+void enumerate_cfg_derivations(
+    Grammar G,
+    Vector<Symbol> form,
+    Direction direction,
+    int depth,
+    int maxDepth
+) {
+    if (depth > maxDepth) return;
+
+    if (contains_only_terminals(form)) {
+        emit(form);
+        return;
+    }
+
+    int p = (direction == LEFTMOST)
+          ? first_nonterminal_position(form)
+          : last_nonterminal_position(form);
+
+    if (p < 0) return;
+
+    Symbol A = form[p];
+    for (Rule r : rules_for(G, A)) {
+        Vector<Symbol> next = replace_symbol(form, p, r.rhs);
+        enumerate_cfg_derivations(G, next, direction, depth + 1, maxDepth);
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{3. Productive Nonterminals}
+\addcontentsline{toc}{subsection}{3. Productive Nonterminals}
+
+A nonterminal is productive when it derives at least one terminal string, including the empty string.
+
+\begin{lstlisting}
+Set<Symbol> compute_productive_nonterminals(Grammar G) {
+    Set<Symbol> productive = {};
+
+    bool changed = true;
+    while (changed) {
+        changed = false;
+
+        for (Rule r : G.rules) {
+            if (productive.contains(r.lhs)) continue;
+
+            bool rhsProductive = true;
+            for (Symbol x : r.rhs) {
+                if (is_nonterminal(x) && !productive.contains(x)) {
+                    rhsProductive = false;
+                    break;
+                }
+            }
+
+            if (rhsProductive) {
+                productive.insert(r.lhs);
+                changed = true;
+            }
+        }
+    }
+
+    return productive;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{4. Remove Nonproductive Rules}
+\addcontentsline{toc}{subsection}{4. Remove Nonproductive Rules}
+
+\begin{lstlisting}
+Grammar remove_nonproductive_rules(Grammar G) {
+    Set<Symbol> productive = compute_productive_nonterminals(G);
+    Grammar H = empty_grammar_like(G);
+
+    for (Rule r : G.rules) {
+        if (!productive.contains(r.lhs)) continue;
+
+        bool keep = true;
+        for (Symbol x : r.rhs) {
+            if (is_nonterminal(x) && !productive.contains(x)) {
+                keep = false;
+                break;
+            }
+        }
+
+        if (keep) add_rule(H, r);
+    }
+
+    H.nonterminals = productive;
+    H.start = G.start;
+    return H;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{5. Reachable Nonterminals}
+\addcontentsline{toc}{subsection}{5. Reachable Nonterminals}
+
+\begin{lstlisting}
+Set<Symbol> compute_reachable_nonterminals(Grammar G) {
+    Set<Symbol> reachable = { G.start };
+    Queue<Symbol> work;
+    work.push(G.start);
+
+    while (!work.empty()) {
+        Symbol A = work.pop();
+
+        for (Rule r : rules_for(G, A)) {
+            for (Symbol x : r.rhs) {
+                if (is_nonterminal(x) && !reachable.contains(x)) {
+                    reachable.insert(x);
+                    work.push(x);
+                }
+            }
+        }
+    }
+
+    return reachable;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{6. Remove Unreachable Rules}
+\addcontentsline{toc}{subsection}{6. Remove Unreachable Rules}
+
+\begin{lstlisting}
+Grammar remove_unreachable_rules(Grammar G) {
+    Set<Symbol> reachable = compute_reachable_nonterminals(G);
+    Grammar H = empty_grammar_like(G);
+
+    for (Rule r : G.rules) {
+        if (reachable.contains(r.lhs)) {
+            add_rule(H, r);
+        }
+    }
+
+    H.nonterminals = reachable;
+    H.start = G.start;
+    return H;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{7. Clean a Context-Free Grammar}
+\addcontentsline{toc}{subsection}{7. Clean a Context-Free Grammar}
+
+The book's grammar hygiene sequence is captured by removing nonproductive rules first, then unreachable rules.
+
+\begin{lstlisting}
+Grammar clean_cfg(Grammar G) {
+    Grammar H = remove_nonproductive_rules(G);
+    H = remove_unreachable_rules(H);
+    return H;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{8. Nullable Nonterminals}
+\addcontentsline{toc}{subsection}{8. Nullable Nonterminals}
+
+\begin{lstlisting}
+Set<Symbol> compute_nullable(Grammar G) {
+    Set<Symbol> N = {};
+
+    bool changed = true;
+    while (changed) {
+        changed = false;
+
+        for (Rule r : G.rules) {
+            if (N.contains(r.lhs)) continue;
+
+            bool allNullable = true;
+            if (r.rhs.length == 0) {
+                allNullable = true;
+            } else {
+                for (Symbol x : r.rhs) {
+                    if (is_terminal(x) || !N.contains(x)) {
+                        allNullable = false;
+                        break;
+                    }
+                }
+            }
+
+            if (allNullable) {
+                N.insert(r.lhs);
+                changed = true;
+            }
+        }
+    }
+
+    return N;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{9. Eliminate Epsilon Rules from a CFG}
+\addcontentsline{toc}{subsection}{9. Eliminate Epsilon Rules from a CFG}
+
+\begin{lstlisting}
+Grammar eliminate_epsilon_rules(Grammar G) {
+    Set<Symbol> nullable = compute_nullable(G);
+    Grammar H = empty_grammar_like(G);
+
+    for (Rule r : G.rules) {
+        Vector<int> nullablePositions;
+
+        for (int k = 0; k < r.rhs.length; k++) {
+            if (is_nonterminal(r.rhs[k]) && nullable.contains(r.rhs[k])) {
+                nullablePositions.push_back(k);
+            }
+        }
+
+        int subsets = 1 << nullablePositions.length;
+        for (int mask = 0; mask < subsets; mask++) {
+            Vector<Symbol> rhs2;
+            for (int k = 0; k < r.rhs.length; k++) {
+                bool omit = false;
+                for (int b = 0; b < nullablePositions.length; b++) {
+                    if (nullablePositions[b] == k && ((mask >> b) & 1)) {
+                        omit = true;
+                        break;
+                    }
+                }
+                if (!omit) rhs2.push_back(r.rhs[k]);
+            }
+
+            if (rhs2.length > 0 || r.lhs == G.start) {
+                add_rule(H, Rule{r.lhs, rhs2, fresh_id()});
+            }
+        }
+    }
+
+    return remove_duplicate_rules(clean_cfg(H));
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{10. Detect Unit-Rule Loops}
+\addcontentsline{toc}{subsection}{10. Detect Unit-Rule Loops}
+
+\begin{lstlisting}
+Set<Pair<Symbol, Symbol>> compute_unit_reachability(Grammar G) {
+    Set<Pair<Symbol, Symbol>> R;
+
+    for (Symbol A : G.nonterminals) {
+        R.insert({A, A});
+    }
+
+    for (Rule r : G.rules) {
+        if (r.rhs.length == 1 && is_nonterminal(r.rhs[0])) {
+            R.insert({r.lhs, r.rhs[0]});
+        }
+    }
+
+    bool changed = true;
+    while (changed) {
+        changed = false;
+
+        for (Pair<Symbol, Symbol> p : R) {
+            for (Pair<Symbol, Symbol> q : R) {
+                if (p.second == q.first && !R.contains({p.first, q.second})) {
+                    R.insert({p.first, q.second});
+                    changed = true;
+                }
+            }
+        }
+    }
+
+    return R;
+}
+
+bool has_unit_cycle(Grammar G) {
+    Set<Pair<Symbol, Symbol>> R = compute_unit_reachability(G);
+    for (Symbol A : G.nonterminals) {
+        if (exists_nontrivial_unit_path(G, A, A, R)) {
+            return true;
+        }
+    }
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{11. FIRST Sets}
+\addcontentsline{toc}{subsection}{11. FIRST Sets}
+
+\begin{lstlisting}
+Map<Symbol, Set<Symbol>> compute_first_sets(Grammar G) {
+    Map<Symbol, Set<Symbol>> FIRST;
+
+    for (Symbol t : G.terminals) FIRST[t].insert(t);
+    for (Symbol A : G.nonterminals) FIRST[A] = {};
+
+    Set<Symbol> nullable = compute_nullable(G);
+
+    bool changed = true;
+    while (changed) {
+        changed = false;
+
+        for (Rule r : G.rules) {
+            bool prefixNullable = true;
+
+            for (Symbol x : r.rhs) {
+                for (Symbol t : FIRST[x]) {
+                    if (!FIRST[r.lhs].contains(t)) {
+                        FIRST[r.lhs].insert(t);
+                        changed = true;
+                    }
+                }
+
+                if (is_terminal(x) || !nullable.contains(x)) {
+                    prefixNullable = false;
+                    break;
+                }
+            }
+
+            if (prefixNullable) {
+                if (!FIRST[r.lhs].contains(EPSILON_SYMBOL)) {
+                    FIRST[r.lhs].insert(EPSILON_SYMBOL);
+                    changed = true;
+                }
+            }
+        }
+    }
+
+    return FIRST;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{12. FOLLOW Sets}
+\addcontentsline{toc}{subsection}{12. FOLLOW Sets}
+
+\begin{lstlisting}
+Map<Symbol, Set<Symbol>> compute_follow_sets(Grammar G) {
+    Map<Symbol, Set<Symbol>> FIRST = compute_first_sets(G);
+    Set<Symbol> nullable = compute_nullable(G);
+    Map<Symbol, Set<Symbol>> FOLLOW;
+
+    for (Symbol A : G.nonterminals) FOLLOW[A] = {};
+    FOLLOW[G.start].insert(END_MARKER_SYMBOL);
+
+    bool changed = true;
+    while (changed) {
+        changed = false;
+
+        for (Rule r : G.rules) {
+            Set<Symbol> trailer = FOLLOW[r.lhs];
+
+            for (int i = r.rhs.length - 1; i >= 0; i--) {
+                Symbol x = r.rhs[i];
+
+                if (is_nonterminal(x)) {
+                    for (Symbol t : trailer) {
+                        if (!FOLLOW[x].contains(t)) {
+                            FOLLOW[x].insert(t);
+                            changed = true;
+                        }
+                    }
+
+                    if (nullable.contains(x)) {
+                        trailer = set_union(trailer, without_epsilon(FIRST[x]));
+                    } else {
+                        trailer = without_epsilon(FIRST[x]);
+                    }
+                } else {
+                    trailer = { x };
+                }
+            }
+        }
+    }
+
+    return FOLLOW;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{13. Transitive Closure by Warshall-Style Matrix Update}
+\addcontentsline{toc}{subsection}{13. Transitive Closure by Warshall-Style Matrix Update}
+
+\begin{lstlisting}
+Matrix<bool> transitive_closure(Matrix<bool> R, int N) {
+    Matrix<bool> C = R;
+
+    for (int k = 0; k < N; k++) {
+        for (int i = 0; i < N; i++) {
+            if (!C[i][k]) continue;
+            for (int j = 0; j < N; j++) {
+                C[i][j] = C[i][j] || C[k][j];
+            }
+        }
+    }
+
+    return C;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part II -- General Non-Directional Parsing}
+\addcontentsline{toc}{section}{Part II -- General Non-Directional Parsing}
+
+\Needspace{5\baselineskip}
+\subsection*{14. Generate Ordered Contiguous Partitions}
+\addcontentsline{toc}{subsection}{14. Generate Ordered Contiguous Partitions}
+
+Used by Unger's method: partition an input segment into \texttt{m} nonempty contiguous subsegments.
+
+\begin{lstlisting}
+void generate_partitions(
+    Span s,
+    int m,
+    Vector<Span> current,
+    Vector<Vector<Span>> *out
+) {
+    int length = s.j - s.i;
+
+    if (m == 0) {
+        if (s.i == s.j) out->push_back(current);
+        return;
+    }
+
+    if (length < m) return;
+
+    for (int firstLen = 1; firstLen <= length - (m - 1); firstLen++) {
+        Span first = {s.i, s.i + firstLen};
+        current.push_back(first);
+        generate_partitions({s.i + firstLen, s.j}, m - 1, current, out);
+        current.pop_back();
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{15. Unger Recognition Without Epsilon Rules}
+\addcontentsline{toc}{subsection}{15. Unger Recognition Without Epsilon Rules}
+
+\begin{lstlisting}
+bool unger_recognize(Symbol X, Span s, Grammar G, Vector<Symbol> input) {
+    if (is_terminal(X)) {
+        return (s.j == s.i + 1 && input[s.i] == X);
+    }
+
+    for (Rule r : rules_for(G, X)) {
+        int m = r.rhs.length;
+
+        Vector<Vector<Span>> parts;
+        generate_partitions(s, m, {}, &parts);
+
+        for (Vector<Span> partition : parts) {
+            bool ok = true;
+
+            for (int k = 0; k < m; k++) {
+                if (!unger_recognize(r.rhs[k], partition[k], G, input)) {
+                    ok = false;
+                    break;
+                }
+            }
+
+            if (ok) return true;
+        }
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{16. Unger Recognition with Epsilon Rules}
+\addcontentsline{toc}{subsection}{16. Unger Recognition with Epsilon Rules}
+
+\begin{lstlisting}
+void generate_partitions_allow_empty(
+    Span s,
+    int m,
+    Vector<Span> current,
+    Vector<Vector<Span>> *out
+) {
+    if (m == 0) {
+        if (s.i == s.j) out->push_back(current);
+        return;
+    }
+
+    int remaining = s.j - s.i;
+    for (int firstLen = 0; firstLen <= remaining; firstLen++) {
+        Span first = {s.i, s.i + firstLen};
+        current.push_back(first);
+        generate_partitions_allow_empty({s.i + firstLen, s.j}, m - 1, current, out);
+        current.pop_back();
+    }
+}
+
+bool unger_recognize_nullable(Symbol X, Span s, Grammar G, Vector<Symbol> input) {
+    if (is_terminal(X)) {
+        return (s.j == s.i + 1 && input[s.i] == X);
+    }
+
+    for (Rule r : rules_for(G, X)) {
+        Vector<Vector<Span>> parts;
+        generate_partitions_allow_empty(s, r.rhs.length, {}, &parts);
+
+        for (Vector<Span> partition : parts) {
+            bool ok = true;
+            for (int k = 0; k < r.rhs.length; k++) {
+                if (!unger_recognize_nullable(r.rhs[k], partition[k], G, input)) {
+                    ok = false;
+                    break;
+                }
+            }
+
+            if (ok) return true;
+        }
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{17. Unger Parse-Forest Grammar Construction}
+\addcontentsline{toc}{subsection}{17. Unger Parse-Forest Grammar Construction}
+
+\begin{lstlisting}
+bool unger_forest(
+    Symbol X,
+    Span s,
+    Grammar G,
+    Vector<Symbol> input,
+    ParseForestGrammar *F
+) {
+    Symbol node = span_symbol(X, s);
+
+    if (is_terminal(X)) {
+        if (s.j == s.i + 1 && input[s.i] == X) {
+            add_terminal_rule(F, node, X);
+            return true;
+        }
+        return false;
+    }
+
+    bool any = false;
+
+    for (Rule r : rules_for(G, X)) {
+        Vector<Vector<Span>> parts;
+        generate_partitions_allow_empty(s, r.rhs.length, {}, &parts);
+
+        for (Vector<Span> partition : parts) {
+            Vector<Symbol> children;
+            bool ok = true;
+
+            for (int k = 0; k < r.rhs.length; k++) {
+                Symbol child = span_symbol(r.rhs[k], partition[k]);
+                if (!unger_forest(r.rhs[k], partition[k], G, input, F)) {
+                    ok = false;
+                    break;
+                }
+                children.push_back(child);
+            }
+
+            if (ok) {
+                add_forest_rule(F, node, children);
+                any = true;
+            }
+        }
+    }
+
+    return any;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{18. CYK Recognition for CNF Grammars}
+\addcontentsline{toc}{subsection}{18. CYK Recognition for CNF Grammars}
+
+Assumes rules are either \texttt{A -> token} or \texttt{A -> B C}.
+
+\begin{lstlisting}
+Set<Symbol> CYK[MAX_N][MAX_N + 1];
+
+bool cyk_recognize_cnf(Grammar G, Vector<Symbol> input) {
+    int n = input.length;
+
+    for (int i = 0; i < n; i++) {
+        for (Rule r : G.rules) {
+            if (r.rhs.length == 1 && r.rhs[0] == input[i]) {
+                CYK[i][1].insert(r.lhs);
+            }
+        }
+    }
+
+    for (int len = 2; len <= n; len++) {
+        for (int i = 0; i + len <= n; i++) {
+            for (int split = 1; split < len; split++) {
+                Set<Symbol> left  = CYK[i][split];
+                Set<Symbol> right = CYK[i + split][len - split];
+
+                for (Rule r : G.rules) {
+                    if (r.rhs.length != 2) continue;
+
+                    Symbol B = r.rhs[0];
+                    Symbol C = r.rhs[1];
+
+                    if (left.contains(B) && right.contains(C)) {
+                        CYK[i][len].insert(r.lhs);
+                    }
+                }
+            }
+        }
+    }
+
+    return CYK[0][n].contains(G.start);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{19. CYK Parse-Forest Construction}
+\addcontentsline{toc}{subsection}{19. CYK Parse-Forest Construction}
+
+\begin{lstlisting}
+ParseForestGrammar cyk_build_forest_cnf(Grammar G, Vector<Symbol> input) {
+    int n = input.length;
+    ParseForestGrammar F;
+
+    for (int i = 0; i < n; i++) {
+        for (Rule r : G.rules) {
+            if (r.rhs.length == 1 && r.rhs[0] == input[i]) {
+                Symbol Ail = span_symbol(r.lhs, {i, i + 1});
+                CYK[i][1].insert(r.lhs);
+                add_forest_rule(&F, Ail, vector(input[i]));
+            }
+        }
+    }
+
+    for (int len = 2; len <= n; len++) {
+        for (int i = 0; i + len <= n; i++) {
+            for (int split = 1; split < len; split++) {
+                for (Rule r : G.rules) {
+                    if (r.rhs.length != 2) continue;
+
+                    Symbol B = r.rhs[0];
+                    Symbol C = r.rhs[1];
+
+                    if (CYK[i][split].contains(B) &&
+                        CYK[i + split][len - split].contains(C)) {
+                        CYK[i][len].insert(r.lhs);
+
+                        Symbol lhs = span_symbol(r.lhs, {i, i + len});
+                        Symbol b = span_symbol(B, {i, i + split});
+                        Symbol c = span_symbol(C, {i + split, i + len});
+
+                        add_forest_rule(&F, lhs, vector(b, c));
+                    }
+                }
+            }
+        }
+    }
+
+    F.start = span_symbol(G.start, {0, n});
+    return clean_parse_forest(F);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{20. Generalized CYK for Arbitrary RHS Length}
+\addcontentsline{toc}{subsection}{20. Generalized CYK for Arbitrary RHS Length}
+
+\begin{lstlisting}
+bool derives_rhs_by_cyk(Vector<Symbol> rhs, Span s, Grammar G) {
+    Vector<Vector<Span>> parts;
+    generate_partitions_allow_empty(s, rhs.length, {}, &parts);
+
+    for (Vector<Span> p : parts) {
+        bool ok = true;
+
+        for (int k = 0; k < rhs.length; k++) {
+            Symbol X = rhs[k];
+
+            if (is_terminal(X)) {
+                ok = (p[k].j == p[k].i + 1 && input[p[k].i] == X);
+            } else {
+                ok = CYK[p[k].i][p[k].j - p[k].i].contains(X);
+            }
+
+            if (!ok) break;
+        }
+
+        if (ok) return true;
+    }
+
+    return false;
+}
+
+bool cyk_recognize_general_cfg(Grammar G, Vector<Symbol> input) {
+    int n = input.length;
+
+    for (int len = 0; len <= n; len++) {
+        for (int i = 0; i + len <= n; i++) {
+            bool changed = true;
+            while (changed) {
+                changed = false;
+
+                for (Rule r : G.rules) {
+                    if (CYK[i][len].contains(r.lhs)) continue;
+
+                    if (derives_rhs_by_cyk(r.rhs, {i, i + len}, G)) {
+                        CYK[i][len].insert(r.lhs);
+                        changed = true;
+                    }
+                }
+            }
+        }
+    }
+
+    return CYK[0][n].contains(G.start);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{21. Transform CFG to Chomsky Normal Form}
+\addcontentsline{toc}{subsection}{21. Transform CFG to Chomsky Normal Form}
+
+\begin{lstlisting}
+Grammar to_chomsky_normal_form(Grammar G) {
+    Grammar H = G;
+
+    H = eliminate_epsilon_rules(H);
+    H = eliminate_unit_rules(H);
+    H = clean_cfg(H);
+
+    // Replace terminals inside long RHSs with fresh nonterminals.
+    for (Rule *r : H.rules) {
+        if (r->rhs.length >= 2) {
+            for (int i = 0; i < r->rhs.length; i++) {
+                if (is_terminal(r->rhs[i])) {
+                    Symbol T = fresh_nonterminal_for_terminal(r->rhs[i]);
+                    add_rule_if_absent(H, Rule{T, vector(r->rhs[i]), fresh_id()});
+                    r->rhs[i] = T;
+                }
+            }
+        }
+    }
+
+    // Binarize long right-hand sides.
+    Vector<Rule> newRules;
+    for (Rule r : H.rules) {
+        if (r.rhs.length <= 2) {
+            newRules.push_back(r);
+            continue;
+        }
+
+        Symbol currentLHS = r.lhs;
+        for (int i = 0; i < r.rhs.length - 2; i++) {
+            Symbol next = fresh_nonterminal("BIN");
+            newRules.push_back(Rule{currentLHS, vector(r.rhs[i], next), fresh_id()});
+            currentLHS = next;
+        }
+
+        newRules.push_back(Rule{
+            currentLHS,
+            vector(r.rhs[r.rhs.length - 2], r.rhs[r.rhs.length - 1]),
+            fresh_id()
+        });
+    }
+
+    H.rules = newRules;
+    return clean_cfg(remove_duplicate_rules(H));
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{22. Top-Down Tabular Parsing}
+\addcontentsline{toc}{subsection}{22. Top-Down Tabular Parsing}
+
+Memoized recognition: each pair \texttt{(Symbol, Span)} is solved once.
+
+\begin{lstlisting}
+typedef enum { UNKNOWN, IN_PROGRESS, FALSE_VALUE, TRUE_VALUE } MemoState;
+Map<Pair<Symbol, Span>, MemoState> memo;
+
+bool td_tabular_recognize(Symbol X, Span s, Grammar G, Vector<Symbol> input) {
+    Pair<Symbol, Span> key = {X, s};
+
+    if (memo[key] == TRUE_VALUE) return true;
+    if (memo[key] == FALSE_VALUE) return false;
+    if (memo[key] == IN_PROGRESS) return false; // left-recursion guard
+
+    memo[key] = IN_PROGRESS;
+
+    bool result = false;
+
+    if (is_terminal(X)) {
+        result = (s.j == s.i + 1 && input[s.i] == X);
+    } else {
+        for (Rule r : rules_for(G, X)) {
+            Vector<Vector<Span>> parts;
+            generate_partitions_allow_empty(s, r.rhs.length, {}, &parts);
+
+            for (Vector<Span> p : parts) {
+                bool ok = true;
+                for (int k = 0; k < r.rhs.length; k++) {
+                    if (!td_tabular_recognize(r.rhs[k], p[k], G, input)) {
+                        ok = false;
+                        break;
+                    }
+                }
+                if (ok) {
+                    result = true;
+                    break;
+                }
+            }
+
+            if (result) break;
+        }
+    }
+
+    memo[key] = result ? TRUE_VALUE : FALSE_VALUE;
+    return result;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{23. Bottom-Up Tabular Closure Parsing}
+\addcontentsline{toc}{subsection}{23. Bottom-Up Tabular Closure Parsing}
+
+\begin{lstlisting}
+bool bu_tabular_recognize(Grammar G, Vector<Symbol> input) {
+    int n = input.length;
+
+    // Seed terminal spans.
+    for (int i = 0; i < n; i++) {
+        for (Rule r : G.rules) {
+            if (r.rhs.length == 1 && r.rhs[0] == input[i]) {
+                Chart[i][i + 1].insert(r.lhs);
+            }
+        }
+    }
+
+    bool changed = true;
+    while (changed) {
+        changed = false;
+
+        for (int i = 0; i <= n; i++) {
+            for (int j = i; j <= n; j++) {
+                for (Rule r : G.rules) {
+                    if (Chart[i][j].contains(r.lhs)) continue;
+
+                    if (rhs_covers_span(r.rhs, i, j, Chart)) {
+                        Chart[i][j].insert(r.lhs);
+                        changed = true;
+                    }
+                }
+            }
+        }
+    }
+
+    return Chart[0][n].contains(G.start);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part III -- Regular Grammars and Finite-State Automata}
+\addcontentsline{toc}{section}{Part III -- Regular Grammars and Finite-State Automata}
+
+\Needspace{5\baselineskip}
+\subsection*{24. Regular Grammar to NFA}
+\addcontentsline{toc}{subsection}{24. Regular Grammar to NFA}
+
+\begin{lstlisting}
+NFA regular_grammar_to_nfa(Grammar G) {
+    NFA A;
+    Symbol finalState = fresh_state("FINAL");
+
+    for (Symbol N : G.nonterminals) {
+        add_state(A, state_for(N));
+    }
+    add_state(A, finalState);
+    A.start = state_for(G.start);
+    A.accepting.insert(finalState);
+
+    for (Rule r : G.rules) {
+        State from = state_for(r.lhs);
+
+        if (r.rhs.length == 0) {
+            add_epsilon_transition(A, from, finalState);
+        } else if (r.rhs.length == 1 && is_terminal(r.rhs[0])) {
+            add_transition(A, from, r.rhs[0], finalState);
+        } else if (r.rhs.length == 2 &&
+                   is_terminal(r.rhs[0]) &&
+                   is_nonterminal(r.rhs[1])) {
+            add_transition(A, from, r.rhs[0], state_for(r.rhs[1]));
+        } else {
+            error("Not a right-regular rule");
+        }
+    }
+
+    return A;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{25. Epsilon Closure}
+\addcontentsline{toc}{subsection}{25. Epsilon Closure}
+
+\begin{lstlisting}
+Set<State> epsilon_closure(NFA A, Set<State> S) {
+    Set<State> C = S;
+    Stack<State> work = stack_from(S);
+
+    while (!work.empty()) {
+        State q = work.pop();
+
+        for (State r : A.epsilon[q]) {
+            if (!C.contains(r)) {
+                C.insert(r);
+                work.push(r);
+            }
+        }
+    }
+
+    return C;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{26. Subset Construction: NFA to DFA}
+\addcontentsline{toc}{subsection}{26. Subset Construction: NFA to DFA}
+
+\begin{lstlisting}
+DFA nfa_to_dfa(NFA A) {
+    DFA D;
+    Map<Set<State>, State> name;
+
+    Set<State> startSet = epsilon_closure(A, {A.start});
+    State d0 = fresh_state("D");
+    name[startSet] = d0;
+    D.start = d0;
+
+    Queue<Set<State>> work;
+    work.push(startSet);
+
+    while (!work.empty()) {
+        Set<State> S = work.pop();
+        State dS = name[S];
+
+        if (intersects(S, A.accepting)) {
+            D.accepting.insert(dS);
+        }
+
+        for (Symbol a : A.alphabet) {
+            Set<State> moveSet = {};
+
+            for (State q : S) {
+                for (State r : A.delta[q][a]) {
+                    moveSet.insert(r);
+                }
+            }
+
+            Set<State> T = epsilon_closure(A, moveSet);
+            if (T.empty()) continue;
+
+            if (!name.contains(T)) {
+                State dT = fresh_state("D");
+                name[T] = dT;
+                work.push(T);
+            }
+
+            D.delta[dS][a] = name[T];
+        }
+    }
+
+    return D;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{27. DFA Minimization by Partition Refinement}
+\addcontentsline{toc}{subsection}{27. DFA Minimization by Partition Refinement}
+
+\begin{lstlisting}
+DFA minimize_dfa(DFA D) {
+    Set<State> nonAccepting = D.states - D.accepting;
+    Partition P = { D.accepting, nonAccepting };
+    Queue<Set<State>> work = queue(P.blocks);
+
+    while (!work.empty()) {
+        Set<State> A = work.pop();
+
+        for (Symbol c : D.alphabet) {
+            Set<State> X = { q in D.states | D.delta[q][c] in A };
+
+            for (Set<State> Y : P.blocks_that_intersect(X)) {
+                Set<State> Y1 = Y & X;
+                Set<State> Y2 = Y - X;
+
+                if (Y1.empty() || Y2.empty()) continue;
+
+                P.replace(Y, Y1, Y2);
+
+                if (work.contains(Y)) {
+                    work.remove(Y);
+                    work.push(Y1);
+                    work.push(Y2);
+                } else {
+                    work.push((Y1.size <= Y2.size) ? Y1 : Y2);
+                }
+            }
+        }
+    }
+
+    return build_quotient_dfa(D, P);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{28. Table-Driven DFA Recognition}
+\addcontentsline{toc}{subsection}{28. Table-Driven DFA Recognition}
+
+\begin{lstlisting}
+bool dfa_accepts(DFA D, Vector<Symbol> input) {
+    State q = D.start;
+
+    for (Symbol a : input) {
+        if (!D.delta[q].contains(a)) return false;
+        q = D.delta[q][a];
+    }
+
+    return D.accepting.contains(q);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{29. Regular Expression Recognition by Direct Recursion}
+\addcontentsline{toc}{subsection}{29. Regular Expression Recognition by Direct Recursion}
+
+This models a top-down recognizer over a regular-expression AST.
+
+\begin{lstlisting}
+Set<int> re_match_positions(RE re, Vector<Symbol> input, int pos) {
+    switch (re.kind) {
+        case LITERAL:
+            if (pos < input.length && input[pos] == re.symbol) return {pos + 1};
+            return {};
+
+        case EPSILON_RE:
+            return {pos};
+
+        case UNION_RE:
+            return set_union(
+                re_match_positions(re.left, input, pos),
+                re_match_positions(re.right, input, pos)
+            );
+
+        case CONCAT_RE: {
+            Set<int> out = {};
+            for (int mid : re_match_positions(re.left, input, pos)) {
+                out = set_union(out, re_match_positions(re.right, input, mid));
+            }
+            return out;
+        }
+
+        case STAR_RE: {
+            Set<int> result = {pos};
+            Queue<int> work;
+            work.push(pos);
+
+            while (!work.empty()) {
+                int p = work.pop();
+                for (int q : re_match_positions(re.child, input, p)) {
+                    if (!result.contains(q)) {
+                        result.insert(q);
+                        work.push(q);
+                    }
+                }
+            }
+
+            return result;
+        }
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{30. Fast Text Search Using a Pattern DFA}
+\addcontentsline{toc}{subsection}{30. Fast Text Search Using a Pattern DFA}
+
+\begin{lstlisting}
+Vector<int> search_with_dfa(DFA patternDFA, Vector<Symbol> text) {
+    Vector<int> matches;
+    State q = patternDFA.start;
+
+    for (int i = 0; i < text.length; i++) {
+        Symbol a = text[i];
+
+        while (!has_transition(patternDFA, q, a) && q != patternDFA.start) {
+            q = fallback_state(patternDFA, q);
+        }
+
+        if (has_transition(patternDFA, q, a)) {
+            q = patternDFA.delta[q][a];
+        }
+
+        if (patternDFA.accepting.contains(q)) {
+            matches.push_back(match_start_position(patternDFA, q, i));
+        }
+    }
+
+    return matches;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part IV -- General Directional Top-Down Parsing}
+\addcontentsline{toc}{section}{Part IV -- General Directional Top-Down Parsing}
+
+\Needspace{5\baselineskip}
+\subsection*{31. Pushdown Automaton Execution}
+\addcontentsline{toc}{subsection}{31. Pushdown Automaton Execution}
+
+\begin{lstlisting}
+bool pda_recognize(PDA P, Vector<Symbol> input) {
+    Queue<Configuration> work;
+    work.push(Configuration{P.start, 0, stack(P.bottom)});
+
+    while (!work.empty()) {
+        Configuration c = work.pop();
+
+        if (c.state == P.accept && c.pos == input.length && stack_is_bottom(c.stack)) {
+            return true;
+        }
+
+        for (Transition t : enabled_transitions(P, c, input)) {
+            Configuration next = apply_transition(c, t, input);
+            work.push(next);
+        }
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{32. Breadth-First Top-Down Parsing}
+\addcontentsline{toc}{subsection}{32. Breadth-First Top-Down Parsing}
+
+\begin{lstlisting}
+bool breadth_first_top_down(Grammar G, Vector<Symbol> input) {
+    Queue<Vector<Symbol>> q;
+    q.push(vector(G.start));
+
+    while (!q.empty()) {
+        Vector<Symbol> form = q.pop();
+
+        if (!terminal_prefix_matches(form, input)) continue;
+
+        if (contains_only_terminals(form)) {
+            if (form == input) return true;
+            continue;
+        }
+
+        int p = first_nonterminal_position(form);
+        Symbol A = form[p];
+
+        for (Rule r : rules_for(G, A)) {
+            q.push(replace_symbol(form, p, r.rhs));
+        }
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{33. Remove Direct Left Recursion}
+\addcontentsline{toc}{subsection}{33. Remove Direct Left Recursion}
+
+For \texttt{A -> A alpha1 | ... | A alpham | beta1 | ... | betan}, produce \texttt{A -> beta A'}, \texttt{A' -> alpha A' | epsilon}.
+
+\begin{lstlisting}
+Grammar eliminate_direct_left_recursion(Grammar G, Symbol A) {
+    Vector<Vector<Symbol>> alpha;
+    Vector<Vector<Symbol>> beta;
+
+    for (Rule r : rules_for(G, A)) {
+        if (!r.rhs.empty() && r.rhs[0] == A) {
+            alpha.push_back(slice(r.rhs, 1, r.rhs.length));
+        } else {
+            beta.push_back(r.rhs);
+        }
+    }
+
+    if (alpha.empty()) return G;
+
+    Symbol Aprime = fresh_nonterminal(A.name + "_tail");
+    remove_rules_for(G, A);
+
+    for (Vector<Symbol> b : beta) {
+        add_rule(G, Rule{A, concat(b, vector(Aprime)), fresh_id()});
+    }
+
+    for (Vector<Symbol> a : alpha) {
+        add_rule(G, Rule{Aprime, concat(a, vector(Aprime)), fresh_id()});
+    }
+
+    add_rule(G, Rule{Aprime, {}, fresh_id()});
+    return G;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{34. Remove Indirect Left Recursion}
+\addcontentsline{toc}{subsection}{34. Remove Indirect Left Recursion}
+
+\begin{lstlisting}
+Grammar eliminate_left_recursion(Grammar G, Vector<Symbol> order) {
+    for (int i = 0; i < order.length; i++) {
+        Symbol Ai = order[i];
+
+        for (int j = 0; j < i; j++) {
+            Symbol Aj = order[j];
+
+            Vector<Rule> replacements;
+            for (Rule r : rules_for(G, Ai)) {
+                if (!r.rhs.empty() && r.rhs[0] == Aj) {
+                    Vector<Symbol> gamma = slice(r.rhs, 1, r.rhs.length);
+                    for (Rule q : rules_for(G, Aj)) {
+                        replacements.push_back(Rule{
+                            Ai,
+                            concat(q.rhs, gamma),
+                            fresh_id()
+                        });
+                    }
+                    remove_rule(G, r);
+                }
+            }
+
+            for (Rule rr : replacements) add_rule(G, rr);
+        }
+
+        G = eliminate_direct_left_recursion(G, Ai);
+    }
+
+    return G;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{35. Depth-First Backtracking Recursive Descent}
+\addcontentsline{toc}{subsection}{35. Depth-First Backtracking Recursive Descent}
+
+\begin{lstlisting}
+bool parse_symbol_backtracking(Symbol X, int *pos, Grammar G, Vector<Symbol> input) {
+    if (is_terminal(X)) {
+        if (*pos < input.length && input[*pos] == X) {
+            (*pos)++;
+            return true;
+        }
+        return false;
+    }
+
+    for (Rule r : rules_for(G, X)) {
+        int save = *pos;
+        bool ok = true;
+
+        for (Symbol Y : r.rhs) {
+            if (!parse_symbol_backtracking(Y, pos, G, input)) {
+                ok = false;
+                break;
+            }
+        }
+
+        if (ok) return true;
+        *pos = save;
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{36. Exhaustive Backtracking Recursive Descent}
+\addcontentsline{toc}{subsection}{36. Exhaustive Backtracking Recursive Descent}
+
+Returns all possible end positions, not only the first successful parse.
+
+\begin{lstlisting}
+Set<int> parse_symbol_all(Symbol X, int pos, Grammar G, Vector<Symbol> input) {
+    if (is_terminal(X)) {
+        if (pos < input.length && input[pos] == X) return {pos + 1};
+        return {};
+    }
+
+    Set<int> ends = {};
+
+    for (Rule r : rules_for(G, X)) {
+        Set<int> positions = {pos};
+
+        for (Symbol Y : r.rhs) {
+            Set<int> nextPositions = {};
+            for (int p : positions) {
+                nextPositions = set_union(nextPositions, parse_symbol_all(Y, p, G, input));
+            }
+            positions = nextPositions;
+            if (positions.empty()) break;
+        }
+
+        ends = set_union(ends, positions);
+    }
+
+    return ends;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{37. Breadth-First Recursive Descent}
+\addcontentsline{toc}{subsection}{37. Breadth-First Recursive Descent}
+
+\begin{lstlisting}
+bool breadth_first_recursive_descent(Grammar G, Vector<Symbol> input) {
+    typedef struct Task { Vector<Symbol> todo; int pos; } Task;
+    Queue<Task> q;
+
+    q.push(Task{vector(G.start), 0});
+
+    while (!q.empty()) {
+        Task t = q.pop();
+
+        if (t.todo.empty()) {
+            if (t.pos == input.length) return true;
+            continue;
+        }
+
+        Symbol X = t.todo.front();
+        Vector<Symbol> rest = slice(t.todo, 1, t.todo.length);
+
+        if (is_terminal(X)) {
+            if (t.pos < input.length && input[t.pos] == X) {
+                q.push(Task{rest, t.pos + 1});
+            }
+        } else {
+            for (Rule r : rules_for(G, X)) {
+                q.push(Task{concat(r.rhs, rest), t.pos});
+            }
+        }
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{38. Definite Clause Grammar Execution Skeleton}
+\addcontentsline{toc}{subsection}{38. Definite Clause Grammar Execution Skeleton}
+
+\begin{lstlisting}
+bool dcg_call(NonterminalPredicate P, int i, int *j, Context ctx) {
+    for (Clause c : clauses_for(P)) {
+        int pos = i;
+        Context local = ctx;
+
+        if (execute_dcg_body(c.body, &pos, &local)) {
+            *j = pos;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool execute_dcg_body(Vector<DCGItem> body, int *pos, Context *ctx) {
+    for (DCGItem item : body) {
+        if (item.kind == TERMINAL_ITEM) {
+            if (input[*pos] != item.terminal) return false;
+            (*pos)++;
+        } else if (item.kind == NONTERMINAL_ITEM) {
+            int end;
+            if (!dcg_call(item.pred, *pos, &end, *ctx)) return false;
+            *pos = end;
+        } else if (item.kind == SEMANTIC_GOAL) {
+            if (!evaluate_goal(item.goal, ctx)) return false;
+        }
+    }
+    return true;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{39. Cancellation Parsing Transformation}
+\addcontentsline{toc}{subsection}{39. Cancellation Parsing Transformation}
+
+Cancellation parsing expands a top-down parser with cancellation sets that prevent unproductive left-recursive exploration.
+
+\begin{lstlisting}
+Grammar transform_for_cancellation(Grammar G) {
+    Grammar H = G;
+
+    for (Symbol A : G.nonterminals) {
+        Set<Symbol> cancel = compute_cancellation_set(G, A);
+
+        for (Symbol X : cancel) {
+            Symbol AX = cancellation_nonterminal(A, X);
+
+            for (Rule r : rules_for(G, A)) {
+                Vector<Symbol> body = cancel_prefix(r.rhs, X);
+                if (body.is_valid) {
+                    add_rule(H, Rule{AX, body, fresh_id()});
+                }
+            }
+        }
+    }
+
+    return clean_cfg(H);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part V -- General Directional Bottom-Up Parsing}
+\addcontentsline{toc}{section}{Part V -- General Directional Bottom-Up Parsing}
+
+\Needspace{5\baselineskip}
+\subsection*{40. Exhaustive Bottom-Up Reduction Search}
+\addcontentsline{toc}{subsection}{40. Exhaustive Bottom-Up Reduction Search}
+
+\begin{lstlisting}
+bool bottom_up_search(Grammar G, Vector<Symbol> input) {
+    Queue<Vector<Symbol>> q;
+    Set<Vector<Symbol>> seen;
+
+    q.push(input);
+    seen.insert(input);
+
+    while (!q.empty()) {
+        Vector<Symbol> form = q.pop();
+
+        if (form.length == 1 && form[0] == G.start) return true;
+
+        for (int i = 0; i < form.length; i++) {
+            for (Rule r : G.rules) {
+                if (matches_at(form, i, r.rhs)) {
+                    Vector<Symbol> next = replace_at(form, i, r.rhs, vector(r.lhs));
+                    if (!seen.contains(next)) {
+                        seen.insert(next);
+                        q.push(next);
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{41. Earley Item Model}
+\addcontentsline{toc}{subsection}{41. Earley Item Model}
+
+\begin{lstlisting}
+typedef struct EarleyItem {
+    Rule rule;       // A -> alpha beta
+    int dot;         // alpha length
+    int origin;      // start input position
+} EarleyItem;
+
+bool complete(EarleyItem item) {
+    return item.dot == item.rule.rhs.length;
+}
+
+Symbol next_symbol(EarleyItem item) {
+    return item.rule.rhs[item.dot];
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{42. Basic Earley Parser}
+\addcontentsline{toc}{subsection}{42. Basic Earley Parser}
+
+\begin{lstlisting}
+Set<EarleyItem> E[MAX_N + 1];
+
+bool earley_parse(Grammar G, Vector<Symbol> input) {
+    int n = input.length;
+    Rule startRule = augmented_start_rule(G);
+    E[0].insert(EarleyItem{startRule, 0, 0});
+
+    for (int k = 0; k <= n; k++) {
+        bool changed = true;
+
+        while (changed) {
+            changed = false;
+
+            for (EarleyItem item : copy(E[k])) {
+                if (!complete(item)) {
+                    Symbol X = next_symbol(item);
+
+                    if (is_nonterminal(X)) {
+                        for (Rule r : rules_for(G, X)) {
+                            EarleyItem predicted = {r, 0, k};
+                            if (E[k].insert(predicted)) changed = true;
+                        }
+                    } else if (k < n && input[k] == X) {
+                        EarleyItem advanced = {item.rule, item.dot + 1, item.origin};
+                        E[k + 1].insert(advanced);
+                    }
+                } else {
+                    Symbol A = item.rule.lhs;
+
+                    for (EarleyItem prev : copy(E[item.origin])) {
+                        if (!complete(prev) && next_symbol(prev) == A) {
+                            EarleyItem advanced = {prev.rule, prev.dot + 1, prev.origin};
+                            if (E[k].insert(advanced)) changed = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return E[n].contains(EarleyItem{startRule, 1, 0});
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{43. Earley with Epsilon Rules}
+\addcontentsline{toc}{subsection}{43. Earley with Epsilon Rules}
+
+\begin{lstlisting}
+void earley_predict_with_nullable(Grammar G, int k, Symbol A) {
+    for (Rule r : rules_for(G, A)) {
+        E[k].insert(EarleyItem{r, 0, k});
+
+        if (r.rhs.length == 0) {
+            E[k].insert(EarleyItem{r, 0, k}); // already complete
+        }
+    }
+}
+\end{lstlisting}
+
+The complete parser is the basic Earley loop with nullable-completion allowed in the same chart set.
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{44. Earley with Lookahead Filtering}
+\addcontentsline{toc}{subsection}{44. Earley with Lookahead Filtering}
+
+\begin{lstlisting}
+bool earley_prediction_allowed(Rule r, Symbol lookahead, Map<Symbol, Set<Symbol>> FIRST) {
+    Set<Symbol> start = first_of_sequence(r.rhs, FIRST);
+    return start.contains(lookahead) || start.contains(EPSILON_SYMBOL);
+}
+
+void earley_predict_filtered(Grammar G, int k, Symbol A, Symbol lookahead) {
+    for (Rule r : rules_for(G, A)) {
+        if (earley_prediction_allowed(r, lookahead, FIRST)) {
+            E[k].insert(EarleyItem{r, 0, k});
+        }
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{45. Earley Parse-Forest Construction}
+\addcontentsline{toc}{subsection}{45. Earley Parse-Forest Construction}
+
+\begin{lstlisting}
+typedef struct BackPointer {
+    EarleyItem from;
+    EarleyItem child;
+    Span childSpan;
+} BackPointer;
+
+Map<EarleyItem, Vector<BackPointer>> back;
+
+void add_earley_completion(
+    EarleyItem prev,
+    EarleyItem completed,
+    int k
+) {
+    EarleyItem advanced = {prev.rule, prev.dot + 1, prev.origin};
+
+    if (E[k].insert(advanced)) {
+        back[advanced] = {};
+    }
+
+    back[advanced].push_back(BackPointer{
+        prev,
+        completed,
+        {completed.origin, k}
+    });
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{46. Chart Parsing with an Agenda}
+\addcontentsline{toc}{subsection}{46. Chart Parsing with an Agenda}
+
+\begin{lstlisting}
+typedef struct Edge {
+    Symbol lhs;
+    Vector<Symbol> rhs;
+    int dot;
+    int i;
+    int j;
+} Edge;
+
+void chart_parse(Grammar G, Vector<Symbol> input) {
+    Set<Edge> chart;
+    Queue<Edge> agenda;
+
+    enqueue_initial_edges(G, &agenda);
+
+    while (!agenda.empty()) {
+        Edge e = agenda.pop();
+
+        if (chart.contains(e)) continue;
+        chart.insert(e);
+
+        if (!edge_complete(e)) {
+            Symbol X = next_symbol(e);
+
+            if (is_nonterminal(X)) {
+                for (Rule r : rules_for(G, X)) {
+                    agenda.push(Edge{r.lhs, r.rhs, 0, e.j, e.j});
+                }
+            } else if (e.j < input.length && input[e.j] == X) {
+                agenda.push(advance_edge(e, e.j + 1));
+            }
+        } else {
+            for (Edge p : chart) {
+                if (!edge_complete(p) && next_symbol(p) == e.lhs && p.j == e.i) {
+                    agenda.push(advance_edge_to(p, e.j));
+                }
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part VI -- Deterministic Top-Down Parsing}
+\addcontentsline{toc}{section}{Part VI -- Deterministic Top-Down Parsing}
+
+\Needspace{5\baselineskip}
+\subsection*{47. LL(1) Parse Table Construction}
+\addcontentsline{toc}{subsection}{47. LL(1) Parse Table Construction}
+
+\begin{lstlisting}
+Table<Symbol, Symbol, Rule> build_ll1_table(Grammar G) {
+    Map<Symbol, Set<Symbol>> FIRST = compute_first_sets(G);
+    Map<Symbol, Set<Symbol>> FOLLOW = compute_follow_sets(G);
+    Table<Symbol, Symbol, Rule> T;
+
+    for (Rule r : G.rules) {
+        Set<Symbol> first = first_of_sequence(r.rhs, FIRST);
+
+        for (Symbol a : without_epsilon(first)) {
+            insert_or_report_conflict(T, r.lhs, a, r);
+        }
+
+        if (first.contains(EPSILON_SYMBOL)) {
+            for (Symbol b : FOLLOW[r.lhs]) {
+                insert_or_report_conflict(T, r.lhs, b, r);
+            }
+        }
+    }
+
+    return T;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{48. Table-Driven LL(1) Parser}
+\addcontentsline{toc}{subsection}{48. Table-Driven LL(1) Parser}
+
+\begin{lstlisting}
+bool parse_ll1(Grammar G, Table T, Vector<Symbol> input) {
+    Stack<Symbol> stack;
+    stack.push(END_MARKER_SYMBOL);
+    stack.push(G.start);
+
+    int pos = 0;
+    Symbol lookahead = input[pos];
+
+    while (!stack.empty()) {
+        Symbol X = stack.pop();
+
+        if (X == END_MARKER_SYMBOL) {
+            return lookahead == END_MARKER_SYMBOL;
+        }
+
+        if (is_terminal(X)) {
+            if (X != lookahead) return false;
+            pos++;
+            lookahead = input[pos];
+            continue;
+        }
+
+        Rule r = T[X][lookahead];
+        if (r.id == NO_RULE) return false;
+
+        for (int i = r.rhs.length - 1; i >= 0; i--) {
+            if (r.rhs[i] != EPSILON_SYMBOL) {
+                stack.push(r.rhs[i]);
+            }
+        }
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{49. Predictive Recursive Descent Skeleton}
+\addcontentsline{toc}{subsection}{49. Predictive Recursive Descent Skeleton}
+
+\begin{lstlisting}
+bool parse_nonterminal(Symbol A, int *pos) {
+    Symbol lookahead = input[*pos];
+
+    for (Rule r : rules_for(G, A)) {
+        if (start_set(r).contains(lookahead)) {
+            int save = *pos;
+
+            for (Symbol X : r.rhs) {
+                if (is_terminal(X)) {
+                    if (input[*pos] != X) {
+                        *pos = save;
+                        return false;
+                    }
+                    (*pos)++;
+                } else {
+                    if (!parse_nonterminal(X, pos)) {
+                        *pos = save;
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{50. LL(k) Parsing Table Construction}
+\addcontentsline{toc}{subsection}{50. LL(k) Parsing Table Construction}
+
+\begin{lstlisting}
+Table<Symbol, Vector<Symbol>, Rule> build_llk_table(Grammar G, int k) {
+    Table<Symbol, Vector<Symbol>, Rule> T;
+    KFirst FIRSTK = compute_first_k_sets(G, k);
+    KFollow FOLLOWK = compute_follow_k_sets(G, k);
+
+    for (Rule r : G.rules) {
+        Set<Vector<Symbol>> looks = first_k_sequence(r.rhs, FIRSTK, k);
+
+        if (sequence_can_be_shorter_than_k(r.rhs, FIRSTK, k)) {
+            looks = concat_k_sets(looks, FOLLOWK[r.lhs], k);
+        }
+
+        for (Vector<Symbol> la : looks) {
+            insert_or_report_conflict(T, r.lhs, la, r);
+        }
+    }
+
+    return T;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{51. Extended LL(1) Parsing for Regular Right Parts}
+\addcontentsline{toc}{subsection}{51. Extended LL(1) Parsing for Regular Right Parts}
+
+\begin{lstlisting}
+bool parse_extended_rhs(RegexAST rhs, int *pos) {
+    switch (rhs.kind) {
+        case SYMBOL_NODE:
+            return parse_symbol(rhs.symbol, pos);
+
+        case CONCAT_NODE:
+            return parse_extended_rhs(rhs.left, pos) &&
+                   parse_extended_rhs(rhs.right, pos);
+
+        case ALT_NODE: {
+            int save = *pos;
+            if (lookahead_in_start(rhs.left, input[*pos])) {
+                if (parse_extended_rhs(rhs.left, pos)) return true;
+            }
+            *pos = save;
+            if (lookahead_in_start(rhs.right, input[*pos])) {
+                return parse_extended_rhs(rhs.right, pos);
+            }
+            return false;
+        }
+
+        case STAR_NODE:
+            while (lookahead_in_start(rhs.child, input[*pos])) {
+                if (!parse_extended_rhs(rhs.child, pos)) break;
+            }
+            return true;
+
+        case OPTIONAL_NODE:
+            if (lookahead_in_start(rhs.child, input[*pos])) {
+                parse_extended_rhs(rhs.child, pos);
+            }
+            return true;
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part VII -- Deterministic Bottom-Up Parsing}
+\addcontentsline{toc}{section}{Part VII -- Deterministic Bottom-Up Parsing}
+
+\Needspace{5\baselineskip}
+\subsection*{52. Operator-Precedence Parsing}
+\addcontentsline{toc}{subsection}{52. Operator-Precedence Parsing}
+
+\begin{lstlisting}
+bool operator_precedence_parse(PrecedenceTable P, Vector<Symbol> input) {
+    Stack<Symbol> stack;
+    stack.push(END_MARKER_SYMBOL);
+
+    int pos = 0;
+    Symbol a = input[pos];
+
+    while (true) {
+        Symbol b = top_terminal(stack);
+
+        if (b == END_MARKER_SYMBOL && a == END_MARKER_SYMBOL) {
+            return true;
+        }
+
+        Relation rel = P[b][a];
+
+        if (rel == LESS || rel == EQUAL) {
+            stack.push(a);
+            pos++;
+            a = input[pos];
+        } else if (rel == GREATER) {
+            Vector<Symbol> handle = pop_until_left_boundary(stack, P);
+            Symbol lhs = reduce_handle(handle);
+            if (lhs == INVALID_SYMBOL) return false;
+            stack.push(lhs);
+        } else {
+            return false;
+        }
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{53. Precedence Function Construction}
+\addcontentsline{toc}{subsection}{53. Precedence Function Construction}
+
+\begin{lstlisting}
+bool build_precedence_functions(
+    Set<Symbol> terminals,
+    PrecedenceRelations R,
+    Map<Symbol,int> *f,
+    Map<Symbol,int> *g
+) {
+    Graph constraints;
+
+    for (Symbol a : terminals) {
+        add_node(constraints, F(a));
+        add_node(constraints, G(a));
+    }
+
+    for (RelationEntry e : R) {
+        if (e.rel == LESS) {
+            add_edge(constraints, G(e.right), F(e.left)); // f(left) < g(right)
+        } else if (e.rel == GREATER) {
+            add_edge(constraints, F(e.left), G(e.right)); // f(left) > g(right)
+        } else if (e.rel == EQUAL) {
+            union_nodes(constraints, F(e.left), G(e.right));
+        }
+    }
+
+    if (has_cycle_in_strict_constraints(constraints)) return false;
+
+    assign_topological_levels(constraints, f, g);
+    return true;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{54. LR(0) Closure}
+\addcontentsline{toc}{subsection}{54. LR(0) Closure}
+
+\begin{lstlisting}
+Set<Item0> closure_lr0(Grammar G, Set<Item0> I) {
+    Set<Item0> C = I;
+
+    bool changed = true;
+    while (changed) {
+        changed = false;
+
+        for (Item0 item : copy(C)) {
+            Symbol X = item.next_after_dot;
+            if (!is_nonterminal(X)) continue;
+
+            for (Rule r : rules_for(G, X)) {
+                Item0 newItem = {r, 0};
+                if (C.insert(newItem)) changed = true;
+            }
+        }
+    }
+
+    return C;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{55. LR(0) GOTO}
+\addcontentsline{toc}{subsection}{55. LR(0) GOTO}
+
+\begin{lstlisting}
+Set<Item0> goto_lr0(Grammar G, Set<Item0> I, Symbol X) {
+    Set<Item0> moved;
+
+    for (Item0 item : I) {
+        if (!item.complete && item.next_after_dot == X) {
+            moved.insert(Item0{item.rule, item.dot + 1});
+        }
+    }
+
+    return closure_lr0(G, moved);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{56. Canonical LR(0) Automaton}
+\addcontentsline{toc}{subsection}{56. Canonical LR(0) Automaton}
+
+\begin{lstlisting}
+Vector<Set<Item0>> build_lr0_collection(Grammar G) {
+    Rule start = augmented_start_rule(G);
+    Set<Item0> I0 = closure_lr0(G, {Item0{start, 0}});
+
+    Vector<Set<Item0>> C = {I0};
+    Queue<Set<Item0>> work;
+    work.push(I0);
+
+    while (!work.empty()) {
+        Set<Item0> I = work.pop();
+
+        for (Symbol X : grammar_symbols(G)) {
+            Set<Item0> J = goto_lr0(G, I, X);
+            if (J.empty()) continue;
+
+            if (!contains_set(C, J)) {
+                C.push_back(J);
+                work.push(J);
+            }
+        }
+    }
+
+    return C;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{57. LR(1) Closure}
+\addcontentsline{toc}{subsection}{57. LR(1) Closure}
+
+\begin{lstlisting}
+Set<Item1> closure_lr1(Grammar G, Set<Item1> I) {
+    Set<Item1> C = I;
+    Map<Symbol, Set<Symbol>> FIRST = compute_first_sets(G);
+
+    bool changed = true;
+    while (changed) {
+        changed = false;
+
+        for (Item1 item : copy(C)) {
+            Symbol B = symbol_after_dot(item);
+            if (!is_nonterminal(B)) continue;
+
+            Vector<Symbol> beta = symbols_after_dot_tail(item);
+            Vector<Symbol> beta_a = concat(beta, vector(item.lookahead));
+
+            Set<Symbol> lookaheads = first_of_sequence(beta_a, FIRST);
+
+            for (Rule r : rules_for(G, B)) {
+                for (Symbol b : without_epsilon(lookaheads)) {
+                    Item1 newItem = {r, 0, b};
+                    if (C.insert(newItem)) changed = true;
+                }
+            }
+        }
+    }
+
+    return C;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{58. LR(1) GOTO}
+\addcontentsline{toc}{subsection}{58. LR(1) GOTO}
+
+\begin{lstlisting}
+Set<Item1> goto_lr1(Grammar G, Set<Item1> I, Symbol X) {
+    Set<Item1> moved;
+
+    for (Item1 item : I) {
+        if (!item_complete(item) && symbol_after_dot(item) == X) {
+            moved.insert(Item1{item.rule, item.dot + 1, item.lookahead});
+        }
+    }
+
+    return closure_lr1(G, moved);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{59. Canonical LR(1) Collection}
+\addcontentsline{toc}{subsection}{59. Canonical LR(1) Collection}
+
+\begin{lstlisting}
+Vector<Set<Item1>> build_lr1_collection(Grammar G) {
+    Rule start = augmented_start_rule(G);
+    Set<Item1> I0 = closure_lr1(G, {Item1{start, 0, END_MARKER_SYMBOL}});
+
+    Vector<Set<Item1>> C = {I0};
+    Queue<Set<Item1>> work;
+    work.push(I0);
+
+    while (!work.empty()) {
+        Set<Item1> I = work.pop();
+
+        for (Symbol X : grammar_symbols(G)) {
+            Set<Item1> J = goto_lr1(G, I, X);
+            if (J.empty()) continue;
+
+            if (!contains_set(C, J)) {
+                C.push_back(J);
+                work.push(J);
+            }
+        }
+    }
+
+    return C;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{60. LR Parse Table Construction}
+\addcontentsline{toc}{subsection}{60. LR Parse Table Construction}
+
+\begin{lstlisting}
+void build_lr1_tables(Grammar G, ActionTable *ACTION, GotoTable *GOTO) {
+    Vector<Set<Item1>> C = build_lr1_collection(G);
+
+    for (int i = 0; i < C.length; i++) {
+        Set<Item1> I = C[i];
+
+        for (Item1 item : I) {
+            if (!item_complete(item)) {
+                Symbol X = symbol_after_dot(item);
+                Set<Item1> J = goto_lr1(G, I, X);
+                int j = index_of_set(C, J);
+
+                if (is_terminal(X)) {
+                    set_action(ACTION, i, X, shift(j));
+                } else {
+                    GOTO[i][X] = j;
+                }
+            } else {
+                if (item.rule.lhs == augmented_start_symbol(G)) {
+                    set_action(ACTION, i, END_MARKER_SYMBOL, accept());
+                } else {
+                    set_action(ACTION, i, item.lookahead, reduce(item.rule));
+                }
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{61. Table-Driven LR Parser}
+\addcontentsline{toc}{subsection}{61. Table-Driven LR Parser}
+
+\begin{lstlisting}
+bool parse_lr(ActionTable ACTION, GotoTable GOTO, Vector<Symbol> input) {
+    Stack<int> states;
+    Stack<Symbol> symbols;
+
+    states.push(0);
+    int pos = 0;
+    Symbol lookahead = input[pos];
+
+    while (true) {
+        int s = states.top();
+        Action a = ACTION[s][lookahead];
+
+        if (a.kind == SHIFT) {
+            symbols.push(lookahead);
+            states.push(a.nextState);
+            pos++;
+            lookahead = input[pos];
+        } else if (a.kind == REDUCE) {
+            Rule r = a.rule;
+
+            for (int k = 0; k < r.rhs.length; k++) {
+                symbols.pop();
+                states.pop();
+            }
+
+            int t = states.top();
+            symbols.push(r.lhs);
+            states.push(GOTO[t][r.lhs]);
+        } else if (a.kind == ACCEPT) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{62. SLR(1) Table Construction}
+\addcontentsline{toc}{subsection}{62. SLR(1) Table Construction}
+
+\begin{lstlisting}
+void build_slr_tables(Grammar G, ActionTable *ACTION, GotoTable *GOTO) {
+    Vector<Set<Item0>> C = build_lr0_collection(G);
+    Map<Symbol, Set<Symbol>> FOLLOW = compute_follow_sets(G);
+
+    for (int i = 0; i < C.length; i++) {
+        for (Item0 item : C[i]) {
+            if (!item_complete(item)) {
+                Symbol X = symbol_after_dot(item);
+                Set<Item0> J = goto_lr0(G, C[i], X);
+                int j = index_of_set(C, J);
+
+                if (is_terminal(X)) set_action(ACTION, i, X, shift(j));
+                else GOTO[i][X] = j;
+            } else {
+                if (item.rule.lhs == augmented_start_symbol(G)) {
+                    set_action(ACTION, i, END_MARKER_SYMBOL, accept());
+                } else {
+                    for (Symbol a : FOLLOW[item.rule.lhs]) {
+                        set_action(ACTION, i, a, reduce(item.rule));
+                    }
+                }
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{63. LALR(1) Table Construction by Core Merging}
+\addcontentsline{toc}{subsection}{63. LALR(1) Table Construction by Core Merging}
+
+\begin{lstlisting}
+void build_lalr_tables(Grammar G, ActionTable *ACTION, GotoTable *GOTO) {
+    Vector<Set<Item1>> C = build_lr1_collection(G);
+    Map<Core, Set<Item1>> merged;
+
+    for (Set<Item1> I : C) {
+        Core core = item_core_set(I);
+        for (Item1 item : I) {
+            merged[core].insert(item);
+        }
+    }
+
+    Vector<Set<Item1>> L = values(merged);
+    build_tables_from_lr1_collection(G, L, ACTION, GOTO);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{64. Recursive Ascent Parser Skeleton}
+\addcontentsline{toc}{subsection}{64. Recursive Ascent Parser Skeleton}
+
+\begin{lstlisting}
+bool state_0();
+bool state_1();
+/* one function per LR state */
+
+bool parse_recursive_ascent(Vector<Symbol> input) {
+    set_input(input);
+    return state_0();
+}
+
+bool state_i_template(int state) {
+    Symbol lookahead = current_token();
+
+    switch (ACTION[state][lookahead].kind) {
+        case SHIFT:
+            consume();
+            return call_state(ACTION[state][lookahead].nextState);
+
+        case REDUCE:
+            perform_reduction(ACTION[state][lookahead].rule);
+            return return_to_caller_with_lhs(ACTION[state][lookahead].rule.lhs);
+
+        case ACCEPT:
+            return true;
+
+        default:
+            return false;
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{65. Discriminating-Reverse Parsing Skeleton}
+\addcontentsline{toc}{subsection}{65. Discriminating-Reverse Parsing Skeleton}
+
+\begin{lstlisting}
+bool dr_parse(DRTable T, Vector<Symbol> input) {
+    Stack<Symbol> stack;
+    int pos = 0;
+
+    while (true) {
+        Context left = compute_left_context(stack);
+        Context right = compute_right_context(input, pos);
+        Action action = T[left][right];
+
+        if (action.kind == SHIFT) {
+            stack.push(input[pos++]);
+        } else if (action.kind == REDUCE) {
+            Vector<Symbol> h = pop_rhs(stack, action.rule.rhs.length);
+            stack.push(action.rule.lhs);
+        } else if (action.kind == ACCEPT) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part VIII -- Non-Canonical and Generalized Deterministic Parsing}
+\addcontentsline{toc}{section}{Part VIII -- Non-Canonical and Generalized Deterministic Parsing}
+
+\Needspace{5\baselineskip}
+\subsection*{66. Left-Corner Relation}
+\addcontentsline{toc}{subsection}{66. Left-Corner Relation}
+
+\begin{lstlisting}
+Map<Symbol, Set<Symbol>> compute_left_corner_relation(Grammar G) {
+    Map<Symbol, Set<Symbol>> LC;
+
+    for (Rule r : G.rules) {
+        if (r.rhs.length > 0) {
+            LC[r.lhs].insert(r.rhs[0]);
+        }
+    }
+
+    bool changed = true;
+    while (changed) {
+        changed = false;
+
+        for (Symbol A : G.nonterminals) {
+            for (Symbol B : copy(LC[A])) {
+                if (is_nonterminal(B)) {
+                    for (Symbol X : LC[B]) {
+                        if (LC[A].insert(X)) changed = true;
+                    }
+                }
+            }
+        }
+    }
+
+    return LC;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{67. Left-Corner Parser}
+\addcontentsline{toc}{subsection}{67. Left-Corner Parser}
+
+\begin{lstlisting}
+bool parse_left_corner(Symbol goal, int *pos) {
+    Symbol lc = scan_or_parse_left_corner(pos);
+
+    if (!is_left_corner_of(lc, goal)) return false;
+
+    return complete_left_corner(goal, lc, pos);
+}
+
+bool complete_left_corner(Symbol goal, Symbol current, int *pos) {
+    if (current == goal) return true;
+
+    for (Rule r : rules_with_left_corner(current)) {
+        int save = *pos;
+
+        bool suffixOk = true;
+        for (int k = 1; k < r.rhs.length; k++) {
+            if (!parse_symbol(r.rhs[k], pos)) {
+                suffixOk = false;
+                break;
+            }
+        }
+
+        if (suffixOk && complete_left_corner(goal, r.lhs, pos)) {
+            return true;
+        }
+
+        *pos = save;
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{68. Partitioned LL Parsing}
+\addcontentsline{toc}{subsection}{68. Partitioned LL Parsing}
+
+\begin{lstlisting}
+bool partitioned_ll_parse(PartitionedTable T, Vector<Symbol> input) {
+    Stack<Symbol> stack;
+    stack.push(G.start);
+
+    int pos = 0;
+    ParserPartition p = initial_partition();
+
+    while (!stack.empty()) {
+        Symbol X = stack.pop();
+        Symbol lookahead = input[pos];
+
+        if (is_terminal(X)) {
+            if (X != lookahead) return false;
+            pos++;
+        } else {
+            Rule r = T[p][X][lookahead];
+            if (r.id == NO_RULE) return false;
+
+            p = transition_partition(p, X, lookahead, r);
+
+            push_reversed(stack, r.rhs);
+        }
+    }
+
+    return input[pos] == END_MARKER_SYMBOL;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{69. Generalized LR Parser with Graph-Structured Stack}
+\addcontentsline{toc}{subsection}{69. Generalized LR Parser with Graph-Structured Stack}
+
+\begin{lstlisting}
+typedef struct GSSNode {
+    int state;
+    int inputPosition;
+    Set<GSSEdge> inEdges;
+} GSSNode;
+
+typedef struct GSSEdge {
+    GSSNode *from;
+    Symbol symbol;
+    ForestNode *tree;
+} GSSEdge;
+
+bool glr_parse(ActionTable ACTION, GotoTable GOTO, Vector<Symbol> input) {
+    Set<GSSNode*> active = { new_gss_node(0, 0) };
+
+    for (int pos = 0; pos <= input.length; pos++) {
+        Queue<ReductionTask> reductions;
+
+        enqueue_all_reductions(active, input[pos], ACTION, &reductions);
+        process_glr_reductions(active, reductions, GOTO);
+
+        if (input[pos] == END_MARKER_SYMBOL && any_accepting(active, ACTION)) {
+            return true;
+        }
+
+        Set<GSSNode*> nextActive = {};
+        for (GSSNode *v : active) {
+            ActionSet acts = ACTION[v->state][input[pos]];
+            for (Action a : acts) {
+                if (a.kind == SHIFT) {
+                    GSSNode *u = get_or_create_node(a.nextState, pos + 1);
+                    add_edge(u, v, input[pos], terminal_forest(input[pos]));
+                    nextActive.insert(u);
+                }
+            }
+        }
+
+        active = nextActive;
+        if (active.empty()) return false;
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{70. GLR Reduction Processing}
+\addcontentsline{toc}{subsection}{70. GLR Reduction Processing}
+
+\begin{lstlisting}
+void process_glr_reductions(
+    Set<GSSNode*> *active,
+    Queue<ReductionTask> reductions,
+    GotoTable GOTO
+) {
+    while (!reductions.empty()) {
+        ReductionTask task = reductions.pop();
+        Rule r = task.rule;
+
+        Vector<Path> paths = find_paths_of_length(task.node, r.rhs.length);
+
+        for (Path p : paths) {
+            GSSNode *base = p.end;
+            int nextState = GOTO[base->state][r.lhs];
+
+            GSSNode *target = get_or_create_node(nextState, task.node->inputPosition);
+            ForestNode *tree = make_packed_node(r, p.forestChildren);
+
+            if (add_edge(target, base, r.lhs, tree)) {
+                active->insert(target);
+                enqueue_new_reductions_for(target, reductions);
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{71. Generalized LL Parser with Descriptors}
+\addcontentsline{toc}{subsection}{71. Generalized LL Parser with Descriptors}
+
+\begin{lstlisting}
+typedef struct Descriptor {
+    Slot slot;       // grammar position
+    GSSNode *gss;
+    int pos;
+    ForestNode *node;
+} Descriptor;
+
+bool gll_parse(Grammar G, Vector<Symbol> input) {
+    Queue<Descriptor> work;
+    Set<Descriptor> seen;
+
+    GSSNode *root = gss_node(START_SLOT, 0);
+    add_descriptor(&work, &seen, Descriptor{start_slot(G), root, 0, NULL});
+
+    while (!work.empty()) {
+        Descriptor d = work.pop();
+        execute_gll_slot(d, input, &work, &seen);
+    }
+
+    return accepted_descriptor_seen();
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{72. GLL Slot Execution}
+\addcontentsline{toc}{subsection}{72. GLL Slot Execution}
+
+\begin{lstlisting}
+void execute_gll_slot(
+    Descriptor d,
+    Vector<Symbol> input,
+    Queue<Descriptor> *work,
+    Set<Descriptor> *seen
+) {
+    Symbol X = symbol_at_slot(d.slot);
+
+    if (is_terminal(X)) {
+        if (input[d.pos] == X) {
+            add_descriptor(work, seen,
+                Descriptor{next_slot(d.slot), d.gss, d.pos + 1, terminal_node(X)});
+        }
+        return;
+    }
+
+    if (is_nonterminal(X)) {
+        GSSNode *returnNode = create_gss(d.gss, next_slot(d.slot), d.pos);
+        for (Rule r : rules_for(G, X)) {
+            add_descriptor(work, seen,
+                Descriptor{first_slot(r), returnNode, d.pos, NULL});
+        }
+        return;
+    }
+
+    if (slot_at_end(d.slot)) {
+        pop_gss_and_resume(d.gss, d.pos, d.node, work, seen);
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{73. Generalized LL with Left-Recursion Guard}
+\addcontentsline{toc}{subsection}{73. Generalized LL with Left-Recursion Guard}
+
+\begin{lstlisting}
+bool add_descriptor(
+    Queue<Descriptor> *work,
+    Set<Descriptor> *seen,
+    Descriptor d
+) {
+    if (seen->contains(d)) return false;
+
+    seen->insert(d);
+    work->push(d);
+    return true;
+}
+\end{lstlisting}
+
+Descriptor memoization prevents infinite descent through left-recursive cycles.
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part IX -- Substring Parsing and Parsing as Intersection}
+\addcontentsline{toc}{section}{Part IX -- Substring Parsing and Parsing as Intersection}
+
+\Needspace{5\baselineskip}
+\subsection*{74. Suffix Grammar Construction}
+\addcontentsline{toc}{subsection}{74. Suffix Grammar Construction}
+
+\begin{lstlisting}
+Grammar build_suffix_grammar(Grammar G) {
+    Grammar H = G;
+
+    for (Rule r : G.rules) {
+        for (int k = 0; k <= r.rhs.length; k++) {
+            Symbol A_suffix = suffix_symbol(r.lhs, k);
+            Vector<Symbol> suffix = slice(r.rhs, k, r.rhs.length);
+            add_rule(H, Rule{A_suffix, suffix, fresh_id()});
+        }
+    }
+
+    H.start = suffix_symbol(G.start, 0);
+    return clean_cfg(H);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{75. General Substring Parsing by Span Search}
+\addcontentsline{toc}{subsection}{75. General Substring Parsing by Span Search}
+
+\begin{lstlisting}
+bool substring_parse_general(Grammar G, Vector<Symbol> input) {
+    int n = input.length;
+
+    for (int i = 0; i <= n; i++) {
+        for (int j = i; j <= n; j++) {
+            if (td_tabular_recognize(G.start, {i, j}, G, input)) {
+                report_match(i, j);
+            }
+        }
+    }
+
+    return any_match_reported();
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{76. Linear-Time LL(1) Suffix Parsing}
+\addcontentsline{toc}{subsection}{76. Linear-Time LL(1) Suffix Parsing}
+
+\begin{lstlisting}
+bool ll1_suffix_parse(Table T, Vector<Symbol> input) {
+    for (int start = 0; start < input.length; start++) {
+        if (parse_ll1_from_position(T, input, start)) {
+            report_suffix_match(start);
+        }
+    }
+    return any_match_reported();
+}
+
+bool parse_ll1_from_position(Table T, Vector<Symbol> input, int pos) {
+    Stack<Symbol> st;
+    st.push(suffix_start_symbol());
+
+    while (!st.empty() && pos <= input.length) {
+        Symbol X = st.pop();
+
+        if (is_terminal(X)) {
+            if (input[pos] != X) return false;
+            pos++;
+        } else {
+            Rule r = T[X][input[pos]];
+            if (r.id == NO_RULE) return false;
+            push_reversed(st, r.rhs);
+        }
+    }
+
+    return true;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{77. Intersection of a CFG with an FSA}
+\addcontentsline{toc}{subsection}{77. Intersection of a CFG with an FSA}
+
+Build a grammar whose nonterminals encode both a CFG nonterminal and FSA start/end states.
+
+\begin{lstlisting}
+Grammar intersect_cfg_fsa(Grammar G, FSA A) {
+    Grammar I;
+
+    for (Rule r : G.rules) {
+        if (r.rhs.length == 1 && is_terminal(r.rhs[0])) {
+            Symbol a = r.rhs[0];
+
+            for (State p : A.states) {
+                for (State q : A.delta[p][a]) {
+                    add_rule(I, Rule{
+                        triple_symbol(p, r.lhs, q),
+                        vector(a),
+                        fresh_id()
+                    });
+                }
+            }
+        } else {
+            for (Vector<State> path : all_state_paths(A.states, r.rhs.length)) {
+                State p0 = path[0];
+                State pk = path[path.length - 1];
+
+                Vector<Symbol> rhs2;
+                for (int i = 0; i < r.rhs.length; i++) {
+                    rhs2.push_back(triple_symbol(path[i], r.rhs[i], path[i + 1]));
+                }
+
+                add_rule(I, Rule{
+                    triple_symbol(p0, r.lhs, pk),
+                    rhs2,
+                    fresh_id()
+                });
+            }
+        }
+    }
+
+    for (State f : A.accepting) {
+        add_rule(I, Rule{
+            new_start_symbol(),
+            vector(triple_symbol(A.start, G.start, f)),
+            fresh_id()
+        });
+    }
+
+    I.start = new_start_symbol();
+    return clean_cfg(I);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{78. Parse an FSA as Input}
+\addcontentsline{toc}{subsection}{78. Parse an FSA as Input}
+
+\begin{lstlisting}
+ParseForestGrammar parse_fsa_with_cfg(Grammar G, FSA inputAutomaton) {
+    Grammar I = intersect_cfg_fsa(G, inputAutomaton);
+    I = clean_cfg(I);
+
+    ParseForestGrammar F;
+    F.start = I.start;
+    for (Rule r : I.rules) {
+        add_forest_rule(&F, r.lhs, r.rhs);
+    }
+    return F;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{79. Filtering by Intersection}
+\addcontentsline{toc}{subsection}{79. Filtering by Intersection}
+
+\begin{lstlisting}
+FSA filter_fsa_with_cfg(Grammar G, FSA A) {
+    Grammar I = intersect_cfg_fsa(G, A);
+    I = clean_cfg(I);
+
+    FSA B;
+
+    for (Rule r : I.rules) {
+        if (represents_terminal_transition(r)) {
+            Transition t = terminal_transition_from_rule(r);
+            add_transition(B, t.from, t.symbol, t.to);
+        }
+    }
+
+    B.start = A.start;
+    B.accepting = states_reachable_from_intersection_start(I, A.accepting);
+    return trim_fsa(B);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{80. Earley Parsing on FSAs}
+\addcontentsline{toc}{subsection}{80. Earley Parsing on FSAs}
+
+\begin{lstlisting}
+bool earley_parse_fsa(Grammar G, FSA A) {
+    Map<State, Set<EarleyItem>> E;
+    E[A.start].insert(EarleyItem{augmented_start_rule(G), 0, A.start});
+
+    Queue<State> stateWork = all_states_queue(A);
+
+    while (!stateWork.empty()) {
+        State q = stateWork.pop();
+
+        bool changed = true;
+        while (changed) {
+            changed = false;
+
+            for (EarleyItem item : copy(E[q])) {
+                if (!complete(item)) {
+                    Symbol X = next_symbol(item);
+
+                    if (is_nonterminal(X)) {
+                        for (Rule r : rules_for(G, X)) {
+                            changed |= E[q].insert(EarleyItem{r, 0, q});
+                        }
+                    } else {
+                        for (State r : A.delta[q][X]) {
+                            E[r].insert(EarleyItem{item.rule, item.dot + 1, item.origin});
+                        }
+                    }
+                } else {
+                    for (EarleyItem prev : copy(E[item.origin])) {
+                        if (!complete(prev) && next_symbol(prev) == item.rule.lhs) {
+                            changed |= E[q].insert(EarleyItem{
+                                prev.rule,
+                                prev.dot + 1,
+                                prev.origin
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    for (State f : A.accepting) {
+        if (E[f].contains(EarleyItem{augmented_start_rule(G), 1, A.start})) {
+            return true;
+        }
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part X -- Parallel Parsing}
+\addcontentsline{toc}{section}{Part X -- Parallel Parsing}
+
+\Needspace{5\baselineskip}
+\subsection*{81. Multiple Serial Parsers over Input Segments}
+\addcontentsline{toc}{subsection}{81. Multiple Serial Parsers over Input Segments}
+
+\begin{lstlisting}
+void parallel_segment_parse(Grammar G, Vector<Symbol> input, int workers) {
+    Vector<Span> segments = split_input(input.length, workers);
+
+    parallel_for (Span s : segments) {
+        local_results[s] = parse_segment(G, input, s);
+    }
+
+    BoundarySummary summary = combine_boundary_results(local_results);
+    final_result = resolve_cross_segment_parses(G, summary);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{82. Process-Configuration GLR Sketch}
+\addcontentsline{toc}{subsection}{82. Process-Configuration GLR Sketch}
+
+\begin{lstlisting}
+void parallel_glr_step(Set<Process> processes, Symbol token) {
+    parallel_for (Process p : processes) {
+        ActionSet actions = ACTION[p.state][token];
+
+        for (Action a : actions) {
+            if (a.kind == SHIFT) spawn_shift_process(p, a, token);
+            if (a.kind == REDUCE) spawn_reduce_process(p, a.rule);
+            if (a.kind == ACCEPT) mark_accepting(p);
+        }
+    }
+
+    merge_equivalent_processes();
+    synchronize_on_input_position();
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{83. CYK as a Boolean Circuit}
+\addcontentsline{toc}{subsection}{83. CYK as a Boolean Circuit}
+
+\begin{lstlisting}
+bool cyk_boolean_cell(
+    Symbol A,
+    int i,
+    int len,
+    Grammar G,
+    BoolMatrix cell
+) {
+    if (len == 1) {
+        return exists_rule_A_to_token(G, A, input[i]);
+    }
+
+    bool value = false;
+
+    parallel_for (int split = 1; split < len; split++) {
+        for (Rule r : rules_for(G, A)) {
+            if (r.rhs.length == 2 &&
+                cell[r.rhs[0]][i][split] &&
+                cell[r.rhs[1]][i + split][len - split]) {
+                value = true;
+            }
+        }
+    }
+
+    return value;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{84. Rytter-Style Parallel Recursive Recognition Sketch}
+\addcontentsline{toc}{subsection}{84. Rytter-Style Parallel Recursive Recognition Sketch}
+
+\begin{lstlisting}
+bool parallel_cfg_recognize(Symbol A, Span s) {
+    if (span_length(s) <= THRESHOLD) {
+        return sequential_recognize(A, s);
+    }
+
+    parallel_for (Rule r : rules_for(G, A)) {
+        if (r.rhs.length == 2) {
+            parallel_for (int k = s.i + 1; k < s.j; k++) {
+                bool left  = parallel_cfg_recognize(r.rhs[0], {s.i, k});
+                bool right = parallel_cfg_recognize(r.rhs[1], {k, s.j});
+                if (left && right) publish_success();
+            }
+        }
+    }
+
+    return success_published();
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part XI -- Non-Chomsky Grammars and Parsers}
+\addcontentsline{toc}{section}{Part XI -- Non-Chomsky Grammars and Parsers}
+
+\Needspace{5\baselineskip}
+\subsection*{85. Context-Sensitive Recognition by Bounded Search}
+\addcontentsline{toc}{subsection}{85. Context-Sensitive Recognition by Bounded Search}
+
+\begin{lstlisting}
+bool context_sensitive_recognize(Grammar G, Vector<Symbol> input) {
+    Queue<Vector<Symbol>> q;
+    Set<Vector<Symbol>> seen;
+
+    q.push(vector(G.start));
+    seen.insert(vector(G.start));
+
+    while (!q.empty()) {
+        Vector<Symbol> form = q.pop();
+
+        if (form == input) return true;
+        if (terminal_length_lower_bound(form) > input.length) continue;
+        if (form.length > input.length) continue;  // monotonic case
+
+        for (int pos = 0; pos < form.length; pos++) {
+            for (Rule r : G.rules) {
+                if (matches_at(form, pos, r.lhs_pattern)) {
+                    Vector<Symbol> next = replace_at(form, pos, r.lhs_pattern, r.rhs);
+                    if (!seen.contains(next)) {
+                        seen.insert(next);
+                        q.push(next);
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{86. Two-Level Grammar Expansion with Bounds}
+\addcontentsline{toc}{subsection}{86. Two-Level Grammar Expansion with Bounds}
+
+\begin{lstlisting}
+Grammar expand_two_level_grammar(TwoLevelGrammar V, int maxMetaDepth) {
+    Grammar G;
+
+    Queue<MetaForm> work;
+    work.push(V.startMetaForm);
+
+    while (!work.empty()) {
+        MetaForm m = work.pop();
+
+        if (m.depth > maxMetaDepth) continue;
+
+        for (HyperRule hr : applicable_hyperrules(V, m)) {
+            Rule r = instantiate_hyperrule(hr, m);
+            add_rule(G, r);
+
+            for (MetaForm child : meta_forms_in(r)) {
+                if (!already_seen(child)) work.push(child);
+            }
+        }
+    }
+
+    return clean_cfg(G);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{87. Attribute Grammar Evaluation}
+\addcontentsline{toc}{subsection}{87. Attribute Grammar Evaluation}
+
+\begin{lstlisting}
+bool evaluate_attribute_grammar(ParseTree *tree, AttributeGrammar AG) {
+    bool changed = true;
+
+    while (changed) {
+        changed = false;
+
+        for (Node *node : postorder(tree)) {
+            for (AttributeEquation eq : AG.equations_for(node->production)) {
+                if (all_inputs_known(eq) && !attribute_known(eq.target)) {
+                    set_attribute(eq.target, compute(eq));
+                    changed = true;
+                }
+            }
+        }
+    }
+
+    return all_required_attributes_known(tree);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{88. Affix Grammar Parsing Skeleton}
+\addcontentsline{toc}{subsection}{88. Affix Grammar Parsing Skeleton}
+
+\begin{lstlisting}
+bool parse_affix_nonterminal(Symbol A, AffixEnv env, int *pos) {
+    for (AffixRule r : affix_rules_for(A)) {
+        int save = *pos;
+        AffixEnv local = env;
+
+        if (!unify_affixes(r.lhsAffixes, actual_affixes(A), &local)) continue;
+
+        bool ok = true;
+        for (AffixItem item : r.rhs) {
+            if (!parse_affix_item(item, &local, pos)) {
+                ok = false;
+                break;
+            }
+        }
+
+        if (ok) return true;
+        *pos = save;
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{89. Tree-Adjoining Grammar Recognition Sketch}
+\addcontentsline{toc}{subsection}{89. Tree-Adjoining Grammar Recognition Sketch}
+
+\begin{lstlisting}
+bool tag_recognize(TAG G, Vector<Symbol> input) {
+    initialize_elementary_tree_spans(G, input);
+
+    bool changed = true;
+    while (changed) {
+        changed = false;
+
+        for (Tree t : G.trees) {
+            for (Span s : all_spans(input)) {
+                if (can_substitute_or_adjoin(t, s, chart)) {
+                    changed |= chart.insert(t.root, s);
+                }
+            }
+        }
+    }
+
+    return chart.contains(G.start, {0, input.length});
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{90. Coupled Grammar Parsing}
+\addcontentsline{toc}{subsection}{90. Coupled Grammar Parsing}
+
+\begin{lstlisting}
+bool coupled_parse(CoupledGrammar C, Vector<Symbol> input) {
+    Set<CoupledState> states = { initial_coupled_state(C) };
+
+    bool changed = true;
+    while (changed) {
+        changed = false;
+
+        for (CoupledState st : copy(states)) {
+            for (CoupledRule r : applicable_coupled_rules(C, st)) {
+                CoupledState next = apply_coupled_rule(st, r, input);
+                changed |= states.insert(next);
+            }
+        }
+    }
+
+    return any_accepting_coupled_state(states);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{91. Rule-Ordered Grammar Parsing}
+\addcontentsline{toc}{subsection}{91. Rule-Ordered Grammar Parsing}
+
+\begin{lstlisting}
+bool ordered_parse(Symbol A, int *pos, OrderedGrammar G) {
+    for (Rule r : ordered_rules_for(G, A)) {
+        int save = *pos;
+
+        if (parse_rhs(r.rhs, pos, G)) {
+            return true;
+        }
+
+        *pos = save;
+
+        if (rule_failure_is_committed(r)) {
+            return false;
+        }
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{92. Recognition-System Execution}
+\addcontentsline{toc}{subsection}{92. Recognition-System Execution}
+
+\begin{lstlisting}
+bool recognition_system_accepts(RecognitionSystem R, Vector<Symbol> input) {
+    Set<State> states = { R.start };
+
+    for (int pos = 0; pos <= input.length; pos++) {
+        bool changed = true;
+        while (changed) {
+            changed = false;
+            for (State s : copy(states)) {
+                for (InferenceRule r : R.inferenceRules) {
+                    if (rule_enabled(r, s, input, pos)) {
+                        changed |= states.insert(apply_rule(r, s, input, pos));
+                    }
+                }
+            }
+        }
+
+        if (pos < input.length) {
+            states = advance_all(states, input[pos]);
+        }
+    }
+
+    return intersects(states, R.accepting);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{93. Boolean Grammar CYK-Style Recognition}
+\addcontentsline{toc}{subsection}{93. Boolean Grammar CYK-Style Recognition}
+
+Boolean grammars allow conjunction and negation in rule bodies.
+
+\begin{lstlisting}
+bool boolean_grammar_recognize(BooleanGrammar G, Vector<Symbol> input) {
+    int n = input.length;
+    initialize_boolean_chart(G, input);
+
+    bool changed = true;
+    while (changed) {
+        changed = false;
+
+        for (int len = 0; len <= n; len++) {
+            for (int i = 0; i + len <= n; i++) {
+                for (BooleanRule r : G.rules) {
+                    bool value = eval_boolean_rhs(r.rhs, i, i + len, chart);
+                    if (value && !chart[r.lhs][i][len]) {
+                        chart[r.lhs][i][len] = true;
+                        changed = true;
+                    }
+                }
+            }
+        }
+    }
+
+    return chart[G.start][0][n];
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part XII -- Error Handling}
+\addcontentsline{toc}{section}{Part XII -- Error Handling}
+
+\Needspace{5\baselineskip}
+\subsection*{94. Panic-Mode Recovery}
+\addcontentsline{toc}{subsection}{94. Panic-Mode Recovery}
+
+\begin{lstlisting}
+void panic_mode_recover(Parser *P, Set<Symbol> synchronizing) {
+    while (!synchronizing.contains(P->lookahead) &&
+           P->lookahead != END_MARKER_SYMBOL) {
+        P->lookahead = next_token();
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{95. FOLLOW-Set Recovery for Predictive Parsing}
+\addcontentsline{toc}{subsection}{95. FOLLOW-Set Recovery for Predictive Parsing}
+
+\begin{lstlisting}
+void follow_set_recover(Symbol A, Parser *P, Map<Symbol, Set<Symbol>> FOLLOW) {
+    while (!FOLLOW[A].contains(P->lookahead) &&
+           P->lookahead != END_MARKER_SYMBOL) {
+        report_skipped_token(P->lookahead);
+        P->lookahead = next_token();
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{96. Insertion-Only Error Correction}
+\addcontentsline{toc}{subsection}{96. Insertion-Only Error Correction}
+
+\begin{lstlisting}
+bool insertion_only_correct(Symbol A, int pos, Vector<Symbol> input, int maxInsertions) {
+    PriorityQueue<State> pq;
+    pq.push(State{A, pos, 0, empty_insertions()});
+
+    while (!pq.empty()) {
+        State s = pq.pop_min_cost();
+
+        if (s.insertions > maxInsertions) continue;
+        if (parse_from_state(s)) {
+            emit_correction(s.insertedTokens);
+            return true;
+        }
+
+        for (Symbol t : candidate_insertions(s)) {
+            State next = insert_token_before_state(s, t);
+            pq.push(next);
+        }
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{97. Locally Least-Cost Error Recovery}
+\addcontentsline{toc}{subsection}{97. Locally Least-Cost Error Recovery}
+
+\begin{lstlisting}
+Recovery locally_least_cost_recovery(ParserState state, Vector<Symbol> input) {
+    PriorityQueue<RecoveryState> pq;
+    Set<RecoveryState> seen;
+
+    pq.push(RecoveryState{state, current_position(), 0, {}});
+
+    while (!pq.empty()) {
+        RecoveryState r = pq.pop_min_cost();
+
+        if (is_viable_parser_state(r.parserState, input, r.pos)) {
+            return r.recovery;
+        }
+
+        for (Edit e : possible_edits(r)) {
+            RecoveryState next = apply_edit(r, e);
+            next.cost += edit_cost(e);
+
+            if (!seen.contains(next)) {
+                seen.insert(next);
+                pq.push(next);
+            }
+        }
+    }
+
+    return failure_recovery();
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{98. Regional Backward/Forward Recovery}
+\addcontentsline{toc}{subsection}{98. Regional Backward/Forward Recovery}
+
+\begin{lstlisting}
+Recovery regional_recovery(Parser P, Vector<Symbol> input, int errorPos, int radius) {
+    for (int left = errorPos; left >= max(0, errorPos - radius); left--) {
+        for (int right = errorPos; right <= min(input.length, errorPos + radius); right++) {
+            Vector<Symbol> region = slice(input, left, right);
+
+            Recovery candidate = least_cost_rewrite(region, P.expected_tokens(left));
+            if (candidate.valid && reparses(P, input, left, right, candidate)) {
+                return candidate;
+            }
+        }
+    }
+
+    return panic_mode_recovery();
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{99. Global Least-Cost Error Correction}
+\addcontentsline{toc}{subsection}{99. Global Least-Cost Error Correction}
+
+\begin{lstlisting}
+Recovery global_least_cost_recovery(Grammar G, Vector<Symbol> input) {
+    PriorityQueue<EditState> pq;
+
+    pq.push(EditState{vector(G.start), 0, 0, {}});
+
+    while (!pq.empty()) {
+        EditState s = pq.pop_min_cost();
+
+        if (s.form.empty() && s.pos == input.length) {
+            return s.edits;
+        }
+
+        expand_parse_edits(G, input, s, &pq);
+    }
+
+    return failure_recovery();
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Part XIII -- Practical Parser Programs and Alternative Uses}
+\addcontentsline{toc}{section}{Part XIII -- Practical Parser Programs and Alternative Uses}
+
+\Needspace{5\baselineskip}
+\subsection*{100. Simple General Context-Free Parser: Goal Model}
+\addcontentsline{toc}{subsection}{100. Simple General Context-Free Parser: Goal Model}
+
+The book's practical parser is a compact general CFG parser. This C-like model captures its logic without copying its implementation.
+
+\begin{lstlisting}
+typedef struct Goal {
+    Symbol symbol;
+    Span span;
+} Goal;
+
+typedef struct RuleGoal {
+    Rule rule;
+    Span span;
+} RuleGoal;
+
+typedef struct DottedGoal {
+    Rule rule;
+    int dot;
+    Span matched;
+    Span remaining;
+} DottedGoal;
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{101. Simple General CFG Parser: Main Driver}
+\addcontentsline{toc}{subsection}{101. Simple General CFG Parser: Main Driver}
+
+\begin{lstlisting}
+bool simple_general_cfg_parse(Grammar G, Vector<Symbol> input) {
+    Goal start = Goal{G.start, {0, input.length}};
+    return solve_goal(start, G, input);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{102. Solve a Goal}
+\addcontentsline{toc}{subsection}{102. Solve a Goal}
+
+\begin{lstlisting}
+bool solve_goal(Goal g, Grammar G, Vector<Symbol> input) {
+    if (is_terminal(g.symbol)) {
+        return g.span.j == g.span.i + 1 &&
+               input[g.span.i] == g.symbol;
+    }
+
+    for (Rule r : rules_for(G, g.symbol)) {
+        RuleGoal rg = RuleGoal{r, g.span};
+        if (solve_rule_goal(rg, G, input)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{103. Solve a Rule Goal by Dotted Progress}
+\addcontentsline{toc}{subsection}{103. Solve a Rule Goal by Dotted Progress}
+
+\begin{lstlisting}
+bool solve_rule_goal(RuleGoal rg, Grammar G, Vector<Symbol> input) {
+    DottedGoal d = DottedGoal{
+        rg.rule,
+        0,
+        {rg.span.i, rg.span.i},
+        rg.span
+    };
+
+    return solve_dotted_goal(d, G, input);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{104. Solve a Dotted Goal}
+\addcontentsline{toc}{subsection}{104. Solve a Dotted Goal}
+
+\begin{lstlisting}
+bool solve_dotted_goal(DottedGoal d, Grammar G, Vector<Symbol> input) {
+    if (d.dot == d.rule.rhs.length) {
+        return d.remaining.i == d.remaining.j;
+    }
+
+    Symbol X = d.rule.rhs[d.dot];
+
+    for (int split = d.remaining.i; split <= d.remaining.j; split++) {
+        Span childSpan = {d.remaining.i, split};
+        Goal child = Goal{X, childSpan};
+
+        if (!solve_goal(child, G, input)) continue;
+
+        DottedGoal next = DottedGoal{
+            d.rule,
+            d.dot + 1,
+            {d.matched.i, split},
+            {split, d.remaining.j}
+        };
+
+        if (solve_dotted_goal(next, G, input)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{105. Left-Recursion Protection for the Simple Parser}
+\addcontentsline{toc}{subsection}{105. Left-Recursion Protection for the Simple Parser}
+
+\begin{lstlisting}
+Map<Goal, GoalState> goalState;
+
+bool solve_goal_guarded(Goal g, Grammar G, Vector<Symbol> input) {
+    if (goalState[g] == SOLVED_TRUE) return true;
+    if (goalState[g] == SOLVED_FALSE) return false;
+    if (goalState[g] == ACTIVE) return false;
+
+    goalState[g] = ACTIVE;
+
+    bool result = solve_goal_body(g, G, input);
+
+    goalState[g] = result ? SOLVED_TRUE : SOLVED_FALSE;
+    return result;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{106. Polynomial-Time Memoization for the Simple Parser}
+\addcontentsline{toc}{subsection}{106. Polynomial-Time Memoization for the Simple Parser}
+
+\begin{lstlisting}
+Map<Goal, bool> goalMemo;
+Map<RuleGoal, bool> ruleGoalMemo;
+Map<DottedGoal, bool> dottedGoalMemo;
+
+bool memo_solve_goal(Goal g, Grammar G, Vector<Symbol> input) {
+    if (goalMemo.contains(g)) return goalMemo[g];
+
+    mark_active(g);
+    bool result = solve_goal_body_using_memo(g, G, input);
+    unmark_active(g);
+
+    goalMemo[g] = result;
+    return result;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{107. Parser as Data Compressor}
+\addcontentsline{toc}{subsection}{107. Parser as Data Compressor}
+
+\begin{lstlisting}
+CompressedTree grammar_compress(Grammar G, Vector<Symbol> input) {
+    ParseForestGrammar F = general_parse_forest(G, input);
+    ParseTree best = choose_minimum_description_tree(F);
+
+    return encode_tree_by_rule_numbers(best);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{108. Tree Parsing for Machine-Code Generation}
+\addcontentsline{toc}{subsection}{108. Tree Parsing for Machine-Code Generation}
+
+\begin{lstlisting}
+InstructionSequence generate_code_by_tree_parsing(IRTree t, TreeGrammar rules) {
+    if (is_leaf(t)) {
+        return match_leaf_instruction(t, rules);
+    }
+
+    Vector<InstructionSequence> childCode;
+    for (IRTree c : t.children) {
+        childCode.push_back(generate_code_by_tree_parsing(c, rules));
+    }
+
+    Rule best = choose_min_cost_tree_rule(t, rules, childCode);
+    return concatenate(childCode, emit_instruction(best, t));
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{109. Logic-Language Support via Parsing}
+\addcontentsline{toc}{subsection}{109. Logic-Language Support via Parsing}
+
+\begin{lstlisting}
+bool prove_by_parsing(LogicGrammar G, Goal goal) {
+    Vector<Symbol> query = encode_goal_as_sentence(goal);
+    return general_cfg_or_dcg_parse(G, query);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\section*{Algorithm Inventory}
+\addcontentsline{toc}{section}{Algorithm Inventory}
+
+\begin{longtable}{L{0.28\textwidth}L{0.65\textwidth}}
+\toprule
+Area & Algorithms reconstructed \\
+\midrule\endfirsthead
+\toprule
+Area & Algorithms reconstructed \\
+\midrule\endhead
+Grammar generation & Breadth-first production, leftmost/rightmost derivation \\
+Grammar hygiene & Productive, reachable, nullable, epsilon removal, loop/unit-cycle checks \\
+General parsing & Unger, CYK, tabular top-down, tabular bottom-up \\
+Regular systems & NFA/DFA conversion, closure, minimization, DFA recognition, FSA search \\
+Top-down parsing & PDA execution, BFS top-down, recursive descent, left-recursion removal, DCG, cancellation \\
+Bottom-up parsing & Reduction search, Earley, chart parsing \\
+Deterministic top-down & FIRST/FOLLOW, LL(1), LL(k), extended LL \\
+Deterministic bottom-up & Operator precedence, LR(0), LR(1), SLR, LALR, LR driver \\
+Non-canonical/generalized & Left-corner, partitioned LL, GLR, GLL \\
+Substring/intersection & Suffix grammar, substring search, CFG/FSA intersection, Earley on FSAs \\
+Parallel parsing & Multiple serial parsers, parallel GLR sketch, CYK circuit, Rytter-style recognition \\
+Non-Chomsky parsing & Context-sensitive, two-level, attribute/affix, TAG, coupled, ordered, Boolean grammar \\
+Error recovery & Panic mode, FOLLOW recovery, insertion-only, least-cost, regional/global recovery \\
+Practical parser program & Goal/rule-goal/dotted-goal general CFG parser with memoization \\
+\bottomrule
+\end{longtable}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{Implementation Notes}
+\addcontentsline{toc}{subsection}{Implementation Notes}
+
+\begin{enumerate}
+\item The algorithms use mathematical sets and maps. A production implementation should replace these with hash sets, bit sets, packed integer IDs, and indexed vectors.
+\item General CFG algorithms should store parse forests, not a single tree, when the grammar may be ambiguous.
+\item CYK and Earley benefit strongly from memoization and compact item identity.
+\item GLR and GLL require packed forests to avoid exponential tree materialization.
+\item Error recovery should be bounded in production compilers; otherwise edit-distance search can explode.
+\item Grammar transformations should retain source-to-transformed rule mappings so parse trees can be projected back to the original grammar.
+\item Use deterministic methods when grammar ownership permits grammar shaping; use Earley/GLR/GLL/intersection methods when grammar ambiguity or external grammar ownership matters.
+\end{enumerate}
+
+\medskip\hrule\medskip
+
+\Needspace{5\baselineskip}
+\subsection*{Suggested Implementation Order}
+\addcontentsline{toc}{subsection}{Suggested Implementation Order}
+
+\begin{lstlisting}
+int main_implementation_plan(void) {
+    implement_symbol_tables();
+    implement_grammar_model();
+    implement_nullable_first_follow();
+    implement_cfg_cleaning();
+
+    implement_cyk_cnf();
+    implement_earley();
+    implement_ll1_table_parser();
+    implement_lr0_lr1_builders();
+
+    implement_parse_forest();
+    implement_error_recovery();
+    implement_general_parser_memoization();
+
+    return 0;
+}
+\end{lstlisting}
+
+
+\clearpage
+\section*{Document Control Notes}
+\phantomsection
+\addcontentsline{toc}{section}{Document Control Notes}
+\begin{itemize}
+\item The algorithms are independent C-like reconstructions intended for study, design review, and implementation planning.
+\item The notation uses consistent helper routines, data structures, chart items, forest nodes, and worklist patterns across parser families.
+\item For production use, each pseudocode routine should be paired with grammar-invariant checks, regression grammars, ambiguity tests, memory bounds, and parse-forest validation.
+\end{itemize}
+\end{document}

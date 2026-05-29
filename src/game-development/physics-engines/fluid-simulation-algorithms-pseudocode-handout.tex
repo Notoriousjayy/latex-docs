@@ -1,0 +1,2261 @@
+
+\documentclass[10pt,letterpaper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.72in,headheight=14pt]{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{ragged2e}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{microtype}
+\usepackage{listings}
+\usepackage{needspace}
+\usepackage{tocloft}
+\usepackage{upquote}
+\definecolor{HouseBlue}{HTML}{1F4E79}
+\definecolor{HouseGray}{HTML}{4F5B62}
+\definecolor{HouseLight}{HTML}{EAF2F8}
+\definecolor{CodeBack}{HTML}{F7F8FA}
+\definecolor{CodeFrame}{HTML}{C9D1D9}
+\definecolor{CodeKeyword}{HTML}{1F4E79}
+\definecolor{CodeComment}{HTML}{5F6F7A}
+\definecolor{CodeString}{HTML}{8A3B12}
+\hypersetup{colorlinks=true,linkcolor=HouseBlue,urlcolor=HouseBlue,citecolor=HouseBlue,pdfauthor={ChatGPT},pdftitle={Fluid Simulation for Computer Graphics: Algorithms as C-like Pseudocode}}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Fluid Simulation --- Algorithms as C-like Pseudocode}
+\rhead{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlist[itemize]{leftmargin=1.25em,itemsep=2pt,topsep=2pt}
+\setlist[enumerate]{leftmargin=1.5em,itemsep=2pt,topsep=2pt}
+\titleformat{\section}{\Large\bfseries\color{HouseBlue}}{}{0pt}{}
+\titleformat{\subsection}{\large\bfseries\color{HouseGray}}{}{0pt}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{HouseGray}}{}{0pt}{}
+\titlespacing*{\section}{0pt}{2.2ex plus .4ex minus .2ex}{1.0ex}
+\titlespacing*{\subsection}{0pt}{1.8ex plus .3ex minus .2ex}{0.7ex}
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\lstdefinelanguage{PseudoC}{
+  morekeywords={typedef,enum,struct,union,return,if,else,for,while,do,case,switch,break,continue,bool,true,false,NULL,void,int,long,char,float,double,string,const,static,foreach,in,new,delete,insert,remove,push,pop,emit,try,catch,throw,private,public,CellLabel,CELL_EMPTY,CELL_FLUID,CELL_SOLID,Vec2,Vec3,Vec4,Grid3f,Grid3i,Grid3Label,MACGrid,LevelSet,Particle,ParticleSet,SparseRowEntry,SparseRow,CSRMatrix,ParticleSet,Triangle,Mesh,RigidBody,Matrix,Vector,LevelSet,Grid,Fluid,Solid,Particle,Cell,Queue,Stack,PriorityQueue,List,Set,Map,Matrix,Vector,CSR,PCG,MIC0},
+  sensitive=true,
+  morecomment=[l]{//},
+  morestring=[b]",
+}
+\lstset{
+  language=PseudoC,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\bfseries\color{CodeKeyword},
+  commentstyle=\itshape\color{CodeComment},
+  stringstyle=\color{CodeString},
+  backgroundcolor=\color{CodeBack},
+  frame=single,
+  rulecolor=\color{CodeFrame},
+  framerule=0.35pt,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  tabsize=4,
+  xleftmargin=0.6em,
+  xrightmargin=0.3em,
+  aboveskip=0.7em,
+  belowskip=0.7em,
+}
+\newcommand{\handouttitle}{Fluid Simulation for Computer Graphics: Algorithms as C-like Pseudocode}
+\sloppy
+\begin{document}
+\pagenumbering{gobble}
+\begin{titlepage}
+\centering
+\vspace*{0.85in}
+{\Huge\bfseries\color{HouseBlue}\handouttitle\par}
+\vspace{0.22in}
+{\Large Systematic Algorithm Extraction and Reconstruction\par}
+\vspace{0.34in}
+{\large Source analyzed: Robert Bridson, \emph{Fluid Simulation for Computer Graphics}, Second Edition, CRC Press / A K Peters, 2016\par}
+\vfill
+\begin{minipage}{0.88\textwidth}
+\small
+This handout rewrites the algorithmic material from the uploaded fluid-simulation text as independent C-like pseudocode. It is organized as an implementation-oriented reference for MAC-grid incompressible solvers, semi-Lagrangian advection, level sets, pressure projection, PCG/MIC(0), smoke, water, fire, viscosity, turbulence, shallow water, ocean spectra, vortex methods, sparse matrices, and fluid-solid coupling. The pseudocode is normalized for study, architecture review, engine design, and implementation planning; it is not a source-code clone.
+\end{minipage}
+\vfill
+{\large Generated \today\par}
+\end{titlepage}
+\clearpage
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\section*{Extraction Coverage}
+\addcontentsline{toc}{section}{Extraction Coverage}
+\begin{longtable}{L{0.29\textwidth}L{0.66\textwidth}}
+\toprule
+\textbf{Area} & \textbf{Algorithm families represented}\\
+\midrule
+Solver skeleton & split time stepping, CFL-style time-step selection, MAC sampling, body-force application, projection drivers.\\
+Advection & RK2/RK3 backtracing, scalar and velocity semi-Lagrangian advection, cubic interpolation, nonnegative scalar clamping.\\
+Level-set geometry & analytic signed distance, closest-point queries, SDF construction, redistancing, Boolean operations, contouring, mesh smoothing, extrapolation.\\
+Projection and solvers & cell labeling, divergence RHS construction, moving-solid boundary terms, pressure matrix assembly, PCG, MIC(0), compatibility correction, pressure-gradient scatter.\\
+Fluid effects & smoke buoyancy, divergence control, PIC/FLIP, marker particles, water surfaces, surface tension, wall separation, combustion, viscosity, vorticity/turbulence.\\
+Extended models & shallow water, spectral ocean evaluation, vortex particles, one-way/weak/strong fluid-solid coupling, immersed-boundary treatment, CSR matrix utilities.\\
+\bottomrule
+\end{longtable}
+
+\textbf{Source analyzed:} Robert Bridson, \emph{Fluid Simulation for Computer Graphics}, Second Edition, CRC Press / A K Peters, 2016. \textbf{Output purpose:} implementation-oriented pseudocode reference for building grid, particle, level-set, smoke, water, fire, viscous, turbulence, shallow-water, ocean, vortex, and fluid-solid coupling solvers. \textbf{Method:} the book's equations, pseudocode figures, algorithm descriptions, and source-oriented implementation notes have been reduced to independent C-like pseudocode. This is not a line-for-line transcription of the book. It normalizes data structures, function names, and control flow for C/C++ implementation planning.
+
+\medskip\hrule\medskip
+
+\Needspace{6\baselineskip}
+\subsection*{0. Shared Types, Indexing, and Constants}
+\addcontentsline{toc}{subsection}{0. Shared Types, Indexing, and Constants}
+
+\begin{lstlisting}
+typedef enum CellLabel {
+    CELL_EMPTY,
+    CELL_FLUID,
+    CELL_SOLID
+} CellLabel;
+
+typedef struct Vec2 { float x, y; } Vec2;
+typedef struct Vec3 { float x, y, z; } Vec3;
+typedef struct Vec4 { float x, y, z, w; } Vec4;
+
+typedef struct Grid3f {
+    int nx, ny, nz;
+    float dx;
+    Vec3 origin;
+    float *a;              // row-major: ((k*ny + j)*nx + i)
+} Grid3f;
+
+typedef struct Grid3i {
+    int nx, ny, nz;
+    int *a;
+} Grid3i;
+
+typedef struct Grid3Label {
+    int nx, ny, nz;
+    CellLabel *a;
+} Grid3Label;
+
+typedef struct MACGrid {
+    int nx, ny, nz;
+    float dx;
+    Vec3 origin;
+    Grid3f u;              // size (nx+1, ny, nz), x-face velocities
+    Grid3f v;              // size (nx, ny+1, nz), y-face velocities
+    Grid3f w;              // size (nx, ny, nz+1), z-face velocities
+} MACGrid;
+
+typedef struct LevelSet {
+    Grid3f phi;            // negative inside, zero at interface, positive outside
+} LevelSet;
+
+typedef struct Particle {
+    Vec3 x;
+    Vec3 v;
+    float smoke;
+    float temperature;
+    float fuel;
+    float mass;
+    int alive;
+} Particle;
+
+typedef struct ParticleSet {
+    Particle *p;
+    int count;
+    int capacity;
+} ParticleSet;
+
+typedef struct SparseRowEntry {
+    int col;
+    double value;
+} SparseRowEntry;
+
+typedef struct SparseRow {
+    SparseRowEntry *e;
+    int count;
+    int capacity;
+} SparseRow;
+
+typedef struct CSRMatrix {
+    int n;
+    int *rowStart;
+    int *col;
+    double *value;
+} CSRMatrix;
+
+float dot3(Vec3 a, Vec3 b);
+Vec3 cross3(Vec3 a, Vec3 b);
+Vec3 add3(Vec3 a, Vec3 b);
+Vec3 sub3(Vec3 a, Vec3 b);
+Vec3 mul3(Vec3 a, float s);
+float length3(Vec3 a);
+Vec3 normalize3(Vec3 a);
+float clampf(float x, float lo, float hi);
+float minf(float a, float b);
+float maxf(float a, float b);
+float absf(float x);
+float rand01(void);
+Vec3 randomUnitVector(void);
+\end{lstlisting}
+
+\begin{lstlisting}
+int index3(int i, int j, int k, int nx, int ny) {
+    return (k * ny + j) * nx + i;
+}
+
+bool insideGrid(Grid3f *g, int i, int j, int k) {
+    return 0 <= i && i < g->nx && 0 <= j && j < g->ny && 0 <= k && k < g->nz;
+}
+
+float getF(Grid3f *g, int i, int j, int k) {
+    if (!insideGrid(g, i, j, k)) return 0.0f;
+    return g->a[index3(i, j, k, g->nx, g->ny)];
+}
+
+void setF(Grid3f *g, int i, int j, int k, float value) {
+    if (insideGrid(g, i, j, k)) g->a[index3(i, j, k, g->nx, g->ny)] = value;
+}
+
+CellLabel getLabel(Grid3Label *labels, int i, int j, int k) {
+    if (i < 0 || i >= labels->nx || j < 0 || j >= labels->ny || k < 0 || k >= labels->nz) {
+        return CELL_SOLID;
+    }
+    return labels->a[index3(i, j, k, labels->nx, labels->ny)];
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part I --- Solver Skeleton and Grid Operations}
+\addcontentsline{toc}{section}{Part I --- Solver Skeleton and Grid Operations}
+
+\Needspace{6\baselineskip}
+\subsection*{1. Split Incompressible Fluid Time Step}
+\addcontentsline{toc}{subsection}{1. Split Incompressible Fluid Time Step}
+
+\begin{lstlisting}
+void stepIncompressibleFluid(
+    MACGrid *vel,
+    Grid3f *smoke,
+    Grid3f *temperature,
+    LevelSet *solidPhi,
+    Vec3 gravity,
+    float frameDt,
+    float density)
+{
+    float t = 0.0f;
+
+    while (t < frameDt) {
+        float dt = chooseFluidDt(vel, gravity, frameDt - t);
+
+        MACGrid oldVel = cloneMACGrid(vel);
+        Grid3f oldSmoke = cloneGrid(smoke);
+        Grid3f oldTemp = cloneGrid(temperature);
+
+        advectMACVelocity(vel, &oldVel, dt, solidPhi);
+        advectScalar(smoke, &oldSmoke, &oldVel, dt, solidPhi);
+        advectScalar(temperature, &oldTemp, &oldVel, dt, solidPhi);
+
+        addBodyForce(vel, gravity, dt);
+        projectVelocity(vel, solidPhi, density, dt);
+
+        t += dt;
+        freeMACGrid(&oldVel);
+        freeGrid(&oldSmoke);
+        freeGrid(&oldTemp);
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{2. Choose a Conservative Time Step}
+\addcontentsline{toc}{subsection}{2. Choose a Conservative Time Step}
+
+\begin{lstlisting}
+float chooseFluidDt(MACGrid *vel, Vec3 bodyForce, float remainingFrameDt) {
+    float maxSpeed = maxMACSpeed(vel);
+    float accel = length3(bodyForce);
+
+    // Estimate speed after acceleration. Avoid zero denominator.
+    float predictedSpeed = maxSpeed + sqrtf(maxf(0.0f, 5.0f * vel->dx * accel));
+    predictedSpeed = maxf(predictedSpeed, 1.0e-8f);
+
+    float cflDt = 5.0f * vel->dx / predictedSpeed;
+    return minf(remainingFrameDt, cflDt);
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{3. MAC Grid Velocity Sampling}
+\addcontentsline{toc}{subsection}{3. MAC Grid Velocity Sampling}
+
+\begin{lstlisting}
+Vec3 sampleMACVelocity(MACGrid *vel, Vec3 x) {
+    Vec3 ux = sub3(x, vel->origin);
+    float invDx = 1.0f / vel->dx;
+
+    // u lives at x faces: (i*dx, (j+0.5)dx, (k+0.5)dx)
+    Vec3 pu = { ux.x * invDx,
+                ux.y * invDx - 0.5f,
+                ux.z * invDx - 0.5f };
+
+    // v lives at y faces: ((i+0.5)dx, j*dx, (k+0.5)dx)
+    Vec3 pv = { ux.x * invDx - 0.5f,
+                ux.y * invDx,
+                ux.z * invDx - 0.5f };
+
+    // w lives at z faces: ((i+0.5)dx, (j+0.5)dx, k*dx)
+    Vec3 pw = { ux.x * invDx - 0.5f,
+                ux.y * invDx - 0.5f,
+                ux.z * invDx };
+
+    Vec3 out;
+    out.x = trilinearSample(&vel->u, pu);
+    out.y = trilinearSample(&vel->v, pv);
+    out.z = trilinearSample(&vel->w, pw);
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{4. Cell-Centered Velocity Reconstruction}
+\addcontentsline{toc}{subsection}{4. Cell-Centered Velocity Reconstruction}
+
+\begin{lstlisting}
+Vec3 cellCenteredVelocity(MACGrid *vel, int i, int j, int k) {
+    Vec3 out;
+    out.x = 0.5f * (getF(&vel->u, i, j, k) + getF(&vel->u, i + 1, j, k));
+    out.y = 0.5f * (getF(&vel->v, i, j, k) + getF(&vel->v, i, j + 1, k));
+    out.z = 0.5f * (getF(&vel->w, i, j, k) + getF(&vel->w, i, j, k + 1));
+    return out;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part II --- Advection Algorithms}
+\addcontentsline{toc}{section}{Part II --- Advection Algorithms}
+
+\Needspace{6\baselineskip}
+\subsection*{5. RK2 Backtrace for Semi-Lagrangian Advection}
+\addcontentsline{toc}{subsection}{5. RK2 Backtrace for Semi-Lagrangian Advection}
+
+\begin{lstlisting}
+Vec3 backtraceRK2(MACGrid *vel, Vec3 x, float dt) {
+    Vec3 v0 = sampleMACVelocity(vel, x);
+    Vec3 xMid = sub3(x, mul3(v0, 0.5f * dt));
+    Vec3 vMid = sampleMACVelocity(vel, xMid);
+    return sub3(x, mul3(vMid, dt));
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{6. RK3 Backtrace for Stronger Swirl Preservation}
+\addcontentsline{toc}{subsection}{6. RK3 Backtrace for Stronger Swirl Preservation}
+
+\begin{lstlisting}
+Vec3 backtraceRK3(MACGrid *vel, Vec3 x, float dt) {
+    Vec3 k1 = mul3(sampleMACVelocity(vel, x), -dt);
+    Vec3 x1 = add3(x, mul3(k1, 0.5f));
+
+    Vec3 k2 = mul3(sampleMACVelocity(vel, x1), -dt);
+    Vec3 x2 = add3(x, mul3(k2, 0.75f));
+
+    Vec3 k3 = mul3(sampleMACVelocity(vel, x2), -dt);
+
+    Vec3 out = x;
+    out = add3(out, mul3(k1, 2.0f / 9.0f));
+    out = add3(out, mul3(k2, 3.0f / 9.0f));
+    out = add3(out, mul3(k3, 4.0f / 9.0f));
+    return out;
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{7. Scalar Semi-Lagrangian Advection}
+\addcontentsline{toc}{subsection}{7. Scalar Semi-Lagrangian Advection}
+
+\begin{lstlisting}
+void advectScalar(Grid3f *dst, Grid3f *src, MACGrid *vel, float dt, LevelSet *solidPhi) {
+    for (int k = 0; k < dst->nz; ++k) {
+        for (int j = 0; j < dst->ny; ++j) {
+            for (int i = 0; i < dst->nx; ++i) {
+                Vec3 x = cellCenter(dst, i, j, k);
+                Vec3 xp = backtraceRK2(vel, x, dt);
+
+                if (sampleLevelSet(solidPhi, xp) < 0.0f) {
+                    xp = closestFluidBoundaryPoint(solidPhi, xp);
+                }
+
+                float q = tricubicSample(src, gridCoords(src, xp));
+                setF(dst, i, j, k, q);
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{8. MAC Velocity Advection}
+\addcontentsline{toc}{subsection}{8. MAC Velocity Advection}
+
+\begin{lstlisting}
+void advectMACVelocity(MACGrid *dst, MACGrid *src, float dt, LevelSet *solidPhi) {
+    forEachUFace(dst, i, j, k) {
+        Vec3 x = uFacePosition(dst, i, j, k);
+        Vec3 xp = backtraceRK2(src, x, dt);
+        if (sampleLevelSet(solidPhi, xp) < 0.0f) xp = closestFluidBoundaryPoint(solidPhi, xp);
+        setF(&dst->u, i, j, k, sampleMACVelocity(src, xp).x);
+    }
+
+    forEachVFace(dst, i, j, k) {
+        Vec3 x = vFacePosition(dst, i, j, k);
+        Vec3 xp = backtraceRK2(src, x, dt);
+        if (sampleLevelSet(solidPhi, xp) < 0.0f) xp = closestFluidBoundaryPoint(solidPhi, xp);
+        setF(&dst->v, i, j, k, sampleMACVelocity(src, xp).y);
+    }
+
+    forEachWFace(dst, i, j, k) {
+        Vec3 x = wFacePosition(dst, i, j, k);
+        Vec3 xp = backtraceRK2(src, x, dt);
+        if (sampleLevelSet(solidPhi, xp) < 0.0f) xp = closestFluidBoundaryPoint(solidPhi, xp);
+        setF(&dst->w, i, j, k, sampleMACVelocity(src, xp).z);
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{9. Cubic Interpolation Weights}
+\addcontentsline{toc}{subsection}{9. Cubic Interpolation Weights}
+
+\begin{lstlisting}
+void cubicWeights(float s, float w[4]) {
+    float s2 = s * s;
+    float s3 = s2 * s;
+
+    w[0] = -s / 3.0f + 0.5f * s2 - s3 / 6.0f;
+    w[1] =  1.0f - s2 + 0.5f * (s3 - s);
+    w[2] =  s + 0.5f * (s2 - s3);
+    w[3] =  (s3 - s) / 6.0f;
+}
+
+float tricubicSample(Grid3f *g, Vec3 p) {
+    int i0 = floorf(p.x) - 1;
+    int j0 = floorf(p.y) - 1;
+    int k0 = floorf(p.z) - 1;
+
+    float wx[4], wy[4], wz[4];
+    cubicWeights(p.x - floorf(p.x), wx);
+    cubicWeights(p.y - floorf(p.y), wy);
+    cubicWeights(p.z - floorf(p.z), wz);
+
+    float sum = 0.0f;
+    for (int dz = 0; dz < 4; ++dz)
+        for (int dy = 0; dy < 4; ++dy)
+            for (int dx = 0; dx < 4; ++dx)
+                sum += wx[dx] * wy[dy] * wz[dz] * getF(g, i0 + dx, j0 + dy, k0 + dz);
+    return sum;
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{10. Nonnegative Quantity Clamp After Sharp Interpolation}
+\addcontentsline{toc}{subsection}{10. Nonnegative Quantity Clamp After Sharp Interpolation}
+
+\begin{lstlisting}
+void clampNonnegative(Grid3f *q) {
+    forEachCell(q, i, j, k) {
+        float v = getF(q, i, j, k);
+        if (v < 0.0f) setF(q, i, j, k, 0.0f);
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{11. Add Body Forces}
+\addcontentsline{toc}{subsection}{11. Add Body Forces}
+
+\begin{lstlisting}
+void addBodyForce(MACGrid *vel, Vec3 force, float dt) {
+    forEachUFace(vel, i, j, k) setF(&vel->u, i, j, k, getF(&vel->u, i, j, k) + dt * force.x);
+    forEachVFace(vel, i, j, k) setF(&vel->v, i, j, k, getF(&vel->v, i, j, k) + dt * force.y);
+    forEachWFace(vel, i, j, k) setF(&vel->w, i, j, k, getF(&vel->w, i, j, k) + dt * force.z);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part III --- Level Set Geometry}
+\addcontentsline{toc}{section}{Part III --- Level Set Geometry}
+
+\Needspace{6\baselineskip}
+\subsection*{12. Analytic Signed Distance: Sphere, Plane, Box}
+\addcontentsline{toc}{subsection}{12. Analytic Signed Distance: Sphere, Plane, Box}
+
+\begin{lstlisting}
+float sdfSphere(Vec3 x, Vec3 c, float r) {
+    return length3(sub3(x, c)) - r;
+}
+
+float sdfPlane(Vec3 x, Vec3 p, Vec3 n) {
+    return dot3(sub3(x, p), normalize3(n));
+}
+
+float sdfAxisAlignedBox(Vec3 x, Vec3 lo, Vec3 hi) {
+    bool inside = (lo.x < x.x && x.x < hi.x && lo.y < x.y && x.y < hi.y && lo.z < x.z && x.z < hi.z);
+    if (inside) {
+        float dx = minf(x.x - lo.x, hi.x - x.x);
+        float dy = minf(x.y - lo.y, hi.y - x.y);
+        float dz = minf(x.z - lo.z, hi.z - x.z);
+        return -minf(dx, minf(dy, dz));
+    }
+
+    Vec3 p;
+    p.x = clampf(x.x, lo.x, hi.x);
+    p.y = clampf(x.y, lo.y, hi.y);
+    p.z = clampf(x.z, lo.z, hi.z);
+    return length3(sub3(x, p));
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{13. Closest Point from Signed Distance}
+\addcontentsline{toc}{subsection}{13. Closest Point from Signed Distance}
+
+\begin{lstlisting}
+Vec3 sdfClosestPoint(LevelSet *phi, Vec3 x) {
+    float d = sampleLevelSet(phi, x);
+    Vec3 n = normalize3(sampleLevelSetGradient(phi, x));
+    return sub3(x, mul3(n, d));
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{14. Iterative Closest Point on a Level Set}
+\addcontentsline{toc}{subsection}{14. Iterative Closest Point on a Level Set}
+
+\begin{lstlisting}
+Vec3 closestPointIterative(LevelSet *phi, Vec3 x, int maxOuter, int maxBacktrack, float eps) {
+    Vec3 p = x;
+    float ph = sampleLevelSet(phi, p);
+    Vec3 grad = sampleLevelSetGradient(phi, p);
+
+    for (int iter = 0; iter < maxOuter; ++iter) {
+        float alpha = 1.0f;
+        for (int bt = 0; bt < maxBacktrack; ++bt) {
+            Vec3 q = sub3(p, mul3(grad, alpha * ph));
+            float qPhi = sampleLevelSet(phi, q);
+
+            if (absf(qPhi) < absf(ph)) {
+                p = q;
+                ph = qPhi;
+                grad = sampleLevelSetGradient(phi, p);
+                if (absf(ph) < eps) return p;
+                break;
+            }
+            alpha *= 0.7f;
+        }
+    }
+    return p;
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{15. Distance to a Set of Points on a Grid}
+\addcontentsline{toc}{subsection}{15. Distance to a Set of Points on a Grid}
+
+\begin{lstlisting}
+void computeDistanceToPoints(Grid3f *phi, Grid3i *closestPoint, Vec3 *points, int pointCount) {
+    fillGrid(phi, INF_FLOAT);
+    fillGridInt(closestPoint, -1);
+
+    for (int e = 0; e < pointCount; ++e) {
+        Vec3 p = points[e];
+        CellBounds b = cellsAroundPoint(phi, p);
+        forCellsInBounds(b, i, j, k) {
+            float d = length3(sub3(cellCenter(phi, i, j, k), p));
+            if (d < getF(phi, i, j, k)) {
+                setF(phi, i, j, k, d);
+                setI(closestPoint, i, j, k, e);
+            }
+        }
+    }
+
+    for (int pass = 0; pass < 2; ++pass) {
+        forEachSweepOrder(order) {
+            sweepPropagatePointDistance(phi, closestPoint, points, order);
+        }
+    }
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+void sweepPropagatePointDistance(Grid3f *phi, Grid3i *closestPoint, Vec3 *points, SweepOrder order) {
+    forEachCellInOrder(phi, order, i, j, k) {
+        forEachSixNeighbor(i, j, k, ni, nj, nk) {
+            int e = getI(closestPoint, ni, nj, nk);
+            if (e < 0) continue;
+            float d = length3(sub3(cellCenter(phi, i, j, k), points[e]));
+            if (d < getF(phi, i, j, k)) {
+                setF(phi, i, j, k, d);
+                setI(closestPoint, i, j, k, e);
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{16. Point-Triangle Distance}
+\addcontentsline{toc}{subsection}{16. Point-Triangle Distance}
+
+\begin{lstlisting}
+float pointTriangleDistance(Vec3 x, Vec3 a, Vec3 b, Vec3 c) {
+    Vec3 ab = sub3(b, a);
+    Vec3 ac = sub3(c, a);
+    Vec3 ax = sub3(x, a);
+
+    float d00 = dot3(ab, ab);
+    float d01 = dot3(ab, ac);
+    float d11 = dot3(ac, ac);
+    float d20 = dot3(ax, ab);
+    float d21 = dot3(ax, ac);
+    float denom = d00 * d11 - d01 * d01;
+
+    float beta = (d11 * d20 - d01 * d21) / denom;
+    float gamma = (d00 * d21 - d01 * d20) / denom;
+    float alpha = 1.0f - beta - gamma;
+
+    if (alpha >= 0.0f && beta >= 0.0f && gamma >= 0.0f) {
+        Vec3 p = add3(add3(mul3(a, alpha), mul3(b, beta)), mul3(c, gamma));
+        return length3(sub3(x, p));
+    }
+
+    float dab = pointSegmentDistance(x, a, b);
+    float dbc = pointSegmentDistance(x, b, c);
+    float dca = pointSegmentDistance(x, c, a);
+    return minf(dab, minf(dbc, dca));
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{17. Signed Distance to a Closed Triangle Mesh}
+\addcontentsline{toc}{subsection}{17. Signed Distance to a Closed Triangle Mesh}
+
+\begin{lstlisting}
+void computeSignedDistanceToMesh(LevelSet *phi, Grid3i *closestTri, Triangle *tri, int triCount) {
+    fillGrid(&phi->phi, INF_FLOAT);
+    fillGridInt(closestTri, -1);
+    Grid3i crossings = makeIntGrid(phi->phi.nx - 1, phi->phi.ny, phi->phi.nz, 0);
+
+    for (int e = 0; e < triCount; ++e) {
+        CellBounds b = triangleGridBounds(&phi->phi, tri[e]);
+
+        forXEdgesIntersectingTriangle(b, tri[e], i, j, k) {
+            incrementI(&crossings, i, j, k);
+        }
+
+        forCellsInBounds(b, i, j, k) {
+            float d = pointTriangleDistance(cellCenter(&phi->phi, i, j, k), tri[e].a, tri[e].b, tri[e].c);
+            if (d < getF(&phi->phi, i, j, k)) {
+                setF(&phi->phi, i, j, k, d);
+                setI(closestTri, i, j, k, e);
+            }
+        }
+    }
+
+    forEachSweepOrder(order) {
+        sweepPropagateTriangleDistance(phi, closestTri, tri, order);
+    }
+
+    for (int j = 0; j < phi->phi.ny; ++j) {
+        for (int k = 0; k < phi->phi.nz; ++k) {
+            int count = 0;
+            for (int i = 0; i < phi->phi.nx; ++i) {
+                if ((count & 1) != 0) setF(&phi->phi, i, j, k, -getF(&phi->phi, i, j, k));
+                count += getI(&crossings, i, j, k);
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{18. Redistance a Level Set by Solving the Eikonal Equation}
+\addcontentsline{toc}{subsection}{18. Redistance a Level Set by Solving the Eikonal Equation}
+
+\begin{lstlisting}
+void redistanceLevelSet(LevelSet *dst, LevelSet *src) {
+    forEachCell(&src->phi, i, j, k) {
+        float f = getF(&src->phi, i, j, k);
+        float best = INF_FLOAT;
+
+        forEachSixNeighbor(i, j, k, ni, nj, nk) {
+            float fn = getF(&src->phi, ni, nj, nk);
+            if (f * fn <= 0.0f) {
+                float theta = absf(f) / (absf(f) + absf(fn));
+                best = minf(best, theta * src->phi.dx);
+            }
+        }
+
+        if (best < INF_FLOAT) setF(&dst->phi, i, j, k, signf(f) * best);
+        else setF(&dst->phi, i, j, k, signf(f) * INF_FLOAT);
+    }
+
+    for (int pass = 0; pass < 2; ++pass) {
+        forEachSweepOrder(order) sweepEikonal(dst, order);
+    }
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+float eikonalUpdate(float a, float b, float c, float dx) {
+    float v[3] = { absf(a), absf(b), absf(c) };
+    sortAscending(v, 3);
+
+    float d = v[0] + dx;
+    if (d > v[1]) {
+        float disc = maxf(0.0f, 2.0f * dx * dx - (v[1] - v[0]) * (v[1] - v[0]));
+        d = 0.5f * (v[0] + v[1] + sqrtf(disc));
+    }
+    if (d > v[2]) {
+        float s = v[0] + v[1] + v[2];
+        float q = v[0] * v[0] + v[1] * v[1] + v[2] * v[2] - dx * dx;
+        d = (s + sqrtf(maxf(0.0f, s * s - 3.0f * q))) / 3.0f;
+    }
+    return d;
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{19. Level-Set Boolean Operations and Offsets}
+\addcontentsline{toc}{subsection}{19. Level-Set Boolean Operations and Offsets}
+
+\begin{lstlisting}
+float levelSetUnion(float phiA, float phiB)        { return minf(phiA, phiB); }
+float levelSetIntersection(float phiA, float phiB) { return maxf(phiA, phiB); }
+float levelSetComplement(float phi)                { return -phi; }
+float levelSetDilate(float phi, float amount)      { return phi - amount; }
+float levelSetErode(float phi, float amount)       { return phi + amount; }
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{20. Marching Tetrahedra Contouring}
+\addcontentsline{toc}{subsection}{20. Marching Tetrahedra Contouring}
+
+\begin{lstlisting}
+Mesh contourLevelSetMarchingTetra(LevelSet *phi) {
+    Mesh mesh = emptyMesh();
+
+    for (int k = 0; k < phi->phi.nz - 1; ++k)
+        for (int j = 0; j < phi->phi.ny - 1; ++j)
+            for (int i = 0; i < phi->phi.nx - 1; ++i) {
+                TetraList tets = tetrahedraForGridCellParity(i, j, k);
+                for (int t = 0; t < tets.count; ++t) {
+                    Vec3 p[4];
+                    float f[4];
+                    loadTetraCorners(phi, i, j, k, tets.t[t], p, f);
+                    appendTetraIsosurfaceTriangles(&mesh, p, f);
+                }
+            }
+
+    return mesh;
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+void appendTetraIsosurfaceTriangles(Mesh *mesh, Vec3 p[4], float f[4]) {
+    Vec3 cut[6];
+    int cutCount = 0;
+
+    forEachTetraEdge(a, b) {
+        if (f[a] * f[b] < 0.0f) {
+            float theta = f[a] / (f[a] - f[b]);
+            cut[cutCount++] = add3(mul3(p[a], 1.0f - theta), mul3(p[b], theta));
+        }
+    }
+
+    if (cutCount == 3) appendTriangle(mesh, cut[0], cut[1], cut[2]);
+    if (cutCount == 4) {
+        appendTriangle(mesh, cut[0], cut[1], cut[2]);
+        appendTriangle(mesh, cut[0], cut[2], cut[3]);
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{21. Smooth Extracted Mesh While Projecting Back to Surface}
+\addcontentsline{toc}{subsection}{21. Smooth Extracted Mesh While Projecting Back to Surface}
+
+\begin{lstlisting}
+void smoothAndProjectMesh(Mesh *mesh, LevelSet *phi, int iterations, float alpha) {
+    for (int iter = 0; iter < iterations; ++iter) {
+        Vec3 *newPos = copyPositions(mesh);
+        for (int v = 0; v < mesh->vertexCount; ++v) {
+            Vec3 avg = averageNeighborVertices(mesh, v);
+            newPos[v] = add3(mul3(mesh->x[v], 1.0f - alpha), mul3(avg, alpha));
+            newPos[v] = closestPointIterative(phi, newPos[v], 8, 8, 1.0e-4f * phi->phi.dx);
+        }
+        replacePositions(mesh, newPos);
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{22. Breadth-First Extrapolation of Grid Data}
+\addcontentsline{toc}{subsection}{22. Breadth-First Extrapolation of Grid Data}
+
+\begin{lstlisting}
+void extrapolateGridBFS(Grid3f *value, Grid3i *knownMask) {
+    Queue q = emptyQueue();
+    Grid3i distance = makeIntGrid(value->nx, value->ny, value->nz, INT_MAX);
+
+    forEachCell(value, i, j, k) {
+        if (getI(knownMask, i, j, k)) setI(&distance, i, j, k, 0);
+    }
+
+    forEachCell(value, i, j, k) {
+        if (getI(&distance, i, j, k) == 0) continue;
+        if (hasNeighborWithDistance(&distance, i, j, k, 0)) {
+            setI(&distance, i, j, k, 1);
+            queuePush(&q, cellIndex(i, j, k));
+        }
+    }
+
+    while (!queueEmpty(&q)) {
+        Cell c = queuePop(&q);
+        float sum = 0.0f;
+        int count = 0;
+
+        forEachSixNeighbor(c.i, c.j, c.k, ni, nj, nk) {
+            if (getI(&distance, ni, nj, nk) < getI(&distance, c.i, c.j, c.k)) {
+                sum += getF(value, ni, nj, nk);
+                count++;
+            }
+        }
+        if (count > 0) setF(value, c.i, c.j, c.k, sum / (float)count);
+
+        forEachSixNeighbor(c.i, c.j, c.k, ni, nj, nk) {
+            if (getI(&distance, ni, nj, nk) == INT_MAX) {
+                setI(&distance, ni, nj, nk, getI(&distance, c.i, c.j, c.k) + 1);
+                queuePush(&q, cellIndex(ni, nj, nk));
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part IV --- Pressure Projection and Linear Solvers}
+\addcontentsline{toc}{section}{Part IV --- Pressure Projection and Linear Solvers}
+
+\Needspace{6\baselineskip}
+\subsection*{23. Label Cells from Fluid and Solid Level Sets}
+\addcontentsline{toc}{subsection}{23. Label Cells from Fluid and Solid Level Sets}
+
+\begin{lstlisting}
+void classifyCells(Grid3Label *label, LevelSet *fluidPhi, LevelSet *solidPhi) {
+    forEachCellLabel(label, i, j, k) {
+        Vec3 x = cellCenterFromLabel(label, i, j, k);
+        if (sampleLevelSet(solidPhi, x) < 0.0f) {
+            setLabel(label, i, j, k, CELL_SOLID);
+        } else if (sampleLevelSet(fluidPhi, x) < 0.0f) {
+            setLabel(label, i, j, k, CELL_FLUID);
+        } else {
+            setLabel(label, i, j, k, CELL_EMPTY);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{24. Negative Divergence Right-Hand Side}
+\addcontentsline{toc}{subsection}{24. Negative Divergence Right-Hand Side}
+
+\begin{lstlisting}
+void buildNegativeDivergence(Grid3f *rhs, MACGrid *vel, Grid3Label *label) {
+    float invDx = 1.0f / vel->dx;
+
+    forEachCell(rhs, i, j, k) {
+        if (getLabel(label, i, j, k) != CELL_FLUID) {
+            setF(rhs, i, j, k, 0.0f);
+            continue;
+        }
+
+        float div = (getF(&vel->u, i + 1, j, k) - getF(&vel->u, i, j, k)
+                   + getF(&vel->v, i, j + 1, k) - getF(&vel->v, i, j, k)
+                   + getF(&vel->w, i, j, k + 1) - getF(&vel->w, i, j, k)) * invDx;
+        setF(rhs, i, j, k, -div);
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{25. Modify RHS for Moving Solid Boundaries}
+\addcontentsline{toc}{subsection}{25. Modify RHS for Moving Solid Boundaries}
+
+\begin{lstlisting}
+void addSolidBoundaryTerms(Grid3f *rhs, MACGrid *vel, MACGrid *solidVel, Grid3Label *label) {
+    float invDx = 1.0f / vel->dx;
+
+    forEachCell(rhs, i, j, k) {
+        if (getLabel(label, i, j, k) != CELL_FLUID) continue;
+
+        if (getLabel(label, i - 1, j, k) == CELL_SOLID)
+            addF(rhs, i, j, k, -invDx * (getF(&vel->u, i, j, k) - getF(&solidVel->u, i, j, k)));
+        if (getLabel(label, i + 1, j, k) == CELL_SOLID)
+            addF(rhs, i, j, k,  invDx * (getF(&vel->u, i + 1, j, k) - getF(&solidVel->u, i + 1, j, k)));
+
+        if (getLabel(label, i, j - 1, k) == CELL_SOLID)
+            addF(rhs, i, j, k, -invDx * (getF(&vel->v, i, j, k) - getF(&solidVel->v, i, j, k)));
+        if (getLabel(label, i, j + 1, k) == CELL_SOLID)
+            addF(rhs, i, j, k,  invDx * (getF(&vel->v, i, j + 1, k) - getF(&solidVel->v, i, j + 1, k)));
+
+        if (getLabel(label, i, j, k - 1) == CELL_SOLID)
+            addF(rhs, i, j, k, -invDx * (getF(&vel->w, i, j, k) - getF(&solidVel->w, i, j, k)));
+        if (getLabel(label, i, j, k + 1) == CELL_SOLID)
+            addF(rhs, i, j, k,  invDx * (getF(&vel->w, i, j, k + 1) - getF(&solidVel->w, i, j, k + 1)));
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{26. Assemble Voxelized Pressure Matrix}
+\addcontentsline{toc}{subsection}{26. Assemble Voxelized Pressure Matrix}
+
+\begin{lstlisting}
+void buildPressureMatrix(Grid3f *diag, Grid3f *plusX, Grid3f *plusY, Grid3f *plusZ,
+                         Grid3Label *label, float dt, float density, float dx) {
+    float scale = dt / (density * dx * dx);
+    clearGrid(diag); clearGrid(plusX); clearGrid(plusY); clearGrid(plusZ);
+
+    forEachCell(diag, i, j, k) {
+        if (getLabel(label, i, j, k) != CELL_FLUID) continue;
+
+        forEachAxisNeighbor(axis, ni, nj, nk) {
+            CellLabel n = getLabel(label, ni, nj, nk);
+            if (n == CELL_FLUID) {
+                addF(diag, i, j, k, scale);
+                if (axis == POS_X) setF(plusX, i, j, k, -scale);
+                if (axis == POS_Y) setF(plusY, i, j, k, -scale);
+                if (axis == POS_Z) setF(plusZ, i, j, k, -scale);
+            } else if (n == CELL_EMPTY) {
+                addF(diag, i, j, k, scale);     // Dirichlet p=0 neighbor
+            } else {
+                // Solid Neumann condition: no diagonal increment from the solid side.
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{27. Apply the Structured Pressure Matrix}
+\addcontentsline{toc}{subsection}{27. Apply the Structured Pressure Matrix}
+
+\begin{lstlisting}
+void applyPressureA(Grid3f *out, Grid3f *x, Grid3f *diag, Grid3f *plusX, Grid3f *plusY, Grid3f *plusZ) {
+    clearGrid(out);
+
+    forEachCell(x, i, j, k) {
+        float v = getF(diag, i, j, k) * getF(x, i, j, k);
+
+        v += getF(plusX, i, j, k) * getF(x, i + 1, j, k);
+        v += getF(plusY, i, j, k) * getF(x, i, j + 1, k);
+        v += getF(plusZ, i, j, k) * getF(x, i, j, k + 1);
+
+        v += getF(plusX, i - 1, j, k) * getF(x, i - 1, j, k);
+        v += getF(plusY, i, j - 1, k) * getF(x, i, j - 1, k);
+        v += getF(plusZ, i, j, k - 1) * getF(x, i, j, k - 1);
+
+        setF(out, i, j, k, v);
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{28. Preconditioned Conjugate Gradient}
+\addcontentsline{toc}{subsection}{28. Preconditioned Conjugate Gradient}
+
+\begin{lstlisting}
+int solvePCG(Vector *p, Vector *b, LinearOperator A, Preconditioner M, double tol, int maxIters) {
+    Vector r = cloneVector(b);              // p starts at zero
+    Vector z = applyPreconditioner(M, &r);
+    Vector s = cloneVector(&z);
+    double sigma = dotVector(&z, &r);
+
+    if (maxAbsVector(&r) <= tol) return 0;
+
+    for (int iter = 1; iter <= maxIters; ++iter) {
+        Vector As = applyA(A, &s);
+        double alpha = sigma / dotVector(&As, &s);
+
+        axpy(p,  alpha, &s);                // p += alpha*s
+        axpy(&r, -alpha, &As);              // r -= alpha*A*s
+
+        if (maxAbsVector(&r) <= tol) return iter;
+
+        destroyVector(&z);
+        z = applyPreconditioner(M, &r);
+        double sigmaNew = dotVector(&z, &r);
+        double beta = sigmaNew / sigma;
+
+        scaleVector(&s, beta);
+        axpy(&s, 1.0, &z);                  // s = z + beta*s
+        sigma = sigmaNew;
+        destroyVector(&As);
+    }
+    return -1;
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{29. Modified Incomplete Cholesky MIC(0) Factor Setup}
+\addcontentsline{toc}{subsection}{29. Modified Incomplete Cholesky MIC(0) Factor Setup}
+
+\begin{lstlisting}
+void buildMIC0Preconditioner(Grid3f *precon, Grid3f *diag, Grid3f *plusX, Grid3f *plusY, Grid3f *plusZ,
+                             Grid3Label *label) {
+    const double tau = 0.97;
+    const double sigma = 0.25;
+
+    forEachCell(precon, i, j, k) {
+        if (getLabel(label, i, j, k) != CELL_FLUID) {
+            setF(precon, i, j, k, 0.0f);
+            continue;
+        }
+
+        double e = getF(diag, i, j, k);
+
+        double axm = getF(plusX, i - 1, j, k);
+        double aym = getF(plusY, i, j - 1, k);
+        double azm = getF(plusZ, i, j, k - 1);
+        double pxm = getF(precon, i - 1, j, k);
+        double pym = getF(precon, i, j - 1, k);
+        double pzm = getF(precon, i, j, k - 1);
+
+        e -= axm * axm * pxm * pxm;
+        e -= aym * aym * pym * pym;
+        e -= azm * azm * pzm * pzm;
+
+        e -= tau * axm * (getF(plusY, i - 1, j, k) + getF(plusZ, i - 1, j, k)) * pxm * pxm;
+        e -= tau * aym * (getF(plusX, i, j - 1, k) + getF(plusZ, i, j - 1, k)) * pym * pym;
+        e -= tau * azm * (getF(plusX, i, j, k - 1) + getF(plusY, i, j, k - 1)) * pzm * pzm;
+
+        if (e < sigma * getF(diag, i, j, k)) e = getF(diag, i, j, k);
+        setF(precon, i, j, k, (float)(1.0 / sqrt(e)));
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{30. Apply MIC(0) Preconditioner}
+\addcontentsline{toc}{subsection}{30. Apply MIC(0) Preconditioner}
+
+\begin{lstlisting}
+void applyMIC0(Grid3f *z, Grid3f *r, Grid3f *precon, Grid3f *plusX, Grid3f *plusY, Grid3f *plusZ,
+               Grid3Label *label) {
+    Grid3f q = makeGridLike(r);
+
+    forEachCellForward(r, i, j, k) {
+        if (getLabel(label, i, j, k) != CELL_FLUID) continue;
+
+        double t = getF(r, i, j, k);
+        t -= getF(plusX, i - 1, j, k) * getF(precon, i - 1, j, k) * getF(&q, i - 1, j, k);
+        t -= getF(plusY, i, j - 1, k) * getF(precon, i, j - 1, k) * getF(&q, i, j - 1, k);
+        t -= getF(plusZ, i, j, k - 1) * getF(precon, i, j, k - 1) * getF(&q, i, j, k - 1);
+        setF(&q, i, j, k, (float)(t * getF(precon, i, j, k)));
+    }
+
+    forEachCellBackward(r, i, j, k) {
+        if (getLabel(label, i, j, k) != CELL_FLUID) continue;
+
+        double t = getF(&q, i, j, k);
+        t -= getF(plusX, i, j, k) * getF(precon, i, j, k) * getF(z, i + 1, j, k);
+        t -= getF(plusY, i, j, k) * getF(precon, i, j, k) * getF(z, i, j + 1, k);
+        t -= getF(plusZ, i, j, k) * getF(precon, i, j, k) * getF(z, i, j, k + 1);
+        setF(z, i, j, k, (float)(t * getF(precon, i, j, k)));
+    }
+
+    freeGrid(&q);
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{31. Enforce Compatibility for Closed Fluid Regions}
+\addcontentsline{toc}{subsection}{31. Enforce Compatibility for Closed Fluid Regions}
+
+\begin{lstlisting}
+void enforceCompatibility(Grid3f *rhs, Grid3Label *label) {
+    int *component = floodFillFluidComponents(label);
+    int compCount = maxComponent(component) + 1;
+
+    double *sum = calloc(compCount, sizeof(double));
+    int *count = calloc(compCount, sizeof(int));
+
+    forEachCell(rhs, i, j, k) {
+        int c = component[index3(i, j, k, rhs->nx, rhs->ny)];
+        if (c >= 0) {
+            sum[c] += getF(rhs, i, j, k);
+            count[c]++;
+        }
+    }
+
+    forEachCell(rhs, i, j, k) {
+        int c = component[index3(i, j, k, rhs->nx, rhs->ny)];
+        if (c >= 0 && count[c] > 0) {
+            addF(rhs, i, j, k, (float)(-sum[c] / count[c]));
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{32. Apply Pressure Gradient to Velocity}
+\addcontentsline{toc}{subsection}{32. Apply Pressure Gradient to Velocity}
+
+\begin{lstlisting}
+void applyPressure(MACGrid *vel, Grid3f *pressure, Grid3Label *label, MACGrid *solidVel,
+                   float dt, float density) {
+    float scale = dt / (density * vel->dx);
+
+    forEachUFace(vel, i, j, k) {
+        CellLabel a = getLabel(label, i - 1, j, k);
+        CellLabel b = getLabel(label, i, j, k);
+        if (a == CELL_SOLID || b == CELL_SOLID) setF(&vel->u, i, j, k, getF(&solidVel->u, i, j, k));
+        else if (a == CELL_FLUID || b == CELL_FLUID) {
+            float pR = (b == CELL_EMPTY) ? 0.0f : getF(pressure, i, j, k);
+            float pL = (a == CELL_EMPTY) ? 0.0f : getF(pressure, i - 1, j, k);
+            addF(&vel->u, i, j, k, -scale * (pR - pL));
+        }
+    }
+
+    forEachVFace(vel, i, j, k) { /* same idea with y-neighbor pressures */ }
+    forEachWFace(vel, i, j, k) { /* same idea with z-neighbor pressures */ }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{33. Voxelized Projection Driver}
+\addcontentsline{toc}{subsection}{33. Voxelized Projection Driver}
+
+\begin{lstlisting}
+void projectVelocity(MACGrid *vel, LevelSet *solidPhi, float density, float dt) {
+    Grid3Label label = classifyDomainForProjection(vel, solidPhi);
+    MACGrid solidVel = buildSolidVelocityField(vel, solidPhi);
+    Grid3f rhs = makeCellGrid(vel);
+    Grid3f pressure = makeCellGrid(vel);
+    Grid3f diag = makeCellGrid(vel), plusX = makeCellGrid(vel), plusY = makeCellGrid(vel), plusZ = makeCellGrid(vel);
+    Grid3f precon = makeCellGrid(vel);
+
+    buildNegativeDivergence(&rhs, vel, &label);
+    addSolidBoundaryTerms(&rhs, vel, &solidVel, &label);
+    enforceCompatibility(&rhs, &label);
+    buildPressureMatrix(&diag, &plusX, &plusY, &plusZ, &label, dt, density, vel->dx);
+    buildMIC0Preconditioner(&precon, &diag, &plusX, &plusY, &plusZ, &label);
+    solveStructuredPCG(&pressure, &rhs, &diag, &plusX, &plusY, &plusZ, &precon, &label);
+    applyPressure(vel, &pressure, &label, &solidVel, dt, density);
+
+    extrapolateMACVelocityIntoInvalidRegions(vel, &label);
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{34. Ghost-Fluid Free-Surface Pressure Update}
+\addcontentsline{toc}{subsection}{34. Ghost-Fluid Free-Surface Pressure Update}
+
+\begin{lstlisting}
+float ghostFluidPressureScale(float phiFluid, float phiAir, float dx) {
+    float theta = phiFluid / (phiFluid - phiAir);
+    theta = clampf(theta, 0.01f, 1.0f);
+    return 1.0f / (theta * dx);
+}
+
+void applyGhostFluidFreeSurfaceU(MACGrid *vel, Grid3f *p, LevelSet *liquidPhi,
+                                 int i, int j, int k, float dt, float rho) {
+    float phiL = getF(&liquidPhi->phi, i - 1, j, k);
+    float phiR = getF(&liquidPhi->phi, i, j, k);
+
+    if (phiL <= 0.0f && phiR > 0.0f) {
+        float s = ghostFluidPressureScale(phiL, phiR, vel->dx);
+        addF(&vel->u, i, j, k, -(dt / rho) * (0.0f - getF(p, i - 1, j, k)) * s);
+    } else if (phiR <= 0.0f && phiL > 0.0f) {
+        float s = ghostFluidPressureScale(phiR, phiL, vel->dx);
+        addF(&vel->u, i, j, k, -(dt / rho) * (getF(p, i, j, k) - 0.0f) * s);
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{35. Finite-Volume Solid Boundary Fractions}
+\addcontentsline{toc}{subsection}{35. Finite-Volume Solid Boundary Fractions}
+
+\begin{lstlisting}
+float faceOpenFraction(LevelSet *solidPhi, Face face) {
+    // Sample solid signed distance at face corners. Return approximate fluid-open area fraction.
+    float phi[4];
+    loadFaceCornerPhi(solidPhi, face, phi);
+    return polygonFractionWherePhiPositive(phi); // 0 solid, 1 open fluid
+}
+
+void buildFractionalPressureMatrix(/* arrays */, LevelSet *solidPhi, LevelSet *fluidPhi, float dt, float rho, float dx) {
+    forEachFluidCell(i, j, k) {
+        forEachFaceOfCell(face) {
+            float open = faceOpenFraction(solidPhi, face);
+            float coeff = open * dt / (rho * dx * dx);
+            addFractionalNeighborCoefficient(/* diag/offdiag */, i, j, k, face, coeff, fluidPhi);
+        }
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part V --- Smoke}
+\addcontentsline{toc}{section}{Part V --- Smoke}
+
+\Needspace{6\baselineskip}
+\subsection*{36. Smoke Solver Step}
+\addcontentsline{toc}{subsection}{36. Smoke Solver Step}
+
+\begin{lstlisting}
+void stepSmoke(Grid3f *density, Grid3f *temperature, MACGrid *vel, LevelSet *solidPhi,
+               float dt, Vec3 gravity, float ambientTemp) {
+    MACGrid oldVel = cloneMACGrid(vel);
+    Grid3f oldDensity = cloneGrid(density);
+    Grid3f oldTemp = cloneGrid(temperature);
+
+    advectScalar(density, &oldDensity, &oldVel, dt, solidPhi);
+    advectScalar(temperature, &oldTemp, &oldVel, dt, solidPhi);
+    advectMACVelocity(vel, &oldVel, dt, solidPhi);
+
+    addBuoyancyForce(vel, density, temperature, ambientTemp, dt);
+    addBodyForce(vel, gravity, dt);
+
+    Grid3f divControl = buildSmokeDivergenceControl(density, temperature, dt);
+    projectVelocityWithDivergenceControl(vel, solidPhi, &divControl, AIR_DENSITY, dt);
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{37. Buoyancy Force from Temperature and Smoke Concentration}
+\addcontentsline{toc}{subsection}{37. Buoyancy Force from Temperature and Smoke Concentration}
+
+\begin{lstlisting}
+void addBuoyancyForce(MACGrid *vel, Grid3f *smoke, Grid3f *temp, float ambientTemp, float dt) {
+    forEachVFace(vel, i, j, k) {
+        float s = sampleCellCenteredAtVFace(smoke, i, j, k);
+        float T = sampleCellCenteredAtVFace(temp, i, j, k);
+        float buoy = BUOYANCY_ALPHA * s - BUOYANCY_BETA * (T - ambientTemp);
+        // sign convention: positive y is upward; adjust constants to the art direction.
+        addF(&vel->v, i, j, k, dt * buoy);
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{38. Divergence Control for Expanding Smoke}
+\addcontentsline{toc}{subsection}{38. Divergence Control for Expanding Smoke}
+
+\begin{lstlisting}
+Grid3f buildSmokeDivergenceControl(Grid3f *smoke, Grid3f *temperature, float dt) {
+    Grid3f d = makeGridLike(smoke);
+    forEachCell(smoke, i, j, k) {
+        float thermalExpansion = TEMP_EXPANSION_GAIN * maxf(0.0f, getF(temperature, i, j, k) - AMBIENT_TEMP);
+        float sourceExpansion = SMOKE_SOURCE_EXPANSION * sourceMask(i, j, k);
+        setF(&d, i, j, k, thermalExpansion + sourceExpansion);
+    }
+    return d;
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{39. Projection with Prescribed Divergence}
+\addcontentsline{toc}{subsection}{39. Projection with Prescribed Divergence}
+
+\begin{lstlisting}
+void projectVelocityWithDivergenceControl(MACGrid *vel, LevelSet *solidPhi, Grid3f *desiredDiv,
+                                          float density, float dt) {
+    Grid3f rhs = makeCellGrid(vel);
+    buildNegativeDivergence(&rhs, vel, classifyDomainForProjection(vel, solidPhi));
+
+    forEachCell(&rhs, i, j, k) {
+        addF(&rhs, i, j, k, getF(desiredDiv, i, j, k));
+    }
+
+    solveAndApplyPressureFromRHS(vel, solidPhi, &rhs, density, dt);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part VI --- Particle Methods, PIC, and FLIP}
+\addcontentsline{toc}{section}{Part VI --- Particle Methods, PIC, and FLIP}
+
+\Needspace{6\baselineskip}
+\subsection*{40. Particle Advection Through a Grid Velocity Field}
+\addcontentsline{toc}{subsection}{40. Particle Advection Through a Grid Velocity Field}
+
+\begin{lstlisting}
+void advectParticles(ParticleSet *particles, MACGrid *vel, float dt) {
+    for (int p = 0; p < particles->count; ++p) {
+        Vec3 x0 = particles->p[p].x;
+        Vec3 k1 = sampleMACVelocity(vel, x0);
+        Vec3 xMid = add3(x0, mul3(k1, 0.5f * dt));
+        Vec3 k2 = sampleMACVelocity(vel, xMid);
+        particles->p[p].x = add3(x0, mul3(k2, dt));
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{41. Particle-to-Grid Weighted Transfer}
+\addcontentsline{toc}{subsection}{41. Particle-to-Grid Weighted Transfer}
+
+\begin{lstlisting}
+void transferParticlesToGrid(MACGrid *gridVel, Grid3f *weightU, Grid3f *weightV, Grid3f *weightW,
+                             ParticleSet *particles) {
+    clearMACGrid(gridVel);
+    clearGrid(weightU); clearGrid(weightV); clearGrid(weightW);
+
+    for (int p = 0; p < particles->count; ++p) {
+        Particle *pt = &particles->p[p];
+
+        splatToFaceGrid(&gridVel->u, weightU, pt->x, pt->v.x);
+        splatToFaceGrid(&gridVel->v, weightV, pt->x, pt->v.y);
+        splatToFaceGrid(&gridVel->w, weightW, pt->x, pt->v.z);
+    }
+
+    normalizeByWeights(&gridVel->u, weightU);
+    normalizeByWeights(&gridVel->v, weightV);
+    normalizeByWeights(&gridVel->w, weightW);
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+void splatToFaceGrid(Grid3f *faceValues, Grid3f *weights, Vec3 x, float value) {
+    Stencil s = interpolationStencil(faceValues, x);
+    for (int n = 0; n < s.count; ++n) {
+        addF(faceValues, s.i[n], s.j[n], s.k[n], s.w[n] * value);
+        addF(weights,    s.i[n], s.j[n], s.k[n], s.w[n]);
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{42. FLIP / PIC Particle Velocity Update}
+\addcontentsline{toc}{subsection}{42. FLIP / PIC Particle Velocity Update}
+
+\begin{lstlisting}
+void updateParticleVelocitiesPICFLIP(ParticleSet *particles, MACGrid *oldGrid, MACGrid *newGrid, float flipRatio) {
+    for (int p = 0; p < particles->count; ++p) {
+        Vec3 x = particles->p[p].x;
+        Vec3 pic = sampleMACVelocity(newGrid, x);
+        Vec3 delta = sub3(sampleMACVelocity(newGrid, x), sampleMACVelocity(oldGrid, x));
+        Vec3 flip = add3(particles->p[p].v, delta);
+        particles->p[p].v = add3(mul3(flip, flipRatio), mul3(pic, 1.0f - flipRatio));
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{43. PIC/FLIP Fluid Step}
+\addcontentsline{toc}{subsection}{43. PIC/FLIP Fluid Step}
+
+\begin{lstlisting}
+void stepPICFLIP(ParticleSet *particles, MACGrid *vel, LevelSet *solidPhi, float dt, float flipRatio) {
+    Grid3f wu = makeGridLike(&vel->u), wv = makeGridLike(&vel->v), ww = makeGridLike(&vel->w);
+
+    transferParticlesToGrid(vel, &wu, &wv, &ww, particles);
+    extrapolateMACVelocityFromWeights(vel, &wu, &wv, &ww);
+
+    MACGrid oldGrid = cloneMACGrid(vel);
+    addBodyForce(vel, (Vec3){0.0f, -9.81f, 0.0f}, dt);
+    projectVelocity(vel, solidPhi, WATER_DENSITY, dt);
+
+    updateParticleVelocitiesPICFLIP(particles, &oldGrid, vel, flipRatio);
+    advectParticles(particles, vel, dt);
+    collideParticlesWithSolids(particles, solidPhi);
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{44. Particle Seeding and Reseeding}
+\addcontentsline{toc}{subsection}{44. Particle Seeding and Reseeding}
+
+\begin{lstlisting}
+void reseedParticles(ParticleSet *particles, LevelSet *fluidPhi, int minPerCell, int maxPerCell) {
+    Grid3i counts = countParticlesPerCell(particles, &fluidPhi->phi);
+
+    forEachCell(&fluidPhi->phi, i, j, k) {
+        if (getF(&fluidPhi->phi, i, j, k) >= 0.0f) continue;
+
+        int n = getI(&counts, i, j, k);
+        while (n < minPerCell) {
+            Vec3 x = randomPointInCell(&fluidPhi->phi, i, j, k);
+            if (sampleLevelSet(fluidPhi, x) < 0.0f) {
+                Particle q = makeParticleAt(x);
+                q.v = interpolateCurrentVelocityAt(x);
+                addParticle(particles, q);
+                n++;
+            }
+        }
+        if (n > maxPerCell) deleteRandomParticlesInCell(particles, i, j, k, n - maxPerCell);
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{45. Brownian Diffusion on Particles}
+\addcontentsline{toc}{subsection}{45. Brownian Diffusion on Particles}
+
+\begin{lstlisting}
+void addParticleDiffusion(ParticleSet *particles, float diffusivity, float dt) {
+    float radius = sqrtf(2.0f * diffusivity * dt);
+    for (int p = 0; p < particles->count; ++p) {
+        Vec3 r = mul3(randomUnitVector(), radius * rand01());
+        particles->p[p].x = add3(particles->p[p].x, r);
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part VII --- Water and Free Surfaces}
+\addcontentsline{toc}{section}{Part VII --- Water and Free Surfaces}
+
+\Needspace{6\baselineskip}
+\subsection*{46. Water Step with Marker Particles and FLIP}
+\addcontentsline{toc}{subsection}{46. Water Step with Marker Particles and FLIP}
+
+\begin{lstlisting}
+void stepWater(ParticleSet *markers, MACGrid *vel, LevelSet *liquidPhi, LevelSet *solidPhi,
+               float dt, float flipRatio) {
+    rebuildLiquidLevelSetFromMarkers(liquidPhi, markers);
+    Grid3Label label = classifyLiquidDomain(liquidPhi, solidPhi);
+
+    Grid3f wu, wv, ww;
+    transferParticlesToGrid(vel, &wu, &wv, &ww, markers);
+    extrapolateMACVelocityFromWeights(vel, &wu, &wv, &ww);
+
+    MACGrid oldGrid = cloneMACGrid(vel);
+    addBodyForce(vel, (Vec3){0.0f, -9.81f, 0.0f}, dt);
+    projectWaterGhostFluid(vel, liquidPhi, solidPhi, WATER_DENSITY, dt);
+
+    updateParticleVelocitiesPICFLIP(markers, &oldGrid, vel, flipRatio);
+    advectParticles(markers, vel, dt);
+    collideParticlesWithSolids(markers, solidPhi);
+    reseedParticles(markers, liquidPhi, 4, 12);
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{47. Build Liquid Level Set from Marker Particles}
+\addcontentsline{toc}{subsection}{47. Build Liquid Level Set from Marker Particles}
+
+\begin{lstlisting}
+void rebuildLiquidLevelSetFromMarkers(LevelSet *phi, ParticleSet *markers) {
+    fillGrid(&phi->phi, INF_FLOAT);
+
+    for (int p = 0; p < markers->count; ++p) {
+        Vec3 x = markers->p[p].x;
+        CellBounds b = cellsWithinRadius(&phi->phi, x, PARTICLE_RADIUS + 2.0f * phi->phi.dx);
+        forCellsInBounds(b, i, j, k) {
+            float d = length3(sub3(cellCenter(&phi->phi, i, j, k), x)) - PARTICLE_RADIUS;
+            if (d < getF(&phi->phi, i, j, k)) setF(&phi->phi, i, j, k, d);
+        }
+    }
+
+    redistanceLevelSet(phi, phi);
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{48. Volume Control by Surface Normal Displacement}
+\addcontentsline{toc}{subsection}{48. Volume Control by Surface Normal Displacement}
+
+\begin{lstlisting}
+void correctLiquidVolume(LevelSet *liquidPhi, float targetVolume) {
+    float current = estimateNegativeVolume(liquidPhi);
+    float area = estimateSurfaceArea(liquidPhi);
+    if (area <= 1.0e-8f) return;
+
+    float normalOffset = (current - targetVolume) / area;
+    forEachCell(&liquidPhi->phi, i, j, k) {
+        addF(&liquidPhi->phi, i, j, k, normalOffset);
+    }
+    redistanceLevelSet(liquidPhi, liquidPhi);
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{49. Surface Tension as a Pressure Boundary Offset}
+\addcontentsline{toc}{subsection}{49. Surface Tension as a Pressure Boundary Offset}
+
+\begin{lstlisting}
+void applySurfaceTensionBoundary(Grid3f *pressureBoundary, LevelSet *liquidPhi, float gamma) {
+    forEachCell(&liquidPhi->phi, i, j, k) {
+        if (nearInterface(liquidPhi, i, j, k)) {
+            float curvature = laplacianLevelSet(liquidPhi, i, j, k);
+            setF(pressureBoundary, i, j, k, gamma * curvature);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{50. Wall Separation Inequality Hack}
+\addcontentsline{toc}{subsection}{50. Wall Separation Inequality Hack}
+
+\begin{lstlisting}
+void enforceNoPenetrationAllowSeparation(MACGrid *vel, LevelSet *solidPhi, MACGrid *solidVel) {
+    forEachBoundaryFaceNearSolid(vel, solidPhi, face) {
+        Vec3 n = solidNormalAtFace(solidPhi, face);
+        float uN = faceVelocity(vel, face) - faceVelocity(solidVel, face);
+        if (uN < 0.0f) setFaceVelocity(vel, face, faceVelocity(solidVel, face));
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part VIII --- Fire and Combustion}
+\addcontentsline{toc}{section}{Part VIII --- Fire and Combustion}
+
+\Needspace{6\baselineskip}
+\subsection*{51. Thin-Flame Level-Set Combustion}
+\addcontentsline{toc}{subsection}{51. Thin-Flame Level-Set Combustion}
+
+\begin{lstlisting}
+void stepThinFlame(LevelSet *fuelPhi, Grid3f *temperature, Grid3f *smoke, MACGrid *vel,
+                   float flameSpeed, float heatRelease, float sootYield, float dt) {
+    LevelSet oldFuel = cloneLevelSet(fuelPhi);
+
+    // Move premixed flame front by advection plus normal propagation.
+    advectLevelSet(fuelPhi, &oldFuel, vel, dt);
+    forEachCell(&fuelPhi->phi, i, j, k) {
+        Vec3 n = normalize3(sampleLevelSetGradient(fuelPhi, cellCenter(&fuelPhi->phi, i, j, k)));
+        float phi = getF(&fuelPhi->phi, i, j, k);
+        setF(&fuelPhi->phi, i, j, k, phi - flameSpeed * dt);
+    }
+    redistanceLevelSet(fuelPhi, fuelPhi);
+
+    // Burn cells crossed by the front.
+    forEachCell(&fuelPhi->phi, i, j, k) {
+        float before = getF(&oldFuel.phi, i, j, k);
+        float after = getF(&fuelPhi->phi, i, j, k);
+        if (before < 0.0f && after >= 0.0f) {
+            addF(temperature, i, j, k, heatRelease);
+            addF(smoke, i, j, k, sootYield);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{52. Volumetric Combustion of Fuel Field}
+\addcontentsline{toc}{subsection}{52. Volumetric Combustion of Fuel Field}
+
+\begin{lstlisting}
+void stepVolumetricCombustion(Grid3f *fuel, Grid3f *temperature, Grid3f *smoke,
+                              Grid3f *divergenceControl, float dt) {
+    forEachCell(fuel, i, j, k) {
+        float F = getF(fuel, i, j, k);
+        float T = getF(temperature, i, j, k);
+
+        if (F > 0.0f && T > IGNITION_TEMPERATURE) {
+            float burned = minf(F, BURN_RATE * dt);
+            addF(fuel, i, j, k, -burned);
+            addF(smoke, i, j, k, SOOT_PER_FUEL * burned);
+            addF(temperature, i, j, k, HEAT_PER_FUEL * burned);
+            addF(divergenceControl, i, j, k, EXPANSION_PER_FUEL * burned / dt);
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{53. Fuel Emission Boundary Condition}
+\addcontentsline{toc}{subsection}{53. Fuel Emission Boundary Condition}
+
+\begin{lstlisting}
+void emitFuelFromSolidBoundary(Grid3f *fuel, MACGrid *vel, LevelSet *emitterPhi,
+                               Vec3 emitterVelocity, float emissionSpeed, float fuelValue) {
+    forEachCell(fuel, i, j, k) {
+        Vec3 x = cellCenter(fuel, i, j, k);
+        float phi = sampleLevelSet(emitterPhi, x);
+        if (phi < 0.25f * fuel->dx) {
+            addF(fuel, i, j, k, fuelValue);
+            imposeNormalEmitterVelocity(vel, emitterPhi, x, emitterVelocity, emissionSpeed);
+        }
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part IX --- Viscous Fluids}
+\addcontentsline{toc}{section}{Part IX --- Viscous Fluids}
+
+\Needspace{6\baselineskip}
+\subsection*{54. Viscosity Time-Split Driver}
+\addcontentsline{toc}{subsection}{54. Viscosity Time-Split Driver}
+
+\begin{lstlisting}
+void stepViscousFluid(MACGrid *vel, LevelSet *fluidPhi, LevelSet *solidPhi, Grid3f *viscosity,
+                      float dt, float density) {
+    projectWaterGhostFluid(vel, fluidPhi, solidPhi, density, dt);
+    solveImplicitViscosity(vel, fluidPhi, solidPhi, viscosity, dt, density);
+    projectWaterGhostFluid(vel, fluidPhi, solidPhi, density, dt);
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{55. Build Implicit Viscosity System}
+\addcontentsline{toc}{subsection}{55. Build Implicit Viscosity System}
+
+\begin{lstlisting}
+void buildViscositySystem(CSRMatrix *A, Vector *b, MACGrid *vel, LevelSet *fluidPhi,
+                          LevelSet *solidPhi, Grid3f *mu, float dt, float rho) {
+    // Unknowns are active u, v, w face velocities. The matrix is SPD when constructed
+    // from the discrete viscous energy terms.
+    initSparseSystemForActiveFaces(A, b, vel, fluidPhi, solidPhi);
+
+    forEachActiveUFace(vel, fluidPhi, i, j, k) {
+        int row = unknownIndexU(i, j, k);
+        addIdentityTerm(A, row, rho / dt);
+        addViscousDerivativeTermsForU(A, row, i, j, k, mu, solidPhi);
+        b->a[row] = (rho / dt) * getF(&vel->u, i, j, k);
+    }
+
+    forEachActiveVFace(vel, fluidPhi, i, j, k) {
+        int row = unknownIndexV(i, j, k);
+        addIdentityTerm(A, row, rho / dt);
+        addViscousDerivativeTermsForV(A, row, i, j, k, mu, solidPhi);
+        b->a[row] = (rho / dt) * getF(&vel->v, i, j, k);
+    }
+
+    forEachActiveWFace(vel, fluidPhi, i, j, k) {
+        int row = unknownIndexW(i, j, k);
+        addIdentityTerm(A, row, rho / dt);
+        addViscousDerivativeTermsForW(A, row, i, j, k, mu, solidPhi);
+        b->a[row] = (rho / dt) * getF(&vel->w, i, j, k);
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{56. Solve Implicit Viscosity and Scatter Back}
+\addcontentsline{toc}{subsection}{56. Solve Implicit Viscosity and Scatter Back}
+
+\begin{lstlisting}
+void solveImplicitViscosity(MACGrid *vel, LevelSet *fluidPhi, LevelSet *solidPhi, Grid3f *mu,
+                            float dt, float rho) {
+    CSRMatrix A;
+    Vector b, x;
+    buildViscositySystem(&A, &b, vel, fluidPhi, solidPhi, mu, dt, rho);
+    x = zeroVector(A.n);
+    solvePCG(&x, &b, makeCSROperator(&A), makeDiagonalPreconditioner(&A), 1.0e-6, 1000);
+    scatterFaceUnknownsToMAC(vel, &x);
+    enforceViscousBoundaryConditions(vel, solidPhi);
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{57. Non-Newtonian Viscosity Update}
+\addcontentsline{toc}{subsection}{57. Non-Newtonian Viscosity Update}
+
+\begin{lstlisting}
+void updatePowerLawViscosity(Grid3f *mu, MACGrid *vel, float K, float n) {
+    forEachCell(mu, i, j, k) {
+        Mat3 D = symmetricVelocityGradient(vel, i, j, k);
+        float normD = frobeniusNorm(D);
+        float apparent = K * powf(maxf(normD, 1.0e-8f), n - 1.0f);
+        setF(mu, i, j, k, apparent);
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part X --- Turbulence and Vorticity}
+\addcontentsline{toc}{section}{Part X --- Turbulence and Vorticity}
+
+\Needspace{6\baselineskip}
+\subsection*{58. Compute Cell-Centered Vorticity}
+\addcontentsline{toc}{subsection}{58. Compute Cell-Centered Vorticity}
+
+\begin{lstlisting}
+void computeVorticity(Grid3Vec3 *omega, MACGrid *vel) {
+    forEachCellVec3(omega, i, j, k) {
+        float dw_dy = (sampleWAtCell(vel, i, j + 1, k) - sampleWAtCell(vel, i, j - 1, k)) / (2.0f * vel->dx);
+        float dv_dz = (sampleVAtCell(vel, i, j, k + 1) - sampleVAtCell(vel, i, j, k - 1)) / (2.0f * vel->dx);
+        float du_dz = (sampleUAtCell(vel, i, j, k + 1) - sampleUAtCell(vel, i, j, k - 1)) / (2.0f * vel->dx);
+        float dw_dx = (sampleWAtCell(vel, i + 1, j, k) - sampleWAtCell(vel, i - 1, j, k)) / (2.0f * vel->dx);
+        float dv_dx = (sampleVAtCell(vel, i + 1, j, k) - sampleVAtCell(vel, i - 1, j, k)) / (2.0f * vel->dx);
+        float du_dy = (sampleUAtCell(vel, i, j + 1, k) - sampleUAtCell(vel, i, j - 1, k)) / (2.0f * vel->dx);
+
+        setVec3(omega, i, j, k, (Vec3){ dw_dy - dv_dz, du_dz - dw_dx, dv_dx - du_dy });
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{59. Vorticity Confinement Force}
+\addcontentsline{toc}{subsection}{59. Vorticity Confinement Force}
+
+\begin{lstlisting}
+void addVorticityConfinement(MACGrid *vel, float epsilon, float dt) {
+    Grid3Vec3 omega = makeVec3CellGrid(vel);
+    Grid3f mag = makeCellGrid(vel);
+    computeVorticity(&omega, vel);
+
+    forEachCell(&mag, i, j, k) setF(&mag, i, j, k, length3(getVec3(&omega, i, j, k)));
+
+    Grid3Vec3 force = makeVec3CellGrid(vel);
+    forEachCell(&mag, i, j, k) {
+        Vec3 grad;
+        grad.x = (getF(&mag, i + 1, j, k) - getF(&mag, i - 1, j, k)) / (2.0f * vel->dx);
+        grad.y = (getF(&mag, i, j + 1, k) - getF(&mag, i, j - 1, k)) / (2.0f * vel->dx);
+        grad.z = (getF(&mag, i, j, k + 1) - getF(&mag, i, j, k - 1)) / (2.0f * vel->dx);
+        Vec3 N = normalize3(add3(grad, (Vec3){1.0e-20f, 1.0e-20f, 1.0e-20f}));
+        Vec3 f = mul3(cross3(N, getVec3(&omega, i, j, k)), epsilon * vel->dx);
+        setVec3(&force, i, j, k, f);
+    }
+
+    addCellForceToMAC(vel, &force, dt);
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{60. Procedural Curl-Noise Turbulence}
+\addcontentsline{toc}{subsection}{60. Procedural Curl-Noise Turbulence}
+
+\begin{lstlisting}
+Vec3 proceduralDivergenceFreeNoise(Vec3 x, float t) {
+    // Define a vector potential psi; curl(psi) is divergence-free by construction.
+    Vec3 psi;
+    psi.x = noise3(x.x, x.y, x.z, t);
+    psi.y = noise3(x.y + 37.0f, x.z, x.x, t);
+    psi.z = noise3(x.z, x.x + 91.0f, x.y, t);
+    return numericalCurlOfPotential(x, t, psiNoiseField);
+}
+
+void advectRenderParticlesWithSubgridTurbulence(ParticleSet *p, MACGrid *vel, float dt) {
+    for (int i = 0; i < p->count; ++i) {
+        Vec3 u = sampleMACVelocity(vel, p->p[i].x);
+        Vec3 turb = proceduralDivergenceFreeNoise(p->p[i].x, currentTime());
+        p->p[i].x = add3(p->p[i].x, mul3(add3(u, mul3(turb, TURB_GAIN)), dt));
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{61. Subgrid Turbulence Energy Injection}
+\addcontentsline{toc}{subsection}{61. Subgrid Turbulence Energy Injection}
+
+\begin{lstlisting}
+void updateSubgridTurbulence(Grid3f *energy, MACGrid *vel, float dt) {
+    forEachCell(energy, i, j, k) {
+        Mat3 gradU = velocityGradient(vel, i, j, k);
+        float production = TURB_PRODUCTION * frobeniusNormSquared(gradU);
+        float decay = TURB_DECAY * getF(energy, i, j, k);
+        addF(energy, i, j, k, dt * (production - decay));
+        if (getF(energy, i, j, k) < 0.0f) setF(energy, i, j, k, 0.0f);
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part XI --- Shallow Water and Ocean Models}
+\addcontentsline{toc}{section}{Part XI --- Shallow Water and Ocean Models}
+
+\Needspace{6\baselineskip}
+\subsection*{62. Shallow-Water Step on a Height Field}
+\addcontentsline{toc}{subsection}{62. Shallow-Water Step on a Height Field}
+
+\begin{lstlisting}
+void stepShallowWater(Grid2f *height, Grid2f *bottom, Grid2Vec2 *vel, float dt, float dx) {
+    Grid2f oldH = cloneGrid2(height);
+    Grid2Vec2 oldU = cloneGrid2Vec2(vel);
+
+    forEachCell2(height, i, j) {
+        float h = get2(height, i, j);
+        Vec2 u = get2v(vel, i, j);
+
+        float fluxX = derivativeXOfHU(&oldH, &oldU, i, j, dx);
+        float fluxZ = derivativeZOfHU(&oldH, &oldU, i, j, dx);
+        set2(height, i, j, h - dt * (fluxX + fluxZ));
+    }
+
+    forEachCell2(height, i, j) {
+        Vec2 u = get2v(&oldU, i, j);
+        float etaL = get2(&oldH, i - 1, j) + get2(bottom, i - 1, j);
+        float etaR = get2(&oldH, i + 1, j) + get2(bottom, i + 1, j);
+        float etaD = get2(&oldH, i, j - 1) + get2(bottom, i, j - 1);
+        float etaU = get2(&oldH, i, j + 1) + get2(bottom, i, j + 1);
+        u.x += -dt * GRAVITY * (etaR - etaL) / (2.0f * dx);
+        u.y += -dt * GRAVITY * (etaU - etaD) / (2.0f * dx);
+        set2v(vel, i, j, u);
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{63. Height-Field Wave Equation Step}
+\addcontentsline{toc}{subsection}{63. Height-Field Wave Equation Step}
+
+\begin{lstlisting}
+void stepWaveEquation(Grid2f *etaNew, Grid2f *eta, Grid2f *etaOld, float c, float dt, float dx) {
+    float a = (c * dt / dx) * (c * dt / dx);
+    forEachCell2(eta, i, j) {
+        float lap = get2(eta, i + 1, j) + get2(eta, i - 1, j)
+                  + get2(eta, i, j + 1) + get2(eta, i, j - 1)
+                  - 4.0f * get2(eta, i, j);
+        set2(etaNew, i, j, 2.0f * get2(eta, i, j) - get2(etaOld, i, j) + a * lap);
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{64. Spectral Ocean Initialization}
+\addcontentsline{toc}{subsection}{64. Spectral Ocean Initialization}
+
+\begin{lstlisting}
+void initializeOceanSpectrum(ComplexGrid *H0, int N, float L, Vec2 wind, float amplitude) {
+    for (int j = -N / 2; j < N / 2; ++j) {
+        for (int i = -N / 2; i < N / 2; ++i) {
+            Vec2 k = { 2.0f * PI * i / L, 2.0f * PI * j / L };
+            float P = phillipsSpectrum(k, wind, amplitude);
+            Complex xi = gaussianComplex();
+            setComplex(H0, i, j, complexScale(xi, sqrtf(P / 2.0f)));
+        }
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{65. Evaluate Spectral Ocean Height and Choppiness}
+\addcontentsline{toc}{subsection}{65. Evaluate Spectral Ocean Height and Choppiness}
+
+\begin{lstlisting}
+void evaluateOceanSurface(ComplexGrid *H0, Grid2f *height, Grid2Vec2 *horizontalDisp,
+                          float t, float L, float chop) {
+    ComplexGrid Ht = makeComplexGridLike(H0);
+    ComplexGrid Dx = makeComplexGridLike(H0);
+    ComplexGrid Dz = makeComplexGridLike(H0);
+
+    forEachFrequency(H0, i, j) {
+        Vec2 k = frequencyVector(i, j, L);
+        float omega = sqrtf(GRAVITY * length2(k));
+        Complex h = addComplex(complexMul(getComplex(H0, i, j), expI( omega * t)),
+                               complexMul(conjComplex(getComplex(H0, -i, -j)), expI(-omega * t)));
+        setComplex(&Ht, i, j, h);
+
+        if (length2(k) > 0.0f) {
+            Complex factor = complexMul((Complex){0.0f, 1.0f}, h);
+            setComplex(&Dx, i, j, complexScale(factor, chop * k.x / length2(k)));
+            setComplex(&Dz, i, j, complexScale(factor, chop * k.y / length2(k)));
+        }
+    }
+
+    inverseFFT2(&Ht, height);
+    inverseFFT2Vec(&Dx, &Dz, horizontalDisp);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part XII --- Vortex Methods}
+\addcontentsline{toc}{section}{Part XII --- Vortex Methods}
+
+\Needspace{6\baselineskip}
+\subsection*{66. Velocity from Point Vortices in 2D}
+\addcontentsline{toc}{subsection}{66. Velocity from Point Vortices in 2D}
+
+\begin{lstlisting}
+Vec2 velocityFromPointVortices2D(Vec2 x, VortexParticle2D *vortices, int count) {
+    Vec2 u = {0.0f, 0.0f};
+    for (int i = 0; i < count; ++i) {
+        Vec2 r = sub2(x, vortices[i].x);
+        float r2 = dot2(r, r) + CORE_RADIUS * CORE_RADIUS;
+        Vec2 perp = { -r.y, r.x };
+        u = add2(u, mul2(perp, vortices[i].omega / (2.0f * PI * r2)));
+    }
+    return u;
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{67. Vortex Particle Step}
+\addcontentsline{toc}{subsection}{67. Vortex Particle Step}
+
+\begin{lstlisting}
+void stepVortexParticles(VortexParticle3D *p, int count, float dt) {
+    for (int i = 0; i < count; ++i) {
+        p[i].u = velocityFromVorticityParticles3D(p[i].x, p, count);
+    }
+
+    for (int i = 0; i < count; ++i) {
+        Mat3 gradU = velocityGradientFromVortices(p[i].x, p, count);
+        Vec3 stretch = mat3Vec(gradU, p[i].omega);
+        p[i].omega = add3(p[i].omega, mul3(stretch, dt));
+        p[i].x = add3(p[i].x, mul3(p[i].u, dt));
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{68. Transfer Vorticity Particles to a Grid Force}
+\addcontentsline{toc}{subsection}{68. Transfer Vorticity Particles to a Grid Force}
+
+\begin{lstlisting}
+void addVortexParticleForceToGrid(MACGrid *vel, VortexParticle3D *p, int count, float dt) {
+    Grid3Vec3 force = makeVec3CellGrid(vel);
+    clearVec3Grid(&force);
+
+    for (int n = 0; n < count; ++n) {
+        Stencil s = interpolationStencilCellCentered(vel, p[n].x);
+        for (int m = 0; m < s.count; ++m) {
+            Vec3 f = vortexForceContribution(p[n], s.position[m]);
+            addVec3(&force, s.i[m], s.j[m], s.k[m], mul3(f, s.w[m]));
+        }
+    }
+
+    addCellForceToMAC(vel, &force, dt);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part XIII --- Fluid/Solid Coupling and General Sparse Matrices}
+\addcontentsline{toc}{section}{Part XIII --- Fluid/Solid Coupling and General Sparse Matrices}
+
+\Needspace{6\baselineskip}
+\subsection*{69. One-Way Solid Coupling}
+\addcontentsline{toc}{subsection}{69. One-Way Solid Coupling}
+
+\begin{lstlisting}
+void applyOneWaySolidVelocityBoundary(MACGrid *vel, LevelSet *solidPhi, RigidBody *solid) {
+    forEachFaceNearSolid(vel, solidPhi, face) {
+        Vec3 x = facePosition(face);
+        Vec3 us = rigidBodyVelocityAt(solid, x);
+        Vec3 n = solidNormalAt(solidPhi, x);
+        float fluidN = dot3(faceVelocityVector(vel, face), n);
+        float solidN = dot3(us, n);
+        addFaceNormalVelocity(vel, face, solidN - fluidN);
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{70. Weak Coupling: Pressure Force and Torque on a Solid}
+\addcontentsline{toc}{subsection}{70. Weak Coupling: Pressure Force and Torque on a Solid}
+
+\begin{lstlisting}
+void accumulatePressureForceTorque(RigidBody *body, Grid3f *pressure, FaceFractionGrid *solidFractions, Vec3 center) {
+    Vec3 F = {0,0,0};
+    Vec3 T = {0,0,0};
+
+    forEachCell(pressure, i, j, k) {
+        Vec3 netAreaNormal = cellSolidAreaNormal(solidFractions, i, j, k);
+        Vec3 force = mul3(netAreaNormal, -getF(pressure, i, j, k));
+        Vec3 x = cellCenter(pressure, i, j, k);
+        F = add3(F, force);
+        T = add3(T, cross3(sub3(x, center), force));
+    }
+
+    body->force = add3(body->force, F);
+    body->torque = add3(body->torque, T);
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{71. Immersed Boundary Pressure Treatment}
+\addcontentsline{toc}{subsection}{71. Immersed Boundary Pressure Treatment}
+
+\begin{lstlisting}
+void immersedBoundaryPressureStep(MACGrid *vel, LevelSet *solidPhi, RigidBody *solid,
+                                  float fluidDensity, float solidDensity, float dt) {
+    MACGrid mixedVel = cloneMACGrid(vel);
+    Grid3f mixedDensityU = makeGridLike(&vel->u);
+    Grid3f mixedDensityV = makeGridLike(&vel->v);
+    Grid3f mixedDensityW = makeGridLike(&vel->w);
+
+    forEachFace(vel, face) {
+        float fluidFrac = faceFluidFraction(solidPhi, face);
+        float solidFrac = 1.0f - fluidFrac;
+        Vec3 x = facePosition(face);
+        float uFluid = faceVelocity(vel, face);
+        float uSolid = dot3(rigidBodyVelocityAt(solid, x), faceNormalDirection(face));
+        setFaceVelocity(&mixedVel, face, fluidFrac * uFluid + solidFrac * uSolid);
+        setFaceDensity(faceDensityGrid(face), face, fluidFrac * fluidDensity + solidFrac * solidDensity);
+    }
+
+    projectVelocityVariableDensity(&mixedVel, solidPhi, &mixedDensityU, &mixedDensityV, &mixedDensityW, dt);
+    recoverSolidVelocityFromMixedGrid(solid, &mixedVel, solidPhi);
+    copyFluidRegionVelocity(vel, &mixedVel, solidPhi);
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{72. Dynamic CSR Add Entry}
+\addcontentsline{toc}{subsection}{72. Dynamic CSR Add Entry}
+
+\begin{lstlisting}
+void sparseRowAdd(SparseRow *row, int col, double value) {
+    for (int n = 0; n < row->count; ++n) {
+        if (row->e[n].col == col) {
+            row->e[n].value += value;
+            return;
+        }
+    }
+
+    if (row->count == row->capacity) {
+        row->capacity = maxInt(4, 2 * row->capacity);
+        row->e = realloc(row->e, row->capacity * sizeof(SparseRowEntry));
+    }
+    row->e[row->count++] = (SparseRowEntry){ col, value };
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{73. Convert Dynamic Rows to CSR}
+\addcontentsline{toc}{subsection}{73. Convert Dynamic Rows to CSR}
+
+\begin{lstlisting}
+CSRMatrix buildCSR(SparseRow *rows, int n) {
+    CSRMatrix A;
+    A.n = n;
+    A.rowStart = malloc((n + 1) * sizeof(int));
+
+    int nnz = 0;
+    for (int r = 0; r < n; ++r) {
+        sortRowByColumn(&rows[r]);
+        A.rowStart[r] = nnz;
+        nnz += rows[r].count;
+    }
+    A.rowStart[n] = nnz;
+
+    A.col = malloc(nnz * sizeof(int));
+    A.value = malloc(nnz * sizeof(double));
+
+    for (int r = 0; r < n; ++r) {
+        int start = A.rowStart[r];
+        for (int e = 0; e < rows[r].count; ++e) {
+            A.col[start + e] = rows[r].e[e].col;
+            A.value[start + e] = rows[r].e[e].value;
+        }
+    }
+    return A;
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{74. CSR Matrix-Vector Product}
+\addcontentsline{toc}{subsection}{74. CSR Matrix-Vector Product}
+
+\begin{lstlisting}
+void csrMultiply(Vector *y, CSRMatrix *A, Vector *x) {
+    for (int r = 0; r < A->n; ++r) {
+        double sum = 0.0;
+        for (int e = A->rowStart[r]; e < A->rowStart[r + 1]; ++e) {
+            sum += A->value[e] * x->a[A->col[e]];
+        }
+        y->a[r] = sum;
+    }
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{75. Strong Coupling Pressure Solve for One Rigid Body}
+\addcontentsline{toc}{subsection}{75. Strong Coupling Pressure Solve for One Rigid Body}
+
+\begin{lstlisting}
+void buildStrongCouplingSystem(CSRMatrix *A, Vector *rhs, MACGrid *vel, LevelSet *fluidPhi,
+                               RigidBody *body, FaceFractionGrid *solidFractions,
+                               float dt, float rho) {
+    // Base fluid pressure matrix.
+    buildGeneralPressureMatrix(A, rhs, vel, fluidPhi, dt, rho);
+
+    // J maps grid pressures to rigid-body force/torque.
+    Matrix J = buildPressureToRigidForceTorque(solidFractions, body->centerOfMass);
+    Matrix Minv = rigidBodyInverseMassMatrix(body);
+
+    // Coupled Schur complement contribution: A += dt * J^T M^{-1} J.
+    CSRMatrix coupling = multiplyJTMinvJ(J, Minv, dt);
+    csrAddInPlace(A, &coupling);
+
+    // RHS also includes current rigid-body velocity contribution at the boundary.
+    addRigidBoundaryVelocityTerms(rhs, vel, body, solidFractions);
+}
+
+void solveStrongCoupledFluidRigidStep(MACGrid *vel, RigidBody *body, LevelSet *fluidPhi,
+                                      FaceFractionGrid *fractions, float dt, float rho) {
+    CSRMatrix A;
+    Vector rhs, p;
+    buildStrongCouplingSystem(&A, &rhs, vel, fluidPhi, body, fractions, dt, rho);
+    p = zeroVector(A.n);
+    solvePCG(&p, &rhs, makeCSROperator(&A), makeICPreconditioner(&A), 1.0e-7, 1000);
+
+    applyPressureToFluid(vel, &p, dt, rho);
+    Vec6 impulse = multiplyJByPressure(fractions, &p);
+    applyRigidPressureImpulse(body, impulse, dt);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Appendix A --- Small Numerical Methods Used Throughout}
+\addcontentsline{toc}{section}{Appendix A --- Small Numerical Methods Used Throughout}
+
+\Needspace{6\baselineskip}
+\subsection*{A.1 Forward Euler}
+\addcontentsline{toc}{subsection}{A.1 Forward Euler}
+
+\begin{lstlisting}
+Vec3 eulerStep(Vec3 x, Vec3 dxdt, float dt) {
+    return add3(x, mul3(dxdt, dt));
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{A.2 Explicit Midpoint / RK2}
+\addcontentsline{toc}{subsection}{A.2 Explicit Midpoint / RK2}
+
+\begin{lstlisting}
+Vec3 rk2Step(Vec3 x, float t, float dt, Vec3 (*f)(Vec3, float)) {
+    Vec3 k1 = f(x, t);
+    Vec3 xm = add3(x, mul3(k1, 0.5f * dt));
+    Vec3 k2 = f(xm, t + 0.5f * dt);
+    return add3(x, mul3(k2, dt));
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{A.3 RK4}
+\addcontentsline{toc}{subsection}{A.3 RK4}
+
+\begin{lstlisting}
+Vec3 rk4Step(Vec3 x, float t, float dt, Vec3 (*f)(Vec3, float)) {
+    Vec3 k1 = f(x, t);
+    Vec3 k2 = f(add3(x, mul3(k1, 0.5f * dt)), t + 0.5f * dt);
+    Vec3 k3 = f(add3(x, mul3(k2, 0.5f * dt)), t + 0.5f * dt);
+    Vec3 k4 = f(add3(x, mul3(k3, dt)), t + dt);
+
+    Vec3 sum = add3(add3(k1, mul3(k2, 2.0f)), add3(mul3(k3, 2.0f), k4));
+    return add3(x, mul3(sum, dt / 6.0f));
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{A.4 Semi-Implicit Velocity Update}
+\addcontentsline{toc}{subsection}{A.4 Semi-Implicit Velocity Update}
+
+\begin{lstlisting}
+void semiImplicitParticleStep(Vec3 *x, Vec3 *v, Vec3 acceleration, float dt) {
+    *v = add3(*v, mul3(acceleration, dt));
+    *x = add3(*x, mul3(*v, dt));
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Appendix B --- Implementation Invariants}
+\addcontentsline{toc}{section}{Appendix B --- Implementation Invariants}
+
+\begin{lstlisting}
+bool fluidSolverInvariantsHold(MACGrid *vel, Grid3Label *label, LevelSet *solidPhi) {
+    // 1. Advection velocity must already satisfy projection constraints.
+    if (maxFluidDivergence(vel, label) > DIVERGENCE_TOLERANCE) return false;
+
+    // 2. Solid faces must not have inward relative normal velocity.
+    if (maxSolidPenetrationVelocity(vel, solidPhi) > PENETRATION_TOLERANCE) return false;
+
+    // 3. Pressure matrix should be symmetric positive semidefinite/definite.
+    if (!pressureMatrixSymmetryCheck()) return false;
+
+    // 4. All quantities advected with tricubic interpolation must be clamped if physically nonnegative.
+    if (minSmokeOrFuel() < -NONNEGATIVE_TOLERANCE) return false;
+
+    // 5. Level sets used as geometry should be redistanced when operations corrupt |grad(phi)| approximately 1.
+    if (maxLevelSetGradientError(solidPhi) > LEVELSET_GRADIENT_TOLERANCE) return false;
+
+    return true;
+}
+\end{lstlisting}
+
+\Needspace{6\baselineskip}
+\subsection*{Recommended Implementation Order}
+\addcontentsline{toc}{subsection}{Recommended Implementation Order}
+
+\begin{lstlisting}
+void recommendedBuildOrder(void) {
+    buildDenseGrid2DPrototype();
+    implementMACInterpolation();
+    implementSemiLagrangianAdvection();
+    implementVoxelizedPressureProjection();
+    addPCGThenMIC0();
+    implementLevelSetSDFAndExtrapolation();
+    addFreeSurfaceWaterWithGhostFluid();
+    addPICFLIPParticles();
+    addSmokeTemperatureBuoyancyAndDivergenceControl();
+    addViscosityOnlyAfterProjectionWorks();
+    addTurbulenceAndVorticityControls();
+    portDenseGridToSparseBlockedGridOnlyAfterCorrectnessIsStable();
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Reference Note}
+\addcontentsline{toc}{section}{Reference Note}
+
+This handout abstracts algorithms from \emph{Fluid Simulation for Computer Graphics} into C-like pseudocode. It preserves the computational intent---MAC grids, semi-Lagrangian advection, level sets, pressure projection, MICCG/PCG, PIC/FLIP, ghost-fluid free surfaces, viscous solves, turbulence controls, ocean spectra, vortex particles, and fluid-solid coupling---while avoiding direct source-code transcription. The result is meant as a technical study aid and implementation checklist.
+
+\end{document}

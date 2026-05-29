@@ -1,0 +1,3165 @@
+
+\documentclass[10pt,letterpaper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.72in,headheight=14pt]{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{ragged2e}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{microtype}
+\usepackage{listings}
+\usepackage{needspace}
+\usepackage{tocloft}
+\usepackage{upquote}
+\definecolor{HouseBlue}{HTML}{1F4E79}
+\definecolor{HouseGray}{HTML}{4F5B62}
+\definecolor{HouseLight}{HTML}{EAF2F8}
+\definecolor{CodeBack}{HTML}{F7F8FA}
+\definecolor{CodeFrame}{HTML}{C9D1D9}
+\definecolor{CodeKeyword}{HTML}{1F4E79}
+\definecolor{CodeComment}{HTML}{5F6F7A}
+\definecolor{CodeString}{HTML}{8A3B12}
+\hypersetup{colorlinks=true,linkcolor=HouseBlue,urlcolor=HouseBlue,citecolor=HouseBlue,pdfauthor={ChatGPT},pdftitle={Real-Time Collision Detection: Algorithms as C-like Pseudocode}}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Real-Time Collision Detection --- Algorithms as C-like Pseudocode}
+\rhead{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlist[itemize]{leftmargin=1.25em,itemsep=2pt,topsep=2pt}
+\setlist[enumerate]{leftmargin=1.5em,itemsep=2pt,topsep=2pt}
+\titleformat{\section}{\Large\bfseries\color{HouseBlue}}{}{0pt}{}
+\titleformat{\subsection}{\large\bfseries\color{HouseGray}}{}{0pt}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{HouseGray}}{}{0pt}{}
+\titlespacing*{\section}{0pt}{2.2ex plus .4ex minus .2ex}{1.0ex}
+\titlespacing*{\subsection}{0pt}{1.8ex plus .3ex minus .2ex}{0.7ex}
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\lstdefinelanguage{PseudoC}{
+  morekeywords={typedef,enum,struct,union,return,if,else,for,while,do,case,switch,break,continue,bool,true,false,NULL,void,int,long,char,float,double,string,const,static,inline,foreach,in,new,delete,insert,remove,push,pop,emit,try,catch,throw,private,public,Vec2,Vec3,Vec4,Mat3,Mat4,Plane,Ray,Segment,Triangle,AABB,OBB,Sphere,Capsule,KDOP,Contact,BVHNode,Grid,HGrid,Octree,KDNode,BSPNode,Polygon,Polyhedron,Mesh,Feature,Simplex,Interval,Queue,Stack,PriorityQueue,List,Set,Map,Array,BitSet,Stamp,Pair,Axis,Matrix,Vector},
+  sensitive=true,
+  morecomment=[l]{//},
+  morestring=[b]",
+}
+\lstset{
+  language=PseudoC,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\bfseries\color{CodeKeyword},
+  commentstyle=\itshape\color{CodeComment},
+  stringstyle=\color{CodeString},
+  backgroundcolor=\color{CodeBack},
+  frame=single,
+  rulecolor=\color{CodeFrame},
+  framerule=0.35pt,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  tabsize=4,
+  xleftmargin=0.6em,
+  xrightmargin=0.3em,
+  aboveskip=0.7em,
+  belowskip=0.7em,
+}
+\newcommand{\handouttitle}{Real-Time Collision Detection: Algorithms as C-like Pseudocode}
+\sloppy
+\begin{document}
+\pagenumbering{gobble}
+\begin{titlepage}
+\centering
+\vspace*{0.85in}
+{\Huge\bfseries\color{HouseBlue}\handouttitle\par}
+\vspace{0.22in}
+{\Large Systematic Algorithm Extraction and Reconstruction\par}
+\vspace{0.34in}
+{\large Source analyzed: Christer Ericson, Real-Time Collision Detection, Morgan Kaufmann / Elsevier, 2005\par}
+\vfill
+\begin{minipage}{0.88\textwidth}
+\small
+This handout rewrites the algorithmic material from the uploaded real-time collision detection text as independent C-like pseudocode. It is organized as an implementation-oriented reference for determinant predicates, barycentric geometry, bounding volumes, closest-point routines, primitive intersection tests, dynamic collision queries, bounding-volume hierarchies, spatial partitioning, BSP trees, GJK/V-Clip style convex methods, robustness hooks, mesh preprocessing, and optimization-oriented layouts. The pseudocode is normalized for study, architecture review, engine design, and implementation planning; it is not a source-code clone.
+\end{minipage}
+\vfill
+{\large Generated \today\par}
+\end{titlepage}
+\clearpage
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\section*{Extraction Coverage}
+\addcontentsline{toc}{section}{Extraction Coverage}
+\begin{longtable}{L{0.29\textwidth}L{0.66\textwidth}}
+\toprule
+\textbf{Area} & \textbf{Algorithm families represented}\\
+\midrule
+Math and geometry & determinant predicates, barycentric coordinates, plane construction, convexity tests, convex hulls, support mappings, Minkowski helpers.\\
+Bounding volumes & AABB, sphere, OBB, k-DOP, capsule, sphere-swept volumes, BV merging, PCA/eigen fits, Ritter/Welzl sphere construction.\\
+Primitive queries & closest-point routines, static primitive tests, triangle-AABB SAT, triangle-triangle tests, point containment, ray/segment/plane intersections.\\
+Dynamic queries & interval halving, moving sphere-plane, moving sphere-sphere, moving sphere-triangle, moving sphere-AABB, moving AABB-AABB.\\
+Acceleration structures & top-down, bottom-up, incremental BVHs; uniform and hashed grids; hierarchical grids; octrees; Morton keys; k-d trees; BSP trees; sort-and-sweep.\\
+Convex and robust methods & V-Clip-style feature iteration, LP helpers, GJK distance/intersection, moving GJK, Chung-Wang separating vector, thick planes, interval arithmetic, integer predicate skeletons.\\
+Preprocessing and optimization & vertex welding, adjacency tables, connected components, planarity, triangulation, convex decomposition, Euler consistency, compact trees, cached linearization, SIMD-style tests.\\
+\bottomrule
+\end{longtable}
+
+\textbf{Source analyzed:} Christer Ericson, \emph{Real-Time Collision Detection}, Morgan Kaufmann / Elsevier, 2005. \textbf{Output purpose:} implementation-oriented pseudocode reference for real-time collision systems, including geometric predicates, bounding volumes, primitive tests, dynamic intersection tests, broad-phase structures, BSP trees, convex methods, robustness routines, preprocessing, and optimization-oriented layouts. \textbf{Method:} the book's C++ listings, pseudocode, equations, figures, and implementation descriptions have been reduced to independent C-like pseudocode. This is not a line-for-line transcription of the book or companion code; it normalizes names, data structures, error handling, tolerances, and control flow for C/C++ implementation planning.
+
+\medskip\hrule\medskip
+
+\Needspace{6\baselineskip}
+\subsection*{0. Shared Types, Constants, and Utility Routines}
+\addcontentsline{toc}{subsection}{0. Shared Types, Constants, and Utility Routines}
+
+\begin{lstlisting}
+typedef int bool;
+#define true 1
+#define false 0
+
+#define EPSILON 1.0e-6f
+#define BIG_FLOAT 3.402823e38f
+
+typedef struct Vec2 { float x, y; } Vec2;
+typedef struct Vec3 { float x, y, z; } Vec3;
+typedef struct Mat3 { float m[3][3]; } Mat3;
+
+typedef struct Plane {
+    Vec3 n;          // plane normal; points x satisfy dot(n, x) = d
+    float d;
+} Plane;
+
+typedef struct Ray {
+    Vec3 origin;
+    Vec3 dir;        // not necessarily normalized unless noted
+} Ray;
+
+typedef struct Segment {
+    Vec3 a, b;
+} Segment;
+
+typedef struct Triangle {
+    Vec3 a, b, c;
+} Triangle;
+
+typedef struct AABB {
+    Vec3 min;
+    Vec3 max;
+} AABB;
+
+typedef struct Sphere {
+    Vec3 c;
+    float r;
+} Sphere;
+
+typedef struct OBB {
+    Vec3 c;
+    Vec3 axis[3];    // orthonormal local axes
+    float e[3];      // nonnegative half extents
+} OBB;
+
+typedef struct Capsule {
+    Vec3 a, b;
+    float r;
+} Capsule;
+
+typedef struct KDOP {
+    int k;
+    float min[32];
+    float max[32];
+} KDOP;
+
+typedef struct Contact {
+    bool hit;
+    float t;
+    Vec3 p;
+    Vec3 normal;
+    float depth;
+} Contact;
+\end{lstlisting}
+
+\begin{lstlisting}
+float dot3(Vec3 a, Vec3 b);
+Vec3 cross3(Vec3 a, Vec3 b);
+Vec3 add3(Vec3 a, Vec3 b);
+Vec3 sub3(Vec3 a, Vec3 b);
+Vec3 scale3(Vec3 v, float s);
+float length3(Vec3 v);
+float lengthSq3(Vec3 v);
+Vec3 normalize3(Vec3 v);
+float absf(float x);
+float minf(float a, float b);
+float maxf(float a, float b);
+float clampf(float x, float lo, float hi);
+int signf_eps(float x, float eps);
+\end{lstlisting}
+
+\begin{lstlisting}
+float sqr(float x) { return x * x; }
+
+float clamp01(float x) {
+    return clampf(x, 0.0f, 1.0f);
+}
+
+Vec3 lerp3(Vec3 a, Vec3 b, float t) {
+    return add3(a, scale3(sub3(b, a), t));
+}
+
+float signedDistancePlane(Plane p, Vec3 q) {
+    return dot3(p.n, q) - p.d;
+}
+
+bool nearlyZero(float x) {
+    return absf(x) <= EPSILON;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part I --- Math, Predicates, and Low-Level Geometry}
+\addcontentsline{toc}{section}{Part I --- Math, Predicates, and Low-Level Geometry}
+
+
+\Needspace{6\baselineskip}
+\subsection*{1. Determinant Predicates}
+\addcontentsline{toc}{subsection}{1. Determinant Predicates}
+
+
+\Needspace{5\baselineskip}
+\subsubsection*{1.1 Orient2D}
+\addcontentsline{toc}{subsubsection}{1.1 Orient2D}
+
+\begin{lstlisting}
+float orient2D(Vec2 a, Vec2 b, Vec2 c) {
+    Vec2 ab = { b.x - a.x, b.y - a.y };
+    Vec2 ac = { c.x - a.x, c.y - a.y };
+    return ab.x * ac.y - ab.y * ac.x;
+}
+
+int classifyPointLine2D(Vec2 a, Vec2 b, Vec2 p) {
+    float s = orient2D(a, b, p);
+    if (s > EPSILON) return +1;   // left of directed line
+    if (s < -EPSILON) return -1;  // right of directed line
+    return 0;                     // collinear within tolerance
+}
+\end{lstlisting}
+
+
+\Needspace{5\baselineskip}
+\subsubsection*{1.2 Orient3D}
+\addcontentsline{toc}{subsubsection}{1.2 Orient3D}
+
+\begin{lstlisting}
+float orient3D(Vec3 a, Vec3 b, Vec3 c, Vec3 d) {
+    Vec3 ad = sub3(a, d);
+    Vec3 bd = sub3(b, d);
+    Vec3 cd = sub3(c, d);
+    return dot3(ad, cross3(bd, cd));
+}
+
+int classifyPointPlaneThroughTriangle(Vec3 a, Vec3 b, Vec3 c, Vec3 p) {
+    float s = orient3D(a, b, c, p);
+    if (s > EPSILON) return +1;
+    if (s < -EPSILON) return -1;
+    return 0;
+}
+\end{lstlisting}
+
+
+\Needspace{5\baselineskip}
+\subsubsection*{1.3 InCircle2D and InSphere3D}
+\addcontentsline{toc}{subsubsection}{1.3 InCircle2D and InSphere3D}
+
+\begin{lstlisting}
+float inCircle2D(Vec2 a, Vec2 b, Vec2 c, Vec2 d) {
+    float ax = a.x - d.x, ay = a.y - d.y;
+    float bx = b.x - d.x, by = b.y - d.y;
+    float cx = c.x - d.x, cy = c.y - d.y;
+
+    float aa = ax * ax + ay * ay;
+    float bb = bx * bx + by * by;
+    float cc = cx * cx + cy * cy;
+
+    return ax * (by * cc - bb * cy)
+         - ay * (bx * cc - bb * cx)
+         + aa * (bx * cy - by * cx);
+}
+
+float inSphere3D(Vec3 a, Vec3 b, Vec3 c, Vec3 d, Vec3 e) {
+    // Independent pseudocode representation: expand the 4x4 determinant
+    // formed by translated coordinates and squared lengths.
+    Vec3 p[4] = { sub3(a, e), sub3(b, e), sub3(c, e), sub3(d, e) };
+    float q[4];
+    for (int i = 0; i < 4; ++i) q[i] = dot3(p[i], p[i]);
+
+    float det = determinant4x4_with_last_column(p, q);
+    return det;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{2. Barycentric Coordinates}
+\addcontentsline{toc}{subsection}{2. Barycentric Coordinates}
+
+
+\Needspace{5\baselineskip}
+\subsubsection*{2.1 Dot-Product Barycentric Coordinates for a Triangle}
+\addcontentsline{toc}{subsubsection}{2.1 Dot-Product Barycentric Coordinates for a Triangle}
+
+\begin{lstlisting}
+void barycentricTriangle(Vec3 a, Vec3 b, Vec3 c, Vec3 p,
+                         float *u, float *v, float *w)
+{
+    Vec3 e0 = sub3(b, a);
+    Vec3 e1 = sub3(c, a);
+    Vec3 q  = sub3(p, a);
+
+    float d00 = dot3(e0, e0);
+    float d01 = dot3(e0, e1);
+    float d11 = dot3(e1, e1);
+    float d20 = dot3(q,  e0);
+    float d21 = dot3(q,  e1);
+    float denom = d00 * d11 - d01 * d01;
+
+    if (absf(denom) <= EPSILON) {
+        *u = *v = *w = 0.0f;
+        return;
+    }
+
+    *v = (d11 * d20 - d01 * d21) / denom;
+    *w = (d00 * d21 - d01 * d20) / denom;
+    *u = 1.0f - *v - *w;
+}
+
+bool pointInTriangleByBarycentric(Vec3 p, Vec3 a, Vec3 b, Vec3 c) {
+    float u, v, w;
+    barycentricTriangle(a, b, c, p, &u, &v, &w);
+    return u >= -EPSILON && v >= -EPSILON && w >= -EPSILON;
+}
+\end{lstlisting}
+
+
+\Needspace{5\baselineskip}
+\subsubsection*{2.2 Projected-Area Barycentric Coordinates}
+\addcontentsline{toc}{subsubsection}{2.2 Projected-Area Barycentric Coordinates}
+
+\begin{lstlisting}
+float twiceArea2D(float x1, float y1, float x2, float y2, float x3, float y3) {
+    return (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1);
+}
+
+void barycentricProjected(Vec3 a, Vec3 b, Vec3 c, Vec3 p,
+                          float *u, float *v, float *w)
+{
+    Vec3 n = cross3(sub3(b, a), sub3(c, a));
+    float ax = absf(n.x), ay = absf(n.y), az = absf(n.z);
+    float nu, nv, denom;
+
+    if (ax >= ay && ax >= az) {
+        nu = twiceArea2D(p.y, p.z, b.y, b.z, c.y, c.z);
+        nv = twiceArea2D(p.y, p.z, c.y, c.z, a.y, a.z);
+        denom = n.x;
+    } else if (ay >= ax && ay >= az) {
+        nu = twiceArea2D(p.x, p.z, b.x, b.z, c.x, c.z);
+        nv = twiceArea2D(p.x, p.z, c.x, c.z, a.x, a.z);
+        denom = -n.y;
+    } else {
+        nu = twiceArea2D(p.x, p.y, b.x, b.y, c.x, c.y);
+        nv = twiceArea2D(p.x, p.y, c.x, c.y, a.x, a.y);
+        denom = n.z;
+    }
+
+    if (absf(denom) <= EPSILON) {
+        *u = *v = *w = 0.0f;
+        return;
+    }
+
+    *u = nu / denom;
+    *v = nv / denom;
+    *w = 1.0f - *u - *v;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{3. Plane Construction and Polygon Convexity}
+\addcontentsline{toc}{subsection}{3. Plane Construction and Polygon Convexity}
+
+\begin{lstlisting}
+Plane computePlaneFromTriangle(Vec3 a, Vec3 b, Vec3 c) {
+    Plane p;
+    p.n = normalize3(cross3(sub3(b, a), sub3(c, a)));
+    p.d = dot3(p.n, a);
+    return p;
+}
+
+bool isConvexQuad(Vec3 a, Vec3 b, Vec3 c, Vec3 d) {
+    Vec3 bd = sub3(d, b);
+    Vec3 ac = sub3(c, a);
+
+    Vec3 n0 = cross3(bd, sub3(a, b));
+    Vec3 n1 = cross3(bd, sub3(c, b));
+    if (dot3(n0, n1) >= -EPSILON) return false;
+
+    Vec3 n2 = cross3(ac, sub3(d, a));
+    Vec3 n3 = cross3(ac, sub3(b, a));
+    return dot3(n2, n3) < -EPSILON;
+}
+
+bool isConvexPolygon2D(Vec2 *v, int n) {
+    if (n < 3) return false;
+    int sign = 0;
+    for (int i = 0; i < n; ++i) {
+        Vec2 a = v[i];
+        Vec2 b = v[(i + 1) % n];
+        Vec2 c = v[(i + 2) % n];
+        float turn = orient2D(a, b, c);
+        if (absf(turn) <= EPSILON) continue;
+        int s = (turn > 0.0f) ? +1 : -1;
+        if (sign == 0) sign = s;
+        else if (sign != s) return false;
+    }
+    return true;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{4. Convex Hulls and Support Mappings}
+\addcontentsline{toc}{subsection}{4. Convex Hulls and Support Mappings}
+
+
+\Needspace{5\baselineskip}
+\subsubsection*{4.1 Andrew Monotone Chain Convex Hull}
+\addcontentsline{toc}{subsubsection}{4.1 Andrew Monotone Chain Convex Hull}
+
+\begin{lstlisting}
+int convexHullAndrew(Vec2 *points, int n, Vec2 *hull) {
+    sortLexicographicXY(points, n);
+    int m = 0;
+
+    for (int i = 0; i < n; ++i) {
+        while (m >= 2 && orient2D(hull[m - 2], hull[m - 1], points[i]) <= EPSILON)
+            --m;
+        hull[m++] = points[i];
+    }
+
+    int lowerCount = m;
+    for (int i = n - 2; i >= 0; --i) {
+        while (m > lowerCount && orient2D(hull[m - 2], hull[m - 1], points[i]) <= EPSILON)
+            --m;
+        hull[m++] = points[i];
+    }
+
+    if (m > 1) --m;   // remove repeated first vertex
+    return m;
+}
+\end{lstlisting}
+
+
+\Needspace{5\baselineskip}
+\subsubsection*{4.2 Quickhull Skeleton}
+\addcontentsline{toc}{subsubsection}{4.2 Quickhull Skeleton}
+
+\begin{lstlisting}
+void quickHullEdge(Vec2 a, Vec2 b, Vec2 *set, int count, Vec2 *out, int *outCount) {
+    int far = -1;
+    float best = 0.0f;
+    for (int i = 0; i < count; ++i) {
+        float d = orient2D(a, b, set[i]);
+        if (d > best) { best = d; far = i; }
+    }
+
+    if (far < 0) {
+        out[(*outCount)++] = b;
+        return;
+    }
+
+    Vec2 p = set[far];
+    Vec2 leftAP[MAX_TMP], leftPB[MAX_TMP];
+    int na = 0, nb = 0;
+
+    for (int i = 0; i < count; ++i) {
+        if (i == far) continue;
+        if (orient2D(a, p, set[i]) > EPSILON) leftAP[na++] = set[i];
+        else if (orient2D(p, b, set[i]) > EPSILON) leftPB[nb++] = set[i];
+    }
+
+    quickHullEdge(a, p, leftAP, na, out, outCount);
+    quickHullEdge(p, b, leftPB, nb, out, outCount);
+}
+
+int convexHullQuickhull(Vec2 *points, int n, Vec2 *hull) {
+    int imin = indexMinX(points, n);
+    int imax = indexMaxX(points, n);
+    Vec2 a = points[imin], b = points[imax];
+
+    Vec2 left[MAX_TMP], right[MAX_TMP];
+    int nl = 0, nr = 0;
+    for (int i = 0; i < n; ++i) {
+        float s = orient2D(a, b, points[i]);
+        if (s > EPSILON) left[nl++] = points[i];
+        else if (s < -EPSILON) right[nr++] = points[i];
+    }
+
+    int m = 0;
+    hull[m++] = a;
+    quickHullEdge(a, b, left, nl, hull, &m);
+    quickHullEdge(b, a, right, nr, hull, &m);
+    return m;
+}
+\end{lstlisting}
+
+
+\Needspace{5\baselineskip}
+\subsubsection*{4.3 Extreme Vertex by Linear Scan and Hill Climb}
+\addcontentsline{toc}{subsubsection}{4.3 Extreme Vertex by Linear Scan and Hill Climb}
+
+\begin{lstlisting}
+int supportVertexLinear(Vec3 *v, int n, Vec3 dir) {
+    int best = 0;
+    float bestDot = dot3(v[0], dir);
+    for (int i = 1; i < n; ++i) {
+        float s = dot3(v[i], dir);
+        if (s > bestDot) {
+            bestDot = s;
+            best = i;
+        }
+    }
+    return best;
+}
+
+int supportVertexHillClimb(ConvexMesh *mesh, Vec3 dir, int startVertex) {
+    int current = startVertex;
+    float currentScore = dot3(mesh->vertex[current], dir);
+
+    for (;;) {
+        int improved = false;
+        for each neighbor in mesh->adjacent[current] {
+            float score = dot3(mesh->vertex[neighbor], dir);
+            if (score > currentScore + EPSILON) {
+                current = neighbor;
+                currentScore = score;
+                improved = true;
+                break;
+            }
+        }
+        if (!improved) return current;
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part II --- Bounding Volumes}
+\addcontentsline{toc}{section}{Part II --- Bounding Volumes}
+
+
+\Needspace{6\baselineskip}
+\subsection*{5. Axis-Aligned Bounding Boxes}
+\addcontentsline{toc}{subsection}{5. Axis-Aligned Bounding Boxes}
+
+\begin{lstlisting}
+bool testAABBAABB(AABB a, AABB b) {
+    if (a.max.x < b.min.x || a.min.x > b.max.x) return false;
+    if (a.max.y < b.min.y || a.min.y > b.max.y) return false;
+    if (a.max.z < b.min.z || a.min.z > b.max.z) return false;
+    return true;
+}
+
+AABB computeAABB(Vec3 *points, int n) {
+    AABB box;
+    box.min = box.max = points[0];
+    for (int i = 1; i < n; ++i) {
+        box.min.x = minf(box.min.x, points[i].x);
+        box.min.y = minf(box.min.y, points[i].y);
+        box.min.z = minf(box.min.z, points[i].z);
+        box.max.x = maxf(box.max.x, points[i].x);
+        box.max.y = maxf(box.max.y, points[i].y);
+        box.max.z = maxf(box.max.z, points[i].z);
+    }
+    return box;
+}
+
+void extremePointsAlongDirection(Vec3 dir, Vec3 *p, int n, int *imin, int *imax) {
+    float minProj = dot3(p[0], dir);
+    float maxProj = minProj;
+    *imin = *imax = 0;
+
+    for (int i = 1; i < n; ++i) {
+        float s = dot3(p[i], dir);
+        if (s < minProj) { minProj = s; *imin = i; }
+        if (s > maxProj) { maxProj = s; *imax = i; }
+    }
+}
+\end{lstlisting}
+
+
+\Needspace{5\baselineskip}
+\subsubsection*{5.1 Transforming an AABB Conservatively}
+\addcontentsline{toc}{subsubsection}{5.1 Transforming an AABB Conservatively}
+
+\begin{lstlisting}
+AABB transformAABB(AABB a, Mat3 r, Vec3 t) {
+    Vec3 center = scale3(add3(a.min, a.max), 0.5f);
+    Vec3 extent = scale3(sub3(a.max, a.min), 0.5f);
+
+    Vec3 newCenter = add3(mat3MulVec3(r, center), t);
+    Vec3 newExtent;
+    for (int i = 0; i < 3; ++i) {
+        newExtent[i] = absf(r.m[i][0]) * extent.x
+                     + absf(r.m[i][1]) * extent.y
+                     + absf(r.m[i][2]) * extent.z;
+    }
+
+    AABB b;
+    b.min = sub3(newCenter, newExtent);
+    b.max = add3(newCenter, newExtent);
+    return b;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{6. Spheres}
+\addcontentsline{toc}{subsection}{6. Spheres}
+
+\begin{lstlisting}
+bool testSphereSphere(Sphere a, Sphere b) {
+    float r = a.r + b.r;
+    return lengthSq3(sub3(a.c, b.c)) <= r * r;
+}
+
+void mostSeparatedPointsOnAABB(Vec3 *p, int n, int *i0, int *i1) {
+    int minX, maxX, minY, maxY, minZ, maxZ;
+    extremePointsAlongDirection((Vec3){1,0,0}, p, n, &minX, &maxX);
+    extremePointsAlongDirection((Vec3){0,1,0}, p, n, &minY, &maxY);
+    extremePointsAlongDirection((Vec3){0,0,1}, p, n, &minZ, &maxZ);
+
+    float dx = lengthSq3(sub3(p[maxX], p[minX]));
+    float dy = lengthSq3(sub3(p[maxY], p[minY]));
+    float dz = lengthSq3(sub3(p[maxZ], p[minZ]));
+
+    *i0 = minX; *i1 = maxX;
+    if (dy > dx && dy > dz) { *i0 = minY; *i1 = maxY; }
+    if (dz > dx && dz > dy) { *i0 = minZ; *i1 = maxZ; }
+}
+
+Sphere sphereFromDistantPoints(Vec3 *p, int n) {
+    int i0, i1;
+    mostSeparatedPointsOnAABB(p, n, &i0, &i1);
+    Sphere s;
+    s.c = scale3(add3(p[i0], p[i1]), 0.5f);
+    s.r = 0.5f * length3(sub3(p[i1], p[i0]));
+    return s;
+}
+
+void expandSphereToIncludePoint(Sphere *s, Vec3 p) {
+    Vec3 d = sub3(p, s->c);
+    float dist2 = dot3(d, d);
+    if (dist2 <= s->r * s->r) return;
+
+    float dist = sqrtf(dist2);
+    float newRadius = 0.5f * (s->r + dist);
+    float shift = (newRadius - s->r) / dist;
+    s->c = add3(s->c, scale3(d, shift));
+    s->r = newRadius;
+}
+
+Sphere ritterSphere(Vec3 *p, int n) {
+    Sphere s = sphereFromDistantPoints(p, n);
+    for (int i = 0; i < n; ++i)
+        expandSphereToIncludePoint(&s, p[i]);
+    return s;
+}
+\end{lstlisting}
+
+
+\Needspace{5\baselineskip}
+\subsubsection*{6.1 Iterative and Eigen-Based Bounding Spheres}
+\addcontentsline{toc}{subsubsection}{6.1 Iterative and Eigen-Based Bounding Spheres}
+
+\begin{lstlisting}
+Sphere iterativeRitterSphere(Vec3 *p, int n, int iterations) {
+    Sphere best = ritterSphere(p, n);
+
+    for (int k = 0; k < iterations; ++k) {
+        shufflePoints(p, n);
+        Sphere s = best;
+        s.r *= 0.95f;      // intentionally tighten, then re-expand
+        for (int i = 0; i < n; ++i)
+            expandSphereToIncludePoint(&s, p[i]);
+        if (s.r < best.r) best = s;
+    }
+    return best;
+}
+
+Mat3 covarianceMatrix(Vec3 *p, int n) {
+    Vec3 mean = {0,0,0};
+    for (int i = 0; i < n; ++i) mean = add3(mean, p[i]);
+    mean = scale3(mean, 1.0f / n);
+
+    Mat3 c = zeroMat3();
+    for (int i = 0; i < n; ++i) {
+        Vec3 q = sub3(p[i], mean);
+        c.m[0][0] += q.x * q.x; c.m[0][1] += q.x * q.y; c.m[0][2] += q.x * q.z;
+        c.m[1][0] += q.y * q.x; c.m[1][1] += q.y * q.y; c.m[1][2] += q.y * q.z;
+        c.m[2][0] += q.z * q.x; c.m[2][1] += q.z * q.y; c.m[2][2] += q.z * q.z;
+    }
+    return scaleMat3(c, 1.0f / n);
+}
+
+Sphere eigenSphere(Vec3 *p, int n) {
+    Mat3 cov = covarianceMatrix(p, n);
+    Vec3 majorAxis = dominantEigenvectorJacobi(cov);
+    int i0, i1;
+    extremePointsAlongDirection(majorAxis, p, n, &i0, &i1);
+
+    Sphere s;
+    s.c = scale3(add3(p[i0], p[i1]), 0.5f);
+    s.r = 0.5f * length3(sub3(p[i1], p[i0]));
+    for (int i = 0; i < n; ++i)
+        expandSphereToIncludePoint(&s, p[i]);
+    return s;
+}
+\end{lstlisting}
+
+
+\Needspace{5\baselineskip}
+\subsubsection*{6.2 Welzl Minimum Sphere Skeleton}
+\addcontentsline{toc}{subsubsection}{6.2 Welzl Minimum Sphere Skeleton}
+
+\begin{lstlisting}
+Sphere sphereFromSupport(Vec3 *support, int m) {
+    if (m == 0) return (Sphere){ {0,0,0}, -1.0f };
+    if (m == 1) return (Sphere){ support[0], 0.0f };
+    if (m == 2) return sphereThrough2(support[0], support[1]);
+    if (m == 3) return sphereThrough3(support[0], support[1], support[2]);
+    return sphereThrough4(support[0], support[1], support[2], support[3]);
+}
+
+Sphere welzlSphereRecursive(Vec3 *p, int n, Vec3 *support, int m) {
+    if (n == 0 || m == 4)
+        return sphereFromSupport(support, m);
+
+    Sphere s = welzlSphereRecursive(p, n - 1, support, m);
+    if (s.r >= 0.0f && lengthSq3(sub3(p[n - 1], s.c)) <= s.r * s.r + EPSILON)
+        return s;
+
+    support[m] = p[n - 1];
+    return welzlSphereRecursive(p, n - 1, support, m + 1);
+}
+
+Sphere minimumBoundingSphere(Vec3 *p, int n) {
+    shufflePoints(p, n);
+    Vec3 support[4];
+    return welzlSphereRecursive(p, n, support, 0);
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{7. Oriented Bounding Boxes}
+\addcontentsline{toc}{subsection}{7. Oriented Bounding Boxes}
+
+
+\Needspace{5\baselineskip}
+\subsubsection*{7.1 OBB-OBB Separating Axis Test}
+\addcontentsline{toc}{subsubsection}{7.1 OBB-OBB Separating Axis Test}
+
+\begin{lstlisting}
+bool testOBBOBB(OBB a, OBB b) {
+    float R[3][3], AbsR[3][3];
+
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            R[i][j] = dot3(a.axis[i], b.axis[j]);
+            AbsR[i][j] = absf(R[i][j]) + EPSILON;  // robust parallel-axis padding
+        }
+    }
+
+    Vec3 tWorld = sub3(b.c, a.c);
+    float t[3] = {
+        dot3(tWorld, a.axis[0]),
+        dot3(tWorld, a.axis[1]),
+        dot3(tWorld, a.axis[2])
+    };
+
+    for (int i = 0; i < 3; ++i) {
+        float ra = a.e[i];
+        float rb = b.e[0] * AbsR[i][0] + b.e[1] * AbsR[i][1] + b.e[2] * AbsR[i][2];
+        if (absf(t[i]) > ra + rb) return false;
+    }
+
+    for (int j = 0; j < 3; ++j) {
+        float ra = a.e[0] * AbsR[0][j] + a.e[1] * AbsR[1][j] + a.e[2] * AbsR[2][j];
+        float rb = b.e[j];
+        float dist = absf(t[0] * R[0][j] + t[1] * R[1][j] + t[2] * R[2][j]);
+        if (dist > ra + rb) return false;
+    }
+
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            float ra = a.e[(i + 1) % 3] * AbsR[(i + 2) % 3][j]
+                     + a.e[(i + 2) % 3] * AbsR[(i + 1) % 3][j];
+            float rb = b.e[(j + 1) % 3] * AbsR[i][(j + 2) % 3]
+                     + b.e[(j + 2) % 3] * AbsR[i][(j + 1) % 3];
+            float dist = absf(t[(i + 2) % 3] * R[(i + 1) % 3][j]
+                            - t[(i + 1) % 3] * R[(i + 2) % 3][j]);
+            if (dist > ra + rb) return false;
+        }
+    }
+    return true;
+}
+\end{lstlisting}
+
+
+\Needspace{5\baselineskip}
+\subsubsection*{7.2 PCA-Based OBB Fitting}
+\addcontentsline{toc}{subsubsection}{7.2 PCA-Based OBB Fitting}
+
+\begin{lstlisting}
+OBB fitOBBByPCA(Vec3 *p, int n) {
+    Mat3 cov = covarianceMatrix(p, n);
+    Mat3 eigenBasis = jacobiEigenvectors(cov);
+
+    OBB box;
+    for (int i = 0; i < 3; ++i) box.axis[i] = getColumn(eigenBasis, i);
+
+    float lo[3] = { BIG_FLOAT, BIG_FLOAT, BIG_FLOAT };
+    float hi[3] = { -BIG_FLOAT, -BIG_FLOAT, -BIG_FLOAT };
+
+    for (int k = 0; k < n; ++k) {
+        for (int i = 0; i < 3; ++i) {
+            float s = dot3(p[k], box.axis[i]);
+            lo[i] = minf(lo[i], s);
+            hi[i] = maxf(hi[i], s);
+        }
+    }
+
+    box.c = (Vec3){0,0,0};
+    for (int i = 0; i < 3; ++i) {
+        float mid = 0.5f * (lo[i] + hi[i]);
+        box.c = add3(box.c, scale3(box.axis[i], mid));
+        box.e[i] = 0.5f * (hi[i] - lo[i]);
+    }
+    return box;
+}
+\end{lstlisting}
+
+
+\Needspace{5\baselineskip}
+\subsubsection*{7.3 Minimum-Area Rectangle by Rotating Calipers}
+\addcontentsline{toc}{subsubsection}{7.3 Minimum-Area Rectangle by Rotating Calipers}
+
+\begin{lstlisting}
+float minimumAreaRectangle2D(Vec2 *hull, int n, Vec2 *center, Vec2 axis[2]) {
+    float bestArea = BIG_FLOAT;
+
+    for (int e = 0; e < n; ++e) {
+        Vec2 u = normalize2(sub2(hull[(e + 1) % n], hull[e]));
+        Vec2 v = perp2(u);
+        float umin = BIG_FLOAT, umax = -BIG_FLOAT;
+        float vmin = BIG_FLOAT, vmax = -BIG_FLOAT;
+
+        for (int i = 0; i < n; ++i) {
+            float su = dot2(hull[i], u);
+            float sv = dot2(hull[i], v);
+            umin = minf(umin, su); umax = maxf(umax, su);
+            vmin = minf(vmin, sv); vmax = maxf(vmax, sv);
+        }
+
+        float area = (umax - umin) * (vmax - vmin);
+        if (area < bestArea) {
+            bestArea = area;
+            axis[0] = u; axis[1] = v;
+            *center = add2(scale2(u, 0.5f * (umin + umax)),
+                           scale2(v, 0.5f * (vmin + vmax)));
+        }
+    }
+    return bestArea;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{8. Sphere-Swept Volumes and k-DOPs}
+\addcontentsline{toc}{subsection}{8. Sphere-Swept Volumes and k-DOPs}
+
+\begin{lstlisting}
+bool testSphereCapsule(Sphere s, Capsule c) {
+    Vec3 q;
+    float t;
+    closestPointSegment(s.c, c.a, c.b, &t, &q);
+    float r = s.r + c.r;
+    return lengthSq3(sub3(s.c, q)) <= r * r;
+}
+
+bool testCapsuleCapsule(Capsule a, Capsule b) {
+    Vec3 p, q;
+    float s, t;
+    closestPointsSegmentSegment(a.a, a.b, b.a, b.b, &s, &t, &p, &q);
+    float r = a.r + b.r;
+    return lengthSq3(sub3(p, q)) <= r * r;
+}
+
+bool testKDOPKDOP(KDOP a, KDOP b) {
+    for (int i = 0; i < a.k; ++i) {
+        if (a.max[i] < b.min[i] || b.max[i] < a.min[i]) return false;
+    }
+    return true;
+}
+
+KDOP computeKDOP(Vec3 *p, int n, Vec3 *axis, int k) {
+    KDOP d; d.k = k;
+    for (int a = 0; a < k; ++a) {
+        d.min[a] = BIG_FLOAT;
+        d.max[a] = -BIG_FLOAT;
+        for (int i = 0; i < n; ++i) {
+            float s = dot3(axis[a], p[i]);
+            d.min[a] = minf(d.min[a], s);
+            d.max[a] = maxf(d.max[a], s);
+        }
+    }
+    return d;
+}
+
+KDOP mergeKDOP(KDOP a, KDOP b) {
+    KDOP r; r.k = a.k;
+    for (int i = 0; i < a.k; ++i) {
+        r.min[i] = minf(a.min[i], b.min[i]);
+        r.max[i] = maxf(a.max[i], b.max[i]);
+    }
+    return r;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part III --- Closest-Point Computations}
+\addcontentsline{toc}{section}{Part III --- Closest-Point Computations}
+
+
+\Needspace{6\baselineskip}
+\subsection*{9. Point to Plane, Segment, AABB, OBB, and Rectangle}
+\addcontentsline{toc}{subsection}{9. Point to Plane, Segment, AABB, OBB, and Rectangle}
+
+\begin{lstlisting}
+Vec3 closestPointPlane(Vec3 q, Plane p) {
+    float dist = signedDistancePlane(p, q);
+    return sub3(q, scale3(p.n, dist));
+}
+
+float distancePointPlane(Vec3 q, Plane p) {
+    return signedDistancePlane(p, q);
+}
+
+Vec3 closestPointSegment(Vec3 p, Vec3 a, Vec3 b, float *tOut, Vec3 *qOut) {
+    Vec3 ab = sub3(b, a);
+    float denom = dot3(ab, ab);
+    float t = 0.0f;
+    if (denom > EPSILON)
+        t = clamp01(dot3(sub3(p, a), ab) / denom);
+    Vec3 q = add3(a, scale3(ab, t));
+    if (tOut) *tOut = t;
+    if (qOut) *qOut = q;
+    return q;
+}
+
+float sqDistPointSegment(Vec3 p, Vec3 a, Vec3 b) {
+    Vec3 q = closestPointSegment(p, a, b, 0, 0);
+    return lengthSq3(sub3(p, q));
+}
+
+Vec3 closestPointAABB(Vec3 p, AABB b) {
+    Vec3 q;
+    q.x = clampf(p.x, b.min.x, b.max.x);
+    q.y = clampf(p.y, b.min.y, b.max.y);
+    q.z = clampf(p.z, b.min.z, b.max.z);
+    return q;
+}
+
+float sqDistPointAABB(Vec3 p, AABB b) {
+    Vec3 q = closestPointAABB(p, b);
+    return lengthSq3(sub3(p, q));
+}
+
+Vec3 closestPointOBB(Vec3 p, OBB b) {
+    Vec3 d = sub3(p, b.c);
+    Vec3 q = b.c;
+    for (int i = 0; i < 3; ++i) {
+        float dist = dot3(d, b.axis[i]);
+        dist = clampf(dist, -b.e[i], b.e[i]);
+        q = add3(q, scale3(b.axis[i], dist));
+    }
+    return q;
+}
+
+float sqDistPointOBB(Vec3 p, OBB b) {
+    Vec3 q = closestPointOBB(p, b);
+    return lengthSq3(sub3(p, q));
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+Vec3 closestPointRectangle(Vec3 p, Vec3 a, Vec3 edge0, Vec3 edge1,
+                           float extent0, float extent1)
+{
+    Vec3 d = sub3(p, a);
+    float s = clampf(dot3(d, edge0), -extent0, extent0);
+    float t = clampf(dot3(d, edge1), -extent1, extent1);
+    return add3(add3(a, scale3(edge0, s)), scale3(edge1, t));
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{10. Closest Point on Triangle}
+\addcontentsline{toc}{subsection}{10. Closest Point on Triangle}
+
+\begin{lstlisting}
+Vec3 closestPointTriangle(Vec3 p, Vec3 a, Vec3 b, Vec3 c) {
+    Vec3 ab = sub3(b, a);
+    Vec3 ac = sub3(c, a);
+    Vec3 ap = sub3(p, a);
+    float d1 = dot3(ab, ap);
+    float d2 = dot3(ac, ap);
+    if (d1 <= 0.0f && d2 <= 0.0f) return a;
+
+    Vec3 bp = sub3(p, b);
+    float d3 = dot3(ab, bp);
+    float d4 = dot3(ac, bp);
+    if (d3 >= 0.0f && d4 <= d3) return b;
+
+    float vc = d1 * d4 - d3 * d2;
+    if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f) {
+        float v = d1 / (d1 - d3);
+        return add3(a, scale3(ab, v));
+    }
+
+    Vec3 cp = sub3(p, c);
+    float d5 = dot3(ab, cp);
+    float d6 = dot3(ac, cp);
+    if (d6 >= 0.0f && d5 <= d6) return c;
+
+    float vb = d5 * d2 - d1 * d6;
+    if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f) {
+        float w = d2 / (d2 - d6);
+        return add3(a, scale3(ac, w));
+    }
+
+    float va = d3 * d6 - d5 * d4;
+    if (va <= 0.0f && (d4 - d3) >= 0.0f && (d5 - d6) >= 0.0f) {
+        float w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+        return add3(b, scale3(sub3(c, b), w));
+    }
+
+    float denom = 1.0f / (va + vb + vc);
+    float v = vb * denom;
+    float w = vc * denom;
+    return add3(a, add3(scale3(ab, v), scale3(ac, w)));
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{11. Closest Point on Tetrahedron and Convex Polyhedron}
+\addcontentsline{toc}{subsection}{11. Closest Point on Tetrahedron and Convex Polyhedron}
+
+\begin{lstlisting}
+bool pointOutsidePlane(Vec3 p, Vec3 a, Vec3 b, Vec3 c, Vec3 opposite) {
+    float sideP = orient3D(a, b, c, p);
+    float sideOpp = orient3D(a, b, c, opposite);
+    return sideP * sideOpp < -EPSILON;
+}
+
+Vec3 closestPointTetrahedron(Vec3 p, Vec3 a, Vec3 b, Vec3 c, Vec3 d) {
+    Vec3 best = p;
+    float bestDist2 = BIG_FLOAT;
+    bool outside = false;
+
+    if (pointOutsidePlane(p, a, b, c, d)) {
+        outside = true;
+        Vec3 q = closestPointTriangle(p, a, b, c);
+        bestDist2 = lengthSq3(sub3(p, q));
+        best = q;
+    }
+    if (pointOutsidePlane(p, a, c, d, b)) {
+        outside = true;
+        Vec3 q = closestPointTriangle(p, a, c, d);
+        float d2 = lengthSq3(sub3(p, q));
+        if (d2 < bestDist2) { bestDist2 = d2; best = q; }
+    }
+    if (pointOutsidePlane(p, a, d, b, c)) {
+        outside = true;
+        Vec3 q = closestPointTriangle(p, a, d, b);
+        float d2 = lengthSq3(sub3(p, q));
+        if (d2 < bestDist2) { bestDist2 = d2; best = q; }
+    }
+    if (pointOutsidePlane(p, b, d, c, a)) {
+        outside = true;
+        Vec3 q = closestPointTriangle(p, b, d, c);
+        float d2 = lengthSq3(sub3(p, q));
+        if (d2 < bestDist2) { bestDist2 = d2; best = q; }
+    }
+
+    return outside ? best : p;
+}
+
+Vec3 closestPointConvexPolyhedron(Vec3 p, Plane *planes, int planeCount) {
+    Vec3 q = p;
+    for (int iter = 0; iter < MAX_PROJECTION_ITERS; ++iter) {
+        bool changed = false;
+        for (int i = 0; i < planeCount; ++i) {
+            float s = signedDistancePlane(planes[i], q);
+            if (s > 0.0f) {
+                q = sub3(q, scale3(planes[i].n, s));
+                changed = true;
+            }
+        }
+        if (!changed) break;
+    }
+    return q;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{12. Closest Points Between Segments and Triangles}
+\addcontentsline{toc}{subsection}{12. Closest Points Between Segments and Triangles}
+
+\begin{lstlisting}
+void closestPointsSegmentSegment(Vec3 p1, Vec3 q1, Vec3 p2, Vec3 q2,
+                                 float *sOut, float *tOut, Vec3 *c1Out, Vec3 *c2Out)
+{
+    Vec3 d1 = sub3(q1, p1);
+    Vec3 d2 = sub3(q2, p2);
+    Vec3 r = sub3(p1, p2);
+    float a = dot3(d1, d1);
+    float e = dot3(d2, d2);
+    float f = dot3(d2, r);
+    float s, t;
+
+    if (a <= EPSILON && e <= EPSILON) {
+        s = t = 0.0f;
+    } else if (a <= EPSILON) {
+        s = 0.0f;
+        t = clamp01(f / e);
+    } else {
+        float c = dot3(d1, r);
+        if (e <= EPSILON) {
+            t = 0.0f;
+            s = clamp01(-c / a);
+        } else {
+            float b = dot3(d1, d2);
+            float denom = a * e - b * b;
+            if (denom != 0.0f) s = clamp01((b * f - c * e) / denom);
+            else s = 0.0f;
+            t = (b * s + f) / e;
+            if (t < 0.0f) { t = 0.0f; s = clamp01(-c / a); }
+            else if (t > 1.0f) { t = 1.0f; s = clamp01((b - c) / a); }
+        }
+    }
+
+    Vec3 c1 = add3(p1, scale3(d1, s));
+    Vec3 c2 = add3(p2, scale3(d2, t));
+    if (sOut) *sOut = s; if (tOut) *tOut = t;
+    if (c1Out) *c1Out = c1; if (c2Out) *c2Out = c2;
+}
+
+float sqDistSegmentSegment(Vec3 a0, Vec3 a1, Vec3 b0, Vec3 b1) {
+    Vec3 p, q;
+    closestPointsSegmentSegment(a0, a1, b0, b1, 0, 0, &p, &q);
+    return lengthSq3(sub3(p, q));
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+float sqDistSegmentTriangle(Vec3 p, Vec3 q, Vec3 a, Vec3 b, Vec3 c) {
+    // Candidate 1: segment endpoint to triangle.
+    float best = lengthSq3(sub3(p, closestPointTriangle(p, a, b, c)));
+    best = minf(best, lengthSq3(sub3(q, closestPointTriangle(q, a, b, c))));
+
+    // Candidate 2: segment against triangle edges.
+    best = minf(best, sqDistSegmentSegment(p, q, a, b));
+    best = minf(best, sqDistSegmentSegment(p, q, b, c));
+    best = minf(best, sqDistSegmentSegment(p, q, c, a));
+
+    // Candidate 3: actual segment-triangle intersection gives zero.
+    if (intersectSegmentTriangle(p, q, a, b, c, 0, 0)) best = 0.0f;
+    return best;
+}
+
+float sqDistTriangleTriangle(Triangle x, Triangle y) {
+    if (testTriangleTriangle(x, y)) return 0.0f;
+    float best = BIG_FLOAT;
+    Vec3 xe[3][2] = {{x.a,x.b},{x.b,x.c},{x.c,x.a}};
+    Vec3 ye[3][2] = {{y.a,y.b},{y.b,y.c},{y.c,y.a}};
+    for (int i = 0; i < 3; ++i) best = minf(best, sqDistSegmentTriangle(xe[i][0], xe[i][1], y.a, y.b, y.c));
+    for (int i = 0; i < 3; ++i) best = minf(best, sqDistSegmentTriangle(ye[i][0], ye[i][1], x.a, x.b, x.c));
+    return best;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part IV --- Static Primitive Tests}
+\addcontentsline{toc}{section}{Part IV --- Static Primitive Tests}
+
+
+\Needspace{6\baselineskip}
+\subsection*{13. Plane, Box, Sphere, Triangle, and Polygon Tests}
+\addcontentsline{toc}{subsection}{13. Plane, Box, Sphere, Triangle, and Polygon Tests}
+
+\begin{lstlisting}
+int testSpherePlane(Sphere s, Plane p) {
+    float dist = signedDistancePlane(p, s.c);
+    if (dist > s.r) return +1;      // entirely in positive halfspace
+    if (dist < -s.r) return -1;     // entirely in negative halfspace
+    return 0;                       // intersects plane slab
+}
+
+bool testSphereHalfspace(Sphere s, Plane p) {
+    return signedDistancePlane(p, s.c) <= s.r;
+}
+
+bool testAABBPlane(AABB b, Plane p) {
+    Vec3 c = scale3(add3(b.min, b.max), 0.5f);
+    Vec3 e = scale3(sub3(b.max, b.min), 0.5f);
+    float r = e.x * absf(p.n.x) + e.y * absf(p.n.y) + e.z * absf(p.n.z);
+    float dist = signedDistancePlane(p, c);
+    return absf(dist) <= r;
+}
+
+bool testOBBPlane(OBB b, Plane p) {
+    float r = 0.0f;
+    for (int i = 0; i < 3; ++i)
+        r += b.e[i] * absf(dot3(p.n, b.axis[i]));
+    float dist = signedDistancePlane(p, b.c);
+    return absf(dist) <= r;
+}
+
+bool testSphereAABB(Sphere s, AABB b) {
+    Vec3 q = closestPointAABB(s.c, b);
+    return lengthSq3(sub3(q, s.c)) <= s.r * s.r;
+}
+
+bool testSphereOBB(Sphere s, OBB b) {
+    Vec3 q = closestPointOBB(s.c, b);
+    return lengthSq3(sub3(q, s.c)) <= s.r * s.r;
+}
+
+bool testSphereTriangle(Sphere s, Vec3 a, Vec3 b, Vec3 c, Vec3 *closest) {
+    Vec3 q = closestPointTriangle(s.c, a, b, c);
+    if (closest) *closest = q;
+    return lengthSq3(sub3(q, s.c)) <= s.r * s.r;
+}
+
+bool testSpherePolygon(Sphere s, Vec3 *v, int n) {
+    Plane p = computePlaneFromPolygon(v, n);
+    float dist = signedDistancePlane(p, s.c);
+    if (absf(dist) > s.r) return false;
+    Vec3 q = sub3(s.c, scale3(p.n, dist));
+    if (pointInConvexPolygon3D(q, v, n, p.n)) return true;
+    for (int i = 0; i < n; ++i) {
+        if (sqDistPointSegment(s.c, v[i], v[(i + 1) % n]) <= s.r * s.r)
+            return true;
+    }
+    return false;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{14. Triangle-AABB Separating Axis Test}
+\addcontentsline{toc}{subsection}{14. Triangle-AABB Separating Axis Test}
+
+\begin{lstlisting}
+bool testTriangleAABB(Vec3 v0, Vec3 v1, Vec3 v2, AABB b) {
+    Vec3 c = scale3(add3(b.min, b.max), 0.5f);
+    Vec3 e = scale3(sub3(b.max, b.min), 0.5f);
+
+    v0 = sub3(v0, c);
+    v1 = sub3(v1, c);
+    v2 = sub3(v2, c);
+
+    Vec3 f0 = sub3(v1, v0);
+    Vec3 f1 = sub3(v2, v1);
+    Vec3 f2 = sub3(v0, v2);
+
+    Vec3 boxAxes[3] = { {1,0,0}, {0,1,0}, {0,0,1} };
+    Vec3 triEdges[3] = { f0, f1, f2 };
+
+    // 9 axes: edge cross box axis.
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            Vec3 axis = cross3(triEdges[i], boxAxes[j]);
+            if (lengthSq3(axis) <= EPSILON) continue;
+            if (!overlapTriangleBoxOnAxis(v0, v1, v2, e, axis)) return false;
+        }
+    }
+
+    // 3 axes: AABB face normals.
+    if (max3(v0.x, v1.x, v2.x) < -e.x || min3(v0.x, v1.x, v2.x) > e.x) return false;
+    if (max3(v0.y, v1.y, v2.y) < -e.y || min3(v0.y, v1.y, v2.y) > e.y) return false;
+    if (max3(v0.z, v1.z, v2.z) < -e.z || min3(v0.z, v1.z, v2.z) > e.z) return false;
+
+    // 1 axis: triangle plane normal.
+    Vec3 n = cross3(f0, f1);
+    Plane p = { n, dot3(n, v0) };
+    return testAABBPlane((AABB){ scale3(e, -1.0f), e }, p);
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{15. Triangle-Triangle Test}
+\addcontentsline{toc}{subsection}{15. Triangle-Triangle Test}
+
+\begin{lstlisting}
+bool testTriangleTriangle(Triangle a, Triangle b) {
+    Plane pa = computePlaneFromTriangle(a.a, a.b, a.c);
+    float db0 = signedDistancePlane(pa, b.a);
+    float db1 = signedDistancePlane(pa, b.b);
+    float db2 = signedDistancePlane(pa, b.c);
+    if (sameStrictSign3(db0, db1, db2)) return false;
+
+    Plane pb = computePlaneFromTriangle(b.a, b.b, b.c);
+    float da0 = signedDistancePlane(pb, a.a);
+    float da1 = signedDistancePlane(pb, a.b);
+    float da2 = signedDistancePlane(pb, a.c);
+    if (sameStrictSign3(da0, da1, da2)) return false;
+
+    if (coplanarPlanes(pa, pb))
+        return testCoplanarTriangles2D(a, b, dominantProjectionAxis(pa.n));
+
+    Vec3 dir = cross3(pa.n, pb.n);
+    Interval ia = trianglePlaneIntersectionInterval(a, pb, dir);
+    Interval ib = trianglePlaneIntersectionInterval(b, pa, dir);
+    return intervalsOverlap(ia, ib);
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{16. Point Containment Tests}
+\addcontentsline{toc}{subsection}{16. Point Containment Tests}
+
+\begin{lstlisting}
+bool pointInConvexPolygon(Vec3 p, Vec3 *v, int n, Vec3 normal) {
+    for (int i = 0; i < n; ++i) {
+        Vec3 a = v[i];
+        Vec3 b = v[(i + 1) % n];
+        Vec3 edge = sub3(b, a);
+        Vec3 outward = cross3(edge, normal);
+        if (dot3(outward, sub3(p, a)) > EPSILON) return false;
+    }
+    return true;
+}
+
+bool pointInTriangleBySameSide(Vec3 p, Vec3 a, Vec3 b, Vec3 c) {
+    Vec3 n = cross3(sub3(b, a), sub3(c, a));
+    Vec3 c0 = cross3(sub3(b, a), sub3(p, a));
+    Vec3 c1 = cross3(sub3(c, b), sub3(p, b));
+    Vec3 c2 = cross3(sub3(a, c), sub3(p, c));
+    return dot3(c0, n) >= -EPSILON && dot3(c1, n) >= -EPSILON && dot3(c2, n) >= -EPSILON;
+}
+
+bool pointInTriangle2D(Vec2 p, Vec2 a, Vec2 b, Vec2 c) {
+    float s0 = orient2D(a, b, p);
+    float s1 = orient2D(b, c, p);
+    float s2 = orient2D(c, a, p);
+    bool hasNeg = (s0 < -EPSILON) || (s1 < -EPSILON) || (s2 < -EPSILON);
+    bool hasPos = (s0 >  EPSILON) || (s1 >  EPSILON) || (s2 >  EPSILON);
+    return !(hasNeg && hasPos);
+}
+
+bool pointInPolyhedron(Vec3 p, Plane *planes, int n) {
+    for (int i = 0; i < n; ++i)
+        if (signedDistancePlane(planes[i], p) > EPSILON) return false;
+    return true;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part V --- Ray, Segment, and Plane Intersections}
+\addcontentsline{toc}{section}{Part V --- Ray, Segment, and Plane Intersections}
+
+
+\Needspace{6\baselineskip}
+\subsection*{17. Segment-Plane, Ray-Sphere, and Ray-AABB}
+\addcontentsline{toc}{subsection}{17. Segment-Plane, Ray-Sphere, and Ray-AABB}
+
+\begin{lstlisting}
+bool intersectSegmentPlane(Vec3 a, Vec3 b, Plane p, float *tOut, Vec3 *qOut) {
+    Vec3 ab = sub3(b, a);
+    float denom = dot3(p.n, ab);
+    if (absf(denom) <= EPSILON) return false;
+
+    float t = (p.d - dot3(p.n, a)) / denom;
+    if (t < 0.0f || t > 1.0f) return false;
+
+    if (tOut) *tOut = t;
+    if (qOut) *qOut = add3(a, scale3(ab, t));
+    return true;
+}
+
+bool intersectRaySphere(Vec3 p, Vec3 d, Sphere s, float *tOut, Vec3 *qOut) {
+    Vec3 m = sub3(p, s.c);
+    float b = dot3(m, d);
+    float c = dot3(m, m) - s.r * s.r;
+    if (c > 0.0f && b > 0.0f) return false;
+
+    float discr = b * b - c * dot3(d, d);
+    if (discr < 0.0f) return false;
+
+    float t = (-b - sqrtf(discr)) / dot3(d, d);
+    if (t < 0.0f) t = 0.0f;
+    if (tOut) *tOut = t;
+    if (qOut) *qOut = add3(p, scale3(d, t));
+    return true;
+}
+
+bool intersectRayAABB(Vec3 p, Vec3 d, AABB a, float *tminOut, Vec3 *qOut) {
+    float tmin = 0.0f;
+    float tmax = BIG_FLOAT;
+
+    for (int axis = 0; axis < 3; ++axis) {
+        float origin = p[axis];
+        float dir = d[axis];
+        float lo = a.min[axis];
+        float hi = a.max[axis];
+
+        if (absf(dir) < EPSILON) {
+            if (origin < lo || origin > hi) return false;
+        } else {
+            float inv = 1.0f / dir;
+            float t1 = (lo - origin) * inv;
+            float t2 = (hi - origin) * inv;
+            if (t1 > t2) swapFloat(&t1, &t2);
+            tmin = maxf(tmin, t1);
+            tmax = minf(tmax, t2);
+            if (tmin > tmax) return false;
+        }
+    }
+
+    if (tminOut) *tminOut = tmin;
+    if (qOut) *qOut = add3(p, scale3(d, tmin));
+    return true;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{18. Segment-AABB and Segment-Triangle}
+\addcontentsline{toc}{subsection}{18. Segment-AABB and Segment-Triangle}
+
+\begin{lstlisting}
+bool testSegmentAABB(Vec3 p0, Vec3 p1, AABB b) {
+    Vec3 c = scale3(add3(b.min, b.max), 0.5f);
+    Vec3 e = scale3(sub3(b.max, b.min), 0.5f);
+    Vec3 m = scale3(add3(p0, p1), 0.5f);
+    Vec3 d = scale3(sub3(p1, p0), 0.5f);
+    m = sub3(m, c);
+
+    float adx = absf(d.x), ady = absf(d.y), adz = absf(d.z);
+    if (absf(m.x) > e.x + adx) return false;
+    if (absf(m.y) > e.y + ady) return false;
+    if (absf(m.z) > e.z + adz) return false;
+
+    adx += EPSILON; ady += EPSILON; adz += EPSILON;
+    if (absf(m.y * d.z - m.z * d.y) > e.y * adz + e.z * ady) return false;
+    if (absf(m.z * d.x - m.x * d.z) > e.x * adz + e.z * adx) return false;
+    if (absf(m.x * d.y - m.y * d.x) > e.x * ady + e.y * adx) return false;
+    return true;
+}
+
+bool intersectSegmentTriangle(Vec3 p, Vec3 q, Vec3 a, Vec3 b, Vec3 c,
+                              float *tOut, Vec3 *uvwOut)
+{
+    Vec3 ab = sub3(b, a);
+    Vec3 ac = sub3(c, a);
+    Vec3 qp = sub3(p, q);
+    Vec3 n = cross3(ab, ac);
+    float denom = dot3(qp, n);
+    if (denom <= EPSILON) return false;
+
+    Vec3 ap = sub3(p, a);
+    float t = dot3(ap, n);
+    if (t < 0.0f || t > denom) return false;
+
+    Vec3 e = cross3(qp, ap);
+    float v = dot3(ac, e);
+    if (v < 0.0f || v > denom) return false;
+
+    float w = -dot3(ab, e);
+    if (w < 0.0f || v + w > denom) return false;
+
+    float inv = 1.0f / denom;
+    if (tOut) *tOut = t * inv;
+    if (uvwOut) *uvwOut = (Vec3){ 1.0f - v * inv - w * inv, v * inv, w * inv };
+    return true;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{19. Line-Triangle, Line-Quad, Segment-Cylinder, Segment-Polyhedron}
+\addcontentsline{toc}{subsection}{19. Line-Triangle, Line-Quad, Segment-Cylinder, Segment-Polyhedron}
+
+\begin{lstlisting}
+bool intersectLineTriangle(Vec3 p, Vec3 q, Vec3 a, Vec3 b, Vec3 c,
+                           float *u, float *v, float *w)
+{
+    Vec3 dir = sub3(q, p);
+    Plane triPlane = computePlaneFromTriangle(a, b, c);
+    float denom = dot3(triPlane.n, dir);
+    if (absf(denom) <= EPSILON) return false;
+
+    float t = (triPlane.d - dot3(triPlane.n, p)) / denom;
+    Vec3 hit = add3(p, scale3(dir, t));
+    barycentricTriangle(a, b, c, hit, u, v, w);
+    return *u >= -EPSILON && *v >= -EPSILON && *w >= -EPSILON;
+}
+
+bool intersectLineQuad(Vec3 p, Vec3 q, Vec3 a, Vec3 b, Vec3 c, Vec3 d, Vec3 *rOut) {
+    float u, v, w;
+    if (intersectLineTriangle(p, q, a, b, c, &u, &v, &w)) {
+        if (rOut) *rOut = barycentricEvalTriangle(a, b, c, u, v, w);
+        return true;
+    }
+    if (intersectLineTriangle(p, q, a, c, d, &u, &v, &w)) {
+        if (rOut) *rOut = barycentricEvalTriangle(a, c, d, u, v, w);
+        return true;
+    }
+    return false;
+}
+
+bool intersectSegmentCylinder(Vec3 sa, Vec3 sb, Vec3 p, Vec3 q, float radius,
+                              float *tOut)
+{
+    Vec3 d = sub3(q, p);      // cylinder axis
+    Vec3 m = sub3(sa, p);
+    Vec3 n = sub3(sb, sa);    // segment direction
+    float dd = dot3(d, d);
+    float nd = dot3(n, d);
+    float md = dot3(m, d);
+
+    float a = dd * dot3(n, n) - nd * nd;
+    float k = dot3(m, m) - radius * radius;
+    float c = dd * k - md * md;
+
+    if (absf(a) <= EPSILON) return false; // segment nearly parallel; handle caps separately
+
+    float b = dd * dot3(m, n) - md * nd;
+    float discr = b * b - a * c;
+    if (discr < 0.0f) return false;
+
+    float t = (-b - sqrtf(discr)) / a;
+    if (t < 0.0f || t > 1.0f) return false;
+
+    float y = md + t * nd;
+    if (y < 0.0f || y > dd) return false;
+    if (tOut) *tOut = t;
+    return true;
+}
+
+bool intersectSegmentConvexPolyhedron(Vec3 a, Vec3 b, Plane *planes, int n,
+                                      float *tFirst, float *tLast)
+{
+    float t0 = 0.0f, t1 = 1.0f;
+    Vec3 ab = sub3(b, a);
+
+    for (int i = 0; i < n; ++i) {
+        float da = signedDistancePlane(planes[i], a);
+        float db = signedDistancePlane(planes[i], b);
+        float denom = da - db;
+
+        if (da > 0.0f && db > 0.0f) return false;
+        if (absf(denom) <= EPSILON) continue;
+
+        float t = da / denom;
+        if (da > db) t0 = maxf(t0, t);  // entering
+        else         t1 = minf(t1, t);  // leaving
+        if (t0 > t1) return false;
+    }
+
+    if (tFirst) *tFirst = t0;
+    if (tLast)  *tLast = t1;
+    return true;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{20. Plane-Plane and Three-Plane Intersection}
+\addcontentsline{toc}{subsection}{20. Plane-Plane and Three-Plane Intersection}
+
+\begin{lstlisting}
+bool intersectPlanes2(Plane p1, Plane p2, Vec3 *pointOut, Vec3 *dirOut) {
+    Vec3 dir = cross3(p1.n, p2.n);
+    float denom = dot3(dir, dir);
+    if (denom <= EPSILON) return false;
+
+    Vec3 p = scale3(
+        add3(scale3(cross3(dir, p2.n), p1.d),
+             scale3(cross3(p1.n, dir), p2.d)),
+        1.0f / denom);
+
+    if (pointOut) *pointOut = p;
+    if (dirOut) *dirOut = dir;
+    return true;
+}
+
+bool intersectPlanes3(Plane p1, Plane p2, Plane p3, Vec3 *pointOut) {
+    float denom = dot3(p1.n, cross3(p2.n, p3.n));
+    if (absf(denom) <= EPSILON) return false;
+
+    Vec3 term1 = scale3(cross3(p2.n, p3.n), p1.d);
+    Vec3 term2 = scale3(cross3(p3.n, p1.n), p2.d);
+    Vec3 term3 = scale3(cross3(p1.n, p2.n), p3.d);
+    *pointOut = scale3(add3(add3(term1, term2), term3), 1.0f / denom);
+    return true;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part VI --- Dynamic Intersection Tests}
+\addcontentsline{toc}{section}{Part VI --- Dynamic Intersection Tests}
+
+
+\Needspace{6\baselineskip}
+\subsection*{21. Interval Halving for Moving Objects}
+\addcontentsline{toc}{subsection}{21. Interval Halving for Moving Objects}
+
+\begin{lstlisting}
+bool intervalCollision(Object a, Object b, float t0, float t1, float *hitTime) {
+    if (!conservativeSweptOverlap(a, b, t0, t1)) return false;
+
+    for (int iter = 0; iter < MAX_INTERVAL_ITERS; ++iter) {
+        float tm = 0.5f * (t0 + t1);
+        Object am = objectAtTime(a, tm);
+        Object bm = objectAtTime(b, tm);
+
+        if (objectsIntersect(am, bm)) {
+            t1 = tm;
+        } else {
+            if (!conservativeSweptOverlap(a, b, tm, t1)) t0 = tm;
+            else t1 = tm;
+        }
+
+        if (t1 - t0 <= TIME_EPSILON) break;
+    }
+
+    *hitTime = t1;
+    return true;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{22. Moving Sphere Against Plane and Sphere}
+\addcontentsline{toc}{subsection}{22. Moving Sphere Against Plane and Sphere}
+
+\begin{lstlisting}
+bool intersectMovingSpherePlane(Sphere s, Vec3 v, Plane p, float *tOut, Vec3 *qOut) {
+    float dist = signedDistancePlane(p, s.c);
+    float denom = dot3(p.n, v);
+
+    if (absf(denom) <= EPSILON) {
+        return absf(dist) <= s.r;
+    }
+
+    float target = (dist > 0.0f) ? s.r : -s.r;
+    float t = (target - dist) / denom;
+    if (t < 0.0f || t > 1.0f) return false;
+
+    if (tOut) *tOut = t;
+    if (qOut) {
+        Vec3 centerAtHit = add3(s.c, scale3(v, t));
+        *qOut = sub3(centerAtHit, scale3(p.n, target));
+    }
+    return true;
+}
+
+bool testMovingSphereSphere(Sphere s0, Sphere s1, Vec3 v0, Vec3 v1, float *tOut) {
+    Vec3 relV = sub3(v0, v1);
+    Sphere expanded = { s1.c, s0.r + s1.r };
+    return intersectRaySphere(s0.c, relV, expanded, tOut, 0) && *tOut <= 1.0f;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{23. Moving Sphere Against Triangle and AABB}
+\addcontentsline{toc}{subsection}{23. Moving Sphere Against Triangle and AABB}
+
+\begin{lstlisting}
+bool intersectMovingSphereTriangle(Sphere s, Vec3 v, Triangle tri, float *tOut, Vec3 *qOut) {
+    float bestT = BIG_FLOAT;
+    Vec3 bestQ = {0,0,0};
+
+    Plane p = computePlaneFromTriangle(tri.a, tri.b, tri.c);
+    float tPlane;
+    Vec3 qPlane;
+    if (intersectMovingSpherePlane(s, v, p, &tPlane, &qPlane)) {
+        Vec3 center = add3(s.c, scale3(v, tPlane));
+        Vec3 projected = sub3(center, scale3(p.n, signedDistancePlane(p, center)));
+        if (pointInTriangleBySameSide(projected, tri.a, tri.b, tri.c)) {
+            bestT = tPlane;
+            bestQ = projected;
+        }
+    }
+
+    Capsule edgeCapsules[3] = {
+        {tri.a, tri.b, s.r}, {tri.b, tri.c, s.r}, {tri.c, tri.a, s.r}
+    };
+    for (int i = 0; i < 3; ++i) {
+        float t;
+        if (intersectMovingPointCapsule(s.c, v, edgeCapsules[i], &t) && t < bestT) {
+            bestT = t;
+            bestQ = closestPointSegment(add3(s.c, scale3(v, t)), edgeCapsules[i].a, edgeCapsules[i].b, 0, 0);
+        }
+    }
+
+    Vec3 vertex[3] = {tri.a, tri.b, tri.c};
+    for (int i = 0; i < 3; ++i) {
+        Sphere vs = { vertex[i], s.r };
+        float t;
+        if (intersectRaySphere(s.c, v, vs, &t, 0) && t >= 0.0f && t <= 1.0f && t < bestT) {
+            bestT = t;
+            bestQ = vertex[i];
+        }
+    }
+
+    if (bestT == BIG_FLOAT) return false;
+    if (tOut) *tOut = bestT;
+    if (qOut) *qOut = bestQ;
+    return true;
+}
+
+bool intersectMovingSphereAABB(Sphere s, Vec3 d, AABB b, float *tOut) {
+    AABB expanded = b;
+    expanded.min = sub3(expanded.min, (Vec3){s.r, s.r, s.r});
+    expanded.max = add3(expanded.max, (Vec3){s.r, s.r, s.r});
+
+    float t;
+    if (!intersectRayAABB(s.c, d, expanded, &t, 0) || t > 1.0f) return false;
+
+    Vec3 hitCenter = add3(s.c, scale3(d, t));
+    Vec3 q = closestPointAABB(hitCenter, b);
+    if (lengthSq3(sub3(hitCenter, q)) <= s.r * s.r + EPSILON) {
+        if (tOut) *tOut = t;
+        return true;
+    }
+    return refineMovingSphereAABB(s, d, b, tOut);
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{24. Moving AABB Against AABB}
+\addcontentsline{toc}{subsection}{24. Moving AABB Against AABB}
+
+\begin{lstlisting}
+bool intersectMovingAABBAABB(AABB a, AABB b, Vec3 va, Vec3 vb,
+                             float *tFirst, float *tLast)
+{
+    Vec3 v = sub3(vb, va);   // move b relative to stationary a
+    float tEnter = 0.0f;
+    float tExit = 1.0f;
+
+    for (int i = 0; i < 3; ++i) {
+        if (absf(v[i]) < EPSILON) {
+            if (b.max[i] < a.min[i] || b.min[i] > a.max[i]) return false;
+            continue;
+        }
+
+        float inv = 1.0f / v[i];
+        float t0 = (a.min[i] - b.max[i]) * inv;
+        float t1 = (a.max[i] - b.min[i]) * inv;
+        if (t0 > t1) swapFloat(&t0, &t1);
+
+        tEnter = maxf(tEnter, t0);
+        tExit = minf(tExit, t1);
+        if (tEnter > tExit) return false;
+    }
+
+    if (tFirst) *tFirst = tEnter;
+    if (tLast) *tLast = tExit;
+    return true;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part VII --- Bounding Volume Hierarchies}
+\addcontentsline{toc}{section}{Part VII --- Bounding Volume Hierarchies}
+
+
+\Needspace{6\baselineskip}
+\subsection*{25. Top-Down BVH Construction}
+\addcontentsline{toc}{subsection}{25. Top-Down BVH Construction}
+
+\begin{lstlisting}
+typedef struct BVHNode {
+    BoundingVolume bv;
+    int left, right;
+    int firstPrimitive;
+    int primitiveCount;
+} BVHNode;
+
+int buildBVHTopDown(Primitive *prim, int first, int count, BVHNode *nodes, int *nodeCount) {
+    int nodeIndex = (*nodeCount)++;
+    BVHNode *node = &nodes[nodeIndex];
+    node->bv = computeBoundingVolumeForRange(prim, first, count);
+
+    if (count <= LEAF_THRESHOLD) {
+        node->left = node->right = -1;
+        node->firstPrimitive = first;
+        node->primitiveCount = count;
+        return nodeIndex;
+    }
+
+    int axis = chooseSplitAxisByLargestExtent(prim, first, count);
+    int mid = partitionPrimitives(prim, first, count, axis, SPLIT_MEDIAN_OR_SAH);
+
+    node->left = buildBVHTopDown(prim, first, mid - first, nodes, nodeCount);
+    node->right = buildBVHTopDown(prim, mid, first + count - mid, nodes, nodeCount);
+    node->firstPrimitive = -1;
+    node->primitiveCount = 0;
+    return nodeIndex;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{26. Bottom-Up and Incremental Construction}
+\addcontentsline{toc}{subsection}{26. Bottom-Up and Incremental Construction}
+
+\begin{lstlisting}
+int buildBVHBottomUp(Primitive *prim, int n, BVHNode *nodes, int *nodeCount) {
+    ActiveSet active = makeLeaves(prim, n, nodes, nodeCount);
+
+    while (active.count > 1) {
+        Pair best = findPairWithMinimumMergeCost(active, nodes);
+        int parent = (*nodeCount)++;
+        nodes[parent].left = best.a;
+        nodes[parent].right = best.b;
+        nodes[parent].bv = mergeBV(nodes[best.a].bv, nodes[best.b].bv);
+        nodes[parent].firstPrimitive = -1;
+        nodes[parent].primitiveCount = 0;
+        activeRemovePairAndInsert(&active, best.a, best.b, parent);
+    }
+    return active.item[0];
+}
+
+int insertLeafIncremental(int root, int leaf, BVHNode *nodes) {
+    int sibling = root;
+    while (!isLeaf(nodes[sibling]))
+        sibling = chooseChildWithLowerInsertionCost(nodes, sibling, nodes[leaf].bv);
+
+    int oldParent = nodes[sibling].parent;
+    int newParent = allocateNode(nodes);
+    nodes[newParent].left = sibling;
+    nodes[newParent].right = leaf;
+    nodes[newParent].bv = mergeBV(nodes[sibling].bv, nodes[leaf].bv);
+    reconnectParent(nodes, oldParent, sibling, newParent);
+    refitAncestors(nodes, newParent);
+    return (oldParent < 0) ? newParent : root;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{27. BVH Traversal Algorithms}
+\addcontentsline{toc}{subsection}{27. BVH Traversal Algorithms}
+
+\begin{lstlisting}
+void collideBVHRecursive(BVHNode *aTree, int a, BVHNode *bTree, int b, ContactList *out) {
+    if (!overlapBV(aTree[a].bv, bTree[b].bv)) return;
+
+    if (isLeaf(aTree[a]) && isLeaf(bTree[b])) {
+        testPrimitiveRanges(aTree[a], bTree[b], out);
+        return;
+    }
+
+    if (isLeaf(bTree[b]) || (!isLeaf(aTree[a]) && volume(aTree[a].bv) > volume(bTree[b].bv))) {
+        collideBVHRecursive(aTree, aTree[a].left,  bTree, b, out);
+        collideBVHRecursive(aTree, aTree[a].right, bTree, b, out);
+    } else {
+        collideBVHRecursive(aTree, a, bTree, bTree[b].left, out);
+        collideBVHRecursive(aTree, a, bTree, bTree[b].right, out);
+    }
+}
+
+void collideBVHStack(BVHNode *A, int rootA, BVHNode *B, int rootB, ContactList *out) {
+    PairStack stack;
+    pushPair(&stack, rootA, rootB);
+
+    while (!emptyPairStack(&stack)) {
+        Pair p = popPair(&stack);
+        if (!overlapBV(A[p.a].bv, B[p.b].bv)) continue;
+
+        if (isLeaf(A[p.a]) && isLeaf(B[p.b])) {
+            testPrimitiveRanges(A[p.a], B[p.b], out);
+        } else if (isLeaf(B[p.b]) || (!isLeaf(A[p.a]) && traversalCost(A[p.a]) >= traversalCost(B[p.b]))) {
+            pushPair(&stack, A[p.a].left,  p.b);
+            pushPair(&stack, A[p.a].right, p.b);
+        } else {
+            pushPair(&stack, p.a, B[p.b].left);
+            pushPair(&stack, p.a, B[p.b].right);
+        }
+    }
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{28. BV Merging and Pointerless Layout}
+\addcontentsline{toc}{subsection}{28. BV Merging and Pointerless Layout}
+
+\begin{lstlisting}
+AABB mergeAABB(AABB a, AABB b) {
+    AABB r;
+    r.min.x = minf(a.min.x, b.min.x);
+    r.min.y = minf(a.min.y, b.min.y);
+    r.min.z = minf(a.min.z, b.min.z);
+    r.max.x = maxf(a.max.x, b.max.x);
+    r.max.y = maxf(a.max.y, b.max.y);
+    r.max.z = maxf(a.max.z, b.max.z);
+    return r;
+}
+
+Sphere mergeSpheres(Sphere a, Sphere b) {
+    Vec3 d = sub3(b.c, a.c);
+    float dist = length3(d);
+    if (a.r >= dist + b.r) return a;
+    if (b.r >= dist + a.r) return b;
+
+    Sphere s;
+    s.r = 0.5f * (dist + a.r + b.r);
+    s.c = (dist > EPSILON) ? add3(a.c, scale3(d, (s.r - a.r) / dist)) : a.c;
+    return s;
+}
+
+int outputPreorder(BVHNode *src, int node, PackedNode *dst, int *next) {
+    int here = (*next)++;
+    dst[here].bv = src[node].bv;
+
+    if (isLeaf(src[node])) {
+        dst[here].isLeaf = true;
+        dst[here].primitiveStart = src[node].firstPrimitive;
+        dst[here].primitiveCount = src[node].primitiveCount;
+    } else {
+        dst[here].isLeaf = false;
+        int leftIndex = outputPreorder(src, src[node].left, dst, next);
+        int rightIndex = outputPreorder(src, src[node].right, dst, next);
+        dst[here].leftOffset = leftIndex - here;
+        dst[here].rightOffset = rightIndex - here;
+    }
+    return here;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{29. Caching and Front Tracking}
+\addcontentsline{toc}{subsection}{29. Caching and Front Tracking}
+
+\begin{lstlisting}
+bool objectsCollidingWithSurfaceCache(Object a, Object b, PrimitivePairCache *cache) {
+    for (int i = 0; i < cache->count; ++i) {
+        if (testPrimitivePair(cache->pair[i])) return true;
+    }
+
+    ContactList contacts = emptyContactList();
+    collideBVHStack(a.bvh, a.root, b.bvh, b.root, &contacts);
+    updatePrimitivePairCache(cache, contacts);
+    return contacts.count > 0;
+}
+
+void updateFront(BVHNode *A, BVHNode *B, Front *front) {
+    Front next = emptyFront();
+    for (int i = 0; i < front->count; ++i) {
+        Pair p = front->pair[i];
+        if (!overlapBV(A[p.a].bv, B[p.b].bv)) continue;
+        if (frontPairStillGood(A, B, p)) addFrontPair(&next, p);
+        else refineFrontPair(A, B, p, &next);
+    }
+    *front = next;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part VIII --- Spatial Partitioning}
+\addcontentsline{toc}{section}{Part VIII --- Spatial Partitioning}
+
+
+\Needspace{6\baselineskip}
+\subsection*{30. Uniform Grid Broad Phase}
+\addcontentsline{toc}{subsection}{30. Uniform Grid Broad Phase}
+
+\begin{lstlisting}
+void insertObjectGrid(Grid *g, Object *obj) {
+    AABB b = objectAABB(obj);
+    CellRange r = cellsOverlappedByAABB(g, b);
+    obj->queryStamp = 0;
+
+    for (int z = r.z0; z <= r.z1; ++z)
+    for (int y = r.y0; y <= r.y1; ++y)
+    for (int x = r.x0; x <= r.x1; ++x)
+        gridCellPush(g, x, y, z, obj);
+}
+
+void testObjectAgainstGrid(Grid *g, Object *obj, PairList *pairs) {
+    AABB b = objectAABB(obj);
+    CellRange r = cellsOverlappedByAABB(g, b);
+    unsigned int stamp = nextQueryStamp(g);
+
+    for (int z = r.z0; z <= r.z1; ++z)
+    for (int y = r.y0; y <= r.y1; ++y)
+    for (int x = r.x0; x <= r.x1; ++x) {
+        for each candidate in gridCell(g, x, y, z) {
+            if (candidate == obj || candidate->lastQueryStamp == stamp) continue;
+            candidate->lastQueryStamp = stamp;
+            if (testAABBAABB(objectAABB(obj), objectAABB(candidate)))
+                addPair(pairs, obj, candidate);
+        }
+    }
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{31. Hashed Infinite Grid}
+\addcontentsline{toc}{subsection}{31. Hashed Infinite Grid}
+
+\begin{lstlisting}
+unsigned int gridHash(int x, int y, int z, unsigned int bucketCount) {
+    unsigned int h = 0;
+    h ^= (unsigned int)x * 73856093u;
+    h ^= (unsigned int)y * 19349663u;
+    h ^= (unsigned int)z * 83492791u;
+    return h % bucketCount;
+}
+
+Bucket *getGridBucket(HashGrid *g, int x, int y, int z) {
+    unsigned int h = gridHash(x, y, z, g->bucketCount);
+    return &g->bucket[h];
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{32. Hierarchical Grid}
+\addcontentsline{toc}{subsection}{32. Hierarchical Grid}
+
+\begin{lstlisting}
+int chooseHGridLevel(HGrid *g, AABB box) {
+    float diameter = maxComponent(sub3(box.max, box.min));
+    int level = 0;
+    float cellSize = g->baseCellSize;
+    while (level + 1 < g->levelCount && cellSize < diameter) {
+        cellSize *= 2.0f;
+        ++level;
+    }
+    return level;
+}
+
+void addObjectToHGrid(HGrid *g, Object *obj) {
+    AABB b = objectAABB(obj);
+    int level = chooseHGridLevel(g, b);
+    Vec3 c = aabbCenter(b);
+    Int3 cell = hgridCellAtLevel(g, c, level);
+
+    obj->hgridLevel = level;
+    obj->hgridCell = cell;
+    hgridBucketPush(g, level, cell, obj);
+    g->occupiedMask |= (1u << level);
+}
+
+void removeObjectFromHGrid(HGrid *g, Object *obj) {
+    hgridBucketRemove(g, obj->hgridLevel, obj->hgridCell, obj);
+    recomputeOccupiedBitIfNeeded(g, obj->hgridLevel);
+}
+
+void checkObjectAgainstHGrid(HGrid *g, Object *obj, PairList *pairs) {
+    AABB b = objectAABB(obj);
+    unsigned int levels = g->occupiedMask;
+    for (int level = 0; levels; ++level, levels >>= 1) {
+        if ((levels & 1u) == 0) continue;
+        CellRange r = overlappedHGridCells(g, b, level);
+        forEachCellInRange(r, cell) {
+            for each candidate in hgridBucket(g, level, cell) {
+                if (candidate != obj && candidate->stamp != g->queryStamp) {
+                    candidate->stamp = g->queryStamp;
+                    if (testAABBAABB(b, objectAABB(candidate))) addPair(pairs, obj, candidate);
+                }
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{33. Octrees and Morton Codes}
+\addcontentsline{toc}{subsection}{33. Octrees and Morton Codes}
+
+\begin{lstlisting}
+unsigned int mortonKey10Bits(int x, int y, int z) {
+    return interleaveBits10(x) | (interleaveBits10(y) << 1) | (interleaveBits10(z) << 2);
+}
+
+int octantOfPoint(Vec3 p, Vec3 center) {
+    int o = 0;
+    if (p.x >= center.x) o |= 1;
+    if (p.y >= center.y) o |= 2;
+    if (p.z >= center.z) o |= 4;
+    return o;
+}
+
+void insertObjectOctree(OctreeNode *node, Object *obj, int depth) {
+    if (depth == MAX_OCTREE_DEPTH || !objectFitsInAnyChild(node, obj)) {
+        listPush(&node->objects, obj);
+        return;
+    }
+
+    int child = childContainingObject(node, obj);
+    if (!node->child[child]) node->child[child] = allocateOctreeChild(node, child);
+    insertObjectOctree(node->child[child], obj, depth + 1);
+}
+
+void testAllCollisionsOctree(OctreeNode *node, ObjectList ancestors, PairList *pairs) {
+    testObjectsWithinList(node->objects, pairs);
+    testObjectsAgainstList(node->objects, ancestors, pairs);
+
+    ObjectList nextAncestors = concatLists(ancestors, node->objects);
+    for (int i = 0; i < 8; ++i)
+        if (node->child[i]) testAllCollisionsOctree(node->child[i], nextAncestors, pairs);
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{34. k-d Tree and Grid Ray Traversal}
+\addcontentsline{toc}{subsection}{34. k-d Tree and Grid Ray Traversal}
+
+\begin{lstlisting}
+bool rayKDTree(KDNode *node, Ray ray, float tmin, float tmax, Hit *hit) {
+    while (node) {
+        if (isLeafKD(node))
+            return intersectRayLeaf(node, ray, tmin, tmax, hit);
+
+        int axis = node->axis;
+        float tsplit = (node->split - ray.origin[axis]) / ray.dir[axis];
+        KDNode *nearChild = ray.origin[axis] <= node->split ? node->left : node->right;
+        KDNode *farChild  = nearChild == node->left ? node->right : node->left;
+
+        if (tsplit >= tmax || tsplit < 0.0f) {
+            node = nearChild;
+        } else if (tsplit <= tmin) {
+            node = farChild;
+        } else {
+            pushKDStack(farChild, tsplit, tmax);
+            node = nearChild;
+            tmax = tsplit;
+        }
+    }
+    return false;
+}
+
+void visitGridCellsRay(Grid *g, Ray r, float tmax, CellVisitor visit) {
+    Int3 cell = gridCellOfPoint(g, r.origin);
+    Int3 step;
+    Vec3 tNext, tDelta;
+    initializeDDA(g, r, &cell, &step, &tNext, &tDelta);
+
+    float t = 0.0f;
+    while (t <= tmax && cellInsideGrid(g, cell)) {
+        visit(cell);
+        if (tNext.x < tNext.y && tNext.x < tNext.z) {
+            cell.x += step.x; t = tNext.x; tNext.x += tDelta.x;
+        } else if (tNext.y < tNext.z) {
+            cell.y += step.y; t = tNext.y; tNext.y += tDelta.y;
+        } else {
+            cell.z += step.z; t = tNext.z; tNext.z += tDelta.z;
+        }
+    }
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{35. Sort and Sweep}
+\addcontentsline{toc}{subsection}{35. Sort and Sweep}
+
+\begin{lstlisting}
+void insertionUpdateEndpointList(EndpointList *list) {
+    for (int i = 1; i < list->count; ++i) {
+        Endpoint e = list->item[i];
+        int j = i - 1;
+        while (j >= 0 && endpointLess(e, list->item[j])) {
+            if (e.isMin && !list->item[j].isMin)
+                addActivePair(e.object, list->item[j].object);
+            if (!e.isMin && list->item[j].isMin)
+                removeActivePair(e.object, list->item[j].object);
+            list->item[j + 1] = list->item[j];
+            --j;
+        }
+        list->item[j + 1] = e;
+    }
+}
+
+void sortAndSweepAABBArray(AABBObject *obj, int n, PairList *pairs) {
+    Endpoint endpoints[MAX_OBJECTS * 2];
+    buildEndpointsForAxis(obj, n, AXIS_X, endpoints);
+    sortEndpoints(endpoints, 2 * n);
+
+    ActiveSet active = emptyActiveSet();
+    for (int i = 0; i < 2 * n; ++i) {
+        Endpoint e = endpoints[i];
+        if (e.isMin) {
+            for each candidate in active
+                if (overlapOnRemainingAxes(e.object, candidate)) addPair(pairs, e.object, candidate);
+            activeInsert(&active, e.object);
+        } else {
+            activeRemove(&active, e.object);
+        }
+    }
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{36. Avoiding Retests with Stamps}
+\addcontentsline{toc}{subsection}{36. Avoiding Retests with Stamps}
+
+\begin{lstlisting}
+bool alreadyTested(Object *a, Object *b, StampTable *table) {
+    uint64 key = makeUnorderedPairKey(a->id, b->id);
+    if (tableLookup(table, key) == table->currentStamp) return true;
+    tableSet(table, key, table->currentStamp);
+    return false;
+}
+
+void beginCollisionFrame(StampTable *table) {
+    table->currentStamp++;
+    if (table->currentStamp == 0) clearStampTable(table);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part IX --- BSP Trees}
+\addcontentsline{toc}{section}{Part IX --- BSP Trees}
+
+
+\Needspace{6\baselineskip}
+\subsection*{37. Plane Selection, Classification, and Splitting}
+\addcontentsline{toc}{subsection}{37. Plane Selection, Classification, and Splitting}
+
+\begin{lstlisting}
+Plane pickSplittingPlane(Polygon **poly, int count) {
+    float bestScore = BIG_FLOAT;
+    Plane best;
+
+    for (int i = 0; i < count; ++i) {
+        Plane p = polygonPlane(poly[i]);
+        int front = 0, back = 0, straddle = 0;
+        for (int j = 0; j < count; ++j) {
+            int cls = classifyPolygonToPlane(poly[j], p);
+            if (cls > 0) ++front;
+            else if (cls < 0) ++back;
+            else ++straddle;
+        }
+        float score = STRADDLE_WEIGHT * straddle + BALANCE_WEIGHT * absf(front - back);
+        if (score < bestScore) { bestScore = score; best = p; }
+    }
+    return best;
+}
+
+int classifyPointToPlane(Vec3 p, Plane plane) {
+    float s = signedDistancePlane(plane, p);
+    if (s > EPSILON) return +1;
+    if (s < -EPSILON) return -1;
+    return 0;
+}
+
+int classifyPolygonToPlane(Polygon *poly, Plane plane) {
+    int front = 0, back = 0;
+    for (int i = 0; i < poly->count; ++i) {
+        int cls = classifyPointToPlane(poly->v[i], plane);
+        if (cls > 0) ++front;
+        else if (cls < 0) ++back;
+    }
+    if (front && back) return 2;    // straddling
+    if (front) return +1;
+    if (back) return -1;
+    return 0;                      // coplanar
+}
+
+void splitPolygon(Polygon *poly, Plane plane, Polygon *front, Polygon *back) {
+    clearPolygon(front);
+    clearPolygon(back);
+
+    for (int i = 0; i < poly->count; ++i) {
+        Vec3 a = poly->v[i];
+        Vec3 b = poly->v[(i + 1) % poly->count];
+        float da = signedDistancePlane(plane, a);
+        float db = signedDistancePlane(plane, b);
+
+        if (da >= -EPSILON) appendVertex(front, a);
+        if (da <=  EPSILON) appendVertex(back, a);
+
+        if ((da > EPSILON && db < -EPSILON) || (da < -EPSILON && db > EPSILON)) {
+            float t = da / (da - db);
+            Vec3 q = lerp3(a, b, t);
+            appendVertex(front, q);
+            appendVertex(back, q);
+        }
+    }
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{38. BSP Build and Queries}
+\addcontentsline{toc}{subsection}{38. BSP Build and Queries}
+
+\begin{lstlisting}
+BSPNode *buildBSP(Polygon **poly, int count, int depth) {
+    if (count == 0) return makeLeaf(EMPTY_SPACE);
+    if (depth >= MAX_BSP_DEPTH || count <= BSP_LEAF_THRESHOLD)
+        return makeLeafWithPolygons(poly, count);
+
+    Plane split = pickSplittingPlane(poly, count);
+    PolygonList front, back, coplanar;
+    partitionPolygonsByPlane(poly, count, split, &front, &back, &coplanar);
+
+    BSPNode *node = allocateBSPNode();
+    node->plane = split;
+    node->polygons = coplanar;
+    node->front = buildBSP(front.item, front.count, depth + 1);
+    node->back  = buildBSP(back.item,  back.count,  depth + 1);
+    return node;
+}
+
+bool pointInSolidBSP(BSPNode *node, Vec3 p) {
+    while (!isLeafBSP(node)) {
+        float s = signedDistancePlane(node->plane, p);
+        node = (s >= 0.0f) ? node->front : node->back;
+    }
+    return node->solid;
+}
+
+bool rayIntersectBSP(BSPNode *node, Ray ray, float tmin, float tmax, float *hitT) {
+    if (!node) return false;
+    if (isLeafBSP(node)) {
+        if (!node->solid) return false;
+        *hitT = tmin;
+        return true;
+    }
+
+    float sd0 = signedDistancePlane(node->plane, add3(ray.origin, scale3(ray.dir, tmin)));
+    float sd1 = signedDistancePlane(node->plane, add3(ray.origin, scale3(ray.dir, tmax)));
+    BSPNode *nearNode = sd0 >= 0.0f ? node->front : node->back;
+    BSPNode *farNode  = sd0 >= 0.0f ? node->back  : node->front;
+
+    if (sd0 * sd1 >= 0.0f)
+        return rayIntersectBSP(nearNode, ray, tmin, tmax, hitT);
+
+    float t = tmin + (tmax - tmin) * (sd0 / (sd0 - sd1));
+    if (rayIntersectBSP(nearNode, ray, tmin, t, hitT)) return true;
+    return rayIntersectBSP(farNode, ray, t, tmax, hitT);
+}
+
+bool polygonInSolidBSP(Polygon *p, BSPNode *node) {
+    if (isLeafBSP(node)) return node->solid;
+    int cls = classifyPolygonToPlane(p, node->plane);
+    if (cls > 0) return polygonInSolidBSP(p, node->front);
+    if (cls < 0) return polygonInSolidBSP(p, node->back);
+    if (cls == 0) return polygonInSolidBSP(p, node->front) || polygonInSolidBSP(p, node->back);
+
+    Polygon f, b;
+    splitPolygon(p, node->plane, &f, &b);
+    return polygonInSolidBSP(&f, node->front) || polygonInSolidBSP(&b, node->back);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part X --- Convexity-Based Methods}
+\addcontentsline{toc}{section}{Part X --- Convexity-Based Methods}
+
+
+\Needspace{6\baselineskip}
+\subsection*{39. V-Clip-Style Closest Feature Iteration}
+\addcontentsline{toc}{subsection}{39. V-Clip-Style Closest Feature Iteration}
+
+\begin{lstlisting}
+FeaturePair vclipClosestFeatures(ConvexPolyhedron A, ConvexPolyhedron B,
+                                 FeaturePair start)
+{
+    FeaturePair pair = start;
+    for (int iter = 0; iter < MAX_VCLIP_ITERS; ++iter) {
+        ClosestFeatureResult r = evaluateFeaturePair(A, B, pair);
+        if (r.isLocallyOptimal) return pair;
+        FeaturePair next = transitionToNeighborFeature(A, B, pair, r.transition);
+        if (sameFeaturePair(pair, next)) return pair;
+        pair = next;
+    }
+    return pair;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{40. Linear Programming Helpers}
+\addcontentsline{toc}{subsection}{40. Linear Programming Helpers}
+
+\begin{lstlisting}
+Polytope fourierMotzkinEliminate(LinearSystem sys, int variable) {
+    ConstraintList lower, upper, independent;
+    partitionConstraintsByVariable(sys, variable, &lower, &upper, &independent);
+
+    Polytope out = constraintsToPolytope(independent);
+    for each l in lower
+    for each u in upper
+        addConstraint(&out, combineLowerUpperToEliminate(l, u, variable));
+    return out;
+}
+
+VecN seidelLP(Halfspace *h, int n, VecN objective, int dim) {
+    shuffleHalfspaces(h, n);
+    VecN x = unconstrainedOptimum(objective, dim);
+
+    for (int i = 0; i < n; ++i) {
+        if (satisfiesHalfspace(x, h[i])) continue;
+        LinearProgram sub = restrictLPToBoundary(h, i, objective, dim);
+        x = seidelLP(sub.halfspace, sub.count, sub.objective, dim - 1);
+        x = liftSolutionFromBoundary(x, h[i]);
+    }
+    return x;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{41. GJK Collision and Distance}
+\addcontentsline{toc}{subsection}{41. GJK Collision and Distance}
+
+\begin{lstlisting}
+Vec3 supportMinkowski(ConvexShape A, ConvexShape B, Vec3 dir) {
+    Vec3 pa = supportPoint(A, dir);
+    Vec3 pb = supportPoint(B, scale3(dir, -1.0f));
+    return sub3(pa, pb);
+}
+
+bool gjkIntersect(ConvexShape A, ConvexShape B) {
+    Simplex simplex = emptySimplex();
+    Vec3 dir = sub3(B.center, A.center);
+    if (lengthSq3(dir) <= EPSILON) dir = (Vec3){1,0,0};
+
+    addSimplexPoint(&simplex, supportMinkowski(A, B, dir));
+    dir = scale3(simplex.p[0], -1.0f);
+
+    for (int iter = 0; iter < MAX_GJK_ITERS; ++iter) {
+        Vec3 a = supportMinkowski(A, B, dir);
+        if (dot3(a, dir) < 0.0f) return false;
+        addSimplexPoint(&simplex, a);
+        if (updateSimplexTowardOrigin(&simplex, &dir)) return true;
+    }
+    return false;
+}
+
+float gjkDistance(ConvexShape A, ConvexShape B, Vec3 *closestA, Vec3 *closestB) {
+    Simplex simplex = emptySimplex();
+    Vec3 dir = sub3(B.center, A.center);
+
+    for (int iter = 0; iter < MAX_GJK_ITERS; ++iter) {
+        SupportPair s = supportPairMinkowski(A, B, dir);
+        if (simplexProgressSmall(simplex, s.v, dir)) break;
+        addSupportPair(&simplex, s);
+        reduceSimplexToClosestPointToOrigin(&simplex, &dir);
+        if (lengthSq3(dir) <= EPSILON) return 0.0f;
+    }
+
+    computeWitnessPoints(simplex, closestA, closestB);
+    return length3(sub3(*closestA, *closestB));
+}
+\end{lstlisting}
+
+
+\Needspace{5\baselineskip}
+\subsubsection*{41.1 Simplex Reduction Toward Origin}
+\addcontentsline{toc}{subsubsection}{41.1 Simplex Reduction Toward Origin}
+
+\begin{lstlisting}
+bool updateSimplexTowardOrigin(Simplex *s, Vec3 *dir) {
+    if (s->count == 1) {
+        *dir = scale3(s->p[0], -1.0f);
+        return false;
+    }
+    if (s->count == 2)
+        return reduceLineSimplex(s, dir);
+    if (s->count == 3)
+        return reduceTriangleSimplex(s, dir);
+    return reduceTetrahedronSimplex(s, dir); // true if origin is inside tetrahedron
+}
+
+void reduceSimplexToClosestPointToOrigin(Simplex *s, Vec3 *dir) {
+    switch (s->count) {
+        case 1: *dir = scale3(s->p[0], -1.0f); break;
+        case 2: closestOriginOnSegmentSimplex(s, dir); break;
+        case 3: closestOriginOnTriangleSimplex(s, dir); break;
+        case 4: closestOriginOnTetrahedronSimplex(s, dir); break;
+    }
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{42. GJK for Moving Objects and Chung-Wang Separating Vector}
+\addcontentsline{toc}{subsection}{42. GJK for Moving Objects and Chung-Wang Separating Vector}
+
+\begin{lstlisting}
+bool gjkMovingConvexTOI(ConvexShape A, ConvexShape B, Vec3 relMotion, float *toi) {
+    float t = 0.0f;
+    Vec3 v = relMotion;
+
+    for (int iter = 0; iter < MAX_CONSERVATIVE_ADVANCE_ITERS; ++iter) {
+        Vec3 pa, pb;
+        float dist = gjkDistance(shapeAt(A, t), B, &pa, &pb);
+        if (dist <= CONTACT_EPSILON) { *toi = t; return true; }
+
+        Vec3 n = normalize3(sub3(pb, pa));
+        float speedToward = dot3(v, n);
+        if (speedToward <= EPSILON) return false;
+
+        t += dist / speedToward;
+        if (t > 1.0f) return false;
+    }
+    return false;
+}
+
+bool chungWangSeparatingVector(ConvexShape A, ConvexShape B, Vec3 *sep) {
+    Vec3 d = sub3(B.center, A.center);
+    for (int iter = 0; iter < MAX_CW_ITERS; ++iter) {
+        Vec3 a = supportPoint(A, d);
+        Vec3 b = supportPoint(B, scale3(d, -1.0f));
+        Vec3 w = sub3(a, b);
+        if (dot3(w, d) < 0.0f) { *sep = d; return true; }
+        Vec3 next = computeImprovedSeparatingDirection(d, w);
+        if (lengthSq3(sub3(next, d)) <= EPSILON) break;
+        d = next;
+    }
+    return false;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part XI --- GPU-Assisted Collision Detection}
+\addcontentsline{toc}{section}{Part XI --- GPU-Assisted Collision Detection}
+
+
+\Needspace{6\baselineskip}
+\subsection*{43. Occlusion-Query Convex Test}
+\addcontentsline{toc}{subsection}{43. Occlusion-Query Convex Test}
+
+\begin{lstlisting}
+bool gpuTestConvexIntersection(Mesh A, Mesh B, Camera view) {
+    beginOcclusionQuery();
+    clearDepthAndStencil();
+
+    renderDepthOnly(A, view);
+    renderDepthTested(B, view);
+
+    int visiblePixelsAB = endOcclusionQuery();
+    if (visiblePixelsAB == 0) return false;
+
+    beginOcclusionQuery();
+    clearDepthAndStencil();
+    renderDepthOnly(B, view);
+    renderDepthTested(A, view);
+    int visiblePixelsBA = endOcclusionQuery();
+
+    return visiblePixelsBA > 0;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{44. GPU Collision Filtering}
+\addcontentsline{toc}{subsection}{44. GPU Collision Filtering}
+
+\begin{lstlisting}
+void gpuFilterPotentiallyCollidingSet(Object *objects, int n, ObjectList *pcs) {
+    for (int pass = 0; pass < 2; ++pass) {
+        setupViewForFilteringPass(pass);
+        clearFrameBuffers();
+
+        for (int i = 0; i < n; ++i) {
+            beginOcclusionQueryForObject(objects[i].id);
+            renderObjectProxy(objects[i]);
+            objects[i].visible[pass] = endOcclusionQueryForObject(objects[i].id) > 0;
+        }
+    }
+
+    clearObjectList(pcs);
+    for (int i = 0; i < n; ++i) {
+        if (!(objects[i].visible[0] && objects[i].visible[1]))
+            objectListPush(pcs, &objects[i]);
+    }
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part XII --- Numerical and Geometrical Robustness}
+\addcontentsline{toc}{section}{Part XII --- Numerical and Geometrical Robustness}
+
+
+\Needspace{6\baselineskip}
+\subsection*{45. Robust Floating-Point Comparison and Thick Planes}
+\addcontentsline{toc}{subsection}{45. Robust Floating-Point Comparison and Thick Planes}
+
+\begin{lstlisting}
+bool equalWithAbsRelTolerance(float a, float b, float absTol, float relTol) {
+    float diff = absf(a - b);
+    if (diff <= absTol) return true;
+    return diff <= relTol * maxf(absf(a), absf(b));
+}
+
+int classifyPointToThickPlane(Vec3 p, Plane plane, float thickness) {
+    float s = signedDistancePlane(plane, p);
+    if (s > thickness) return +1;
+    if (s < -thickness) return -1;
+    return 0;
+}
+
+bool segmentIntersectsThickPlane(Vec3 a, Vec3 b, Plane plane, float thickness) {
+    int ca = classifyPointToThickPlane(a, plane, thickness);
+    int cb = classifyPointToThickPlane(b, plane, thickness);
+    return ca == 0 || cb == 0 || ca != cb;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{46. Interval Arithmetic}
+\addcontentsline{toc}{subsection}{46. Interval Arithmetic}
+
+\begin{lstlisting}
+typedef struct IntervalF { float lo, hi; } IntervalF;
+
+IntervalF intervalAdd(IntervalF a, IntervalF b) {
+    return (IntervalF){ roundDown(a.lo + b.lo), roundUp(a.hi + b.hi) };
+}
+
+IntervalF intervalMul(IntervalF a, IntervalF b) {
+    float v0 = a.lo * b.lo;
+    float v1 = a.lo * b.hi;
+    float v2 = a.hi * b.lo;
+    float v3 = a.hi * b.hi;
+    return (IntervalF){ roundDown(min4(v0, v1, v2, v3)), roundUp(max4(v0, v1, v2, v3)) };
+}
+
+bool intervalPlaneSide(Vec3Interval p, PlaneInterval plane, int *side) {
+    IntervalF s = intervalSub(intervalDot(plane.n, p), plane.d);
+    if (s.lo > 0.0f) { *side = +1; return true; }
+    if (s.hi < 0.0f) { *side = -1; return true; }
+    *side = 0;
+    return false; // indeterminate; refine or use exact predicate
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{47. Exact Integer Segment-Plane Predicate Skeleton}
+\addcontentsline{toc}{subsection}{47. Exact Integer Segment-Plane Predicate Skeleton}
+
+\begin{lstlisting}
+int order4(int a, int b, int c, int d) {
+    // Return the sign of the permutation needed to sort four symbolic labels.
+    int v[4] = {a,b,c,d};
+    int sign = +1;
+    for (int i = 0; i < 4; ++i)
+        for (int j = i + 1; j < 4; ++j)
+            if (v[i] > v[j]) { swapInt(&v[i], &v[j]); sign = -sign; }
+    return sign;
+}
+
+bool robustSegmentPlaneByOrientation(Vec3i a, Vec3i b, Vec3i p0, Vec3i p1, Vec3i p2) {
+    BigInt s0 = exactOrient3D(p0, p1, p2, a);
+    BigInt s1 = exactOrient3D(p0, p1, p2, b);
+    if (signBig(s0) == 0 || signBig(s1) == 0) return true;
+    return signBig(s0) != signBig(s1);
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{48. Vertex Welding with Spatial Buckets}
+\addcontentsline{toc}{subsection}{48. Vertex Welding with Spatial Buckets}
+
+\begin{lstlisting}
+unsigned int weldBucketHash(Int3 cell, unsigned int bucketCount) {
+    return gridHash(cell.x, cell.y, cell.z, bucketCount);
+}
+
+Vec3 *locateVertexInBuckets(WeldGrid *g, Vec3 v, float tol) {
+    Int3 c = weldCell(g, v);
+    for (int dz = -1; dz <= 1; ++dz)
+    for (int dy = -1; dy <= 1; ++dy)
+    for (int dx = -1; dx <= 1; ++dx) {
+        Bucket *b = bucketAt(g, (Int3){c.x + dx, c.y + dy, c.z + dz});
+        for each existing in b
+            if (lengthSq3(sub3(*existing, v)) <= tol * tol) return existing;
+    }
+    return 0;
+}
+
+void weldVertices(Vec3 *v, int n, float tol, int *remap, Vec3 *unique, int *uniqueCount) {
+    WeldGrid g = makeWeldGrid(tol);
+    *uniqueCount = 0;
+
+    for (int i = 0; i < n; ++i) {
+        Vec3 *found = locateVertexInBuckets(&g, v[i], tol);
+        if (found) {
+            remap[i] = indexOfUnique(unique, *uniqueCount, *found);
+        } else {
+            unique[*uniqueCount] = v[i];
+            remap[i] = *uniqueCount;
+            addVertexToWeldGrid(&g, &unique[*uniqueCount]);
+            (*uniqueCount)++;
+        }
+    }
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{49. Adjacency Tables and Connected Components}
+\addcontentsline{toc}{subsection}{49. Adjacency Tables and Connected Components}
+
+\begin{lstlisting}
+void buildVertexToFaceTable(Mesh *m, IntList *vertexFaces) {
+    for (int f = 0; f < m->faceCount; ++f)
+        for each vertexIndex in m->face[f]
+            intListPush(&vertexFaces[vertexIndex], f);
+}
+
+void buildEdgeToFaceTable(Mesh *m, EdgeMap *edgeFaces) {
+    for (int f = 0; f < m->faceCount; ++f) {
+        Face face = m->face[f];
+        for (int i = 0; i < face.count; ++i) {
+            int a = face.v[i];
+            int b = face.v[(i + 1) % face.count];
+            edgeMapInsertUndirected(edgeFaces, a, b, f);
+        }
+    }
+}
+
+void markConnectedComponent(Mesh *m, int startFace, int componentId) {
+    Queue q = emptyQueue();
+    enqueue(&q, startFace);
+    m->face[startFace].component = componentId;
+
+    while (!queueEmpty(&q)) {
+        int f = dequeue(&q);
+        for each neighborFace across each edge of f {
+            if (m->face[neighborFace].component < 0) {
+                m->face[neighborFace].component = componentId;
+                enqueue(&q, neighborFace);
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{50. Co-Planarity, Planarity, and Newell Plane}
+\addcontentsline{toc}{subsection}{50. Co-Planarity, Planarity, and Newell Plane}
+
+\begin{lstlisting}
+Plane newellPlane(Vec3 *v, int n) {
+    Vec3 normal = {0,0,0};
+    Vec3 centroid = {0,0,0};
+
+    for (int i = 0; i < n; ++i) {
+        Vec3 a = v[i];
+        Vec3 b = v[(i + 1) % n];
+        normal.x += (a.y - b.y) * (a.z + b.z);
+        normal.y += (a.z - b.z) * (a.x + b.x);
+        normal.z += (a.x - b.x) * (a.y + b.y);
+        centroid = add3(centroid, a);
+    }
+
+    centroid = scale3(centroid, 1.0f / n);
+    Plane p;
+    p.n = normalize3(normal);
+    p.d = dot3(p.n, centroid);
+    return p;
+}
+
+bool isPlanarPolygon(Vec3 *v, int n, float tolerance) {
+    Plane p = newellPlane(v, n);
+    for (int i = 0; i < n; ++i)
+        if (absf(signedDistancePlane(p, v[i])) > tolerance) return false;
+    return true;
+}
+
+bool polygonsCoplanar(Vec3 *a, int na, Vec3 *b, int nb, float angleTol, float distTol) {
+    Plane pa = newellPlane(a, na);
+    Plane pb = newellPlane(b, nb);
+    if (absf(dot3(pa.n, pb.n)) < cosf(angleTol)) return false;
+    for (int i = 0; i < nb; ++i)
+        if (absf(signedDistancePlane(pa, b[i])) > distTol) return false;
+    return true;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{51. Ear-Cutting Triangulation and Convex Decomposition}
+\addcontentsline{toc}{subsection}{51. Ear-Cutting Triangulation and Convex Decomposition}
+
+\begin{lstlisting}
+bool isEar(VertexList *poly, int i) {
+    int prev = previousVertex(poly, i);
+    int next = nextVertex(poly, i);
+    Vec2 a = poly->v[prev].p;
+    Vec2 b = poly->v[i].p;
+    Vec2 c = poly->v[next].p;
+
+    if (orient2D(a, b, c) <= EPSILON) return false;
+    for each vertex j in poly not equal prev/i/next
+        if (pointInTriangle2D(poly->v[j].p, a, b, c)) return false;
+    return true;
+}
+
+int triangulateEarCut(Vec2 *v, int n, Triangle2D *tri) {
+    VertexList poly = makeVertexList(v, n);
+    int count = 0;
+
+    while (poly.count > 3) {
+        bool cut = false;
+        for (int i = 0; i < poly.count; ++i) {
+            if (isEar(&poly, i)) {
+                int prev = previousVertex(&poly, i);
+                int next = nextVertex(&poly, i);
+                tri[count++] = (Triangle2D){ poly.v[prev].p, poly.v[i].p, poly.v[next].p };
+                removeVertex(&poly, i);
+                cut = true;
+                break;
+            }
+        }
+        if (!cut) break; // malformed or numerically problematic polygon
+    }
+
+    if (poly.count == 3)
+        tri[count++] = (Triangle2D){ poly.v[0].p, poly.v[1].p, poly.v[2].p };
+    return count;
+}
+
+void hertelMehlhornConvexDecomposition(Vec2 *v, int n, PolygonList *pieces) {
+    Triangle2D tri[MAX_TRIANGLES];
+    int triCount = triangulateEarCut(v, n, tri);
+    initializePiecesFromTriangles(pieces, tri, triCount);
+
+    bool changed = true;
+    while (changed) {
+        changed = false;
+        for each adjacent pair of pieces sharing a diagonal {
+            Polygon merged = mergeIfSharedDiagonal(pair.a, pair.b);
+            if (isConvexPolygon2D(merged.v, merged.count)) {
+                replacePairWithMergedPiece(pieces, pair, merged);
+                changed = true;
+                break;
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{52. Mesh Consistency via Euler Formula}
+\addcontentsline{toc}{subsection}{52. Mesh Consistency via Euler Formula}
+
+\begin{lstlisting}
+bool checkClosedManifoldEuler(Mesh *m) {
+    int V = countUniqueVertices(m);
+    int E = countUniqueUndirectedEdges(m);
+    int F = m->faceCount;
+    int components = countConnectedComponents(m);
+    int genusEstimate = (2 * components - (V - E + F)) / 2;
+
+    if (!everyEdgeHasTwoIncidentFaces(m)) return false;
+    if (genusEstimate < 0) return false;
+    return (V - E + F) == 2 * components - 2 * genusEstimate;
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part XIII --- Optimization-Oriented Layouts and SIMD-Style Tests}
+\addcontentsline{toc}{section}{Part XIII --- Optimization-Oriented Layouts and SIMD-Style Tests}
+
+
+\Needspace{6\baselineskip}
+\subsection*{53. Compact k-d Tree Child Pointers}
+\addcontentsline{toc}{subsection}{53. Compact k-d Tree Child Pointers}
+
+\begin{lstlisting}
+KDNode *compactKDLeftChild(KDNode *root, KDNode *node) {
+    if (!node->hasLeftChild) return 0;
+    return node + 1;       // preorder convention
+}
+
+KDNode *compactKDRightChild(KDNode *root, KDNode *node) {
+    if (!node->hasRightChild) return 0;
+    return root + node->rightChildOffset;
+}
+
+void computeChildAABBs(AABB parent, PackedKDNode node, AABB *left, AABB *right) {
+    *left = parent;
+    *right = parent;
+    left->max[node.axis] = node.split;
+    right->min[node.axis] = node.split;
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{54. Cached Linearization}
+\addcontentsline{toc}{subsection}{54. Cached Linearization}
+
+\begin{lstlisting}
+void linearizeLeafGeometry(BVH *tree, int leaf, LinearCache *cache) {
+    clearLinearCache(cache);
+    for each primitiveId in tree->leaf[leaf].primitiveIds {
+        Primitive prim = loadPrimitive(tree, primitiveId);
+        appendPackedPrimitive(cache, prim);
+    }
+}
+
+bool queryWithLinearizedCache(Query q, BVH *tree, LinearCache *cache) {
+    if (!cacheValidForQuery(cache, q)) {
+        int leaf = locateLeafForQuery(tree, q);
+        linearizeLeafGeometry(tree, leaf, cache);
+        cache->region = leafRegion(tree, leaf);
+    }
+    return testQueryAgainstPackedPrimitives(q, cache->data, cache->count);
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{55. SIMD-Style Four-Lane Primitive Tests}
+\addcontentsline{toc}{subsection}{55. SIMD-Style Four-Lane Primitive Tests}
+
+\begin{lstlisting}
+Mask4 testFourSpheresFourSpheres(Sphere4 a, Sphere4 b) {
+    Vec4 dx = sub4(a.cx, b.cx);
+    Vec4 dy = sub4(a.cy, b.cy);
+    Vec4 dz = sub4(a.cz, b.cz);
+    Vec4 rr = add4(a.r, b.r);
+    Vec4 dist2 = add4(add4(mul4(dx, dx), mul4(dy, dy)), mul4(dz, dz));
+    return lessEqual4(dist2, mul4(rr, rr));
+}
+
+Mask4 testFourSpheresFourAABBs(Sphere4 s, AABB4 b) {
+    Vec4 qx = clamp4(s.cx, b.minx, b.maxx);
+    Vec4 qy = clamp4(s.cy, b.miny, b.maxy);
+    Vec4 qz = clamp4(s.cz, b.minz, b.maxz);
+    Vec4 dx = sub4(s.cx, qx);
+    Vec4 dy = sub4(s.cy, qy);
+    Vec4 dz = sub4(s.cz, qz);
+    Vec4 dist2 = add4(add4(mul4(dx, dx), mul4(dy, dy)), mul4(dz, dz));
+    return lessEqual4(dist2, mul4(s.r, s.r));
+}
+
+Mask4 testFourAABBsFourAABBs(AABB4 a, AABB4 b) {
+    Mask4 x = and4(lessEqual4(a.minx, b.maxx), lessEqual4(b.minx, a.maxx));
+    Mask4 y = and4(lessEqual4(a.miny, b.maxy), lessEqual4(b.miny, a.maxy));
+    Mask4 z = and4(lessEqual4(a.minz, b.maxz), lessEqual4(b.minz, a.maxz));
+    return and4(and4(x, y), z);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Part XIV --- Implementation Checklist}
+\addcontentsline{toc}{section}{Part XIV --- Implementation Checklist}
+
+
+\Needspace{6\baselineskip}
+\subsection*{56. Collision System Pipeline}
+\addcontentsline{toc}{subsection}{56. Collision System Pipeline}
+
+\begin{lstlisting}
+void collisionFrame(Scene *scene, float dt) {
+    updateWorldTransforms(scene);
+    refitDynamicBoundingVolumes(scene);
+
+    PairList broadPairs = emptyPairList();
+    broadPhaseQuery(scene->broadPhase, scene->objects, scene->objectCount, &broadPairs);
+
+    ContactList contacts = emptyContactList();
+    for (int i = 0; i < broadPairs.count; ++i) {
+        Object *a = broadPairs.pair[i].a;
+        Object *b = broadPairs.pair[i].b;
+        if (collisionMasksReject(a, b)) continue;
+        narrowPhaseObjectPair(a, b, dt, &contacts);
+    }
+
+    solveContacts(scene, &contacts, dt);
+    updateCollisionCaches(scene, &contacts);
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{57. Narrow Phase Dispatch}
+\addcontentsline{toc}{subsection}{57. Narrow Phase Dispatch}
+
+\begin{lstlisting}
+void narrowPhaseObjectPair(Object *a, Object *b, float dt, ContactList *contacts) {
+    if (!overlapBV(a->worldBV, b->worldBV)) return;
+
+    if (a->shapeType == SHAPE_SPHERE && b->shapeType == SHAPE_AABB) {
+        Vec3 q;
+        if (testSphereAABB(a->sphere, b->aabb)) addSphereAABBContact(a, b, contacts);
+        return;
+    }
+
+    if (a->convex && b->convex) {
+        Vec3 pa, pb;
+        float d = gjkDistance(a->convexShape, b->convexShape, &pa, &pb);
+        if (d <= CONTACT_DISTANCE) addConvexContact(a, b, pa, pb, contacts);
+        return;
+    }
+
+    collideBVHStack(a->bvh.nodes, a->bvh.root, b->bvh.nodes, b->bvh.root, contacts);
+}
+\end{lstlisting}
+
+
+\Needspace{6\baselineskip}
+\subsection*{58. Robustness Hooks for Production Use}
+\addcontentsline{toc}{subsection}{58. Robustness Hooks for Production Use}
+
+\begin{lstlisting}
+void prepareCollisionGeometry(Mesh *mesh) {
+    weldVertices(mesh->vertices, mesh->vertexCount, WELD_TOLERANCE,
+                 mesh->remap, mesh->uniqueVertices, &mesh->uniqueCount);
+    remapMeshIndices(mesh);
+    buildVertexToFaceTable(mesh, mesh->vertexFaces);
+    buildEdgeToFaceTable(mesh, &mesh->edgeFaces);
+    removeDegenerateFaces(mesh, AREA_TOLERANCE);
+    splitTJunctions(mesh, T_JUNCTION_TOLERANCE);
+    mergeCoplanarFaces(mesh, ANGLE_TOLERANCE, DISTANCE_TOLERANCE);
+    triangulateOrConvexDecompose(mesh);
+    assert(checkClosedManifoldEuler(mesh) || mesh->allowsOpenBoundaries);
+}
+\end{lstlisting}
+
+\medskip\hrule\medskip
+
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Coverage Index}
+\addcontentsline{toc}{section}{Coverage Index}
+
+The pseudocode above covers the algorithmic families exposed by the book's source-oriented sections:
+
+
+\begin{longtable}{L{0.30\textwidth}L{0.65\textwidth}}
+\toprule
+\textbf{Area} & \textbf{Algorithms represented}\\
+\midrule
+Math and predicates & determinant predicates, barycentric coordinates, plane construction, convexity tests, convex hulls, support mappings\\
+Bounding volumes & AABB, sphere, OBB, k-DOP, capsule and sphere-swept tests, BV merging, PCA/eigen fits, Ritter/Welzl sphere construction\\
+Primitive tests & closest point routines, sphere/box/plane/triangle/polygon tests, triangle-AABB SAT, triangle-triangle tests, point containment\\
+Intersections & segment-plane, ray-sphere, ray-AABB, segment-AABB, segment-triangle, segment-cylinder, segment-convex-polyhedron, plane-plane intersections\\
+Dynamic tests & interval halving, moving sphere-plane, moving sphere-sphere, moving sphere-triangle, moving sphere-AABB, moving AABB-AABB\\
+BVHs & top-down, bottom-up, incremental construction, traversal, merge operations, pointerless preorder layout, caching, front tracking\\
+Spatial partitioning & uniform grids, hashed grids, hierarchical grids, octrees, Morton keys, k-d trees, DDA traversal, sort-and-sweep, retest avoidance\\
+BSP trees & splitting-plane selection, point/polygon classification, polygon splitting, BSP construction, point/ray/polygon queries\\
+Convex methods & V-Clip, linear programming helpers, GJK intersection/distance, moving GJK, Chung-Wang separating vector\\
+GPU collision & occlusion-query filtering for convex and concave proxies, potentially colliding set filtering\\
+Robustness and preprocessing & tolerance comparison, thick planes, interval arithmetic, exact integer predicate skeletons, vertex welding, adjacency, planarity, triangulation, convex decomposition, Euler consistency\\
+Optimization & compact kd-tree pointers, child AABB reconstruction, cached linearization, SIMD four-lane primitive tests\\
+\bottomrule
+\end{longtable}
+
+\medskip\hrule\medskip
+
+\clearpage
+\Needspace{8\baselineskip}
+\section*{Reference Note}
+\addcontentsline{toc}{section}{Reference Note}
+
+This handout abstracts algorithms from \emph{Real-Time Collision Detection} into C-like pseudocode. It preserves the computational intent---geometric predicates, bounding volumes, closest-point and intersection tests, BVHs, spatial partitioning, BSP construction, GJK/V-Clip style convex routines, robustness strategies, mesh cleanup, and optimization-aware layouts---while avoiding direct source-code transcription. The result is meant as a technical study aid and implementation checklist.
+
+\end{document}
