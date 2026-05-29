@@ -1,0 +1,953 @@
+
+\documentclass[11pt]{article}
+
+\usepackage[letterpaper,margin=0.82in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{calc}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage[most]{tcolorbox}
+\usepackage{listings}
+\usepackage{etoolbox}
+\usepackage{ragged2e}
+\usepackage{needspace}
+
+\definecolor{Navy}{HTML}{17365D}
+\definecolor{Slate}{HTML}{334155}
+\definecolor{SoftBlue}{HTML}{EAF2F8}
+\definecolor{SoftGray}{HTML}{F7F7F7}
+\definecolor{RuleGray}{HTML}{CBD5E1}
+\definecolor{Accent}{HTML}{2563EB}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=Navy,
+  urlcolor=Accent,
+  citecolor=Navy,
+  pdftitle={Systematic Analysis of The TeXbook},
+  pdfauthor={OpenAI ChatGPT, prepared for Jordan Suber},
+  pdfsubject={Classic TeX and Plain TeX rules, syntax, commands, and math-formatting algorithms},
+  pdfkeywords={TeX, Plain TeX, The TeXbook, Donald Knuth, math typesetting, macro language}
+}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.45em}
+\setlist{nosep,leftmargin=1.5em}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\LTpre}{0.5em}
+\setlength{\LTpost}{0.75em}
+\setlength{\emergencystretch}{3em}
+\sloppy
+
+\lstdefinestyle{texcode}{
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  keepspaces=true,
+  breaklines=true,
+  frame=single,
+  framerule=0.3pt,
+  rulecolor=\color{RuleGray},
+  backgroundcolor=\color{SoftGray},
+  xleftmargin=0.4em,
+  xrightmargin=0.4em
+}
+\lstset{style=texcode}
+
+\newcommand{\tightlist}{}
+\newcommand{\passthrough}[1]{#1}
+\newcommand{\subtitle}[1]{\par\vspace{0.25em}{\large\color{Slate}#1}\par}
+\newcommand{\sourceitem}[2]{\textbf{#1}. #2\par}
+
+\newtcolorbox{insightbox}[1]{
+  enhanced,
+  colback=SoftBlue,
+  colframe=Navy,
+  coltitle=white,
+  title=\textbf{#1},
+  fonttitle=\bfseries,
+  arc=2mm,
+  boxrule=0.6pt,
+  left=1.0em,
+  right=1.0em,
+  top=0.65em,
+  bottom=0.65em
+}
+
+\titleformat{\section}
+  {\Large\bfseries\color{Navy}}
+  {\thesection}{0.75em}{}
+\titleformat{\subsection}
+  {\large\bfseries\color{Slate}}
+  {\thesubsection}{0.75em}{}
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{Slate}}
+  {\thesubsubsection}{0.75em}{}
+\titlespacing*{\section}{0pt}{1.6em}{0.55em}
+\titlespacing*{\subsection}{0pt}{1.0em}{0.35em}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Systematic TeXbook Analysis}
+\rhead{\small Classic TeX / Plain TeX}
+\cfoot{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\AtBeginEnvironment{longtable}{\small}
+
+\begin{document}
+\pagenumbering{gobble}
+
+\begin{titlepage}
+  \centering
+  \vspace*{0.7in}
+  {\Huge\bfseries\color{Navy} Systematic Analysis of \emph{The TeXbook}\par}
+  \vspace{0.35in}
+  {\Large Rules, Syntax, Control Sequences, and Math-Formatting Algorithms for Classic TeX\par}
+  \vspace{0.45in}
+  \begin{tcolorbox}[colback=SoftBlue,colframe=Navy,width=0.84\textwidth,arc=2mm,boxrule=0.6pt]
+  \textbf{Scope.} This is an original technical handout derived from Donald E. Knuth's \emph{The TeXbook}. It focuses on the TeX engine and Plain TeX, not LaTeX. It emphasizes the grammar, command families, modes, box/glue model, and the algorithmic pipeline for mathematical formulas.
+  \end{tcolorbox}
+  \vfill
+  {\large Prepared for Jordan Suber\par}
+  \vspace{0.1in}
+  {\large \today\par}
+\end{titlepage}
+
+\clearpage
+\pagenumbering{roman}
+\tableofcontents
+\newpage
+\pagenumbering{arabic}
+
+
+\section*{Executive Overview}
+\addcontentsline{toc}{section}{Executive Overview}
+This handout reorganizes \emph{The TeXbook} into a practical reference architecture for classic TeX and Plain TeX. It is designed for technical readers who want to understand the TeX engine, the Plain TeX macro surface, and the mathematical formula-building algorithms without reading the book strictly chapter-by-chapter.
+
+\begin{insightbox}{Core interpretation}
+TeX is best understood as a programmable typesetting engine: character input is tokenized using category codes, expanded through a macro language, digested according to the current mode, built into box/glue/penalty lists, optimized by line/page/math algorithms, and shipped as DVI output.
+\end{insightbox}
+
+\section*{How to Use This Handout}
+\addcontentsline{toc}{section}{How to Use This Handout}
+Use Sections~\ref{lexical-syntax-and-category-code-system} through~\ref{macro-and-expansion-commands} as a language reference. Use Sections~\ref{math-syntax-and-semantic-classes} through~\ref{math-formatting-algorithm-generating-boxes-from-formulas} for math-mode implementation study. Use Sections~\ref{paragraph-line-breaking-algorithm}, \ref{page-building-algorithm}, and \ref{hyphenation-algorithm} for TeX's optimization algorithms.
+
+\section{Scope and Source Basis}\label{scope-and-source-basis}
+
+This analysis treats \emph{The TeXbook} as a specification of classic TeX/Plain TeX, not LaTeX. It separates:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{TeX engine primitives}: the low-level language implemented by the TeX program.
+\item
+  \textbf{Plain TeX format}: the macro layer loaded on top of TeX primitives.
+\item
+  \textbf{Mathematical layout algorithms}: the rules that convert a math list into boxes, glue, kerns, penalties, and delimiters.
+\end{enumerate}
+
+The book itself is structured so that chapters 24-26 summarize the primitive command language by mode, Appendix B summarizes Plain TeX control sequences, Appendix F lists math symbols and font tables, Appendix G gives the formula-to-box algorithm, and Appendix H covers hyphenation.
+
+\section{Core TeX processing model}\label{core-tex-processing-model}
+
+TeX can be understood as a pipeline:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Input scanning}: characters are read from files or terminal input.
+\item
+  \textbf{Tokenization}: characters become tokens using category codes.
+\item
+  \textbf{Expansion}: expandable tokens such as macros, conditionals, and \passthrough{\lstinline!\\csname...\\endcsname!} are expanded.
+\item
+  \textbf{Execution/digestion}: unexpandable tokens are executed according to the current mode.
+\item
+  \textbf{List building}: TeX builds vertical lists, horizontal lists, or math lists.
+\item
+  \textbf{Optimization}: paragraphs are broken into lines; vertical lists are broken into pages; math lists are converted to horizontal lists.
+\item
+  \textbf{Output}: pages are shipped out as DVI boxes.
+\end{enumerate}
+
+The critical design point: TeX is not simply a markup language. It is a macro-expansion language plus a typesetting engine with stateful modes, registers, penalties, glue, boxes, and font metrics.
+
+\section{Lexical syntax and category-code system}\label{lexical-syntax-and-category-code-system}
+
+\subsection{Token classes}\label{token-classes}
+
+TeX input is tokenized into two broad classes:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Character tokens}: character code + category code.
+\item
+  \textbf{Control sequence tokens}: names introduced by the escape character, conventionally backslash.
+\end{itemize}
+
+\subsection{Standard category codes}\label{standard-category-codes}
+
+\begin{longtable}[]{@{}rll@{}}
+\toprule\noalign{}
+Code & Meaning & Usual character \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+0 & Escape & \passthrough{\lstinline!\\!} \\
+1 & Begin group & \passthrough{\lstinline!\{!} \\
+2 & End group & \passthrough{\lstinline!\}!} \\
+3 & Math shift & \passthrough{\lstinline!$!} \\
+4 & Alignment tab & \passthrough{\lstinline!\&!} \\
+5 & End of line & return \\
+6 & Parameter & \passthrough{\lstinline!\#!} \\
+7 & Superscript & \passthrough{\lstinline!\^!} \\
+8 & Subscript & \passthrough{\lstinline!\_!} \\
+9 & Ignored & null \\
+10 & Space & space \\
+11 & Letter & \passthrough{\lstinline!A!}-\passthrough{\lstinline!Z!}, \passthrough{\lstinline!a!}-\passthrough{\lstinline!z!} by default \\
+12 & Other character & digits, punctuation, most symbols \\
+13 & Active character & context-dependent macro-like character \\
+14 & Comment & \passthrough{\lstinline!\%!} \\
+15 & Invalid & delete \\
+\end{longtable}
+
+\subsection{Control sequences}\label{control-sequences}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Form
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Syntax
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Space behavior
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Example
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Control word & escape + one or more letters & following space is skipped & \passthrough{\lstinline!\\input!}, \passthrough{\lstinline!\\hbox!}, \passthrough{\lstinline!\\TeX!} \\
+Control symbol & escape + one nonletter & following space is not skipped & \passthrough{\lstinline!\\$!}, \passthrough{\lstinline!\\\%!}, \passthrough{\lstinline!\\,!}, \passthrough{\lstinline!\\!} \\
+\end{longtable}
+
+Important rule: \passthrough{\lstinline!\\pi!}, \passthrough{\lstinline!\\Pi!}, \passthrough{\lstinline!\\PI!}, and \passthrough{\lstinline!\\pI!} are distinct. TeX does not treat case variants as related control sequence names.
+
+\subsection{Special text conventions}\label{special-text-conventions}
+
+\begin{longtable}[]{@{}ll@{}}
+\toprule\noalign{}
+Desired output & Plain TeX input pattern \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Opening double quote & two left quotes \\
+Closing double quote & two right quotes/apostrophes \\
+Hyphen & \passthrough{\lstinline!-!} \\
+En dash & \passthrough{\lstinline!--!} \\
+Em dash & \passthrough{\lstinline!---!} \\
+Minus sign & \passthrough{\lstinline!-!} in math mode, e.g.~\passthrough{\lstinline!$-$!} \\
+Nonbreaking interword space & \passthrough{\lstinline!\~!} \\
+Explicit control space & backslash followed by a space \\
+Comment & \passthrough{\lstinline!\%!} to end of line \\
+End paragraph & blank line or \passthrough{\lstinline!\\par!} \\
+\end{longtable}
+
+TeX automatically uses font ligature and kerning data where available.
+
+\section{Grouping, scope, and assignment rules}\label{grouping-scope-and-assignment-rules}
+
+\subsection{Groups}\label{groups}
+
+Groups are introduced by category-1 and category-2 tokens, conventionally \passthrough{\lstinline!\{!} and \passthrough{\lstinline!\}!}. They provide two distinct functions:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Syntactic aggregation}: treat multiple tokens as one argument, e.g.~\passthrough{\lstinline!\\hbox\{...\}!}.
+\item
+  \textbf{Scope control}: limit assignments, font changes, definitions, and parameter changes.
+\end{enumerate}
+
+\subsection{Local versus global assignments}\label{local-versus-global-assignments}
+
+Assignments are normally local to the innermost group. Prefixing an assignment with \passthrough{\lstinline!\\global!} makes it survive existing groups.
+
+Common assignment forms include:
+
+\begin{itemize}
+\tightlist
+\item
+  register assignment: \passthrough{\lstinline!\\count0=...!}, \passthrough{\lstinline!\\dimen0=...!}, \passthrough{\lstinline!\\skip0=...!}
+\item
+  parameter assignment: \passthrough{\lstinline!\\hsize=...!}, \passthrough{\lstinline!\\parindent=...!}
+\item
+  definition: \passthrough{\lstinline!\\def\\foo\{...\}!}
+\item
+  font assignment: \passthrough{\lstinline!\\font\\tenrm=cmr10!}
+\item
+  code assignment: \passthrough{\lstinline!\\catcode!}, \passthrough{\lstinline!\\mathcode!}, \passthrough{\lstinline!\\sfcode!}, \passthrough{\lstinline!\\delcode!}, \passthrough{\lstinline!\\lccode!}, \passthrough{\lstinline!\\uccode!}
+\end{itemize}
+
+\section{Formal argument syntax}\label{formal-argument-syntax}
+
+The book's formal syntax rules are Backus-Naur-like. The most important grammatical quantities are:
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Quantity
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Meaning
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+optional spaces & zero or more explicit/implicit space tokens \\
+number & signed integer, register value, character code, octal, hexadecimal, or coerced value \\
+dimen & dimension with unit or internal dimension \\
+glue & dimension plus optional stretch and shrink components \\
+muglue & math glue in mu units \\
+fil units & infinite stretch/shrink: \passthrough{\lstinline!fil!}, \passthrough{\lstinline!fill!}, \passthrough{\lstinline!filll!} \\
+box specification & optional \passthrough{\lstinline!to!} or \passthrough{\lstinline!spread!} plus dimension \\
+general text & balanced token list used as macro or command argument \\
+math field & math symbol, grouped subformula, box, or other permitted math nucleus \\
+\end{longtable}
+
+\subsection{Dimensions}\label{dimensions}
+
+Common dimension units:
+
+\begin{longtable}[]{@{}ll@{}}
+\toprule\noalign{}
+Unit & Meaning \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\passthrough{\lstinline!pt!} & printer's point \\
+\passthrough{\lstinline!pc!} & pica \\
+\passthrough{\lstinline!in!} & inch \\
+\passthrough{\lstinline!bp!} & big point \\
+\passthrough{\lstinline!cm!} & centimeter \\
+\passthrough{\lstinline!mm!} & millimeter \\
+\passthrough{\lstinline!dd!} & didot point \\
+\passthrough{\lstinline!cc!} & cicero \\
+\passthrough{\lstinline!sp!} & scaled point \\
+\passthrough{\lstinline!em!} & font-dependent em \\
+\passthrough{\lstinline!ex!} & font-dependent x-height \\
+\passthrough{\lstinline!true!} prefix & physical size unaffected by magnification \\
+\end{longtable}
+
+\subsection{Glue syntax}\label{glue-syntax}
+
+A glue specification has:
+
+\begin{lstlisting}[language=TeX]
+<natural dimension> plus <stretch> minus <shrink>
+\end{lstlisting}
+
+Examples:
+
+\begin{lstlisting}[language=TeX]
+\baselineskip=12pt plus 1pt minus .5pt
+\hskip 1em plus .5em minus .25em
+\vskip 0pt plus 1fill
+\end{lstlisting}
+
+\section{TeX modes}\label{tex-modes}
+
+TeX executes commands differently depending on mode.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Mode
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Purpose
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Typical builders
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Vertical mode & main vertical page list & paragraphs, boxes, vertical glue, penalties \\
+Internal vertical mode & vertical list inside a \passthrough{\lstinline!\\vbox!} & same as vertical mode but not page builder \\
+Horizontal mode & paragraph horizontal list & characters, words, interword glue, math formulas \\
+Restricted horizontal mode & horizontal list inside \passthrough{\lstinline!\\hbox!} & same as horizontal but no paragraph/page breaking \\
+Math mode & inline formula math list & math atoms and symbols \\
+Display math mode & displayed formula math list & display formula, equation numbers, display alignment \\
+\end{longtable}
+
+Mode transitions:
+
+\begin{itemize}
+\tightlist
+\item
+  vertical -\textgreater{} horizontal when a paragraph starts (\passthrough{\lstinline!\\indent!}, \passthrough{\lstinline!\\noindent!}, character, \passthrough{\lstinline!\\hskip!}, inline math, etc.)
+\item
+  horizontal -\textgreater{} vertical at paragraph end (\passthrough{\lstinline!\\par!}, blank line, certain vertical commands)
+\item
+  horizontal -\textgreater{} math with \passthrough{\lstinline!$!}; display math with \passthrough{\lstinline!$$!}
+\item
+  restricted modes occur inside boxes and math constructions
+\end{itemize}
+
+\section{Major command families}\label{major-command-families}
+
+\subsection{Text and font commands}\label{text-and-font-commands}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Family
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Representative commands
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Font selection & \passthrough{\lstinline!\\rm!}, \passthrough{\lstinline!\\sl!}, \passthrough{\lstinline!\\it!}, \passthrough{\lstinline!\\tt!}, \passthrough{\lstinline!\\bf!} \\
+Font loading & \passthrough{\lstinline!\\font\\cs=<font>!}, \passthrough{\lstinline!at!}, \passthrough{\lstinline!scaled!} \\
+Font magnification & \passthrough{\lstinline!\\magstep!}, \passthrough{\lstinline!\\magstephalf!}, \passthrough{\lstinline!\\magnification!} \\
+Italic correction & \passthrough{\lstinline!\\/!} \\
+Accents & \passthrough{\lstinline!\\'!}, \passthrough{\lstinline!\\``,!}\^{}\passthrough{\lstinline!,!}"\passthrough{\lstinline!,!}\textasciitilde{}\passthrough{\lstinline!,!}=\passthrough{\lstinline!,!}.\passthrough{\lstinline!,!}\u`, \passthrough{\lstinline!\\v!}, \passthrough{\lstinline!\\H!}, \passthrough{\lstinline!\\t!}, \passthrough{\lstinline!\\b!}, \passthrough{\lstinline!\\c!}, \passthrough{\lstinline!\\d!} \\
+Special text symbols & \passthrough{\lstinline!\\S!}, \passthrough{\lstinline!\\P!}, \passthrough{\lstinline!\\dag!}, \passthrough{\lstinline!\\ddag!}, \passthrough{\lstinline!\\copyright!}, \passthrough{\lstinline!\\TeX!}, \passthrough{\lstinline!\\dots!} \\
+\end{longtable}
+
+\subsection{Box commands}\label{box-commands}
+
+\begin{longtable}[]{@{}ll@{}}
+\toprule\noalign{}
+Operation & Commands \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Make horizontal box & \passthrough{\lstinline!\\hbox\{...\}!} \\
+Make vertical box & \passthrough{\lstinline!\\vbox\{...\}!}, \passthrough{\lstinline!\\vtop\{...\}!} \\
+Centered vertical math box & \passthrough{\lstinline!\\vcenter\{...\}!} \\
+Store box & \passthrough{\lstinline!\\setbox<number>=<box>!} \\
+Use box & \passthrough{\lstinline!\\box!}, \passthrough{\lstinline!\\copy!} \\
+Unpack box & \passthrough{\lstinline!\\unhbox!}, \passthrough{\lstinline!\\unhcopy!}, \passthrough{\lstinline!\\unvbox!}, \passthrough{\lstinline!\\unvcopy!} \\
+Box dimensions & \passthrough{\lstinline!\\wd!}, \passthrough{\lstinline!\\ht!}, \passthrough{\lstinline!\\dp!} \\
+Positioning & \passthrough{\lstinline!\\raise!}, \passthrough{\lstinline!\\lower!}, \passthrough{\lstinline!\\moveleft!}, \passthrough{\lstinline!\\moveright!} \\
+Rules & \passthrough{\lstinline!\\hrule!}, \passthrough{\lstinline!\\vrule!} \\
+\end{longtable}
+
+\subsection{Glue, kern, and spacing commands}\label{glue-kern-and-spacing-commands}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Scope
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Commands
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Horizontal glue & \passthrough{\lstinline!\\hskip!}, \passthrough{\lstinline!\\hfil!}, \passthrough{\lstinline!\\hfill!}, \passthrough{\lstinline!\\hss!}, \passthrough{\lstinline!\\hfilneg!} \\
+Vertical glue & \passthrough{\lstinline!\\vskip!}, \passthrough{\lstinline!\\vfil!}, \passthrough{\lstinline!\\vfill!}, \passthrough{\lstinline!\\vss!}, \passthrough{\lstinline!\\vfilneg!} \\
+Fixed kern & \passthrough{\lstinline!\\kern!}, \passthrough{\lstinline!\\mkern!} \\
+Plain spacing & \passthrough{\lstinline!\\enskip!}, \passthrough{\lstinline!\\enspace!}, \passthrough{\lstinline!\\quad!}, \passthrough{\lstinline!\\qquad!}, \passthrough{\lstinline!\\thinspace!}, \passthrough{\lstinline!\\negthinspace!} \\
+Vertical skips & \passthrough{\lstinline!\\smallskip!}, \passthrough{\lstinline!\\medskip!}, \passthrough{\lstinline!\\bigskip!} \\
+Leaders & \passthrough{\lstinline!\\leaders!}, \passthrough{\lstinline!\\cleaders!}, \passthrough{\lstinline!\\xleaders!} \\
+Fills & \passthrough{\lstinline!\\dotfill!}, \passthrough{\lstinline!\\hrulefill!}, \passthrough{\lstinline!\\leftarrowfill!}, \passthrough{\lstinline!\\rightarrowfill!}, \passthrough{\lstinline!\\upbracefill!}, \passthrough{\lstinline!\\downbracefill!} \\
+\end{longtable}
+
+\subsection{Paragraph, line, and page control}\label{paragraph-line-and-page-control}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Purpose
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Commands/parameters
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Paragraph start/end & \passthrough{\lstinline!\\indent!}, \passthrough{\lstinline!\\noindent!}, \passthrough{\lstinline!\\par!} \\
+Paragraph shape & \passthrough{\lstinline!\\parshape!}, \passthrough{\lstinline!\\hangindent!}, \passthrough{\lstinline!\\hangafter!}, \passthrough{\lstinline!\\narrower!} \\
+Line width & \passthrough{\lstinline!\\hsize!}, \passthrough{\lstinline!\\leftskip!}, \passthrough{\lstinline!\\rightskip!} \\
+Tolerance and looseness & \passthrough{\lstinline!\\pretolerance!}, \passthrough{\lstinline!\\tolerance!}, \passthrough{\lstinline!\\emergencystretch!}, \passthrough{\lstinline!\\looseness!} \\
+Hyphenation penalties & \passthrough{\lstinline!\\hyphenpenalty!}, \passthrough{\lstinline!\\exhyphenpenalty!}, \passthrough{\lstinline!\\doublehyphendemerits!}, \passthrough{\lstinline!\\finalhyphendemerits!} \\
+Break commands & \passthrough{\lstinline!\\break!}, \passthrough{\lstinline!\\nobreak!}, \passthrough{\lstinline!\\allowbreak!}, \passthrough{\lstinline!\\penalty!} \\
+Page geometry & \passthrough{\lstinline!\\vsize!}, \passthrough{\lstinline!\\hoffset!}, \passthrough{\lstinline!\\voffset!}, \passthrough{\lstinline!\\topskip!}, \passthrough{\lstinline!\\maxdepth!} \\
+Page breaks & \passthrough{\lstinline!\\eject!}, \passthrough{\lstinline!\\supereject!}, \passthrough{\lstinline!\\goodbreak!}, \passthrough{\lstinline!\\filbreak!} \\
+Output & \passthrough{\lstinline!\\output!}, \passthrough{\lstinline!\\shipout!}, \passthrough{\lstinline!\\deadcycles!} \\
+Page contents & \passthrough{\lstinline!\\headline!}, \passthrough{\lstinline!\\footline!}, \passthrough{\lstinline!\\pageno!}, \passthrough{\lstinline!\\folio!}, \passthrough{\lstinline!\\nopagenumbers!} \\
+Inserts & \passthrough{\lstinline!\\insert!}, \passthrough{\lstinline!\\topinsert!}, \passthrough{\lstinline!\\midinsert!}, \passthrough{\lstinline!\\pageinsert!}, \passthrough{\lstinline!\\footnote!} \\
+Marks & \passthrough{\lstinline!\\mark!}, \passthrough{\lstinline!\\topmark!}, \passthrough{\lstinline!\\firstmark!}, \passthrough{\lstinline!\\botmark!}, \passthrough{\lstinline!\\splitfirstmark!}, \passthrough{\lstinline!\\splitbotmark!} \\
+\end{longtable}
+
+\subsection{Alignment commands}\label{alignment-commands}
+
+\begin{longtable}[]{@{}ll@{}}
+\toprule\noalign{}
+Operation & Commands \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Horizontal alignment & \passthrough{\lstinline!\\halign\{...\}!} \\
+Vertical alignment & \passthrough{\lstinline!\\valign\{...\}!} \\
+Alignment tab & \passthrough{\lstinline!\&!} \\
+Row terminator & \passthrough{\lstinline!\\cr!}, \passthrough{\lstinline!\\crcr!} \\
+Suppress template & \passthrough{\lstinline!\\omit!} \\
+Span columns & \passthrough{\lstinline!\\span!}, \passthrough{\lstinline!\\multispan!} \\
+Insert vertical material between rows & \passthrough{\lstinline!\\noalign\{...\}!} \\
+Intercolumn glue & \passthrough{\lstinline!\\tabskip!} \\
+Plain tabbing & \passthrough{\lstinline!\\settabs!}, \passthrough{\lstinline!\\+!}, \passthrough{\lstinline!\\columns!} \\
+\end{longtable}
+
+\subsection{Macro and expansion commands}\label{macro-and-expansion-commands}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Purpose
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Commands
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Define macros & \passthrough{\lstinline!\\def!}, \passthrough{\lstinline!\\gdef!}, \passthrough{\lstinline!\\edef!}, \passthrough{\lstinline!\\xdef!} \\
+Prefixes & \passthrough{\lstinline!\\global!}, \passthrough{\lstinline!\\long!}, \passthrough{\lstinline!\\outer!} \\
+Let/alias & \passthrough{\lstinline!\\let!}, \passthrough{\lstinline!\\futurelet!} \\
+Expansion control & \passthrough{\lstinline!\\expandafter!}, \passthrough{\lstinline!\\noexpand!}, \passthrough{\lstinline!\\the!}, \passthrough{\lstinline!\\number!}, \passthrough{\lstinline!\\romannumeral!}, \passthrough{\lstinline!\\string!}, \passthrough{\lstinline!\\meaning!} \\
+Construct names & \passthrough{\lstinline!\\csname...\\endcsname!} \\
+Conditionals & \passthrough{\lstinline!\\if!}, \passthrough{\lstinline!\\ifcat!}, \passthrough{\lstinline!\\ifx!}, \passthrough{\lstinline!\\ifnum!}, \passthrough{\lstinline!\\ifdim!}, \passthrough{\lstinline!\\ifodd!}, \passthrough{\lstinline!\\ifvmode!}, \passthrough{\lstinline!\\ifhmode!}, \passthrough{\lstinline!\\ifmmode!}, \passthrough{\lstinline!\\ifinner!}, \passthrough{\lstinline!\\ifvoid!}, \passthrough{\lstinline!\\ifhbox!}, \passthrough{\lstinline!\\ifvbox!}, \passthrough{\lstinline!\\ifeof!}, \passthrough{\lstinline!\\iftrue!}, \passthrough{\lstinline!\\iffalse!}, \passthrough{\lstinline!\\ifcase!}, \passthrough{\lstinline!\\else!}, \passthrough{\lstinline!\\or!}, \passthrough{\lstinline!\\fi!} \\
+Looping in Plain TeX & \passthrough{\lstinline!\\loop!}, \passthrough{\lstinline!\\repeat!} \\
+Token registers & \passthrough{\lstinline!\\toks!}, \passthrough{\lstinline!\\newtoks!}, \passthrough{\lstinline!\\toksdef!} \\
+Control diagnostics & \passthrough{\lstinline!\\show!}, \passthrough{\lstinline!\\showthe!}, \passthrough{\lstinline!\\showbox!}, \passthrough{\lstinline!\\showlists!} \\
+\end{longtable}
+
+\subsection{Registers and allocation}\label{registers-and-allocation}
+
+\begin{longtable}[]{@{}ll@{}}
+\toprule\noalign{}
+Register type & Commands \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Count registers & \passthrough{\lstinline!\\count!}, \passthrough{\lstinline!\\countdef!}, \passthrough{\lstinline!\\newcount!} \\
+Dimension registers & \passthrough{\lstinline!\\dimen!}, \passthrough{\lstinline!\\dimendef!}, \passthrough{\lstinline!\\newdimen!} \\
+Glue registers & \passthrough{\lstinline!\\skip!}, \passthrough{\lstinline!\\skipdef!}, \passthrough{\lstinline!\\newskip!} \\
+Math glue registers & \passthrough{\lstinline!\\muskip!}, \passthrough{\lstinline!\\muskipdef!}, \passthrough{\lstinline!\\newmuskip!} \\
+Box registers & \passthrough{\lstinline!\\box!}, \passthrough{\lstinline!\\newbox!} \\
+Token registers & \passthrough{\lstinline!\\toks!}, \passthrough{\lstinline!\\newtoks!} \\
+Arithmetic & \passthrough{\lstinline!\\advance!}, \passthrough{\lstinline!\\multiply!}, \passthrough{\lstinline!\\divide!} \\
+\end{longtable}
+
+\subsection{Input, output, and diagnostics}\label{input-output-and-diagnostics}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Purpose
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Commands
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Input & \passthrough{\lstinline!\\input!}, \passthrough{\lstinline!\\endinput!} \\
+Termination & \passthrough{\lstinline!\\end!}, \passthrough{\lstinline!\\bye!}, \passthrough{\lstinline!\\dump!} \\
+File streams & \passthrough{\lstinline!\\openin!}, \passthrough{\lstinline!\\closein!}, \passthrough{\lstinline!\\read!}, \passthrough{\lstinline!\\openout!}, \passthrough{\lstinline!\\closeout!}, \passthrough{\lstinline!\\write!}, \passthrough{\lstinline!\\immediate!} \\
+Messages & \passthrough{\lstinline!\\message!}, \passthrough{\lstinline!\\errmessage!} \\
+Error handling & \passthrough{\lstinline!\\errhelp!}, \passthrough{\lstinline!\\errorcontextlines!} \\
+Tracing & \passthrough{\lstinline!\\tracingcommands!}, \passthrough{\lstinline!\\tracingmacros!}, \passthrough{\lstinline!\\tracingonline!}, \passthrough{\lstinline!\\tracingoutput!}, \passthrough{\lstinline!\\tracingparagraphs!}, \passthrough{\lstinline!\\tracingpages!}, \passthrough{\lstinline!\\tracingrestores!}, \passthrough{\lstinline!\\tracingstats!}, \passthrough{\lstinline!\\tracinglostchars!}, \passthrough{\lstinline!\\showboxbreadth!}, \passthrough{\lstinline!\\showboxdepth!} \\
+\end{longtable}
+
+\section{Plain TeX user-level command surface}\label{plain-tex-user-level-command-surface}
+
+Plain TeX gives practical names to common structures. Major Plain TeX surfaces include:
+
+\begin{itemize}
+\tightlist
+\item
+  text styles: \passthrough{\lstinline!\\rm!}, \passthrough{\lstinline!\\sl!}, \passthrough{\lstinline!\\it!}, \passthrough{\lstinline!\\tt!}, \passthrough{\lstinline!\\bf!}
+\item
+  text layout: \passthrough{\lstinline!\\centerline!}, \passthrough{\lstinline!\\leftline!}, \passthrough{\lstinline!\\rightline!}, \passthrough{\lstinline!\\line!}
+\item
+  paragraph helpers: \passthrough{\lstinline!\\noindent!}, \passthrough{\lstinline!\\narrower!}, \passthrough{\lstinline!\\item!}, \passthrough{\lstinline!\\itemitem!}, \passthrough{\lstinline!\\proclaim!}, \passthrough{\lstinline!\\beginsection!}
+\item
+  page helpers: \passthrough{\lstinline!\\topglue!}, \passthrough{\lstinline!\\eject!}, \passthrough{\lstinline!\\supereject!}, \passthrough{\lstinline!\\goodbreak!}, \passthrough{\lstinline!\\filbreak!}
+\item
+  inserts: \passthrough{\lstinline!\\topinsert!}, \passthrough{\lstinline!\\midinsert!}, \passthrough{\lstinline!\\pageinsert!}, \passthrough{\lstinline!\\endinsert!}, \passthrough{\lstinline!\\footnote!}
+\item
+  tabbing and alignment helpers: \passthrough{\lstinline!\\settabs!}, \passthrough{\lstinline!\\+!}, \passthrough{\lstinline!\\columns!}, \passthrough{\lstinline!\\multispan!}
+\item
+  math display helpers: \passthrough{\lstinline!\\displaylines!}, \passthrough{\lstinline!\\eqalign!}, \passthrough{\lstinline!\\eqalignno!}, \passthrough{\lstinline!\\leqalignno!}, \passthrough{\lstinline!\\cases!}, \passthrough{\lstinline!\\matrix!}, \passthrough{\lstinline!\\pmatrix!}
+\item
+  delimiters and sizing: \passthrough{\lstinline!\\big!}, \passthrough{\lstinline!\\Big!}, \passthrough{\lstinline!\\bigg!}, \passthrough{\lstinline!\\Bigg!}, plus \passthrough{\lstinline!l!}, \passthrough{\lstinline!m!}, \passthrough{\lstinline!r!} variants such as \passthrough{\lstinline!\\bigl!}, \passthrough{\lstinline!\\bigm!}, \passthrough{\lstinline!\\bigr!}
+\item
+  math spacing: \passthrough{\lstinline!\\,!}, \passthrough{\lstinline"\\!"}, \passthrough{\lstinline!\\;!}, \passthrough{\lstinline!\\quad!}, \passthrough{\lstinline!\\qquad!}
+\item
+  operator names: \passthrough{\lstinline!\\sin!}, \passthrough{\lstinline!\\cos!}, \passthrough{\lstinline!\\tan!}, \passthrough{\lstinline!\\log!}, \passthrough{\lstinline!\\ln!}, \passthrough{\lstinline!\\lim!}, \passthrough{\lstinline!\\sup!}, \passthrough{\lstinline!\\inf!}, etc.
+\item
+  symbol names: Greek letters, relations, binary operations, arrows, delimiters, large operators, miscellaneous symbols.
+\end{itemize}
+
+\section{Math syntax and semantic classes}\label{math-syntax-and-semantic-classes}
+
+\subsection{Entering math}\label{entering-math}
+
+\begin{longtable}[]{@{}ll@{}}
+\toprule\noalign{}
+Structure & Syntax \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Inline math & \passthrough{\lstinline!$...$!} \\
+Display math & \passthrough{\lstinline!$$...$$!} \\
+Superscript & \passthrough{\lstinline!\^<math field>!} \\
+Subscript & \passthrough{\lstinline!\_<math field>!} \\
+Grouped subformula & \passthrough{\lstinline!\{...\}!} \\
+Delimited subformula & \passthrough{\lstinline!\\left<delim> ... \\right<delim>!} \\
+Equation number & \passthrough{\lstinline!\\eqno ...!} or \passthrough{\lstinline!\\leqno ...!} in display math \\
+\end{longtable}
+
+\subsection{Math atom classes}\label{math-atom-classes}
+
+TeX assigns math material to atom classes. Spacing depends primarily on neighboring atom classes.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Class
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Meaning
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Examples
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Ord & ordinary symbol & variables, numbers \\
+Op & large operator/operator name & \passthrough{\lstinline!\\sum!}, \passthrough{\lstinline!\\int!}, \passthrough{\lstinline!\\lim!} \\
+Bin & binary operator & \passthrough{\lstinline!+!}, \passthrough{\lstinline!\\times!}, \passthrough{\lstinline!\\oplus!} \\
+Rel & relation & \passthrough{\lstinline!=!}, \passthrough{\lstinline!<!}, \passthrough{\lstinline!\\le!}, \passthrough{\lstinline!\\approx!} \\
+Open & opening delimiter & \passthrough{\lstinline!(!}, \passthrough{\lstinline![!} \\
+Close & closing delimiter & \passthrough{\lstinline!)!}, \passthrough{\lstinline!]!} \\
+Punct & punctuation & comma, semicolon \\
+Inner & delimited/fraction-like subformula & \passthrough{\lstinline!\\left...\\right!}, generalized fractions \\
+Acc & accented atom & \passthrough{\lstinline!\\hat\{x\}!}-style constructions \\
+Rad & radical & \passthrough{\lstinline!\\sqrt\{...\}!} \\
+Vcent & vertically centered box & \passthrough{\lstinline!\\vcenter\{...\}!} \\
+\end{longtable}
+
+\subsection{Math style system}\label{math-style-system}
+
+TeX uses eight styles: display, text, script, scriptscript, and cramped variants. These determine font size, numerator/denominator style, superscript/subscript position, operator limits, and delimiter choices.
+
+Plain-language mapping:
+
+\begin{itemize}
+\tightlist
+\item
+  Display style: large standalone formulas.
+\item
+  Text style: inline formulas.
+\item
+  Script style: first-level super/subscripts.
+\item
+  Scriptscript style: nested scripts.
+\item
+  Cramped variants: used in denominators and some radical/fraction contexts to reduce vertical spacing.
+\end{itemize}
+
+\subsection{Important math commands}\label{important-math-commands}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Family
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Commands
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Atom constructors & \passthrough{\lstinline!\\mathord!}, \passthrough{\lstinline!\\mathop!}, \passthrough{\lstinline!\\mathbin!}, \passthrough{\lstinline!\\mathrel!}, \passthrough{\lstinline!\\mathopen!}, \passthrough{\lstinline!\\mathclose!}, \passthrough{\lstinline!\\mathpunct!}, \passthrough{\lstinline!\\mathinner!} \\
+Style commands & \passthrough{\lstinline!\\displaystyle!}, \passthrough{\lstinline!\\textstyle!}, \passthrough{\lstinline!\\scriptstyle!}, \passthrough{\lstinline!\\scriptscriptstyle!} \\
+Limits & \passthrough{\lstinline!\\limits!}, \passthrough{\lstinline!\\nolimits!}, \passthrough{\lstinline!\\displaylimits!} \\
+Generalized fractions & \passthrough{\lstinline!\\over!}, \passthrough{\lstinline!\\atop!}, \passthrough{\lstinline!\\above!}, \passthrough{\lstinline!\\overwithdelims!}, \passthrough{\lstinline!\\atopwithdelims!}, \passthrough{\lstinline!\\abovewithdelims!} \\
+Delimiters & \passthrough{\lstinline!\\left!}, \passthrough{\lstinline!\\right!}, \passthrough{\lstinline!\\delimiter!}, \passthrough{\lstinline!\\delcode!} \\
+Radicals & \passthrough{\lstinline!\\radical!}, Plain TeX \passthrough{\lstinline!\\sqrt!} \\
+Accents & \passthrough{\lstinline!\\mathaccent!}, Plain TeX \passthrough{\lstinline!\\hat!}, \passthrough{\lstinline!\\tilde!}, \passthrough{\lstinline!\\bar!}, \passthrough{\lstinline!\\vec!}, etc. \\
+Math chars & \passthrough{\lstinline!\\mathchar!}, \passthrough{\lstinline!\\mathchardef!}, \passthrough{\lstinline!\\mathcode!} \\
+Math glue/kern & \passthrough{\lstinline!\\mskip!}, \passthrough{\lstinline!\\mkern!}, \passthrough{\lstinline!\\nonscript!}, \passthrough{\lstinline!\\muskip!} \\
+Math choice & \passthrough{\lstinline!\\mathchoice!} \\
+Families/fonts & \passthrough{\lstinline!\\fam!}, \passthrough{\lstinline!\\textfont!}, \passthrough{\lstinline!\\scriptfont!}, \passthrough{\lstinline!\\scriptscriptfont!} \\
+\end{longtable}
+
+\section{Math-formatting algorithm: generating boxes from formulas}\label{math-formatting-algorithm-generating-boxes-from-formulas}
+
+The essential algorithm is:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Token scan}: TeX reads math-mode tokens and builds a math list.
+\item
+  \textbf{Atom construction}: math symbols become atoms with class, family, and character code; commands such as \passthrough{\lstinline!\\over!}, \passthrough{\lstinline!\\left!}, \passthrough{\lstinline!\\radical!}, and scripts produce compound nodes.
+\item
+  \textbf{Style propagation}: each subformula is assigned a style: display, text, script, scriptscript, or cramped variant.
+\item
+  \textbf{Font selection}: the current style selects \passthrough{\lstinline!\\textfont!}, \passthrough{\lstinline!\\scriptfont!}, or \passthrough{\lstinline!\\scriptscriptfont!} for each family.
+\item
+  \textbf{Noad conversion}: atoms/noads are recursively converted into horizontal boxes, kerns, rules, glue, and penalties.
+\item
+  \textbf{Italic correction}: TeX inserts italic corrections in selected contexts, especially around scripts and adjacent math italic material.
+\item
+  \textbf{Large operators}: operators such as sums and integrals are built from selected characters; limits are placed according to style and \passthrough{\lstinline!\\limits!}/\passthrough{\lstinline!\\nolimits!}/\passthrough{\lstinline!\\displaylimits!}.
+\item
+  \textbf{Accents}: accent placement uses skew information and font metrics.
+\item
+  \textbf{Radicals}: TeX chooses or builds a radical delimiter large enough for the nucleus, then adds rule/clearance around the radicand.
+\item
+  \textbf{Fractions}: generalized fractions build numerator and denominator boxes in appropriate styles, set vertical clearances, add optional rule thickness, and attach delimiters when requested.
+\item
+  \textbf{Scripts}: superscripts and subscripts are shifted according to font-dimension parameters, x-height, italic correction, and \passthrough{\lstinline!\\scriptspace!}.
+\item
+  \textbf{Delimiters}: \passthrough{\lstinline!\\left!}/\passthrough{\lstinline!\\right!} delimiters are chosen by target height/depth using \passthrough{\lstinline!\\delimiterfactor!} and \passthrough{\lstinline!\\delimitershortfall!}; extensible delimiters may be assembled from extension-font pieces.
+\item
+  \textbf{Spacing table}: TeX inserts thin/medium/thick math glue between adjacent atom classes according to a fixed table, modified by style and \passthrough{\lstinline!\\nonscript!}.
+\item
+  \textbf{Binary correction}: binary operators are reclassified when they occur at the start/end of a list or after incompatible atom types.
+\item
+  \textbf{Penalties}: TeX may insert penalties after binary and relation atoms using \passthrough{\lstinline!\\binoppenalty!} and \passthrough{\lstinline!\\relpenalty!}.
+\item
+  \textbf{Math surround}: \passthrough{\lstinline!\\mathsurround!} is added around inline math when converted to a horizontal list.
+\item
+  \textbf{Display placement}: displayed formulas are boxed, centered or shifted according to display width/indent, and placed with \passthrough{\lstinline!\\abovedisplayskip!}, \passthrough{\lstinline!\\belowdisplayskip!}, and related short-display skips.
+\end{enumerate}
+
+\subsection{Math spacing table concept}\label{math-spacing-table-concept}
+
+The spacing table is class-pair based. The key practical consequences are:
+
+\begin{itemize}
+\tightlist
+\item
+  Relations get more surrounding space than binary operators.
+\item
+  Binary operators get medium spacing in text/display style but can be suppressed in scripts.
+\item
+  Ordinary adjacency usually has no inserted space.
+\item
+  Punctuation produces following space.
+\item
+  Manual corrections use \passthrough{\lstinline!\\,!}, \passthrough{\lstinline"\\!"}, \passthrough{\lstinline!\\;!}, \passthrough{\lstinline!\\quad!}, \passthrough{\lstinline!\\qquad!}, \passthrough{\lstinline!\\mskip!}, or \passthrough{\lstinline!\\mkern!}.
+\end{itemize}
+
+\section{Paragraph line-breaking algorithm}\label{paragraph-line-breaking-algorithm}
+
+TeX's paragraph algorithm can be summarized as dynamic programming over feasible breakpoints.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Convert paragraph text to a horizontal list of boxes, glue, kerns, penalties, and discretionary nodes.
+\item
+  Identify legal breakpoints: glue after non-discardable items, penalties, and discretionary hyphen points.
+\item
+  First pass: try without hyphenation if \passthrough{\lstinline!\\pretolerance!} permits acceptable lines.
+\item
+  Second pass: allow hyphenation and use \passthrough{\lstinline!\\tolerance!}.
+\item
+  Emergency pass: if needed, use \passthrough{\lstinline!\\emergencystretch!} to reduce overfull-line pressure.
+\item
+  For each candidate line, compute width discrepancy, stretch/shrink ratio, badness, penalties, fitness class, and demerits.
+\item
+  Use active breakpoints to find the globally best sequence of lines, not merely a greedy local choice.
+\item
+  Apply \passthrough{\lstinline!\\looseness!} if a paragraph is requested to be longer or shorter than optimal.
+\item
+  Output the selected lines as hboxes with interline glue in the vertical list.
+\end{enumerate}
+
+Key parameters include:
+\begin{itemize}
+\item Line width and fill: \passthrough{\lstinline!\\hsize!}, \passthrough{\lstinline!\\leftskip!}, \passthrough{\lstinline!\\rightskip!}, \passthrough{\lstinline!\\parfillskip!}.
+\item Tolerance control: \passthrough{\lstinline!\\pretolerance!}, \passthrough{\lstinline!\\tolerance!}, \passthrough{\lstinline!\\emergencystretch!}, \passthrough{\lstinline!\\looseness!}.
+\item Demerit and penalty control: \passthrough{\lstinline!\\linepenalty!}, \passthrough{\lstinline!\\hyphenpenalty!}, \passthrough{\lstinline!\\exhyphenpenalty!}, \passthrough{\lstinline!\\adjdemerits!}, \passthrough{\lstinline!\\doublehyphendemerits!}, \passthrough{\lstinline!\\finalhyphendemerits!}.
+\end{itemize}
+
+\section{Page-building algorithm}\label{page-building-algorithm}
+
+TeX builds pages from a main vertical list.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Add boxes, glue, kerns, penalties, marks, and insertions to the main vertical list.
+\item
+  Track accumulated natural height, stretch, shrink, and penalties.
+\item
+  Evaluate feasible page breakpoints.
+\item
+  Compute page badness based on how well the material fits \passthrough{\lstinline!\\vsize!}/\passthrough{\lstinline!\\pagegoal!}.
+\item
+  Combine badness with penalties into a page-break cost.
+\item
+  Remember the best breakpoint found so far.
+\item
+  Trigger the output routine when the page is overfull or a forced break occurs.
+\item
+  Split off held-over material, handle insertions, marks, and footnotes.
+\item
+  Execute \passthrough{\lstinline!\\output!}; normally it ships \passthrough{\lstinline!\\box255!} via \passthrough{\lstinline!\\shipout!}.
+\end{enumerate}
+
+Important parameters: \passthrough{\lstinline!\\vsize!}, \passthrough{\lstinline!\\pagegoal!}, \passthrough{\lstinline!\\pagetotal!}, \passthrough{\lstinline!\\pagestretch!}, \passthrough{\lstinline!\\pagefilstretch!}, \passthrough{\lstinline!\\pagefillstretch!}, \passthrough{\lstinline!\\pagefilllstretch!}, \passthrough{\lstinline!\\pageshrink!}, \passthrough{\lstinline!\\pagedepth!}, \passthrough{\lstinline!\\topskip!}, \passthrough{\lstinline!\\maxdepth!}, \passthrough{\lstinline!\\splittopskip!}, \passthrough{\lstinline!\\splitmaxdepth!}, \passthrough{\lstinline!\\clubpenalty!}, \passthrough{\lstinline!\\widowpenalty!}, \passthrough{\lstinline!\\displaywidowpenalty!}, \passthrough{\lstinline!\\brokenpenalty!}, \passthrough{\lstinline!\\interlinepenalty!}, \passthrough{\lstinline!\\outputpenalty!}, and insertion registers.
+
+\section{Hyphenation algorithm}\label{hyphenation-algorithm}
+
+TeX's hyphenation algorithm uses exception lookup plus pattern matching.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Check the exception dictionary created by \passthrough{\lstinline!\\hyphenation\{...\}!}.
+\item
+  If no exception applies, surround the word with boundary markers.
+\item
+  Match all stored hyphenation patterns against all substrings of the word.
+\item
+  Each pattern contributes numeric values to interletter positions.
+\item
+  For each position, take the maximum value contributed by all matching patterns.
+\item
+  Odd values allow hyphenation; even values suppress it.
+\item
+  Apply boundary constraints such as \passthrough{\lstinline!\\lefthyphenmin!} and \passthrough{\lstinline!\\righthyphenmin!}.
+\item
+  Convert accepted hyphen positions to discretionary breakpoints.
+\end{enumerate}
+
+Key commands/parameters: \passthrough{\lstinline!\\hyphenation!}, \passthrough{\lstinline!\\patterns!}, \passthrough{\lstinline!\\language!}, \passthrough{\lstinline!\\lefthyphenmin!}, \passthrough{\lstinline!\\righthyphenmin!}, \passthrough{\lstinline!\\uchyph!}, \passthrough{\lstinline!\\hyphenchar!}, \passthrough{\lstinline!\\discretionary!}, \passthrough{\lstinline!\\-!}.
+
+\section{High-value reading map}\label{high-value-reading-map}
+
+For implementation-level study, use this order:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Chapter 7: tokenization and category codes.
+\item
+  Chapter 20: macros and expansion.
+\item
+  Chapters 24-26: primitive command grammar by mode.
+\item
+  Chapter 14: paragraph line breaking.
+\item
+  Chapter 15: page breaking and output routine.
+\item
+  Chapters 16-19: math user syntax.
+\item
+  Appendix G: formula-to-box algorithm.
+\item
+  Appendix B: Plain TeX command surface.
+\item
+  Appendix F: math symbol/font mapping.
+\item
+  Appendix H: hyphenation.
+\end{enumerate}
+
+\section{Practical conclusion}\label{practical-conclusion}
+
+The TeX system is best modeled as four interacting subsystems:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Language subsystem}: category codes, tokens, macros, registers, assignments, conditionals.
+\item
+  \textbf{Box/glue subsystem}: boxes, kerns, glue, penalties, leaders, rules, dimensions.
+\item
+  \textbf{Optimization subsystem}: paragraph breaking, page breaking, hyphenation, output routines.
+\item
+  \textbf{Math subsystem}: math atoms, styles, symbol classes, font families, formula-to-box conversion.
+\end{enumerate}
+
+Plain TeX is a compact macro layer that exposes these subsystems through readable commands, while preserving access to the primitive engine for format designers.
+
+
+\section*{Reference Notes}
+\addcontentsline{toc}{section}{Reference Notes}
+\sourceitem{Primary source}{Donald E. Knuth, \emph{The TeXbook}, Computers \& Typesetting, Volume A. The uploaded edition states that it describes TeX Version 3.0.}
+\sourceitem{Implementation companion}{Donald E. Knuth, \emph{TeX: The Program}, Computers \& Typesetting, Volume B. This is the implementation-level companion to the user-facing book.}
+\sourceitem{Plain TeX surface}{Appendix B of \emph{The TeXbook}, \emph{Basic Control Sequences}.}
+\sourceitem{Math symbol/font surface}{Appendix F of \emph{The TeXbook}, \emph{Font Tables}.}
+\sourceitem{Math formula algorithm}{Appendix G of \emph{The TeXbook}, \emph{Generating Boxes from Formulas}.}
+\sourceitem{Hyphenation}{Appendix H of \emph{The TeXbook}, \emph{Hyphenation}.}
+
+\begin{insightbox}{Copyright and reuse note}
+This handout is an analytical transformation and study aid. It avoids reproducing extended copyrighted passages and should be used as a reference map alongside the original book.
+\end{insightbox}
+
+\end{document}

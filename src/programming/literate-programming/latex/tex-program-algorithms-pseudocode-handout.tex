@@ -1,0 +1,2525 @@
+\documentclass[11pt]{article}
+
+\usepackage[letterpaper,margin=0.75in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{calc}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{etoolbox}
+
+\definecolor{TeXBlue}{HTML}{1F4E79}
+\definecolor{TeXLightBlue}{HTML}{EAF3F8}
+\definecolor{TeXGray}{HTML}{F7F7F7}
+\definecolor{TeXDarkGray}{HTML}{444444}
+\definecolor{TeXRule}{HTML}{B7C9D6}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=TeXBlue,
+  urlcolor=TeXBlue,
+  citecolor=TeXBlue,
+  pdftitle={TeX: The Program - Algorithm Catalog and C-like Pseudocode},
+  pdfauthor={Jordan Suber / ChatGPT},
+  pdfsubject={TeX82 algorithms rendered as C-like pseudocode},
+  pdfkeywords={TeX, TeX82, WEB, algorithms, pseudocode, C-like pseudocode}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textit{TeX: The Program} Algorithm Handout}
+\rhead{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\headheight}{14pt}
+
+\titleformat{\section}{\Large\bfseries\color{TeXBlue}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{TeXBlue}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{TeXDarkGray}}{\thesubsubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.4em}{0.5em}
+\titlespacing*{\subsection}{0pt}{1.0em}{0.35em}
+\titlespacing*{\subsubsection}{0pt}{0.8em}{0.25em}
+
+\setlist[itemize]{leftmargin=1.4em,itemsep=0.2em,topsep=0.2em}
+\setlist[enumerate]{leftmargin=1.6em,itemsep=0.25em,topsep=0.25em}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlength{\LTpre}{0.35em}
+\setlength{\LTpost}{0.35em}
+
+\lstdefinestyle{cstyle}{
+  language=C,
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\bfseries\color{TeXBlue},
+  commentstyle=\itshape\color{TeXDarkGray},
+  stringstyle=\color{TeXBlue},
+  numbers=left,
+  numberstyle=\tiny\color{TeXDarkGray},
+  stepnumber=1,
+  numbersep=0.75em,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  tabsize=4,
+  showstringspaces=false,
+  frame=single,
+  framerule=0.3pt,
+  rulecolor=\color{TeXRule},
+  backgroundcolor=\color{TeXGray},
+  xleftmargin=1.0em,
+  framexleftmargin=0.8em,
+  framexrightmargin=0.4em,
+  framesep=0.45em
+}
+\lstset{style=cstyle}
+
+\newtcolorbox{scopebox}{
+  enhanced,
+  colback=TeXLightBlue,
+  colframe=TeXBlue,
+  boxrule=0.5pt,
+  arc=2mm,
+  left=1em,
+  right=1em,
+  top=0.7em,
+  bottom=0.7em
+}
+
+% Pandoc compatibility helpers
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\passthrough}[1]{#1}
+\DeclareUnicodeCharacter{2014}{---}
+
+\AtBeginEnvironment{longtable}{\small}
+\renewcommand{\arraystretch}{1.15}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \vspace*{2.5cm}
+  {\Huge\bfseries\color{TeXBlue}\TeX: The Program\par}
+  \vspace{0.5cm}
+  {\LARGE Algorithm Catalog and C-like Pseudocode\par}
+  \vspace{1.5cm}
+  \begin{scopebox}
+  This handout reorganizes the TeX82 WEB program into an implementation-study guide. It summarizes the major state-transforming algorithms and expresses them as structured C-like pseudocode for readers who want to understand TeX as a compiler, scanner, macro expander, list builder, paragraph optimizer, page builder, math-layout engine, and DVI backend.
+  \end{scopebox}
+  \vfill
+  {\large Source basis: uploaded PDF of \textit{TeX: The Program} / TeX82 WEB listing\par}
+  \vspace{0.25cm}
+  {\large Prepared May 27, 2026\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\begin{scopebox}
+\textbf{Scope.} This handout is an algorithmic abstraction of TeX82. It collects the major state-transforming algorithms from the WEB source and rewrites them as C-like pseudocode. It intentionally omits most minor diagnostic and printing helpers unless they materially change TeX state.
+\end{scopebox}
+
+Source analyzed: \passthrough{\lstinline!tex The program.pdf!}, the
+uploaded PDF of \textbf{TeX: The Program} / TeX82 WEB listing.
+
+This document is an algorithmic abstraction of the TeX82 source. It is
+\textbf{not} a line-for-line translation of Knuth's Pascal/WEB source.
+It collects the principal state-transforming algorithms and rewrites
+them as C-like pseudocode, grouping small diagnostic/printing helpers
+where they are not central to TeX's computational behavior.
+
+\section{Reading model}\label{reading-model}
+
+TeX82 is organized as a WEB program. The source is not arranged in
+compiler order; it is arranged pedagogically. Many routines are built
+from named code fragments such as
+\passthrough{\lstinline!Get ready to start line breaking!},
+\passthrough{\lstinline!Find optimal breakpoints!}, or
+\passthrough{\lstinline!Move to next line of file!}. In the pseudocode
+below:
+
+\begin{itemize}
+\tightlist
+\item
+  Global TeX variables remain global, matching TeX82's style.
+\item
+  Node-memory fields such as \passthrough{\lstinline!link(p)!},
+  \passthrough{\lstinline!type(p)!},
+  \passthrough{\lstinline!subtype(p)!},
+  \passthrough{\lstinline!width(p)!},
+  \passthrough{\lstinline!glue\_ptr(p)!}, etc. are treated as accessors
+  over TeX's packed memory arrays.
+\item
+  Routines named \passthrough{\lstinline!scan\_*!} read tokens and leave
+  results in \passthrough{\lstinline!cur\_val!},
+  \passthrough{\lstinline!cur\_val\_level!},
+  \passthrough{\lstinline!cur\_order!}, or other global scanner outputs.
+\item
+  Routines named \passthrough{\lstinline!new\_*!} allocate TeX nodes and
+  initialize their fields.
+\item
+  The pseudocode uses structured control flow where the original uses
+  labels and \passthrough{\lstinline!goto!}.
+\item
+  Error recovery is summarized unless the recovery branch materially
+  affects TeX state.
+\end{itemize}
+
+\section{Algorithm inventory by
+subsystem}\label{algorithm-inventory-by-subsystem}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+TeX82 area
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Principal algorithms
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Output/state effect
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Character set & initialize \passthrough{\lstinline!xchr!}, initialize
+inverse \passthrough{\lstinline!xord!} & External text is mapped to
+internal 8-bit codes and back. \\
+Input/output & \passthrough{\lstinline!input\_ln!}, terminal
+initialization, file open/close & Lines are read into
+\passthrough{\lstinline!buffer[first..last)!}, trailing blanks
+removed. \\
+String pool & \passthrough{\lstinline!make\_string!},
+\passthrough{\lstinline!flush\_string!}, string comparisons, pool
+initialization & Variable-length strings are interned in
+\passthrough{\lstinline!str\_pool!}/\passthrough{\lstinline!str\_start!}. \\
+Printing/errors & \passthrough{\lstinline!print\_*!},
+\passthrough{\lstinline!show\_context!},
+\passthrough{\lstinline!error!}, \passthrough{\lstinline!fatal\_error!}
+& Diagnostic text and interaction mode are managed. \\
+Scaled arithmetic & \passthrough{\lstinline!round\_decimals!},
+\passthrough{\lstinline!mult\_and\_add!},
+\passthrough{\lstinline!x\_over\_n!},
+\passthrough{\lstinline!xn\_over\_d!}, \passthrough{\lstinline!badness!}
+& Fixed-point TeX dimensions and glue badness are computed safely. \\
+Packed memory & \passthrough{\lstinline!get\_avail!},
+\passthrough{\lstinline!get\_node!},
+\passthrough{\lstinline!free\_node!},
+\passthrough{\lstinline!flush\_node\_list!},
+\passthrough{\lstinline!copy\_node\_list!} & Token, box, glue, math,
+discretionary, and whatsit nodes are allocated/freed. \\
+Boxes/lists & constructors for boxes, rules, glue, kerns, penalties,
+math nodes & Horizontal, vertical, and math lists are constructed. \\
+Semantic nest & \passthrough{\lstinline!push\_nest!},
+\passthrough{\lstinline!pop\_nest!},
+\passthrough{\lstinline!show\_activities!} & TeX enters/exits vertical,
+horizontal, math, and internal modes. \\
+Equivalents/groups & \passthrough{\lstinline!new\_save\_level!},
+\passthrough{\lstinline!eq\_define!},
+\passthrough{\lstinline!geq\_define!},
+\passthrough{\lstinline!save\_for\_after!},
+\passthrough{\lstinline!unsave!} & Assignments are made local/global and
+group state is restored. \\
+Hash table & \passthrough{\lstinline!id\_lookup!}, primitive
+installation & Control sequence names are interned and looked up. \\
+Token lists & token insertion, deletion, display, macro body storage &
+Macros, marks, output routines, and inserted token streams are
+represented. \\
+Input stacks & file stack, token-list stack, backup stack & TeX
+multiplexes files, macros, inserted tokens, and error recovery input. \\
+Tokenization & \passthrough{\lstinline!get\_next!},
+\passthrough{\lstinline!get\_token!},
+\passthrough{\lstinline!get\_x\_token!} & Raw input becomes
+command/character/control-sequence tokens. \\
+Expansion & \passthrough{\lstinline!expand!},
+\passthrough{\lstinline!macro\_call!},
+\passthrough{\lstinline!conditional!},
+\passthrough{\lstinline!pass\_text!},
+\passthrough{\lstinline!conv\_toks!},
+\passthrough{\lstinline!the\_toks!} & Expandable commands and macros are
+reduced before execution. \\
+Scanning & \passthrough{\lstinline!scan\_int!},
+\passthrough{\lstinline!scan\_dimen!},
+\passthrough{\lstinline!scan\_glue!},
+\passthrough{\lstinline!scan\_rule\_spec!},
+\passthrough{\lstinline!scan\_file\_name!},
+\passthrough{\lstinline!scan\_font\_ident!} & Grammar-level arguments
+are parsed into typed values. \\
+File names & \passthrough{\lstinline!begin\_name!},
+\passthrough{\lstinline!more\_name!},
+\passthrough{\lstinline!end\_name!},
+\passthrough{\lstinline!pack\_file\_name!},
+\passthrough{\lstinline!prompt\_file\_name!} & TeX filenames are parsed,
+defaulted, and packed for host I/O. \\
+Font metrics & \passthrough{\lstinline!read\_font\_info!},
+font-dimension access & TFM data is loaded into font-info arrays. \\
+DVI output & DVI buffering, movement compression, font definitions &
+TeX's box tree is emitted as DVI bytecode. \\
+Shipping pages & \passthrough{\lstinline!ship\_out!},
+\passthrough{\lstinline!hlist\_out!},
+\passthrough{\lstinline!vlist\_out!} & Completed box 255/page boxes are
+written to the DVI stream. \\
+Packaging & \passthrough{\lstinline!hpack!},
+\passthrough{\lstinline!vpackage!},
+\passthrough{\lstinline!append\_to\_vlist!} & Lists are measured,
+justified, and converted into boxes. \\
+Math conversion & \passthrough{\lstinline!mlist\_to\_hlist!},
+\passthrough{\lstinline!clean\_box!}, \passthrough{\lstinline!fetch!},
+\passthrough{\lstinline!make\_fraction!},
+\passthrough{\lstinline!make\_radical!},
+\passthrough{\lstinline!make\_accent!},
+\passthrough{\lstinline!make\_ord!} & Math noads are converted to
+horizontal lists using font parameters. \\
+Alignment & \passthrough{\lstinline!init\_align!},
+\passthrough{\lstinline!fin\_col!}, \passthrough{\lstinline!fin\_row!},
+\passthrough{\lstinline!fin\_align!} &
+\passthrough{\lstinline!\\halign!}/\passthrough{\lstinline!\\valign!}
+preambles and entries become boxes with computed column widths. \\
+Line breaking & \passthrough{\lstinline!line\_break!},
+\passthrough{\lstinline!try\_break!},
+\passthrough{\lstinline!post\_line\_break!} & Paragraph hlist is broken
+into optimal justified lines. \\
+Hyphenation & pre-hyphenation scanner, trie lookup,
+\passthrough{\lstinline!hyphenate!}, post-hyphenation rebuild & Words
+are replaced by discretionary break nodes when patterns apply. \\
+Page breaking & \passthrough{\lstinline!vert\_break!},
+\passthrough{\lstinline!build\_page!},
+\passthrough{\lstinline!fire\_up!} & Vertical contribution list is
+broken into pages and output routines are invoked. \\
+Executive control & \passthrough{\lstinline!main\_control!},
+mode-specific command dispatch & TeX interprets tokens according to
+current mode. \\
+Box/list building & \passthrough{\lstinline!begin\_box!},
+\passthrough{\lstinline!scan\_box!}, \passthrough{\lstinline!package!},
+\passthrough{\lstinline!new\_graf!},
+\passthrough{\lstinline!end\_graf!},
+\passthrough{\lstinline!handle\_right\_brace!} & User commands mutate
+current lists and semantic state. \\
+Math list building & \passthrough{\lstinline!push\_math!},
+\passthrough{\lstinline!init\_math!},
+\passthrough{\lstinline!scan\_math!},
+\passthrough{\lstinline!sub\_sup!},
+\passthrough{\lstinline!math\_fraction!},
+\passthrough{\lstinline!after\_math!} & Math input is parsed into noads
+and finalized. \\
+Assignments & \passthrough{\lstinline!prefixed\_command!},
+\passthrough{\lstinline!do\_register\_command!},
+\passthrough{\lstinline!new\_font!}, \passthrough{\lstinline!alter\_*!},
+\passthrough{\lstinline!issue\_message!} & Prefixes, registers,
+definitions, fonts, messages, and cases are processed. \\
+Dump/load & \passthrough{\lstinline!store\_fmt\_file!},
+\passthrough{\lstinline!load\_fmt\_file!} & INITEX serializes
+initialized tables; production TeX reloads them. \\
+Extensions & \passthrough{\lstinline!do\_extension!},
+\passthrough{\lstinline!write\_out!},
+\passthrough{\lstinline!special\_out!},
+\passthrough{\lstinline!fix\_language!} &
+\passthrough{\lstinline!\\write!}, \passthrough{\lstinline!\\special!},
+language nodes, and extension whatsits are handled. \\
+\end{longtable}
+
+\section{Core pseudocode}\label{core-pseudocode}
+
+\subsection{3.1 Program initialization}\label{program-initialization}
+
+\begin{lstlisting}[language=C]
+void initialize_tex(void) {
+    set_initial_character_tables();      // xchr, xord
+    initialize_core_constants();
+    initialize_memory_arrays();
+    initialize_equivalents();            // eqtb, catcodes, mathcodes, registers
+    initialize_hash_table_and_primitives();
+    initialize_string_pool();            // INITEX; production reloads format
+    initialize_fonts_and_hyphenation();  // INITEX or format load
+}
+\end{lstlisting}
+
+\subsection{3.2 Main program}\label{main-program}
+
+\begin{lstlisting}[language=C]
+int main(void) {
+    open_terminal_output();
+    if (format_not_preloaded()) {
+        if (!load_fmt_file()) initialize_tex();
+    }
+    if (!init_terminal()) goto final_end;
+
+start_of_tex:
+    prepare_first_input_line();
+    main_control();
+
+end_of_tex:
+    final_cleanup();
+    close_files_and_terminate();
+
+final_end:
+    return history_to_exit_code(history);
+}
+\end{lstlisting}
+
+\subsection{3.3 Input line acquisition}\label{input-line-acquisition}
+
+\begin{lstlisting}[language=C]
+bool input_ln(AlphaFile *f, bool bypass_eoln) {
+    int last_nonblank;
+
+    if (bypass_eoln && !eof(f)) get(f);
+
+    last = first;
+    if (eof(f)) return false;
+
+    last_nonblank = first;
+    while (!eoln(f)) {
+        if (last >= max_buf_stack) {
+            max_buf_stack = last + 1;
+            if (max_buf_stack == buf_size) overflow("buffer size", buf_size);
+        }
+        buffer[last] = xord[current_char(f)];
+        get(f);
+        last++;
+
+        if (buffer[last - 1] != ' ') last_nonblank = last;
+    }
+
+    last = last_nonblank;       // trim trailing blanks
+    return true;
+}
+\end{lstlisting}
+
+\subsection{3.4 Terminal startup}\label{terminal-startup}
+
+\begin{lstlisting}[language=C]
+bool init_terminal(void) {
+    open_terminal_input();
+
+    for (;;) {
+        wake_up_terminal();
+        prompt("**");
+
+        if (!input_ln(&term_in, true)) {
+            print("! End of file on the terminal");
+            return false;
+        }
+
+        loc = first;
+        while (loc < last && buffer[loc] == ' ') loc++;
+        if (loc < last) return true;
+
+        print("Please type the name of your input file.");
+    }
+}
+\end{lstlisting}
+
+\subsection{3.5 String-pool creation}\label{string-pool-creation}
+
+\begin{lstlisting}[language=C]
+StringNumber make_string(void) {
+    if (str_ptr == max_strings) overflow("number of strings", max_strings - init_str_ptr);
+    str_ptr++;
+    str_start[str_ptr] = pool_ptr;
+    return str_ptr - 1;
+}
+
+void append_char(int c) {
+    str_pool[pool_ptr++] = pack_ascii(c);
+}
+
+void flush_string(void) {
+    str_ptr--;
+    pool_ptr = str_start[str_ptr];
+}
+
+bool str_eq_buf(StringNumber s, int k) {
+    for (int j = str_start[s]; j < str_start[s + 1]; j++, k++) {
+        if (unpack_ascii(str_pool[j]) != buffer[k]) return false;
+    }
+    return true;
+}
+
+bool str_eq_str(StringNumber s, StringNumber t) {
+    if (length(s) != length(t)) return false;
+    for (int j = str_start[s], k = str_start[t]; j < str_start[s + 1]; j++, k++) {
+        if (str_pool[j] != str_pool[k]) return false;
+    }
+    return true;
+}
+\end{lstlisting}
+
+\subsection{3.6 String-pool
+bootstrapping}\label{string-pool-bootstrapping}
+
+\begin{lstlisting}[language=C]
+bool get_strings_started(void) {
+    pool_ptr = 0;
+    str_ptr = 0;
+    str_start[0] = 0;
+
+    for (int k = 0; k <= 255; k++) {
+        if (character_cannot_be_printed(k)) {
+            append_char('^');
+            append_char('^');
+            if (k < 0100) append_char(k + 0100);
+            else if (k < 0200) append_char(k - 0100);
+            else append_lowercase_hex(k);
+        } else {
+            append_char(k);
+        }
+        make_string();
+    }
+
+    return read_pool_file_and_check_checksum();
+}
+\end{lstlisting}
+
+\subsection{3.7 Scaled arithmetic}\label{scaled-arithmetic}
+
+\begin{lstlisting}[language=C]
+Scaled round_decimals(int digits[], int n) {
+    int a = 0;
+    while (n > 0) {
+        n--;
+        a = (a + digits[n] * TWO) / 10;  // TWO is TeX's fixed-point base step
+    }
+    return (a + 1) / 2;
+}
+
+int mult_and_add(int n, int x, int y, int max_answer) {
+    if (n < 0) { x = -x; n = -n; }
+    if (n == 0) return y;
+    if (abs(x) <= (max_answer - abs(y)) / n) return n * x + y;
+
+    arith_error = true;
+    return 0;
+}
+
+int x_over_n(int x, int n, int *remainder) {
+    bool negative = false;
+    if (n == 0) { arith_error = true; *remainder = x; return 0; }
+    if (n < 0) { x = -x; n = -n; }
+    if (x < 0) { negative = true; x = -x; }
+
+    int q = x / n;
+    *remainder = x % n;
+    if (negative) { q = -q; *remainder = -*remainder; }
+    return q;
+}
+
+int xn_over_d(int x, int n, int d, int *remainder) {
+    // Computes floor(x*n/d) with overflow checks and remainder propagation.
+    // TeX splits x into high and low parts to avoid machine overflow.
+    if (d <= 0) { arith_error = true; return 0; }
+    bool negative = (x < 0);
+    if (negative) x = -x;
+
+    int high = x / 32768;
+    int low  = x % 32768;
+    int t = (low * n);
+    int u = (high * n) + (t / 32768);
+    int v = ((u % d) * 32768) + (t % 32768);
+    int q = (u / d) * 32768 + (v / d);
+    *remainder = v % d;
+
+    if (negative) { q = -q; *remainder = -*remainder; }
+    return q;
+}
+
+int badness(Scaled t, Scaled s) {
+    if (t == 0) return 0;
+    if (s <= 0) return INF_BAD;
+    double r = (double)t / (double)s;
+    int b = (int)(100.0 * r * r * r + 0.5);
+    return min(b, INF_BAD);
+}
+\end{lstlisting}
+
+\subsection{3.8 Single-word node
+allocation}\label{single-word-node-allocation}
+
+\begin{lstlisting}[language=C]
+Pointer get_avail(void) {
+    Pointer p;
+    if (avail != NULL) {
+        p = avail;
+        avail = link(avail);
+    } else {
+        if (mem_end < mem_max) p = ++mem_end;
+        else if (hi_mem_min > lo_mem_max + 1) p = --hi_mem_min;
+        else overflow("main memory size", mem_max + 1 - mem_min);
+    }
+    link(p) = NULL;
+    return p;
+}
+
+void free_avail(Pointer p) {
+    link(p) = avail;
+    avail = p;
+}
+\end{lstlisting}
+
+\subsection{3.9 Variable-size memory
+allocation}\label{variable-size-memory-allocation}
+
+\begin{lstlisting}[language=C]
+Pointer get_node(int size) {
+    Pointer p, q, r;
+
+    restart:
+    p = rover;
+    do {
+        q = p + node_size(p);        // address just after this free block
+
+        while (is_empty_free_block(q)) {
+            // coalesce adjacent free blocks
+            node_size(p) += node_size(q);
+            unlink_free_block(q);
+            q = p + node_size(p);
+        }
+
+        if (node_size(p) >= size) {
+            if (node_size(p) == size) {
+                unlink_free_block(p);
+                rover = next_free_after(p);
+                return p;
+            }
+            node_size(p) -= size;
+            return p + node_size(p); // allocate from high end of block
+        }
+        p = rlink(p);
+    } while (p != rover);
+
+    if (lo_mem_max + 2 < hi_mem_min) {
+        grow_low_memory_area();
+        goto restart;
+    }
+
+    overflow("main memory size", mem_max + 1 - mem_min);
+}
+
+void free_node(Pointer p, int size) {
+    node_size(p) = size;
+    link_into_free_list(p, rover);
+}
+\end{lstlisting}
+
+\subsection{3.10 Recursive node-list
+destruction}\label{recursive-node-list-destruction}
+
+\begin{lstlisting}[language=C]
+void flush_node_list(Pointer p) {
+    while (p != NULL) {
+        Pointer q = link(p);
+
+        if (is_char_node(p)) {
+            free_avail(p);
+        } else {
+            switch (type(p)) {
+                case HLIST_NODE:
+                case VLIST_NODE:
+                case UNSET_NODE:
+                    flush_node_list(list_ptr(p));
+                    free_node(p, box_node_size(type(p)));
+                    break;
+                case RULE_NODE:
+                    free_node(p, rule_node_size);
+                    break;
+                case INS_NODE:
+                    flush_node_list(ins_ptr(p));
+                    delete_glue_ref(split_top_ptr(p));
+                    free_node(p, ins_node_size);
+                    break;
+                case WHATSIT_NODE:
+                    free_whatsit_substructure(p);
+                    break;
+                case GLUE_NODE:
+                    delete_glue_ref(glue_ptr(p));
+                    flush_node_list(leader_ptr(p));
+                    free_node(p, small_node_size);
+                    break;
+                case DISC_NODE:
+                    flush_node_list(pre_break(p));
+                    flush_node_list(post_break(p));
+                    free_node(p, small_node_size);
+                    break;
+                case MATH_NODE:
+                case KERN_NODE:
+                case PENALTY_NODE:
+                    free_node(p, small_node_size);
+                    break;
+                default:
+                    free_node(p, node_size_for_type(type(p)));
+            }
+        }
+        p = q;
+    }
+}
+\end{lstlisting}
+
+\subsection{3.11 Copying node lists}\label{copying-node-lists}
+
+\begin{lstlisting}[language=C]
+Pointer copy_node_list(Pointer p) {
+    Pointer head = NULL;
+    Pointer tail = &head;
+
+    while (p != NULL) {
+        Pointer r;
+        if (is_char_node(p)) {
+            r = get_avail();
+            mem[r] = mem[p];
+        } else {
+            r = copy_node_shallow(p);
+            increment_references_owned_by(r);
+            copy_deep_substructures_if_required(r, p);
+        }
+        link(*tail) = r;
+        tail = &link(r);
+        p = link(p);
+    }
+    return head;
+}
+\end{lstlisting}
+
+\subsection{3.12 Hash lookup and control-sequence
+interning}\label{hash-lookup-and-control-sequence-interning}
+
+\begin{lstlisting}[language=C]
+Pointer id_lookup(int j, int l) {
+    // Search buffer[j..j+l) in the control sequence hash table.
+    int h = hash_first_character(buffer[j]);
+    for (int k = j + 1; k < j + l; k++) h = update_hash(h, buffer[k]);
+    h = h % HASH_PRIME;
+
+    Pointer p = h + HASH_BASE;
+    for (;;) {
+        if (text(p) > 0 && string_equals_buffer(text(p), j, l)) return p;
+        if (next(p) == 0) break;
+        p = next(p);
+    }
+
+    if (no_new_control_sequence) return UNDEFINED_CONTROL_SEQUENCE;
+
+    Pointer q = allocate_hash_slot_or_overflow();
+    next(p) = q;
+    text(q) = make_string_from_buffer(j, l);
+    eq_type(q) = UNDEFINED_CS;
+    equiv(q) = NULL;
+    eq_level(q) = LEVEL_ZERO;
+    return q;
+}
+\end{lstlisting}
+
+\subsection{3.13 Grouped assignments and
+restoration}\label{grouped-assignments-and-restoration}
+
+\begin{lstlisting}[language=C]
+void eq_define(Pointer p, Command t, Halfword e) {
+    if (eq_level(p) == cur_level) {
+        eq_destroy(eqtb[p]);
+    } else if (cur_level > LEVEL_ONE) {
+        save_eqtb_entry_for_later_restore(p);
+    }
+    eq_type(p) = t;
+    equiv(p) = e;
+    eq_level(p) = cur_level;
+}
+
+void geq_define(Pointer p, Command t, Halfword e) {
+    eq_destroy(eqtb[p]);
+    eq_type(p) = t;
+    equiv(p) = e;
+    eq_level(p) = LEVEL_ONE;
+}
+
+void new_save_level(GroupCode c) {
+    push_save_boundary(c, cur_group, cur_boundary);
+    cur_group = c;
+    cur_level++;
+    cur_boundary = save_ptr;
+}
+
+void unsave(void) {
+    if (cur_level <= LEVEL_ONE) confusion("curlevel");
+
+    while (save_ptr > cur_boundary) {
+        SaveEntry e = pop_save_entry();
+        if (e.kind == RESTORE_OLD_VALUE) {
+            Pointer p = e.location;
+            if (eq_level(p) == cur_level) eq_destroy(eqtb[p]);
+            eqtb[p] = e.saved_value;
+        } else if (e.kind == RESTORE_ZERO) {
+            Pointer p = e.location;
+            if (eq_level(p) == cur_level) eq_destroy(eqtb[p]);
+            eq_type(p) = UNDEFINED_CS;
+            equiv(p) = NULL;
+            eq_level(p) = LEVEL_ZERO;
+        } else if (e.kind == INSERT_TOKEN_AFTER_GROUP) {
+            back_input(e.token);
+        }
+    }
+
+    restore_group_boundary();
+    cur_level--;
+}
+\end{lstlisting}
+
+\subsection{3.14 Input-stack management}\label{input-stack-management}
+
+\begin{lstlisting}[language=C]
+void begin_file_reading(void) {
+    if (in_open == MAX_IN_OPEN) overflow("text input levels", MAX_IN_OPEN);
+    if (input_ptr == STACK_SIZE) overflow("input stack size", STACK_SIZE);
+    input_stack[input_ptr++] = cur_input;
+    in_open++;
+    cur_input = new_file_input_state();
+}
+
+void end_file_reading(void) {
+    close_current_input_file_if_needed();
+    cur_input = input_stack[--input_ptr];
+    in_open--;
+}
+
+void begin_token_list(Pointer p, TokenType t) {
+    if (input_ptr == STACK_SIZE) overflow("input stack size", STACK_SIZE);
+    input_stack[input_ptr++] = cur_input;
+    state = TOKEN_LIST;
+    start = p;
+    token_type = t;
+    loc = link(p);
+}
+
+void end_token_list(void) {
+    if (token_type >= BACKED_UP) delete_token_ref(start);
+    cur_input = input_stack[--input_ptr];
+}
+
+void back_input(Token tok) {
+    Pointer p = get_avail();
+    info(p) = tok;
+    begin_token_list(p, BACKED_UP);
+}
+\end{lstlisting}
+
+\subsection{\texorpdfstring{3.15 Token acquisition:
+\texttt{get\_next}}{3.15 Token acquisition: get\_next}}\label{token-acquisition-get_next}
+
+\begin{lstlisting}[language=C]
+void get_next(void) {
+    cur_cs = 0;
+
+    for (;;) {
+        if (state == TOKEN_LIST) {
+            if (loc == NULL) {
+                end_token_list();
+                continue;
+            }
+
+            Token t = info(loc);
+            loc = link(loc);
+
+            if (is_parameter_token_needing_expansion(t)) {
+                expand_parameter_token(t);
+                continue;
+            }
+
+            decode_token(t, &cur_cmd, &cur_chr, &cur_cs);
+            break;
+        }
+
+        if (loc > limit) {
+            state = NEW_LINE;
+            if (!move_to_next_input_line()) continue;
+        }
+
+        int c = buffer[loc++];
+        int cat = cat_code(c);
+
+        reswitch:
+        switch (state) {
+            case NEW_LINE:
+                if (cat == SPACER) continue;
+                if (cat == CAR_RET) { cur_cmd = PAR_END; cur_chr = 0; return; }
+                state = MID_LINE;
+                break;
+
+            case SKIP_BLANKS:
+                if (cat == SPACER || cat == CAR_RET) continue;
+                state = MID_LINE;
+                break;
+
+            case MID_LINE:
+                if (cat == SPACER) state = SKIP_BLANKS;
+                if (cat == CAR_RET) { loc = limit + 1; cur_cmd = SPACER; cur_chr = ' '; return; }
+                break;
+        }
+
+        if (cat == ESCAPE) {
+            scan_control_sequence_name(&cur_cs);
+            lookup_control_sequence(cur_cs, &cur_cmd, &cur_chr);
+            state = command_state_after_control_sequence(cur_cmd);
+            break;
+        }
+
+        if (cat == ACTIVE_CHAR) {
+            cur_cs = active_cs(c);
+            lookup_control_sequence(cur_cs, &cur_cmd, &cur_chr);
+            break;
+        }
+
+        if (cat == SUP_MARK && next_chars_form_expanded_code()) {
+            c = expanded_character_code();
+            cat = cat_code(c);
+            goto reswitch;
+        }
+
+        cur_cmd = cat;
+        cur_chr = c;
+        break;
+    }
+
+    if (alignment_entry_just_ended()) insert_v_template_and_restart();
+}
+\end{lstlisting}
+
+\subsection{\texorpdfstring{3.16 \texttt{get\_token},
+\texttt{get\_x\_token}, and
+\texttt{x\_token}}{3.16 get\_token, get\_x\_token, and x\_token}}\label{get_token-get_x_token-and-x_token}
+
+\begin{lstlisting}[language=C]
+void get_token(void) {
+    no_new_control_sequence = false;
+    get_next();
+    no_new_control_sequence = true;
+    cur_tok = (cur_cs == 0) ? character_token(cur_cmd, cur_chr) : cs_token(cur_cs);
+}
+
+void get_x_token(void) {
+    for (;;) {
+        get_next();
+        if (cur_cmd <= MAX_COMMAND) return;
+        expand();
+    }
+}
+
+void x_token(void) {
+    while (cur_cmd > MAX_COMMAND) {
+        expand();
+        get_next();
+    }
+    cur_tok = (cur_cs == 0) ? character_token(cur_cmd, cur_chr) : cs_token(cur_cs);
+}
+\end{lstlisting}
+
+\subsection{3.17 Expansion dispatcher}\label{expansion-dispatcher}
+
+\begin{lstlisting}[language=C]
+void expand(void) {
+    save_scanner_outputs();
+
+    switch (cur_cmd) {
+        case TOP_BOT_MARK:   push_mark_tokens(cur_chr); break;
+        case EXPAND_AFTER:   expand_after_algorithm(); break;
+        case NO_EXPAND:      suppress_next_expansion_once(); break;
+        case CS_NAME:        build_control_sequence_until_endcsname(); break;
+        case CONVERT:        conv_toks(cur_chr); break;
+        case THE:            ins_the_toks(); break;
+        case IF_TEST:        conditional(); break;
+        case FI_OR_ELSE:     handle_stray_conditional_token(); break;
+        case INPUT:          start_input(); break;
+        case MACRO_CALL:     macro_call(); break;
+        default:             expand_primitive_or_error(); break;
+    }
+
+    restore_scanner_outputs();
+}
+\end{lstlisting}
+
+\subsection{3.18 Macro-call expansion}\label{macro-call-expansion}
+
+\begin{lstlisting}[language=C]
+void macro_call(void) {
+    ScannerStatus old_status = scanner_status;
+    Pointer ref_count = cur_chr;      // macro token list reference count
+    Pointer r = link(ref_count);      // parameter text, then body
+    int n = 0;
+
+    if (tracing_macros > 0) show_macro_expansion(ref_count);
+
+    if (info(r) != END_MATCH_TOKEN) {
+        while (true) {
+            MatchInstruction m = next_match_instruction(&r);
+            if (m.kind == PARAMETER) {
+                param_stack[++n] = scan_macro_argument(m);
+            } else if (m.kind == DELIMITED_TEXT) {
+                require_exact_token_sequence(m.tokens);
+            } else if (m.kind == END_MATCH) {
+                break;
+            }
+
+            if (illegal_par_detected()) {
+                recover_from_runaway_argument();
+                scanner_status = old_status;
+                return;
+            }
+        }
+    }
+
+    while (state == TOKEN_LIST && loc == NULL && token_type != V_TEMPLATE) {
+        end_token_list();              // tail-recursive macro optimization
+    }
+
+    begin_token_list(ref_count, MACRO);
+    name = warning_index;
+    loc = link(r);                     // macro body
+    scanner_status = old_status;
+}
+\end{lstlisting}
+
+\subsection{3.19 Integer scanning}\label{integer-scanning}
+
+\begin{lstlisting}[language=C]
+void scan_int(void) {
+    bool negative = false;
+    int radix = 10;
+    int acc = 0;
+
+    get_next_nonblank_nonsign_token(&negative);
+
+    if (cur_cmd_is_internal_integer()) {
+        scan_something_internal(INT_VAL, false);
+        if (cur_val_level >= DIMEN_VAL) coerce_or_report_bad_internal_value();
+        if (negative) cur_val = -cur_val;
+        return;
+    }
+
+    if (cur_tok == OCTAL_QUOTE_TOKEN) radix = 8;
+    else if (cur_tok == HEX_QUOTE_TOKEN) radix = 16;
+    else if (cur_tok == ALPHA_TOKEN) { cur_val = scan_character_code_value(); return; }
+    else back_input_current_token();
+
+    while (next_token_is_digit_for_radix(radix)) {
+        acc = radix * acc + scanned_digit_value();
+        if (acc_too_large(acc)) report_number_too_big_and_clip();
+    }
+
+    optional_space();
+    cur_val = negative ? -acc : acc;
+}
+\end{lstlisting}
+
+\subsection{3.20 Dimension scanning}\label{dimension-scanning}
+
+\begin{lstlisting}[language=C]
+void scan_dimen(bool mu, bool inf, bool shortcut) {
+    bool negative = false;
+    int fraction = 0;
+    cur_order = NORMAL;
+    arith_error = false;
+
+    if (!shortcut) {
+        get_next_nonblank_nonsign_token(&negative);
+
+        if (cur_cmd_is_internal_quantity()) {
+            scan_internal_dimension_or_integer(mu);
+            if (cur_val_level_is_dimension_or_mu()) goto attach_sign;
+        } else {
+            back_input_current_token();
+            if (current_token_is_decimal_point()) {
+                cur_val = 0;
+                radix = 10;
+            } else {
+                scan_int();
+            }
+
+            if (radix == 10 && next_token_is_decimal_point()) {
+                fraction = scan_decimal_fraction();
+            }
+        }
+    }
+
+    if (cur_val < 0) { negative = !negative; cur_val = -cur_val; }
+
+    Unit u = scan_units(mu, inf);
+    if (u.kind == INTERNAL_UNIT) {
+        cur_val = combine_with_internal_unit(cur_val, fraction, u);
+        goto attach_sign;
+    }
+
+    cur_val = convert_to_scaled_points(cur_val, fraction, u);
+    optional_space();
+
+attach_sign:
+    if (arith_error || abs(cur_val) >= DIMEN_LIMIT) report_dimension_out_of_range();
+    if (negative) cur_val = -cur_val;
+}
+\end{lstlisting}
+
+\subsection{3.21 Glue scanning}\label{glue-scanning}
+
+\begin{lstlisting}[language=C]
+void scan_glue(ValueLevel level) {
+    bool negative = false;
+    bool mu = (level == MU_VAL);
+
+    get_next_nonblank_nonsign_token(&negative);
+
+    if (cur_cmd_is_internal_quantity()) {
+        scan_something_internal(level, negative);
+        if (cur_val_level >= GLUE_VAL) {
+            if (cur_val_level != level) mu_error();
+            return;
+        }
+        if (cur_val_level == INT_VAL) scan_dimen(mu, false, true);
+        else if (level == MU_VAL) mu_error();
+    } else {
+        back_input_current_token();
+        scan_dimen(mu, false, false);
+        if (negative) cur_val = -cur_val;
+    }
+
+    Pointer q = new_spec(zero_glue);
+    width(q) = cur_val;
+
+    if (scan_keyword("plus")) {
+        scan_dimen(mu, true, false);
+        stretch(q) = cur_val;
+        stretch_order(q) = cur_order;
+    }
+    if (scan_keyword("minus")) {
+        scan_dimen(mu, true, false);
+        shrink(q) = cur_val;
+        shrink_order(q) = cur_order;
+    }
+
+    cur_val = q;
+}
+\end{lstlisting}
+
+\subsection{3.22 Rule specification
+scanning}\label{rule-specification-scanning}
+
+\begin{lstlisting}[language=C]
+Pointer scan_rule_spec(void) {
+    Pointer q = new_rule();
+
+    if (cur_cmd == VRULE) {
+        width(q) = default_rule;
+        height(q) = default_rule;
+        depth(q) = default_rule;
+    } else {
+        width(q) = default_rule;
+        height(q) = default_rule;
+        depth(q) = default_rule;
+    }
+
+    while (true) {
+        if (scan_keyword("width"))  scan_dimen(false, false, false), width(q)  = cur_val;
+        else if (scan_keyword("height")) scan_dimen(false, false, false), height(q) = cur_val;
+        else if (scan_keyword("depth"))  scan_dimen(false, false, false), depth(q)  = cur_val;
+        else break;
+    }
+    return q;
+}
+\end{lstlisting}
+
+\subsection{3.23 Token-list construction}\label{token-list-construction}
+
+\begin{lstlisting}[language=C]
+Pointer scan_toks(bool macro_definition, bool xpand) {
+    Pointer head = get_avail();
+    Pointer tail = head;
+    int unbalance = 1;
+
+    scanner_status = DEFINING;
+    warning_index = cur_cs;
+
+    while (true) {
+        if (xpand) get_x_token(); else get_token();
+
+        if (cur_cmd == LEFT_BRACE) unbalance++;
+        if (cur_cmd == RIGHT_BRACE) {
+            unbalance--;
+            if (unbalance == 0) break;
+        }
+
+        if (macro_definition && token_is_parameter_marker(cur_tok)) {
+            append_parameter_token_or_error(&tail);
+        } else {
+            append_token(&tail, cur_tok);
+        }
+    }
+
+    scanner_status = NORMAL;
+    return link(head);
+}
+\end{lstlisting}
+
+\subsection{3.24 Conditional processing}\label{conditional-processing}
+
+\begin{lstlisting}[language=C]
+void conditional(void) {
+    push_condition_stack(cur_if, if_limit, if_line);
+    cur_if = cur_chr;
+    if_limit = IF_CODE;
+    if_line = line;
+
+    bool result = evaluate_if_test(cur_if);
+
+    if (!result) {
+        pass_text();                  // skip to matching else/or/fi
+        if (cur_chr == ELSE_CODE) if_limit = ELSE_CODE;
+        else if (cur_chr == FI_CODE) pop_condition_stack();
+    }
+}
+
+void pass_text(void) {
+    int level = 0;
+    scanner_status = SKIPPING;
+    while (true) {
+        get_next();
+        if (cur_cmd == IF_TEST) level++;
+        else if (cur_cmd == FI_OR_ELSE) {
+            if (level == 0) return;
+            if (cur_chr == FI_CODE) level--;
+        }
+    }
+}
+\end{lstlisting}
+
+\subsection{3.25 Filename scanning}\label{filename-scanning}
+
+\begin{lstlisting}[language=C]
+void scan_file_name(void) {
+    begin_name();
+    while (true) {
+        get_x_token();
+        if (!token_can_be_part_of_file_name(cur_cmd, cur_chr)) break;
+        more_name(cur_chr);
+    }
+    end_name();
+    back_input_current_token_if_needed();
+}
+
+void pack_file_name(StringNumber area, StringNumber name, StringNumber ext) {
+    name_length = 0;
+    append_string_to_name_of_file(area);
+    append_string_to_name_of_file(name);
+    append_string_to_name_of_file(ext);
+}
+\end{lstlisting}
+
+\subsection{3.26 Font metric loading}\label{font-metric-loading}
+
+\begin{lstlisting}[language=C]
+InternalFont read_font_info(ControlSequence u, StringNumber nom, StringNumber aire, Scaled s) {
+    open_tfm_file_or_fail(aire, nom);
+    read_tfm_header();
+    validate_tfm_table_lengths();
+    read_character_info_table();
+    read_width_height_depth_italic_tables();
+    read_lig_kern_program();
+    read_kern_and_extensible_recipe_tables();
+    read_font_parameters();
+
+    InternalFont f = allocate_font_slot();
+    set_font_name_area_size_and_design_size(f, nom, aire, s);
+    install_font_dimensions(f);
+    define_font_identifier(u, f);
+    return f;
+}
+\end{lstlisting}
+
+\subsection{3.27 DVI byte buffering}\label{dvi-byte-buffering}
+
+\begin{lstlisting}[language=C]
+void dvi_out(Byte b) {
+    dvi_buf[dvi_ptr++] = b;
+    if (dvi_ptr == dvi_limit) dvi_swap();
+}
+
+void dvi_four(int x) {
+    dvi_out((x >> 24) & 255);
+    dvi_out((x >> 16) & 255);
+    dvi_out((x >>  8) & 255);
+    dvi_out(x & 255);
+}
+
+void dvi_swap(void) {
+    write_dvi(dvi_buf, dvi_offset, dvi_ptr);
+    dvi_offset += dvi_ptr;
+    dvi_ptr = 0;
+}
+\end{lstlisting}
+
+\subsection{3.28 Movement compression}\label{movement-compression}
+
+\begin{lstlisting}[language=C]
+void movement(Scaled w, Opcode o) {
+    Pointer p = find_recent_matching_movement(w, o);
+
+    if (p != NULL && movement_can_be_reused(p)) {
+        emit_compressed_movement_reference(p);
+        mark_movement_reference(p);
+    } else {
+        emit_new_movement(o, w);
+        remember_movement(w, current_dvi_location(), o);
+    }
+
+    prune_movements_older_than_current_level();
+}
+\end{lstlisting}
+
+\subsection{3.29 Shipping a box to DVI}\label{shipping-a-box-to-dvi}
+
+\begin{lstlisting}[language=C]
+void ship_out(Pointer p) {
+    if (tracing_output > 0) show_box(p);
+
+    ensure_dvi_file_open();
+    emit_bop_with_count_registers();
+
+    cur_h = h_offset;
+    cur_v = v_offset;
+    dvi_h = 0;
+    dvi_v = 0;
+    max_v = height(p) + depth(p);
+    max_h = width(p);
+
+    if (type(p) == VLIST_NODE) vlist_out(p);
+    else hlist_out(p);
+
+    emit_eop();
+    dead_cycles = 0;
+    total_pages++;
+    flush_node_list(p);
+}
+\end{lstlisting}
+
+\subsection{3.30 Horizontal-list DVI
+output}\label{horizontal-list-dvi-output}
+
+\begin{lstlisting}[language=C]
+void hlist_out(Pointer box) {
+    Pointer p = list_ptr(box);
+    Scaled base_line = cur_v;
+    Scaled left_edge = cur_h;
+
+    while (p != NULL) {
+        if (is_char_node(p)) {
+            set_current_font_if_needed(font(p));
+            emit_set_char(character(p));
+            cur_h += char_width(font(p), character(p));
+        } else {
+            switch (type(p)) {
+                case HLIST_NODE:
+                case VLIST_NODE:
+                    if (list_ptr(p) != NULL) {
+                        dvi_push();
+                        cur_v = base_line + shift_amount(p);
+                        if (type(p) == VLIST_NODE) vlist_out(p); else hlist_out(p);
+                        dvi_pop();
+                    }
+                    cur_h += width(p);
+                    break;
+                case RULE_NODE:
+                    emit_rule_if_visible(height(p), width(p));
+                    cur_h += width(p);
+                    break;
+                case GLUE_NODE:
+                    cur_h += effective_glue_width(p, box);
+                    if (leader_ptr(p) != NULL) output_leaders(p, HORIZONTAL);
+                    break;
+                case KERN_NODE:
+                case MATH_NODE:
+                    cur_h += width(p);
+                    break;
+                case WHATSIT_NODE:
+                    out_what(p);
+                    break;
+            }
+        }
+        p = link(p);
+    }
+    cur_h = left_edge + width(box);
+}
+\end{lstlisting}
+
+\subsection{3.31 Vertical-list DVI
+output}\label{vertical-list-dvi-output}
+
+\begin{lstlisting}[language=C]
+void vlist_out(Pointer box) {
+    Pointer p = list_ptr(box);
+    Scaled left_edge = cur_h;
+    cur_v -= height(box);
+
+    while (p != NULL) {
+        if (!is_char_node(p)) {
+            switch (type(p)) {
+                case HLIST_NODE:
+                case VLIST_NODE:
+                    cur_v += height(p);
+                    if (list_ptr(p) != NULL) {
+                        dvi_push();
+                        cur_h = left_edge + shift_amount(p);
+                        if (type(p) == VLIST_NODE) vlist_out(p); else hlist_out(p);
+                        dvi_pop();
+                    }
+                    cur_v += depth(p);
+                    break;
+                case RULE_NODE:
+                    cur_v += height(p);
+                    emit_rule_if_visible(height(p) + depth(p), width(p));
+                    cur_v += depth(p);
+                    break;
+                case GLUE_NODE:
+                    cur_v += effective_glue_width(p, box);
+                    if (leader_ptr(p) != NULL) output_leaders(p, VERTICAL);
+                    break;
+                case KERN_NODE:
+                    cur_v += width(p);
+                    break;
+                case WHATSIT_NODE:
+                    out_what(p);
+                    break;
+            }
+        }
+        p = link(p);
+    }
+}
+\end{lstlisting}
+
+\subsection{3.32 Horizontal packaging}\label{horizontal-packaging}
+
+\begin{lstlisting}[language=C]
+Pointer hpack(Pointer p, Scaled desired_width, PackMode mode) {
+    Pointer box = new_null_box();
+    type(box) = HLIST_NODE;
+    list_ptr(box) = p;
+
+    Scaled natural = 0;
+    Scaled stretch[4] = {0};
+    Scaled shrink[4] = {0};
+    Scaled max_height = 0;
+    Scaled max_depth = 0;
+
+    for (Pointer q = p; q != NULL; q = link(q)) {
+        if (is_char_node(q)) {
+            natural += char_width(font(q), character(q));
+            update_height_depth_from_char(q, &max_height, &max_depth);
+        } else {
+            accumulate_node_dimensions_for_hpack(q, &natural, stretch, shrink, &max_height, &max_depth);
+        }
+    }
+
+    width(box) = (mode == ADDITIONAL) ? natural + desired_width : desired_width;
+    height(box) = max_height;
+    depth(box) = max_depth;
+
+    Scaled delta = width(box) - natural;
+    set_glue_ratio_and_badness(box, delta, stretch, shrink);
+    return box;
+}
+\end{lstlisting}
+
+\subsection{3.33 Vertical packaging}\label{vertical-packaging}
+
+\begin{lstlisting}[language=C]
+Pointer vpackage(Pointer p, Scaled desired_height, PackMode mode, Scaled max_depth) {
+    Pointer box = new_null_box();
+    type(box) = VLIST_NODE;
+    list_ptr(box) = p;
+
+    Scaled natural = 0;
+    Scaled max_width = 0;
+    Scaled depth_so_far = 0;
+    Scaled stretch[4] = {0};
+    Scaled shrink[4] = {0};
+
+    for (Pointer q = p; q != NULL; q = link(q)) {
+        accumulate_node_dimensions_for_vpack(q, &natural, stretch, shrink, &max_width, &depth_so_far);
+    }
+
+    if (depth_so_far > max_depth) {
+        natural += depth_so_far - max_depth;
+        depth_so_far = max_depth;
+    }
+
+    height(box) = (mode == ADDITIONAL) ? natural + desired_height : desired_height;
+    depth(box) = depth_so_far;
+    width(box) = max_width;
+
+    Scaled delta = height(box) - natural;
+    set_glue_ratio_and_badness(box, delta, stretch, shrink);
+    return box;
+}
+\end{lstlisting}
+
+\subsection{3.34 Appending a box to a vertical
+list}\label{appending-a-box-to-a-vertical-list}
+
+\begin{lstlisting}[language=C]
+void append_to_vlist(Pointer b) {
+    Scaled d = prev_depth;
+    if (d > IGNORE_DEPTH) {
+        Scaled baseline_skip = width(baseline_skip_glue) - d - height(b);
+        Pointer g = (baseline_skip < line_skip_limit)
+                  ? new_param_glue(LINE_SKIP_CODE)
+                  : new_param_glue(BASELINE_SKIP_CODE);
+        width(glue_ptr(g)) = max(width(glue_ptr(g)), baseline_skip);
+        tail_append(g);
+    }
+    tail_append(b);
+    prev_depth = depth(b);
+}
+\end{lstlisting}
+
+\subsection{3.35 Math-list conversion}\label{math-list-conversion}
+
+\begin{lstlisting}[language=C]
+void mlist_to_hlist(void) {
+    setup_math_style_parameters(cur_style);
+    Pointer h = temp_head;
+    Pointer tail = h;
+
+    for (Pointer q = cur_mlist; q != NULL; q = link(q)) {
+        switch (type(q)) {
+            case ORD_NOAD:      make_ord(q); break;
+            case OP_NOAD:       make_op(q); break;
+            case BIN_NOAD:      make_bin(q); break;
+            case REL_NOAD:      make_rel(q); break;
+            case OPEN_NOAD:
+            case CLOSE_NOAD:
+            case PUNCT_NOAD:    convert_simple_noad(q); break;
+            case RADICAL_NOAD:  make_radical(q); break;
+            case ACCENT_NOAD:   make_math_accent(q); break;
+            case FRACTION_NOAD: make_fraction(q); break;
+            case LEFT_NOAD:
+            case RIGHT_NOAD:    make_left_right(q); break;
+            case STYLE_NODE:    cur_style = subtype(q); setup_math_style_parameters(cur_style); break;
+            case CHOICE_NODE:   select_math_choice(q); break;
+        }
+        append_resulting_hlist(&tail, q);
+    }
+
+    apply_spacing_between_noad_classes(temp_head);
+    link(temp_head) = resulting_hlist_after_spacing();
+}
+\end{lstlisting}
+
+\subsection{3.36 Clean math sub-box}\label{clean-math-sub-box}
+
+\begin{lstlisting}[language=C]
+Pointer clean_box(Pointer p, Style s) {
+    Pointer q;
+
+    switch (math_type(p)) {
+        case MATH_CHAR:
+            cur_mlist = new_noad_from_math_char(p);
+            goto convert;
+        case SUB_BOX:
+            q = info(p);
+            break;
+        case SUB_MLIST:
+            cur_mlist = info(p);
+        convert:
+            Style save_style = cur_style;
+            cur_style = s;
+            mlist_penalties = false;
+            mlist_to_hlist();
+            q = link(temp_head);
+            cur_style = save_style;
+            setup_math_style_parameters(cur_style);
+            break;
+        default:
+            q = new_null_box();
+    }
+
+    Pointer x = already_clean_box(q) ? q : hpack(q, 0, NATURAL);
+    remove_trivial_italic_correction(x);
+    return x;
+}
+\end{lstlisting}
+
+\subsection{3.37 Fraction construction}\label{fraction-construction}
+
+\begin{lstlisting}[language=C]
+void make_fraction(Pointer q) {
+    if (thickness(q) == DEFAULT_CODE) thickness(q) = default_rule_thickness;
+
+    Pointer numerator = clean_box(numerator(q), num_style(cur_style));
+    Pointer denominator = clean_box(denominator(q), denom_style(cur_style));
+    make_equal_width(&numerator, &denominator);
+
+    Scaled shift_up, shift_down;
+    choose_default_fraction_shifts(cur_style, thickness(q), &shift_up, &shift_down);
+
+    if (thickness(q) == 0) {
+        enforce_clearance_without_fraction_rule(numerator, denominator, &shift_up, &shift_down);
+    } else {
+        enforce_clearance_with_fraction_rule(numerator, denominator, thickness(q), &shift_up, &shift_down);
+    }
+
+    Pointer v = build_fraction_vlist(numerator, denominator, thickness(q), shift_up, shift_down);
+    Pointer boxed = add_delimiters_if_present(q, v);
+    new_hlist(q) = boxed;
+}
+\end{lstlisting}
+
+\subsection{3.38 Radical construction}\label{radical-construction}
+
+\begin{lstlisting}[language=C]
+void make_radical(Pointer q) {
+    Pointer x = clean_box(nucleus(q), cramped_style(cur_style));
+    Scaled clearance = choose_radical_clearance(cur_style, default_rule_thickness);
+    Pointer radical = variable_delimiter(left_delimiter(q), cur_size, height(x) + depth(x) + clearance);
+    Pointer rule = overbar(x, clearance, height(radical));
+    new_hlist(q) = hpack(concat(radical, rule), 0, NATURAL);
+}
+\end{lstlisting}
+
+\subsection{3.39 Math accent
+construction}\label{math-accent-construction}
+
+\begin{lstlisting}[language=C]
+void make_math_accent(Pointer q) {
+    Pointer base = clean_box(nucleus(q), cramped_style(cur_style));
+    fetch_accent_character(q);
+
+    if (accent_exists()) {
+        Pointer accent = char_box(accent_font, accent_char);
+        Scaled skew = compute_skew_for_math_accent(base, q);
+        Pointer v = stack_accent_over_base(accent, base, skew);
+        new_hlist(q) = v;
+    } else {
+        new_hlist(q) = base;
+    }
+}
+\end{lstlisting}
+
+\subsection{3.40 Alignment
+initialization}\label{alignment-initialization}
+
+\begin{lstlisting}[language=C]
+void init_align(void) {
+    Pointer save_cs = cur_cs;
+
+    push_alignment();
+    align_state = -1000000;
+    check_improper_display_alignment();
+
+    push_nest();
+    enter_negative_mode_for_alignment();
+    scan_spec(ALIGN_GROUP, false);
+
+    preamble = NULL;
+    cur_align = align_head;
+    cur_loop = NULL;
+    scanner_status = ALIGNING;
+    warning_index = save_cs;
+
+    scan_preamble_and_build_alignrecords();
+    new_save_level(ALIGN_GROUP);
+
+    if (every_cr != NULL) begin_token_list(every_cr, EVERY_CR_TEXT);
+    align_peek();
+}
+\end{lstlisting}
+
+\subsection{3.41 Alignment finalization}\label{alignment-finalization}
+
+\begin{lstlisting}[language=C]
+void fin_align(void) {
+    require_group(ALIGN_GROUP);
+    unsave();              // entry group
+    require_group(ALIGN_GROUP);
+    unsave();              // whole alignment group
+
+    Scaled offset = (enclosing_mode_is_display_math()) ? display_indent : 0;
+
+    compute_column_widths_from_preamble_and_spans();
+    Pointer prototype = package_preamble_list_to_set_tabskip_glue();
+    set_glue_in_all_unset_alignment_boxes(prototype);
+    flush_node_list(prototype);
+
+    pop_alignment();
+    insert_alignment_box_into_surrounding_mode(offset);
+}
+\end{lstlisting}
+
+\subsection{3.42 Paragraph line breaking}\label{paragraph-line-breaking}
+
+\begin{lstlisting}[language=C]
+void line_break(int final_widow_penalty) {
+    pack_begin_line = mode_line;
+
+    prepare_paragraph_for_line_breaking();   // add infinite penalty and parfillskip
+
+    int thresholds[3];
+    int pass_count = 0;
+    if (pretolerance >= 0) thresholds[pass_count++] = pretolerance;
+    thresholds[pass_count++] = tolerance;
+    if (emergency_stretch > 0) thresholds[pass_count++] = tolerance;
+
+    bool second_pass = (pretolerance < 0);
+    bool final_pass = false;
+
+    for (int pass = 0; pass < pass_count; pass++) {
+        threshold = min(thresholds[pass], INF_BAD);
+        second_pass = (pass > 0 || pretolerance < 0);
+        final_pass = (pass == pass_count - 1);
+
+        if (final_pass && emergency_stretch > 0) background[2] += emergency_stretch;
+        if (second_pass) initialize_hyphenation_for_paragraph();
+
+        create_initial_active_breakpoint();
+        cur_p = link(temp_head);
+        prev_p = cur_p;
+        auto_breaking = true;
+
+        while (cur_p != NULL && active_list_not_empty()) {
+            if (is_char_node(cur_p)) {
+                advance_over_character_run_and_update_widths();
+            } else {
+                switch (type(cur_p)) {
+                    case HLIST_NODE:
+                    case VLIST_NODE:
+                    case RULE_NODE:
+                        act_width += width(cur_p);
+                        break;
+                    case GLUE_NODE:
+                        if (legal_glue_break(prev_p, auto_breaking)) try_break(0, UNHYPHENATED);
+                        add_glue_widths_to_active_width(cur_p);
+                        if (second_pass && auto_breaking) try_to_hyphenate_following_word();
+                        break;
+                    case KERN_NODE:
+                        if (subtype(cur_p) == EXPLICIT) try_kern_break_then_add_width();
+                        else act_width += width(cur_p);
+                        break;
+                    case DISC_NODE:
+                        try_discretionary_break();
+                        break;
+                    case MATH_NODE:
+                        auto_breaking = (subtype(cur_p) == AFTER);
+                        try_kern_break_then_add_width();
+                        break;
+                    case PENALTY_NODE:
+                        try_break(penalty(cur_p), UNHYPHENATED);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            prev_p = cur_p;
+            cur_p = link(cur_p);
+        }
+
+        if (cur_p == NULL && final_break_succeeds()) break;
+        cleanup_break_nodes();
+    }
+
+    post_line_break(final_widow_penalty);
+    cleanup_break_nodes();
+    pack_begin_line = 0;
+}
+\end{lstlisting}
+
+\subsection{\texorpdfstring{3.43 Breakpoint evaluation:
+\texttt{try\_break}}{3.43 Breakpoint evaluation: try\_break}}\label{breakpoint-evaluation-try_break}
+
+\begin{lstlisting}[language=C]
+void try_break(int penalty, HyphenationFlag hyph) {
+    if (abs(penalty) >= INF_PENALTY) {
+        if (penalty > 0) return;
+        penalty = EJECT_PENALTY;
+    }
+
+    reset_best_place_by_fitness_class();
+
+    Pointer prev_r = active;
+    Pointer r = link(active);
+    copy_active_width_to_cur_active_width();
+
+    while (r != last_active) {
+        if (type(r) == DELTA_NODE) {
+            update_cur_active_width_from_delta(r);
+            prev_r = r;
+            r = link(r);
+            continue;
+        }
+
+        int line = line_number(r);
+        Scaled line_width = determine_line_width(line);
+        Scaled shortfall = line_width - cur_active_width[NATURAL_WIDTH];
+
+        int b;
+        if (shortfall > 0) b = badness(shortfall, available_stretch(cur_active_width));
+        else b = badness(-shortfall, available_shrink(cur_active_width));
+
+        if (b > INF_BAD || penalty == EJECT_PENALTY) {
+            deactivate_if_impossible(prev_r, r);
+        }
+
+        if (b <= threshold) {
+            FitnessClass fit = classify_fitness(shortfall, b);
+            int d = compute_demerits(b, penalty, hyph, fit, fitness(r));
+            if (d < minimal_demerits[fit]) {
+                minimal_demerits[fit] = d;
+                best_place[fit] = break_node(r);
+                best_place_line[fit] = line;
+            }
+        }
+
+        prev_r = r;
+        r = link(r);
+    }
+
+    for_each_fitness_class_with_feasible_break() {
+        Pointer passive_node = create_passive_break_node(cur_p, best_place[fit]);
+        Pointer active_node = create_active_break_node(passive_node, fit, minimal_demerits[fit]);
+        insert_active_node_with_delta_widths(active_node);
+    }
+}
+\end{lstlisting}
+
+\subsection{3.44 Post-line-break
+reconstruction}\label{post-line-break-reconstruction}
+
+\begin{lstlisting}[language=C]
+void post_line_break(int final_widow_penalty) {
+    Pointer q = best_break_chain();
+    reverse_break_chain(q);
+
+    int cur_line = prev_graf + 1;
+    while (q != NULL) {
+        Pointer line_start = previous_break(q);
+        Pointer line_end = current_break(q);
+
+        Pointer h = extract_line_segment(line_start, line_end);
+        insert_discretionary_replacement_if_needed(q);
+        append_line_penalties(cur_line, final_widow_penalty);
+
+        Pointer justified = hpack(h, line_width(cur_line), EXACTLY);
+        shift_amount(justified) = line_indent(cur_line);
+        append_to_vlist(justified);
+
+        q = next_break(q);
+        cur_line++;
+    }
+
+    prev_graf = cur_line - 1;
+}
+\end{lstlisting}
+
+\subsection{3.45 Hyphenation preparation and word
+collection}\label{hyphenation-preparation-and-word-collection}
+
+\begin{lstlisting}[language=C]
+bool collect_hyphenatable_word_after_glue(void) {
+    hn = 0;
+    ha = node_before_first_letter();
+    hb = NULL;
+
+    for (Pointer p = link(ha); p != NULL; p = link(p)) {
+        if (is_character_or_ligature_eligible_for_hyphenation(p)) {
+            append_character_to_hyphenation_buffer(p);
+            hb = p;
+        } else if (node_can_terminate_hyphenatable_word(p)) {
+            break;
+        } else {
+            return false;
+        }
+    }
+
+    return hn >= l_hyf + r_hyf;
+}
+\end{lstlisting}
+
+\subsection{3.46 Hyphenation trie lookup and node
+rebuilding}\label{hyphenation-trie-lookup-and-node-rebuilding}
+
+\begin{lstlisting}[language=C]
+void hyphenate(void) {
+    if (!collect_hyphenatable_word_after_glue()) return;
+
+    clear_hyf_positions();
+
+    if (word_matches_exception_table()) {
+        load_exception_hyphen_positions();
+    } else {
+        for (int j = 0; j < hn; j++) {
+            TrieState z = TRIE_ROOT;
+            for (int l = j; l < hn; l++) {
+                z = trie_transition(z, hc[l]);
+                if (z == NO_STATE) break;
+                apply_trie_operations(z, j, hyf);
+            }
+        }
+    }
+
+    suppress_hyphens_near_word_boundaries(l_hyf, r_hyf);
+    if (!any_hyphen_found()) return;
+
+    replace_nodes_ha_to_hb_with_discretionary_hyphen_nodes();
+}
+\end{lstlisting}
+
+\subsection{3.47 Hyphenation-pattern
+insertion}\label{hyphenation-pattern-insertion}
+
+\begin{lstlisting}[language=C]
+void new_patterns(void) {
+    while (scan_next_pattern_word()) {
+        Pattern p = parse_letters_and_digit_weights();
+        TrieState s = TRIE_ROOT;
+        for (int i = 0; i < p.letter_count; i++) {
+            s = insert_trie_transition_if_missing(s, p.letters[i]);
+        }
+        install_pattern_operations_at_state(s, p.weights);
+    }
+}
+
+void init_trie(void) {
+    compress_equivalent_trie_subtrees();
+    pack_trie_nodes_into_arrays();
+    fix_trie_links_and_roots();
+}
+\end{lstlisting}
+
+\subsection{3.48 Vertical page-break cost
+computation}\label{vertical-page-break-cost-computation}
+
+\begin{lstlisting}[language=C]
+int vert_break(Pointer p, Scaled target_height, Scaled max_depth) {
+    Scaled page_so_far[7] = {0};
+    Pointer best_place = NULL;
+    int least_cost = AWFUL_BAD;
+    Pointer prev_p = NULL;
+
+    for (; p != NULL; p = link(p)) {
+        int pi = INF_PENALTY;
+
+        switch (type(p)) {
+            case HLIST_NODE:
+            case VLIST_NODE:
+            case RULE_NODE:
+                page_so_far[HEIGHT] += page_so_far[DEPTH] + height(p);
+                page_so_far[DEPTH] = depth(p);
+                break;
+            case GLUE_NODE:
+                if (precedes_breakable_box(prev_p)) pi = 0;
+                add_glue_to_page_so_far(p, page_so_far);
+                break;
+            case KERN_NODE:
+                if (link(p) != NULL && type(link(p)) == GLUE_NODE) pi = 0;
+                page_so_far[HEIGHT] += page_so_far[DEPTH] + width(p);
+                page_so_far[DEPTH] = 0;
+                break;
+            case PENALTY_NODE:
+                pi = penalty(p);
+                break;
+            case INS_NODE:
+                account_for_insert_in_vertical_break(p);
+                break;
+        }
+
+        if (page_so_far[DEPTH] > max_depth) {
+            page_so_far[HEIGHT] += page_so_far[DEPTH] - max_depth;
+            page_so_far[DEPTH] = max_depth;
+        }
+
+        if (pi < INF_PENALTY) {
+            int b = compute_page_badness(page_so_far, target_height);
+            int c = page_break_cost(b, pi);
+            if (c <= least_cost) {
+                best_place = p;
+                least_cost = c;
+                best_height_plus_depth = page_so_far[HEIGHT] + page_so_far[DEPTH];
+            }
+            if (c == AWFUL_BAD || pi <= EJECT_PENALTY) break;
+        }
+
+        prev_p = p;
+    }
+
+    return best_place;
+}
+\end{lstlisting}
+
+\subsection{3.49 Page builder}\label{page-builder}
+
+\begin{lstlisting}[language=C]
+void build_page(void) {
+    if (output_active) return;
+
+    while (link(contrib_head) != NULL) {
+        Pointer p = link(contrib_head);
+
+        if (page_contents == EMPTY && discardable_at_top(p)) {
+            remove_from_contrib_list(p);
+            flush_node_list(p);
+            continue;
+        }
+
+        move_node_from_contrib_to_page(p);
+
+        switch (type(p)) {
+            case HLIST_NODE:
+            case VLIST_NODE:
+            case RULE_NODE:
+                initialize_page_specs_if_empty(p);
+                add_box_to_page_totals(p);
+                break;
+            case GLUE_NODE:
+                if (valid_glue_break_after_box()) evaluate_page_break(0);
+                add_glue_to_page_totals(p);
+                break;
+            case KERN_NODE:
+                if (followed_by_glue()) evaluate_page_break(0);
+                add_kern_to_page_totals(p);
+                break;
+            case PENALTY_NODE:
+                evaluate_page_break(penalty(p));
+                break;
+            case INS_NODE:
+                handle_insertion_node(p);
+                break;
+            case MARK_NODE:
+                update_page_marks(p);
+                break;
+        }
+
+        if (best_page_break_found()) {
+            fire_up(best_break_penalty);
+            if (output_active) return;
+        }
+    }
+}
+\end{lstlisting}
+
+\subsection{3.50 Firing the output
+routine}\label{firing-the-output-routine}
+
+\begin{lstlisting}[language=C]
+void fire_up(int c) {
+    if (type(best_page_break) == PENALTY_NODE) penalty(best_page_break) = INF_PENALTY;
+    else insert_penalty_node_at_best_break(INF_PENALTY);
+
+    box(255) = vpackage(link(page_head), best_size, EXACTLY, page_max_depth);
+    remove_page_material_through_best_break();
+    move_remaining_page_nodes_to_contrib_list();
+    package_insertions_for_output();
+
+    if (output_routine_defined()) {
+        output_active = true;
+        push_nest();
+        mode = INTERNAL_VMODE;
+        prev_depth = IGNORE_DEPTH;
+        begin_token_list(output_routine, OUTPUT_TEXT);
+        new_save_level(OUTPUT_GROUP);
+    } else {
+        ship_out(box(255));
+        box(255) = NULL;
+    }
+}
+\end{lstlisting}
+
+\subsection{3.51 Resuming after output
+routine}\label{resuming-after-output-routine}
+
+\begin{lstlisting}[language=C]
+void resume_after_output_routine(void) {
+    if (input_not_balanced_after_output()) recover_from_unbalanced_output_routine();
+
+    end_token_list();
+    end_graf();
+    unsave();
+    output_active = false;
+    insert_penalties = 0;
+
+    if (box(255) != NULL) discard_box_255_with_error();
+
+    append_current_internal_vlist_after_heldover_insertions();
+    move_page_head_material_before_contrib_list();
+    pop_nest();
+    build_page();
+}
+\end{lstlisting}
+
+\subsection{3.52 Executive command
+dispatcher}\label{executive-command-dispatcher}
+
+\begin{lstlisting}[language=C]
+void main_control(void) {
+    if (every_job != NULL) begin_token_list(every_job, EVERY_JOB_TEXT);
+
+    while (true) {
+        get_x_token();
+
+        int dispatch_key = abs(mode) + cur_cmd;
+
+        switch (dispatch_key) {
+            case VMODE_PLUS_LETTER:
+            case HMODE_PLUS_LETTER:
+                append_character_or_ligature_to_hlist();
+                break;
+
+            case VMODE_PLUS_HRULE:
+            case HMODE_PLUS_VRULE:
+                append_rule_or_enter_mode();
+                break;
+
+            case HMODE_PLUS_SPACER:
+                append_normal_space();
+                break;
+
+            case HMODE_PLUS_PAR_END:
+                end_graf();
+                break;
+
+            case VMODE_PLUS_LEFT_BRACE:
+            case HMODE_PLUS_LEFT_BRACE:
+            case MMODE_PLUS_LEFT_BRACE:
+                new_save_level(SIMPLE_GROUP);
+                break;
+
+            case ANY_MODE_PLUS_RIGHT_BRACE:
+                handle_right_brace();
+                break;
+
+            case ANY_MODE_PLUS_ASSIGNMENT:
+                prefixed_command();
+                break;
+
+            case ANY_MODE_PLUS_BOX_COMMAND:
+                begin_box();
+                break;
+
+            case HMODE_PLUS_MATH_SHIFT:
+            case VMODE_PLUS_MATH_SHIFT:
+                init_math();
+                break;
+
+            case MMODE_PLUS_MATH_SHIFT:
+                after_math();
+                break;
+
+            case ANY_MODE_PLUS_EXTENSION:
+                do_extension();
+                break;
+
+            case STOP_OR_END:
+                if (its_all_over()) return;
+                break;
+
+            default:
+                report_illegal_case_and_recover();
+        }
+    }
+}
+\end{lstlisting}
+
+\subsection{3.53 Beginning and ending
+boxes}\label{beginning-and-ending-boxes}
+
+\begin{lstlisting}[language=C]
+void begin_box(void) {
+    switch (cur_chr) {
+        case BOX_CODE:      scan_eight_bit_int(); box_end(box(cur_val)); break;
+        case COPY_CODE:     scan_eight_bit_int(); box_end(copy_node_list(box(cur_val))); break;
+        case LAST_BOX_CODE: box_end(remove_last_box_if_allowed()); break;
+        case VSPLIT_CODE:   box_end(vsplit_box()); break;
+        case VTOP_CODE:
+        case VBOX_CODE:
+        case HBOX_CODE:
+            scan_box_spec_and_push_box_group(cur_chr);
+            break;
+    }
+}
+
+void box_end(Pointer box_node) {
+    if (box_context < BOX_FLAG) append_box_to_current_list(box_node);
+    else if (box_context < SHIP_OUT_FLAG) box_register(box_context) = box_node;
+    else if (box_context == SHIP_OUT_FLAG) ship_out(box_node);
+    else append_box_to_leader_or_insert_context(box_node);
+}
+\end{lstlisting}
+
+\subsection{3.54 Paragraph entry and
+exit}\label{paragraph-entry-and-exit}
+
+\begin{lstlisting}[language=C]
+void new_graf(bool indented) {
+    prev_graf = 0;
+    if (mode == VMODE || head == tail) push_nest();
+    mode = HMODE;
+    space_factor = 1000;
+    set_current_language_from_prev_graf();
+    if (indented) tail_append(new_null_box_with_parindent());
+    if (every_par != NULL) begin_token_list(every_par, EVERY_PAR_TEXT);
+}
+
+void end_graf(void) {
+    if (mode == HMODE) {
+        if (head == tail) pop_nest();
+        else line_break(widow_penalty);
+        normal_paragraph();
+        error_count = 0;
+    }
+}
+\end{lstlisting}
+
+\subsection{3.55 Right-brace handling}\label{right-brace-handling}
+
+\begin{lstlisting}[language=C]
+void handle_right_brace(void) {
+    switch (cur_group) {
+        case SIMPLE_GROUP:
+            unsave();
+            break;
+        case HBOX_GROUP:
+        case ADJUSTED_HBOX_GROUP:
+            package_hbox_and_finish_group();
+            break;
+        case VBOX_GROUP:
+        case VTOP_GROUP:
+            package_vbox_and_finish_group();
+            break;
+        case INSERT_GROUP:
+            finish_insert();
+            break;
+        case OUTPUT_GROUP:
+            resume_after_output_routine();
+            break;
+        case MATH_GROUP:
+            finish_math_group();
+            break;
+        case DISC_GROUP:
+            build_discretionary();
+            break;
+        case ALIGN_GROUP:
+            finish_alignment_group();
+            break;
+        default:
+            extra_right_brace();
+    }
+}
+\end{lstlisting}
+
+\subsection{3.56 Math-mode construction}\label{math-mode-construction}
+
+\begin{lstlisting}[language=C]
+void push_math(GroupCode c) {
+    push_nest();
+    mode = -MMODE;
+    incompleat_noad = NULL;
+    new_save_level(c);
+}
+
+void scan_math(Pointer p) {
+    get_x_token();
+    if (cur_cmd == LETTER || cur_cmd == OTHER_CHAR || cur_cmd == CHAR_GIVEN) {
+        set_math_char(math_code(cur_chr), p);
+    } else if (cur_cmd == MATH_CHAR_NUM) {
+        scan_fifteen_bit_int();
+        set_math_char(cur_val, p);
+    } else {
+        back_input_current_token();
+        scan_left_brace();
+        push_math(MATH_GROUP);
+        cur_mlist = p;
+    }
+}
+
+void sub_sup(void) {
+    Pointer p = tail;
+    if (!scriptable_noad(p)) {
+        p = new_noad();
+        tail_append(p);
+    }
+    Pointer field = (cur_cmd == SUP_MARK) ? supscr(p) : subscr(p);
+    if (!field_is_empty(field)) report_double_script_error();
+    scan_math(field);
+}
+
+void after_math(void) {
+    finish_current_math_list();
+    if (display_math()) build_display_formula_and_append_to_vlist();
+    else convert_inline_math_to_hlist_and_append();
+}
+\end{lstlisting}
+
+\subsection{3.57 Assignment and prefix
+processing}\label{assignment-and-prefix-processing}
+
+\begin{lstlisting}[language=C]
+void prefixed_command(void) {
+    PrefixFlags prefixes = scan_optional_prefixes();  // global, long, outer
+    get_x_token();
+
+    switch (cur_cmd) {
+        case DEF:
+            define_macro(prefixes);
+            break;
+        case LET:
+            define_equivalent_from_next_token(prefixes);
+            break;
+        case SHORTHAND_DEF:
+            define_shorthand_register(prefixes);
+            break;
+        case REGISTER:
+            do_register_command(prefixes);
+            break;
+        case SET_BOX:
+            scan_box_assignment(prefixes);
+            break;
+        case DEF_FONT:
+            new_font(prefixes);
+            break;
+        case SET_INTERACTION:
+            new_interaction();
+            break;
+        case ASSIGN_INT:
+        case ASSIGN_DIMEN:
+        case ASSIGN_GLUE:
+        case ASSIGN_MU_GLUE:
+        case ASSIGN_TOKS:
+            scan_and_store_assignment(prefixes, cur_cmd, cur_chr);
+            break;
+        default:
+            report_missing_assignment_target();
+    }
+
+    after_assignment_token_if_any();
+}
+\end{lstlisting}
+
+\subsection{3.58 Register arithmetic}\label{register-arithmetic}
+
+\begin{lstlisting}[language=C]
+void do_register_command(Command a) {
+    ValueLevel level = decode_register_level(a);
+    Pointer target = scan_register_location(level);
+    Operator op = cur_cmd;  // advance, multiply, divide, assign
+
+    if (op == ASSIGN) {
+        scan_value_of_level(level);
+        store_value(target, cur_val, level);
+    } else if (op == ADVANCE) {
+        scan_optional_by();
+        scan_value_of_level(level);
+        add_value_to_register(target, cur_val, level);
+    } else if (op == MULTIPLY) {
+        scan_optional_by();
+        scan_int();
+        multiply_register(target, cur_val, level);
+    } else if (op == DIVIDE) {
+        scan_optional_by();
+        scan_int();
+        divide_register(target, cur_val, level);
+    }
+}
+\end{lstlisting}
+
+\subsection{3.59 Dumping format files}\label{dumping-format-files}
+
+\begin{lstlisting}[language=C]
+void store_fmt_file(void) {
+    ensure_no_open_groups_or_semantic_levels();
+    prepare_string_pool_for_dump();
+    dump_engine_constants_and_integrity_word();
+    dump_string_pool();
+    dump_dynamic_memory();
+    dump_eqtb_and_hash();
+    dump_font_info();
+    dump_hyphenation_tables();
+    dump_trie();
+    dump_interaction_and_format_identifier();
+}
+\end{lstlisting}
+
+\subsection{3.60 Loading format files}\label{loading-format-files}
+
+\begin{lstlisting}[language=C]
+bool load_fmt_file(void) {
+    if (!open_fmt_file()) return false;
+    if (!undump_and_validate_constants()) return false;
+    undump_string_pool();
+    undump_dynamic_memory();
+    undump_eqtb_and_hash();
+    undump_font_info();
+    undump_hyphenation_tables();
+    undump_trie();
+    undump_format_identifier();
+    return validate_format_integrity();
+}
+\end{lstlisting}
+
+\subsection{\texorpdfstring{3.61 Extensions:
+\texttt{\textbackslash{}write}, \texttt{\textbackslash{}special},
+language
+nodes}{3.61 Extensions: \textbackslash write, \textbackslash special, language nodes}}\label{extensions-write-special-language-nodes}
+
+\begin{lstlisting}[language=C]
+void do_extension(void) {
+    switch (cur_chr) {
+        case OPEN_NODE:    new_write_whatsit(OPEN_NODE); scan_openout_operands(); break;
+        case WRITE_NODE:   new_write_whatsit(WRITE_NODE); scan_write_tokens(); break;
+        case CLOSE_NODE:   new_write_whatsit(CLOSE_NODE); scan_stream_number(); break;
+        case SPECIAL_NODE: new_write_whatsit(SPECIAL_NODE); scan_special_tokens(); break;
+        case IMMEDIATE_CODE:
+            get_x_token();
+            if (cur_cmd == EXTENSION) execute_extension_immediately();
+            else back_input_current_token();
+            break;
+        case SET_LANGUAGE_CODE:
+            fix_language();
+            break;
+    }
+}
+
+void out_what(Pointer p) {
+    switch (subtype(p)) {
+        case OPEN_NODE:    open_write_stream(p); break;
+        case WRITE_NODE:   write_out(p); break;
+        case CLOSE_NODE:   close_write_stream(p); break;
+        case SPECIAL_NODE: special_out(p); break;
+        case LANGUAGE_NODE: /* no DVI output */ break;
+    }
+}
+
+void write_out(Pointer p) {
+    expand_write_tokens_in_safe_scanner_context(p);
+    write_result_to_selected_stream_or_terminal();
+}
+
+void special_out(Pointer p) {
+    expand_special_tokens();
+    emit_dvi_xxx_command_with_byte_string();
+}
+
+void fix_language(void) {
+    scan_int();
+    if (cur_val <= 0) cur_lang = 0;
+    else cur_lang = min(cur_val, 255);
+    append_language_node_if_hmode_language_changed();
+}
+\end{lstlisting}
+
+\section{Cross-subsystem execution
+flow}\label{cross-subsystem-execution-flow}
+
+\begin{lstlisting}[language=C]
+while (job_not_finished) {
+    get_x_token();                      // input, tokenization, expansion
+    main_control_dispatch();             // mode-dependent command execution
+
+    if (horizontal_paragraph_finished) {
+        line_break();                    // optimal breakpoints
+        append_lines_to_vertical_list();
+    }
+
+    if (vertical_contribution_available) {
+        build_page();                    // page breakpoint and output routine
+    }
+
+    if (page_box_ready) {
+        ship_out(box255_or_explicit_box); // DVI emission
+    }
+}
+\end{lstlisting}
+
+\section{Most important algorithmic
+invariants}\label{most-important-algorithmic-invariants}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Everything is a token before it is executed.} Input lines
+  become tokens; expandable tokens reduce to other tokens; only
+  unexpandable commands reach the executive dispatcher.
+\item
+  \textbf{All local state is stack-disciplined.} Groups save old
+  equivalents and restore them through \passthrough{\lstinline!unsave!};
+  semantic modes are tracked through the nest.
+\item
+  \textbf{Node lists are the universal intermediate representation.}
+  Paragraphs, pages, math formulas, insertions, and alignments are all
+  represented as linked nodes in TeX's memory array.
+\item
+  \textbf{Line breaking is dynamic programming over legal breakpoints.}
+  Active nodes represent feasible prior breaks; passive nodes remember
+  chosen break chains.
+\item
+  \textbf{Page breaking is greedy with cost memory.} The page builder
+  tracks the best page break seen so far until a forced or sufficiently
+  bad breakpoint triggers output.
+\item
+  \textbf{Math typesetting is a tree/list conversion.} Noads encode
+  semantic math atoms; \passthrough{\lstinline!mlist\_to\_hlist!} turns
+  them into boxes, kerns, rules, delimiters, and glue.
+\item
+  \textbf{Hyphenation is trie-driven.} Patterns are compiled into a
+  trie, then applied to collected word characters to mark discretionary
+  positions.
+\item
+  \textbf{DVI output is a traversal with stateful movement compression.}
+  Horizontal and vertical movements are compressed by remembering
+  previous movements at compatible stack levels.
+\end{enumerate}
+
+\section{Recommended next
+decomposition}\label{recommended-next-decomposition}
+
+For implementation study, split the algorithms into these independent
+review packets:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Scanner/expander: \passthrough{\lstinline!get\_next!},
+  \passthrough{\lstinline!expand!},
+  \passthrough{\lstinline!macro\_call!}, conditionals.
+\item
+  Value scanners: integers, dimensions, glue, rules, filenames, fonts.
+\item
+  Memory and node model: allocation, copying, flushing, semantic nest.
+\item
+  Paragraph engine: \passthrough{\lstinline!line\_break!},
+  \passthrough{\lstinline!try\_break!}, hyphenation, post-line
+  reconstruction.
+\item
+  Page engine: \passthrough{\lstinline!vert\_break!},
+  \passthrough{\lstinline!build\_page!}, insertions, output routine
+  handling.
+\item
+  Math engine: noad construction,
+  \passthrough{\lstinline!mlist\_to\_hlist!}, fractions, radicals,
+  delimiters.
+\item
+  DVI backend: packing, shipping, movement compression, whatsit output.
+\item
+  Format lifecycle: INITEX initialization, dump, undump, production
+  startup.
+\end{enumerate}
+
+\newpage
+\section*{Reference Note}
+\addcontentsline{toc}{section}{Reference Note}
+Primary source: Donald E. Knuth, \textit{TeX: The Program}, the TeX82 WEB listing supplied as the uploaded PDF file \texttt{tex The program.pdf}. This handout is a study abstraction and is not a verbatim replacement for the WEB source.
+
+\end{document}

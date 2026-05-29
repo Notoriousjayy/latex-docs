@@ -1,0 +1,338 @@
+\documentclass[10pt,letterpaper]{article}
+
+% ---------- Page setup ----------
+\usepackage[margin=0.7in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{charter}                 % Charter body
+\usepackage[scaled=0.92]{helvet}     % Helvetica sans (headings)
+\usepackage{microtype}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage[hidelinks]{hyperref}
+\usepackage{ragged2e}
+\usepackage{multicol}
+
+% ---------- Colors (house palette) ----------
+\definecolor{Navy}{HTML}{17324D}
+\definecolor{Blue}{HTML}{2563EB}
+\definecolor{Teal}{HTML}{0F766E}
+\definecolor{Green}{HTML}{15803D}
+\definecolor{Amber}{HTML}{B45309}
+\definecolor{Brick}{HTML}{B91C1C}
+\definecolor{Purple}{HTML}{6D28D9}
+\definecolor{GrayText}{HTML}{475569}
+\definecolor{LightBlue}{HTML}{EFF6FF}
+\definecolor{LightTeal}{HTML}{ECFDF5}
+\definecolor{LightAmber}{HTML}{FFFBEB}
+\definecolor{LightBrick}{HTML}{FEF2F2}
+\definecolor{LightPurple}{HTML}{F5F3FF}
+\definecolor{LightGreen}{HTML}{F0FDF4}
+\definecolor{LightGray}{HTML}{F8FAFC}
+\definecolor{RuleGray}{HTML}{CBD5E1}
+
+% ---------- Global formatting ----------
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\renewcommand{\arraystretch}{1.22}
+\setlength{\tabcolsep}{4pt}
+\setlist[itemize]{leftmargin=*, nosep, topsep=2pt}
+\setlist[enumerate]{leftmargin=*, nosep, topsep=2pt}
+\titleformat{\section}{\large\sffamily\bfseries\color{Navy}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\sffamily\bfseries\color{Navy}}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\sffamily\bfseries\color{Teal}}{}{0em}{}
+\titlespacing*{\section}{0pt}{12pt}{5pt}
+\titlespacing*{\subsection}{0pt}{9pt}{3pt}
+\emergencystretch=2.5em
+\sloppy
+
+% ---------- Header/footer ----------
+\setlength{\headheight}{14pt}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\sffamily\footnotesize\textcolor{GrayText}{Self-Hosting Cloud Architecture Reference}}
+\rhead{\sffamily\footnotesize\textcolor{GrayText}{Enterprise AppSec + Operations Stack}}
+\cfoot{\sffamily\footnotesize\textcolor{GrayText}{Page \thepage\ of \pageref{LastPage}}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% ---------- Column types ----------
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\Centering\arraybackslash}p{#1}}
+
+% ---------- Boxes ----------
+\newtcolorbox{summarybox}{colback=LightBlue, colframe=Blue, boxrule=0.7pt,
+  arc=2mm, left=8pt, right=8pt, top=7pt, bottom=7pt}
+\newtcolorbox{decisionbox}{colback=LightTeal, colframe=Teal, boxrule=0.7pt,
+  arc=2mm, left=8pt, right=8pt, top=7pt, bottom=7pt}
+\newtcolorbox{principlebox}{colback=LightTeal, colframe=Teal, boxrule=0.7pt,
+  arc=2mm, left=8pt, right=8pt, top=7pt, bottom=7pt}
+\newtcolorbox{warningbox}{colback=LightAmber, colframe=Amber, boxrule=0.7pt,
+  arc=2mm, left=8pt, right=8pt, top=7pt, bottom=7pt}
+\newtcolorbox{riskbox}{colback=LightBrick, colframe=Brick, boxrule=0.7pt,
+  arc=2mm, left=8pt, right=8pt, top=7pt, bottom=7pt}
+
+% ---------- Helpers ----------
+\newcommand{\arch}[1]{\textcolor{Navy}{\textbf{#1}}}
+\newcommand{\tool}[1]{\textbf{#1}}
+
+\begin{document}
+
+% ---------- Title ----------
+{\sffamily\bfseries\color{Navy}\Huge Self-Hosting Cloud Architecture Reference}\par
+\vspace{3pt}
+{\sffamily\large\color{GrayText} Per-application deployment topology for a Kubernetes-centered, self-hosted Enterprise AppSec and Operations estate}\par
+\vspace{4pt}
+{\sffamily\small\color{GrayText} Companion to the Enterprise AppSec and Operations Stack and the Minimum Comprehensive Deployment Orchestration Stack \textbullet\ May 2026}\par
+\vspace{10pt}
+
+\begin{summarybox}
+\textbf{Scope.} The deployment stack already fixes \tool{Kubernetes} as the runtime orchestrator, so the open question is not \emph{whether} to use Kubernetes but \emph{what topology each self-hosted component should adopt on or alongside that cluster}. This reference maps every self-hostable application in the stack to one of eight architecture archetypes, states the externalized state and high-availability posture for each, and identifies the cross-cutting cloud decisions --- externalized relational state, object-backed blob storage, and tier-based segmentation --- that do most of the work. One component, \tool{GHAS}, does not fit the containerized model and is handled as a dedicated appliance.
+\end{summarybox}
+
+\section{Purpose and Decision Standard}
+
+This document answers a single question: for each application in the stack that must be self-hosted, what cloud architecture pattern is most appropriate? It does not re-litigate tool selection --- that is settled in the companion handouts --- and it does not enumerate every Kubernetes primitive. It assigns each component a deployment topology and the minimum set of design constraints required to make that topology safe to operate.
+
+\begin{decisionbox}
+\textbf{Decision rule.} The architecture for a component is determined by three properties, evaluated in order: (1) \emph{is it an application workload or a platform control plane?} (2) \emph{does it hold state, and can that state be externalized?} (3) \emph{does it scale out horizontally, or must it run as a low-replica or quorum-based singleton?} The answers place every component into exactly one of the archetypes below.
+\end{decisionbox}
+
+\section{The Deciding Axis: Statefulness and Scale-Out}
+
+Most of these tools are described loosely as ``apps you can self-host,'' but they behave very differently at runtime. Three behaviors separate them:
+
+\begin{itemize}
+  \item \textbf{Twelve-factor services} (Authentik, Taiga, Harbor) externalize all state to a database, cache, and object store, so the running process is disposable and replicas scale horizontally.
+  \item \textbf{Stateful monoliths} (Eramba, GLPI, iTop, SuiteCRM) assume local session and file state and run singleton cron, so they scale \emph{vertically} and depend on the database tier for durability rather than on replica count.
+  \item \textbf{Control planes} (Kubernetes, Vault, Argo CD, admission and identity layers) are not application workloads at all; their failure cascades across every workload, so they are operated as managed services, quorum clusters, or highly-available in-cluster controllers.
+\end{itemize}
+
+The practical consequence is that ``put it on Kubernetes'' is correct for almost everything, but the \emph{shape} on Kubernetes --- horizontal autoscaling versus a pinned single replica, in-cluster versus externalized state, workload tenant versus management-plane tenant --- changes per component.
+
+\section{Architecture Archetypes}
+
+\begin{longtable}{L{0.55cm} L{3.6cm} L{6.2cm} L{4.3cm}}
+\toprule
+\textbf{} & \textbf{Archetype} & \textbf{Definition} & \textbf{Applies to} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{} & \textbf{Archetype} & \textbf{Definition} & \textbf{Applies to} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\arch{A} & Managed control plane & Provider-operated Kubernetes control plane; the enterprise operates only node pools and add-ons. & Kubernetes itself. \\
+\arch{B} & Stateless service + external data & Twelve-factor app tier (\texttt{Deployment} with optional autoscaling); database, cache, and blobs externalized off-cluster. & Authentik, Taiga, Moodle, Harbor, DongTai server. \\
+\arch{C} & Single-instance + persistent volume & One replica (or active--passive) with a persistent volume for local file state, an external managed database, and a singleton cron. & Eramba, GLPI, iTop, SuiteCRM. \\
+\arch{D} & HA stateful cluster & Quorum-based multi-node cluster with anti-affinity and durable storage; treated as tier-0 for recovery. & Vault; the long-term metrics and log tier. \\
+\arch{E} & In-cluster operator / admission controller & A reconciling controller or admission webhook, run multi-replica for control-plane availability. & Argo CD, Argo Rollouts, External Secrets Operator, Kyverno / Gatekeeper, Trivy Operator. \\
+\arch{F} & Ephemeral job / pipeline & Run-to-completion workload that scales to zero and leaves no persistent footprint. & Trivy (CI), OWASP ZAP, GitHub Actions runners, Cosign, Ansible. \\
+\arch{G} & Agent / sidecar & Instrumentation attached to a target workload; never deployed standalone. & DongTai-IAST agent. \\
+\arch{H} & Dedicated VM appliance & Vendor appliance with its own lifecycle, kept off the workload cluster. & GitHub Enterprise Server (GHAS). \\
+\end{longtable}
+
+\section{Business and Operations Applications}
+
+\small
+\begin{longtable}{L{1.15in} C{0.5in} L{4.9in}}
+\toprule
+\textbf{Application (role)} & \textbf{Arch.} & \textbf{Architecture and key design notes} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Application (role)} & \textbf{Arch.} & \textbf{Architecture and key design notes} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\tool{Authentik} \newline (IAM) & B & Server and worker \texttt{Deployment}s with external managed PostgreSQL and Redis. This is the identity control plane: give it the highest availability target in the estate and isolate its blast radius (treat as tier-0). \\
+\tool{Taiga} \newline (Project mgmt) & B & Separate back, front, events, and async services with external PostgreSQL and a real RabbitMQ broker. The frontend is static (serve via ingress or CDN). Do not run the broker as a single fragile pod. \\
+\tool{Moodle} \newline (LMS) & B & The one PHP application that genuinely scales out --- but only with \texttt{moodledata} on shared storage (EFS / Filestore or an object-storage plugin), sessions in Redis, and an external managed MySQL. Cron must be a single \texttt{CronJob}, never per-replica. \\
+\tool{Eramba} \newline (GRC) & C & CakePHP monolith with singleton cron. Run a single replica with a persistent volume and an external managed MySQL / MariaDB. Scale vertically; rely on managed-database HA and point-in-time recovery rather than horizontal replicas. \\
+\tool{GLPI} \newline (ITAM) & C & Low-replica web tier with a persistent volume for local file storage and an external MariaDB. Local uploads and the cron singleton make true scale-out risky. \\
+\tool{iTop} \newline (ITSM / CMDB) & C & One to two replicas with an external MariaDB and a persistent volume. CMDB integrity matters most --- prioritize database point-in-time recovery over scale. \\
+\tool{SuiteCRM} \newline (CRM) & C & Single or low-replica web tier with a persistent volume for uploads and an external MariaDB. Legacy PHP with local session and file assumptions; treat as a vertically scaled monolith with managed-database durability. \\
+\tool{DongTai-IAST} \newline (IAST) & B + G & Split component. The \emph{server} (web, OpenAPI, engine) is a stateless tier with external MySQL and Redis. The \emph{agent} is archetype G: it instruments the target application pods as a sidecar or in-process agent and is never deployed standalone. \\
+\tool{OWASP ZAP} \newline (DAST) & F & On-demand headless \texttt{Job} run against pre-production. Scale to zero; emit findings as release evidence, then discard the container. No persistent footprint. \\
+\tool{GHAS} \newline (SAST) & H & Not a container workload. Self-hosted means GitHub Enterprise Server --- a dedicated VM / OVA appliance with its own backup and HA story, kept off the workload cluster. GitHub Enterprise Cloud is the managed (not self-hosted) alternative. See the dedicated section below. \\
+\end{longtable}
+\normalsize
+
+\section{Platform and Deployment Components}
+
+\small
+\begin{longtable}{L{1.15in} C{0.5in} L{4.9in}}
+\toprule
+\textbf{Component} & \textbf{Arch.} & \textbf{Architecture and key design notes} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Component} & \textbf{Arch.} & \textbf{Architecture and key design notes} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\tool{Kubernetes} & A & Use a managed control plane (EKS / GKE / AKS) unless an air-gap or data-sovereignty constraint forbids it. The control plane is the one piece worth offloading to a provider; self-manage (kubeadm / Talos) only when required. \\
+\tool{Harbor} \newline (registry) & B & Stateless components with external PostgreSQL and Redis, and \emph{object storage} (S3 / GCS) for image layers. Object-backed storage is what makes the registry cloud-appropriate; avoid block-volume image storage. \\
+\tool{Argo CD} / \tool{Argo Rollouts} & E & In-cluster, HA mode (multiple repo-server and application-controller replicas, redis-ha). Run in a dedicated namespace, or on a separate management cluster, since it is itself a delivery control plane. \\
+\tool{Vault} + \tool{External Secrets Operator} & D + E & Vault is archetype D: integrated Raft storage across three or five nodes, pod anti-affinity, and cloud-KMS auto-unseal --- the most operationally sensitive component, treated as tier-0 for availability and recovery. The External Secrets Operator is archetype E: an in-cluster operator that syncs external secrets into Kubernetes \texttt{Secret}s. \\
+\tool{Kyverno} / \tool{OPA Gatekeeper} & E & Admission controllers run with multiple webhook replicas. A single-replica admission webhook is a cluster-wide availability risk, since its failure can block all admissions. \\
+\tool{Prometheus} / \tool{Alertmanager} / \tool{Grafana} / \tool{Loki} & E + D & Collection runs in-cluster (archetype E); durable state is externalized (archetype D). Prometheus \texttt{remote\_write} to Thanos / Mimir or a managed store; Loki on object storage; Grafana on an external database; Alertmanager as a three-replica gossip mesh. Local volumes are acceptable only for short retention. \\
+\tool{GitHub Actions} runners & F & Actions Runner Controller (ARC) with ephemeral pods that scale to zero. Isolate runner nodes from production workloads. \\
+\tool{Trivy} & F + E & Dual mode: an ephemeral CI \texttt{Job} that gates registry promotion, and the Trivy Operator (archetype E) for continuous in-cluster CVE posture. \\
+\tool{Cosign} / \tool{Sigstore} & F & Signing happens in CI (ephemeral); verification happens at admission via Kyverno / Gatekeeper policy. A standing service is required only if a Rekor / Fulcio transparency stack is self-hosted. \\
+\tool{Ansible} & F & Procedural automation from a control node or CI runner --- not a persistent service. Introduce AWX on Kubernetes only if a self-service control layer is wanted. \\
+\end{longtable}
+\normalsize
+
+\section{Reference Topology}
+
+The estate resolves to four planes: a managed control plane, a tier-0 platform plane, application workloads, and ephemeral jobs --- all drawing on an off-cluster managed data plane, with the GHAS appliance deliberately detached.
+
+\begin{center}
+\begin{tikzpicture}[
+  font=\sffamily\scriptsize,
+  band/.style={rectangle, rounded corners=4pt, draw=#1, thick, fill=#1!6, minimum width=15.4cm},
+  title/.style={anchor=west, font=\sffamily\bfseries\scriptsize, text=#1},
+  box/.style={rectangle, rounded corners=3pt, draw=RuleGray, thick, fill=white,
+    align=center, minimum height=0.58cm, text width=2.5cm, inner sep=2pt, font=\sffamily\scriptsize},
+  arrow/.style={-{Latex[length=1.8mm]}, semithick, draw=GrayText}
+]
+
+% ---- Band A: Managed control plane ----
+\node[band=Blue, minimum height=1.3cm] at (0,0) {};
+\node[title=Blue] at (-7.5,0.45) {A \textbullet\ Managed control plane};
+\node[box, draw=Blue, fill=LightBlue, text width=9cm] at (0,-0.12)
+  {\textbf{Managed Kubernetes Control Plane} --- EKS / GKE / AKS (managed node pools and add-ons only)};
+
+% ---- Band B: Tier-0 platform plane ----
+\node[band=Purple, minimum height=1.55cm] at (0,-2.15) {};
+\node[title=Purple] at (-7.5,-1.55) {B \textbullet\ Tier-0 platform plane (separate management cluster recommended)};
+\node[box, draw=Purple] at (-5.7,-2.4) {\textbf{Authentik}\\Identity / SSO};
+\node[box, draw=Purple] at (-2.85,-2.4) {\textbf{Vault} (HA Raft)\\+ ESO};
+\node[box, draw=Purple] at (0,-2.4) {\textbf{Argo CD}\\/ Rollouts};
+\node[box, draw=Purple] at (2.85,-2.4) {\textbf{Kyverno /}\\\textbf{Gatekeeper}};
+\node[box, draw=Purple] at (5.7,-2.4) {\textbf{Prometheus}\\long-term tier};
+
+% ---- Band C: Application workloads ----
+\node[band=Teal, minimum height=2.7cm] at (0,-4.95) {};
+\node[title=Teal] at (-7.5,-3.85) {C \textbullet\ Application workloads};
+\node[box, draw=Teal] at (-5.7,-4.55) {\textbf{Taiga}};
+\node[box, draw=Teal] at (-2.85,-4.55) {\textbf{Moodle}};
+\node[box, draw=Teal] at (0,-4.55) {\textbf{Harbor}};
+\node[box, draw=Teal] at (2.85,-4.55) {\textbf{DongTai} server};
+\node[box, draw=Teal] at (5.7,-4.55) {\textbf{Grafana /}\\\textbf{Loki} read};
+\node[box, draw=Teal] at (-5.7,-5.45) {\textbf{Eramba}};
+\node[box, draw=Teal] at (-2.85,-5.45) {\textbf{GLPI}};
+\node[box, draw=Teal] at (0,-5.45) {\textbf{iTop}};
+\node[box, draw=Teal] at (2.85,-5.45) {\textbf{SuiteCRM}};
+\node[box, draw=Teal] at (5.7,-5.45) {\textbf{DongTai} agent\\(sidecar)};
+
+% ---- Band F: Ephemeral jobs ----
+\node[band=GrayText, minimum height=1.7cm] at (0,-7.55) {};
+\node[title=GrayText] at (-7.5,-6.9) {F \textbullet\ Ephemeral jobs / pipeline (scale to zero)};
+\node[box, draw=GrayText] at (-5.7,-7.8) {\textbf{Trivy} (CI)};
+\node[box, draw=GrayText] at (-2.85,-7.8) {\textbf{OWASP ZAP}};
+\node[box, draw=GrayText] at (0,-7.8) {\textbf{Actions} runners};
+\node[box, draw=GrayText] at (2.85,-7.8) {\textbf{Cosign}};
+\node[box, draw=GrayText] at (5.7,-7.8) {\textbf{Ansible}};
+
+% ---- Band D: External managed data plane ----
+\node[band=Green, minimum height=1.7cm] at (0,-9.65) {};
+\node[title=Green] at (-7.5,-9.0) {D \textbullet\ External managed data plane (off-cluster)};
+\node[box, draw=Green, fill=LightGreen] at (-5.7,-9.9) {Managed SQL\\(Postgres / MySQL)};
+\node[box, draw=Green, fill=LightGreen] at (-2.85,-9.9) {Managed Redis\\/ broker};
+\node[box, draw=Green, fill=LightGreen] at (0,-9.9) {Object storage\\(S3 / GCS)};
+\node[box, draw=Green, fill=LightGreen] at (2.85,-9.9) {Cloud KMS\\(auto-unseal)};
+\node[box, draw=Green, fill=LightGreen] at (5.7,-9.9) {Long-term metrics\\(Thanos / Mimir)};
+
+% ---- Detached GHAS appliance ----
+\node[box, draw=Brick, fill=LightBrick, text width=8.4cm] (ghas) at (0,-11.2)
+  {\textbf{H \textbullet\ GitHub Enterprise Server (GHAS)} --- dedicated off-cluster appliance};
+
+% ---- Arrows ----
+% State externalization: application workloads -> external data plane (left channel)
+\draw[arrow] (-7.7,-4.95) -- (-8.15,-4.95) -- (-8.15,-9.65) -- (-7.7,-9.65);
+\node[anchor=south, rotate=90, font=\sffamily\scriptsize, text=GrayText] at (-8.4,-7.3) {externalized state};
+% GHAS feeds the pipeline but stays detached (right channel, dashed)
+\draw[arrow, draw=Brick, dashed] (4.2,-11.2) -- (8.15,-11.2) -- (8.15,-7.55) -- (7.7,-7.55);
+\node[anchor=north, rotate=90, font=\sffamily\scriptsize, text=Brick] at (8.4,-9.4) {detached feed};
+\end{tikzpicture}
+\end{center}
+
+\vspace{2pt}
+{\footnotesize\color{GrayText} Solid arrows: application and platform planes draw their relational, cache, and blob state from the off-cluster managed data plane. Dashed arrow: GHAS feeds source-security results into the pipeline but is operated as a detached appliance, not a cluster tenant.}
+
+\section{Cross-Cutting Cloud Decisions}
+
+Three decisions account for most of the resilience and scalability outcomes across every row above. They apply regardless of which archetype a component sits in.
+
+\begin{principlebox}
+\textbf{1. Externalize all relational state.} Eramba, GLPI, iTop, Moodle, SuiteCRM, Authentik, Taiga, Harbor, and the DongTai server all want their database \emph{out} of the cluster on managed MySQL or PostgreSQL (RDS, Cloud SQL, Aurora). This is what turns a stateful monolith into a restartable pod, and it moves high-availability, backup, and point-in-time recovery onto a service built to do them well. Avoid running production databases as in-cluster \texttt{StatefulSet}s unless no managed option exists.
+\end{principlebox}
+
+\begin{principlebox}
+\textbf{2. Push blob and file state to object storage.} Harbor image layers, Loki log chunks, Moodle's \texttt{moodledata}, and application file uploads belong on S3 / GCS --- or on a shared filesystem (EFS / Filestore) where object storage is unsupported. This is the difference between a replica that scales freely and a replica pinned to one node's disk.
+\end{principlebox}
+
+\begin{principlebox}
+\textbf{3. Segment by tier, not just by namespace.} The identity plane (Authentik), the secrets plane (Vault), and the policy plane (Kyverno / Gatekeeper) are tier-0: their failure cascades across every workload. Running these on a separate management or platform cluster --- distinct from application workloads --- is worth the operational overhead given this stack's compliance posture.
+\end{principlebox}
+
+\section{Availability and Recovery Tiers}
+
+The archetypes also map to a recovery-priority model, which is the lens that matters most during incident planning and disaster-recovery design.
+
+\begin{tabularx}{\textwidth}{L{1.5in} L{2.0in} Y}
+\toprule
+\textbf{Tier} & \textbf{Components} & \textbf{Why this tier} \\
+\midrule
+Tier-0 (platform / control plane) & Kubernetes control plane, Authentik, Vault, Argo CD, Kyverno / Gatekeeper, External Secrets Operator & Failure cascades across all workloads; warrants HA topology, anti-affinity, and a separate management cluster. \\
+Tier-1 (systems of record) & Eramba, iTop, GLPI, Harbor & Data integrity and point-in-time recovery are the dominant concern; managed-database durability and tested restores are mandatory. \\
+Tier-2 (delivery and enablement) & Taiga, Moodle, SuiteCRM, DongTai server, observability read paths & Important but tolerant of short outages; standard backups and single or low-replica topologies are acceptable. \\
+Ephemeral (no standing SLA) & Trivy, OWASP ZAP, Actions runners, Cosign, Ansible & Run-to-completion jobs with no persistent state; resilience is achieved by re-running, not by replication. \\
+\bottomrule
+\end{tabularx}
+
+\section{Adoption Sequencing}
+
+\begin{enumerate}
+  \item Stand up the managed Kubernetes control plane and the off-cluster managed data plane (SQL, Redis, object storage, KMS) first; everything else assumes they exist.
+  \item Establish the tier-0 platform plane --- Authentik, Vault with auto-unseal, Argo CD, and admission policy --- ideally on a dedicated management cluster.
+  \item Onboard archetype-B services (Authentik already done; then Harbor, Taiga, Moodle, DongTai server) against the externalized data plane.
+  \item Migrate the archetype-C monoliths (Eramba, GLPI, iTop, SuiteCRM) with persistent volumes for file state and managed databases for durability; convert cron to singleton \texttt{CronJob}s.
+  \item Wire in archetype-F pipelines (Trivy, ZAP, Actions runners, Cosign, Ansible) and the DongTai agent against running workloads.
+  \item Provision the GHAS appliance (GitHub Enterprise Server) on its own lifecycle and connect it to the source and CI control loops.
+\end{enumerate}
+
+\section{Special Case: GHAS / GitHub Advanced Security}
+
+\begin{warningbox}
+\textbf{GHAS is the only component that does not fit the model.} Everything else in the stack is a containerized workload or a run-to-completion job. GHAS is a commercial capability of GitHub, not an open-source platform you deploy as a pod. ``Self-hosted'' for GHAS means \emph{GitHub Enterprise Server} --- a dedicated virtual appliance (OVA) with its own backup-utilities, replica, and upgrade lifecycle. Plan it as a separate system with its own availability story, not as a tenant of the workload cluster. If a self-hosted requirement is not strictly mandatory, GitHub Enterprise Cloud delivers the same GHAS capabilities as a managed service and removes the appliance-operations burden entirely.
+\end{warningbox}
+
+\section{Recommended Decision}
+
+\begin{riskbox}
+\textbf{Final decision.} Run a \tool{managed Kubernetes control plane} with an \tool{off-cluster managed data plane} (SQL, Redis, object storage, KMS). Deploy \tool{Authentik}, \tool{Taiga}, \tool{Moodle}, \tool{Harbor}, and the \tool{DongTai server} as stateless tiers with externalized state (archetype B). Deploy \tool{Eramba}, \tool{GLPI}, \tool{iTop}, and \tool{SuiteCRM} as single-instance monoliths with persistent volumes and managed databases (archetype C). Operate \tool{Vault} as an HA Raft cluster and the long-term metrics tier as durable stores (archetype D); run \tool{Argo CD}, \tool{Argo Rollouts}, \tool{ESO}, \tool{Kyverno / Gatekeeper}, and the \tool{Trivy Operator} as HA in-cluster controllers (archetype E); run \tool{Trivy} CI scans, \tool{OWASP ZAP}, \tool{GitHub Actions} runners, \tool{Cosign}, and \tool{Ansible} as ephemeral jobs (archetype F); attach the \tool{DongTai agent} as a sidecar (archetype G). Operate \tool{GHAS} as a dedicated \tool{GitHub Enterprise Server} appliance (archetype H), detached from the workload cluster. Place all tier-0 planes on a separate management cluster.
+\end{riskbox}
+
+\vfill
+\begin{center}
+{\sffamily\footnotesize\color{GrayText} End of reference}
+\end{center}
+
+\end{document}
