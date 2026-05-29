@@ -16,7 +16,7 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        
+
         echo "::group::Installing TeX Live packages"
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends \
@@ -27,6 +27,7 @@ runs:
           texlive-pictures \
           texlive-science \
           texlive-bibtex-extra \
+          texlive-plain-generic \
           texlive-luatex \
           texlive-xetex \
           latexmk \
@@ -35,7 +36,7 @@ runs:
           ghostscript \
           ${{ inputs.extra-packages }}
         echo "::endgroup::"
-        
+
         sudo rm -rf /var/lib/apt/lists/* || true
 
     - name: Verify LaTeX installation
@@ -45,11 +46,17 @@ runs:
         echo "pdflatex:   $(which pdflatex) - $(pdflatex --version | head -1)"
         echo "latexmk:    $(which latexmk) - $(latexmk --version | head -1)"
         echo "pygmentize: $(which pygmentize) - $(pygmentize -V)"
-        
+
+        # Guard against the newtx -> \input{binhex} failure. binhex.tex ships
+        # in texlive-plain-generic; fail fast here rather than mid-build if a
+        # future base-image change drops it.
+        if ! kpsewhich binhex.tex >/dev/null; then
+          echo "::error::binhex.tex not found on TEXMF path (needed by newtx). Ensure texlive-plain-generic is installed."
+          exit 1
+        fi
+        echo "binhex.tex: $(kpsewhich binhex.tex)"
+
         # Ensure pygmentize is accessible for minted
         if [[ ! -f /usr/bin/pygmentize ]]; then
           sudo ln -sf "$(which pygmentize)" /usr/bin/pygmentize 2>/dev/null || true
         fi
-
-
-
