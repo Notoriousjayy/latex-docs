@@ -57,7 +57,10 @@ def resolve_texinputs() -> str:
     entries = [str(path) + "//" for path in paths if path.exists()]
     current = os.environ.get("TEXINPUTS", "")
     if entries:
-        return ":".join(entries) + (":" + current if current else "")
+        base = ":" + ":".join(entries) + ":"
+        if current:
+            return base + current + ":"
+        return base
     return current
 
 
@@ -145,7 +148,12 @@ def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | N
     env.setdefault("BIBINPUTS", "")
     env.setdefault("BSTINPUTS", "")
 
-    base_cmd = [LATEXMK, "-pdf", "-interaction=nonstopmode", "-halt-on-error", "-file-line-error", "-shell-escape", "-synctex=1"]
+    rc_file = ROOT / ".latexmkrc"
+    if not rc_file.exists():
+        rc_file = ROOT / "latexmkrc"
+    base_cmd = [LATEXMK, "-pdf", "-interaction=nonstopmode", "-halt-on-error", "-file-line-error", "-shell-escape", "-synctex=1", "-f"]
+    if rc_file.exists():
+        base_cmd.extend(["-r", str(rc_file)])
     engine = _detect_engine(tex_path)
     if engine == "lualatex":
         base_cmd.extend(["-pdflatex=lualatex", "-interaction=nonstopmode", "-halt-on-error", "-file-line-error", "-shell-escape", "%O", "%S"])
@@ -186,13 +194,19 @@ def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | N
         if stderr_handle is not None:
             stderr_handle.close()
 
+    pdf_path = build_dir / f"{stem}.pdf"
     if artifact_dir is not None:
         rel_dir = tex_path.relative_to(SRC_DIR).parent
         dest_dir = artifact_dir / rel_dir
         dest_dir.mkdir(parents=True, exist_ok=True)
-        pdf_path = build_dir / f"{stem}.pdf"
         if pdf_path.exists():
             shutil.copy2(pdf_path, dest_dir / f"{stem}.pdf")
+
+    if result.returncode == 0:
+        return 0
+
+    if result.returncode == 12 and pdf_path.exists():
+        return 0
 
     return result.returncode
 
