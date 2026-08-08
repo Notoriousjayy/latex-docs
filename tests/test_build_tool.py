@@ -41,6 +41,14 @@ class BuildToolTests(unittest.TestCase):
 
             self.assertEqual({doc_a.resolve(), doc_b.resolve()}, set(affected))
 
+    def test_repo_has_latexmk_config_loaded_by_latexmk(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        latexmkrc_path = repo_root / ".latexmkrc"
+
+        self.assertTrue(latexmkrc_path.exists(), "expected a repository .latexmkrc for latexmk discovery")
+        text = latexmkrc_path.read_text(encoding="utf-8", errors="ignore")
+        self.assertIn("TEXINPUTS", text)
+
 
 if __name__ == "__main__":
     unittest.main()

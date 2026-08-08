@@ -23,4 +23,199 @@
 \setlist{topsep=4pt, itemsep=3pt, parsep=0pt}
 
 % === Code Blocks (listings only) ===
+% listings removed; minted is now the canonical backend
+
+
+
+
+% === Silence missing .toc on first run ===
+\makeatletter
+\let\orig@starttoc\@starttoc
+\def\@starttoc#1{\IfFileExists{\jobname.#1}{\orig@starttoc{#1}}{}}
+\makeatother
+
+% === Document ===
+\begin{document}
+
+\begin{center}
+{\LARGE \textbf{Explore GitHub --- Ultra-Practical Cheat Sheet}}\\[6pt]
+{\small Repos, PRs, Actions, Releases, \texttt{gh} CLI, and SemVer you can use today}
+\end{center}
+
+\section*{1) Platform Overview}
+
+\begin{description}[leftmargin=1.5cm, style=nextline]
+  \item[Code] Branches, tags, files, clone URLs, Codespaces.
+  \item[Issues] Tasks with labels/milestones; link to PRs and commits.
+  \item[Pull Requests] Code review, checks, merge strategies.
+  \item[Actions] CI/CD: build, test, package, deploy, automate.
+  \item[Projects] Boards/tables/timelines across repos.
+  \item[Wiki/Pages] Documentation and static sites.
+  \item[Security] GHAS: code scanning, Dependabot, secrets, advisories.
+  \item[Insights] Contributors, traffic, forks, clones.
+  \item[Settings] Permissions, branch protection, secrets/variables, webhooks, apps.
+\end{description}
+
+\callout{\textbf{Pro tips.} Star \& Watch important repos; use template repos; initialize with \kbd{README}, language \kbd{.gitignore}, and a license.}
+
+\section*{2) Create a Repository Quickly}
+
+\begin{enumerate}
+  \item \textbf{New repository} $\rightarrow$ name, description, visibility.
+  \item Add \kbd{README}, choose language \kbd{.gitignore}, select a license.
+  \item \textbf{Create repository}, then use \textbf{Code} button for HTTPS/SSH/CLI.
+\end{enumerate}
+
+\subsection*{CLI equivalents (GitHub CLI)}
+
+\begin{bashcode}
+# Install: https://cli.github.com
+gh --version
+gh auth login
+gh auth status
+
+# Create from scratch (public) with README, license, .gitignore
+gh repo create my-repo \
+  --public --add-readme \
+  --license apache-2.0 \
+  --gitignore Python
+
+# Clone (HTTPS or SSH depending on your auth)
+gh repo clone OWNER/REPO
+\end{bashcode}
+
+\section*{3) Branching \& Commits}
+
+\subsection*{Branch naming}
+
+\begin{itemize}
+  \item \kbd{feature/short-description}, \kbd{fix/issue-123}, \kbd{docs/update-contrib}.
+  \item Keep branches short-lived; rebase or merge from \kbd{main} frequently.
+\end{itemize}
+
+\subsection*{Conventional Commits (recommended)}
+
+\begin{textcode}
+<type>[optional scope]: <description>
+
+feat: add search box to header
+fix(auth): handle expired refresh tokens
+docs(readme): add quickstart
+refactor(api): collapse duplicate handlers
+test(web): add unit tests for navbar
+chore(deps): bump axios from 1.6.7 to 1.7.0
+\end{textcode}
+
+\section*{4) Pull Request Workflow}
+
+\begin{enumerate}
+  \item \textbf{Open an issue} or link an existing one.
+  \item \textbf{Create a topic branch}, commit in small chunks.
+  \item \textbf{Open PR}: crisp title \& body; link issues (\kbd{Fixes \#123}).
+  \item \textbf{Request review}; address comments; keep PR focused.
+  \item \textbf{Checks green}: unit/integration tests, linters, scanners.
+  \item \textbf{Merge}: \emph{Squash} (clean history), \emph{Merge commit} (context), or \emph{Rebase} (linear).
+  \item \textbf{Delete branch} if done; confirm deployment/observability.
+\end{enumerate}
+
+\subsection*{Useful PR CLI}
+
+\begin{bashcode}
+# Create and view
+gh pr create --base main --title "feat: search box" --body "Adds quick search."
+gh pr view --web
+
+# Status, checkout, and merge
+gh pr status
+gh pr checkout 123
+gh pr merge 123 --squash --delete-branch
+\end{bashcode}
+
+\section*{5) Actions: From Zero to Useful}
+
+\subsection*{Minimal CI for Node (drop-in)}
+
+\begin{yamlcode}
+# .github/workflows/ci.yml
+name: ci
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: npm test --if-present
+\end{yamlcode}
+
+\section*{6) Releases \& Tagging}
+
+\subsection*{Tags vs Releases}
+
+\begin{itemize}
+  \item \term{Tag}: pointer to a commit (\kbd{git tag v1.2.0}).
+  \item \term{Release}: tag \textit{plus} notes, assets, visibility in UI.
+\end{itemize}
+
+\subsection*{Create release with CLI}
+
+\begin{bashcode}
+# From a prepared CHANGELOG and a tag:
+git tag v1.2.0
+git push origin v1.2.0
+
+# Create a GitHub release (notes from file)
+gh release create v1.2.0 \
+  --title "v1.2.0" \
+  --notes-file CHANGELOG-1.2.0.md \
+  ./builds/app-linux-x64.tar.gz#linux
+
+# Let GitHub generate notes based on PRs and commits
+gh release create v1.3.0 --generate-notes
+\end{bashcode}
+
+\section*{7) Semantic Versioning (SemVer)}
+
+\begin{tabular}{@{}ll@{}}
+\texttt{MAJOR} & breaking changes \\
+\texttt{MINOR} & backwards-compatible features \\
+\texttt{PATCH} & bug fixes / small improvements \\
+\end{tabular}
+
+\section*{8) Security Essentials}
+
+\begin{itemize}
+  \item Enable \term{Dependabot alerts} and \term{security updates}.
+  \item Turn on \term{Secret scanning} (push protection where available).
+  \item Configure \term{Code scanning} (CodeQL) for primary languages.
+  \item Use \term{branch protection}: required reviews, required checks, \kbd{CODEOWNERS}.
+\end{itemize}
+
+\section*{9) Troubleshooting}
+
+\begin{itemize}
+  \item \term{PR checks failing}: open the \textbf{Checks} tab; re-run \& read logs.
+  \item \term{Auth errors}: \kbd{gh auth status}; verify PAT scopes (\kbd{repo}, \kbd{workflow}).
+  \item \term{Missing permissions}: ask a maintainer; check branch protection \& CODEOWNERS.
+  \item \term{Actions not running}: confirm \kbd{on:} triggers and branch filters; check concurrency.
+\end{itemize}
+
+\bigskip
+\noindent\textit{Adapt this sheet with your team's conventions (branch names, required checks, deploy envs). Keep PRs small, reviews fast, and releases frequent.}
+
+\end{document}
+
+
 

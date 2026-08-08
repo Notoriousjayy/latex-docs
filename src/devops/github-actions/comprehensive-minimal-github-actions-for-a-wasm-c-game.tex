@@ -25,4 +25,351 @@
 \setlist{itemsep=2pt, topsep=4pt, leftmargin=1.2em}
 
 % === Code Blocks (listings only) ===
+% listings removed; minted is now the canonical backend
+
+% listings macros removed; minted is the canonical backend
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{CodeBg},
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{Ink!30},
+  tabsize=2,
+  aboveskip=8pt,
+  belowskip=8pt,
+  xleftmargin=4pt,
+  xrightmargin=4pt
+}
+
+% minted environments are used directly in this document{% listings macros removed; minted is the canonical backendlanguage=bash}}{}
+% minted environments are used directly in this document{% listings macros removed; minted is the canonical backend}}{}
+
+% === Silence missing .toc on first run ===
+\makeatletter
+\let\orig@starttoc\@starttoc
+\def\@starttoc#1{\IfFileExists{\jobname.#1}{\orig@starttoc{#1}}{}}
+\makeatother
+
+% === Document ===
+\title{\textbf{Comprehensive-Minimal GitHub Actions for a WASM C++ Game}}
+\author{Emscripten + CMake Presets + Conan/vcpkg + SDL Flags}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Goal}
+
+Stand up a comprehensive-minimal CI/CD set for a WebAssembly (WASM) C++ game using Emscripten. This doc gives you:
+\begin{itemize}
+  \item A tailored repo layout, CMakePresets and CMakeLists tuned for Emscripten + SDL.
+  \item Optional integration with Conan or vcpkg.
+  \item Five production-ready GitHub Actions workflows: Build \& Test, CodeQL, Dependency Review, Pages Deploy, Release.
+\end{itemize}
+
+\section{Repository Layout}
+
+\begin{textcode}
+.
+|-- CMakeLists.txt
+|-- CMakePresets.json
+|-- src/
+|   |-- main.cpp
+|   |-- game/
+|       |-- engine.cpp
+|       `-- engine.hpp
+|-- include/
+|   `-- game/
+|       `-- public.hpp
+|-- assets/
+|   |-- sprites/
+|   |-- audio/
+|   `-- index.html
+|-- .github/
+|   `-- workflows/
+`-- out/
+\end{textcode}
+
+\section{Emscripten-aware CMake Presets}
+
+\begin{jsoncode}
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "wasm-release",
+      "displayName": "WASM (Emscripten) - Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/wasm",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": "${env:EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+        "GAME_ENABLE_SDL": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "wasm-release",
+      "configurePreset": "wasm-release",
+      "jobs": 4
+    }
+  ]
+}
+\end{jsoncode}
+
+\section{CMakeLists.txt (WASM-friendly)}
+
+\begin{cmakecode}
+cmake_minimum_required(VERSION 3.25)
+project(WasmGame LANGUAGES C CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(GAME_ASSETS_DIR "${GAME_ASSETS_DIR}" CACHE PATH "Assets dir")
+set(GAME_ENABLE_SDL "${GAME_ENABLE_SDL}" CACHE BOOL "Enable SDL2")
+
+file(GLOB_RECURSE GAME_SRC CONFIGURE_DEPENDS
+     "${CMAKE_SOURCE_DIR}/src/*.cpp" "${CMAKE_SOURCE_DIR}/src/*.c")
+add_executable(game ${GAME_SRC})
+
+target_include_directories(game PRIVATE "${CMAKE_SOURCE_DIR}/include")
+
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "Emscripten")
+  message(STATUS "Configuring Emscripten/WASM build")
+  target_compile_options(game PRIVATE -O3)
+  target_link_options(game PRIVATE -O3)
+  target_link_options(game PRIVATE
+    "-sALLOW_MEMORY_GROWTH=1"
+    "-sMODULARIZE=1"
+    "-sENVIRONMENT=web"
+  )
+  if(GAME_ENABLE_SDL)
+    target_link_options(game PRIVATE "-sUSE_SDL=2")
+  endif()
+  set_target_properties(game PROPERTIES SUFFIX ".html")
+endif()
+\end{cmakecode}
+
+\section{Workflow 1: Build \& Test}
+
+\begin{yamlcode}
+# .github/workflows/build-wasm.yml
+name: Build (WASM C++)
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      EMSDK: ${{ runner.temp }}/emsdk
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Emscripten
+        run: |
+          git clone https://github.com/emscripten-core/emsdk.git "$EMSDK"
+          "$EMSDK/emsdk" install latest
+          "$EMSDK/emsdk" activate latest
+          echo "EMSDK=$EMSDK" >> $GITHUB_ENV
+
+      - name: Cache Emscripten
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.emscripten_cache
+            ${{ env.EMSDK }}/upstream/emscripten/cache
+          key: emsdk-${{ runner.os }}-latest
+
+      - name: Configure
+        run: |
+          source "$EMSDK/emsdk_env.sh"
+          cmake --preset wasm-release
+
+      - name: Build
+        run: cmake --build --preset wasm-release -j2
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-build
+          path: |
+            out/wasm/**/*.wasm
+            out/wasm/**/*.js
+            out/wasm/**/*.html
+\end{yamlcode}
+
+\section{Workflow 2: CodeQL}
+
+\begin{yamlcode}
+# .github/workflows/codeql.yml
+name: CodeQL (C/C++)
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+  schedule: [{ cron: "0 6 * * 1" }]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: cpp
+      - uses: github/codeql-action/autobuild@v3
+      - uses: github/codeql-action/analyze@v3
+\end{yamlcode}
+
+\section{Workflow 3: Dependency Review}
+
+\begin{yamlcode}
+# .github/workflows/dependency-review.yml
+name: Dependency Review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+\end{yamlcode}
+
+\section{Workflow 4: Deploy to GitHub Pages}
+
+\begin{yamlcode}
+# .github/workflows/pages.yml
+name: Deploy (GitHub Pages)
+on:
+  push: { branches: [main] }
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      EMSDK: ${{ runner.temp }}/emsdk
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Emscripten
+        run: |
+          git clone https://github.com/emscripten-core/emsdk.git "$EMSDK"
+          "$EMSDK/emsdk" install latest
+          "$EMSDK/emsdk" activate latest
+          source "$EMSDK/emsdk_env.sh"
+      - name: Build
+        run: |
+          cmake --preset wasm-release
+          cmake --build --preset wasm-release -j2
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out/wasm
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+\end{yamlcode}
+
+\section{Workflow 5: Release on Tags}
+
+\begin{yamlcode}
+# .github/workflows/release.yml
+name: Release
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      EMSDK: ${{ runner.temp }}/emsdk
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Emscripten
+        run: |
+          git clone https://github.com/emscripten-core/emsdk.git "$EMSDK"
+          "$EMSDK/emsdk" install latest
+          "$EMSDK/emsdk" activate latest
+          source "$EMSDK/emsdk_env.sh"
+      - name: Build
+        run: |
+          cmake --preset wasm-release
+          cmake --build --preset wasm-release -j2
+          mkdir -p release
+          cp out/wasm/*.wasm out/wasm/*.js out/wasm/*.html release/
+          (cd release && zip -r game-wasm.zip .)
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release/game-wasm.zip
+\end{yamlcode}
+
+\section{Local Build}
+
+\begin{bashcode}
+# 1) Install and activate emsdk (once)
+git clone https://github.com/emscripten-core/emsdk.git ~/emsdk
+~/emsdk/emsdk install latest
+~/emsdk/emsdk activate latest
+source ~/emsdk/emsdk_env.sh
+
+# 2) Configure & build
+cmake --preset wasm-release
+cmake --build --preset wasm-release -j
+
+# 3) Serve
+python3 -m http.server --directory out/wasm 8080
+\end{bashcode}
+
+\section{Notes}
+
+\begin{itemize}
+  \item Caching: We cache both \texttt{\textasciitilde/.emscripten\_cache} and \texttt{EMSDK/upstream/emscripten/cache}.
+  \item Assets: Using \texttt{--preload-file} ensures your assets load from a static host like Pages.
+  \item SDL: If you need image formats beyond PNG/JPG, expand \texttt{GAME\_SDL\_IMAGE\_FORMATS}.
+  \item CodeQL: For complex builds, run your exact Emscripten steps before \texttt{analyze}.
+\end{itemize}
+
+\end{document}
+
+
 
