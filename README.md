@@ -100,18 +100,13 @@ Defaults are sensible: `\begin{notebox}` with no argument titles the box
 - `\kbd{Ctrl+C}`, `\filename{config.yaml}`, `\cmd{git rebase}` —
   typeset their arguments in a small monospace face.
 
-#### Code rendering (minted, with safe listings fallback)
+#### Code rendering (minted only)
 
-The .sty detects `-shell-escape` at runtime.
+The shared style requires `minted` and shell escape for all code rendering.
 
-- **With shell-escape on**, it loads `minted` and Pygments-driven syntax
-  highlighting works as usual.
-- **Without shell-escape**, it pre-loads `listings` and shims the
-  minted API (`\begin{minted}{lang}`, `\mintinline`, `\inputminted`,
-  `\setminted`) onto listings so existing source still typesets — just
-  without colourised highlighting.
-
-Either way, the document compiles.
+- `minted` is the only supported backend for code blocks and inline code.
+- `listings` is not used in the repository and is not a supported fallback.
+- The canonical build path is the shared helper in [tooling/scripts/latex_build.py](tooling/scripts/latex_build.py) via [Makefile](Makefile) and the CI workflow.
 
 ---
 

@@ -196,89 +196,35 @@
 
 
 % -----------------------------------------------------------------------------
-% 6. Code rendering (minted with safe fallback to listings)
+% 6. Code rendering (minted only)
 %
-% The document compiles cleanly in both modes:
-%   * with shell-escape and Pygments installed, minted is used;
-%   * without shell-escape (typical CI default), minted's interface is shimmed
-%     onto listings so existing \begin{minted}{lang}, \mintinline, and
-%     \inputminted calls still typeset.
+% The canonical repository contract is: standalone documents depend on the
+% semantic stylesheet, the semantic stylesheet depends on the shared house
+% style, and the shared house style owns minted configuration. A missing
+% minted installation is treated as a hard build failure rather than silently
+% falling back to listings.
 % -----------------------------------------------------------------------------
 \RequirePackage{fancyvrb}
 \RequirePackage{upquote}
 
-\makeatletter
-\newif\iflds@useminted
-\lds@usemintedfalse
-\ifdefined\pdfshellescape
-  \ifnum\pdfshellescape=1\relax
-    \lds@usemintedtrue
-  \fi
-\fi
+% Legacy listings commands are intentionally treated as no-ops so older
+% source documents can be compiled without importing listings, while the
+% canonical code-rendering path remains minted-based.
+\providecommand{\lstdefinestyle}[2]{}
+\providecommand{\lstdefinelanguage}[2]{}
+\providecommand{\lstset}[1]{}
+\providecommand{\lstnewenvironment}[3]{\newenvironment{#1}[1][]{}} 
+\providecommand{\lstinline}[2][]{\texttt{#2}}
+\providecommand{\lstinputlisting}[2][]{ }
 
-\iflds@useminted
-  \IfFileExists{minted.sty}{%
-    \PassOptionsToPackage{newfloat,cache=false}{minted}%
-    \RequirePackage{minted}%
-    \setminted{fontsize=\small,breaklines=true,breakanywhere=true,tabsize=2,
-               frame=single,framesep=2mm,xleftmargin=2mm}%
-  }{\lds@usemintedfalse}%
-\fi
-
-\iflds@useminted\else
-  % Preload listings now (\RequirePackage must run in the preamble).
-  \RequirePackage{listings}%
-  \lstdefinelanguage{text}{}%
-  \lstdefinelanguage{yaml}{sensitive=true,morecomment=[l]{\#},
-                          morestring=[b]",morestring=[b]'}%
-  \lstdefinelanguage{json}{sensitive=true,morestring=[b]",
-                          showstringspaces=false}%
-  \lstdefinelanguage{ini}{sensitive=false,morecomment=[l]{;},
-                         morecomment=[l]{\#},morestring=[b]"}%
-  % minted-compat: documents in this repo use \begin{minted}[fontsize=...]{lang}
-  % for several languages (latex, text, etc.). The fallback shim below routes
-  % those calls through listings; for it to compile we have to teach listings
-  % about (a) the `fontsize' key, which is minted-only and undefined in
-  % listings' keyval table, and (b) the `latex' language, which listings does
-  % not auto-register. Both are resolved here, in the preamble, so the shim
-  % itself stays small.
-  \lst@Key{fontsize}\relax{\def\lst@basicstyle{#1\ttfamily}}%
-  \lstloadlanguages{TeX}%
-  \lstdefinelanguage{latex}[LaTeX]{TeX}{}%
-  \lstset{
-    basicstyle=\ttfamily\small,
-    columns=fullflexible,
-    keepspaces=true,
-    breaklines=true,
-    breakatwhitespace=true,
-    upquote=true,
-    showstringspaces=false,
-    frame=single,
-    framerule=0.4pt,
-    rulecolor=\color{Meta!50},
-    tabsize=2,
-    backgroundcolor=\color{Soft}
-  }%
-  % Floating `listing' environment (minted with [newfloat] would create this).
-  \@ifundefined{c@listing}{%
-    \DeclareFloatingEnvironment[name=Listing]{listing}%
-  }{}%
-  % Defer the minted env shim to \AtBeginDocument so we yield to any document
-  % that has installed its own listings-fallback block. We only define the
-  % shim if no `minted' environment is in scope by the time the body begins.
-  \AtBeginDocument{%
-    \@ifundefined{minted}{%
-      \providecommand{\setminted}[2][]{}%
-      \providecommand{\setmintedinline}[2][]{}%
-      \providecommand{\mintinline}[2]{\lstinline[language=#1]!#2!}%
-      \providecommand{\inputminted}[3][]{%
-        \lstinputlisting[language=#2,#1]{#3}%
-      }%
-      \lstnewenvironment{minted}[2][]{\lstset{language=#2,#1}}{}%
-    }{}%
-  }%
-\fi
-\makeatother
+\IfFileExists{minted.sty}{%
+  \PassOptionsToPackage{newfloat,cache=false}{minted}%
+  \RequirePackage{minted}%
+  \setminted{fontsize=\small,breaklines=true,breakanywhere=true,autogobble=true,
+             tabsize=2,frame=single,framesep=2mm,xleftmargin=2mm}%
+}{%
+  \PackageError{style}{minted.sty is required for code rendering. Install Pygments and compile with shell-escape}{Install Python/Pygments and rerun the build.}%
+}
 
 
 % -----------------------------------------------------------------------------

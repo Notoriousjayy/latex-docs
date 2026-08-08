@@ -39,11 +39,16 @@ $ENV{BIBINPUTS} = ":$root/src//:" . ($ENV{BIBINPUTS} // '') . ':';
 $ENV{BSTINPUTS} = ":$root/src//:" . ($ENV{BSTINPUTS} // '') . ':';
 
 # Engine: pdflatex (matches your CI matrix).
-$pdf_mode = 1;
+my $pdf_mode = 1;
 
 # Build hygiene.
-$silent      = 0;
-$emulate_aux = 1;
+my $silent      = 0;
+my $emulate_aux = 1;
 
 # Track .synctex.gz as a generated artifact so 'latexmk -c' cleans it.
-push @generated_exts, 'synctex.gz';
+my @generated_exts = ('synctex.gz');
+
+# Expose the values expected by newer latexmk versions.
+$silent      = $silent;
+$emulate_aux = $emulate_aux;
+push @generated_exts, @generated_exts;
