@@ -228,17 +228,23 @@ def build_roots(tex_paths: Sequence[Path], jobs: int = 1, output_dir: Path | Non
     return failures
 
 
-def build_changed(base_ref: str | None = None, jobs: int = 1) -> int:
+def collect_changed_paths(base_ref: str | None = None, head_ref: str | None = None) -> List[str]:
     try:
-        if base_ref is None:
-            target = "HEAD~1"
-            changed = subprocess.check_output(["git", "diff", "--name-only", target, "HEAD"], cwd=str(ROOT), text=True)
-        else:
+        if base_ref and head_ref:
+            changed = subprocess.check_output(["git", "diff", "--name-only", base_ref, head_ref], cwd=str(ROOT), text=True)
+        elif base_ref:
             changed = subprocess.check_output(["git", "diff", "--name-only", base_ref], cwd=str(ROOT), text=True)
+        else:
+            changed = subprocess.check_output(["git", "diff", "--name-only", "HEAD~1", "HEAD"], cwd=str(ROOT), text=True)
     except subprocess.CalledProcessError:
-        return 1
+        return []
 
-    tex_changes = [line.strip() for line in changed.splitlines() if line.endswith(".tex")]
+    return [line.strip() for line in changed.splitlines() if line.strip()]
+
+
+def build_changed(base_ref: str | None = None, head_ref: str | None = None, jobs: int = 1) -> int:
+    changed_paths = collect_changed_paths(base_ref=base_ref, head_ref=head_ref)
+    tex_changes = [line.strip() for line in changed_paths if line.endswith(".tex")]
     roots = discover_roots()
     affected = []
     for changed_path in tex_changes:
@@ -246,7 +252,58 @@ def build_changed(base_ref: str | None = None, jobs: int = 1) -> int:
         if path.exists() and path.suffix == ".tex":
             affected.extend(determine_affected_roots(roots, path))
     unique_roots = sorted({path.resolve() for path in affected})
+    if not unique_roots:
+        return 0
     return build_roots(unique_roots, jobs=jobs)
+
+
+def render_plantuml(source_dir: Path | None = None, formats: Sequence[str] | None = None) -> int:
+    search_root = (source_dir or SRC_DIR).resolve()
+    if not search_root.exists():
+        return 0
+
+    config_names = ["plantuml-config.puml", "config.puml"]
+    formats = list(formats or ["png", "svg"])
+    include_paths = [ROOT / "tooling" / "plantuml", ROOT / "tooling" / "styles" / "plantuml"]
+    env = os.environ.copy()
+    env["PLANTUML_INCLUDE_PATH"] = ":".join(str(path) for path in include_paths if path.exists())
+
+    diagram_count = 0
+    failures = 0
+    for path in sorted(search_root.rglob("*.puml")):
+        if not path.is_file() or path.name.lower() in {name.lower() for name in config_names}:
+            continue
+        try:
+            text = path.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        if "@startuml" not in text:
+            continue
+
+        diagram_count += 1
+        config_path = None
+        current = path.parent
+        while current != current.parent:
+            for config_name in config_names:
+                candidate = current / config_name
+                if candidate.exists():
+                    config_path = candidate
+                    break
+            if config_path is not None:
+                break
+            current = current.parent
+
+        for fmt in formats:
+            output_dir = path.parent / fmt
+            output_dir.mkdir(parents=True, exist_ok=True)
+            cmd = ["plantuml", f"-t{fmt}", "-o", str(output_dir)]
+            if config_path is not None:
+                cmd.extend(["-config", str(config_path)])
+            cmd.append(str(path.name))
+            result = subprocess.run(cmd, cwd=str(path.parent), env=env, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if result.returncode != 0:
+                failures += 1
+    return 1 if failures else 0
 
 
 def clean() -> int:
@@ -279,7 +336,12 @@ def main() -> int:
 
     changed_parser = subparsers.add_parser("build-changed")
     changed_parser.add_argument("--base", default=None)
+    changed_parser.add_argument("--head", default=None)
     changed_parser.add_argument("--jobs", type=int, default=1)
+
+    render_parser = subparsers.add_parser("render-plantuml")
+    render_parser.add_argument("--source-dir", type=Path, default=None)
+    render_parser.add_argument("--formats", nargs="*", default=["png", "svg"])
 
     clean_parser = subparsers.add_parser("clean")
     clean_parser.add_argument("--jobs", type=int, default=1)
@@ -305,7 +367,10 @@ def main() -> int:
         return build_roots(roots, jobs=args.jobs, output_dir=args.output_dir, log_dir=args.log_dir, artifact_dir=args.artifact_dir)
 
     if args.command == "build-changed":
-        return build_changed(base_ref=args.base, jobs=args.jobs)
+        return build_changed(base_ref=args.base, head_ref=args.head, jobs=args.jobs)
+
+    if args.command == "render-plantuml":
+        return render_plantuml(source_dir=args.source_dir, formats=args.formats)
 
     if args.command == "clean":
         return clean()

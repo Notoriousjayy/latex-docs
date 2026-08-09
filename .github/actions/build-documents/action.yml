@@ -1,157 +1,80 @@
 # .github/actions/build-documents/action.yml
-# Reusable composite action for building LaTeX documents
 name: 'Build LaTeX Documents'
-description: 'Build LaTeX documents with selective compilation'
+description: 'Delegate LaTeX builds to the canonical Makefile/build-script contract'
 
 inputs:
-  source-dir:
-    description: 'Root directory containing .tex files'
+  mode:
+    description: 'Build mode: full, changed, publish, or category'
     required: false
-    default: 'src'
-  document-filter:
-    description: 'Directory path to filter documents (e.g., "src/security")'
+    default: 'changed'
+  category:
+    description: 'Category name when mode is category'
     required: false
     default: ''
-  build-all:
-    description: 'Force build of all documents regardless of changes'
+  jobs:
+    description: 'Parallel job count for the canonical build layer'
     required: false
-    default: 'false'
-  cache-aux-files:
-    description: 'Cache LaTeX auxiliary files between runs'
+    default: '4'
+  base-ref:
+    description: 'Base revision for changed-root builds'
     required: false
-    default: 'true'
+    default: ''
+  head-ref:
+    description: 'Head revision for changed-root builds'
+    required: false
+    default: ''
 
 outputs:
   pdf-count:
     description: 'Number of PDFs built'
-    value: ${{ steps.build.outputs.count }}
-  pdf-files:
-    description: 'JSON array of built PDF paths'
-    value: ${{ steps.build.outputs.files }}
-  failed-count:
-    description: 'Number of failed builds'
-    value: ${{ steps.build.outputs.failed }}
+    value: ${{ steps.run.outputs.pdf-count }}
 
 runs:
   using: 'composite'
   steps:
-    - name: Cache LaTeX auxiliary files
-      if: inputs.cache-aux-files == 'true'
-      uses: actions/cache@v4
-      with:
-        path: |
-          ${{ inputs.document-filter || inputs.source-dir }}/**/*.aux
-          ${{ inputs.document-filter || inputs.source-dir }}/**/*.fdb_latexmk
-          ${{ inputs.document-filter || inputs.source-dir }}/**/*.fls
-          ${{ inputs.document-filter || inputs.source-dir }}/**/*.toc
-          ${{ inputs.document-filter || inputs.source-dir }}/**/*.out
-          ${{ inputs.document-filter || inputs.source-dir }}/**/_minted-*
-        key: latex-aux-${{ inputs.document-filter || 'all' }}-${{ github.sha }}
-        restore-keys: |
-          latex-aux-${{ inputs.document-filter || 'all' }}-
-
-    - name: Discover and build documents
-      id: build
+    - name: Run canonical build target
+      id: run
       shell: bash
       run: |
         set -euo pipefail
-
-        # Make the shared house style (tooling/latex/style.sty)
-        # resolvable from any leaf directory we pushd into. Trailing `//:`
-        # tells kpathsea to recurse, then fall through to the system tree.
         export TEXINPUTS="${GITHUB_WORKSPACE}/tooling/latex//:${GITHUB_WORKSPACE}/tooling/styles/latex//:${TEXINPUTS:-}"
+        mkdir -p public/pdfs public/logs
 
-        SEARCH_DIR="${{ inputs.document-filter }}"
-        if [[ -z "$SEARCH_DIR" ]]; then
-          SEARCH_DIR="${{ inputs.source-dir }}"
-        fi
-        
-        echo "Searching for documents in: $SEARCH_DIR"
-        
-        # Find all root documents (files with \documentclass)
-        mapfile -t ROOTS < <(find "$SEARCH_DIR" -name '*.tex' -type f -exec grep -l '^\s*\\documentclass' {} \; 2>/dev/null | sort)
-        
-        echo "Found ${#ROOTS[@]} document roots"
-        
-        if [[ ${#ROOTS[@]} -eq 0 ]]; then
-          echo "No documents to build"
-          echo "count=0" >> "$GITHUB_OUTPUT"
-          echo "failed=0" >> "$GITHUB_OUTPUT"
-          echo 'files=[]' >> "$GITHUB_OUTPUT"
-          exit 0
-        fi
-        
-        built_pdfs=()
-        failed=0
-        failed_files=()
-        
-        for tex_file in "${ROOTS[@]}"; do
-          dir="$(dirname "$tex_file")"
-          base="$(basename "$tex_file")"
-          name="${base%.tex}"
-          pdf_name="${name}.pdf"
-          
-          echo ""
-          echo "════════════════════════════════════════════════════════════"
-          echo "Building: $tex_file"
-          echo "════════════════════════════════════════════════════════════"
-          
-          # Create minted cache directory
-          mkdir -p "${dir}/_minted-${name}"
-          
-          # Build with latexmk
-          pushd "$dir" > /dev/null
-          if latexmk -pdf \
-               -interaction=nonstopmode \
-               -halt-on-error \
-               -file-line-error \
-               -shell-escape \
-               "$base" 2>&1 | tail -100; then
-            
-            if [[ -f "$pdf_name" ]]; then
-              echo "✓ SUCCESS: ${dir}/${pdf_name}"
-              built_pdfs+=("${dir}/${pdf_name}")
+        mode="${{ inputs.mode }}"
+        category="${{ inputs.category }}"
+        jobs="${{ inputs.jobs }}"
+        base_ref="${{ inputs.base-ref }}"
+        head_ref="${{ inputs.head-ref }}"
+
+        case "$mode" in
+          full)
+            make build-all
+            ;;
+          changed)
+            if [[ -n "$base_ref" ]]; then
+              make build-changed BASE_REF="$base_ref" HEAD_REF="$head_ref"
             else
-              echo "⚠ WARNING: Build completed but PDF not found"
+              make build-changed
             fi
-          else
-            echo "✗ FAILED: $tex_file"
-            failed_files+=("$tex_file")
-            ((failed++)) || true
-          fi
-          popd > /dev/null
-        done
-        
-        echo ""
-        echo "════════════════════════════════════════════════════════════"
-        echo "BUILD SUMMARY"
-        echo "════════════════════════════════════════════════════════════"
-        echo "Successful: ${#built_pdfs[@]}"
-        echo "Failed: $failed"
-        
-        if [[ $failed -gt 0 ]]; then
-          echo ""
-          echo "Failed files:"
-          for f in "${failed_files[@]}"; do
-            echo "  - $f"
-          done
-        fi
-        
-        # Set outputs
-        echo "count=${#built_pdfs[@]}" >> "$GITHUB_OUTPUT"
-        echo "failed=$failed" >> "$GITHUB_OUTPUT"
-        
-        if [[ ${#built_pdfs[@]} -gt 0 ]]; then
-          printf 'files=%s\n' "$(printf '%s\n' "${built_pdfs[@]}" | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
-        else
-          echo 'files=[]' >> "$GITHUB_OUTPUT"
-        fi
-        
-        # Only fail if ALL builds failed
-        if [[ $failed -gt 0 && ${#built_pdfs[@]} -eq 0 ]]; then
-          echo "::error::All document builds failed!"
-          exit 1
-        fi
+            ;;
+          publish)
+            make publish-parallel JOBS="$jobs"
+            ;;
+          category)
+            if [[ -z "$category" ]]; then
+              echo "::error::category mode requires a non-empty category"
+              exit 1
+            fi
+            make "build-category-${category}"
+            ;;
+          *)
+            echo "::error::Unsupported mode: $mode"
+            exit 1
+            ;;
+        esac
+
+        pdf_count=$(find public/pdfs -type f -name '*.pdf' 2>/dev/null | wc -l | tr -d ' ')
+        echo "pdf-count=$pdf_count" >> "$GITHUB_OUTPUT"
 
 
 

@@ -1,22 +1,8 @@
-# .github/workflows/render-plantuml.yml
-# ============================================================================
-# UNIFIED PLANTUML CI WORKFLOW
-# ============================================================================
-# Single workflow for both:
-#   - PRs / workflow_dispatch  → Render + Validate + upload artifact (no commit)
-#   - Push to main             → Render + Commit back to repo
-#
-# Uses the unified render-plantuml composite action so logic isn't duplicated.
-# ============================================================================
 name: PlantUML Render CI
 
 on:
   workflow_dispatch:
     inputs:
-      commit-changes:
-        description: 'Commit rendered images back to repo'
-        type: boolean
-        default: true
       generate-jpg:
         description: 'Generate JPG files from PNG'
         type: boolean
@@ -33,7 +19,9 @@ on:
       - '.github/actions/render-plantuml/**'
       - '.github/workflows/render-plantuml.yml'
 
-# Force JS actions still pinned to Node.js 20 internally onto Node.js 24.
+permissions:
+  contents: read
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -41,35 +29,12 @@ concurrency:
   group: plantuml-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: write
-
 jobs:
-  # ============================================================================
-  # Single render job - used for both validation and commit scenarios
-  # ============================================================================
   render:
     runs-on: ubuntu-latest
-    # Skip if triggered by the bot's own commits to prevent loops
-    if: github.actor != 'github-actions[bot]'
-
-    outputs:
-      has-changes: ${{ steps.plantuml.outputs.has_changes }}
-      diagram-count: ${{ steps.plantuml.outputs.diagram_count }}
-      rendered-count: ${{ steps.plantuml.outputs.rendered_count }}
-      failed-count: ${{ steps.plantuml.outputs.failed_count }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-          persist-credentials: true
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      # ----------------------------------------------------------------
-      # Use the SINGLE render unit (DRY - no duplicate logic)
-      # ----------------------------------------------------------------
       - name: Render PlantUML diagrams
         id: plantuml
         uses: ./.github/actions/render-plantuml
@@ -78,128 +43,25 @@ jobs:
           formats: 'png svg'
           generate-jpg: ${{ inputs.generate-jpg || 'false' }}
           fail-on-error: 'true'
-
-      # ----------------------------------------------------------------
-      # Verify outputs
-      # ----------------------------------------------------------------
-      - name: Verify rendered outputs
-        run: |
-          echo "=== Render Results ==="
-          echo "Diagrams found: ${{ steps.plantuml.outputs.diagram_count }}"
-          echo "Files rendered: ${{ steps.plantuml.outputs.rendered_count }}"
-          echo "Failures: ${{ steps.plantuml.outputs.failed_count }}"
-          echo "Has changes: ${{ steps.plantuml.outputs.has_changes }}"
-          echo ""
-
-          png_count=$(find src -path "*/png/*.png" -type f 2>/dev/null | wc -l)
-          svg_count=$(find src -path "*/svg/*.svg" -type f 2>/dev/null | wc -l)
-          jpg_count=$(find src -path "*/jpg/*.jpg" -type f 2>/dev/null | wc -l)
-
-          echo "=== File counts ==="
-          echo "PNG: $png_count"
-          echo "SVG: $svg_count"
-          if [[ $jpg_count -gt 0 ]]; then
-            echo "JPG: $jpg_count"
-          fi
-
-      # ----------------------------------------------------------------
-      # Stage rendered diagrams into a flat structure for artifact upload.
-      # Mirrors src/ tree under collected-diagrams/ so downloaders don't
-      # have to deal with the in-tree png/svg folders mixed with sources.
-      # ----------------------------------------------------------------
-      - name: Collect rendered diagrams for artifact
-        id: collect
-        run: |
-          set -euo pipefail
-          mkdir -p collected-diagrams
-
-          png_count=0
-          svg_count=0
-          jpg_count=0
-
-          while IFS= read -r -d '' fmt_dir; do
-            [[ -d "$fmt_dir" ]] || continue
-            fmt="$(basename "$fmt_dir")"
-            parent="$(dirname "$fmt_dir")"
-            # Path of the parent dir relative to src/
-            rel="${parent#src/}"
-            rel="${rel#/}"
-            if [[ -z "$rel" ]]; then
-              target="collected-diagrams/${fmt}"
-            else
-              target="collected-diagrams/${rel}/${fmt}"
-            fi
-            mkdir -p "$target"
-            while IFS= read -r -d '' f; do
-              cp -f "$f" "$target/" || true
-              case "$fmt" in
-                png) png_count=$((png_count + 1)) ;;
-                svg) svg_count=$((svg_count + 1)) ;;
-                jpg) jpg_count=$((jpg_count + 1)) ;;
-              esac
-            done < <(find "$fmt_dir" -maxdepth 1 -type f \( -name '*.png' -o -name '*.svg' -o -name '*.jpg' \) -print0 2>/dev/null)
-          done < <(find src -type d \( -name png -o -name svg -o -name jpg \) -print0 2>/dev/null)
-
-          total=$((png_count + svg_count + jpg_count))
-          echo "Collected: png=$png_count svg=$svg_count jpg=$jpg_count total=$total"
-          echo "total=$total" >> "$GITHUB_OUTPUT"
-
-      # ----------------------------------------------------------------
-      # Upload artifact (PRs, push, workflow_dispatch — every run)
-      # ----------------------------------------------------------------
       - name: Upload rendered diagrams artifact
-        if: always() && steps.collect.outputs.total != '0'
         uses: actions/upload-artifact@v6
         with:
           name: plantuml-diagrams
-          path: collected-diagrams
+          path: src
           retention-days: 14
           if-no-files-found: ignore
 
-      # ----------------------------------------------------------------
-      # Summary for PR reviews
-      # ----------------------------------------------------------------
-      - name: Generate PR summary
-        if: github.event_name == 'pull_request'
-        run: |
-          {
-            echo "## 🎨 PlantUML Render Results"
-            echo ""
-            echo "| Metric | Count |"
-            echo "|--------|------:|"
-            echo "| Source diagrams | ${{ steps.plantuml.outputs.diagram_count }} |"
-            echo "| Files rendered  | ${{ steps.plantuml.outputs.rendered_count }} |"
-            echo "| Failures        | ${{ steps.plantuml.outputs.failed_count }} |"
-            echo ""
-
-            if [[ "${{ steps.plantuml.outputs.failed_count }}" == "0" ]]; then
-              echo "✅ All diagrams rendered successfully."
-            else
-              echo "❌ Some diagrams failed to render. Check the logs above."
-            fi
-            echo ""
-            echo "📦 PNG + SVG outputs are available in the **plantuml-diagrams** artifact on this run."
-          } >> "$GITHUB_STEP_SUMMARY"
-
-  # ============================================================================
-  # Commit job - only runs on push to main (not on PRs)
-  # ============================================================================
   commit-images:
     needs: render
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'push' &&
-      github.ref == 'refs/heads/main' &&
-      needs.render.outputs.has-changes == 'true' &&
-      github.actor != 'github-actions[bot]'
-
     steps:
       - name: Checkout
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          persist-credentials: true
-
       - name: Render PlantUML diagrams
         uses: ./.github/actions/render-plantuml
         with:
@@ -207,95 +69,15 @@ jobs:
           formats: 'png svg'
           generate-jpg: ${{ inputs.generate-jpg || 'false' }}
           fail-on-error: 'true'
-
       - name: Commit rendered images
         run: |
           set -euo pipefail
-
-          echo "=== Configuring Git ==="
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          echo ""
-          echo "=== Staging generated artifacts ==="
-          git add src/**/png/*.png 2>/dev/null || true
-          git add src/**/svg/*.svg 2>/dev/null || true
-          git add src/**/jpg/*.jpg 2>/dev/null || true
-
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/**/png/*.png src/**/svg/*.svg src/**/jpg/*.jpg 2>/dev/null || true
           if git diff --cached --quiet; then
-            echo "No changes to commit"
+            echo 'No changes to commit'
             exit 0
           fi
-
-          echo ""
-          echo "=== Staged files ==="
-          git diff --cached --name-only | head -50
-
-          echo ""
-          echo "=== Rebasing before commit ==="
-          git fetch origin main
-          git rebase origin/main || {
-            echo "::warning::Rebase failed, attempting merge instead"
-            git rebase --abort 2>/dev/null || true
-            git pull --rebase=false origin main
-          }
-
-          echo ""
-          echo "=== Committing ==="
-          git commit -m "chore(diagrams): render PlantUML images [skip ci]"
-
-          echo ""
-          echo "=== Pushing ==="
+          git commit -m 'chore(diagrams): render PlantUML images [skip ci]'
           git push origin main
-
-      - name: Generate commit summary
-        run: |
-          {
-            echo "## 📝 PlantUML Images Committed"
-            echo ""
-            echo "| Metric | Count |"
-            echo "|--------|------:|"
-            echo "| Diagrams processed | ${{ needs.render.outputs.diagram_count }} |"
-            echo "| Files rendered     | ${{ needs.render.outputs.rendered_count }} |"
-            echo ""
-            echo "✅ Rendered images committed to \`main\` branch."
-            echo ""
-            echo "📦 Same files are also available as the **plantuml-diagrams** artifact."
-          } >> "$GITHUB_STEP_SUMMARY"
-
-  # ============================================================================
-  # Manual commit job - for workflow_dispatch with commit-changes=true
-  # ============================================================================
-  manual-commit:
-    needs: render
-    runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'workflow_dispatch' &&
-      inputs.commit-changes == true &&
-      needs.render.outputs.has-changes == 'true'
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-          persist-credentials: true
-
-      - name: Render PlantUML diagrams
-        uses: ./.github/actions/render-plantuml
-        with:
-          source-dir: 'src'
-          formats: 'png svg'
-          generate-jpg: ${{ inputs.generate-jpg || 'false' }}
-          fail-on-error: 'true'
-
-      - name: Auto-commit rendered images
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: 'chore(diagrams): render PlantUML images [skip ci]'
-          file_pattern: |
-            src/**/png/*.png
-            src/**/svg/*.svg
-            src/**/jpg/*.jpg
-
-

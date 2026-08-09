@@ -1,7 +1,6 @@
 # .github/actions/setup-latex/action.yml
-# Reusable composite action for setting up LaTeX environment
 name: 'Setup LaTeX Environment'
-description: 'Install TeX Live for LaTeX document compilation'
+description: 'Install the TeX toolchain required by the canonical Makefile build contract'
 
 inputs:
   extra-packages:
@@ -12,12 +11,12 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Install TeX Live and dependencies
+    - name: Install TeX Live and Python dependencies
       shell: bash
       run: |
         set -euo pipefail
 
-        echo "::group::Installing TeX Live packages"
+        echo "::group::Installing TeX toolchain"
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends \
           texlive-latex-recommended \
@@ -39,24 +38,18 @@ runs:
 
         sudo rm -rf /var/lib/apt/lists/* || true
 
-    - name: Verify LaTeX installation
+    - name: Verify toolchain
       shell: bash
       run: |
+        set -euo pipefail
         echo "=== LaTeX Environment Verification ==="
         echo "pdflatex:   $(which pdflatex) - $(pdflatex --version | head -1)"
         echo "latexmk:    $(which latexmk) - $(latexmk --version | head -1)"
         echo "pygmentize: $(which pygmentize) - $(pygmentize -V)"
-
-        # Guard against the newtx -> \input{binhex} failure. binhex.tex ships
-        # in texlive-plain-generic; fail fast here rather than mid-build if a
-        # future base-image change drops it.
         if ! kpsewhich binhex.tex >/dev/null; then
-          echo "::error::binhex.tex not found on TEXMF path (needed by newtx). Ensure texlive-plain-generic is installed."
+          echo "::error::binhex.tex not found on TEXMF path (needed by newtx)."
           exit 1
         fi
-        echo "binhex.tex: $(kpsewhich binhex.tex)"
-
-        # Ensure pygmentize is accessible for minted
         if [[ ! -f /usr/bin/pygmentize ]]; then
           sudo ln -sf "$(which pygmentize)" /usr/bin/pygmentize 2>/dev/null || true
         fi

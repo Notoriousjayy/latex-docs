@@ -1,5 +1,3 @@
-# .github/workflows/latex-release.yml
-# Build and attach PDFs to GitHub releases
 name: LaTeX Release
 
 on:
@@ -10,63 +8,36 @@ on:
 permissions:
   contents: write
 
-# Force JS actions still pinned to Node.js 20 internally onto Node.js 24.
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  # ============================================================================
-  # Build all documents for release
-  # ============================================================================
   build:
     uses: ./.github/workflows/_build-latex.yml
     with:
-      build-all: true
+      build-mode: publish
+      jobs: 4
       upload-artifacts: true
       render-plantuml: true
 
-  # ============================================================================
-  # Package and attach to release
-  # ============================================================================
   release:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Download built PDFs
+      - name: Download PDFs artifact
         uses: actions/download-artifact@v7
         with:
           name: latex-pdfs
           path: pdfs
-
-      - name: Create release archives
+      - name: Create release archive
         run: |
+          set -euo pipefail
           mkdir -p dist
-
-          # Create main archive with all PDFs
           cd pdfs
           zip -r ../dist/latex-pdfs-all.zip . -i '*.pdf'
           cd ..
-
-          # Create per-category archives
-          for category in $(find pdfs -mindepth 1 -maxdepth 1 -type d -exec basename {} \;); do
-            pdf_count=$(find "pdfs/$category" -name "*.pdf" -type f | wc -l)
-            if [[ $pdf_count -gt 0 ]]; then
-              cd pdfs
-              zip -r "../dist/${category}-pdfs.zip" "$category" -i '*.pdf'
-              cd ..
-              echo "Created ${category}-pdfs.zip with $pdf_count PDFs"
-            fi
-          done
-
-          echo ""
-          echo "Release archives:"
-          ls -lh dist/
-
-      - name: Attach to release
+      - name: Attach archive to release
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.zip
-
-
-

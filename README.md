@@ -155,9 +155,21 @@ make list-categories                  # categories with document counts
 make build-all                        # serial build of every root
 make build-parallel JOBS=8            # parallel build
 make build-category-architecture      # one category
+make build-changed BASE_REF=HEAD~1 HEAD_REF=HEAD
+make publish                          # publish canonical PDFs/logs under public/
 make clean                            # drop aux files, keep PDFs
 make distclean                        # drop aux files and PDFs
 ```
+
+### GitHub automation contract
+
+GitHub Actions now delegates build execution to the repository-owned interface:
+
+- the reusable workflow calls the canonical Make targets;
+- the Makefile delegates to the Python helper in tooling/scripts/latex_build.py;
+- the build script owns root discovery, changed-file analysis, latexmk execution, logging, cleanup, and canonical output layout.
+
+This keeps CI, Pages, and release workflows aligned with the same public contract used locally.
 
 ### Build one document
 

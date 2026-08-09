@@ -1,29 +1,43 @@
-# .github/workflows/latex-ci.yml
-# CI workflow: Build and validate LaTeX documents on PRs and pushes
 name: LaTeX CI
 
 on:
   workflow_dispatch:
     inputs:
-      build-all:
-        description: 'Build all documents (ignore change detection)'
-        type: boolean
-        default: false
+      build-mode:
+        description: 'Build mode: changed or full'
+        type: choice
+        default: 'changed'
+        options:
+          - changed
+          - full
   pull_request:
     paths:
       - 'src/**/*.tex'
       - 'src/**/*.puml'
-      - 'tooling/**'
-      - '.github/workflows/*.yml'
+      - 'tooling/**/*.sty'
+      - 'tooling/**/*.tex'
+      - 'tooling/**/*.iuml'
+      - 'tooling/scripts/**'
+      - 'Makefile'
+      - 'latexmkrc'
       - '.github/actions/**'
+      - '.github/workflows/_build-latex.yml'
   push:
     branches: [main]
     paths:
       - 'src/**/*.tex'
       - 'src/**/*.puml'
-      - 'tooling/**'
-      - '.github/workflows/*.yml'
+      - 'tooling/**/*.sty'
+      - 'tooling/**/*.tex'
+      - 'tooling/**/*.iuml'
+      - 'tooling/scripts/**'
+      - 'Makefile'
+      - 'latexmkrc'
       - '.github/actions/**'
+      - '.github/workflows/_build-latex.yml'
+
+permissions:
+  contents: read
 
 concurrency:
   group: latex-ci-${{ github.ref }}
@@ -33,9 +47,8 @@ jobs:
   build:
     uses: ./.github/workflows/_build-latex.yml
     with:
-      build-all: ${{ inputs.build-all || false }}
+      build-mode: ${{ github.event_name == 'workflow_dispatch' && inputs.build-mode || 'changed' }}
+      base-ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+      head-ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       upload-artifacts: true
       render-plantuml: true
-
-
-
