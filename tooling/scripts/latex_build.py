@@ -17,6 +17,10 @@ SRC_DIR = ROOT / "src"
 LATEXMK = os.environ.get("LATEXMK", "latexmk")
 
 
+def _is_generated_wrapper(path: Path) -> bool:
+    return path.name.startswith(".") and path.name.endswith(".latex-build-wrapper.tex")
+
+
 def discover_roots(src_root: Path | None = None) -> List[Path]:
     search_root = (src_root or SRC_DIR).resolve()
     if not search_root.exists():
@@ -24,7 +28,9 @@ def discover_roots(src_root: Path | None = None) -> List[Path]:
 
     roots: List[Path] = []
     for path in sorted(search_root.rglob("*.tex")):
-        if path.is_file() and contains_documentclass(path):
+        if not path.is_file() or _is_generated_wrapper(path):
+            continue
+        if contains_documentclass(path):
             roots.append(path.resolve())
     return roots
 
@@ -133,6 +139,35 @@ def _detect_engine(tex_path: Path) -> str:
     return "pdflatex"
 
 
+def _uses_minted_syntax(text: str) -> bool:
+    return any(marker in text for marker in ("\\begin{minted}", "\\mintinline", "\\inputminted", "\\setminted{"))
+
+
+def _prepare_build_input(tex_path: Path) -> tuple[Path, bool]:
+    try:
+        text = tex_path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return tex_path, False
+
+    if not _uses_minted_syntax(text):
+        return tex_path, False
+
+    if re.search(r"\\(?:usepackage|RequirePackage)\s*(?:\[[^\]]*\])?\{minted\}", text):
+        return tex_path, False
+
+    lines = text.splitlines()
+    insert_at = 0
+    for index, line in enumerate(lines):
+        if line.lstrip().startswith(r"\documentclass"):
+            insert_at = index + 1
+            break
+
+    wrapper_lines = lines[:insert_at] + [r"\usepackage[cache=false]{minted}", ""] + lines[insert_at:]
+    wrapper_path = tex_path.with_name(f".{tex_path.stem}.latex-build-wrapper.tex")
+    wrapper_path.write_text("\n".join(wrapper_lines) + "\n", encoding="utf-8")
+    return wrapper_path, True
+
+
 def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | None = None, artifact_dir: Path | None = None) -> int:
     tex_path = tex_path.resolve()
     if not tex_path.exists():
@@ -160,17 +195,19 @@ def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | N
     elif engine == "xelatex":
         base_cmd.extend(["-pdflatex=xelatex", "-interaction=nonstopmode", "-halt-on-error", "-file-line-error", "-shell-escape", "%O", "%S"])
 
+    build_dir = work_dir
     if output_dir is not None:
-        build_dir = output_dir / tex_path.relative_to(SRC_DIR).parent / stem
+        rel_dir = tex_path.relative_to(SRC_DIR).parent
+        build_dir = output_dir / rel_dir
         build_dir.mkdir(parents=True, exist_ok=True)
-        base_cmd.extend([f"-outdir={build_dir}"])
-    else:
-        build_dir = work_dir
 
     if log_dir is not None:
         log_dir.mkdir(parents=True, exist_ok=True)
 
-    cmd = [*base_cmd, tex_path.name]
+    build_input_path, used_wrapper = _prepare_build_input(tex_path)
+    cmd = [*base_cmd, build_input_path.name]
+    if used_wrapper:
+        cmd = [*base_cmd, f"-jobname={stem}", build_input_path.name]
     stdout_path = None
     stderr_path = None
     if log_dir is not None:
@@ -194,18 +231,30 @@ def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | N
         if stderr_handle is not None:
             stderr_handle.close()
 
-    pdf_path = build_dir / f"{stem}.pdf"
+    source_pdf_path = work_dir / f"{stem}.pdf"
+    published_pdf_path = build_dir / f"{stem}.pdf"
+
+    if used_wrapper and build_input_path.exists():
+        try:
+            build_input_path.unlink()
+        except OSError:
+            pass
+
+    if output_dir is not None and source_pdf_path.exists():
+        build_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_pdf_path, published_pdf_path)
+
     if artifact_dir is not None:
         rel_dir = tex_path.relative_to(SRC_DIR).parent
         dest_dir = artifact_dir / rel_dir
         dest_dir.mkdir(parents=True, exist_ok=True)
-        if pdf_path.exists():
-            shutil.copy2(pdf_path, dest_dir / f"{stem}.pdf")
+        if source_pdf_path.exists():
+            shutil.copy2(source_pdf_path, dest_dir / f"{stem}.pdf")
 
     if result.returncode == 0:
         return 0
 
-    if result.returncode == 12 and pdf_path.exists():
+    if result.returncode == 12 and source_pdf_path.exists():
         return 0
 
     return result.returncode
@@ -223,7 +272,8 @@ def build_roots(tex_paths: Sequence[Path], jobs: int = 1, output_dir: Path | Non
     with ThreadPoolExecutor(max_workers=max(1, jobs)) as executor:
         futures = [executor.submit(build_root, tex_path, output_dir, log_dir, artifact_dir) for tex_path in tex_paths]
         for future in futures:
-            if future.result() != 0:
+            result = future.result()
+            if result not in {0, 12}:
                 failures += 1
     return failures
 
