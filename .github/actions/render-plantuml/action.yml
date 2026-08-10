@@ -80,11 +80,7 @@ runs:
         JAR_URL="https://github.com/plantuml/plantuml/releases/download/${PLANTUML_VERSION}/plantuml-${JAR_VERSION}.jar"
         sudo mkdir -p /usr/local/lib/plantuml
         sudo curl -fsSL -L "$JAR_URL" -o /usr/local/lib/plantuml/plantuml.jar
-        sudo tee /usr/local/bin/plantuml >/dev/null <<'EOF'
-          #!/usr/bin/env bash
-          set -euo pipefail
-          exec java -Djava.awt.headless=true -jar /usr/local/lib/plantuml/plantuml.jar "$@"
-                    EOF
+        printf '%s\n' '#!/usr/bin/env bash' 'set -euo pipefail' 'exec java -Djava.awt.headless=true -jar /usr/local/lib/plantuml/plantuml.jar "$@"' | sudo tee /usr/local/bin/plantuml >/dev/null
         sudo chmod +x /usr/local/bin/plantuml
         sudo rm -rf /var/lib/apt/lists/* || true
         echo "::endgroup::"
@@ -107,13 +103,29 @@ runs:
           exit 0
         fi
         export PLANTUML_INCLUDE_PATH="${GITHUB_WORKSPACE}/tooling/plantuml:${GITHUB_WORKSPACE}/tooling/styles/plantuml"
+        set +e
         python3 tooling/scripts/latex_build.py render-plantuml --source-dir "$ROOT" --formats ${FORMATS[*]}
-        echo "diagram_count=$(find "$ROOT" -type f -name '*.puml' 2>/dev/null | wc -l | tr -d ' ' )" >> "$GITHUB_OUTPUT"
-        echo "rendered_count=$(find "$ROOT" -type f \( -name '*.png' -o -name '*.svg' -o -name '*.jpg' \) 2>/dev/null | wc -l | tr -d ' ' )" >> "$GITHUB_OUTPUT"
-        echo "failed_count=0" >> "$GITHUB_OUTPUT"
-        echo "skipped_count=0" >> "$GITHUB_OUTPUT"
+        render_status=$?
+        set -e
+        diagram_count=$(find "$ROOT" -type f -name '*.puml' 2>/dev/null | wc -l | tr -d ' ')
+        rendered_count=$(find "$ROOT" -type f \( -name '*.png' -o -name '*.svg' -o -name '*.jpg' \) 2>/dev/null | wc -l | tr -d ' ')
+        failed_count=0
+        skipped_count=0
+        if [[ "$render_status" -ne 0 ]]; then
+          failed_count=$((failed_count + 1))
+        fi
+        if [[ "$FAIL_ON_ERROR" != "true" ]]; then
+          echo "::warning::PlantUML rendering completed with non-zero exit status; continuing because fail-on-error=false"
+        fi
+        echo "diagram_count=$diagram_count" >> "$GITHUB_OUTPUT"
+        echo "rendered_count=$rendered_count" >> "$GITHUB_OUTPUT"
+        echo "failed_count=$failed_count" >> "$GITHUB_OUTPUT"
+        echo "skipped_count=$skipped_count" >> "$GITHUB_OUTPUT"
         echo 'files=[]' >> "$GITHUB_OUTPUT"
         echo 'has_changes=true' >> "$GITHUB_OUTPUT"
+        if [[ "$FAIL_ON_ERROR" == "true" && "$render_status" -ne 0 ]]; then
+          exit "$render_status"
+        fi
 
 
 
