@@ -1,7 +1,9 @@
 import subprocess
 import tempfile
 import unittest
+from io import StringIO
 from pathlib import Path
+from contextlib import redirect_stderr
 from unittest.mock import patch
 
 import tooling.scripts.latex_build as latex_build
@@ -166,6 +168,136 @@ class BuildToolTests(unittest.TestCase):
 
             self.assertEqual(0, result)
             self.assertTrue((output_dir / "docs" / "sample.pdf").exists())
+
+    def test_build_root_does_not_publish_stale_pdf_after_failed_build(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src_dir = root / "src" / "docs"
+            src_dir.mkdir(parents=True)
+
+            tex_path = src_dir / "sample.tex"
+            tex_path.write_text("\\documentclass{article}\n\\begin{document}\nHello\n\\end{document}\n", encoding="utf-8")
+            stale_pdf = src_dir / "sample.pdf"
+            stale_pdf.write_bytes(b"%PDF-1.4 stale")
+
+            output_dir = root / "public" / "pdfs"
+            log_dir = root / "public" / "logs"
+
+            def fake_run(cmd, cwd, env, stdout=None, stderr=None, check=False):
+                return subprocess.CompletedProcess(cmd, 12)
+
+            with patch("tooling.scripts.latex_build.ROOT", root), patch("tooling.scripts.latex_build.SRC_DIR", root / "src"), patch("tooling.scripts.latex_build.subprocess.run", side_effect=fake_run):
+                result = latex_build.build_root(tex_path, output_dir=output_dir, log_dir=log_dir)
+
+            self.assertEqual(12, result)
+            self.assertFalse((output_dir / "docs" / "sample.pdf").exists())
+
+    def test_build_root_fails_when_pdf_is_missing_after_successful_run(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src_dir = root / "src" / "docs"
+            src_dir.mkdir(parents=True)
+
+            tex_path = src_dir / "sample.tex"
+            tex_path.write_text("\\documentclass{article}\n\\begin{document}\nHello\n\\end{document}\n", encoding="utf-8")
+
+            output_dir = root / "public" / "pdfs"
+            log_dir = root / "public" / "logs"
+
+            def fake_run(cmd, cwd, env, stdout=None, stderr=None, check=False):
+                return subprocess.CompletedProcess(cmd, 0)
+
+            with patch("tooling.scripts.latex_build.ROOT", root), patch("tooling.scripts.latex_build.SRC_DIR", root / "src"), patch("tooling.scripts.latex_build.subprocess.run", side_effect=fake_run):
+                result = latex_build.build_root(tex_path, output_dir=output_dir, log_dir=log_dir)
+
+            self.assertNotEqual(0, result)
+            self.assertFalse((output_dir / "docs" / "sample.pdf").exists())
+            stderr_log = log_dir / "sample.build.stderr.txt"
+            self.assertTrue(stderr_log.exists())
+            self.assertIn("Expected PDF output was not produced", stderr_log.read_text(encoding="utf-8"))
+
+    def test_build_roots_reports_failures_with_log_locations(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src_dir = root / "src" / "docs"
+            src_dir.mkdir(parents=True)
+
+            tex_path = src_dir / "sample.tex"
+            tex_path.write_text("\\documentclass{article}\n\\begin{document}\nHello\n\\end{document}\n", encoding="utf-8")
+            log_dir = root / "public" / "logs"
+
+            with patch("tooling.scripts.latex_build.build_root", return_value=9):
+                stderr_buffer = StringIO()
+                with redirect_stderr(stderr_buffer):
+                    failures = latex_build.build_roots([tex_path], log_dir=log_dir)
+
+            self.assertEqual(1, failures)
+            self.assertIn("Build failed for", stderr_buffer.getvalue())
+            self.assertIn("sample.build.stdout.txt", stderr_buffer.getvalue())
+
+    def test_stage_pages_site_preserves_nested_paths_and_builds_index(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            pdf_dir = root / "public" / "pdfs"
+            nested_pdf = pdf_dir / "security" / "certifications" / "cissp" / "cornell-notes" / "01-security-and-risk-management-cornell-notes.pdf"
+            nested_pdf.parent.mkdir(parents=True, exist_ok=True)
+            nested_pdf.write_bytes(b"%PDF-1.4")
+
+            other_pdf = pdf_dir / "architecture" / "guide.pdf"
+            other_pdf.parent.mkdir(parents=True, exist_ok=True)
+            other_pdf.write_bytes(b"%PDF-1.4")
+
+            site_dir = root / "site"
+            rel_paths = latex_build.stage_pages_site(pdf_dir, site_dir)
+
+            self.assertEqual(
+                [
+                    Path("architecture/guide.pdf"),
+                    Path("security/certifications/cissp/cornell-notes/01-security-and-risk-management-cornell-notes.pdf"),
+                ],
+                rel_paths,
+            )
+            self.assertTrue((site_dir / "pdfs" / "security" / "certifications" / "cissp" / "cornell-notes" / "01-security-and-risk-management-cornell-notes.pdf").exists())
+            index_text = (site_dir / "index.html").read_text(encoding="utf-8")
+            self.assertIn('href="pdfs/security/certifications/cissp/cornell-notes/01-security-and-risk-management-cornell-notes.pdf"', index_text)
+            self.assertIn('href="pdfs/architecture/guide.pdf"', index_text)
+
+    def test_discover_roots_includes_all_canonical_cornell_documents(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        roots = discover_roots(repo_root / "src")
+        cornell_roots = sorted(path.relative_to(repo_root).as_posix() for path in roots if "src/security/certifications/cissp/cornell-notes/" in path.as_posix())
+
+        self.assertEqual(
+            [
+                "src/security/certifications/cissp/cornell-notes/01-security-and-risk-management-cornell-notes.tex",
+                "src/security/certifications/cissp/cornell-notes/02-asset-security-cornell-notes.tex",
+                "src/security/certifications/cissp/cornell-notes/03-security-architecture-and-engineering-cornell-notes.tex",
+                "src/security/certifications/cissp/cornell-notes/04-communication-and-network-security-cornell-notes.tex",
+                "src/security/certifications/cissp/cornell-notes/05-identity-and-access-management-cornell-notes.tex",
+                "src/security/certifications/cissp/cornell-notes/06-security-assessment-and-testing-cornell-notes.tex",
+                "src/security/certifications/cissp/cornell-notes/07-security-operations-cornell-notes.tex",
+                "src/security/certifications/cissp/cornell-notes/08-software-development-security-cornell-notes.tex",
+            ],
+            cornell_roots,
+        )
+
+    def test_pages_workflow_trigger_paths_cover_publication_inputs(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        workflow_text = (repo_root / ".github" / "workflows" / "latex-pages.yml").read_text(encoding="utf-8")
+
+        self.assertIn("'src/**/*.tex'", workflow_text)
+        self.assertIn("'tooling/**/*.sty'", workflow_text)
+        self.assertIn("'tooling/scripts/**'", workflow_text)
+        self.assertIn("'Makefile'", workflow_text)
+        self.assertIn("'.latexmkrc'", workflow_text)
+        self.assertIn("'.github/workflows/latex-pages.yml'", workflow_text)
+
+    def test_resolve_texinputs_includes_cornell_style_tree(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        with patch("tooling.scripts.latex_build.ROOT", repo_root):
+            texinputs = latex_build.resolve_texinputs()
+
+        self.assertIn(str(repo_root / "tooling" / "styles" / "latex") + "//", texinputs)
 
     def test_documents_using_calloutbox_define_the_macro(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]

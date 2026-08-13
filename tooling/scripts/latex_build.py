@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import html
 import os
 import re
 import shutil
@@ -68,6 +69,13 @@ def resolve_texinputs() -> str:
             return base + current + ":"
         return base
     return current
+
+
+def reset_output_tree(path: Path | None) -> None:
+    if path is None:
+        return
+    shutil.rmtree(path, ignore_errors=True)
+    path.mkdir(parents=True, exist_ok=True)
 
 
 def _resolve_package_path(package_name: str) -> Path | None:
@@ -168,6 +176,31 @@ def _prepare_build_input(tex_path: Path) -> tuple[Path, bool]:
     return wrapper_path, True
 
 
+def stage_pages_site(pdf_dir: Path, site_dir: Path) -> List[Path]:
+    pdf_dir = pdf_dir.resolve()
+    site_dir = site_dir.resolve()
+    site_pdf_dir = site_dir / "pdfs"
+
+    if not pdf_dir.exists():
+        raise FileNotFoundError(pdf_dir)
+
+    reset_output_tree(site_dir)
+    shutil.copytree(pdf_dir, site_pdf_dir, dirs_exist_ok=True)
+
+    pdf_rel_paths = sorted(path.relative_to(site_pdf_dir) for path in site_pdf_dir.rglob("*.pdf") if path.is_file())
+
+    index_path = site_dir / "index.html"
+    with index_path.open("w", encoding="utf-8") as handle:
+        handle.write("<!doctype html><html><body><h1>LaTeX PDFs</h1><ul>")
+        for rel_path in pdf_rel_paths:
+            rel_posix = rel_path.as_posix()
+            escaped = html.escape(rel_posix)
+            handle.write(f'<li><a href="pdfs/{escaped}">{escaped}</a></li>')
+        handle.write("</ul></body></html>")
+
+    return pdf_rel_paths
+
+
 def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | None = None, artifact_dir: Path | None = None) -> int:
     tex_path = tex_path.resolve()
     if not tex_path.exists():
@@ -240,7 +273,13 @@ def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | N
         except OSError:
             pass
 
-    if output_dir is not None and source_pdf_path.exists():
+    if result.returncode == 0 and not source_pdf_path.exists():
+        if stderr_path is not None:
+            with stderr_path.open("a", encoding="utf-8") as handle:
+                handle.write(f"Expected PDF output was not produced: {source_pdf_path}\n")
+        return 2
+
+    if output_dir is not None and result.returncode == 0 and source_pdf_path.exists():
         build_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source_pdf_path, published_pdf_path)
 
@@ -248,33 +287,46 @@ def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | N
         rel_dir = tex_path.relative_to(SRC_DIR).parent
         dest_dir = artifact_dir / rel_dir
         dest_dir.mkdir(parents=True, exist_ok=True)
-        if source_pdf_path.exists():
+        if result.returncode == 0 and source_pdf_path.exists():
             shutil.copy2(source_pdf_path, dest_dir / f"{stem}.pdf")
 
     if result.returncode == 0:
         return 0
 
-    if result.returncode == 12 and source_pdf_path.exists():
-        return 0
-
     return result.returncode
 
 
-def build_roots(tex_paths: Sequence[Path], jobs: int = 1, output_dir: Path | None = None, log_dir: Path | None = None, artifact_dir: Path | None = None) -> int:
+def build_roots(tex_paths: Sequence[Path], jobs: int = 1, output_dir: Path | None = None, log_dir: Path | None = None, artifact_dir: Path | None = None, clean_output: bool = False) -> int:
+    if clean_output:
+        reset_output_tree(output_dir)
+        reset_output_tree(log_dir)
+
+    def report_failure(tex_path: Path, result_code: int) -> None:
+        message = f"Build failed for {tex_path} (exit {result_code})"
+        if log_dir is not None:
+            stem = tex_path.stem
+            stdout_path = log_dir / f"{stem}.build.stdout.txt"
+            stderr_path = log_dir / f"{stem}.build.stderr.txt"
+            message += f"; logs: stdout={stdout_path} stderr={stderr_path}"
+        print(message, file=sys.stderr)
+
     if jobs <= 1:
         failures = 0
         for tex_path in tex_paths:
-            if build_root(tex_path, output_dir=output_dir, log_dir=log_dir, artifact_dir=artifact_dir) != 0:
+            result_code = build_root(tex_path, output_dir=output_dir, log_dir=log_dir, artifact_dir=artifact_dir)
+            if result_code != 0:
                 failures += 1
+                report_failure(tex_path, result_code)
         return failures
 
     failures = 0
     with ThreadPoolExecutor(max_workers=max(1, jobs)) as executor:
         futures = [executor.submit(build_root, tex_path, output_dir, log_dir, artifact_dir) for tex_path in tex_paths]
-        for future in futures:
+        for tex_path, future in zip(tex_paths, futures):
             result = future.result()
-            if result not in {0, 12}:
+            if result != 0:
                 failures += 1
+                report_failure(tex_path, result)
     return failures
 
 
@@ -376,6 +428,7 @@ def main() -> int:
     build_parser.add_argument("--output-dir", type=Path, default=None)
     build_parser.add_argument("--log-dir", type=Path, default=None)
     build_parser.add_argument("--artifact-dir", type=Path, default=None)
+    build_parser.add_argument("--clean-output", action="store_true")
 
     category_parser = subparsers.add_parser("build-category")
     category_parser.add_argument("category")
@@ -383,6 +436,7 @@ def main() -> int:
     category_parser.add_argument("--output-dir", type=Path, default=None)
     category_parser.add_argument("--log-dir", type=Path, default=None)
     category_parser.add_argument("--artifact-dir", type=Path, default=None)
+    category_parser.add_argument("--clean-output", action="store_true")
 
     changed_parser = subparsers.add_parser("build-changed")
     changed_parser.add_argument("--base", default=None)
@@ -392,6 +446,10 @@ def main() -> int:
     render_parser = subparsers.add_parser("render-plantuml")
     render_parser.add_argument("--source-dir", type=Path, default=None)
     render_parser.add_argument("--formats", nargs="*", default=["png", "svg"])
+
+    stage_parser = subparsers.add_parser("stage-pages")
+    stage_parser.add_argument("--pdf-dir", type=Path, required=True)
+    stage_parser.add_argument("--site-dir", type=Path, required=True)
 
     clean_parser = subparsers.add_parser("clean")
     clean_parser.add_argument("--jobs", type=int, default=1)
@@ -410,14 +468,18 @@ def main() -> int:
 
     if args.command == "build-all":
         jobs = max(1, args.jobs if args.parallel else 1)
-        return build_roots(discover_roots(), jobs=jobs, output_dir=args.output_dir, log_dir=args.log_dir, artifact_dir=args.artifact_dir)
+        return build_roots(discover_roots(), jobs=jobs, output_dir=args.output_dir, log_dir=args.log_dir, artifact_dir=args.artifact_dir, clean_output=args.clean_output)
 
     if args.command == "build-category":
         roots = [root for root in discover_roots() if root.is_relative_to(SRC_DIR / args.category)]
-        return build_roots(roots, jobs=args.jobs, output_dir=args.output_dir, log_dir=args.log_dir, artifact_dir=args.artifact_dir)
+        return build_roots(roots, jobs=args.jobs, output_dir=args.output_dir, log_dir=args.log_dir, artifact_dir=args.artifact_dir, clean_output=args.clean_output)
 
     if args.command == "build-changed":
         return build_changed(base_ref=args.base, head_ref=args.head, jobs=args.jobs)
+
+    if args.command == "stage-pages":
+        stage_pages_site(args.pdf_dir, args.site_dir)
+        return 0
 
     if args.command == "render-plantuml":
         return render_plantuml(source_dir=args.source_dir, formats=args.formats)

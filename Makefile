@@ -72,14 +72,12 @@ render-plantuml:
 .PHONY: publish
 publish:
 	@echo "Publishing PDFs to $(BUILD_DIR)"
-	@mkdir -p $(BUILD_DIR) $(LOG_DIR)
-	@python3 tooling/scripts/latex_build.py build-all --output-dir $(BUILD_DIR) --log-dir $(LOG_DIR)
+	@python3 tooling/scripts/latex_build.py build-all --output-dir $(BUILD_DIR) --log-dir $(LOG_DIR) --clean-output
 
 .PHONY: publish-parallel
 publish-parallel:
 	@echo "Publishing PDFs in parallel to $(BUILD_DIR)"
-	@mkdir -p $(BUILD_DIR) $(LOG_DIR)
-	@python3 tooling/scripts/latex_build.py build-all --parallel --jobs $(JOBS) --output-dir $(BUILD_DIR) --log-dir $(LOG_DIR)
+	@python3 tooling/scripts/latex_build.py build-all --parallel --jobs $(JOBS) --output-dir $(BUILD_DIR) --log-dir $(LOG_DIR) --clean-output
 
 .PHONY: clean
 clean:
