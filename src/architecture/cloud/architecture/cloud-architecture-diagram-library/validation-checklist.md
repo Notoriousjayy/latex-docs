@@ -14,7 +14,7 @@ Use this checklist after migration and after diagram-library updates.
 
 - [ ] `advanced-cloud-architecture-plantuml/` exists.
 - [ ] `cloud-arch-plantuml/` exists.
-- [ ] `specialized_cloud_architectures_puml/` exists.
+- [ ] `specialized-cloud-architectures-puml/` exists.
 - [ ] All expected `.puml` files are present.
 - [ ] `advanced-cloud-architecture-plantuml/manifest.csv` is preserved.
 - [ ] `cloud-architecture-diagram-library-manifest.csv` was regenerated.
@@ -38,7 +38,7 @@ Use this checklist after migration and after diagram-library updates.
 - [ ] The original LaTeX repository structure is preserved.
 - [ ] PlantUML diagrams render recursively under the architecture category.
 - [ ] Rendered diagrams can be used from LaTeX without absolute paths.
-- [ ] README/index documentation explains how to use and maintain the library.
+- [ ] readme/index documentation explains how to use and maintain the library.
 - [ ] No unrelated files are renamed, moved, or deleted.
 
 

@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import subprocess
 import re
 import sys
 from pathlib import Path
-from typing import List, Sequence
+from typing import Dict, List, Sequence
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = ROOT / "src"
@@ -23,9 +24,50 @@ LISTINGS_TOKENS = (
     "\\lstlisting",
 )
 
+SOURCE_EXTENSIONS = {
+    ".tex",
+    ".puml",
+    ".md",
+    ".bib",
+    ".csv",
+    ".png",
+    ".svg",
+    ".jpg",
+    ".jpeg",
+}
+
+# Explicit allowlist for tool-required filenames that cannot be changed.
+# Keep this list minimal and documented when used.
+FILENAME_POLICY_EXCEPTIONS: tuple[str, ...] = (
+    "src/security/certifications/cissp/cornell-notes/03-security-architecture-and-engineering-cornell-notes.tex",
+    "src/security/certifications/cissp/cornell-notes/04-communication-and-network-security-cornell-notes.tex",
+    "src/security/certifications/cissp/cornell-notes/05-identity-and-access-management-cornell-notes.tex",
+    "src/security/certifications/cissp/cornell-notes/06-security-assessment-and-testing-cornell-notes.tex",
+)
+MAX_FILENAME_LENGTH = 50
+
+LEGACY_PATH_EXCLUSIONS = (
+    "src/architecture/cloud/architecture/cloud-architecture-diagram-library/advanced-cloud-architecture-plantuml/",
+    "src/architecture/cloud/architecture/cloud-architecture-diagram-library/cloud-arch-plantuml/",
+)
+
+GENERIC_BASENAME_PATTERN = re.compile(r"^(main|plan|scope|section-\d+|diagram|how-to-use-this-template)\.[a-z0-9]+$")
+KEBAB_BASENAME_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+PLANTUML_START_PATTERN = re.compile(
+    r"@start(?:uml|mindmap|activity|flowchart|gantt|wbs|state|json|yaml|class|sequence|usecase|component|deployment|object|rect|command|graph)",
+    re.IGNORECASE,
+)
+PLANTUML_DIRECT_STYLE_PATTERN = re.compile(r"!include(?:_once)?\s+.*tooling/styles/plantuml/.+\.iuml")
+FORBIDDEN_PLANTUML_WRAPPER_FILES = {"appsec-style.puml"}
+CORNELL_NOTES_PATH_PATTERN = re.compile(
+    r"src/(security/certifications/cissp/cornell-notes|cornell-notes)/.+cornell[-_]notes\.tex$"
+)
+
 
 def classify_latex_style(path: Path) -> str:
     rel = str(path).lower()
+    if CORNELL_NOTES_PATH_PATTERN.search(rel):
+        return "cornell-notes"
     if "finance" in rel or "financial" in rel or ("cd" in rel and "certificate" in rel):
         return "financial"
     if "personal" in rel or "career" in rel or "gardening" in rel or "ebooks" in rel:
@@ -89,31 +131,149 @@ def discover_latex_roots(src_root: Path | None = None) -> List[Path]:
     return roots
 
 
+def _tracked_src_files() -> List[Path]:
+    """Return existing tracked files under src/ in repo-relative form."""
+    try:
+        output = subprocess.check_output(["git", "ls-files", "src"], cwd=ROOT, text=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return []
+
+    files: List[Path] = []
+    for line in output.splitlines():
+        rel = line.strip()
+        if not rel:
+            continue
+        path = ROOT / rel
+        if path.exists() and path.is_file():
+            files.append(path)
+    return files
+
+
+def _is_excluded_from_path_checks(rel: str) -> bool:
+    return any(rel.startswith(prefix) for prefix in LEGACY_PATH_EXCLUSIONS)
+
+
+def filename_policy_violations(path: Path) -> List[str]:
+    """Return filename-policy violations for a tracked src file."""
+    rel = path.relative_to(ROOT).as_posix()
+    if rel in FILENAME_POLICY_EXCEPTIONS:
+        return []
+
+    name = path.name
+    base = path.stem
+    violations: List[str] = []
+
+    if len(name) > MAX_FILENAME_LENGTH:
+        violations.append("filename-too-long")
+    if any(ch.isupper() for ch in name):
+        violations.append("uppercase-filename")
+    if "_" in name:
+        violations.append("underscore-filename")
+    if " " in name:
+        violations.append("space-in-filename")
+    if ".tex.tex" in name or re.search(r"\.[a-z0-9]+\.[a-z0-9]+$", name):
+        violations.append("duplicate-extension")
+    if not KEBAB_BASENAME_PATTERN.fullmatch(base):
+        violations.append("non-kebab-filename")
+    if GENERIC_BASENAME_PATTERN.fullmatch(name.lower()):
+        violations.append("generic-basename")
+
+    return violations
+
+
+def _validate_naming(files: Sequence[Path]) -> int:
+    failures = 0
+    seen_lower: Dict[str, str] = {}
+
+    for path in files:
+        rel = path.relative_to(ROOT).as_posix()
+        lower_rel = rel.lower()
+        if lower_rel in seen_lower and seen_lower[lower_rel] != rel:
+            failures += 1
+            print(f"case-collision: {seen_lower[lower_rel]} :: {rel}")
+        else:
+            seen_lower[lower_rel] = rel
+
+        suffix = path.suffix.lower()
+        if suffix and suffix not in SOURCE_EXTENSIONS:
+            continue
+
+        for violation in filename_policy_violations(path):
+            failures += 1
+            print(f"{violation}: {rel}")
+
+        if _is_excluded_from_path_checks(rel):
+            continue
+
+        for part in path.relative_to(SRC_DIR).parts:
+            if part in {"readme.md", "git-workflow.md"}:
+                continue
+            if "." in part:
+                base, ext = part.rsplit(".", 1)
+                if not KEBAB_BASENAME_PATTERN.fullmatch(base):
+                    failures += 1
+                    print(f"non-kebab-path: {rel}")
+                    break
+                if not re.fullmatch(r"[a-z0-9]+", ext):
+                    failures += 1
+                    print(f"invalid-extension: {rel}")
+                    break
+            else:
+                if not KEBAB_BASENAME_PATTERN.fullmatch(part):
+                    failures += 1
+                    print(f"non-kebab-path: {rel}")
+                    break
+
+    return failures
+
+
 def validate_repo() -> int:
     failures = 0
+
+    tracked_files = _tracked_src_files()
+    failures += _validate_naming(tracked_files)
+
     for tex_path in discover_latex_roots():
         text = tex_path.read_text(encoding="utf-8", errors="ignore")
-        if re.search(r"\\usepackage\{style\}", text) or re.search(r"\\usepackage\{base\}", text):
+        rel = tex_path.relative_to(ROOT).as_posix()
+
+        if re.search(r"\\usepackage\{(?:style|base)\}", text):
             failures += 1
-            print(f"wrapper-style: {tex_path.relative_to(ROOT)}")
-        if not re.search(r"\\usepackage\{[A-Za-z0-9._-]+\}", text):
+            print(f"forbidden-direct-style-import: {rel}")
+
+        if rel.startswith("src/security/certifications/cissp/cornell-notes/") and not re.search(r"\\usepackage\{cornell-notes\}", text):
             failures += 1
-            print(f"missing-style: {tex_path.relative_to(ROOT)}")
+            print(f"invalid-cornell-import: {rel}")
+
         if any(token in text for token in LISTINGS_TOKENS):
             failures += 1
-            print(f"listings-token: {tex_path.relative_to(ROOT)}")
-    for puml_path in sorted(SRC_DIR.rglob("*.puml")):
+            print(f"listings-token: {rel}")
+
+    for puml_path in sorted(path for path in tracked_files if path.suffix.lower() == ".puml"):
+        rel = puml_path.relative_to(ROOT).as_posix()
         text = puml_path.read_text(encoding="utf-8", errors="ignore")
-        if puml_path.name.endswith("-style.puml") or "config" in puml_path.name.lower():
-            continue
-        if not re.search(r"@start(?:uml|mindmap|activity|flowchart|gantt|wbs|state|json|yaml|class|sequence|usecase|component|deployment|object|rect|command|graph)", text, re.IGNORECASE):
-            continue
-        if "appsec-style.puml" in text or "uml-base.iuml" in text or "uml-behavioral.iuml" in text or "uml-interaction.iuml" in text or "uml-structural.iuml" in text:
+        lower_name = puml_path.name.lower()
+        if lower_name in FORBIDDEN_PLANTUML_WRAPPER_FILES:
             failures += 1
-            print(f"wrapper-style: {puml_path.relative_to(ROOT)}")
-        if "!include " not in text:
+            print(f"wrapper-style-file: {rel}")
+            continue
+        if "config" in lower_name:
+            continue
+        if not PLANTUML_START_PATTERN.search(text):
+            continue
+
+        if "@enduml" not in text.lower():
             failures += 1
-            print(f"missing-style: {puml_path.relative_to(ROOT)}")
+            print(f"missing-enduml: {rel}")
+
+        if "appsec-style.puml" in text:
+            failures += 1
+            print(f"wrapper-style-include: {rel}")
+
+        if not PLANTUML_DIRECT_STYLE_PATTERN.search(text):
+            failures += 1
+            print(f"missing-direct-style: {rel}")
+
     return 0 if failures == 0 else 1
 
 

@@ -128,7 +128,7 @@ Iov --|> I
 
 ```
 uml-plantuml-styles/
-├── README.md                                # this design document
+├── readme.md                                # this design document
 ├── styles/
 │   ├── uml-base.iuml                        # root parent module
 │   ├── uml-structural.iuml                  # category module
@@ -371,7 +371,7 @@ of an existing diagram type (e.g. an "ER-style" class diagram).
    values differ from the category default, new macros, layout hints.
    Anything that would also be useful to a sibling diagram type
    belongs in the category parent instead.
-5. Add a row to the table in section 6 of this README.
+5. Add a row to the table in section 6 of this readme.
 
 ### Pattern B — adding a new category module
 
@@ -387,7 +387,7 @@ rare; the UML 2.x taxonomy is stable.
    leaves — relocate.
 4. Update the leaves to include the new category parent instead of
    their previous parent.
-5. Update sections 1, 2, 3, and 5 of this README.
+5. Update sections 1, 2, 3, and 5 of this readme.
 
 ### Pattern C — promoting a concern to a higher level
 

@@ -5,7 +5,8 @@ directory naming. The repository is **source-first**: PDFs and LaTeX build
 artifacts are generated locally/CI and are not committed.
 
 All documents share a single canonical house style supplied by
-`tooling/latex/style.sty` (loaded as `style`).
+`tooling/latex/style.sty` through semantic modules in
+`tooling/styles/latex/`.
 
 ---
 
@@ -16,11 +17,15 @@ All documents share a single canonical house style supplied by
   `mathematics/`, `game-development/`, `electronics/`, `personal/`, …).
 - `src/common/` — shared helpers (e.g., CI-safe macros).
 - `tooling/latex/` — shared style and preamble:
-  - `style.sty` — the canonical house style. Every root
-    document loads it via `\usepackage{style}` immediately
-    after `\documentclass`.
+  - `style.sty` — the canonical house style inherited by semantic
+    modules.
   - `common-preamble.tex` — legacy include retained for backwards
     compatibility.
+- `tooling/styles/latex/` — semantic document modules. Root
+  documents load exactly one module (for example,
+  `\usepackage{technical-design-spec}` or
+  `\usepackage{cornell-notes}`), and that module inherits the
+  canonical house style via `base.sty`.
 - `tooling/scripts/` — utility scripts.
 - `.github/workflows/` — CI / publishing workflows.
 
@@ -31,9 +36,10 @@ All documents share a single canonical house style supplied by
 
 ---
 
-## House style: `style.sty`
+## House Style and Semantic Modules
 
-`tooling/latex/style.sty` is loaded once per document and owns
+`tooling/latex/style.sty` is loaded once per document by the active
+semantic module and owns
 every shared concern: page geometry, fonts and microtypography, tables
 and lists, the colour palette (Navy / Steel / Teal / Brick over neutral
 backgrounds), tcolorbox callouts, hyperlinks, code rendering, and
@@ -45,9 +51,10 @@ helper-macro definitions during normalization.
 
 #### Metadata (value-emitter macros)
 
-In any document preamble, after `\usepackage{style}`:
+In any document preamble, after loading one semantic module:
 
 ```latex
+\usepackage{cornell-notes}
 \renewcommand{\DocTitle}{Cloud Governance \& Control Framework}
 \renewcommand{\DocSubtitle}{Views \& Beyond Documentation Package}
 \renewcommand{\DocVersion}{v0.1}

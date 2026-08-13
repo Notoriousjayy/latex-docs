@@ -21,9 +21,9 @@ src/architecture/cloud/architecture/cloud-architecture-diagram-library/
 ## Generated Files
 
 ```text
-/home/jordan/latex-docs/src/architecture/cloud/architecture/cloud-architecture-diagram-library/README.md
+/home/jordan/latex-docs/src/architecture/cloud/architecture/cloud-architecture-diagram-library/readme.md
 /home/jordan/latex-docs/src/architecture/cloud/architecture/cloud-architecture-diagram-library/validation-checklist.md
-/home/jordan/latex-docs/src/architecture/cloud/architecture/cloud-architecture-diagram-library/GIT-WORKFLOW.md
+/home/jordan/latex-docs/src/architecture/cloud/architecture/cloud-architecture-diagram-library/git-workflow.md
 /home/jordan/latex-docs/src/architecture/cloud/architecture/cloud-architecture-diagram-library/cloud-architecture-diagram-library-manifest.csv
 /home/jordan/latex-docs/src/architecture/cloud/architecture/cloud-architecture-diagram-library-index.tex
 ```
