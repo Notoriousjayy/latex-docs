@@ -9,6 +9,7 @@ import re
 import shutil
 import subprocess
 import sys
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import List, Sequence, Set
@@ -16,6 +17,18 @@ from typing import List, Sequence, Set
 ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = ROOT / "src"
 LATEXMK = os.environ.get("LATEXMK", "latexmk")
+
+FATAL_PATTERNS = [
+    re.compile(r"LaTeX Error:\s+.+"),
+    re.compile(r"Package\s+.+?\s+Error:\s+.+"),
+    re.compile(r"Undefined control sequence"),
+    re.compile(r"Emergency stop"),
+    re.compile(r"Fatal error occurred, no output PDF file produced"),
+    re.compile(r"File `[^`]+` not found"),
+    re.compile(r"Runaway argument"),
+    re.compile(r"Missing \\begin\{document\}"),
+    re.compile(r"No \\title given"),
+]
 
 
 def _is_generated_wrapper(path: Path) -> bool:
@@ -76,6 +89,39 @@ def reset_output_tree(path: Path | None) -> None:
         return
     shutil.rmtree(path, ignore_errors=True)
     path.mkdir(parents=True, exist_ok=True)
+
+
+def _relative_root_path(tex_path: Path) -> Path:
+    try:
+        return tex_path.relative_to(SRC_DIR)
+    except ValueError:
+        return Path(tex_path.name)
+
+
+def _log_paths(tex_path: Path, log_dir: Path | None) -> tuple[Path | None, Path | None]:
+    if log_dir is None:
+        return None, None
+
+    rel_path = _relative_root_path(tex_path)
+    log_leaf = rel_path.with_suffix("")
+    stdout_path = (log_dir / log_leaf).with_suffix(".build.stdout.txt")
+    stderr_path = (log_dir / log_leaf).with_suffix(".build.stderr.txt")
+    stdout_path.parent.mkdir(parents=True, exist_ok=True)
+    stderr_path.parent.mkdir(parents=True, exist_ok=True)
+    return stdout_path, stderr_path
+
+
+def _extract_first_error(root_log: Path, stdout_path: Path | None, stderr_path: Path | None) -> str:
+    for candidate in (stderr_path, stdout_path, root_log):
+        if candidate is None or not candidate.exists():
+            continue
+        text = candidate.read_text(encoding="utf-8", errors="ignore")
+        for line in text.splitlines():
+            for pattern in FATAL_PATTERNS:
+                match = pattern.search(line)
+                if match:
+                    return match.group(0).strip()
+    return ""
 
 
 def _resolve_package_path(package_name: str) -> Path | None:
@@ -230,7 +276,7 @@ def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | N
 
     build_dir = work_dir
     if output_dir is not None:
-        rel_dir = tex_path.relative_to(SRC_DIR).parent
+        rel_dir = _relative_root_path(tex_path).parent
         build_dir = output_dir / rel_dir
         build_dir.mkdir(parents=True, exist_ok=True)
 
@@ -241,11 +287,7 @@ def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | N
     cmd = [*base_cmd, build_input_path.name]
     if used_wrapper:
         cmd = [*base_cmd, f"-jobname={stem}", build_input_path.name]
-    stdout_path = None
-    stderr_path = None
-    if log_dir is not None:
-        stdout_path = log_dir / f"{stem}.build.stdout.txt"
-        stderr_path = log_dir / f"{stem}.build.stderr.txt"
+    stdout_path, stderr_path = _log_paths(tex_path, log_dir)
 
     stdout_handle = stdout_path.open("w", encoding="utf-8") if stdout_path else None
     stderr_handle = stderr_path.open("w", encoding="utf-8") if stderr_path else None
@@ -284,7 +326,7 @@ def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | N
         shutil.copy2(source_pdf_path, published_pdf_path)
 
     if artifact_dir is not None:
-        rel_dir = tex_path.relative_to(SRC_DIR).parent
+        rel_dir = _relative_root_path(tex_path).parent
         dest_dir = artifact_dir / rel_dir
         dest_dir.mkdir(parents=True, exist_ok=True)
         if result.returncode == 0 and source_pdf_path.exists():
@@ -301,33 +343,51 @@ def build_roots(tex_paths: Sequence[Path], jobs: int = 1, output_dir: Path | Non
         reset_output_tree(output_dir)
         reset_output_tree(log_dir)
 
+    failures: List[tuple[Path, int, str]] = []
+
     def report_failure(tex_path: Path, result_code: int) -> None:
+        stdout_path, stderr_path = _log_paths(tex_path, log_dir)
+        first_error = _extract_first_error(tex_path.with_suffix(".log"), stdout_path, stderr_path)
         message = f"Build failed for {tex_path} (exit {result_code})"
         if log_dir is not None:
-            stem = tex_path.stem
-            stdout_path = log_dir / f"{stem}.build.stdout.txt"
-            stderr_path = log_dir / f"{stem}.build.stderr.txt"
             message += f"; logs: stdout={stdout_path} stderr={stderr_path}"
+        if first_error:
+            message += f"; first_error={first_error}"
         print(message, file=sys.stderr)
+        failures.append((tex_path, result_code, first_error or "UNKNOWN"))
 
     if jobs <= 1:
-        failures = 0
+        failure_count = 0
         for tex_path in tex_paths:
             result_code = build_root(tex_path, output_dir=output_dir, log_dir=log_dir, artifact_dir=artifact_dir)
             if result_code != 0:
-                failures += 1
+                failure_count += 1
                 report_failure(tex_path, result_code)
-        return failures
+        print(f"Build summary: {len(tex_paths) - failure_count} succeeded, {failure_count} failed, {len(tex_paths)} total", file=sys.stderr)
+        if failure_count:
+            clusters = Counter(error for _, _, error in failures)
+            print("Failure clusters:", file=sys.stderr)
+            for signature, count in clusters.most_common(10):
+                print(f"  {count} x {signature}", file=sys.stderr)
+            return 1
+        return 0
 
-    failures = 0
+    failure_count = 0
     with ThreadPoolExecutor(max_workers=max(1, jobs)) as executor:
         futures = [executor.submit(build_root, tex_path, output_dir, log_dir, artifact_dir) for tex_path in tex_paths]
         for tex_path, future in zip(tex_paths, futures):
             result = future.result()
             if result != 0:
-                failures += 1
+                failure_count += 1
                 report_failure(tex_path, result)
-    return failures
+    print(f"Build summary: {len(tex_paths) - failure_count} succeeded, {failure_count} failed, {len(tex_paths)} total", file=sys.stderr)
+    if failure_count:
+        clusters = Counter(error for _, _, error in failures)
+        print("Failure clusters:", file=sys.stderr)
+        for signature, count in clusters.most_common(10):
+            print(f"  {count} x {signature}", file=sys.stderr)
+        return 1
+    return 0
 
 
 def collect_changed_paths(base_ref: str | None = None, head_ref: str | None = None) -> List[str]:

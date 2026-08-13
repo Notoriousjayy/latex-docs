@@ -63,6 +63,21 @@ CORNELL_NOTES_PATH_PATTERN = re.compile(
     r"src/(security/certifications/cissp/cornell-notes|cornell-notes)/.+cornell[-_]notes\.tex$"
 )
 
+SEMANTIC_STYLE_PACKAGES = {
+    "business-admin",
+    "cornell-notes",
+    "financial",
+    "hr",
+    "legal",
+    "personal-official",
+    "technical",
+    "technical-design-spec",
+    "technical-implementation",
+    "technical-installation",
+    "technical-testing",
+    "technical-user-manual",
+}
+
 
 def classify_latex_style(path: Path) -> str:
     rel = str(path).lower()
@@ -129,6 +144,42 @@ def discover_latex_roots(src_root: Path | None = None) -> List[Path]:
         if path.is_file() and re.search(r"^\\documentclass", path.read_text(encoding="utf-8", errors="ignore"), re.MULTILINE):
             roots.append(path.resolve())
     return roots
+
+
+def strip_latex_comments(text: str) -> str:
+    lines: List[str] = []
+    for raw_line in text.splitlines():
+        out: List[str] = []
+        idx = 0
+        while idx < len(raw_line):
+            ch = raw_line[idx]
+            if ch == "%":
+                backslashes = 0
+                j = idx - 1
+                while j >= 0 and raw_line[j] == "\\":
+                    backslashes += 1
+                    j -= 1
+                if backslashes % 2 == 0:
+                    break
+            out.append(ch)
+            idx += 1
+        lines.append("".join(out))
+    return "\n".join(lines)
+
+
+def latex_usepackages(text: str) -> List[str]:
+    packages: List[str] = []
+    for match in re.finditer(r"\\usepackage(?:\[[^\]]*\])?\{([^}]+)\}", text):
+        for package in match.group(1).split(","):
+            normalized = package.strip()
+            if normalized:
+                packages.append(normalized)
+    return packages
+
+
+def _command_args(text: str, command: str) -> List[str]:
+    pattern = re.compile(rf"\\{re.escape(command)}\s*\{{([^{{}}]*)\}}", re.MULTILINE)
+    return [match.group(1).strip() for match in pattern.finditer(text)]
 
 
 def _tracked_src_files() -> List[Path]:
@@ -235,17 +286,56 @@ def validate_repo() -> int:
 
     for tex_path in discover_latex_roots():
         text = tex_path.read_text(encoding="utf-8", errors="ignore")
+        active_text = strip_latex_comments(text)
         rel = tex_path.relative_to(ROOT).as_posix()
 
-        if re.search(r"\\usepackage\{(?:style|base)\}", text):
+        if re.search(r"\\usepackage\{(?:style|base)\}", active_text):
             failures += 1
             print(f"forbidden-direct-style-import: {rel}")
 
-        if rel.startswith("src/security/certifications/cissp/cornell-notes/") and not re.search(r"\\usepackage\{cornell-notes\}", text):
+        is_cornell_root = rel.startswith("src/security/certifications/cissp/cornell-notes/") or rel == "src/architecture/style-system/examples/cornell-notes-study-sheet.tex"
+        uses_cornell_notes = bool(re.search(r"\\usepackage(?:\[[^\]]*\])?\{[^}]*\bcornell-notes\b[^}]*\}", active_text))
+
+        if rel.startswith("src/security/certifications/cissp/cornell-notes/") and not uses_cornell_notes:
             failures += 1
             print(f"invalid-cornell-import: {rel}")
 
-        if any(token in text for token in LISTINGS_TOKENS):
+        if is_cornell_root:
+            if not uses_cornell_notes:
+                failures += 1
+                print(f"invalid-cornell-import: {rel}")
+
+            packages = latex_usepackages(active_text)
+            semantic_packages = [name for name in packages if name in SEMANTIC_STYLE_PACKAGES]
+            if semantic_packages != ["cornell-notes"]:
+                failures += 1
+                print(f"invalid-cornell-semantic-style-set: {rel}")
+
+            title_values = _command_args(active_text, "title")
+            if not title_values:
+                failures += 1
+                print(f"missing-cornell-title-command: {rel}")
+            elif all(value == "" for value in title_values):
+                failures += 1
+                print(f"empty-cornell-title-command: {rel}")
+
+            maketitle_count = len(re.findall(r"\\maketitle\b", active_text))
+            if maketitle_count == 0:
+                failures += 1
+                print(f"missing-cornell-maketitle: {rel}")
+            elif maketitle_count > 1:
+                failures += 1
+                print(f"multiple-cornell-maketitle: {rel}")
+
+            if re.search(r"\\makecornelltitle\b", active_text):
+                failures += 1
+                print(f"legacy-cornell-title-command: {rel}")
+
+            if re.search(r"\\begin\s*\{titlepage\}|\\end\s*\{titlepage\}", active_text):
+                failures += 1
+                print(f"manual-titlepage-in-cornell-doc: {rel}")
+
+        if any(token in active_text for token in LISTINGS_TOKENS):
             failures += 1
             print(f"listings-token: {rel}")
 

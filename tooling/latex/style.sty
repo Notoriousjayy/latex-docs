@@ -290,6 +290,21 @@
 \providecommand{\DocDate}{\today}
 \providecommand{\DocSummary}{}
 
+% Track explicit metadata calls from documents so legacy fallback can
+% safely fill only missing fields before \maketitle.
+\newif\ifldsexplicittitle
+\newif\ifldsexplicitauthor
+\newif\ifldsexplicitdate
+\ldsexplicittitlefalse
+\ldsexplicitauthorfalse
+\ldsexplicitdatefalse
+\let\ldsorigtitle\title
+\renewcommand{\title}[1]{\ldsexplicittitletrue\ldsorigtitle{#1}}
+\let\ldsorigauthor\author
+\renewcommand{\author}[1]{\ldsexplicitauthortrue\ldsorigauthor{#1}}
+\let\ldsorigdate\date
+\renewcommand{\date}[1]{\ldsexplicitdatetrue\ldsorigdate{#1}}
+
 \newcommand{\setDocTitle}[1]{\def\DocTitle{#1}}
 \newcommand{\setDocSubtitle}[1]{\def\DocSubtitle{#1}}
 \newcommand{\setDocVersion}[1]{\def\DocVersion{#1}}
@@ -343,6 +358,31 @@
   \makedocsummary
   \tableofcontents
   \clearpage}
+
+% Legacy compatibility: many historical roots call \maketitle directly
+% without defining \title. Provide safe defaults so publish-mode builds
+% fail only on substantive LaTeX errors, not missing title metadata.
+\AtBeginDocument{%
+  \ifldsexplicittitle\else
+    \protected@edef\lds@titleval{\DocTitle}%
+    \ifx\lds@titleval\@empty
+      \ldsorigtitle{\jobname}%
+    \else
+      \ldsorigtitle{\DocTitle}%
+    \fi
+  \fi
+
+  \ifldsexplicitauthor\else
+    \protected@edef\lds@authorval{\DocAuthor}%
+    \ifx\lds@authorval\@empty\else
+      \ldsorigauthor{\DocAuthor}%
+    \fi
+  \fi
+
+  \ifldsexplicitdate\else
+    \ldsorigdate{\DocDate}%
+  \fi
+}
 \makeatother
 
 

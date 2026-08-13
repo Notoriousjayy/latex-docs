@@ -83,6 +83,19 @@ Or, if you only want pieces:
 \makedocsummary    % "Purpose" box, suppressed when \DocSummary is empty
 ```
 
+Cornell-note documents also use the standard LaTeX title API explicitly:
+
+```latex
+	itle{...}
+\author{...}
+\date{...}
+\begin{document}
+\maketitle
+```
+
+The `cornell-notes` module specializes the visual rendering of
+`\maketitle`. The legacy `\makecornelltitle` command is compatibility-only.
+
 #### Named callouts
 
 The five callout environments are pre-defined; the optional argument is

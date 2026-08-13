@@ -21,8 +21,10 @@
 %     \setCornellCompanionLabel{...}
 %
 %   Front matter:
-%     \CornellMakeTitle
-%     % example: \CornellMakeTitle
+%     \maketitle            % canonical Cornell renderer
+%     \makecornelltitle     % compatibility alias
+%     \CornellMakeTitle     % compatibility alias
+%     % example: \maketitle
 %
 %   Cornell table:
 %     \begin{CornellNotesTable} ... \end{CornellNotesTable}
@@ -106,11 +108,9 @@
 }
 
 \AtBeginDocument{%
-  \ifstrempty{\DocTitle}{%
-    \ifstrempty{\CornellCollection}{}{\setDocTitle{\CornellCollection}}%
-  }{%
-    \ifstrempty{\CornellCollection}{\setCornellCollection{\DocTitle}}{}%
-  }%
+  \ifstrempty{\CornellCollection}{%
+    \ifstrempty{\DocTitle}{}{\setCornellCollection{\DocTitle}}%
+  }{}
 
   \ifstrempty{\DocSubtitle}{%
     \ifstrempty{\CornellUnitLabel}{}{\setDocSubtitle{\CornellUnitLabel}}%
@@ -181,43 +181,93 @@
 % -----------------------------------------------------------------------------
 % 5. Cornell title page
 % -----------------------------------------------------------------------------
-\newcommand{\CornellMakeTitle}{%
-  \hypersetup{pageanchor=false}%
-  \begin{titlepage}
-    \pagecolor{Navy}\color{white}
-    \vspace*{1.0in}
+\makeatletter
+\newif\ifldscornelltitleprinted
+\ldscornelltitleprintedfalse
 
-    \CornellIfNonEmpty{\CornellSourceTitle}{{\Large \CornellSourceTitle\par}}
-    \vspace{0.25in}
-    \CornellIfNonEmpty{\CornellSourceEdition}{{\large \CornellSourceEdition\par}}
-
-    \vfill
-    {\Huge\bfseries Cornell Notes\par}
-    \vspace{0.25in}
-    \CornellIfNonEmpty{\CornellUnitType}{{\LARGE \CornellUnitType\space\CornellUnitNumber\par}}
-    \vspace{0.08in}
-    \CornellIfNonEmpty{\CornellUnitTitle}{{\LARGE\bfseries \CornellUnitTitle\par}}
-    \vfill
-
-    \CornellIfNonEmpty{\CornellSourceAuthor}{{\large \CornellSourceAuthor\par}}
-    \vspace{0.12in}
-    \CornellIfNonEmpty{\CornellCompanionLabel}{{\normalsize \CornellCompanionLabel\par}}
-    \vspace{0.35in}
-
-    {\small Primary source: \textit{\CornellSourceTitle}%
-    \CornellIfNonEmpty{\CornellSourceEdition}{, \CornellSourceEdition}%
-    \CornellIfNonEmpty{\CornellSourceRange}{, \CornellSourceRange}%
-    .\par}
-  \end{titlepage}
-  \hypersetup{pageanchor=true}%
-  \nopagecolor\color{black}
+\newcommand{\LdsCornellEnsureTitleProvided}{%
+  \ifcsname ifldsexplicittitle\endcsname
+    \ifldsexplicittitle\else
+      \PackageError{cornell-notes}{Cornell documents require an explicit \string\title{...}}{Add \string\title{<human-readable title>} in the preamble and call \string\maketitle after \string\begin{document}.}%
+    \fi
+  \fi
+  \protected@edef\lds@cornell@title{\@title}%
+  \ifx\lds@cornell@title\@empty
+    \PackageError{cornell-notes}{Cornell documents require a non-empty \string\title{...}}{Provide a non-empty value to \string\title{...} in the preamble.}%
+  \fi
 }
+
+\newcommand{\LdsCornellSyncMetadataFromStandard}{%
+  \protected@edef\lds@cornell@title{\@title}%
+  \protected@edef\lds@cornell@author{\@author}%
+  \protected@edef\lds@cornell@date{\@date}%
+  \ifstrempty{\DocTitle}{%
+    \ifx\lds@cornell@title\@empty\else
+      \setDocTitle{\@title}%
+    \fi
+  }{}
+  \ifstrempty{\DocAuthor}{%
+    \ifx\lds@cornell@author\@empty\else
+      \setDocAuthor{\@author}%
+    \fi
+  }{}
+  \ifstrempty{\DocDate}{%
+    \ifx\lds@cornell@date\@empty\else
+      \setDocDate{\@date}%
+    \fi
+  }{}
+}
+
+\AtBeginDocument{\LdsCornellSyncMetadataFromStandard}
+
+\newcommand{\LdsCornellRenderTitle}{%
+  \LdsCornellEnsureTitleProvided
+  \ifldscornelltitleprinted
+    \PackageWarning{cornell-notes}{Title already rendered; duplicate \string\maketitle skipped}%
+  \else
+    \global\ldscornelltitleprintedtrue
+    \hypersetup{pageanchor=false}%
+    \begin{titlepage}
+      \pagecolor{Navy}\color{white}
+      \thispagestyle{empty}%
+      \vspace*{0.9in}
+
+      \CornellIfNonEmpty{\CornellCollection}{{\large \CornellCollection\par}}
+      \CornellIfNonEmpty{\CornellUnitLabel}{{\large \CornellUnitLabel\par}}
+      \vspace{0.35in}
+
+      {\Huge\bfseries \@title\par}
+      \vspace{0.20in}
+      \ifx\@author\@empty\else
+        {\large \@author\par}
+      \fi
+      \ifx\@date\@empty\else
+        \vspace{0.08in}{\normalsize \@date\par}
+      \fi
+
+      \vfill
+      \CornellIfNonEmpty{\CornellCompanionLabel}{{\normalsize \CornellCompanionLabel\par}}
+      \vspace{0.20in}
+      \CornellIfNonEmpty{\CornellSourceTitle}{{\small Primary source: \textit{\CornellSourceTitle}%
+      \CornellIfNonEmpty{\CornellSourceEdition}{, \CornellSourceEdition}%
+      \CornellIfNonEmpty{\CornellSourceAuthor}{, \CornellSourceAuthor}%
+      \CornellIfNonEmpty{\CornellSourceRange}{, \CornellSourceRange}%
+      .\par}}
+    \end{titlepage}
+    \hypersetup{pageanchor=true}%
+    \nopagecolor\color{black}
+  \fi
+}
+
+\renewcommand{\maketitle}{\LdsCornellRenderTitle}
+\providecommand{\CornellMakeTitle}{\maketitle}
+\providecommand{\makecornelltitle}{\maketitle}
+\makeatother
 
 % -----------------------------------------------------------------------------
 % 6. Guarded legacy aliases
 % -----------------------------------------------------------------------------
 \makeatletter
-\@ifundefined{makecornelltitle}{\newcommand{\makecornelltitle}{\CornellMakeTitle}}{}
 \@ifundefined{cornell}{\newenvironment{cornell}{\begin{CornellNotesTable}}{\end{CornellNotesTable}}}{}
 \@ifundefined{noterow}{\newcommand{\noterow}[2]{\CornellNoteRow{#1}{#2}}}{}
 \@ifundefined{source}{\newcommand{\source}[1]{\CornellSourceNote{#1}}}{}

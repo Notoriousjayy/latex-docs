@@ -1,6 +1,7 @@
 import subprocess
 import tempfile
 import unittest
+import shutil
 from io import StringIO
 from pathlib import Path
 from contextlib import redirect_stderr
@@ -212,7 +213,7 @@ class BuildToolTests(unittest.TestCase):
 
             self.assertNotEqual(0, result)
             self.assertFalse((output_dir / "docs" / "sample.pdf").exists())
-            stderr_log = log_dir / "sample.build.stderr.txt"
+            stderr_log = log_dir / "docs" / "sample.build.stderr.txt"
             self.assertTrue(stderr_log.exists())
             self.assertIn("Expected PDF output was not produced", stderr_log.read_text(encoding="utf-8"))
 
@@ -229,11 +230,76 @@ class BuildToolTests(unittest.TestCase):
             with patch("tooling.scripts.latex_build.build_root", return_value=9):
                 stderr_buffer = StringIO()
                 with redirect_stderr(stderr_buffer):
-                    failures = latex_build.build_roots([tex_path], log_dir=log_dir)
+                    status = latex_build.build_roots([tex_path], log_dir=log_dir)
 
-            self.assertEqual(1, failures)
+            self.assertEqual(1, status)
             self.assertIn("Build failed for", stderr_buffer.getvalue())
+            self.assertIn("Build summary: 0 succeeded, 1 failed, 1 total", stderr_buffer.getvalue())
             self.assertIn("sample.build.stdout.txt", stderr_buffer.getvalue())
+
+    def test_build_roots_returns_one_not_failure_count(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src_dir = root / "src" / "docs"
+            src_dir.mkdir(parents=True)
+
+            tex_a = src_dir / "a.tex"
+            tex_b = src_dir / "b.tex"
+            tex_a.write_text("\\documentclass{article}\n\\begin{document}\nA\n\\end{document}\n", encoding="utf-8")
+            tex_b.write_text("\\documentclass{article}\n\\begin{document}\nB\n\\end{document}\n", encoding="utf-8")
+
+            with patch("tooling.scripts.latex_build.build_root", side_effect=[5, 9]):
+                stderr_buffer = StringIO()
+                with redirect_stderr(stderr_buffer):
+                    status = latex_build.build_roots([tex_a, tex_b], log_dir=root / "public" / "logs")
+
+            self.assertEqual(1, status)
+            self.assertIn("Build summary: 0 succeeded, 2 failed, 2 total", stderr_buffer.getvalue())
+
+    def test_parallel_and_serial_use_same_failure_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src_dir = root / "src" / "docs"
+            src_dir.mkdir(parents=True)
+
+            tex_files = []
+            for name in ("a", "b", "c"):
+                tex = src_dir / f"{name}.tex"
+                tex.write_text("\\documentclass{article}\n\\begin{document}\nX\n\\end{document}\n", encoding="utf-8")
+                tex_files.append(tex)
+
+            with patch("tooling.scripts.latex_build.build_root", side_effect=[0, 12, 0]):
+                serial_status = latex_build.build_roots(tex_files, jobs=1, log_dir=root / "public" / "logs")
+
+            with patch("tooling.scripts.latex_build.build_root", side_effect=[0, 12, 0]):
+                parallel_status = latex_build.build_roots(tex_files, jobs=2, log_dir=root / "public" / "logs")
+
+            self.assertEqual(1, serial_status)
+            self.assertEqual(1, parallel_status)
+
+    def test_duplicate_stems_write_distinct_log_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src_dir = root / "src"
+            left = src_dir / "left"
+            right = src_dir / "right"
+            left.mkdir(parents=True)
+            right.mkdir(parents=True)
+
+            tex_left = left / "shared.tex"
+            tex_right = right / "shared.tex"
+            tex_left.write_text("\\documentclass{article}\n\\begin{document}\nL\n\\end{document}\n", encoding="utf-8")
+            tex_right.write_text("\\documentclass{article}\n\\begin{document}\nR\n\\end{document}\n", encoding="utf-8")
+
+            log_dir = root / "public" / "logs"
+            with patch("tooling.scripts.latex_build.ROOT", root), patch("tooling.scripts.latex_build.SRC_DIR", root / "src"):
+                left_stdout, left_stderr = latex_build._log_paths(tex_left, log_dir)
+                right_stdout, right_stderr = latex_build._log_paths(tex_right, log_dir)
+
+            self.assertNotEqual(left_stdout, right_stdout)
+            self.assertNotEqual(left_stderr, right_stderr)
+            self.assertIn("left/shared.build.stdout.txt", str(left_stdout))
+            self.assertIn("right/shared.build.stdout.txt", str(right_stdout))
 
     def test_stage_pages_site_preserves_nested_paths_and_builds_index(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -292,6 +358,23 @@ class BuildToolTests(unittest.TestCase):
         self.assertIn("'.latexmkrc'", workflow_text)
         self.assertIn("'.github/workflows/latex-pages.yml'", workflow_text)
 
+    def test_reusable_workflow_uploads_logs_on_failure(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        workflow_text = (repo_root / ".github" / "workflows" / "_build-latex.yml").read_text(encoding="utf-8")
+
+        self.assertIn("if: ${{ always() && inputs.upload-artifacts }}", workflow_text)
+        self.assertIn("name: latex-logs", workflow_text)
+
+    def test_pages_workflow_permissions_and_job_dependencies(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        workflow_text = (repo_root / ".github" / "workflows" / "latex-pages.yml").read_text(encoding="utf-8")
+
+        self.assertIn("contents: read", workflow_text)
+        self.assertIn("pages: write", workflow_text)
+        self.assertIn("id-token: write", workflow_text)
+        self.assertIn("needs: build", workflow_text)
+        self.assertIn("needs: stage", workflow_text)
+
     def test_resolve_texinputs_includes_cornell_style_tree(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
         with patch("tooling.scripts.latex_build.ROOT", repo_root):
@@ -313,6 +396,64 @@ class BuildToolTests(unittest.TestCase):
         self.assertTrue(latexmkrc_path.exists(), "expected a repository .latexmkrc for latexmk discovery")
         text = latexmkrc_path.read_text(encoding="utf-8", errors="ignore")
         self.assertIn("TEXINPUTS", text)
+
+    def test_minimal_cornell_document_compiles_with_standard_maketitle(self) -> None:
+        if shutil.which(latex_build.LATEXMK) is None:
+            self.skipTest("latexmk is not available")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tex_path = root / "minimal-cornell.tex"
+            tex_path.write_text(
+                "\\documentclass[10pt,letterpaper]{article}\n"
+                "\\usepackage{cornell-notes}\n"
+                "\\title{Minimal Cornell Title}\n"
+                "\\author{Test Author}\n"
+                "\\date{\\today}\n"
+                "\\setDocTitle{Minimal Cornell Title}\n"
+                "\\begin{document}\n"
+                "\\maketitle\n"
+                "Body text.\n"
+                "\\end{document}\n",
+                encoding="utf-8",
+            )
+
+            output_dir = root / "public" / "pdfs"
+            log_dir = root / "public" / "logs"
+            result = latex_build.build_root(tex_path, output_dir=output_dir, log_dir=log_dir)
+
+            self.assertEqual(0, result)
+            self.assertTrue((output_dir / "minimal-cornell.pdf").exists())
+
+    def test_minimal_cornell_document_without_title_fails_clearly(self) -> None:
+        if shutil.which(latex_build.LATEXMK) is None:
+            self.skipTest("latexmk is not available")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tex_path = root / "missing-title-cornell.tex"
+            tex_path.write_text(
+                "\\documentclass[10pt,letterpaper]{article}\n"
+                "\\usepackage{cornell-notes}\n"
+                "\\author{Test Author}\n"
+                "\\date{\\today}\n"
+                "\\begin{document}\n"
+                "\\maketitle\n"
+                "Body text.\n"
+                "\\end{document}\n",
+                encoding="utf-8",
+            )
+
+            output_dir = root / "public" / "pdfs"
+            log_dir = root / "public" / "logs"
+            result = latex_build.build_root(tex_path, output_dir=output_dir, log_dir=log_dir)
+
+            self.assertNotEqual(0, result)
+            stdout_log = log_dir / "missing-title-cornell.build.stdout.txt"
+            self.assertTrue(stdout_log.exists())
+            stdout_text = stdout_log.read_text(encoding="utf-8", errors="ignore")
+            self.assertIn("Package cornell-notes Error:", stdout_text)
+            self.assertIn("explicit \\title{...}", stdout_text)
 
 
 if __name__ == "__main__":
