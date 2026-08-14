@@ -189,6 +189,8 @@ GitHub Actions now delegates build execution to the repository-owned interface:
 - the Makefile delegates to the Python helper in tooling/scripts/latex_build.py;
 - the build script owns root discovery, changed-file analysis, latexmk execution, logging, cleanup, and canonical output layout.
 
+The canonical changed-build CLI is `python3 tooling/scripts/latex_build.py build-changed --base <sha> --head <sha>`. The Makefile variables `BASE_REF` and `HEAD_REF` map to those flags.
+
 This keeps CI, Pages, and release workflows aligned with the same public contract used locally.
 
 ### Build one document

@@ -38,6 +38,22 @@ MISSING_FILE_PATTERNS = [
     re.compile(r"I can't find file `[^`]+`"),
 ]
 
+FULL_REBUILD_PREFIXES = (
+    ".github/",
+    "tooling/scripts/",
+    "src/common/",
+)
+
+FULL_REBUILD_FILES = {
+    "Makefile",
+    ".latexmkrc",
+    "latexmkrc",
+}
+
+
+class RevisionResolutionError(RuntimeError):
+    """Raised when a Git revision pair cannot be resolved."""
+
 
 @dataclass
 class BuildSummary:
@@ -309,13 +325,17 @@ def _resolve_package_path(package_name: str) -> Path | None:
     return None
 
 
-def _collect_dependencies(path: Path) -> Set[Path]:
+def _collect_dependencies(path: Path, seen: Set[Path] | None = None) -> Set[Path]:
     deps: Set[Path] = set()
-    if not path.exists():
+    resolved_path = path.resolve()
+    visited = seen if seen is not None else set()
+    if resolved_path in visited or not resolved_path.exists():
         return deps
 
-    text = path.read_text(encoding="utf-8", errors="ignore")
-    base_dir = path.parent
+    visited.add(resolved_path)
+
+    text = resolved_path.read_text(encoding="utf-8", errors="ignore")
+    base_dir = resolved_path.parent
 
     for match in re.finditer(r"\\(?:input|include)\{([^}]+)\}", text):
         include_name = match.group(1)
@@ -327,7 +347,7 @@ def _collect_dependencies(path: Path) -> Set[Path]:
         for candidate in candidates:
             if candidate.exists():
                 deps.add(candidate)
-                deps.update(_collect_dependencies(candidate))
+                deps.update(_collect_dependencies(candidate, visited))
                 break
 
     for match in re.finditer(r"\\usepackage\{([^}]+)\}", text):
@@ -335,8 +355,52 @@ def _collect_dependencies(path: Path) -> Set[Path]:
         package_path = _resolve_package_path(package_name)
         if package_path is not None:
             deps.add(package_path)
+            deps.update(_collect_dependencies(package_path, visited))
 
     return deps
+
+
+def _requires_full_rebuild(changed_path: str) -> bool:
+    normalized = changed_path.strip().replace("\\", "/")
+    if not normalized:
+        return False
+    if normalized in FULL_REBUILD_FILES:
+        return True
+    if normalized.startswith(FULL_REBUILD_PREFIXES):
+        return True
+    return normalized.startswith("tooling/") and normalized.endswith(".tex")
+
+
+def _write_empty_summary(
+    *,
+    log_dir: Path | None,
+    output_dir: Path | None,
+    mode: str,
+    base_revision: str,
+    head_revision: str,
+    exit_code: int,
+    error_message: str = "",
+) -> None:
+    summary = BuildSummary(
+        mode=mode,
+        base_revision=base_revision,
+        head_revision=head_revision,
+        root_count=0,
+        attempted_count=0,
+        succeeded_count=0,
+        failed_count=0,
+        skipped_count=0,
+        pdf_count=_count_files(output_dir, "*.pdf"),
+        log_count=_count_files(log_dir),
+        build_status=_normalize_build_status(exit_code),
+        first_errors=(
+            [{"root": "configuration", "signature": error_message, "exit_code": str(exit_code)}]
+            if error_message
+            else []
+        ),
+        failure_clusters=([{"signature": error_message, "count": 1}] if error_message else []),
+    )
+    _write_build_summary(log_dir, summary, output_dir)
 
 
 def determine_affected_roots(roots: Sequence[Path], changed_path: Path | None = None) -> List[Path]:
@@ -658,17 +722,23 @@ def build_roots(
 
 
 def collect_changed_paths(base_ref: str | None = None, head_ref: str | None = None) -> List[str]:
-    try:
-        if base_ref and head_ref:
-            changed = subprocess.check_output(["git", "diff", "--name-only", base_ref, head_ref], cwd=str(ROOT), text=True)
-        elif base_ref:
-            changed = subprocess.check_output(["git", "diff", "--name-only", base_ref], cwd=str(ROOT), text=True)
-        else:
-            changed = subprocess.check_output(["git", "diff", "--name-only", "HEAD~1", "HEAD"], cwd=str(ROOT), text=True)
-    except subprocess.CalledProcessError:
-        return []
+    if base_ref and head_ref:
+        cmd = ["git", "diff", "--name-only", base_ref, head_ref]
+    elif base_ref:
+        cmd = ["git", "diff", "--name-only", base_ref]
+    elif head_ref:
+        cmd = ["git", "diff", "--name-only", head_ref]
+    else:
+        cmd = ["git", "diff", "--name-only", "HEAD~1", "HEAD"]
 
-    return [line.strip() for line in changed.splitlines() if line.strip()]
+    result = subprocess.run(cmd, cwd=str(ROOT), text=True, capture_output=True, check=False)
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout or "git diff failed").strip().splitlines()[-1]
+        raise RevisionResolutionError(
+            f"unable to calculate changed paths for base={base_ref or '-'} head={head_ref or '-'}: {detail}"
+        )
+
+    return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
 
 def build_changed(
@@ -685,8 +755,38 @@ def build_changed(
     log_dir = _resolve_repo_path(log_dir)
     artifact_dir = _resolve_repo_path(artifact_dir)
 
-    changed_paths = collect_changed_paths(base_ref=base_ref, head_ref=head_ref)
+    try:
+        changed_paths = collect_changed_paths(base_ref=base_ref, head_ref=head_ref)
+    except RevisionResolutionError as exc:
+        print(f"Configuration error: {exc}", file=sys.stderr)
+        if clean_output:
+            reset_output_tree(output_dir)
+            reset_output_tree(log_dir)
+        _write_empty_summary(
+            log_dir=log_dir,
+            output_dir=output_dir,
+            mode=mode_name,
+            base_revision=base_ref or "",
+            head_revision=head_ref or "",
+            exit_code=2,
+            error_message=str(exc),
+        )
+        return 2
+
     roots = discover_roots()
+    if any(_requires_full_rebuild(changed_path) for changed_path in changed_paths):
+        return build_roots(
+            roots,
+            jobs=jobs,
+            output_dir=output_dir,
+            log_dir=log_dir,
+            artifact_dir=artifact_dir,
+            clean_output=clean_output,
+            mode=mode_name,
+            base_revision=base_ref or "",
+            head_revision=head_ref or "",
+        )
+
     affected = []
     for changed_path in changed_paths:
         path = (ROOT / changed_path).resolve()
@@ -765,7 +865,7 @@ def clean() -> int:
     return 0
 
 
-def main() -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Manage LaTeX document builds")
     subparsers = parser.add_subparsers(dest="command")
 
@@ -780,8 +880,8 @@ def main() -> int:
     build_parser.add_argument("--artifact-dir", type=Path, default=None)
     build_parser.add_argument("--clean-output", action="store_true")
     build_parser.add_argument("--mode-name", default="full")
-    build_parser.add_argument("--base-revision", default="")
-    build_parser.add_argument("--head-revision", default="")
+    build_parser.add_argument("--base", "--base-revision", dest="base_ref", default="")
+    build_parser.add_argument("--head", "--head-revision", dest="head_ref", default="")
 
     category_parser = subparsers.add_parser("build-category")
     category_parser.add_argument("category")
@@ -791,12 +891,12 @@ def main() -> int:
     category_parser.add_argument("--artifact-dir", type=Path, default=None)
     category_parser.add_argument("--clean-output", action="store_true")
     category_parser.add_argument("--mode-name", default="category")
-    category_parser.add_argument("--base-revision", default="")
-    category_parser.add_argument("--head-revision", default="")
+    category_parser.add_argument("--base", "--base-revision", dest="base_ref", default="")
+    category_parser.add_argument("--head", "--head-revision", dest="head_ref", default="")
 
     changed_parser = subparsers.add_parser("build-changed")
-    changed_parser.add_argument("--base", default=None)
-    changed_parser.add_argument("--head", default=None)
+    changed_parser.add_argument("--base", dest="base_ref", default=None, help="Base Git revision used to calculate changed paths")
+    changed_parser.add_argument("--head", dest="head_ref", default=None, help="Head Git revision used to calculate changed paths")
     changed_parser.add_argument("--jobs", type=int, default=1)
     changed_parser.add_argument("--output-dir", type=Path, default=None)
     changed_parser.add_argument("--log-dir", type=Path, default=None)
@@ -815,7 +915,7 @@ def main() -> int:
     clean_parser = subparsers.add_parser("clean")
     clean_parser.add_argument("--jobs", type=int, default=1)
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if args.command == "list-roots":
         for path in discover_roots():
@@ -837,8 +937,8 @@ def main() -> int:
             artifact_dir=args.artifact_dir,
             clean_output=args.clean_output,
             mode=args.mode_name,
-            base_revision=args.base_revision,
-            head_revision=args.head_revision,
+            base_revision=args.base_ref,
+            head_revision=args.head_ref,
         )
 
     if args.command == "build-category":
@@ -851,14 +951,14 @@ def main() -> int:
             artifact_dir=args.artifact_dir,
             clean_output=args.clean_output,
             mode=args.mode_name,
-            base_revision=args.base_revision,
-            head_revision=args.head_revision,
+            base_revision=args.base_ref,
+            head_revision=args.head_ref,
         )
 
     if args.command == "build-changed":
         return build_changed(
-            base_ref=args.base,
-            head_ref=args.head,
+            base_ref=args.base_ref,
+            head_ref=args.head_ref,
             jobs=args.jobs,
             output_dir=args.output_dir,
             log_dir=args.log_dir,

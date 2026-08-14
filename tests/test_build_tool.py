@@ -4,6 +4,7 @@ import unittest
 import shutil
 import json
 import re
+import shlex
 from io import StringIO
 from pathlib import Path
 from contextlib import redirect_stderr
@@ -14,6 +15,19 @@ from tooling.scripts.latex_build import determine_affected_roots, discover_roots
 
 
 class BuildToolTests(unittest.TestCase):
+    def _make_dry_run_command(self, *make_args: str) -> str:
+        repo_root = Path(__file__).resolve().parents[1]
+        result = subprocess.run(
+            ["make", "--dry-run", *make_args],
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+        self.assertTrue(lines, "expected make --dry-run to emit a command")
+        return lines[-1]
+
     def test_extract_first_error_detects_stdout_only_failure(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -144,6 +158,81 @@ class BuildToolTests(unittest.TestCase):
             self.assertEqual(0, summary["attempted_count"])
             self.assertEqual(0, summary["failed_count"])
             self.assertEqual("success", summary["build_status"])
+
+    def test_build_changed_base_equals_head_writes_zero_root_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src_dir = root / "src" / "docs"
+            src_dir.mkdir(parents=True, exist_ok=True)
+            tex_path = src_dir / "sample.tex"
+            tex_path.write_text("\\documentclass{article}\n\\begin{document}\nHello\n\\end{document}\n", encoding="utf-8")
+
+            subprocess.run(["git", "init"], cwd=root, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=root, check=True)
+            subprocess.run(["git", "config", "user.name", "Test User"], cwd=root, check=True)
+            subprocess.run(["git", "add", "."], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-m", "initial"], cwd=root, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+            with patch("tooling.scripts.latex_build.ROOT", root), patch("tooling.scripts.latex_build.SRC_DIR", root / "src"):
+                status = latex_build.build_changed(
+                    base_ref="HEAD",
+                    head_ref="HEAD",
+                    output_dir=root / "public" / "pdfs",
+                    log_dir=root / "public" / "logs",
+                    clean_output=True,
+                )
+
+            self.assertEqual(0, status)
+            summary = json.loads((root / "public" / "logs" / "build-summary.json").read_text(encoding="utf-8"))
+            self.assertEqual(0, summary["root_count"])
+            self.assertEqual(0, summary["attempted_count"])
+            self.assertEqual("success", summary["build_status"])
+
+    def test_build_changed_invalid_revision_returns_configuration_error(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src_dir = root / "src"
+            src_dir.mkdir(parents=True, exist_ok=True)
+
+            subprocess.run(["git", "init"], cwd=root, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=root, check=True)
+            subprocess.run(["git", "config", "user.name", "Test User"], cwd=root, check=True)
+            subprocess.run(["git", "commit", "--allow-empty", "-m", "initial"], cwd=root, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+            stderr_buffer = StringIO()
+            with patch("tooling.scripts.latex_build.ROOT", root), patch("tooling.scripts.latex_build.SRC_DIR", root / "src"):
+                with redirect_stderr(stderr_buffer):
+                    status = latex_build.build_changed(
+                        base_ref="does-not-exist",
+                        head_ref="HEAD",
+                        output_dir=root / "public" / "pdfs",
+                        log_dir=root / "public" / "logs",
+                        clean_output=True,
+                    )
+
+            self.assertEqual(2, status)
+            self.assertIn("Configuration error:", stderr_buffer.getvalue())
+            summary = json.loads((root / "public" / "logs" / "build-summary.json").read_text(encoding="utf-8"))
+            self.assertEqual("invalid", summary["build_status"])
+            self.assertEqual("configuration", summary["first_errors"][0]["root"])
+
+    def test_build_changed_rebuilds_all_roots_for_workflow_changes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tex_a = root / "src" / "docs" / "a.tex"
+            tex_b = root / "src" / "docs" / "b.tex"
+            tex_a.parent.mkdir(parents=True, exist_ok=True)
+            tex_a.write_text("\\documentclass{article}\\begin{document}A\\end{document}", encoding="utf-8")
+            tex_b.write_text("\\documentclass{article}\\begin{document}B\\end{document}", encoding="utf-8")
+
+            with patch("tooling.scripts.latex_build.collect_changed_paths", return_value=[".github/actions/build-documents/action.yml"]), patch(
+                "tooling.scripts.latex_build.discover_roots", return_value=[tex_a, tex_b]
+            ), patch("tooling.scripts.latex_build.build_roots", return_value=0) as build_roots_mock:
+                status = latex_build.build_changed(base_ref="base", head_ref="head")
+
+            self.assertEqual(0, status)
+            build_roots_mock.assert_called_once()
+            self.assertEqual([tex_a, tex_b], build_roots_mock.call_args.args[0])
 
     def test_build_root_resolves_relative_output_paths_from_repo_root(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -298,6 +387,31 @@ class BuildToolTests(unittest.TestCase):
                     changed = latex_build.collect_changed_paths(base_ref="HEAD~1", head_ref="HEAD")
 
             self.assertEqual(["src/architecture/sample-document.tex"], changed)
+
+    def test_collect_dependencies_tracks_transitive_style_packages(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src_dir = root / "src" / "docs"
+            style_dir = root / "tooling" / "styles" / "latex"
+            src_dir.mkdir(parents=True)
+            style_dir.mkdir(parents=True)
+
+            tex_path = src_dir / "sample.tex"
+            tex_path.write_text(
+                "\\documentclass{article}\n"
+                "\\usepackage{outer-style}\n"
+                "\\begin{document}\nHello\n\\end{document}\n",
+                encoding="utf-8",
+            )
+            (style_dir / "outer-style.sty").write_text("\\usepackage{inner-style}\n", encoding="utf-8")
+            inner_style = style_dir / "inner-style.sty"
+            inner_style.write_text("% shared inner style\n", encoding="utf-8")
+
+            with patch("tooling.scripts.latex_build.ROOT", root), patch("tooling.scripts.latex_build.SRC_DIR", root / "src"):
+                roots = discover_roots(root / "src")
+                affected = determine_affected_roots(roots, changed_path=inner_style)
+
+            self.assertEqual([tex_path.resolve()], affected)
 
     def test_build_root_uses_source_dir_for_latexmk_output(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -620,6 +734,15 @@ class BuildToolTests(unittest.TestCase):
         self.assertIn("build_status_code=$?", action_text)
         self.assertIn("exit \"$build_status_code\"", action_text)
 
+    def test_build_documents_action_uses_canonical_make_revision_variables(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        action_text = (repo_root / ".github" / "actions" / "build-documents" / "action.yml").read_text(encoding="utf-8")
+
+        self.assertIn('BASE_REF="$base_ref"', action_text)
+        self.assertIn('HEAD_REF="$head_ref"', action_text)
+        self.assertNotIn("BASE_REVISION", action_text)
+        self.assertNotIn("HEAD_REVISION", action_text)
+
     def test_build_documents_action_manifest_schema_and_caller_compatibility(self) -> None:
         try:
             import yaml  # type: ignore
@@ -676,6 +799,87 @@ class BuildToolTests(unittest.TestCase):
         ]
         self.assertEqual(1, len(matching))
         self.assertEqual(expected_inputs, set(matching[0].get("with", {}).keys()))
+
+    def test_main_parses_build_changed_base_and_head_into_build_changed_call(self) -> None:
+        with patch("tooling.scripts.latex_build.build_changed", return_value=0) as build_changed_mock:
+            status = latex_build.main(["build-changed", "--base", "base123", "--head", "head456", "--jobs", "3"])
+
+        self.assertEqual(0, status)
+        build_changed_mock.assert_called_once_with(
+            base_ref="base123",
+            head_ref="head456",
+            jobs=3,
+            output_dir=None,
+            log_dir=None,
+            artifact_dir=None,
+            clean_output=False,
+            mode_name="changed",
+        )
+
+    def test_main_rejects_unknown_build_changed_revision_flags(self) -> None:
+        stderr_buffer = StringIO()
+        with redirect_stderr(stderr_buffer):
+            with self.assertRaises(SystemExit) as exc:
+                latex_build.main(["build-changed", "--base-revision", "base123"])
+
+        self.assertEqual(2, exc.exception.code)
+        self.assertIn("unrecognized arguments", stderr_buffer.getvalue())
+
+    def test_make_build_changed_uses_canonical_revision_flags(self) -> None:
+        command = self._make_dry_run_command(
+            "build-changed",
+            "OUTPUT_DIR=public/pdfs",
+            "LOG_DIR=public/logs",
+            "CLEAN_OUTPUT=true",
+            "MODE_NAME=changed",
+            "JOBS=4",
+            "BASE_REF=base123",
+            "HEAD_REF=head456",
+        )
+
+        self.assertIn("--base base123", command)
+        self.assertIn("--head head456", command)
+        self.assertIn("--output-dir public/pdfs", command)
+        self.assertIn("--log-dir public/logs", command)
+        self.assertIn("--mode-name changed", command)
+        self.assertIn("--clean-output", command)
+        self.assertNotIn("--base-revision", command)
+        self.assertNotIn("--head-revision", command)
+
+    def test_make_build_changed_maps_legacy_revision_variables_to_canonical_flags(self) -> None:
+        command = self._make_dry_run_command(
+            "build-changed",
+            "BASE_REVISION=base123",
+            "HEAD_REVISION=head456",
+        )
+
+        self.assertIn("--base base123", command)
+        self.assertIn("--head head456", command)
+        self.assertNotIn("--base-revision", command)
+        self.assertNotIn("--head-revision", command)
+
+    def test_make_build_changed_omits_empty_revision_flags(self) -> None:
+        command = self._make_dry_run_command("build-changed")
+
+        self.assertNotIn("--base", command)
+        self.assertNotIn("--head", command)
+
+    def test_make_build_changed_command_is_accepted_by_python_parser(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        command = self._make_dry_run_command(
+            "build-changed",
+            "OUTPUT_DIR=public/pdfs",
+            "LOG_DIR=public/logs",
+            "CLEAN_OUTPUT=true",
+            "MODE_NAME=changed",
+            "JOBS=1",
+            "BASE_REF=HEAD",
+            "HEAD_REF=HEAD",
+        )
+
+        result = subprocess.run(shlex.split(command), cwd=repo_root, check=False, capture_output=True, text=True)
+
+        self.assertEqual(0, result.returncode, result.stderr)
 
     def test_build_documents_action_sets_has_logs_when_summary_exists(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
