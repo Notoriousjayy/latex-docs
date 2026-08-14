@@ -38,6 +38,10 @@ MISSING_FILE_PATTERNS = [
     re.compile(r"I can't find file `[^`]+`"),
 ]
 
+# Emitted by pdfTeX/LuaTeX/XeTeX when run with -file-line-error: e.g.
+#   ./doc.tex:88: pdfTeX error (font expansion): ...
+FILE_LINE_ERROR_PATTERN = re.compile(r"^(\.[/\\][^\s:]+?\.(?:tex|sty|cls)):(\d+):\s*(.*)$")
+
 FULL_REBUILD_PREFIXES = (
     ".github/",
     "tooling/scripts/",
@@ -251,6 +255,56 @@ def _extract_first_error_details(root_log: Path | None, stdout_path: Path | None
         normalized = re.sub(r"\s+", " ", normalized)
         return normalized.strip()
 
+    def _first_file_line_error_details(text: str) -> dict[str, str]:
+        lines = text.splitlines()
+        for idx, raw in enumerate(lines):
+            match = FILE_LINE_ERROR_PATTERN.match(raw)
+            if not match:
+                continue
+            source_file, line_no, message = match.groups()
+
+            # pdfTeX wraps long log lines (commonly at column 79); rejoin
+            # continuation lines that are not the start of a new log entry.
+            message_parts = [message]
+            next_idx = idx + 1
+            while next_idx < len(lines) and next_idx < idx + 4:
+                stripped = lines[next_idx].strip()
+                if not stripped:
+                    break
+                if FILE_LINE_ERROR_PATTERN.match(lines[next_idx]):
+                    break
+                if re.match(r"^[<(\[!]", stripped):
+                    break
+                if re.match(r"^(Package|LaTeX|Overfull|Underfull|Runaway|Output written|l\.\d+)", stripped):
+                    break
+                message_parts.append(stripped)
+                next_idx += 1
+                if stripped.endswith((".", "!", "?")):
+                    break
+            full_message = " ".join(part.strip() for part in message_parts).strip() or "LaTeX fatal error"
+
+            line_ref = f"l.{line_no}"
+            for next_line in lines[idx + 1 : idx + 8]:
+                candidate = next_line.strip()
+                if re.match(r"l\.\d+", candidate):
+                    line_ref = candidate
+                    break
+
+            context_lines = [raw.strip()] + [
+                stripped for stripped in (line.strip() for line in lines[idx + 1 : idx + 4]) if stripped
+            ]
+
+            signature = f"{full_message} ({line_ref})" if line_ref else full_message
+
+            return {
+                "signature": _normalize_signature(signature),
+                "message": _normalize_signature(full_message),
+                "line_ref": _normalize_signature(line_ref),
+                "context": _normalize_signature(" | ".join(context_lines)),
+                "source": _normalize_signature(source_file),
+            }
+        return {}
+
     def _first_bang_details(text: str) -> dict[str, str]:
         lines = text.splitlines()
         for idx, raw in enumerate(lines):
@@ -305,13 +359,21 @@ def _extract_first_error_details(root_log: Path | None, stdout_path: Path | None
             "source": "",
         }
 
-    # 1) TeX-leading `!` errors with line context are highest signal.
+    # 1) File-and-line errors emitted with -file-line-error are the most
+    #    specific diagnostic and are preferred even over a bare `!` line,
+    #    since some pdfTeX-internal fatal errors never emit a `!` prefix.
+    for _, text in non_empty_sources:
+        details = _first_file_line_error_details(text)
+        if details:
+            return details
+
+    # 2) TeX-leading `!` errors with line context are next highest signal.
     for _, text in non_empty_sources:
         details = _first_bang_details(text)
         if details:
             return details
 
-    # 2..7) Canonical LaTeX/package fatal signatures.
+    # 3..7) Canonical LaTeX/package fatal signatures.
     precedence_patterns = [
         re.compile(r"LaTeX Error:\s*.+"),
         re.compile(r"Package\s+[^\s]+\s+Error:\s*.+"),
@@ -650,7 +712,11 @@ def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | N
     rc_file = ROOT / ".latexmkrc"
     if not rc_file.exists():
         rc_file = ROOT / "latexmkrc"
-    base_cmd = [LATEXMK, "-pdf", "-interaction=nonstopmode", "-halt-on-error", "-file-line-error", "-shell-escape", "-synctex=1", "-f"]
+    # No "-f" (force mode): the Python orchestrator already isolates and
+    # aggregates results per document, so forcing latexmk to keep re-running
+    # a broken document only produces misleading "force_mode" downstream
+    # noise instead of the earliest actionable error.
+    base_cmd = [LATEXMK, "-pdf", "-interaction=nonstopmode", "-halt-on-error", "-file-line-error", "-shell-escape", "-synctex=1"]
     if rc_file.exists():
         base_cmd.extend(["-r", str(rc_file)])
     engine = _detect_engine(tex_path)

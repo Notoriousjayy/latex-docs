@@ -96,6 +96,103 @@ class BuildToolTests(unittest.TestCase):
 
             self.assertEqual("UNKNOWN", signature)
 
+    def test_extract_first_error_prefers_file_line_error_over_trailing_fatal(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tex_log = root / "doc.log"
+            stdout_log = root / "doc.stdout.txt"
+            stderr_log = root / "doc.stderr.txt"
+            tex_log.write_text(
+                "./doc.tex:79: pdfTeX error (font expansion): auto expansion is only\n"
+                "possible with scalable fonts.\n"
+                "<argument> ...shipout:D \\box_use:N \\l_shipout_box\n"
+                "l.79   \\item \\checkbox\n"
+                "./doc.tex:79:  ==> Fatal error occurred, no output PDF file produced\n"
+                "!\n",
+                encoding="utf-8",
+            )
+            stdout_log.write_text("", encoding="utf-8")
+            stderr_log.write_text("", encoding="utf-8")
+
+            details = latex_build._extract_first_error_details(tex_log, stdout_log, stderr_log)
+
+            self.assertIn("font expansion", details["signature"])
+            self.assertIn("auto expansion is only possible with scalable fonts", details["signature"])
+            self.assertNotEqual("Fatal error", details["signature"])
+            self.assertEqual("l.<n> \\item \\checkbox", details["line_ref"])
+            self.assertEqual("./doc.tex", details["source"])
+
+    def test_extract_first_error_handles_wrapped_file_line_error(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tex_log = root / "doc.log"
+            stdout_log = root / "doc.stdout.txt"
+            stderr_log = root / "doc.stderr.txt"
+            tex_log.write_text(
+                "./doc.tex:88: pdfTeX error (font expansion\n"
+                "): auto expansion is only possible with scalable fonts.\n"
+                "l.88 \n",
+                encoding="utf-8",
+            )
+            stdout_log.write_text("", encoding="utf-8")
+            stderr_log.write_text("", encoding="utf-8")
+
+            details = latex_build._extract_first_error_details(tex_log, stdout_log, stderr_log)
+
+            self.assertIn("pdfTeX error (font expansion", details["message"])
+            self.assertIn("auto expansion is only possible with scalable fonts.", details["message"])
+
+    def test_extract_first_error_detects_runaway_argument(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tex_log = root / "doc.log"
+            stdout_log = root / "doc.stdout.txt"
+            stderr_log = root / "doc.stderr.txt"
+            tex_log.write_text(
+                "Runaway argument?\n"
+                "{Some unterminated argument text\n"
+                "! Paragraph ended before \\foo was complete.\n"
+                "l.42 \n",
+                encoding="utf-8",
+            )
+            stdout_log.write_text("", encoding="utf-8")
+            stderr_log.write_text("", encoding="utf-8")
+
+            signature = latex_build._extract_first_error(tex_log, stdout_log, stderr_log)
+
+            self.assertIn("Paragraph ended before", signature)
+
+    def test_extract_first_error_detects_package_error(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tex_log = root / "doc.log"
+            stdout_log = root / "doc.stdout.txt"
+            stderr_log = root / "doc.stderr.txt"
+            tex_log.write_text(
+                "Package minted Error: You must invoke LaTeX with the -shell-escape flag.\n",
+                encoding="utf-8",
+            )
+            stdout_log.write_text("", encoding="utf-8")
+            stderr_log.write_text("", encoding="utf-8")
+
+            signature = latex_build._extract_first_error(tex_log, stdout_log, stderr_log)
+
+            self.assertIn("Package minted Error", signature)
+
+    def test_extract_first_error_falls_back_to_generic_fatal(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tex_log = root / "doc.log"
+            stdout_log = root / "doc.stdout.txt"
+            stderr_log = root / "doc.stderr.txt"
+            tex_log.write_text("", encoding="utf-8")
+            stdout_log.write_text("", encoding="utf-8")
+            stderr_log.write_text("Fatal error occurred, no output PDF file produced!\n", encoding="utf-8")
+
+            signature = latex_build._extract_first_error(tex_log, stdout_log, stderr_log)
+
+            self.assertEqual("Fatal error occurred, no output PDF file produced", signature)
+
     def test_build_roots_clusters_normalized_package_errors(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
