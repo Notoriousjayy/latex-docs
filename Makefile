@@ -10,10 +10,35 @@ BUILD_DIR := public/pdfs
 LOG_DIR := public/logs
 BASE_REF ?=
 HEAD_REF ?=
+OUTPUT_DIR ?=
+MODE_NAME ?=
+BASE_REVISION ?=
+HEAD_REVISION ?=
+CLEAN_OUTPUT ?=
 
 CHANGE_ARGS :=
 ifneq ($(strip $(BASE_REF)),)
 CHANGE_ARGS += --base $(BASE_REF)
+endif
+
+ARTIFACT_ARGS :=
+ifneq ($(strip $(OUTPUT_DIR)),)
+ARTIFACT_ARGS += --output-dir $(OUTPUT_DIR)
+endif
+ifneq ($(strip $(LOG_DIR)),)
+ARTIFACT_ARGS += --log-dir $(LOG_DIR)
+endif
+ifneq ($(strip $(MODE_NAME)),)
+ARTIFACT_ARGS += --mode-name $(MODE_NAME)
+endif
+ifneq ($(strip $(BASE_REVISION)),)
+ARTIFACT_ARGS += --base-revision $(BASE_REVISION)
+endif
+ifneq ($(strip $(HEAD_REVISION)),)
+ARTIFACT_ARGS += --head-revision $(HEAD_REVISION)
+endif
+ifeq ($(strip $(CLEAN_OUTPUT)),true)
+ARTIFACT_ARGS += --clean-output
 endif
 ifneq ($(strip $(HEAD_REF)),)
 CHANGE_ARGS += --head $(HEAD_REF)
@@ -46,16 +71,16 @@ list-categories:
 
 .PHONY: build-all
 build-all:
-	@python3 tooling/scripts/latex_build.py build-all
+	@python3 tooling/scripts/latex_build.py build-all $(ARTIFACT_ARGS)
 
 .PHONY: build-parallel
 build-parallel:
-	@python3 tooling/scripts/latex_build.py build-all --parallel --jobs $(JOBS)
+	@python3 tooling/scripts/latex_build.py build-all --parallel --jobs $(JOBS) $(ARTIFACT_ARGS)
 
 define category_rule
 .PHONY: build-category-$(1)
 build-category-$(1):
-	@python3 tooling/scripts/latex_build.py build-category $(1)
+	@python3 tooling/scripts/latex_build.py build-category $(1) $(ARTIFACT_ARGS)
 endef
 
 CATEGORIES := $(shell python3 tooling/scripts/latex_build.py list-categories)
@@ -63,7 +88,7 @@ $(foreach cat,$(CATEGORIES),$(eval $(call category_rule,$(cat))))
 
 .PHONY: build-changed
 build-changed:
-	@python3 tooling/scripts/latex_build.py build-changed $(CHANGE_ARGS) --jobs $(JOBS) --output-dir $(BUILD_DIR) --log-dir $(LOG_DIR) --clean-output
+	@python3 tooling/scripts/latex_build.py build-changed $(CHANGE_ARGS) --jobs $(JOBS) $(ARTIFACT_ARGS)
 
 .PHONY: render-plantuml
 render-plantuml:
@@ -72,12 +97,12 @@ render-plantuml:
 .PHONY: publish
 publish:
 	@echo "Publishing PDFs to $(BUILD_DIR)"
-	@python3 tooling/scripts/latex_build.py build-all --output-dir $(BUILD_DIR) --log-dir $(LOG_DIR) --clean-output
+	@python3 tooling/scripts/latex_build.py build-all --output-dir $(BUILD_DIR) --log-dir $(LOG_DIR) --clean-output --mode-name publish
 
 .PHONY: publish-parallel
 publish-parallel:
 	@echo "Publishing PDFs in parallel to $(BUILD_DIR)"
-	@python3 tooling/scripts/latex_build.py build-all --parallel --jobs $(JOBS) --output-dir $(BUILD_DIR) --log-dir $(LOG_DIR) --clean-output
+	@python3 tooling/scripts/latex_build.py build-all --parallel --jobs $(JOBS) --output-dir $(BUILD_DIR) --log-dir $(LOG_DIR) --clean-output --mode-name publish
 
 .PHONY: clean
 clean:

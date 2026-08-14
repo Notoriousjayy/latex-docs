@@ -2,6 +2,7 @@ import subprocess
 import tempfile
 import unittest
 import shutil
+import json
 from io import StringIO
 from pathlib import Path
 from contextlib import redirect_stderr
@@ -114,6 +115,128 @@ class BuildToolTests(unittest.TestCase):
             self.assertEqual(root / "public" / "pdfs", kwargs["output_dir"])
             self.assertEqual(root / "public" / "logs", kwargs["log_dir"])
             self.assertTrue(kwargs["clean_output"])
+
+    def test_build_changed_with_zero_roots_still_writes_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "src").mkdir(parents=True, exist_ok=True)
+            output_dir = root / "public" / "pdfs"
+            log_dir = root / "public" / "logs"
+
+            with patch("tooling.scripts.latex_build.ROOT", root), patch("tooling.scripts.latex_build.SRC_DIR", root / "src"), patch(
+                "tooling.scripts.latex_build.collect_changed_paths", return_value=[]
+            ), patch("tooling.scripts.latex_build.discover_roots", return_value=[]):
+                status = latex_build.build_changed(
+                    base_ref="HEAD~1",
+                    head_ref="HEAD",
+                    jobs=2,
+                    output_dir=Path("public/pdfs"),
+                    log_dir=Path("public/logs"),
+                    clean_output=True,
+                )
+
+            self.assertEqual(0, status)
+            summary_path = log_dir / "build-summary.json"
+            self.assertTrue(summary_path.exists())
+            summary = json.loads(summary_path.read_text(encoding="utf-8"))
+            self.assertEqual("changed", summary["mode"])
+            self.assertEqual(0, summary["attempted_count"])
+            self.assertEqual(0, summary["failed_count"])
+            self.assertEqual("success", summary["build_status"])
+
+    def test_build_root_resolves_relative_output_paths_from_repo_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src_dir = root / "src" / "docs"
+            src_dir.mkdir(parents=True, exist_ok=True)
+            tex_path = src_dir / "sample.tex"
+            tex_path.write_text("\\documentclass{article}\\begin{document}Hello\\end{document}", encoding="utf-8")
+
+            def fake_run(cmd, cwd, env, stdout=None, stderr=None, check=False):
+                work_dir = Path(cwd)
+                (work_dir / "sample.pdf").write_bytes(b"%PDF-1.4")
+                return subprocess.CompletedProcess(cmd, 0)
+
+            with patch("tooling.scripts.latex_build.ROOT", root), patch("tooling.scripts.latex_build.SRC_DIR", root / "src"), patch(
+                "tooling.scripts.latex_build.subprocess.run", side_effect=fake_run
+            ):
+                status = latex_build.build_root(tex_path, output_dir=Path("public/pdfs"), log_dir=Path("public/logs"))
+
+            self.assertEqual(0, status)
+            self.assertTrue((root / "public" / "pdfs" / "docs" / "sample.pdf").exists())
+            self.assertTrue((root / "public" / "logs" / "docs" / "sample.build.stdout.txt").exists())
+
+    def test_build_summary_contains_required_contract_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src_dir = root / "src" / "docs"
+            src_dir.mkdir(parents=True, exist_ok=True)
+            tex_path = src_dir / "ok.tex"
+            tex_path.write_text("\\documentclass{article}\\begin{document}OK\\end{document}", encoding="utf-8")
+
+            def fake_run(cmd, cwd, env, stdout=None, stderr=None, check=False):
+                Path(cwd, "ok.pdf").write_bytes(b"%PDF-1.4")
+                return subprocess.CompletedProcess(cmd, 0)
+
+            with patch("tooling.scripts.latex_build.ROOT", root), patch("tooling.scripts.latex_build.SRC_DIR", root / "src"), patch(
+                "tooling.scripts.latex_build.subprocess.run", side_effect=fake_run
+            ):
+                status = latex_build.build_roots(
+                    [tex_path],
+                    output_dir=root / "public" / "pdfs",
+                    log_dir=root / "public" / "logs",
+                    clean_output=True,
+                    mode="full",
+                    base_revision="base123",
+                    head_revision="head456",
+                )
+
+            self.assertEqual(0, status)
+            summary = json.loads((root / "public" / "logs" / "build-summary.json").read_text(encoding="utf-8"))
+            for key in (
+                "mode",
+                "base_revision",
+                "head_revision",
+                "root_count",
+                "attempted_count",
+                "succeeded_count",
+                "failed_count",
+                "skipped_count",
+                "pdf_count",
+                "log_count",
+                "build_status",
+            ):
+                self.assertIn(key, summary)
+            self.assertEqual("full", summary["mode"])
+            self.assertEqual("base123", summary["base_revision"])
+            self.assertEqual("head456", summary["head_revision"])
+
+    def test_build_category_writes_mode_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src_dir = root / "src" / "security"
+            src_dir.mkdir(parents=True, exist_ok=True)
+            tex_path = src_dir / "sample.tex"
+            tex_path.write_text("\\documentclass{article}\\begin{document}x\\end{document}", encoding="utf-8")
+
+            def fake_run(cmd, cwd, env, stdout=None, stderr=None, check=False):
+                Path(cwd, "sample.pdf").write_bytes(b"%PDF-1.4")
+                return subprocess.CompletedProcess(cmd, 0)
+
+            with patch("tooling.scripts.latex_build.ROOT", root), patch("tooling.scripts.latex_build.SRC_DIR", root / "src"), patch(
+                "tooling.scripts.latex_build.subprocess.run", side_effect=fake_run
+            ):
+                status = latex_build.build_roots(
+                    [tex_path],
+                    output_dir=Path("public/pdfs"),
+                    log_dir=Path("public/logs"),
+                    clean_output=True,
+                    mode="category",
+                )
+
+            self.assertEqual(0, status)
+            summary = json.loads((root / "public" / "logs" / "build-summary.json").read_text(encoding="utf-8"))
+            self.assertEqual("category", summary["mode"])
 
     def test_discover_roots_finds_document_roots(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -465,8 +588,43 @@ class BuildToolTests(unittest.TestCase):
         repo_root = Path(__file__).resolve().parents[1]
         workflow_text = (repo_root / ".github" / "workflows" / "_build-latex.yml").read_text(encoding="utf-8")
 
-        self.assertIn("if: ${{ always() && inputs.upload-artifacts }}", workflow_text)
+        self.assertIn("if: ${{ always() && inputs.upload-artifacts && steps.build-docs.outputs.has-logs == 'true' }}", workflow_text)
         self.assertIn("name: latex-logs", workflow_text)
+
+    def test_reusable_workflow_uploads_pdfs_only_when_valid_outputs_exist(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        workflow_text = (repo_root / ".github" / "workflows" / "_build-latex.yml").read_text(encoding="utf-8")
+
+        self.assertIn("steps.build-docs.outputs.build-status == 'success'", workflow_text)
+        self.assertIn("steps.build-docs.outputs.has-pdfs == 'true'", workflow_text)
+
+    def test_build_documents_action_exposes_artifact_contract_outputs(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        action_text = (repo_root / ".github" / "actions" / "build-documents" / "action.yml").read_text(encoding="utf-8")
+
+        self.assertIn("root-count", action_text)
+        self.assertIn("attempted-count", action_text)
+        self.assertIn("success-count", action_text)
+        self.assertIn("failure-count", action_text)
+        self.assertIn("log-count", action_text)
+        self.assertIn("has-pdfs", action_text)
+        self.assertIn("has-logs", action_text)
+        self.assertIn("build-status", action_text)
+
+    def test_build_documents_action_preserves_failure_exit_status_after_outputs(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        action_text = (repo_root / ".github" / "actions" / "build-documents" / "action.yml").read_text(encoding="utf-8")
+
+        self.assertIn("set +e", action_text)
+        self.assertIn("build_status_code=$?", action_text)
+        self.assertIn("exit \"$build_status_code\"", action_text)
+
+    def test_build_documents_action_sets_has_logs_when_summary_exists(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        action_text = (repo_root / ".github" / "actions" / "build-documents" / "action.yml").read_text(encoding="utf-8")
+
+        self.assertIn("if [[ -f \"public/logs/build-summary.json\" ]]; then", action_text)
+        self.assertIn("has_logs=true", action_text)
 
     def test_pages_workflow_permissions_and_job_dependencies(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]

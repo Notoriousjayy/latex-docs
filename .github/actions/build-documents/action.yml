@@ -25,9 +25,33 @@ inputs:
     default: ''
 
 outputs:
+  root-count:
+    description: 'Number of selected roots for the current mode'
+    value: ${{ steps.run.outputs.root-count }}
+  attempted-count:
+    description: 'Number of attempted document builds'
+    value: ${{ steps.run.outputs.attempted-count }}
+  success-count:
+    description: 'Number of successful document builds'
+    value: ${{ steps.run.outputs.success-count }}
+  failure-count:
+    description: 'Number of failed document builds'
+    value: ${{ steps.run.outputs.failure-count }}
   pdf-count:
     description: 'Number of PDFs built'
     value: ${{ steps.run.outputs.pdf-count }}
+  log-count:
+    description: 'Number of log files generated'
+    value: ${{ steps.run.outputs.log-count }}
+  has-pdfs:
+    description: 'Whether valid current PDFs were produced'
+    value: ${{ steps.run.outputs.has-pdfs }}
+  has-logs:
+    description: 'Whether log artifacts exist'
+    value: ${{ steps.run.outputs.has-logs }}
+  build-status:
+    description: 'Normalized build status (success, failed, invalid)'
+    value: ${{ steps.run.outputs.build-status }}
 
 runs:
   using: 'composite'
@@ -36,9 +60,9 @@ runs:
       id: run
       shell: bash
       run: |
-        set -euo pipefail
+        set -uo pipefail
         export TEXINPUTS="${GITHUB_WORKSPACE}/tooling/latex//:${GITHUB_WORKSPACE}/tooling/styles/latex//:${TEXINPUTS:-}"
-        mkdir -p public/pdfs public/logs
+        mkdir -p "${GITHUB_WORKSPACE}/public/pdfs" "${GITHUB_WORKSPACE}/public/logs"
 
         mode="${{ inputs.mode }}"
         category="${{ inputs.category }}"
@@ -46,15 +70,27 @@ runs:
         base_ref="${{ inputs.base-ref }}"
         head_ref="${{ inputs.head-ref }}"
 
+        make_args=(
+          OUTPUT_DIR=public/pdfs
+          LOG_DIR=public/logs
+          CLEAN_OUTPUT=true
+          JOBS="$jobs"
+          MODE_NAME="$mode"
+          BASE_REVISION="$base_ref"
+          HEAD_REVISION="$head_ref"
+        )
+
+        set +e
+
         case "$mode" in
           full)
-            make build-all JOBS="$jobs"
+            make build-all "${make_args[@]}"
             ;;
           changed)
             if [[ -n "$base_ref" ]]; then
-              make build-changed BASE_REF="$base_ref" HEAD_REF="$head_ref" JOBS="$jobs"
+              make build-changed "${make_args[@]}" BASE_REF="$base_ref" HEAD_REF="$head_ref"
             else
-              make build-changed JOBS="$jobs"
+              make build-changed "${make_args[@]}"
             fi
             ;;
           publish)
@@ -65,7 +101,7 @@ runs:
               echo "::error::category mode requires a non-empty category"
               exit 1
             fi
-            make "build-category-${category}"
+            make "build-category-${category}" "${make_args[@]}"
             ;;
           *)
             echo "::error::Unsupported mode: $mode"
@@ -73,8 +109,69 @@ runs:
             ;;
         esac
 
-        pdf_count=$(find public/pdfs -type f -name '*.pdf' 2>/dev/null | wc -l | tr -d ' ')
-        echo "pdf-count=$pdf_count" >> "$GITHUB_OUTPUT"
+        build_status_code=$?
+        set -e
+
+        summary_json="${GITHUB_WORKSPACE}/public/logs/build-summary.json"
+        if [[ -f "$summary_json" ]]; then
+          eval "$(python3 - <<'PY'
+import json
+from pathlib import Path
+
+summary = json.loads(Path('public/logs/build-summary.json').read_text(encoding='utf-8'))
+
+def emit(name: str, value) -> None:
+    text = str(value).replace('"', '\\"')
+    print(f'{name}="{text}"')
+
+emit('root_count', summary.get('root_count', 0))
+emit('attempted_count', summary.get('attempted_count', 0))
+emit('success_count', summary.get('succeeded_count', 0))
+emit('failure_count', summary.get('failed_count', 0))
+emit('pdf_count', summary.get('pdf_count', 0))
+emit('log_count', summary.get('log_count', 0))
+emit('build_status', summary.get('build_status', 'invalid'))
+PY
+)"
+        else
+          root_count=0
+          attempted_count=0
+          success_count=0
+          failure_count=0
+          pdf_count=$(find public/pdfs -type f -name '*.pdf' 2>/dev/null | wc -l | tr -d ' ')
+          log_count=$(find public/logs -type f 2>/dev/null | wc -l | tr -d ' ')
+          if [[ "$build_status_code" -eq 0 ]]; then
+            build_status="success"
+          elif [[ "$build_status_code" -eq 1 ]]; then
+            build_status="failed"
+          else
+            build_status="invalid"
+          fi
+        fi
+
+        has_pdfs=false
+        if [[ "${pdf_count:-0}" -gt 0 ]]; then
+          has_pdfs=true
+        fi
+
+        has_logs=false
+        if [[ -f "public/logs/build-summary.json" ]]; then
+          has_logs=true
+        fi
+
+        {
+          echo "root-count=${root_count:-0}"
+          echo "attempted-count=${attempted_count:-0}"
+          echo "success-count=${success_count:-0}"
+          echo "failure-count=${failure_count:-0}"
+          echo "pdf-count=${pdf_count:-0}"
+          echo "log-count=${log_count:-0}"
+          echo "has-pdfs=$has_pdfs"
+          echo "has-logs=$has_logs"
+          echo "build-status=${build_status:-invalid}"
+        } >> "$GITHUB_OUTPUT"
+
+        exit "$build_status_code"
 
 
 

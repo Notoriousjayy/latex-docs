@@ -73,20 +73,30 @@ jobs:
           base-ref: ${{ inputs.base-ref }}
           head-ref: ${{ inputs.head-ref }}
 
+      - name: Inspect generated artifacts
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          pwd
+          find public -maxdepth 12 -type f 2>/dev/null | sort
+          find src -type f \( -name '*.pdf' -o -name '*.build.stdout.txt' -o -name '*.build.stderr.txt' \) -print 2>/dev/null | sort
+          du -ah public 2>/dev/null | sort -h | tail -50
+
       - name: Upload PDFs artifact
-        if: ${{ success() && inputs.upload-artifacts }}
+        if: ${{ always() && inputs.upload-artifacts && steps.build-docs.outputs.build-status == 'success' && steps.build-docs.outputs.has-pdfs == 'true' }}
         uses: actions/upload-artifact@v6
         with:
           name: latex-pdfs
           path: public/pdfs
           retention-days: 14
-          if-no-files-found: warn
+          if-no-files-found: error
 
       - name: Upload logs artifact
-        if: ${{ always() && inputs.upload-artifacts }}
+        if: ${{ always() && inputs.upload-artifacts && steps.build-docs.outputs.has-logs == 'true' }}
         uses: actions/upload-artifact@v6
         with:
           name: latex-logs
           path: public/logs
           retention-days: 14
-          if-no-files-found: warn
+          if-no-files-found: error

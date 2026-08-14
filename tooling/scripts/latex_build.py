@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import html
+import json
 import os
 import re
 import shutil
@@ -11,6 +12,7 @@ import subprocess
 import sys
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import List, Sequence, Set
 
@@ -35,6 +37,95 @@ MISSING_FILE_PATTERNS = [
     re.compile(r"File [\"']([^\"']+)[\"'] not found"),
     re.compile(r"I can't find file `[^`]+`"),
 ]
+
+
+@dataclass
+class BuildSummary:
+    mode: str
+    base_revision: str
+    head_revision: str
+    root_count: int
+    attempted_count: int
+    succeeded_count: int
+    failed_count: int
+    skipped_count: int
+    pdf_count: int
+    log_count: int
+    build_status: str
+    first_errors: list[dict[str, str]]
+    failure_clusters: list[dict[str, str | int]]
+
+
+def _resolve_repo_path(path: Path | None) -> Path | None:
+    if path is None:
+        return None
+    if path.is_absolute():
+        return path
+    return (ROOT / path).resolve()
+
+
+def _count_files(path: Path | None, pattern: str = "*") -> int:
+    if path is None or not path.exists():
+        return 0
+    return sum(1 for candidate in path.rglob(pattern) if candidate.is_file())
+
+
+def _normalize_build_status(exit_code: int) -> str:
+    if exit_code == 0:
+        return "success"
+    if exit_code == 1:
+        return "failed"
+    return "invalid"
+
+
+def _write_build_summary(log_dir: Path | None, summary: BuildSummary, output_dir: Path | None) -> None:
+    if log_dir is None:
+        return
+
+    log_dir.mkdir(parents=True, exist_ok=True)
+    summary_path = log_dir / "build-summary.json"
+    text_summary_path = log_dir / "build-summary.txt"
+    first_errors_path = log_dir / "build-first-errors.json"
+    failure_clusters_path = log_dir / "build-failure-clusters.json"
+    manifest_path = log_dir / "build-manifest.txt"
+
+    summary_dict = asdict(summary)
+    summary_path.write_text(json.dumps(summary_dict, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    lines = [
+        f"mode: {summary.mode}",
+        f"base revision: {summary.base_revision or '-'}",
+        f"head revision: {summary.head_revision or '-'}",
+        f"root count: {summary.root_count}",
+        f"attempted count: {summary.attempted_count}",
+        f"succeeded count: {summary.succeeded_count}",
+        f"failed count: {summary.failed_count}",
+        f"skipped count: {summary.skipped_count}",
+        f"PDF count: {summary.pdf_count}",
+        f"log count: {summary.log_count}",
+        f"build status: {summary.build_status}",
+    ]
+    text_summary_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    first_errors_path.write_text(json.dumps(summary.first_errors, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    failure_clusters_path.write_text(json.dumps(summary.failure_clusters, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    def _display_path(path: Path) -> str:
+        try:
+            return path.relative_to(ROOT).as_posix()
+        except ValueError:
+            return str(path)
+
+    manifest_lines: list[str] = []
+    if output_dir is not None and output_dir.exists():
+        manifest_lines.append("[pdfs]")
+        for pdf_path in sorted(path for path in output_dir.rglob("*.pdf") if path.is_file()):
+            manifest_lines.append(_display_path(pdf_path))
+    if log_dir.exists():
+        manifest_lines.append("[logs]")
+        for log_path in sorted(path for path in log_dir.rglob("*") if path.is_file()):
+            manifest_lines.append(_display_path(log_path))
+    manifest_path.write_text("\n".join(manifest_lines) + "\n", encoding="utf-8")
 
 
 def _is_generated_wrapper(path: Path) -> bool:
@@ -332,6 +423,9 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path) -> List[Path]:
 
 def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | None = None, artifact_dir: Path | None = None) -> int:
     tex_path = tex_path.resolve()
+    output_dir = _resolve_repo_path(output_dir)
+    log_dir = _resolve_repo_path(log_dir)
+    artifact_dir = _resolve_repo_path(artifact_dir)
     if not tex_path.exists():
         raise FileNotFoundError(tex_path)
 
@@ -439,7 +533,21 @@ def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | N
     return result.returncode
 
 
-def build_roots(tex_paths: Sequence[Path], jobs: int = 1, output_dir: Path | None = None, log_dir: Path | None = None, artifact_dir: Path | None = None, clean_output: bool = False) -> int:
+def build_roots(
+    tex_paths: Sequence[Path],
+    jobs: int = 1,
+    output_dir: Path | None = None,
+    log_dir: Path | None = None,
+    artifact_dir: Path | None = None,
+    clean_output: bool = False,
+    mode: str = "full",
+    base_revision: str = "",
+    head_revision: str = "",
+) -> int:
+    output_dir = _resolve_repo_path(output_dir)
+    log_dir = _resolve_repo_path(log_dir)
+    artifact_dir = _resolve_repo_path(artifact_dir)
+
     if clean_output:
         reset_output_tree(output_dir)
         reset_output_tree(log_dir)
@@ -465,13 +573,42 @@ def build_roots(tex_paths: Sequence[Path], jobs: int = 1, output_dir: Path | Non
                 failure_count += 1
                 report_failure(tex_path, result_code)
         print(f"Build summary: {len(tex_paths) - failure_count} succeeded, {failure_count} failed, {len(tex_paths)} total", file=sys.stderr)
+        exit_code = 0
         if failure_count:
             clusters = Counter(error for _, _, error in failures)
             print("Failure clusters:", file=sys.stderr)
             for signature, count in clusters.most_common(10):
                 print(f"  {count} x {signature}", file=sys.stderr)
-            return 1
-        return 0
+            exit_code = 1
+
+        cluster_counts = Counter(error for _, _, error in failures)
+        summary = BuildSummary(
+            mode=mode,
+            base_revision=base_revision,
+            head_revision=head_revision,
+            root_count=len(tex_paths),
+            attempted_count=len(tex_paths),
+            succeeded_count=len(tex_paths) - failure_count,
+            failed_count=failure_count,
+            skipped_count=0,
+            pdf_count=_count_files(output_dir, "*.pdf"),
+            log_count=_count_files(log_dir),
+            build_status=_normalize_build_status(exit_code),
+            first_errors=[
+                {
+                    "root": tex_path.relative_to(ROOT).as_posix() if tex_path.is_relative_to(ROOT) else str(tex_path),
+                    "signature": signature,
+                    "exit_code": str(result_code),
+                }
+                for tex_path, result_code, signature in failures
+            ],
+            failure_clusters=[
+                {"signature": signature, "count": count}
+                for signature, count in cluster_counts.most_common()
+            ],
+        )
+        _write_build_summary(log_dir, summary, output_dir)
+        return exit_code
 
     failure_count = 0
     with ThreadPoolExecutor(max_workers=max(1, jobs)) as executor:
@@ -482,13 +619,42 @@ def build_roots(tex_paths: Sequence[Path], jobs: int = 1, output_dir: Path | Non
                 failure_count += 1
                 report_failure(tex_path, result)
     print(f"Build summary: {len(tex_paths) - failure_count} succeeded, {failure_count} failed, {len(tex_paths)} total", file=sys.stderr)
+    exit_code = 0
     if failure_count:
         clusters = Counter(error for _, _, error in failures)
         print("Failure clusters:", file=sys.stderr)
         for signature, count in clusters.most_common(10):
             print(f"  {count} x {signature}", file=sys.stderr)
-        return 1
-    return 0
+        exit_code = 1
+
+    cluster_counts = Counter(error for _, _, error in failures)
+    summary = BuildSummary(
+        mode=mode,
+        base_revision=base_revision,
+        head_revision=head_revision,
+        root_count=len(tex_paths),
+        attempted_count=len(tex_paths),
+        succeeded_count=len(tex_paths) - failure_count,
+        failed_count=failure_count,
+        skipped_count=0,
+        pdf_count=_count_files(output_dir, "*.pdf"),
+        log_count=_count_files(log_dir),
+        build_status=_normalize_build_status(exit_code),
+        first_errors=[
+            {
+                "root": tex_path.relative_to(ROOT).as_posix() if tex_path.is_relative_to(ROOT) else str(tex_path),
+                "signature": signature,
+                "exit_code": str(result_code),
+            }
+            for tex_path, result_code, signature in failures
+        ],
+        failure_clusters=[
+            {"signature": signature, "count": count}
+            for signature, count in cluster_counts.most_common()
+        ],
+    )
+    _write_build_summary(log_dir, summary, output_dir)
+    return exit_code
 
 
 def collect_changed_paths(base_ref: str | None = None, head_ref: str | None = None) -> List[str]:
@@ -513,7 +679,12 @@ def build_changed(
     log_dir: Path | None = None,
     artifact_dir: Path | None = None,
     clean_output: bool = False,
+    mode_name: str = "changed",
 ) -> int:
+    output_dir = _resolve_repo_path(output_dir)
+    log_dir = _resolve_repo_path(log_dir)
+    artifact_dir = _resolve_repo_path(artifact_dir)
+
     changed_paths = collect_changed_paths(base_ref=base_ref, head_ref=head_ref)
     roots = discover_roots()
     affected = []
@@ -525,8 +696,6 @@ def build_changed(
             continue
         affected.extend(determine_affected_roots(roots, path))
     unique_roots = sorted({path.resolve() for path in affected})
-    if not unique_roots:
-        return 0
     return build_roots(
         unique_roots,
         jobs=jobs,
@@ -534,6 +703,9 @@ def build_changed(
         log_dir=log_dir,
         artifact_dir=artifact_dir,
         clean_output=clean_output,
+        mode=mode_name,
+        base_revision=base_ref or "",
+        head_revision=head_ref or "",
     )
 
 
@@ -607,6 +779,9 @@ def main() -> int:
     build_parser.add_argument("--log-dir", type=Path, default=None)
     build_parser.add_argument("--artifact-dir", type=Path, default=None)
     build_parser.add_argument("--clean-output", action="store_true")
+    build_parser.add_argument("--mode-name", default="full")
+    build_parser.add_argument("--base-revision", default="")
+    build_parser.add_argument("--head-revision", default="")
 
     category_parser = subparsers.add_parser("build-category")
     category_parser.add_argument("category")
@@ -615,6 +790,9 @@ def main() -> int:
     category_parser.add_argument("--log-dir", type=Path, default=None)
     category_parser.add_argument("--artifact-dir", type=Path, default=None)
     category_parser.add_argument("--clean-output", action="store_true")
+    category_parser.add_argument("--mode-name", default="category")
+    category_parser.add_argument("--base-revision", default="")
+    category_parser.add_argument("--head-revision", default="")
 
     changed_parser = subparsers.add_parser("build-changed")
     changed_parser.add_argument("--base", default=None)
@@ -624,6 +802,7 @@ def main() -> int:
     changed_parser.add_argument("--log-dir", type=Path, default=None)
     changed_parser.add_argument("--artifact-dir", type=Path, default=None)
     changed_parser.add_argument("--clean-output", action="store_true")
+    changed_parser.add_argument("--mode-name", default="changed")
 
     render_parser = subparsers.add_parser("render-plantuml")
     render_parser.add_argument("--source-dir", type=Path, default=None)
@@ -650,11 +829,31 @@ def main() -> int:
 
     if args.command == "build-all":
         jobs = max(1, args.jobs if args.parallel else 1)
-        return build_roots(discover_roots(), jobs=jobs, output_dir=args.output_dir, log_dir=args.log_dir, artifact_dir=args.artifact_dir, clean_output=args.clean_output)
+        return build_roots(
+            discover_roots(),
+            jobs=jobs,
+            output_dir=args.output_dir,
+            log_dir=args.log_dir,
+            artifact_dir=args.artifact_dir,
+            clean_output=args.clean_output,
+            mode=args.mode_name,
+            base_revision=args.base_revision,
+            head_revision=args.head_revision,
+        )
 
     if args.command == "build-category":
         roots = [root for root in discover_roots() if root.is_relative_to(SRC_DIR / args.category)]
-        return build_roots(roots, jobs=args.jobs, output_dir=args.output_dir, log_dir=args.log_dir, artifact_dir=args.artifact_dir, clean_output=args.clean_output)
+        return build_roots(
+            roots,
+            jobs=args.jobs,
+            output_dir=args.output_dir,
+            log_dir=args.log_dir,
+            artifact_dir=args.artifact_dir,
+            clean_output=args.clean_output,
+            mode=args.mode_name,
+            base_revision=args.base_revision,
+            head_revision=args.head_revision,
+        )
 
     if args.command == "build-changed":
         return build_changed(
@@ -665,6 +864,7 @@ def main() -> int:
             log_dir=args.log_dir,
             artifact_dir=args.artifact_dir,
             clean_output=args.clean_output,
+            mode_name=args.mode_name,
         )
 
     if args.command == "stage-pages":
