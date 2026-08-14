@@ -3,6 +3,7 @@ import tempfile
 import unittest
 import shutil
 import json
+import re
 from io import StringIO
 from pathlib import Path
 from contextlib import redirect_stderr
@@ -618,6 +619,63 @@ class BuildToolTests(unittest.TestCase):
         self.assertIn("set +e", action_text)
         self.assertIn("build_status_code=$?", action_text)
         self.assertIn("exit \"$build_status_code\"", action_text)
+
+    def test_build_documents_action_manifest_schema_and_caller_compatibility(self) -> None:
+        try:
+            import yaml  # type: ignore
+        except ImportError:
+            self.skipTest("PyYAML is not available")
+
+        repo_root = Path(__file__).resolve().parents[1]
+        action_path = repo_root / ".github" / "actions" / "build-documents" / "action.yml"
+        workflow_path = repo_root / ".github" / "workflows" / "_build-latex.yml"
+
+        raw = action_path.read_text(encoding="utf-8")
+        self.assertNotIn("\t", raw)
+
+        data = yaml.safe_load(raw)
+        self.assertIsInstance(data, dict)
+        self.assertIsInstance(data.get("runs"), dict)
+        self.assertEqual("composite", data["runs"].get("using"))
+        self.assertIsInstance(data["runs"].get("steps"), list)
+        self.assertGreater(len(data["runs"]["steps"]), 0)
+
+        forbidden_root_keys = {"on", "jobs", "permissions", "concurrency", "env"}
+        self.assertFalse(forbidden_root_keys.intersection(data.keys()))
+
+        step_ids = {
+            step.get("id")
+            for step in data["runs"]["steps"]
+            if isinstance(step, dict) and isinstance(step.get("id"), str)
+        }
+        for step in data["runs"]["steps"]:
+            if isinstance(step, dict) and "run" in step:
+                self.assertIn("shell", step)
+
+        outputs = data.get("outputs")
+        self.assertIsInstance(outputs, dict)
+        for output_name, output_def in outputs.items():
+            self.assertIsInstance(output_def, dict, output_name)
+            self.assertIn("description", output_def, output_name)
+            self.assertIn("value", output_def, output_name)
+
+            value = str(output_def["value"])
+            for ref_id in re.findall(r"steps\.([A-Za-z0-9_-]+)\.outputs", value):
+                self.assertIn(ref_id, step_ids)
+
+        expected_inputs = {"mode", "category", "jobs", "base-ref", "head-ref"}
+        self.assertEqual(expected_inputs, set(data.get("inputs", {}).keys()))
+
+        workflow = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
+        self.assertIsInstance(workflow, dict)
+        build_steps = workflow["jobs"]["build"]["steps"]
+        matching = [
+            step
+            for step in build_steps
+            if isinstance(step, dict) and step.get("uses") == "./.github/actions/build-documents"
+        ]
+        self.assertEqual(1, len(matching))
+        self.assertEqual(expected_inputs, set(matching[0].get("with", {}).keys()))
 
     def test_build_documents_action_sets_has_logs_when_summary_exists(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
