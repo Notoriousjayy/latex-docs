@@ -12,6 +12,109 @@ from tooling.scripts.latex_build import determine_affected_roots, discover_roots
 
 
 class BuildToolTests(unittest.TestCase):
+    def test_extract_first_error_detects_stdout_only_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tex_log = root / "doc.log"
+            stdout_log = root / "doc.stdout.txt"
+            stderr_log = root / "doc.stderr.txt"
+            tex_log.write_text("", encoding="utf-8")
+            stdout_log.write_text("! Undefined control sequence.\nl.37 \\LdsCornellRenderTitle\n", encoding="utf-8")
+            stderr_log.write_text("", encoding="utf-8")
+
+            signature = latex_build._extract_first_error(tex_log, stdout_log, stderr_log)
+
+            self.assertIn("Undefined control sequence", signature)
+            self.assertIn("l.<n>", signature)
+
+    def test_extract_first_error_detects_native_log_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tex_log = root / "doc.log"
+            stdout_log = root / "doc.stdout.txt"
+            stderr_log = root / "doc.stderr.txt"
+            tex_log.write_text("! LaTeX Error: Missing \\begin{document}.\nl.12\\end{titlepage}\n", encoding="utf-8")
+            stdout_log.write_text("", encoding="utf-8")
+            stderr_log.write_text("", encoding="utf-8")
+
+            signature = latex_build._extract_first_error(tex_log, stdout_log, stderr_log)
+
+            self.assertIn("LaTeX Error", signature)
+            self.assertIn("l.<n>", signature)
+
+    def test_extract_first_error_uses_unknown_only_when_all_sources_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tex_log = root / "doc.log"
+            stdout_log = root / "doc.stdout.txt"
+            stderr_log = root / "doc.stderr.txt"
+            tex_log.write_text("", encoding="utf-8")
+            stdout_log.write_text("", encoding="utf-8")
+            stderr_log.write_text("", encoding="utf-8")
+
+            signature = latex_build._extract_first_error(tex_log, stdout_log, stderr_log)
+
+            self.assertEqual("UNKNOWN", signature)
+
+    def test_build_roots_clusters_normalized_package_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src_dir = root / "src" / "docs"
+            src_dir.mkdir(parents=True)
+            tex_a = src_dir / "a.tex"
+            tex_b = src_dir / "b.tex"
+            tex_a.write_text("\\documentclass{article}\\begin{document}A\\end{document}", encoding="utf-8")
+            tex_b.write_text("\\documentclass{article}\\begin{document}B\\end{document}", encoding="utf-8")
+            log_dir = root / "public" / "logs"
+
+            with patch("tooling.scripts.latex_build.ROOT", root), patch("tooling.scripts.latex_build.SRC_DIR", root / "src"):
+                a_stdout, _ = latex_build._log_paths(tex_a, log_dir)
+                b_stdout, _ = latex_build._log_paths(tex_b, log_dir)
+                assert a_stdout is not None
+                assert b_stdout is not None
+                a_stdout.write_text("! Package cornell-notes Error: Cornell documents require an explicit \\title{...}.\nl.11 \\maketitle\n", encoding="utf-8")
+                b_stdout.write_text("! Package cornell-notes Error: Cornell documents require an explicit \\title{...}.\nl.97 \\maketitle\n", encoding="utf-8")
+
+                with patch("tooling.scripts.latex_build.build_root", side_effect=[12, 12]):
+                    stderr_buffer = StringIO()
+                    with redirect_stderr(stderr_buffer):
+                        status = latex_build.build_roots([tex_a, tex_b], log_dir=log_dir)
+
+            self.assertEqual(1, status)
+            stderr_text = stderr_buffer.getvalue()
+            self.assertIn("Failure clusters", stderr_text)
+            self.assertIn("2 x Package cornell-notes Error", stderr_text)
+            self.assertIn("l.<n>", stderr_text)
+
+    def test_build_changed_includes_style_dependency_changes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src_dir = root / "src" / "docs"
+            src_dir.mkdir(parents=True)
+            tex_path = src_dir / "a.tex"
+            tex_path.write_text("\\documentclass{article}\\begin{document}A\\end{document}", encoding="utf-8")
+
+            with patch("tooling.scripts.latex_build.collect_changed_paths", return_value=["tooling/styles/latex/cornell-notes.sty"]), patch(
+                "tooling.scripts.latex_build.discover_roots", return_value=[tex_path]
+            ), patch("tooling.scripts.latex_build.determine_affected_roots", return_value=[tex_path]), patch(
+                "tooling.scripts.latex_build.build_roots", return_value=0
+            ) as build_roots_mock:
+                status = latex_build.build_changed(
+                    base_ref="base",
+                    head_ref="head",
+                    jobs=2,
+                    output_dir=root / "public" / "pdfs",
+                    log_dir=root / "public" / "logs",
+                    clean_output=True,
+                )
+
+            self.assertEqual(0, status)
+            _, kwargs = build_roots_mock.call_args
+            self.assertEqual(2, kwargs["jobs"])
+            self.assertEqual(root / "public" / "pdfs", kwargs["output_dir"])
+            self.assertEqual(root / "public" / "logs", kwargs["log_dir"])
+            self.assertTrue(kwargs["clean_output"])
+
     def test_discover_roots_finds_document_roots(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

@@ -63,7 +63,7 @@ $(foreach cat,$(CATEGORIES),$(eval $(call category_rule,$(cat))))
 
 .PHONY: build-changed
 build-changed:
-	@python3 tooling/scripts/latex_build.py build-changed $(CHANGE_ARGS)
+	@python3 tooling/scripts/latex_build.py build-changed $(CHANGE_ARGS) --jobs $(JOBS) --output-dir $(BUILD_DIR) --log-dir $(LOG_DIR) --clean-output
 
 .PHONY: render-plantuml
 render-plantuml:

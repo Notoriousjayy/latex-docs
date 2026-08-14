@@ -30,6 +30,12 @@ FATAL_PATTERNS = [
     re.compile(r"No \\title given"),
 ]
 
+MISSING_FILE_PATTERNS = [
+    re.compile(r"File `[^`]+` not found"),
+    re.compile(r"File [\"']([^\"']+)[\"'] not found"),
+    re.compile(r"I can't find file `[^`]+`"),
+]
+
 
 def _is_generated_wrapper(path: Path) -> bool:
     return path.name.startswith(".") and path.name.endswith(".latex-build-wrapper.tex")
@@ -112,16 +118,93 @@ def _log_paths(tex_path: Path, log_dir: Path | None) -> tuple[Path | None, Path 
 
 
 def _extract_first_error(root_log: Path, stdout_path: Path | None, stderr_path: Path | None) -> str:
-    for candidate in (stderr_path, stdout_path, root_log):
-        if candidate is None or not candidate.exists():
-            continue
-        text = candidate.read_text(encoding="utf-8", errors="ignore")
+    def _read_text(path: Path | None) -> str:
+        if path is None or not path.exists():
+            return ""
+        return path.read_text(encoding="utf-8", errors="ignore")
+
+    def _normalize_signature(text: str) -> str:
+        normalized = text.strip()
+        if not normalized:
+            return ""
+        normalized = normalized.replace(str(ROOT), "<repo>")
+        normalized = re.sub(r"/tmp/[^\s:;,)]+", "<tmp>", normalized)
+        normalized = re.sub(r"l\.\d+", "l.<n>", normalized)
+        normalized = re.sub(r"\s+", " ", normalized)
+        return normalized.strip()
+
+    def _first_bang_signature(text: str) -> str:
+        lines = text.splitlines()
+        for idx, raw in enumerate(lines):
+            line = raw.strip()
+            if not line.startswith("!"):
+                continue
+            message = line[1:].strip() or "LaTeX fatal error"
+            line_ref = ""
+            for next_line in lines[idx + 1 : idx + 6]:
+                next_line = next_line.strip()
+                if re.match(r"l\.\d+", next_line):
+                    line_ref = next_line
+                    break
+            if line_ref:
+                return f"{message} ({line_ref})"
+            return message
+        return ""
+
+    sources: list[tuple[str, str]] = [
+        ("log", _read_text(root_log)),
+        ("stdout", _read_text(stdout_path)),
+        ("stderr", _read_text(stderr_path)),
+    ]
+    non_empty_sources = [(name, text) for name, text in sources if text.strip()]
+    if not non_empty_sources:
+        return "UNKNOWN"
+
+    # 1) TeX-leading `!` errors with line context are highest signal.
+    for _, text in non_empty_sources:
+        signature = _first_bang_signature(text)
+        if signature:
+            return _normalize_signature(signature)
+
+    # 2..7) Canonical LaTeX/package fatal signatures.
+    precedence_patterns = [
+        re.compile(r"LaTeX Error:\s*.+"),
+        re.compile(r"Package\s+[^\s]+\s+Error:\s*.+"),
+        re.compile(r"Undefined control sequence"),
+    ]
+
+    for missing_file_pattern in MISSING_FILE_PATTERNS:
+        precedence_patterns.append(missing_file_pattern)
+
+    precedence_patterns.extend(
+        [
+            re.compile(r"Emergency stop"),
+            re.compile(r"Fatal error(?: occurred, no output PDF file produced)?"),
+        ]
+    )
+
+    for pattern in precedence_patterns:
+        for _, text in non_empty_sources:
+            match = pattern.search(text)
+            if match:
+                return _normalize_signature(match.group(0))
+
+    # 8) latexmk-level failure phrasing.
+    latexmk_pattern = re.compile(r"Latexmk:.*(?:error|failed|failure|stopping).+", re.IGNORECASE)
+    for _, text in non_empty_sources:
         for line in text.splitlines():
-            for pattern in FATAL_PATTERNS:
-                match = pattern.search(line)
-                if match:
-                    return match.group(0).strip()
-    return ""
+            match = latexmk_pattern.search(line)
+            if match:
+                return _normalize_signature(match.group(0))
+
+    # 9) Last non-empty line fallback from collected sources.
+    for _, text in non_empty_sources:
+        for line in reversed(text.splitlines()):
+            stripped = line.strip()
+            if stripped:
+                return _normalize_signature(stripped)
+
+    return "UNKNOWN"
 
 
 def _resolve_package_path(package_name: str) -> Path | None:
@@ -309,6 +392,13 @@ def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | N
     source_pdf_path = work_dir / f"{stem}.pdf"
     published_pdf_path = build_dir / f"{stem}.pdf"
 
+    # Clear any previous staged output for this root so failures cannot leave stale files.
+    if output_dir is not None and published_pdf_path.exists():
+        try:
+            published_pdf_path.unlink()
+        except OSError:
+            pass
+
     if used_wrapper and build_input_path.exists():
         try:
             build_input_path.unlink()
@@ -319,6 +409,11 @@ def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | N
         if stderr_path is not None:
             with stderr_path.open("a", encoding="utf-8") as handle:
                 handle.write(f"Expected PDF output was not produced: {source_pdf_path}\n")
+        if output_dir is not None and published_pdf_path.exists():
+            try:
+                published_pdf_path.unlink()
+            except OSError:
+                pass
         return 2
 
     if output_dir is not None and result.returncode == 0 and source_pdf_path.exists():
@@ -334,6 +429,12 @@ def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | N
 
     if result.returncode == 0:
         return 0
+
+    if output_dir is not None and published_pdf_path.exists():
+        try:
+            published_pdf_path.unlink()
+        except OSError:
+            pass
 
     return result.returncode
 
@@ -404,19 +505,36 @@ def collect_changed_paths(base_ref: str | None = None, head_ref: str | None = No
     return [line.strip() for line in changed.splitlines() if line.strip()]
 
 
-def build_changed(base_ref: str | None = None, head_ref: str | None = None, jobs: int = 1) -> int:
+def build_changed(
+    base_ref: str | None = None,
+    head_ref: str | None = None,
+    jobs: int = 1,
+    output_dir: Path | None = None,
+    log_dir: Path | None = None,
+    artifact_dir: Path | None = None,
+    clean_output: bool = False,
+) -> int:
     changed_paths = collect_changed_paths(base_ref=base_ref, head_ref=head_ref)
-    tex_changes = [line.strip() for line in changed_paths if line.endswith(".tex")]
     roots = discover_roots()
     affected = []
-    for changed_path in tex_changes:
+    for changed_path in changed_paths:
         path = (ROOT / changed_path).resolve()
-        if path.exists() and path.suffix == ".tex":
-            affected.extend(determine_affected_roots(roots, path))
+        if not path.exists():
+            continue
+        if path.suffix.lower() not in {".tex", ".sty", ".cls"}:
+            continue
+        affected.extend(determine_affected_roots(roots, path))
     unique_roots = sorted({path.resolve() for path in affected})
     if not unique_roots:
         return 0
-    return build_roots(unique_roots, jobs=jobs)
+    return build_roots(
+        unique_roots,
+        jobs=jobs,
+        output_dir=output_dir,
+        log_dir=log_dir,
+        artifact_dir=artifact_dir,
+        clean_output=clean_output,
+    )
 
 
 def render_plantuml(source_dir: Path | None = None, formats: Sequence[str] | None = None) -> int:
@@ -502,6 +620,10 @@ def main() -> int:
     changed_parser.add_argument("--base", default=None)
     changed_parser.add_argument("--head", default=None)
     changed_parser.add_argument("--jobs", type=int, default=1)
+    changed_parser.add_argument("--output-dir", type=Path, default=None)
+    changed_parser.add_argument("--log-dir", type=Path, default=None)
+    changed_parser.add_argument("--artifact-dir", type=Path, default=None)
+    changed_parser.add_argument("--clean-output", action="store_true")
 
     render_parser = subparsers.add_parser("render-plantuml")
     render_parser.add_argument("--source-dir", type=Path, default=None)
@@ -535,7 +657,15 @@ def main() -> int:
         return build_roots(roots, jobs=args.jobs, output_dir=args.output_dir, log_dir=args.log_dir, artifact_dir=args.artifact_dir, clean_output=args.clean_output)
 
     if args.command == "build-changed":
-        return build_changed(base_ref=args.base, head_ref=args.head, jobs=args.jobs)
+        return build_changed(
+            base_ref=args.base,
+            head_ref=args.head,
+            jobs=args.jobs,
+            output_dir=args.output_dir,
+            log_dir=args.log_dir,
+            artifact_dir=args.artifact_dir,
+            clean_output=args.clean_output,
+        )
 
     if args.command == "stage-pages":
         stage_pages_site(args.pdf_dir, args.site_dir)

@@ -135,6 +135,12 @@ class StyleMigrationTests(unittest.TestCase):
         self.assertEqual(1, text.count("\\maketitle"))
         self.assertNotIn("\\makecornelltitle", text)
 
+    def test_modular_style_architecture_doc_keeps_technical_semantic_package(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        doc_path = repo_root / "src" / "architecture" / "style-system" / "modular-latex-style-module-architecture.tex"
+        text = strip_latex_comments(doc_path.read_text(encoding="utf-8", errors="ignore"))
+        self.assertIn("\\usepackage{technical-design-spec}", text)
+
     def test_cornell_package_inherits_from_base(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
         style_path = repo_root / "tooling" / "styles" / "latex" / "cornell-notes.sty"
