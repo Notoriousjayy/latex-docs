@@ -9,6 +9,7 @@ from tooling.scripts.style_migration import (
     classify_plantuml_style,
     filename_policy_violations,
     find_unbalanced_setminted_lines,
+    find_malformed_mintinline_lines,
     strip_latex_comments,
     _validate_naming,
     validate_repo,
@@ -177,6 +178,18 @@ class StyleMigrationTests(unittest.TestCase):
 \\end{document}
 """
         self.assertEqual([], find_unbalanced_setminted_lines(text))
+
+    def test_find_malformed_mintinline_lines_reports_line_number(self) -> None:
+        text = """\\documentclass{article}
+\\textbf{Distribution.} Uniform over all \\passthrough{\\mintinline"n!"} permutations.
+\\begin{document}
+\\end{document}
+"""
+        self.assertEqual([2], find_malformed_mintinline_lines(text))
+
+    def test_find_malformed_mintinline_lines_accepts_brace_form(self) -> None:
+        text = "\\mintinline{c}{int x;}\n"
+        self.assertEqual([], find_malformed_mintinline_lines(text))
 
     def test_repo_validator_rejects_duplicate_shared_minted_helpers(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

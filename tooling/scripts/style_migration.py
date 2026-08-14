@@ -146,6 +146,8 @@ def discover_latex_roots(src_root: Path | None = None) -> List[Path]:
         return []
     roots = []
     for path in sorted(search_root.rglob("*.tex")):
+        if path.name.startswith(".") and path.name.endswith(".latex-build-wrapper.tex"):
+            continue
         if path.is_file() and re.search(r"^\\documentclass", path.read_text(encoding="utf-8", errors="ignore"), re.MULTILINE):
             roots.append(path.resolve())
     return roots
@@ -219,6 +221,21 @@ def find_unbalanced_setminted_lines(text: str) -> List[int]:
 
         start = cursor + 1
 
+    return lines
+
+
+def find_malformed_mintinline_lines(text: str) -> List[int]:
+    """Detect the broken \\mintinline"lang"code" shorthand.
+
+    minted's \\mintinline always takes its language as a brace-delimited
+    argument (\\mintinline{lang}{code}); a bare double-quote delimiter is a
+    leftover migration artifact that pygmentize rejects (\"no lexer for alias
+    '\"' found\") and which corrupts fvextra's Verbatim scanning downstream,
+    surfacing as an unrelated "Missing end for environment Verbatim" error.
+    """
+    lines: List[int] = []
+    for match in re.finditer(r'\\mintinline"[^"]*"', text):
+        lines.append(text.count("\n", 0, match.start()) + 1)
     return lines
 
 
@@ -332,6 +349,10 @@ def validate_repo() -> int:
         for line in find_unbalanced_setminted_lines(active_text):
             failures += 1
             print(f"unbalanced-setminted: {rel}:{line}")
+
+        for line in find_malformed_mintinline_lines(active_text):
+            failures += 1
+            print(f"malformed-mintinline-shorthand: {rel}:{line}")
 
         for pattern in MINTED_SHARED_HELPER_PATTERNS:
             for match in pattern.finditer(active_text):

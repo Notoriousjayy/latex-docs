@@ -255,6 +255,27 @@ def _extract_first_error_details(root_log: Path | None, stdout_path: Path | None
         normalized = re.sub(r"\s+", " ", normalized)
         return normalized.strip()
 
+    def _join_wrapped_lines(raw_lines: list[str]) -> str:
+        """Rejoin pdfTeX's hard-wrapped log lines without corrupting tokens.
+
+        pdfTeX wraps long log lines at a fixed column (commonly 79 chars)
+        without regard for word boundaries, so a token such as "LaTeX" or
+        "sequence." can be split mid-word across two physical lines. The raw
+        (unstripped) line already preserves a trailing space when the wrap
+        happened to land on a genuine word boundary; when it does not, the
+        line ends with a non-space character and the next physical line is a
+        direct continuation of the same token. Concatenating the raw lines
+        with no inserted separator therefore preserves genuine word
+        boundaries (where a trailing space already exists) while avoiding a
+        spurious space inside a split token.
+        """
+        if not raw_lines:
+            return ""
+        joined = raw_lines[0]
+        for raw_line in raw_lines[1:]:
+            joined += raw_line
+        return re.sub(r"[ \t]+", " ", joined).strip()
+
     def _first_file_line_error_details(text: str) -> dict[str, str]:
         lines = text.splitlines()
         for idx, raw in enumerate(lines):
@@ -265,7 +286,7 @@ def _extract_first_error_details(root_log: Path | None, stdout_path: Path | None
 
             # pdfTeX wraps long log lines (commonly at column 79); rejoin
             # continuation lines that are not the start of a new log entry.
-            message_parts = [message]
+            message_lines = [message]
             next_idx = idx + 1
             while next_idx < len(lines) and next_idx < idx + 4:
                 stripped = lines[next_idx].strip()
@@ -277,11 +298,11 @@ def _extract_first_error_details(root_log: Path | None, stdout_path: Path | None
                     break
                 if re.match(r"^(Package|LaTeX|Overfull|Underfull|Runaway|Output written|l\.\d+)", stripped):
                     break
-                message_parts.append(stripped)
+                message_lines.append(lines[next_idx])
                 next_idx += 1
                 if stripped.endswith((".", "!", "?")):
                     break
-            full_message = " ".join(part.strip() for part in message_parts).strip() or "LaTeX fatal error"
+            full_message = _join_wrapped_lines(message_lines) or "LaTeX fatal error"
 
             line_ref = f"l.{line_no}"
             for next_line in lines[idx + 1 : idx + 8]:
@@ -298,10 +319,11 @@ def _extract_first_error_details(root_log: Path | None, stdout_path: Path | None
 
             return {
                 "signature": _normalize_signature(signature),
-                "message": _normalize_signature(full_message),
+                "message": full_message,
                 "line_ref": _normalize_signature(line_ref),
+                "line": line_no,
                 "context": _normalize_signature(" | ".join(context_lines)),
-                "source": _normalize_signature(source_file),
+                "source": source_file,
             }
         return {}
 
@@ -311,12 +333,30 @@ def _extract_first_error_details(root_log: Path | None, stdout_path: Path | None
             line = raw.strip()
             if not line.startswith("!"):
                 continue
-            message = line[1:].strip() or "LaTeX fatal error"
+
+            # The "!" line itself may be hard-wrapped across physical lines
+            # (e.g. "! Undefined control sequen" / "ce."); rejoin continuation
+            # lines up to the first `l.<n>` context line or a blank line.
+            message_lines = [raw[raw.index("!") + 1 :]]
+            next_idx = idx + 1
+            while next_idx < len(lines) and next_idx < idx + 4:
+                stripped = lines[next_idx].strip()
+                if not stripped or re.match(r"l\.\d+", stripped):
+                    break
+                message_lines.append(lines[next_idx])
+                next_idx += 1
+                if stripped.endswith((".", "!", "?")):
+                    break
+            message = _join_wrapped_lines(message_lines) or "LaTeX fatal error"
+
             line_ref = ""
+            line_number = ""
             for next_line in lines[idx + 1 : idx + 6]:
                 next_line = next_line.strip()
-                if re.match(r"l\.\d+", next_line):
+                ref_match = re.match(r"l\.(\d+)", next_line)
+                if ref_match:
                     line_ref = next_line
+                    line_number = ref_match.group(1)
                     break
             context_lines = [line]
             for next_line in lines[idx + 1 : idx + 4]:
@@ -337,10 +377,11 @@ def _extract_first_error_details(root_log: Path | None, stdout_path: Path | None
 
             return {
                 "signature": _normalize_signature(signature),
-                "message": _normalize_signature(message),
+                "message": message,
                 "line_ref": _normalize_signature(line_ref),
+                "line": line_number,
                 "context": _normalize_signature(" | ".join(context_lines)),
-                "source": _normalize_signature(source_file),
+                "source": source_file,
             }
         return {}
 
@@ -355,6 +396,7 @@ def _extract_first_error_details(root_log: Path | None, stdout_path: Path | None
             "signature": "UNKNOWN",
             "message": "UNKNOWN",
             "line_ref": "",
+            "line": "",
             "context": "",
             "source": "",
         }
@@ -399,6 +441,7 @@ def _extract_first_error_details(root_log: Path | None, stdout_path: Path | None
                     "signature": message,
                     "message": message,
                     "line_ref": "",
+                    "line": "",
                     "context": message,
                     "source": "",
                 }
@@ -414,6 +457,7 @@ def _extract_first_error_details(root_log: Path | None, stdout_path: Path | None
                     "signature": message,
                     "message": message,
                     "line_ref": "",
+                    "line": "",
                     "context": message,
                     "source": "",
                 }
@@ -428,6 +472,7 @@ def _extract_first_error_details(root_log: Path | None, stdout_path: Path | None
                     "signature": message,
                     "message": message,
                     "line_ref": "",
+                    "line": "",
                     "context": message,
                     "source": "",
                 }
@@ -436,6 +481,7 @@ def _extract_first_error_details(root_log: Path | None, stdout_path: Path | None
         "signature": "UNKNOWN",
         "message": "UNKNOWN",
         "line_ref": "",
+        "line": "",
         "context": "",
         "source": "",
     }
@@ -839,12 +885,19 @@ def build_roots(
         if native_log_path is None or not native_log_path.exists():
             native_log_path = tex_path.with_suffix(".log")
         details = _extract_first_error_details(native_log_path, stdout_path, stderr_path)
-        first_error = details.get("signature", "UNKNOWN")
+        # Per-document output uses the actual (non-normalized) message, source,
+        # and line number; the normalized "signature" is reserved for cluster
+        # fingerprinting only (see failure_clusters below).
+        first_error = details.get("message") or details.get("signature", "UNKNOWN")
         message = f"Build failed for {tex_path} (exit {result_code})"
         if log_dir is not None:
             message += f"; logs: log={native_log_path} stdout={stdout_path} stderr={stderr_path}"
         if first_error:
             message += f"; first_error={first_error}"
+        if details.get("source"):
+            message += f"; source={details['source']}"
+        if details.get("line"):
+            message += f"; line={details['line']}"
         print(message, file=sys.stderr)
         failures.append((tex_path, result_code, details))
 
@@ -882,6 +935,8 @@ def build_roots(
                     "root": tex_path.relative_to(ROOT).as_posix() if tex_path.is_relative_to(ROOT) else str(tex_path),
                     "signature": details.get("signature", "UNKNOWN"),
                     "exit_code": str(result_code),
+                    "message": details.get("message", ""),
+                    "line": details.get("line", ""),
                     "line_ref": details.get("line_ref", ""),
                     "context": details.get("context", ""),
                     "source": details.get("source", ""),
@@ -931,6 +986,8 @@ def build_roots(
                 "root": tex_path.relative_to(ROOT).as_posix() if tex_path.is_relative_to(ROOT) else str(tex_path),
                 "signature": details.get("signature", "UNKNOWN"),
                 "exit_code": str(result_code),
+                "message": details.get("message", ""),
+                "line": details.get("line", ""),
                 "line_ref": details.get("line_ref", ""),
                 "context": details.get("context", ""),
                 "source": details.get("source", ""),

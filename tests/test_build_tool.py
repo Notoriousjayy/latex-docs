@@ -103,7 +103,7 @@ class BuildToolTests(unittest.TestCase):
             stdout_log = root / "doc.stdout.txt"
             stderr_log = root / "doc.stderr.txt"
             tex_log.write_text(
-                "./doc.tex:79: pdfTeX error (font expansion): auto expansion is only\n"
+                "./doc.tex:79: pdfTeX error (font expansion): auto expansion is only \n"
                 "possible with scalable fonts.\n"
                 "<argument> ...shipout:D \\box_use:N \\l_shipout_box\n"
                 "l.79   \\item \\checkbox\n"
@@ -192,6 +192,118 @@ class BuildToolTests(unittest.TestCase):
             signature = latex_build._extract_first_error(tex_log, stdout_log, stderr_log)
 
             self.assertEqual("Fatal error occurred, no output PDF file produced", signature)
+
+    def test_extract_first_error_rejoins_bang_line_wrapped_mid_word(self) -> None:
+        # "La" / "TeX Error" -- pdfTeX hard-wrapped mid-token with no space.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tex_log = root / "doc.log"
+            stdout_log = root / "doc.stdout.txt"
+            stderr_log = root / "doc.stderr.txt"
+            tex_log.write_text(
+                "! La\n"
+                "TeX Error: Missing \\begin{document}.\n"
+                "l.12 \\end{titlepage}\n",
+                encoding="utf-8",
+            )
+            stdout_log.write_text("", encoding="utf-8")
+            stderr_log.write_text("", encoding="utf-8")
+
+            details = latex_build._extract_first_error_details(tex_log, stdout_log, stderr_log)
+
+            self.assertIn("LaTeX Error: Missing \\begin{document}.", details["message"])
+            self.assertNotIn("La TeX", details["message"])
+            self.assertEqual("12", details["line"])
+
+    def test_extract_first_error_rejoins_bang_message_wrapped_mid_word(self) -> None:
+        # "Undefined control sequen" / "ce." -- split inside a single word.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tex_log = root / "doc.log"
+            stdout_log = root / "doc.stdout.txt"
+            stderr_log = root / "doc.stderr.txt"
+            tex_log.write_text(
+                "! Undefined control sequen\n"
+                "ce.\n"
+                "l.37 \\LdsCornellRenderTitle\n",
+                encoding="utf-8",
+            )
+            stdout_log.write_text("", encoding="utf-8")
+            stderr_log.write_text("", encoding="utf-8")
+
+            details = latex_build._extract_first_error_details(tex_log, stdout_log, stderr_log)
+
+            self.assertEqual("Undefined control sequence.", details["message"])
+            self.assertNotIn("sequen ce", details["message"])
+            self.assertEqual("37", details["line"])
+
+    def test_extract_first_error_rejoins_bang_message_wrapped_before_brace(self) -> None:
+        # "Missi" / "ng } inserted." -- split inside a single word.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tex_log = root / "doc.log"
+            stdout_log = root / "doc.stdout.txt"
+            stderr_log = root / "doc.stderr.txt"
+            tex_log.write_text(
+                "! Missi\n"
+                "ng } inserted.\n"
+                "l.261 \\texttt{\\halign}\n",
+                encoding="utf-8",
+            )
+            stdout_log.write_text("", encoding="utf-8")
+            stderr_log.write_text("", encoding="utf-8")
+
+            details = latex_build._extract_first_error_details(tex_log, stdout_log, stderr_log)
+
+            self.assertEqual("Missing } inserted.", details["message"])
+            self.assertNotIn("Missi ng", details["message"])
+            self.assertEqual("261", details["line"])
+
+    def test_extract_first_error_preserves_genuine_space_at_wrap(self) -> None:
+        # A wrap occurring at a genuine space between words must keep exactly
+        # one space, not zero and not two.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tex_log = root / "doc.log"
+            stdout_log = root / "doc.stdout.txt"
+            stderr_log = root / "doc.stderr.txt"
+            tex_log.write_text(
+                "! Package minted Error: You must have `\\usepackage[outputdir=out]{minted}' \n"
+                "or similar for this document to compile.\n"
+                "l.5 \\begin{minted}\n",
+                encoding="utf-8",
+            )
+            stdout_log.write_text("", encoding="utf-8")
+            stderr_log.write_text("", encoding="utf-8")
+
+            details = latex_build._extract_first_error_details(tex_log, stdout_log, stderr_log)
+
+            self.assertIn("{minted}' or similar", details["message"])
+            self.assertNotIn("{minted}'or similar", details["message"])
+            self.assertNotIn("{minted}'  or similar", details["message"])
+
+    def test_extract_first_error_per_document_message_uses_actual_line(self) -> None:
+        # Per-document failure output must preserve the real line number, not
+        # the normalized l.<n> cluster fingerprint.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tex_log = root / "doc.log"
+            stdout_log = root / "doc.stdout.txt"
+            stderr_log = root / "doc.stderr.txt"
+            tex_log.write_text(
+                "! LaTeX Error: Missing \\begin{document}.\n"
+                "l.12 \\end{titlepage}\n",
+                encoding="utf-8",
+            )
+            stdout_log.write_text("", encoding="utf-8")
+            stderr_log.write_text("", encoding="utf-8")
+
+            details = latex_build._extract_first_error_details(tex_log, stdout_log, stderr_log)
+
+            self.assertEqual("LaTeX Error: Missing \\begin{document}.", details["message"])
+            self.assertEqual("12", details["line"])
+            self.assertIn("l.<n>", details["signature"])
+            self.assertNotIn("l.<n>", details["message"])
 
     def test_build_roots_clusters_normalized_package_errors(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
