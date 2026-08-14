@@ -78,6 +78,11 @@ SEMANTIC_STYLE_PACKAGES = {
     "technical-user-manual",
 }
 
+MINTED_SHARED_HELPER_PATTERNS = (
+    re.compile(r"\\newminted\[(?:yamlcode|bashcode|textcode)\]\{(?:yaml|bash|text)\}\{"),
+    re.compile(r"\\newminted\{(?:yaml|bash|text)\}\{"),
+)
+
 
 def classify_latex_style(path: Path) -> str:
     rel = str(path).lower()
@@ -180,6 +185,41 @@ def latex_usepackages(text: str) -> List[str]:
 def _command_args(text: str, command: str) -> List[str]:
     pattern = re.compile(rf"\\{re.escape(command)}\s*\{{([^{{}}]*)\}}", re.MULTILINE)
     return [match.group(1).strip() for match in pattern.finditer(text)]
+
+
+def find_unbalanced_setminted_lines(text: str) -> List[int]:
+    lines: List[int] = []
+    start = 0
+    marker = r"\setminted{"
+
+    while True:
+        idx = text.find(marker, start)
+        if idx == -1:
+            break
+
+        line_number = text.count("\n", 0, idx) + 1
+        cursor = idx + len(marker)
+        depth = 1
+        balanced = False
+
+        while cursor < len(text):
+            char = text[cursor]
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+                if depth == 0:
+                    balanced = True
+                    break
+            cursor += 1
+
+        if not balanced:
+            lines.append(line_number)
+            break
+
+        start = cursor + 1
+
+    return lines
 
 
 def _tracked_src_files() -> List[Path]:
@@ -288,6 +328,16 @@ def validate_repo() -> int:
         text = tex_path.read_text(encoding="utf-8", errors="ignore")
         active_text = strip_latex_comments(text)
         rel = tex_path.relative_to(ROOT).as_posix()
+
+        for line in find_unbalanced_setminted_lines(active_text):
+            failures += 1
+            print(f"unbalanced-setminted: {rel}:{line}")
+
+        for pattern in MINTED_SHARED_HELPER_PATTERNS:
+            for match in pattern.finditer(active_text):
+                failures += 1
+                line = active_text.count("\n", 0, match.start()) + 1
+                print(f"duplicate-shared-minted-helper: {rel}:{line}")
 
         if re.search(r"\\usepackage\{(?:style|base)\}", active_text):
             failures += 1

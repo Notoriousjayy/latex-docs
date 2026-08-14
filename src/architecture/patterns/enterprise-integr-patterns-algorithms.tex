@@ -163,7 +163,7 @@ copyrighted example source.
 \textbf{Core abstraction.} Most algorithms in the book can be
 represented as repeated transformations over the same primitive:
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct Message {
     HeaderMap headers;
     Body body;
@@ -188,7 +188,7 @@ typedef struct Endpoint {
 
 The general message-processing loop is:
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void run_endpoint(Endpoint *ep) {
     while (system_is_running()) {
         Message msg = receive(ep->input);
@@ -248,7 +248,7 @@ Algorithms}\label{integration-style-algorithms}
 
 \subsection{2.1 File Transfer}\label{file-transfer}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void file_transfer_producer(App *source, Directory *dropbox, Schedule schedule) {
     while (true) {
         wait_until(schedule.next_time());
@@ -276,7 +276,7 @@ still writing it.
 
 \subsection{2.2 Shared Database}\label{shared-database}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void shared_database_update(Transaction *tx, Table *table, Row row) {
     begin(tx);
     Row current = select_for_update(table, row.primaryKey);
@@ -292,7 +292,7 @@ schema contract; transaction isolation protects concurrent updates.
 \subsection{2.3 Remote Procedure
 Invocation}\label{remote-procedure-invocation}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Response invoke_remote(ServiceRef svc, Request req) {
     SerializedRequest bytes = marshal(req);
     NetworkReply reply = send_synchronous(svc.address, bytes);
@@ -308,7 +308,7 @@ but has different latency, failure, and coupling properties.
 
 \subsection{2.4 Messaging}\label{messaging}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void send_message(Channel *ch, Body body, HeaderMap headers) {
     Message msg = make_message(body, headers);
     put(ch, msg);                 // store locally or durably
@@ -336,7 +336,7 @@ Algorithms}\label{core-messaging-system-algorithms}
 \subsection{3.1 Message Transmission: Create, Send, Deliver, Receive,
 Process}\label{message-transmission-create-send-deliver-receive-process}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void transmit(Sender *sender, Channel *ch, Receiver *receiver, Body payload) {
     Message msg;
     msg.headers = default_headers(sender, ch, receiver);
@@ -352,7 +352,7 @@ void transmit(Sender *sender, Channel *ch, Receiver *receiver, Body payload) {
 
 \subsection{3.2 Message Channel}\label{message-channel}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void send_to_channel(Channel *ch, Message msg) {
     validate_channel_exists(ch);
     enqueue(ch->durableQueue, msg);
@@ -371,7 +371,7 @@ Message receive_from_channel(Channel *ch, Selector selector) {
 
 \subsection{3.3 Message Envelope}\label{message-envelope}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Message make_message(Body body, HeaderMap headers) {
     Message msg;
     msg.headers = headers;
@@ -385,7 +385,7 @@ Message make_message(Body body, HeaderMap headers) {
 
 \subsection{3.4 Pipes and Filters}\label{pipes-and-filters}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void filter_loop(Channel *input, Channel *output, FilterFn fn) {
     while (true) {
         Message in = receive(input);
@@ -399,7 +399,7 @@ void filter_loop(Channel *input, Channel *output, FilterFn fn) {
 \subsection{3.5 Event-Driven Filter
 Loop}\label{event-driven-filter-loop}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void on_message(Event e) {
     Message in = end_receive(e);
     Message out = process_message(in);
@@ -415,7 +415,7 @@ void start_event_driven_filter(Channel *input) {
 \subsection{3.6 Transactional Filter
 Loop}\label{transactional-filter-loop}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void transactional_filter(Channel *input, Channel *output, FilterFn fn) {
     while (true) {
         begin_transaction();
@@ -437,7 +437,7 @@ Algorithms}\label{messaging-channel-algorithms}
 
 \subsection{4.1 Point-to-Point Channel}\label{point-to-point-channel}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void point_to_point_send(Channel *q, Message msg) {
     enqueue(q->durableQueue, msg);
 }
@@ -453,7 +453,7 @@ Message point_to_point_receive(Channel *q, Consumer *c) {
 \subsection{4.2 Publish-Subscribe
 Channel}\label{publish-subscribe-channel}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void publish(Channel *topic, Message msg) {
     for (Subscriber *s = topic->subscribers.head; s != NULL; s = s->next) {
         Message copy = clone_message(msg);
@@ -464,7 +464,7 @@ void publish(Channel *topic, Message msg) {
 
 \subsection{4.3 Datatype Channel}\label{datatype-channel}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void datatype_channel_send(Channel *ch, Message msg, Type expected) {
     if (message_type(msg) != expected) {
         send(invalid_message_channel(), msg);
@@ -476,7 +476,7 @@ void datatype_channel_send(Channel *ch, Message msg, Type expected) {
 
 \subsection{4.4 Invalid Message Channel}\label{invalid-message-channel}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void validate_or_reject(Channel *target, Message msg, Validator v) {
     if (v(msg)) {
         send(target, msg);
@@ -489,7 +489,7 @@ void validate_or_reject(Channel *target, Message msg, Validator v) {
 
 \subsection{4.5 Dead Letter Channel}\label{dead-letter-channel}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void deliver_with_dead_letter(Channel *target, Message msg, int maxAttempts) {
     for (int attempt = 1; attempt <= maxAttempts; attempt++) {
         if (try_deliver(target, msg)) {
@@ -504,7 +504,7 @@ void deliver_with_dead_letter(Channel *target, Message msg, int maxAttempts) {
 
 \subsection{4.6 Guaranteed Delivery}\label{guaranteed-delivery}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void guaranteed_send(Channel *ch, Message msg) {
     begin_transaction();
     persist_message(ch, msg);
@@ -523,7 +523,7 @@ void guaranteed_forwarder(Channel *ch) {
 
 \subsection{4.7 Channel Adapter}\label{channel-adapter}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void inbound_adapter(App *app, Channel *out) {
     while (true) {
         AppEvent e = app_wait_for_event(app);
@@ -544,7 +544,7 @@ void outbound_adapter(Channel *in, App *app) {
 
 \subsection{4.8 Messaging Bridge}\label{messaging-bridge}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void bridge(Channel *from, Channel *to, TransformFn bridgeTransform) {
     while (true) {
         Message in = receive(from);
@@ -557,7 +557,7 @@ void bridge(Channel *from, Channel *to, TransformFn bridgeTransform) {
 
 \subsection{4.9 Message Bus}\label{message-bus}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void register_bus_endpoint(MessageBus *bus, char *logicalName, Channel *channel, Schema schema) {
     bus->directory[logicalName] = channel;
     bus->schemas[logicalName] = schema;
@@ -577,7 +577,7 @@ Algorithms}\label{message-construction-algorithms}
 
 \subsection{5.1 Command Message}\label{command-message}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Message make_command_message(char *commandName, ParameterMap args) {
     Message msg = make_message(args, empty_headers());
     msg.headers["MessageKind"] = "Command";
@@ -593,7 +593,7 @@ void handle_command(Message msg) {
 
 \subsection{5.2 Document Message}\label{document-message}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Message make_document_message(Document doc) {
     Message msg = make_message(doc, empty_headers());
     msg.headers["MessageKind"] = "Document";
@@ -603,7 +603,7 @@ Message make_document_message(Document doc) {
 
 \subsection{5.3 Event Message}\label{event-message}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Message make_event_message(char *eventName, EntityId id, Time occurredAt) {
     EventBody body = { eventName, id, occurredAt };
     Message msg = make_message(body, empty_headers());
@@ -614,7 +614,7 @@ Message make_event_message(char *eventName, EntityId id, Time occurredAt) {
 
 \subsection{5.4 Request-Reply}\label{request-reply}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Message request_reply(Requester *r, Channel *requestCh, Channel *replyCh, Body requestBody) {
     Message req = make_message(requestBody, empty_headers());
     req.headers["ReplyTo"] = replyCh->name;
@@ -636,7 +636,7 @@ Message request_reply(Requester *r, Channel *requestCh, Channel *replyCh, Body r
 \subsection{5.5 Replier with Return
 Address}\label{replier-with-return-address}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void replier(Channel *requestCh) {
     while (true) {
         Message req = receive(requestCh);
@@ -652,7 +652,7 @@ void replier(Channel *requestCh) {
 
 \subsection{5.6 Correlation Identifier}\label{correlation-identifier}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void remember_request(CorrelationStore *store, Message req, Continuation cont) {
     store->byCorrelationId[req.headers["CorrelationId"]] = cont;
 }
@@ -671,7 +671,7 @@ void dispatch_reply(CorrelationStore *store, Message reply) {
 
 \subsection{5.7 Message Sequence}\label{message-sequence}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void send_sequence(Channel *ch, Body *parts, int n) {
     char *seqId = new_uuid();
     for (int i = 0; i < n; i++) {
@@ -687,7 +687,7 @@ void send_sequence(Channel *ch, Body *parts, int n) {
 
 \subsection{5.8 Message Expiration}\label{message-expiration}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 bool is_expired(Message msg) {
     return msg.expiresAt != INFINITE_TIME && now() > msg.expiresAt;
 }
@@ -706,7 +706,7 @@ void receive_skip_expired(Channel *ch) {
 
 \subsection{5.9 Format Indicator}\label{format-indicator}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void send_with_format(Channel *ch, Body body, char *formatName, int version) {
     Message msg = make_message(body, empty_headers());
     msg.headers["Format"] = formatName;
@@ -727,7 +727,7 @@ Algorithms}\label{message-routing-algorithms}
 
 \subsection{6.1 Simple Router}\label{simple-router}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void simple_router(Channel *in, Channel *out1, Channel *out2) {
     bool toggle = false;
     while (true) {
@@ -742,7 +742,7 @@ void simple_router(Channel *in, Channel *out1, Channel *out2) {
 
 \subsection{6.2 Content-Based Router}\label{content-based-router}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void content_based_router(Channel *in, RouteRule *rules, int ruleCount, Channel *defaultCh) {
     while (true) {
         Message msg = receive(in);
@@ -761,7 +761,7 @@ void content_based_router(Channel *in, RouteRule *rules, int ruleCount, Channel 
 
 Example routing rule:
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Channel *order_item_destination(Message msg) {
     char prefix = first_char(msg.body.itemNumber);
     if (prefix == 'W') return channel("WIDGET_INVENTORY");
@@ -772,7 +772,7 @@ Channel *order_item_destination(Message msg) {
 
 \subsection{6.3 Message Filter}\label{message-filter}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void message_filter(Channel *in, Channel *out, Predicate accepts) {
     while (true) {
         Message msg = receive(in);
@@ -788,7 +788,7 @@ void message_filter(Channel *in, Channel *out, Predicate accepts) {
 
 \subsection{6.4 Dynamic Router}\label{dynamic-router}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct DynamicRule {
     Predicate predicate;
     Channel *destination;
@@ -826,7 +826,7 @@ void dynamic_router(Channel *in, Channel *control, RuleBase *rules) {
 
 Conflict policies:
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void route_by_conflict_policy(Message msg, List<DynamicRule> matches) {
     if (matches.count == 0) {
         send(invalid_message_channel(), msg);
@@ -842,7 +842,7 @@ void route_by_conflict_policy(Message msg, List<DynamicRule> matches) {
 
 \subsection{6.5 Recipient List}\label{recipient-list}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void recipient_list(Channel *in, RecipientResolver resolver) {
     while (true) {
         Message msg = receive(in);
@@ -857,7 +857,7 @@ void recipient_list(Channel *in, RecipientResolver resolver) {
 
 \subsection{6.6 Splitter}\label{splitter}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void splitter(Channel *in, Channel *out, SplitFn split) {
     while (true) {
         Message whole = receive(in);
@@ -882,7 +882,7 @@ The aggregator is one of the most algorithmic patterns in the book. It
 has three explicit decision points: correlation, completeness, and
 aggregation.
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct AggregateState {
     char *correlationId;
     Map<int, Message> messages;
@@ -912,7 +912,7 @@ void aggregator(Channel *in, Channel *out, AggregationSpec spec) {
 
 Common completeness strategies:
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 bool complete_by_sequence_size(AggregateState *s) {
     int expected = any_message(s)->headers["SequenceSize"];
     return s->messages.count == expected;
@@ -929,7 +929,7 @@ bool complete_by_quorum(AggregateState *s) {
 
 Common aggregation strategies:
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Message aggregate_best_bid(AggregateState *s) {
     Message best = first_message(s);
     for_each_message(s, msg) {
@@ -949,7 +949,7 @@ Message aggregate_concatenate(AggregateState *s) {
 
 \subsection{6.8 Resequencer}\label{resequencer}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct SequenceBuffer {
     int nextExpected;
     Map<int, Message> buffered;
@@ -984,7 +984,7 @@ void resequencer(Channel *in, Channel *out) {
 \subsection{6.9 Composed Message
 Processor}\label{composed-message-processor}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void composed_message_processor(Channel *in, Channel *out, Pipeline p) {
     // Conceptual composition: Splitter -> Router/Processors -> Aggregator
     Message whole = receive(in);
@@ -1006,7 +1006,7 @@ void composed_message_processor(Channel *in, Channel *out, Pipeline p) {
 
 \subsection{6.10 Scatter-Gather}\label{scatter-gather}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void scatter_gather(Channel *in, Channel **recipients, int n, Channel *replyCh, Channel *out) {
     while (true) {
         Message req = receive(in);
@@ -1029,7 +1029,7 @@ void scatter_gather(Channel *in, Channel **recipients, int n, Channel *replyCh, 
 
 Auction-style scatter-gather:
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void auction_scatter(Channel *broadcast, Message req, Channel *replyCh) {
     req.headers["ReplyTo"] = replyCh->name;
     req.headers["CorrelationId"] = new_uuid();
@@ -1039,7 +1039,7 @@ void auction_scatter(Channel *broadcast, Message req, Channel *replyCh) {
 
 \subsection{6.11 Routing Slip}\label{routing-slip}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void routing_slip_start(Message msg, Channel *first) {
     msg.headers["RoutingSlip"] = list("Validate", "Translate", "Bill", "Ship");
     msg.headers["RouteIndex"] = 0;
@@ -1061,7 +1061,7 @@ void routing_slip_endpoint(Channel *in) {
 
 \subsection{6.12 Process Manager}\label{process-manager}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct ProcessInstance {
     char *processId;
     ProcessState state;
@@ -1088,7 +1088,7 @@ void process_manager(Channel *in, ProcessDefinition def) {
 
 \subsection{6.13 Message Broker}\label{message-broker}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void message_broker(Channel *in, BrokerConfig cfg) {
     while (true) {
         Message msg = receive(in);
@@ -1111,7 +1111,7 @@ Algorithms}\label{message-transformation-algorithms}
 
 \subsection{7.1 Message Translator}\label{message-translator}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Message translate(Message msg, Mapping mapping) {
     Body out = empty_body();
     for (int i = 0; i < mapping.fieldRules.count; i++) {
@@ -1126,7 +1126,7 @@ Message translate(Message msg, Mapping mapping) {
 
 \subsection{7.2 Envelope Wrapper}\label{envelope-wrapper}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Message wrap_envelope(Message inner, EnvelopeSpec spec) {
     Body wrapper;
     wrapper[spec.payloadField] = serialize(inner);
@@ -1143,7 +1143,7 @@ Message unwrap_envelope(Message outer, EnvelopeSpec spec) {
 
 \subsection{7.3 Content Enricher}\label{content-enricher}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Message enrich(Message msg, LookupService *svc, EnrichmentSpec spec) {
     Message out = clone_message(msg);
     for (int i = 0; i < spec.fields.count; i++) {
@@ -1159,7 +1159,7 @@ Message enrich(Message msg, LookupService *svc, EnrichmentSpec spec) {
 
 \subsection{7.4 Content Filter}\label{content-filter}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Message content_filter(Message msg, Projection projection) {
     Body out = empty_body();
     for (int i = 0; i < projection.keepPaths.count; i++) {
@@ -1171,7 +1171,7 @@ Message content_filter(Message msg, Projection projection) {
 
 \subsection{7.5 Claim Check}\label{claim-check}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Message claim_check_store(Message msg, BlobStore *store, PathList largePaths) {
     Message out = clone_message(msg);
     for_each(largePaths, path) {
@@ -1194,7 +1194,7 @@ Message claim_check_restore(Message msg, BlobStore *store) {
 
 \subsection{7.6 Normalizer}\label{normalizer}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void normalizer(Channel *in, Channel *out, MappingRegistry registry) {
     while (true) {
         Message msg = receive(in);
@@ -1210,7 +1210,7 @@ void normalizer(Channel *in, Channel *out, MappingRegistry registry) {
 
 \subsection{7.7 Canonical Data Model}\label{canonical-data-model}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Message to_canonical(Message appMsg, AppName app, CanonicalRegistry reg) {
     Mapping m = reg.appToCanonical[app][appMsg.headers["Format"]];
     return translate(appMsg, m);
@@ -1229,7 +1229,7 @@ Algorithms}\label{messaging-endpoint-algorithms}
 
 \subsection{8.1 Messaging Gateway}\label{messaging-gateway}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct OrderGateway {
     Channel *orders;
 } OrderGateway;
@@ -1245,7 +1245,7 @@ does not directly depend on JMS, MSMQ, or a vendor API.
 
 \subsection{8.2 Messaging Mapper}\label{messaging-mapper}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Message map_domain_object_to_message(Object obj, MappingSpec spec) {
     Body body = empty_body();
     for_each(spec.fields, f) {
@@ -1265,7 +1265,7 @@ Object map_message_to_domain_object(Message msg, MappingSpec spec) {
 
 \subsection{8.3 Transactional Client}\label{transactional-client}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void transactional_client(Channel *in, Channel *out, Handler h) {
     while (true) {
         begin_transaction();
@@ -1282,7 +1282,7 @@ void transactional_client(Channel *in, Channel *out, Handler h) {
 
 \subsection{8.4 Polling Consumer}\label{polling-consumer}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void polling_consumer(Channel *ch, Duration interval) {
     while (true) {
         Message *msg = try_receive(ch);
@@ -1298,7 +1298,7 @@ void polling_consumer(Channel *ch, Duration interval) {
 
 \subsection{8.5 Event-Driven Consumer}\label{event-driven-consumer}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void event_driven_consumer(Channel *ch) {
     register_callback(ch, on_message_available);
 }
@@ -1312,7 +1312,7 @@ void on_message_available(Channel *ch) {
 
 \subsection{8.6 Competing Consumers}\label{competing-consumers}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void start_competing_consumers(Channel *q, int workerCount) {
     for (int i = 0; i < workerCount; i++) {
         spawn(worker_loop, q);
@@ -1330,7 +1330,7 @@ void worker_loop(Channel *q) {
 
 \subsection{8.7 Message Dispatcher}\label{message-dispatcher}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void dispatcher(Channel *in, HandlerRegistry registry) {
     while (true) {
         Message msg = receive(in);
@@ -1345,7 +1345,7 @@ void dispatcher(Channel *in, HandlerRegistry registry) {
 
 \subsection{8.8 Selective Consumer}\label{selective-consumer}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void selective_consumer(Channel *ch, Selector selector) {
     while (true) {
         Message msg = receive_matching(ch, selector);
@@ -1357,7 +1357,7 @@ void selective_consumer(Channel *ch, Selector selector) {
 
 \subsection{8.9 Durable Subscriber}\label{durable-subscriber}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void durable_subscribe(Topic *topic, SubscriberId id) {
     topic->durableSubscribers.add(id);
     create_persistent_inbox(topic, id);
@@ -1380,7 +1380,7 @@ void durable_receive(Topic *topic, SubscriberId id) {
 
 \subsection{8.10 Idempotent Receiver}\label{idempotent-receiver}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void idempotent_receiver(Channel *in, IdStore *seen) {
     while (true) {
         Message msg = receive(in);
@@ -1398,7 +1398,7 @@ void idempotent_receiver(Channel *in, IdStore *seen) {
 
 \subsection{8.11 Service Activator}\label{service-activator}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void service_activator(Channel *in, Channel *replyDefault, Service *svc) {
     while (true) {
         Message req = receive(in);
@@ -1422,7 +1422,7 @@ Algorithms}\label{system-management-algorithms}
 
 \subsection{9.1 Control Bus}\label{control-bus}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void control_bus_agent(Channel *control, ManagedComponent *component) {
     while (true) {
         Message cmd = receive(control);
@@ -1437,7 +1437,7 @@ void control_bus_agent(Channel *control, ManagedComponent *component) {
 
 \subsection{9.2 Detour}\label{detour}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void detour_router(Channel *normal, Channel *detour, Channel *out, Config *cfg) {
     while (true) {
         Message msg = receive(normal);
@@ -1450,7 +1450,7 @@ void detour_router(Channel *normal, Channel *detour, Channel *out, Config *cfg) 
 
 \subsection{9.3 Wire Tap}\label{wire-tap}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void wire_tap(Channel *in, Channel *mainOut, Channel *tapOut) {
     while (true) {
         Message msg = receive(in);
@@ -1463,7 +1463,7 @@ void wire_tap(Channel *in, Channel *mainOut, Channel *tapOut) {
 
 \subsection{9.4 Message History}\label{message-history}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Message append_history(Message msg, char *componentName) {
     HistoryEntry e = { componentName, now(), current_host() };
     append(msg.headers["History"], e);
@@ -1473,7 +1473,7 @@ Message append_history(Message msg, char *componentName) {
 
 \subsection{9.5 Message Store}\label{message-store}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void store_message(MessageStore *store, Message msg, char *stage) {
     StoreRecord r;
     r.messageId = msg.headers["MessageId"];
@@ -1487,7 +1487,7 @@ void store_message(MessageStore *store, Message msg, char *stage) {
 
 \subsection{9.6 Smart Proxy}\label{smart-proxy}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct ProxyState {
     char *correlationId;
     Channel *originalReplyTo;
@@ -1523,7 +1523,7 @@ void smart_proxy_reply(Channel *fixedReply, MapStore *state) {
 
 \subsection{9.7 Test Message}\label{test-message}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void send_periodic_test(Channel *request, Channel *reply, TestCase tc, Duration interval) {
     while (true) {
         Message msg = make_message(tc.input, empty_headers());
@@ -1545,7 +1545,7 @@ void verify_test_reply(Channel *reply, ExpectedResult expected) {
 
 \subsection{9.8 Channel Purger}\label{channel-purger}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void purge_channel(Channel *ch, PurgePolicy policy) {
     while (has_message(ch)) {
         Message msg = peek(ch);
@@ -1567,7 +1567,7 @@ Messaging}\label{interlude-algorithms-simple-messaging}
 \subsection{10.1 JMS-Style Request/Reply
 Client}\label{jms-style-requestreply-client}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Message jms_style_request_reply(Channel *requestQ, Channel *replyQ, Body body) {
     Message req = make_message(body, empty_headers());
     req.headers["ReplyTo"] = replyQ->name;
@@ -1584,7 +1584,7 @@ Message jms_style_request_reply(Channel *requestQ, Channel *replyQ, Body body) {
 \subsection{10.2 JMS-Style Request/Reply
 Server}\label{jms-style-requestreply-server}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void jms_style_replier(Channel *requestQ) {
     while (true) {
         Message req = consumer_receive(requestQ, ANY);
@@ -1600,7 +1600,7 @@ void jms_style_replier(Channel *requestQ) {
 \subsection{10.3 Publish/Subscribe
 Listener}\label{publishsubscribe-listener}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void topic_subscriber(Topic *topic, SubscriberId id, Handler h) {
     subscribe(topic, id);
     while (true) {
@@ -1619,7 +1619,7 @@ Messaging}\label{interlude-algorithms-loan-broker-composed-messaging}
 \subsection{11.1 Loan Quote
 Scatter-Gather}\label{loan-quote-scatter-gather}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void loan_broker(Channel *loanRequests, BankDirectory *banks, Channel *bankReplies, Channel *loanReplies) {
     while (true) {
         Message customerReq = receive(loanRequests);
@@ -1646,7 +1646,7 @@ void loan_broker(Channel *loanRequests, BankDirectory *banks, Channel *bankRepli
 \subsection{11.2 Credit Bureau Enrichment Before Bank
 Routing}\label{credit-bureau-enrichment-before-bank-routing}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Message enrich_with_credit_score(Message loanReq, CreditBureau *bureau) {
     CreditScore score = bureau_lookup(bureau, loanReq.body.ssn);
     loanReq.body.creditScore = score;
@@ -1656,7 +1656,7 @@ Message enrich_with_credit_score(Message loanReq, CreditBureau *bureau) {
 
 \subsection{11.3 Bank Quote Aggregation}\label{bank-quote-aggregation}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Message choose_lowest_rate_offer(AggregateState offers) {
     Message best = NULL_MESSAGE;
     for_each_message(&offers, offer) {
@@ -1676,7 +1676,7 @@ Walkthrough}\label{order-processing-algorithms-from-the-pattern-walkthrough}
 \subsection{12.1 Normalize Orders from Multiple Entry
 Channels}\label{normalize-orders-from-multiple-entry-channels}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void normalize_orders(Channel *web, Channel *callCenter, Channel *fax, Channel *newOrder) {
     spawn(translator_loop, web,        newOrder, WEB_TO_CANONICAL_ORDER);
     spawn(translator_loop, callCenter, newOrder, CALLCENTER_TO_CANONICAL_ORDER);
@@ -1687,7 +1687,7 @@ void normalize_orders(Channel *web, Channel *callCenter, Channel *fax, Channel *
 \subsection{12.2 Validate Order with Parallel Credit and Inventory
 Checks}\label{validate-order-with-parallel-credit-and-inventory-checks}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void validate_order(Channel *newOrder, Channel *creditReq, Channel *inventoryReq,
                     Channel *validationReplies, Channel *validOrder, Channel *invalidOrder) {
     Message order = receive(newOrder);
@@ -1711,7 +1711,7 @@ void validate_order(Channel *newOrder, Channel *creditReq, Channel *inventoryReq
 \subsection{12.3 Split Multi-Item Order for Inventory
 Routing}\label{split-multi-item-order-for-inventory-routing}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void check_inventory_for_order(Channel *orders, Channel *itemStatus, Channel *orderStatus) {
     Message order = receive(orders);
     char *seqId = new_uuid();
@@ -1825,7 +1825,7 @@ Systems}\label{implementation-notes-for-c-like-systems}
 
 A C or C++ implementation should separate the following interfaces:
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct IMessageStore IMessageStore;
 typedef struct IChannel IChannel;
 typedef struct ISerializer ISerializer;
@@ -1836,7 +1836,7 @@ typedef struct ICorrelationStore ICorrelationStore;
 
 Recommended responsibilities:
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 struct IChannelVTable {
     bool (*send)(IChannel*, Message*);
     bool (*receive)(IChannel*, Selector*, Message* out);
@@ -1862,7 +1862,7 @@ adapters, translators, routers, and stores can vary independently.
 \section{16. Minimal End-to-End Integration
 Skeleton}\label{minimal-end-to-end-integration-skeleton}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 int main(void) {
     Channel *newOrder        = channel("NEW_ORDER");
     Channel *validatedOrder  = channel("VALIDATED_ORDER");

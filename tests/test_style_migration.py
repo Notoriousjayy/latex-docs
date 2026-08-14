@@ -8,6 +8,7 @@ from tooling.scripts.style_migration import (
     classify_latex_style,
     classify_plantuml_style,
     filename_policy_violations,
+    find_unbalanced_setminted_lines,
     strip_latex_comments,
     _validate_naming,
     validate_repo,
@@ -159,6 +160,66 @@ class StyleMigrationTests(unittest.TestCase):
         house_style_path = repo_root / "tooling" / "latex" / "style.sty"
         house_style = house_style_path.read_text(encoding="utf-8", errors="ignore")
         self.assertNotIn("LdsCornellRenderTitle", house_style)
+
+    def test_find_unbalanced_setminted_lines_reports_line_number(self) -> None:
+        text = """\\documentclass{article}
+\\setminted{
+  fontsize=\\small,
+\\begin{document}
+\\end{document}
+"""
+        self.assertEqual([2], find_unbalanced_setminted_lines(text))
+
+    def test_find_unbalanced_setminted_lines_accepts_balanced_block(self) -> None:
+        text = """\\documentclass{article}
+\\setminted{fontsize=\\small,breaklines=true}
+\\begin{document}
+\\end{document}
+"""
+        self.assertEqual([], find_unbalanced_setminted_lines(text))
+
+    def test_repo_validator_rejects_duplicate_shared_minted_helpers(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            tex_path = repo_root / "src" / "docs" / "dup-helper.tex"
+            tex_path.parent.mkdir(parents=True, exist_ok=True)
+            tex_path.write_text(
+                "\\documentclass{article}\n"
+                "\\usepackage{technical-installation}\n"
+                "\\newminted[yamlcode]{yaml}{}\n"
+                "\\begin{document}\n"
+                "\\end{document}\n",
+                encoding="utf-8",
+            )
+
+            with patch.object(sm, "ROOT", repo_root):
+                with patch.object(sm, "SRC_DIR", repo_root / "src"):
+                    with patch.object(sm, "_tracked_src_files", return_value=[tex_path]):
+                        with patch.object(sm, "discover_latex_roots", return_value=[tex_path]):
+                            with patch.object(sm, "_validate_naming", return_value=0):
+                                self.assertNotEqual(0, validate_repo())
+
+    def test_repo_validator_rejects_unbalanced_setminted(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            tex_path = repo_root / "src" / "docs" / "bad-setminted.tex"
+            tex_path.parent.mkdir(parents=True, exist_ok=True)
+            tex_path.write_text(
+                "\\documentclass{article}\n"
+                "\\usepackage{technical-installation}\n"
+                "\\setminted{\n"
+                "  fontsize=\\small,\n"
+                "\\begin{document}\n"
+                "\\end{document}\n",
+                encoding="utf-8",
+            )
+
+            with patch.object(sm, "ROOT", repo_root):
+                with patch.object(sm, "SRC_DIR", repo_root / "src"):
+                    with patch.object(sm, "_tracked_src_files", return_value=[tex_path]):
+                        with patch.object(sm, "discover_latex_roots", return_value=[tex_path]):
+                            with patch.object(sm, "_validate_naming", return_value=0):
+                                self.assertNotEqual(0, validate_repo())
 
     def test_comment_stripping_ignores_commented_cornell_commands(self) -> None:
         sample = """\\title{Visible}\n% \\title{Hidden}\n\\maketitle\n% \\makecornelltitle\n"""

@@ -156,7 +156,7 @@ movement.
 
 \section{Shared notation}\label{shared-notation}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef long Id;
 typedef struct Date Date;
 typedef struct Money Money;
@@ -196,7 +196,7 @@ A transaction script is one procedure per business action. It obtains
 data, applies validation/calculation rules, writes results, and returns
 response data.
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void calculate_revenue_recognitions(Id contract_id) {
     Transaction *tx = begin_transaction();
     try {
@@ -236,7 +236,7 @@ void calculate_revenue_recognitions(Id contract_id) {
 }
 \end{minted}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Money recognized_revenue(Id contract_id, Date as_of) {
     ResultSet *rows = recognition_gateway_find_for_contract(contract_id);
     Money total = money_zero();
@@ -255,7 +255,7 @@ Money recognized_revenue(Id contract_id, Date as_of) {
 A domain model distributes behavior across objects instead of
 concentrating it in a single transaction procedure.
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct RecognitionStrategy RecognitionStrategy;
 struct RecognitionStrategy {
     void (*calculate)(RecognitionStrategy *self, struct Contract *contract);
@@ -280,13 +280,13 @@ void contract_calculate_recognitions(Contract *c) {
 }
 \end{minted}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void complete_recognition_calculate(RecognitionStrategy *s, Contract *c) {
     contract_add_recognition(c, c->revenue, c->signed_on);
 }
 \end{minted}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct ThreeWayStrategy {
     RecognitionStrategy base;
     int first_delay_days;
@@ -309,7 +309,7 @@ void three_way_recognition_calculate(RecognitionStrategy *base, Contract *c) {
 A table module places behavior in one object per logical table or record
 set, not one object per row.
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct ContractModule { ResultSet *contracts; } ContractModule;
 typedef struct ProductModule { ResultSet *products; } ProductModule;
 typedef struct RecognitionModule { ResultSet *recognitions; } RecognitionModule;
@@ -343,7 +343,7 @@ void contract_module_calculate_recognitions(ContractModule *cm,
 A service layer defines an application API and centralizes
 transaction/security handling.
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Response service_execute(Request *req,
                          const char *permission,
                          void (*operation)(Request *req, Response *res)) {
@@ -376,7 +376,7 @@ Patterns}\label{data-source-architectural-patterns}
 A table data gateway has one object/class per table. Methods wrap SQL
 and return record sets or scalar results.
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 ResultSet *person_gateway_find_all(void) {
     return db_query("select id, lastname, firstname, number_of_dependents from person", map_empty());
 }
@@ -422,7 +422,7 @@ void person_gateway_delete(Id id) {
 A row data gateway has one object per database row. It stores field data
 and knows how to update or insert that row.
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct PersonRow {
     Id id;
     char *last_name;
@@ -454,7 +454,7 @@ Id person_row_insert(PersonRow *r) {
 }
 \end{minted}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 PersonRow *person_finder_find(Id id) {
     PersonRow *cached = identity_registry_get("PersonRow", id);
     if (cached != NULL) return cached;
@@ -475,7 +475,7 @@ PersonRow *person_finder_find(Id id) {
 Active Record combines domain behavior and persistence behavior in the
 same object.
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct PersonAR {
     DomainObject base;
     char *last_name;
@@ -514,7 +514,7 @@ PersonAR *person_ar_find(Id id) {
 A data mapper keeps domain objects independent of database tables and
 SQL.
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct Mapper Mapper;
 struct Mapper {
     char *class_name;
@@ -541,7 +541,7 @@ DomainObject *mapper_find(Mapper *m, Id id) {
 }
 \end{minted}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void person_mapper_update(Mapper *m, DomainObject *obj) {
     Person *p = (Person *)obj;
     Map *params = map_new();
@@ -562,7 +562,7 @@ Patterns}\label{object-relational-behavioral-patterns}
 Unit of Work tracks all changed objects in a business transaction and
 writes them in one commit.
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct UnitOfWork {
     List *new_objects;
     List *dirty_objects;
@@ -610,7 +610,7 @@ void uow_register_clean(UnitOfWork *uow, DomainObject *obj) {
 }
 \end{minted}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void uow_commit(UnitOfWork *uow) {
     Transaction *tx = begin_transaction();
     try {
@@ -641,7 +641,7 @@ void uow_commit(UnitOfWork *uow) {
 Identity Map guarantees that each database row is represented by only
 one in-memory object in a business transaction.
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct IdentityMap { Map *objects; } IdentityMap;
 
 char *identity_key(char *class_name, Id id) {
@@ -665,7 +665,7 @@ void identity_map_put(IdentityMap *m, char *class_name, Id id, void *obj) {
 Lazy Load delays loading an association or expensive field until the
 field is needed.
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct Order {
     DomainObject base;
     Id customer_id;
@@ -680,7 +680,7 @@ Customer *order_get_customer(Order *o) {
 }
 \end{minted}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct ValueHolder {
     int loaded;
     void *value;
@@ -697,7 +697,7 @@ void *value_holder_get(ValueHolder *h) {
 }
 \end{minted}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct CustomerGhost {
     Customer base;
     int loaded;
@@ -721,7 +721,7 @@ Patterns}\label{object-relational-structural-patterns}
 
 \subsection{4.1 Identity Field}\label{identity-field}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void assign_identity_if_needed(DomainObject *obj, char *sequence_name) {
     if (obj->id == 0) obj->id = db_next_id(sequence_name);
 }
@@ -736,7 +736,7 @@ int same_database_identity(DomainObject *a, DomainObject *b) {
 
 \subsection{4.2 Foreign Key Mapping}\label{foreign-key-mapping}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void album_load_artist(Album *album, Row row) {
     Id artist_id = row_id(row, "artist_id");
     album->artist = artist_id == 0 ? NULL : artist_mapper_find(artist_id);
@@ -748,7 +748,7 @@ void album_save_artist_key(Album *album, Map *params) {
 }
 \end{minted}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 List *track_mapper_find_for_album(Id album_id) {
     Map *p = map_new();
     map_put_id(p, "album_id", album_id);
@@ -762,7 +762,7 @@ List *track_mapper_find_for_album(Id album_id) {
 \subsection{4.3 Association Table
 Mapping}\label{association-table-mapping}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 List *employee_find_skills(Id employee_id) {
     Map *p = map_new();
     map_put_id(p, "employee_id", employee_id);
@@ -784,7 +784,7 @@ void employee_save_skills(Employee *e) {
 
 \subsection{4.4 Dependent Mapping}\label{dependent-mapping}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void album_save_tracks(Album *album) {
     db_execute_with_id("delete from tracks where album_id = :id", album->base.id);
     int position = 0;
@@ -801,7 +801,7 @@ void album_save_tracks(Album *album) {
 
 \subsection{4.5 Embedded Value}\label{embedded-value}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Money money_from_columns(Row row, char *amount_col, char *currency_col) {
     Money m;
     m.amount = row_decimal(row, amount_col);
@@ -817,7 +817,7 @@ void bind_money(Map *params, char *prefix, Money m) {
 
 \subsection{4.6 Serialized LOB}\label{serialized-lob}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void customer_save_preferences(Customer *c) {
     char *xml = serialize_preferences(c->preferences);
     Map *p = map_new();
@@ -835,7 +835,7 @@ void customer_load_preferences(Customer *c, Row row) {
 \subsection{4.7 Single Table
 Inheritance}\label{single-table-inheritance}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Player *player_load_single_table(Row row) {
     char *type = row_string(row, "type");
     Player *p;
@@ -865,7 +865,7 @@ Player *player_load_single_table(Row row) {
 
 \subsection{4.8 Class Table Inheritance}\label{class-table-inheritance}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Bowler *bowler_find_class_table(Id id) {
     Map *p = map_new();
     map_put_id(p, "id", id);
@@ -887,7 +887,7 @@ Bowler *bowler_find_class_table(Id id) {
 \subsection{4.9 Concrete Table
 Inheritance}\label{concrete-table-inheritance}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 List *player_find_all_concrete(void) {
     List *players = list_new();
     ResultSet *footballers = db_query("select id, name, club, 'footballer' as type from footballers", map_empty());
@@ -907,7 +907,7 @@ Repository}\label{metadata-mapping-query-object-and-repository}
 
 \subsection{5.1 Metadata Mapping}\label{metadata-mapping}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct FieldMapping {
     char *field_name;
     char *column_name;
@@ -953,7 +953,7 @@ void *metadata_load(ClassMapping *cm, Row row) {
 
 \subsection{5.2 Query Object}\label{query-object}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef enum { Q_EQ, Q_GT, Q_AND, Q_OR } QueryKind;
 
 typedef struct QueryExpr {
@@ -994,7 +994,7 @@ List *query_execute(ClassMapping *cm, QueryExpr *where) {
 
 \subsection{5.3 Repository}\label{repository}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct Repository { ClassMapping *mapping; } Repository;
 
 void *repository_find(Repository *r, Id id) {
@@ -1020,7 +1020,7 @@ void repository_remove(Repository *r, DomainObject *obj) {
 
 \subsection{6.1 Model View Controller}\label{model-view-controller}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Response mvc_handle(Request *req) {
     Controller *controller = route_to_controller(req);
     ModelResult model = controller_handle(controller, req);
@@ -1031,7 +1031,7 @@ Response mvc_handle(Request *req) {
 
 \subsection{6.2 Page Controller}\label{page-controller}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Response customer_page_controller(Request *req) {
     Id id = request_id(req, "id");
     if (request_is_post(req)) {
@@ -1048,7 +1048,7 @@ Response customer_page_controller(Request *req) {
 
 \subsection{6.3 Front Controller}\label{front-controller}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Response front_controller_handle(Request *req) {
     try {
         authenticate(req);
@@ -1065,7 +1065,7 @@ Response front_controller_handle(Request *req) {
 
 \subsection{6.4 Template View}\label{template-view}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Response template_view_render(char *template_name, Map *model) {
     Template *t = template_cache_get(template_name);
     StringBuilder *out = sb_new();
@@ -1088,7 +1088,7 @@ Response template_view_render(char *template_name, Map *model) {
 
 \subsection{6.5 Transform View}\label{transform-view}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Response transform_view_render(ModelResult model, char *stylesheet_name) {
     char *xml = model_to_xml(model);
     Transform *xform = transform_cache_get(stylesheet_name);
@@ -1099,7 +1099,7 @@ Response transform_view_render(ModelResult model, char *stylesheet_name) {
 
 \subsection{6.6 Two Step View}\label{two-step-view}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Response two_step_view_render(ModelResult model,
                               LogicalScreen *(*first_stage)(ModelResult),
                               char *(*second_stage)(LogicalScreen *)) {
@@ -1111,7 +1111,7 @@ Response two_step_view_render(ModelResult model,
 
 \subsection{6.7 Application Controller}\label{application-controller}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Response application_controller_handle(ApplicationController *ac, Request *req) {
     char *action = request_param(req, "action");
     Command *cmd = map_get(ac->commands, action);
@@ -1129,7 +1129,7 @@ Response application_controller_handle(ApplicationController *ac, Request *req) 
 
 \subsection{7.1 Remote Facade}\label{remote-facade}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 OrderDTO *order_facade_get_order(Id order_id) {
     Transaction *tx = begin_transaction();
     try {
@@ -1162,7 +1162,7 @@ void order_facade_update_order(OrderDTO *dto) {
 
 \subsection{7.2 Data Transfer Object}\label{data-transfer-object}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 OrderDTO *order_assembler_to_dto(Order *o) {
     OrderDTO *dto = order_dto_new();
     dto->id = o->base.id;
@@ -1191,7 +1191,7 @@ Patterns}\label{offline-concurrency-patterns}
 Optimistic locking detects conflict during commit by comparing the
 version read earlier with the current database version.
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void mapper_update_with_optimistic_lock(DomainObject *obj, char *table, Map *values) {
     map_put_id(values, "id", obj->id);
     map_put_int(values, "old_version", obj->version);
@@ -1203,7 +1203,7 @@ void mapper_update_with_optimistic_lock(DomainObject *obj, char *table, Map *val
 }
 \end{minted}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct ReadRecord { char *class_name; Id id; int version; } ReadRecord;
 
 void uow_validate_read_set(UnitOfWork *uow) {
@@ -1235,7 +1235,7 @@ Lock}\label{pessimistic-offline-lock}
 Pessimistic locking prevents conflict by acquiring an application lock
 before edit.
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 int lock_try_acquire(char *type, Id id, Id owner_id) {
     Transaction *tx = begin_transaction();
     try {
@@ -1271,7 +1271,7 @@ void lock_release(char *type, Id id, Id owner_id) {
 
 \subsection{8.3 Coarse-Grained Lock}\label{coarse-grained-lock}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct LockRoot { char *type; Id id; } LockRoot;
 
 LockRoot lock_root_for(DomainObject *obj) {
@@ -1288,7 +1288,7 @@ int coarse_lock_acquire(DomainObject *obj, Id owner_id) {
 
 \subsection{8.4 Implicit Lock}\label{implicit-lock}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 DomainObject *repository_find_for_edit(Repository *r, Id id, Id owner_id) {
     DomainObject *obj = repository_find(r, id);
     if (obj == NULL) return NULL;
@@ -1308,7 +1308,7 @@ void domain_mark_dirty_implicit_lock(DomainObject *obj) {
 
 \subsection{9.1 Client Session State}\label{client-session-state}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Response render_with_client_state(char *template, Map *model, SessionState *state) {
     char *serialized = serialize_state(state);
     char *protected_state = sign_and_encode(serialized, server_secret());
@@ -1328,7 +1328,7 @@ SessionState *restore_client_state(Request *req) {
 
 \subsection{9.2 Server Session State}\label{server-session-state}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 SessionState *restore_server_state(Request *req) {
     Id session_id = request_session_id(req);
     SessionState *state = server_cache_get(session_id);
@@ -1346,7 +1346,7 @@ void save_server_state(Request *req, SessionState *state) {
 
 \subsection{9.3 Database Session State}\label{database-session-state}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 SessionState *db_session_load(Id session_id) {
     Map *p = map_new();
     map_put_id(p, "session_id", session_id);
@@ -1371,7 +1371,7 @@ void db_session_save(Id session_id, SessionState *state) {
 
 \subsection{10.1 Gateway}\label{gateway}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 PaymentResult payment_gateway_authorize(PaymentGateway *g, PaymentRequest *req) {
     HttpRequest *http = http_post(g->endpoint, payment_request_to_json(req));
     HttpResponse *res = http_send(http);
@@ -1382,7 +1382,7 @@ PaymentResult payment_gateway_authorize(PaymentGateway *g, PaymentRequest *req) 
 
 \subsection{10.2 Mapper}\label{mapper}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void *map_representation(void *source,
                          void *(*allocate_target)(void),
                          void (*map_fields)(void *source, void *target)) {
@@ -1394,7 +1394,7 @@ void *map_representation(void *source,
 
 \subsection{10.3 Layer Supertype}\label{layer-supertype}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void domain_mark_new(DomainObject *obj) {
     obj->state = NEW;
     unit_of_work_register_new(current_uow(), obj);
@@ -1415,7 +1415,7 @@ void domain_mark_removed(DomainObject *obj) {
 
 \subsection{10.4 Separated Interface}\label{separated-interface}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct TaxService TaxService;
 struct TaxService { Money (*calculate)(TaxService *self, TaxRequest *req); };
 
@@ -1431,7 +1431,7 @@ Money checkout_tax(Order *order) {
 
 \subsection{10.5 Registry}\label{registry}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void registry_put_scoped(Scope scope, char *key, void *value) {
     map_put(registry_map(scope), key, value);
 }
@@ -1445,7 +1445,7 @@ void *registry_get_scoped(Scope scope, char *key) {
 
 \subsection{10.6 Value Object and Money}\label{value-object-and-money}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 int date_range_equals(DateRange a, DateRange b) {
     return date_equal(a.start, b.start) && date_equal(a.end, b.end);
 }
@@ -1478,7 +1478,7 @@ List *money_allocate(Money total, int *ratios, int n) {
 
 \subsection{10.7 Special Case}\label{special-case}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Customer *customer_find_or_unknown(Id id) {
     Customer *c = customer_repository_find(id);
     return c != NULL ? c : unknown_customer_singleton();
@@ -1491,7 +1491,7 @@ char *unknown_customer_name(Customer *c) {
 
 \subsection{10.8 Plugin}\label{plugin}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void *plugin_load(char *interface_name) {
     char *implementation = config_get(interface_name);
     PluginFactory *factory = plugin_factory_find(implementation);
@@ -1502,7 +1502,7 @@ void *plugin_load(char *interface_name) {
 
 \subsection{10.9 Service Stub}\label{service-stub}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 typedef struct TaxServiceStub {
     TaxService base;
     Money canned_result;
@@ -1518,7 +1518,7 @@ Money tax_stub_calculate(TaxService *svc, TaxRequest *req) {
 
 \subsection{10.10 Record Set}\label{record-set}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void *recordset_get(RecordSet *rs, int row_index, char *column_name) {
     int col = recordset_column_index(rs, column_name);
     Row *row = list_get(rs->rows, row_index);
@@ -1544,7 +1544,7 @@ Algorithms}\label{cross-pattern-enterprise-algorithms}
 \subsection{11.1
 Connection-per-transaction}\label{connection-per-transaction}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 void execute_in_transaction(void (*work)(void)) {
     Connection *c = connection_pool_acquire();
     registry_put_scoped(THREAD_SCOPE, "db.connection", c);
@@ -1567,7 +1567,7 @@ void execute_in_transaction(void (*work)(void)) {
 \subsection{11.2 Referential write
 ordering}\label{referential-write-ordering}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 List *topological_sort_writes(List *write_ops) {
     Graph *g = graph_new();
     for_each(op, write_ops) {
@@ -1590,7 +1590,7 @@ void execute_ordered_writes(List *write_ops) {
 \subsection{11.3 Full enterprise request
 skeleton}\label{full-enterprise-request-skeleton}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Response enterprise_request(Request *req) {
     authenticate(req);
     authorize_request(req);
@@ -1621,7 +1621,7 @@ Response enterprise_request(Request *req) {
 \section{12. Pattern Selection Heuristics as
 Algorithms}\label{pattern-selection-heuristics-as-algorithms}
 
-\begin{minted}{text}[language=C]
+\begin{minted}{C}
 Pattern choose_domain_logic_pattern(int domain_complexity,
                                     int recordset_tooling_strength,
                                     int team_domain_model_skill) {

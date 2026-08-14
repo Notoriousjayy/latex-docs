@@ -14,7 +14,7 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import List, Sequence, Set
+from typing import Any, List, Sequence, Set
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = ROOT / "src"
@@ -68,7 +68,7 @@ class BuildSummary:
     pdf_count: int
     log_count: int
     build_status: str
-    first_errors: list[dict[str, str]]
+    first_errors: list[dict[str, Any]]
     failure_clusters: list[dict[str, str | int]]
 
 
@@ -224,7 +224,18 @@ def _log_paths(tex_path: Path, log_dir: Path | None) -> tuple[Path | None, Path 
     return stdout_path, stderr_path
 
 
-def _extract_first_error(root_log: Path, stdout_path: Path | None, stderr_path: Path | None) -> str:
+def _native_log_copy_path(tex_path: Path, log_dir: Path | None) -> Path | None:
+    if log_dir is None:
+        return None
+
+    rel_path = _relative_root_path(tex_path)
+    log_leaf = rel_path.with_suffix("")
+    native_log_path = (log_dir / log_leaf).with_suffix(".log.txt")
+    native_log_path.parent.mkdir(parents=True, exist_ok=True)
+    return native_log_path
+
+
+def _extract_first_error_details(root_log: Path | None, stdout_path: Path | None, stderr_path: Path | None) -> dict[str, str]:
     def _read_text(path: Path | None) -> str:
         if path is None or not path.exists():
             return ""
@@ -240,7 +251,7 @@ def _extract_first_error(root_log: Path, stdout_path: Path | None, stderr_path: 
         normalized = re.sub(r"\s+", " ", normalized)
         return normalized.strip()
 
-    def _first_bang_signature(text: str) -> str:
+    def _first_bang_details(text: str) -> dict[str, str]:
         lines = text.splitlines()
         for idx, raw in enumerate(lines):
             line = raw.strip()
@@ -253,10 +264,31 @@ def _extract_first_error(root_log: Path, stdout_path: Path | None, stderr_path: 
                 if re.match(r"l\.\d+", next_line):
                     line_ref = next_line
                     break
+            context_lines = [line]
+            for next_line in lines[idx + 1 : idx + 4]:
+                stripped = next_line.strip()
+                if stripped:
+                    context_lines.append(stripped)
+
+            source_file = ""
+            for prev_line in reversed(lines[max(0, idx - 12) : idx + 1]):
+                tex_matches = re.findall(r"([^()\s]+\.tex)", prev_line)
+                if tex_matches:
+                    source_file = tex_matches[-1]
+                    break
+
+            signature = message
             if line_ref:
-                return f"{message} ({line_ref})"
-            return message
-        return ""
+                signature = f"{message} ({line_ref})"
+
+            return {
+                "signature": _normalize_signature(signature),
+                "message": _normalize_signature(message),
+                "line_ref": _normalize_signature(line_ref),
+                "context": _normalize_signature(" | ".join(context_lines)),
+                "source": _normalize_signature(source_file),
+            }
+        return {}
 
     sources: list[tuple[str, str]] = [
         ("log", _read_text(root_log)),
@@ -265,13 +297,19 @@ def _extract_first_error(root_log: Path, stdout_path: Path | None, stderr_path: 
     ]
     non_empty_sources = [(name, text) for name, text in sources if text.strip()]
     if not non_empty_sources:
-        return "UNKNOWN"
+        return {
+            "signature": "UNKNOWN",
+            "message": "UNKNOWN",
+            "line_ref": "",
+            "context": "",
+            "source": "",
+        }
 
     # 1) TeX-leading `!` errors with line context are highest signal.
     for _, text in non_empty_sources:
-        signature = _first_bang_signature(text)
-        if signature:
-            return _normalize_signature(signature)
+        details = _first_bang_details(text)
+        if details:
+            return details
 
     # 2..7) Canonical LaTeX/package fatal signatures.
     precedence_patterns = [
@@ -294,7 +332,14 @@ def _extract_first_error(root_log: Path, stdout_path: Path | None, stderr_path: 
         for _, text in non_empty_sources:
             match = pattern.search(text)
             if match:
-                return _normalize_signature(match.group(0))
+                message = _normalize_signature(match.group(0))
+                return {
+                    "signature": message,
+                    "message": message,
+                    "line_ref": "",
+                    "context": message,
+                    "source": "",
+                }
 
     # 8) latexmk-level failure phrasing.
     latexmk_pattern = re.compile(r"Latexmk:.*(?:error|failed|failure|stopping).+", re.IGNORECASE)
@@ -302,16 +347,40 @@ def _extract_first_error(root_log: Path, stdout_path: Path | None, stderr_path: 
         for line in text.splitlines():
             match = latexmk_pattern.search(line)
             if match:
-                return _normalize_signature(match.group(0))
+                message = _normalize_signature(match.group(0))
+                return {
+                    "signature": message,
+                    "message": message,
+                    "line_ref": "",
+                    "context": message,
+                    "source": "",
+                }
 
     # 9) Last non-empty line fallback from collected sources.
     for _, text in non_empty_sources:
         for line in reversed(text.splitlines()):
             stripped = line.strip()
             if stripped:
-                return _normalize_signature(stripped)
+                message = _normalize_signature(stripped)
+                return {
+                    "signature": message,
+                    "message": message,
+                    "line_ref": "",
+                    "context": message,
+                    "source": "",
+                }
 
-    return "UNKNOWN"
+    return {
+        "signature": "UNKNOWN",
+        "message": "UNKNOWN",
+        "line_ref": "",
+        "context": "",
+        "source": "",
+    }
+
+
+def _extract_first_error(root_log: Path | None, stdout_path: Path | None, stderr_path: Path | None) -> str:
+    return _extract_first_error_details(root_log, stdout_path, stderr_path).get("signature", "UNKNOWN")
 
 
 def _resolve_package_path(package_name: str) -> Path | None:
@@ -435,26 +504,101 @@ def _uses_minted_syntax(text: str) -> bool:
     return any(marker in text for marker in ("\\begin{minted}", "\\mintinline", "\\inputminted", "\\setminted{"))
 
 
+def _split_option_list(option_text: str) -> list[str]:
+    items: list[str] = []
+    token: list[str] = []
+    depth = 0
+    for char in option_text:
+        if char == "{":
+            depth += 1
+        elif char == "}" and depth > 0:
+            depth -= 1
+
+        if char == "," and depth == 0:
+            item = "".join(token).strip()
+            if item:
+                items.append(item)
+            token = []
+            continue
+
+        token.append(char)
+
+    item = "".join(token).strip()
+    if item:
+        items.append(item)
+    return items
+
+
+def _sanitize_minted_blocks(text: str) -> str:
+    def _normalize_begin(options: str, language: str) -> str:
+        lang = language.strip()
+        keep_items: list[str] = []
+        for item in _split_option_list(options):
+            if "=" not in item:
+                keep_items.append(item)
+                continue
+
+            key, value = item.split("=", 1)
+            normalized_key = key.strip().lower()
+            normalized_value = value.strip()
+
+            # Legacy listings-style keys need migration for minted.
+            if normalized_key == "language":
+                if normalized_value:
+                    lang = normalized_value
+                continue
+            if normalized_key in {"caption", "label", "style"}:
+                continue
+
+            keep_items.append(item)
+
+        if keep_items:
+            return f"\\begin{{minted}}[{','.join(keep_items)}]{{{lang}}}"
+        return f"\\begin{{minted}}{{{lang}}}"
+
+    # Fix legacy ordering: \begin{minted}{lang}[opts]
+    text = re.sub(
+        r"\\begin\{minted\}\{([^}]+)\}\[([^\]]+)\]",
+        lambda match: _normalize_begin(match.group(2), match.group(1)),
+        text,
+    )
+
+    # Sanitize modern ordering options list.
+    text = re.sub(
+        r"\\begin\{minted\}\[([^\]]+)\]\{([^}]+)\}",
+        lambda match: _normalize_begin(match.group(1), match.group(2)),
+        text,
+    )
+
+    return text
+
+
 def _prepare_build_input(tex_path: Path) -> tuple[Path, bool]:
     try:
         text = tex_path.read_text(encoding="utf-8", errors="ignore")
     except OSError:
         return tex_path, False
 
-    if not _uses_minted_syntax(text):
+    uses_minted = _uses_minted_syntax(text)
+    if not uses_minted:
         return tex_path, False
 
-    if re.search(r"\\(?:usepackage|RequirePackage)\s*(?:\[[^\]]*\])?\{minted\}", text):
+    sanitized_text = _sanitize_minted_blocks(text)
+    requires_minted_package = not re.search(r"\\(?:usepackage|RequirePackage)\s*(?:\[[^\]]*\])?\{minted\}", sanitized_text)
+    needs_wrapper = sanitized_text != text or requires_minted_package
+    if not needs_wrapper:
         return tex_path, False
 
-    lines = text.splitlines()
+    lines = sanitized_text.splitlines()
     insert_at = 0
     for index, line in enumerate(lines):
         if line.lstrip().startswith(r"\documentclass"):
             insert_at = index + 1
             break
 
-    wrapper_lines = lines[:insert_at] + [r"\usepackage[cache=false]{minted}", ""] + lines[insert_at:]
+    wrapper_lines = lines
+    if requires_minted_package:
+        wrapper_lines = lines[:insert_at] + [r"\usepackage[cache=false]{minted}", ""] + lines[insert_at:]
     wrapper_path = tex_path.with_name(f".{tex_path.stem}.latex-build-wrapper.tex")
     wrapper_path.write_text("\n".join(wrapper_lines) + "\n", encoding="utf-8")
     return wrapper_path, True
@@ -529,6 +673,7 @@ def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | N
     if used_wrapper:
         cmd = [*base_cmd, f"-jobname={stem}", build_input_path.name]
     stdout_path, stderr_path = _log_paths(tex_path, log_dir)
+    native_log_copy_path = _native_log_copy_path(tex_path, log_dir)
 
     stdout_handle = stdout_path.open("w", encoding="utf-8") if stdout_path else None
     stderr_handle = stderr_path.open("w", encoding="utf-8") if stderr_path else None
@@ -546,6 +691,10 @@ def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | N
             stdout_handle.close()
         if stderr_handle is not None:
             stderr_handle.close()
+
+    source_log_path = work_dir / f"{stem}.log"
+    if native_log_copy_path is not None and source_log_path.exists():
+        shutil.copy2(source_log_path, native_log_copy_path)
 
     source_pdf_path = work_dir / f"{stem}.pdf"
     published_pdf_path = build_dir / f"{stem}.pdf"
@@ -616,18 +765,22 @@ def build_roots(
         reset_output_tree(output_dir)
         reset_output_tree(log_dir)
 
-    failures: List[tuple[Path, int, str]] = []
+    failures: List[tuple[Path, int, dict[str, str]]] = []
 
     def report_failure(tex_path: Path, result_code: int) -> None:
         stdout_path, stderr_path = _log_paths(tex_path, log_dir)
-        first_error = _extract_first_error(tex_path.with_suffix(".log"), stdout_path, stderr_path)
+        native_log_path = _native_log_copy_path(tex_path, log_dir)
+        if native_log_path is None or not native_log_path.exists():
+            native_log_path = tex_path.with_suffix(".log")
+        details = _extract_first_error_details(native_log_path, stdout_path, stderr_path)
+        first_error = details.get("signature", "UNKNOWN")
         message = f"Build failed for {tex_path} (exit {result_code})"
         if log_dir is not None:
-            message += f"; logs: stdout={stdout_path} stderr={stderr_path}"
+            message += f"; logs: log={native_log_path} stdout={stdout_path} stderr={stderr_path}"
         if first_error:
             message += f"; first_error={first_error}"
         print(message, file=sys.stderr)
-        failures.append((tex_path, result_code, first_error or "UNKNOWN"))
+        failures.append((tex_path, result_code, details))
 
     if jobs <= 1:
         failure_count = 0
@@ -639,13 +792,13 @@ def build_roots(
         print(f"Build summary: {len(tex_paths) - failure_count} succeeded, {failure_count} failed, {len(tex_paths)} total", file=sys.stderr)
         exit_code = 0
         if failure_count:
-            clusters = Counter(error for _, _, error in failures)
+            clusters = Counter(detail.get("signature", "UNKNOWN") for _, _, detail in failures)
             print("Failure clusters:", file=sys.stderr)
             for signature, count in clusters.most_common(10):
                 print(f"  {count} x {signature}", file=sys.stderr)
             exit_code = 1
 
-        cluster_counts = Counter(error for _, _, error in failures)
+        cluster_counts = Counter(detail.get("signature", "UNKNOWN") for _, _, detail in failures)
         summary = BuildSummary(
             mode=mode,
             base_revision=base_revision,
@@ -661,10 +814,13 @@ def build_roots(
             first_errors=[
                 {
                     "root": tex_path.relative_to(ROOT).as_posix() if tex_path.is_relative_to(ROOT) else str(tex_path),
-                    "signature": signature,
+                    "signature": details.get("signature", "UNKNOWN"),
                     "exit_code": str(result_code),
+                    "line_ref": details.get("line_ref", ""),
+                    "context": details.get("context", ""),
+                    "source": details.get("source", ""),
                 }
-                for tex_path, result_code, signature in failures
+                for tex_path, result_code, details in failures
             ],
             failure_clusters=[
                 {"signature": signature, "count": count}
@@ -685,13 +841,13 @@ def build_roots(
     print(f"Build summary: {len(tex_paths) - failure_count} succeeded, {failure_count} failed, {len(tex_paths)} total", file=sys.stderr)
     exit_code = 0
     if failure_count:
-        clusters = Counter(error for _, _, error in failures)
+        clusters = Counter(detail.get("signature", "UNKNOWN") for _, _, detail in failures)
         print("Failure clusters:", file=sys.stderr)
         for signature, count in clusters.most_common(10):
             print(f"  {count} x {signature}", file=sys.stderr)
         exit_code = 1
 
-    cluster_counts = Counter(error for _, _, error in failures)
+    cluster_counts = Counter(detail.get("signature", "UNKNOWN") for _, _, detail in failures)
     summary = BuildSummary(
         mode=mode,
         base_revision=base_revision,
@@ -707,10 +863,13 @@ def build_roots(
         first_errors=[
             {
                 "root": tex_path.relative_to(ROOT).as_posix() if tex_path.is_relative_to(ROOT) else str(tex_path),
-                "signature": signature,
+                "signature": details.get("signature", "UNKNOWN"),
                 "exit_code": str(result_code),
+                "line_ref": details.get("line_ref", ""),
+                "context": details.get("context", ""),
+                "source": details.get("source", ""),
             }
-            for tex_path, result_code, signature in failures
+            for tex_path, result_code, details in failures
         ],
         failure_clusters=[
             {"signature": signature, "count": count}

@@ -58,6 +58,30 @@ class BuildToolTests(unittest.TestCase):
             self.assertIn("LaTeX Error", signature)
             self.assertIn("l.<n>", signature)
 
+    def test_extract_first_error_details_include_line_and_context(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tex_log = root / "doc.log"
+            stdout_log = root / "doc.stdout.txt"
+            stderr_log = root / "doc.stderr.txt"
+            tex_log.write_text(
+                "(./doc.tex\n"
+                "! LaTeX Error: Missing \\begin{document}.\n"
+                "l.12 \\end{titlepage}\n"
+                "See the LaTeX manual\n",
+                encoding="utf-8",
+            )
+            stdout_log.write_text("", encoding="utf-8")
+            stderr_log.write_text("", encoding="utf-8")
+
+            details = latex_build._extract_first_error_details(tex_log, stdout_log, stderr_log)
+
+            self.assertIn("LaTeX Error", details["signature"])
+            self.assertIn("l.<n>", details["signature"])
+            self.assertEqual("l.<n> \\end{titlepage}", details["line_ref"])
+            self.assertIn("Missing \\begin{document}", details["context"])
+            self.assertEqual("./doc.tex", details["source"])
+
     def test_extract_first_error_uses_unknown_only_when_all_sources_empty(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -245,6 +269,7 @@ class BuildToolTests(unittest.TestCase):
             def fake_run(cmd, cwd, env, stdout=None, stderr=None, check=False):
                 work_dir = Path(cwd)
                 (work_dir / "sample.pdf").write_bytes(b"%PDF-1.4")
+                (work_dir / "sample.log").write_text("! Sample failure line\n", encoding="utf-8")
                 return subprocess.CompletedProcess(cmd, 0)
 
             with patch("tooling.scripts.latex_build.ROOT", root), patch("tooling.scripts.latex_build.SRC_DIR", root / "src"), patch(
@@ -255,6 +280,7 @@ class BuildToolTests(unittest.TestCase):
             self.assertEqual(0, status)
             self.assertTrue((root / "public" / "pdfs" / "docs" / "sample.pdf").exists())
             self.assertTrue((root / "public" / "logs" / "docs" / "sample.build.stdout.txt").exists())
+            self.assertTrue((root / "public" / "logs" / "docs" / "sample.log.txt").exists())
 
     def test_build_summary_contains_required_contract_fields(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
