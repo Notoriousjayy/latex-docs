@@ -1,0 +1,133 @@
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=0.72in,top=0.82in,bottom=0.72in,headheight=22pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[table]{xcolor}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{array,longtable,booktabs,tabularx}
+\usepackage[inline]{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+
+\definecolor{Primary}{HTML}{17324D}
+\definecolor{Accent}{HTML}{2C7A7B}
+\definecolor{CueTint}{HTML}{EAF1F5}
+\definecolor{NoteTint}{HTML}{F8FAFB}
+\definecolor{Rule}{HTML}{B8C6CF}
+\hypersetup{hidelinks,pdftitle={Chapter 9: More Applications of Suffix Trees},pdfsubject={Cornell notes}}
+\setlist[itemize]{leftmargin=1.25em,itemsep=1pt,topsep=1.5pt,parsep=0pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\renewcommand{\arraystretch}{1.16}
+\emergencystretch=2em
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\sffamily\small\color{Primary} Chapter 9}
+\fancyhead[R]{\sffamily\small\color{Primary} Advanced suffix applications}
+\fancyfoot[C]{\sffamily\small\color{Primary}\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{Accent}\leaders\hrule height \headrulewidth\hfill}}
+
+\newcolumntype{C}{>{\raggedright\arraybackslash}p{0.275\textwidth}}
+\newcolumntype{N}{>{\raggedright\arraybackslash}p{0.655\textwidth}}
+\newcommand{\cnrow}[2]{%
+  \cellcolor{CueTint}\textbf{\sffamily\color{Primary}#1} &
+  \cellcolor{NoteTint}#2 \\[4pt]\arrayrulecolor{Rule}\hline}
+
+\begin{document}
+
+\begin{tcolorbox}[
+  enhanced,breakable,colback=Primary!4,colframe=Primary,boxrule=0.9pt,
+  arc=2mm,left=3mm,right=3mm,top=2.5mm,bottom=2.5mm]
+{\sffamily\color{Accent}\bfseries CHAPTER 9}\\[-1pt]
+{\sffamily\LARGE\bfseries\color{Primary} More Applications of Suffix Trees}
+
+\vspace{2pt}
+\textbf{Purpose.} Use constant-time exact-extension queries as building blocks for palindromes, wildcards, bounded mismatches, tandem repeats, and multi-string commonality.
+
+\textbf{Learning objectives}
+\begin{itemize}
+  \item Implement longest common extension through suffix-tree LCA.
+  \item Reduce palindrome questions to forward/reverse comparisons.
+  \item Use LCE jumps to make work proportional to the number of mismatches.
+  \item Understand how exact indexes accelerate approximate structures.
+\end{itemize}
+
+\textbf{Prerequisites.} Suffix trees, generalized trees, LCA, reverse strings, and mismatch distance.
+\end{tcolorbox}
+
+\begin{longtable}{@{}C!{\color{Accent}\vrule width 0.8pt}N@{}}
+\rowcolor{Primary}
+\color{white}\sffamily\bfseries Cue / question &
+\color{white}\sffamily\bfseries Notes \\ \hline
+\endfirsthead
+\rowcolor{Primary}
+\color{white}\sffamily\bfseries Cue / question &
+\color{white}\sffamily\bfseries Notes (continued) \\ \hline
+\endhead
+\cnrow{\S9.1: What is longest common extension?}{$\operatorname{LCE}(i,j)$ is the longest length $\ell$ for which $S[i..i+\ell-1]=S[j..j+\ell-1]$. In a suffix tree, take the LCA of leaves $i$ and $j$ and return its string depth. Linear preprocessing supports $O(1)$ LCE queries.}
+\cnrow{What is the space-efficient alternative?}{A suffix array, LCP array, and range-minimum structure recover the LCP of any two suffixes without storing an explicit pointer-rich tree. This keeps the same query abstraction while improving representation constants.}
+\cnrow{\S9.2: How are maximal palindromes found?}{Compare characters expanding around each center, but use LCE between the forward string and its reverse to jump across the entire matching arm. The mapping between original and reversed indices determines the palindrome radius. Check both odd and even centers and clip at boundaries.}
+\cnrow{What variants follow?}{Complemented palindromes compare one arm with the reverse complement of the other. Separated palindromes allow a gap between arms. The LCE reduction remains valid after the appropriate string transformation and index mapping.}
+\cnrow{\S9.3: How are wildcards handled?}{Break the pattern into maximal literal blocks. At an alignment, use LCE to consume each exact block and skip wildcard positions without comparison. Candidate generation or direct jumping makes cost depend on the number of blocks or wildcards rather than all pattern positions.}
+\cnrow{\S9.4: How does $k$-mismatch jumping work?}{At one alignment, query LCE from the current offset to skip a maximal exact run. If the pattern is unfinished, charge the next character as one mismatch and continue. Stop after $k+1$ mismatches or report the alignment. The per-alignment verification uses $O(k+1)$ LCE calls.}
+\cnrow{What does the $k$-mismatch profile require?}{\textbf{Input:} $P,T,k$. \textbf{Preprocess:} a combined suffix index and LCA/RMQ support. \textbf{Invariant:} all positions before the current offset are classified and at most $k$ mismatch positions are counted. \textbf{Cost:} preprocessing linear in combined length; verification proportional to the mismatch budget per candidate alignment.}
+\cnrow{\S9.5: Approximate palindromes and repeats}{Apply the same jump-count pattern to two arms or two candidate repeat copies. Exact runs are consumed by LCE; discrepancies spend the allowed budget. The chosen distance model must distinguish mismatches from insertions and deletions.}
+\cnrow{\S9.6: How are tandem repeats accelerated?}{A tandem repeat has adjacent equal blocks. Candidate block lengths are organized into ranges, and LCE queries test how far equality extends on either side of a boundary. Grouping lengths prevents independent character scans for every candidate; bounded-mismatch variants spend work only at discovered differences.}
+\cnrow{\S9.7: What is the multiple common substring problem?}{Color a generalized suffix tree by input string. Subtree color information and depth reveal substrings present in a required number of strings. A linear traversal can compute the best qualifying depth and witnesses when the requested output is compact; reporting all solutions adds output cost.}
+\cnrow{What should implementation tests cover?}{Verify reverse-index formulas, odd/even centers, wildcards at both ends, $k=0$, $k\ge m$, tandem blocks touching a boundary, and repeated suffixes. Most errors occur in coordinate translation rather than in the LCE primitive.}
+\cnrow{\S9.8: What should practice emphasize?}{For each application, write the two suffix positions passed to LCE, state what equality that query certifies, and prove that every mismatch or boundary advance is charged only a bounded number of times.}
+\end{longtable}
+
+
+\begin{tcolorbox}[enhanced,breakable,title={Chapter synthesis},
+  colback=Accent!5,colframe=Accent,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+Once LCE is constant time, exact equality becomes a jump operation rather than a character loop. Reversal turns palindrome arms into suffix comparisons; wildcard and mismatch algorithms alternate long exact jumps with a small number of exceptional positions; repeat algorithms organize many candidate lengths around the same primitive.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Key takeaways},
+  colback=white,colframe=Primary,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item LCE is the string analogue of a constant-time equality jump.
+  \item Reverse-string indexing converts symmetric comparisons into forward suffix comparisons.
+  \item $k$-mismatch verification needs at most $k+1$ exact-run jumps per alignment.
+  \item Wildcard complexity should depend on literal blocks or wildcard count.
+  \item Mismatch and edit-distance models are not interchangeable.
+  \item Coordinate mapping is a primary correctness concern.
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Algorithm selection / when to use this},
+  colback=Primary!3,colframe=Primary,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item Use suffix-tree or suffix-array LCE when many substring-equality queries are expected.
+  \item Use forward/reverse indexing for palindrome and mirrored-repeat problems.
+  \item Use LCE jumping when the number of exceptions is small.
+  \item Use colored generalized indexes for common substrings across many inputs.
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Self-test questions},
+  colback=white,colframe=Accent,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item How is $\operatorname{LCE}(i,j)$ answered from a suffix tree?
+  \item Map an odd-palindrome center to positions in the reversed string.
+  \item Why does $k$-mismatch verification stop after $k+1$ discrepancies?
+  \item What changes if insertions and deletions are allowed?
+\end{itemize}
+\end{tcolorbox}
+
+{\footnotesize
+\textbf{Terms and notation to remember.} LCE, reverse complement, palindrome center, literal block, mismatch budget, tandem repeat, colored subtree, witness.
+
+\textbf{Connections.} Bounded-edit DP combines LCE jumps with sparse frontiers.
+}
+
+\end{document}

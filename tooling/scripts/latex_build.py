@@ -725,14 +725,106 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path) -> List[Path]:
 
     pdf_rel_paths = sorted(path.relative_to(site_pdf_dir) for path in site_pdf_dir.rglob("*.pdf") if path.is_file())
 
-    index_path = site_dir / "index.html"
-    with index_path.open("w", encoding="utf-8") as handle:
-        handle.write("<!doctype html><html><body><h1>LaTeX PDFs</h1><ul>")
-        for rel_path in pdf_rel_paths:
+    def _numeric_chapter_key(path: Path) -> tuple[int, str]:
+        match = re.match(r"ch(\d+)-", path.name)
+        if match:
+            return int(match.group(1)), path.name
+        match = re.match(r"chapter_(\d+)_", path.name)
+        if match:
+            return int(match.group(1)), path.name
+        return (10**9, path.name)
+
+    cornell_paths = sorted(path for path in pdf_rel_paths if path.parts and path.parts[0] == "cornell-notes")
+    non_cornell_paths = sorted(path for path in pdf_rel_paths if not (path.parts and path.parts[0] == "cornell-notes"))
+
+    def _emit_links(handle: Any, paths: list[Path], sort_by_chapter: bool = False) -> None:
+        ordered = sorted(paths, key=_numeric_chapter_key) if sort_by_chapter else sorted(paths)
+        handle.write("<ul>")
+        for rel_path in ordered:
             rel_posix = rel_path.as_posix()
             escaped = html.escape(rel_posix)
             handle.write(f'<li><a href="pdfs/{escaped}">{escaped}</a></li>')
-        handle.write("</ul></body></html>")
+        handle.write("</ul>")
+
+    index_path = site_dir / "index.html"
+    with index_path.open("w", encoding="utf-8") as handle:
+        handle.write("<!doctype html><html><body><h1>LaTeX PDFs</h1>")
+
+        if cornell_paths:
+            handle.write("<h2>Cornell Notes</h2>")
+
+            cs_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "computer-science", "string-algorithms")]
+            elec_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "electronics", "electronic-circuits")]
+            math_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "mathematics", "numerical-methods")]
+            sec_paths = [path for path in cornell_paths if path.parts[:4] == ("cornell-notes", "security", "certifications", "cissp")]
+            other_cornell = [path for path in cornell_paths if path not in cs_paths and path not in elec_paths and path not in math_paths and path not in sec_paths]
+
+            if cs_paths:
+                handle.write("<h3>Computer Science</h3><h4>String Algorithms</h4>")
+                _emit_links(handle, cs_paths, sort_by_chapter=True)
+
+            if elec_paths:
+                handle.write("<h3>Electronics</h3><h4>Electronic Circuits</h4>")
+                grouped: dict[str, list[Path]] = {}
+                for path in elec_paths:
+                    topic = path.parts[3] if len(path.parts) > 4 else "(uncategorized)"
+                    grouped.setdefault(topic, []).append(path)
+
+                topic_order = [
+                    "foundations",
+                    "semiconductor-devices",
+                    "analog-circuits",
+                    "power-electronics",
+                    "digital-logic-and-interfaces",
+                    "mixed-signal-systems",
+                    "embedded-systems",
+                ]
+                ordered_topics = [topic for topic in topic_order if topic in grouped]
+                ordered_topics.extend(topic for topic in sorted(grouped) if topic not in ordered_topics)
+
+                for topic in ordered_topics:
+                    handle.write(f"<h5>{html.escape(topic)}</h5>")
+                    _emit_links(handle, grouped[topic], sort_by_chapter=True)
+
+            if math_paths:
+                handle.write("<h3>Mathematics</h3><h4>Numerical Methods</h4>")
+                grouped = {}
+                for path in math_paths:
+                    topic = path.parts[3] if len(path.parts) > 4 else "(uncategorized)"
+                    grouped.setdefault(topic, []).append(path)
+
+                topic_order = [
+                    "foundations",
+                    "linear-algebra",
+                    "interpolation-integration-and-functions",
+                    "randomization-and-ordering",
+                    "root-finding-and-optimization",
+                    "fourier-and-spectral-methods",
+                    "statistics-modeling-and-inference",
+                    "differential-and-integral-equations",
+                    "computational-geometry",
+                    "general-algorithms",
+                ]
+                ordered_topics = [topic for topic in topic_order if topic in grouped]
+                ordered_topics.extend(topic for topic in sorted(grouped) if topic not in ordered_topics)
+
+                for topic in ordered_topics:
+                    handle.write(f"<h5>{html.escape(topic)}</h5>")
+                    _emit_links(handle, grouped[topic], sort_by_chapter=True)
+
+            if sec_paths:
+                handle.write("<h3>Security</h3><h4>CISSP</h4>")
+                _emit_links(handle, sec_paths, sort_by_chapter=True)
+
+            if other_cornell:
+                handle.write("<h3>Other Cornell Notes</h3>")
+                _emit_links(handle, other_cornell)
+
+        if non_cornell_paths:
+            handle.write("<h2>Other PDFs</h2>")
+            _emit_links(handle, non_cornell_paths)
+
+        handle.write("</body></html>")
 
     return pdf_rel_paths
 

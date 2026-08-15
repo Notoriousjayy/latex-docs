@@ -1,0 +1,142 @@
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=0.72in,top=0.82in,bottom=0.72in,headheight=22pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[table]{xcolor}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{array,longtable,booktabs,tabularx}
+\usepackage[inline]{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+
+\definecolor{Primary}{HTML}{17324D}
+\definecolor{Accent}{HTML}{2C7A7B}
+\definecolor{CueTint}{HTML}{EAF1F5}
+\definecolor{NoteTint}{HTML}{F8FAFB}
+\definecolor{Rule}{HTML}{B8C6CF}
+\hypersetup{hidelinks,pdftitle={Chapter 11: Core String Edits, Alignments, and Dynamic Programming},pdfsubject={Cornell notes}}
+\setlist[itemize]{leftmargin=1.25em,itemsep=1pt,topsep=1.5pt,parsep=0pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\renewcommand{\arraystretch}{1.16}
+\emergencystretch=2em
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\sffamily\small\color{Primary} Chapter 11}
+\fancyhead[R]{\sffamily\small\color{Primary} Core alignment DP}
+\fancyfoot[C]{\sffamily\small\color{Primary}\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{Accent}\leaders\hrule height \headrulewidth\hfill}}
+
+\newcolumntype{C}{>{\raggedright\arraybackslash}p{0.275\textwidth}}
+\newcolumntype{N}{>{\raggedright\arraybackslash}p{0.655\textwidth}}
+\newcommand{\cnrow}[2]{%
+  \cellcolor{CueTint}\textbf{\sffamily\color{Primary}#1} &
+  \cellcolor{NoteTint}#2 \\[4pt]\arrayrulecolor{Rule}\hline}
+
+\begin{document}
+
+\begin{tcolorbox}[
+  enhanced,breakable,colback=Primary!4,colframe=Primary,boxrule=0.9pt,
+  arc=2mm,left=3mm,right=3mm,top=2.5mm,bottom=2.5mm]
+{\sffamily\color{Accent}\bfseries CHAPTER 11}\\[-1pt]
+{\sffamily\LARGE\bfseries\color{Primary} Core String Edits, Alignments, and Dynamic Programming}
+
+\vspace{2pt}
+\textbf{Purpose.} Derive edit-distance and similarity recurrences, recover alignments, and adapt the dynamic program to weights, local scope, and realistic gap models.
+
+\textbf{Learning objectives}
+\begin{itemize}
+  \item Derive and initialize the edit-distance dynamic program.
+  \item Interpret an alignment as a path in an edit graph.
+  \item Distinguish distance minimization from similarity maximization.
+  \item Implement global, end-space-free, local, and affine-gap variants.
+\end{itemize}
+
+\textbf{Prerequisites.} Dynamic programming, shortest paths in DAGs, strings, and basic biological scoring.
+\end{tcolorbox}
+
+\begin{longtable}{@{}C!{\color{Accent}\vrule width 0.8pt}N@{}}
+\rowcolor{Primary}
+\color{white}\sffamily\bfseries Cue / question &
+\color{white}\sffamily\bfseries Notes \\ \hline
+\endfirsthead
+\rowcolor{Primary}
+\color{white}\sffamily\bfseries Cue / question &
+\color{white}\sffamily\bfseries Notes (continued) \\ \hline
+\endhead
+\cnrow{\S11.1: What is the core strategy?}{Define a value for every pair of prefixes, express the optimum through smaller prefix pairs, choose boundary conditions that encode the desired alignment scope, and retain predecessor information when an actual alignment rather than only its score is required.}
+\cnrow{\S11.2: What is edit distance?}{The edit distance between $A$ and $B$ is the minimum number or cost of allowed insertions, deletions, and substitutions that transform one string into the other. An alignment places symbols or gaps in columns so each column corresponds to one operation or a match.}
+\cnrow{How are operations represented?}{A diagonal alignment column pairs $A_i$ with $B_j$ and is a match or substitution. A vertical step pairs $A_i$ with a gap, and a horizontal step pairs a gap with $B_j$. Columns containing two gaps are meaningless and excluded.}
+\cnrow{\S11.3: What is the recurrence?}{Let $D[i,j]$ be the minimum cost to transform $A[1..i]$ into $B[1..j]$. For unit costs, $D[i,j]=\min\{D[i-1,j]+1,\ D[i,j-1]+1,\ D[i-1,j-1]+[A_i\ne B_j]\}$. Initialize $D[i,0]=i$ and $D[0,j]=j$.}
+\cnrow{Why is the recurrence correct?}{Every nonempty optimal alignment ends in exactly one of three column types. Removing that last column leaves an optimal solution to the corresponding smaller prefix pair; otherwise replacing it by a better prefix solution would improve the full alignment. Conversely, appending the chosen operation gives a feasible solution.}
+\cnrow{How is an alignment recovered?}{Starting at $(m,n)$, follow any predecessor attaining the cell value until $(0,0)$. Reverse the collected columns. Ties represent multiple optimal alignments; a deterministic implementation should define a tie policy or enumerate alternatives only when requested.}
+\cnrow{What are the core bounds?}{The full table uses $O(mn)$ time and space. If only the optimum value is needed, each row depends on the previous row and current-row neighbor, so two rows give $O(\min\{m,n\})$ auxiliary space after orienting the shorter string as columns.}
+\cnrow{\S11.4: What is the edit graph?}{Create a grid vertex $(i,j)$ for every prefix pair and directed edges for insertion, deletion, and diagonal comparison. Any source-to-sink path is an alignment and its edge-weight sum is the alignment cost. Because the graph is acyclic in index order, dynamic programming is shortest-path relaxation.}
+\cnrow{\S11.5: How are weights generalized?}{Replace unit costs with operation weights or symbol-pair-specific substitution costs. The recurrence remains valid when the score decomposes by columns. Check nonnegativity and metric properties only if downstream reasoning actually requires a distance metric.}
+\cnrow{\S11.6: How is similarity different?}{Similarity assigns rewards to matches and penalties to substitutions or gaps, then maximizes total score. Replace $\min$ by $\max$ and use the appropriate additive column scores. A monotone conversion between distance and similarity exists only under compatible scoring assumptions.}
+\cnrow{What is end-space-free alignment?}{Make leading or trailing gaps free on selected sequence ends by changing boundary initialization and/or choosing the optimum from a border rather than a fixed corner. This models a complete short sequence aligned inside a longer one without penalizing unused outer text.}
+\cnrow{How are approximate pattern occurrences found?}{Align the entire pattern against substrings ending at each text position. Free text-prefix initialization allows a candidate to start anywhere; inspect the final pattern row or corresponding border values to obtain scores and endpoints, then traceback for coordinates.}
+\cnrow{\S11.7: What is local alignment?}{Let $H[i,j]=\max\{0,\ H[i-1,j-1]+s(A_i,B_j),\ H[i-1,j]+g,\ H[i,j-1]+g\}$. Zero permits a new local alignment to start. The maximum cell is the best endpoint; traceback stops when the score reaches zero.}
+\cnrow{Why does zero-reset work?}{Any negative-scoring prefix would decrease every extension, so an optimal local alignment discards it and restarts. The invariant is that each cell stores the best score of an alignment ending exactly at $(i,j)$, not necessarily beginning at the sequence boundaries.}
+\cnrow{\S11.8: Why model gaps as runs?}{A biological insertion or deletion event may create several consecutive gap symbols. Charging each symbol independently can over-penalize one event. A gap function $g(k)$ assigns a cost to a run of length $k$; affine costs separate gap opening from extension.}
+\cnrow{How are affine gaps computed?}{Maintain separate states for alignments ending in a diagonal column, a gap in $A$, and a gap in $B$. Opening a gap transitions from a nongap state with an opening penalty; extending remains in the gap state with an extension penalty. A constant number of transitions per cell preserves $O(mn)$ time and space.}
+\cnrow{\S11.9: What should practice emphasize?}{Derive recurrences from the last alignment column, not from memorized formulas. Test empty strings, multiple optima, free-end policies, all-negative local scores, and the exact convention for whether a length-one gap pays both open and extension costs.}
+\end{longtable}
+
+
+\begin{tcolorbox}[enhanced,breakable,title={Chapter synthesis},
+  colback=Accent!5,colframe=Accent,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+Alignment dynamic programming is a path optimization over prefix pairs. Boundary conditions define scope, cell transitions define allowed edits, and min versus max defines distance versus similarity. Traceback turns values into explanations. Extra states preserve the same principle when scores depend on whether a gap is opened or extended.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Key takeaways},
+  colback=white,colframe=Primary,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item Every recurrence follows from classifying the final alignment column.
+  \item The edit graph makes correctness a shortest-path argument.
+  \item Score-only computation needs linear rather than quadratic space.
+  \item Boundary initialization is part of the problem definition.
+  \item Local alignment resets unhelpful prefixes to zero.
+  \item Affine gaps require state, not a single scalar table.
+  \item Tie handling determines which optimum traceback returns.
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Algorithm selection / when to use this},
+  colback=Primary!3,colframe=Primary,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item Use unit-cost edit distance for a simple minimum-operation measure.
+  \item Use weighted global alignment for full-length correspondence under a score model.
+  \item Use end-space-free alignment for a complete query inside a larger target.
+  \item Use local alignment for conserved regions.
+  \item Use affine gaps when gap runs should have opening and extension costs.
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Self-test questions},
+  colback=white,colframe=Accent,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item Derive the three edit-distance predecessor cases.
+  \item How do boundary conditions change for free leading text gaps?
+  \item Why does a local-alignment traceback stop at zero?
+  \item What information is lost by retaining only two rows?
+  \item Why cannot an affine gap generally be modeled with one table?
+  \item How does an edit-graph path encode an alignment?
+\end{itemize}
+\end{tcolorbox}
+
+{\footnotesize
+\textbf{Terms and notation to remember.} $D[i,j]$, edit operation, alignment column, traceback, edit graph, similarity score, local alignment, end-space free, gap opening, gap extension.
+
+\textbf{Connections.} The next chapter reduces space, exploits small difference budgets, combines exact-match indexes with DP, and precomputes repeated block transitions.
+}
+
+\end{document}

@@ -1,0 +1,133 @@
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=0.72in,top=0.82in,bottom=0.72in,headheight=22pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[table]{xcolor}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{array,longtable,booktabs,tabularx}
+\usepackage[inline]{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+
+\definecolor{Primary}{HTML}{17324D}
+\definecolor{Accent}{HTML}{2C7A7B}
+\definecolor{CueTint}{HTML}{EAF1F5}
+\definecolor{NoteTint}{HTML}{F8FAFB}
+\definecolor{Rule}{HTML}{B8C6CF}
+\hypersetup{hidelinks,pdftitle={Chapter 8: Constant-Time Lowest Common Ancestor Retrieval},pdfsubject={Cornell notes}}
+\setlist[itemize]{leftmargin=1.25em,itemsep=1pt,topsep=1.5pt,parsep=0pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\renewcommand{\arraystretch}{1.16}
+\emergencystretch=2em
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\sffamily\small\color{Primary} Chapter 8}
+\fancyhead[R]{\sffamily\small\color{Primary} Constant-time LCA}
+\fancyfoot[C]{\sffamily\small\color{Primary}\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{Accent}\leaders\hrule height \headrulewidth\hfill}}
+
+\newcolumntype{C}{>{\raggedright\arraybackslash}p{0.275\textwidth}}
+\newcolumntype{N}{>{\raggedright\arraybackslash}p{0.655\textwidth}}
+\newcommand{\cnrow}[2]{%
+  \cellcolor{CueTint}\textbf{\sffamily\color{Primary}#1} &
+  \cellcolor{NoteTint}#2 \\[4pt]\arrayrulecolor{Rule}\hline}
+
+\begin{document}
+
+\begin{tcolorbox}[
+  enhanced,breakable,colback=Primary!4,colframe=Primary,boxrule=0.9pt,
+  arc=2mm,left=3mm,right=3mm,top=2.5mm,bottom=2.5mm]
+{\sffamily\color{Accent}\bfseries CHAPTER 8}\\[-1pt]
+{\sffamily\LARGE\bfseries\color{Primary} Constant-Time Lowest Common Ancestor Retrieval}
+
+\vspace{2pt}
+\textbf{Purpose.} Preprocess a static rooted tree in linear time so the lowest common ancestor of any two nodes can be returned in constant time.
+
+\textbf{Learning objectives}
+\begin{itemize}
+  \item Connect suffix-tree leaf pairs to longest common extension queries.
+  \item Understand the word-RAM assumptions behind constant-time bit operations.
+  \item Explain the conceptual mapping from an arbitrary tree to a binary labeling scheme.
+  \item Separate linear preprocessing from constant query work.
+\end{itemize}
+
+\textbf{Prerequisites.} Rooted trees, preorder traversal, bit representations, suffix trees, and asymptotic models.
+\end{tcolorbox}
+
+\begin{longtable}{@{}C!{\color{Accent}\vrule width 0.8pt}N@{}}
+\rowcolor{Primary}
+\color{white}\sffamily\bfseries Cue / question &
+\color{white}\sffamily\bfseries Notes \\ \hline
+\endfirsthead
+\rowcolor{Primary}
+\color{white}\sffamily\bfseries Cue / question &
+\color{white}\sffamily\bfseries Notes (continued) \\ \hline
+\endhead
+\cnrow{\S8.1: What is an LCA?}{For nodes $u$ and $v$ in a rooted tree, $\operatorname{LCA}(u,v)$ is their deepest common ancestor. In a suffix tree, the string depth of the LCA of two suffix leaves is the length of their longest common prefix, making LCA a constant-time longest-common-extension primitive after preprocessing.}
+\cnrow{\S8.2: Which machine model is assumed?}{The constant bound assumes a word-RAM whose word holds $O(\log n)$ bits and supports selected shifts, masks, and bit-position operations in $O(1)$ time. If those operations are not primitive, small-table lookup or another RMQ construction must supply the same asymptotic service.}
+\cnrow{\S8.3: Why begin with a complete binary tree?}{In a complete binary tree, binary path or interval labels expose ancestry directly. The highest bit at which two labels diverge identifies the depth of their common path. This simple case motivates labels for a general tree.}
+\cnrow{\S8.4: How is LCA found in the conceptual tree?}{Combine the labels of the two query nodes, isolate the most significant structural difference, and recover the unique conceptual node representing their shared prefix. The operations are fixed in number, so the query does not climb parent pointers.}
+\cnrow{\S8.5: What must a mapping preserve?}{A map from original tree $T$ to conceptual tree $B$ must preserve ancestor relationships relevant to queries and provide a way back to an actual node of $T$. Preorder intervals and selected representatives summarize where each conceptual label occurs.}
+\cnrow{\S8.6: What labels are stored?}{Nodes receive traversal-derived labels plus bit masks describing distinguished ancestors or heads of paths. The exact representation supports two tasks: locate the conceptual common ancestor and select the corresponding deepest representative on each original-tree path.}
+\cnrow{\S8.7: Why is preprocessing linear?}{A constant amount of label and mask information is computed per node during a small number of traversals. Table entries or path-head data are shared rather than built per query pair, avoiding the quadratic all-pairs LCA table.}
+\cnrow{\S8.8: What happens during a query?}{First handle trivial ancestor or equality cases. Then combine node labels to find the relevant distinguished level, select the nearest representatives beneath that level, and take the appropriate parent or representative as the LCA. The sequence uses only constant-time table and word operations.}
+\cnrow{\S8.9: Is the binary tree materialized?}{No. It is an explanatory coordinate system. Only compact labels, masks, and pointers associated with original nodes are stored, which preserves $O(n)$ space.}
+\cnrow{\S8.10: Can bit tricks be avoided?}{Partition labels into sufficiently small blocks and precompute answers for every block shape, or reduce LCA to range-minimum queries with linear preprocessing. Table lookup replaces specialized bit primitives while retaining $O(1)$ query time under a standard RAM model.}
+\cnrow{What is the algorithm profile?}{\textbf{Input:} static rooted tree. \textbf{Output:} $\operatorname{LCA}(u,v)$. \textbf{Preprocess:} traversal labels, representatives, and constant-query auxiliary data in $O(n)$ time and space. \textbf{Invariant:} labels preserve the deepest shared ancestor relation. \textbf{Query:} $O(1)$; updates are not supported without rebuilding or a dynamic structure.}
+\cnrow{\S8.11: What should practice emphasize?}{Test ancestor-descendant pairs, identical nodes, siblings, and nodes in distant subtrees. State machine assumptions before claiming $O(1)$ and explain why the conceptual structure does not add storage.}
+\end{longtable}
+
+
+\begin{tcolorbox}[enhanced,breakable,title={Chapter synthesis},
+  colback=Accent!5,colframe=Accent,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+Constant-time LCA is obtained by moving work from queries into a linear preprocessing pass. Traversal labels and compact ancestor summaries encode the tree in a word-friendly coordinate system; each query combines a fixed number of values and returns to an original-tree representative. On a suffix tree this immediately gives constant-time longest common extensions.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Key takeaways},
+  colback=white,colframe=Primary,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item LCA is a static-tree query with many string applications.
+  \item Suffix-tree LCA depth equals suffix longest-common-prefix length.
+  \item Constant-time claims depend on an explicit word model or lookup reduction.
+  \item The conceptual complete binary tree is not stored.
+  \item Linear preprocessing replaces a quadratic pair table.
+  \item Dynamic updates require a different data structure.
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Algorithm selection / when to use this},
+  colback=Primary!3,colframe=Primary,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item Use a static $O(n)$-preprocess, $O(1)$-query LCA structure for many queries on an unchanged tree.
+  \item Use an RMQ-based implementation when it is clearer or better supported by the platform.
+  \item Use binary lifting when $O(\log n)$ queries are acceptable and implementation simplicity is preferred.
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Self-test questions},
+  colback=white,colframe=Accent,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item How does a suffix-tree LCA answer longest common extension?
+  \item Why is a word-size assumption relevant to constant query time?
+  \item What relationship must the conceptual mapping preserve?
+  \item Why is the conceptual binary tree unnecessary at runtime?
+  \item Which query pairs are essential edge-case tests?
+\end{itemize}
+\end{tcolorbox}
+
+{\footnotesize
+\textbf{Terms and notation to remember.} lowest common ancestor, string depth, longest common extension, word-RAM, preorder label, ancestor mask, representative, range-minimum query.
+
+\textbf{Connections.} The next chapter repeatedly uses LCE to jump across exact regions inside approximate matching, palindrome, and repeat algorithms.
+}
+
+\end{document}

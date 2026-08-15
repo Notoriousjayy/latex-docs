@@ -1,0 +1,130 @@
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=0.72in,top=0.82in,bottom=0.72in,headheight=22pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[table]{xcolor}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{array,longtable,booktabs,tabularx}
+\usepackage[inline]{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+
+\definecolor{Primary}{HTML}{17324D}
+\definecolor{Accent}{HTML}{2C7A7B}
+\definecolor{CueTint}{HTML}{EAF1F5}
+\definecolor{NoteTint}{HTML}{F8FAFB}
+\definecolor{Rule}{HTML}{B8C6CF}
+\hypersetup{hidelinks,pdftitle={Chapter 6: Linear-Time Construction of Suffix Trees},pdfsubject={Cornell notes}}
+\setlist[itemize]{leftmargin=1.25em,itemsep=1pt,topsep=1.5pt,parsep=0pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\renewcommand{\arraystretch}{1.16}
+\emergencystretch=2em
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\sffamily\small\color{Primary} Chapter 6}
+\fancyhead[R]{\sffamily\small\color{Primary} Linear suffix-tree construction}
+\fancyfoot[C]{\sffamily\small\color{Primary}\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{Accent}\leaders\hrule height \headrulewidth\hfill}}
+
+\newcolumntype{C}{>{\raggedright\arraybackslash}p{0.275\textwidth}}
+\newcolumntype{N}{>{\raggedright\arraybackslash}p{0.655\textwidth}}
+\newcommand{\cnrow}[2]{%
+  \cellcolor{CueTint}\textbf{\sffamily\color{Primary}#1} &
+  \cellcolor{NoteTint}#2 \\[4pt]\arrayrulecolor{Rule}\hline}
+
+\begin{document}
+
+\begin{tcolorbox}[
+  enhanced,breakable,colback=Primary!4,colframe=Primary,boxrule=0.9pt,
+  arc=2mm,left=3mm,right=3mm,top=2.5mm,bottom=2.5mm]
+{\sffamily\color{Accent}\bfseries CHAPTER 6}\\[-1pt]
+{\sffamily\LARGE\bfseries\color{Primary} Linear-Time Construction of Suffix Trees}
+
+\vspace{2pt}
+\textbf{Purpose.} Understand three linear-time construction strategies and the invariants that keep compressed-edge navigation proportional to text length.
+
+\textbf{Learning objectives}
+\begin{itemize}
+  \item Trace Ukkonen phases, extensions, active points, and suffix links.
+  \item Contrast left-to-right, right-to-left, and suffix-by-suffix constructions.
+  \item Explain the skip/count technique and shared leaf endpoints.
+  \item Extend a suffix tree to a collection of terminated strings.
+\end{itemize}
+
+\textbf{Prerequisites.} Chapter 5, compact tries, amortized analysis, and pointer-based trees.
+\end{tcolorbox}
+
+\begin{longtable}{@{}C!{\color{Accent}\vrule width 0.8pt}N@{}}
+\rowcolor{Primary}
+\color{white}\sffamily\bfseries Cue / question &
+\color{white}\sffamily\bfseries Notes \\ \hline
+\endfirsthead
+\rowcolor{Primary}
+\color{white}\sffamily\bfseries Cue / question &
+\color{white}\sffamily\bfseries Notes (continued) \\ \hline
+\endhead
+\cnrow{\S6.1: What does Ukkonen build?}{Process $S$ from left to right. Phase $i$ updates the implicit suffix tree for prefix $S[1..i]$ so it represents every suffix of that prefix. Each phase conceptually performs extensions, but suffix links and a persistent active point avoid restarting from the root.}
+\cnrow{What is an implicit suffix tree?}{It may omit the unique terminator and therefore allow a suffix to end inside an edge or at an internal point without a dedicated leaf. Appending a fresh terminator at the end forces every suffix to a distinct leaf and yields the explicit suffix tree.}
+\cnrow{What are the extension rules?}{An extension either adds a new leaf from an explicit node, splits an edge and adds a leaf, or does nothing because the next character is already present. The no-change case implies later extensions in the same phase are already present, enabling early termination.}
+\cnrow{How do suffix links help?}{A suffix link from an internal node with path label $x\alpha$ points to the node for $\alpha$. After extending one suffix, the next extension drops its first character; the link moves near the correct location without rescanning the shared substring.}
+\cnrow{What is skip/count?}{When a known substring of length $k$ must be traversed, compare $k$ with edge lengths and jump entire edges rather than characters. Only the final edge may require character-level inspection. Canonical active-point representation keeps node, edge, and offset state unambiguous.}
+\cnrow{Why is Ukkonen linear?}{A global leaf endpoint updates all open leaves in constant time per phase. Each created internal node gets a suffix link, active depth changes are amortized, and explicit comparisons that cross new text do not repeat without corresponding progress. With constant-time child access, total construction is $O(n)$.}
+\cnrow{What can break an implementation?}{Common defects are off-by-one edge intervals, failing to close the last pending suffix link, confusing an explicit node with an implicit edge position, and mishandling the terminator. Assertions should check unique first characters, valid intervals, and correct suffix-link path labels.}
+\cnrow{\S6.2: How does Weiner reverse the direction?}{Insert suffixes from right to left. Prepending a character transforms existing suffix relationships, and reverse-oriented links identify where the new branching structure belongs. The algorithm is historically important because it first achieved linear construction through carefully maintained intersuffix navigation.}
+\cnrow{\S6.3: What is McCreight's viewpoint?}{Insert complete suffixes in decreasing length order. After one suffix is inserted, a suffix link from the newly relevant internal node locates most of the path for the next suffix; skip/count traverses the known portion. Each insertion creates limited new structure, giving linear total work.}
+\cnrow{How do the three methods differ?}{Ukkonen is online over growing prefixes; Weiner works right to left by prepending; McCreight inserts suffixes one at a time using links between related path labels. All rely on compressed edges, intersuffix links, and amortizing rescans.}
+\cnrow{\S6.4: What is a generalized suffix tree?}{Index all suffixes of several strings, assigning a distinct terminator to each string or otherwise preventing a suffix from crossing a string boundary. Leaves retain both string identity and start position. Shared paths now expose substrings common to selected strings.}
+\cnrow{\S6.5: Which practical choices matter?}{Child representations trade constant factors, memory, and alphabet dependence: arrays are fast for small fixed alphabets; maps or balanced structures handle large alphabets. Store edge intervals, parent pointers when useful, suffix links, depths, and compact leaf identifiers. Validate memory traffic as well as asymptotic bounds.}
+\cnrow{\S6.6: What should practice emphasize?}{Trace every phase on a short repeated string, identify when each extension rule fires, and verify suffix links by path labels. Compare theoretical linearity with engineering costs of child lookup and allocation.}
+\end{longtable}
+\enlargethispage{2\baselineskip}
+
+\begin{tcolorbox}[enhanced,breakable,title={Chapter synthesis},
+  colback=Accent!5,colframe=Accent,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+All three constructions avoid reinserting suffixes by reusing compressed paths and intersuffix links. Ukkonen is online, Weiner works right to left, and McCreight proceeds suffix by suffix; generalized trees add boundary control.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Key takeaways},
+  colback=white,colframe=Primary,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item Implicit trees permit suffix endpoints inside edges.
+  \item Suffix links remove the first character from an internal path label.
+  \item Skip/count traverses known lengths edge by edge.
+  \item A shared leaf endpoint avoids updating every open leaf separately.
+  \item The terminator completes the explicit structure.
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Algorithm selection / when to use this},
+  colback=Primary!3,colframe=Primary,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item Use Ukkonen when online left-to-right construction is important.
+  \item Use McCreight for direct suffix insertion, or a generalized tree for cross-string queries.
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Self-test questions},
+  colback=white,colframe=Accent,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item State the three extension outcomes in Ukkonen's construction.
+  \item Why can a no-change extension terminate a phase early?
+  \item What exact path-label relationship does a suffix link represent?
+\end{itemize}
+\end{tcolorbox}
+
+{\footnotesize
+\textbf{Terms and notation to remember.} phase, extension, active point, suffix link, edge split, skip/count, generalized suffix tree.
+
+\textbf{Connections.} Later applications assume these construction invariants or an equivalent suffix index.
+}
+
+\end{document}

@@ -1,0 +1,143 @@
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=0.72in,top=0.82in,bottom=0.72in,headheight=22pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[table]{xcolor}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{array,longtable,booktabs,tabularx}
+\usepackage[inline]{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+
+\definecolor{Primary}{HTML}{17324D}
+\definecolor{Accent}{HTML}{2C7A7B}
+\definecolor{CueTint}{HTML}{EAF1F5}
+\definecolor{NoteTint}{HTML}{F8FAFB}
+\definecolor{Rule}{HTML}{B8C6CF}
+\hypersetup{hidelinks,pdftitle={Chapter 12: Refining Core String Edits and Alignments},pdfsubject={Cornell notes}}
+\setlist[itemize]{leftmargin=1.25em,itemsep=1pt,topsep=1.5pt,parsep=0pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\renewcommand{\arraystretch}{1.16}
+\emergencystretch=2em
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\sffamily\small\color{Primary} Chapter 12}
+\fancyhead[R]{\sffamily\small\color{Primary} Refined alignment algorithms}
+\fancyfoot[C]{\sffamily\small\color{Primary}\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{Accent}\leaders\hrule height \headrulewidth\hfill}}
+
+\newcolumntype{C}{>{\raggedright\arraybackslash}p{0.275\textwidth}}
+\newcolumntype{N}{>{\raggedright\arraybackslash}p{0.655\textwidth}}
+\newcommand{\cnrow}[2]{%
+  \cellcolor{CueTint}\textbf{\sffamily\color{Primary}#1} &
+  \cellcolor{NoteTint}#2 \\[4pt]\arrayrulecolor{Rule}\hline}
+
+\begin{document}
+
+\begin{tcolorbox}[
+  enhanced,breakable,colback=Primary!4,colframe=Primary,boxrule=0.9pt,
+  arc=2mm,left=3mm,right=3mm,top=2.5mm,bottom=2.5mm]
+{\sffamily\color{Accent}\bfseries CHAPTER 12}\\[-1pt]
+{\sffamily\LARGE\bfseries\color{Primary} Refining Core String Edits and Alignments}
+
+\vspace{2pt}
+\textbf{Purpose.} Improve alignment space and time by divide-and-conquer reconstruction, sparse frontiers, filtering, exact-match jumps, combinatorial reductions, and block tabulation.
+
+\textbf{Learning objectives}
+\begin{itemize}
+  \item Recover an optimum alignment in linear space.
+  \item Exploit a small edit or mismatch budget.
+  \item Distinguish filtration from verification.
+  \item Reduce LCS to LIS when symbol matches are sparse.
+  \item Explain convex-gap and Four-Russians speedups.
+\end{itemize}
+
+\textbf{Prerequisites.} Chapter 11, suffix-tree LCE, divide and conquer, randomized analysis, LIS, and block dynamic programming.
+\end{tcolorbox}
+
+\begin{longtable}{@{}C!{\color{Accent}\vrule width 0.8pt}N@{}}
+\rowcolor{Primary}
+\color{white}\sffamily\bfseries Cue / question &
+\color{white}\sffamily\bfseries Notes \\ \hline
+\endfirsthead
+\rowcolor{Primary}
+\color{white}\sffamily\bfseries Cue / question &
+\color{white}\sffamily\bfseries Notes (continued) \\ \hline
+\endhead
+\cnrow{\S12.1: How is score computation made linear-space?}{A DP row depends only on the previous row and current-row prefix. Orient the shorter dimension as the stored row to compute an optimum score with $O(\min\{m,n\})$ auxiliary space. This alone does not retain enough predecessors for traceback.}
+\cnrow{How is an alignment recovered in linear space?}{Compute forward scores to a middle row and reverse scores from the end back to that row. Their best compatible sum identifies a point crossed by some optimal path. Recurse on the two subrectangles. The area across each recursion level is $O(mn)$ and row storage remains linear.}
+\cnrow{What is the divide-and-conquer profile?}{\textbf{Input/output:} two strings and one optimal alignment. \textbf{Precondition:} additive DP transitions. \textbf{Invariant:} the chosen midpoint lies on an optimal source-to-sink path. \textbf{Cost:} $O(mn)$ time and $O(\min\{m,n\})$ extra space, plus output storage.}
+\cnrow{\S12.2: What changes when differences are bounded?}{If the optimum is at most $k$, only a band of diagonals near a feasible path can matter. Track the farthest row reached on each diagonal for each error count rather than fill the full grid. The frontier expands as the budget grows and can stop when the target or threshold is reached.}
+\cnrow{How do exact-match jumps help bounded edits?}{After one edit transition, use an LCE query to extend along the diagonal through the next maximal exact run in $O(1)$. Each state then spends constant work on an edit plus one exact jump. The resulting bound depends on $k$ and relevant diagonal states rather than the full matrix.}
+\cnrow{Where do bounded-difference problems arise?}{Error-tolerant pattern matching, primer or probe selection, near-duplicate detection, and sequencing reads often assume a small threshold. The method is beneficial only when $k$ is small enough relative to lengths; otherwise general DP may be simpler.}
+\cnrow{\S12.3: What is an exclusion method?}{A filter cheaply proves that many alignments cannot meet the error threshold, and a verifier checks the survivors exactly. Partitioning a pattern into pieces uses the pigeonhole principle: an alignment with at most $k$ errors must contain enough error-free pieces under the selected error model.}
+\cnrow{How do BYP and related filters reason?}{Sample or compare selected pattern regions to reject shifts before full verification. Expected sublinear time relies on assumptions about symbol distribution, independence, pattern length, and threshold. State these assumptions; an adversarial text can defeat the average-case argument.}
+\cnrow{What do multiple filtration and sublinear methods add?}{Use several exact seeds or blocks so a valid approximate occurrence must trigger a controlled number of hits. Choose seed lengths to balance false candidates against search cost. Deduplicate candidate alignments before verification.}
+\cnrow{\S12.4: How are suffix trees and DP hybridized?}{Exact indexes identify long shared regions or rapidly extend DP states, while dynamic programming handles sparse differences between anchors. All-against-all variants share preprocessing across many sequence pairs but must still account for potentially large output and threshold frontiers.}
+\cnrow{\S12.5: How does LCS reduce to LIS?}{List all matching index pairs $(i,j)$ with $A_i=B_j$ in increasing $i$ order and decreasing $j$ order within each $i$. A common subsequence corresponds to an increasing sequence of $j$ values. Compute LIS to obtain LCS in time tied to the number $r$ of symbol matches, commonly $O(r\log n)$ with appropriate data structures.}
+\cnrow{When is the LCS reduction useful?}{It is attractive when $r\ll mn$, as with large alphabets or sparse matches. If nearly every pair matches, constructing the pair list is quadratic and ordinary DP may be preferable. Recovering the subsequence requires predecessor information in the LIS structure.}
+\cnrow{\S12.6: What do convex gap weights change?}{A cell may appear to depend on many earlier positions because the cost of a gap is a function of its length. Convexity or concavity conventions create monotone dominance among candidate gap starts. Maintain only undominated candidates or row partitions so the best transition can be updated faster than scanning every possible length.}
+\cnrow{What is the correctness invariant for candidate pruning?}{A discarded candidate must be provably no better than a retained candidate for every future endpoint in the range where it might compete. The weight function's shape establishes this dominance; applying the optimization to an arbitrary gap function is unsound.}
+\cnrow{\S12.7: What is the Four-Russians idea?}{Partition the DP table into small blocks. A block's interior is determined by compactly encoded top and left boundary differences plus its local input symbols. Precompute every possible block transition, then fill the large table by lookup rather than cell-by-cell evaluation.}
+\cnrow{Which assumptions enable the block speedup?}{The alphabet and score differences must admit a bounded encoding, and the block size must keep the universal table subdominant. In restricted edit or LCS settings, this yields a logarithmic-factor asymptotic speedup, with substantial constants and preprocessing.}
+\cnrow{\S12.8: What should practice emphasize?}{Prove midpoint optimality, derive a frontier update on diagonals, quantify filter false candidates, order match pairs correctly for LCS-to-LIS, and state exactly which gap-shape or alphabet assumptions each speedup uses.}
+\end{longtable}
+
+
+\begin{tcolorbox}[enhanced,breakable,title={Chapter synthesis},
+  colback=Accent!5,colframe=Accent,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+Alignment speedups exploit structure absent from the generic matrix: only one midpoint is needed for reconstruction, only a narrow frontier matters under a small error budget, most candidates can often be filtered, symbol matches may be sparse, gap candidates can dominate one another, and small block transitions can be reused. Each gain depends on a condition that must be stated and tested.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Key takeaways},
+  colback=white,colframe=Primary,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item Linear-space traceback uses forward and reverse midpoint scores.
+  \item Bounded-difference methods track farthest-reaching diagonal states.
+  \item LCE turns exact diagonal runs into constant-time jumps.
+  \item Filters may reject cheaply but must never discard a valid candidate.
+  \item LCS-to-LIS is output-sparse in the number of matching pairs.
+  \item Gap-function shape justifies candidate dominance.
+  \item Four-Russians trades a universal table for fewer per-cell operations.
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Algorithm selection / when to use this},
+  colback=Primary!3,colframe=Primary,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item Use divide-and-conquer when an alignment is needed but quadratic memory is unacceptable.
+  \item Use bounded-difference frontiers when $k$ is small.
+  \item Use filtration when random-like input makes candidate rejection effective.
+  \item Use LCS-to-LIS when matching pairs are sparse.
+  \item Use block tabulation only when its alphabet and encoding assumptions hold.
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Self-test questions},
+  colback=white,colframe=Accent,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item Why does the forward-plus-reverse maximum identify an optimal midpoint?
+  \item What does a farthest-reaching diagonal state store?
+  \item How does LCE reduce work after an edit transition?
+  \item Why are matching pairs ordered decreasingly within one $A$ position?
+  \item What property permits convex-gap candidate pruning?
+  \item Which costs are hidden by a Four-Russians asymptotic speedup?
+\end{itemize}
+\end{tcolorbox}
+
+{\footnotesize
+\textbf{Terms and notation to remember.} linear-space traceback, midpoint, diagonal frontier, error budget, filtration, seed, verification, match pair, LIS, dominance, block function, offset encoding.
+
+\textbf{Connections.} Parametric and suboptimal alignment reuse the DP graph but ask for score regions or near-best paths; database search operationalizes seed-and-extend filtration at scale.
+}
+
+\end{document}

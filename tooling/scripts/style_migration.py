@@ -39,10 +39,10 @@ SOURCE_EXTENSIONS = {
 # Explicit allowlist for tool-required filenames that cannot be changed.
 # Keep this list minimal and documented when used.
 FILENAME_POLICY_EXCEPTIONS: tuple[str, ...] = (
-    "src/security/certifications/cissp/cornell-notes/03-security-architecture-and-engineering-cornell-notes.tex",
-    "src/security/certifications/cissp/cornell-notes/04-communication-and-network-security-cornell-notes.tex",
-    "src/security/certifications/cissp/cornell-notes/05-identity-and-access-management-cornell-notes.tex",
-    "src/security/certifications/cissp/cornell-notes/06-security-assessment-and-testing-cornell-notes.tex",
+    "src/cornell-notes/security/certifications/cissp/03-security-architecture-and-engineering-cornell-notes.tex",
+    "src/cornell-notes/security/certifications/cissp/04-communication-and-network-security-cornell-notes.tex",
+    "src/cornell-notes/security/certifications/cissp/05-identity-and-access-management-cornell-notes.tex",
+    "src/cornell-notes/security/certifications/cissp/06-security-assessment-and-testing-cornell-notes.tex",
 )
 MAX_FILENAME_LENGTH = 50
 
@@ -60,7 +60,7 @@ PLANTUML_START_PATTERN = re.compile(
 PLANTUML_DIRECT_STYLE_PATTERN = re.compile(r"!include(?:_once)?\s+.*tooling/styles/plantuml/.+\.iuml")
 FORBIDDEN_PLANTUML_WRAPPER_FILES = {"appsec-style.puml"}
 CORNELL_NOTES_PATH_PATTERN = re.compile(
-    r"src/(security/certifications/cissp/cornell-notes|cornell-notes)/.+cornell[-_]notes\.tex$"
+    r"src/cornell-notes/(electronics/electronic-circuits|security/certifications/cissp|mathematics/numerical-methods)/.+\.tex$"
 )
 
 SEMANTIC_STYLE_PACKAGES = {
@@ -364,10 +364,15 @@ def validate_repo() -> int:
             failures += 1
             print(f"forbidden-direct-style-import: {rel}")
 
-        is_cornell_root = rel.startswith("src/security/certifications/cissp/cornell-notes/") or rel == "src/architecture/style-system/examples/cornell-notes-study-sheet.tex"
+        is_cornell_root = (
+            rel.startswith("src/cornell-notes/electronics/electronic-circuits/")
+            or rel.startswith("src/cornell-notes/security/certifications/cissp/")
+            or rel.startswith("src/cornell-notes/mathematics/numerical-methods/")
+            or rel == "src/architecture/style-system/examples/cornell-notes-study-sheet.tex"
+        )
         uses_cornell_notes = bool(re.search(r"\\usepackage(?:\[[^\]]*\])?\{[^}]*\bcornell-notes\b[^}]*\}", active_text))
 
-        if rel.startswith("src/security/certifications/cissp/cornell-notes/") and not uses_cornell_notes:
+        if is_cornell_root and not uses_cornell_notes:
             failures += 1
             print(f"invalid-cornell-import: {rel}")
 

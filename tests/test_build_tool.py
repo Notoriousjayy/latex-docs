@@ -881,7 +881,7 @@ class BuildToolTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             pdf_dir = root / "public" / "pdfs"
-            nested_pdf = pdf_dir / "security" / "certifications" / "cissp" / "cornell-notes" / "01-security-and-risk-management-cornell-notes.pdf"
+            nested_pdf = pdf_dir / "cornell-notes" / "security" / "certifications" / "cissp" / "01-security-and-risk-management-cornell-notes.pdf"
             nested_pdf.parent.mkdir(parents=True, exist_ok=True)
             nested_pdf.write_bytes(b"%PDF-1.4")
 
@@ -895,30 +895,33 @@ class BuildToolTests(unittest.TestCase):
             self.assertEqual(
                 [
                     Path("architecture/guide.pdf"),
-                    Path("security/certifications/cissp/cornell-notes/01-security-and-risk-management-cornell-notes.pdf"),
+                    Path("cornell-notes/security/certifications/cissp/01-security-and-risk-management-cornell-notes.pdf"),
                 ],
                 rel_paths,
             )
-            self.assertTrue((site_dir / "pdfs" / "security" / "certifications" / "cissp" / "cornell-notes" / "01-security-and-risk-management-cornell-notes.pdf").exists())
+            self.assertTrue((site_dir / "pdfs" / "cornell-notes" / "security" / "certifications" / "cissp" / "01-security-and-risk-management-cornell-notes.pdf").exists())
             index_text = (site_dir / "index.html").read_text(encoding="utf-8")
-            self.assertIn('href="pdfs/security/certifications/cissp/cornell-notes/01-security-and-risk-management-cornell-notes.pdf"', index_text)
+            self.assertIn("Cornell Notes", index_text)
+            self.assertIn("Security", index_text)
+            self.assertIn("CISSP", index_text)
+            self.assertIn('href="pdfs/cornell-notes/security/certifications/cissp/01-security-and-risk-management-cornell-notes.pdf"', index_text)
             self.assertIn('href="pdfs/architecture/guide.pdf"', index_text)
 
     def test_discover_roots_includes_all_canonical_cornell_documents(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
         roots = discover_roots(repo_root / "src")
-        cornell_roots = sorted(path.relative_to(repo_root).as_posix() for path in roots if "src/security/certifications/cissp/cornell-notes/" in path.as_posix())
+        cornell_roots = sorted(path.relative_to(repo_root).as_posix() for path in roots if "src/cornell-notes/security/certifications/cissp/" in path.as_posix())
 
         self.assertEqual(
             [
-                "src/security/certifications/cissp/cornell-notes/01-security-and-risk-management-cornell-notes.tex",
-                "src/security/certifications/cissp/cornell-notes/02-asset-security-cornell-notes.tex",
-                "src/security/certifications/cissp/cornell-notes/03-security-architecture-and-engineering-cornell-notes.tex",
-                "src/security/certifications/cissp/cornell-notes/04-communication-and-network-security-cornell-notes.tex",
-                "src/security/certifications/cissp/cornell-notes/05-identity-and-access-management-cornell-notes.tex",
-                "src/security/certifications/cissp/cornell-notes/06-security-assessment-and-testing-cornell-notes.tex",
-                "src/security/certifications/cissp/cornell-notes/07-security-operations-cornell-notes.tex",
-                "src/security/certifications/cissp/cornell-notes/08-software-development-security-cornell-notes.tex",
+                "src/cornell-notes/security/certifications/cissp/01-security-and-risk-management-cornell-notes.tex",
+                "src/cornell-notes/security/certifications/cissp/02-asset-security-cornell-notes.tex",
+                "src/cornell-notes/security/certifications/cissp/03-security-architecture-and-engineering-cornell-notes.tex",
+                "src/cornell-notes/security/certifications/cissp/04-communication-and-network-security-cornell-notes.tex",
+                "src/cornell-notes/security/certifications/cissp/05-identity-and-access-management-cornell-notes.tex",
+                "src/cornell-notes/security/certifications/cissp/06-security-assessment-and-testing-cornell-notes.tex",
+                "src/cornell-notes/security/certifications/cissp/07-security-operations-cornell-notes.tex",
+                "src/cornell-notes/security/certifications/cissp/08-software-development-security-cornell-notes.tex",
             ],
             cornell_roots,
         )

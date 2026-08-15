@@ -1,0 +1,145 @@
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=0.72in,top=0.82in,bottom=0.72in,headheight=22pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[table]{xcolor}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{array,longtable,booktabs,tabularx}
+\usepackage[inline]{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+
+\definecolor{Primary}{HTML}{17324D}
+\definecolor{Accent}{HTML}{2C7A7B}
+\definecolor{CueTint}{HTML}{EAF1F5}
+\definecolor{NoteTint}{HTML}{F8FAFB}
+\definecolor{Rule}{HTML}{B8C6CF}
+\hypersetup{hidelinks,pdftitle={Chapter 7: First Applications of Suffix Trees},pdfsubject={Cornell notes}}
+\setlist[itemize]{leftmargin=1.25em,itemsep=1pt,topsep=1.5pt,parsep=0pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\renewcommand{\arraystretch}{1.16}
+\emergencystretch=2em
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\sffamily\small\color{Primary} Chapter 7}
+\fancyhead[R]{\sffamily\small\color{Primary} Suffix-tree applications}
+\fancyfoot[C]{\sffamily\small\color{Primary}\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{Accent}\leaders\hrule height \headrulewidth\hfill}}
+
+\newcolumntype{C}{>{\raggedright\arraybackslash}p{0.275\textwidth}}
+\newcolumntype{N}{>{\raggedright\arraybackslash}p{0.655\textwidth}}
+\newcommand{\cnrow}[2]{%
+  \cellcolor{CueTint}\textbf{\sffamily\color{Primary}#1} &
+  \cellcolor{NoteTint}#2 \\[4pt]\arrayrulecolor{Rule}\hline}
+
+\begin{document}
+
+\begin{tcolorbox}[
+  enhanced,breakable,colback=Primary!4,colframe=Primary,boxrule=0.9pt,
+  arc=2mm,left=3mm,right=3mm,top=2.5mm,bottom=2.5mm]
+{\sffamily\color{Accent}\bfseries CHAPTER 7}\\[-1pt]
+{\sffamily\LARGE\bfseries\color{Primary} First Applications of Suffix Trees}
+
+\vspace{2pt}
+\textbf{Purpose.} Turn path, leaf, color, and depth information in suffix trees into a broad toolkit for matching, repeats, compression, and space-reduced indexes.
+
+\textbf{Learning objectives}
+\begin{itemize}
+  \item Derive query algorithms from loci and descendant leaves.
+  \item Use generalized-tree colors to solve common-substring problems.
+  \item Define and detect maximal and supermaximal repeats.
+  \item Relate suffix trees to suffix arrays, matching statistics, and Lempel-Ziv parsing.
+\end{itemize}
+
+\textbf{Prerequisites.} Suffix-tree construction, tree traversal, lexicographic ordering, and exact matching.
+\end{tcolorbox}
+
+\begin{longtable}{@{}C!{\color{Accent}\vrule width 0.8pt}N@{}}
+\rowcolor{Primary}
+\color{white}\sffamily\bfseries Cue / question &
+\color{white}\sffamily\bfseries Notes \\ \hline
+\endfirsthead
+\rowcolor{Primary}
+\color{white}\sffamily\bfseries Cue / question &
+\color{white}\sffamily\bfseries Notes (continued) \\ \hline
+\endhead
+\cnrow{\S7.1: Exact pattern matching}{Build a suffix tree for text $T$. Spell $P$ from the root; failure means no occurrence, while the descendant leaves of the final locus are exactly the start positions. Query time is $O(|P|+\mathrm{occ})$ after linear text preprocessing under suitable child lookup.}
+\cnrow{\S7.2: Exact set matching}{A generalized suffix tree can index a pattern set, or a text suffix tree can receive each pattern as a query. Choose the indexed side according to reuse and total size. Keyword trees process one text against many patterns; suffix trees naturally support many future queries against one indexed text.}
+\cnrow{\S7.3: Substring queries for a pattern database}{Color leaves by the database string that owns each suffix. A query locus identifies database strings containing the query; distinct-color reporting avoids emitting the same string once per occurrence. Boundary terminators prevent false cross-string substrings.}
+\cnrow{\S7.4: Longest common substring of two strings}{Build a generalized tree with two leaf colors. The deepest internal node having descendants of both colors spells a longest common substring. Postorder color aggregation and string-depth computation make the search linear in total input length.}
+\cnrow{\S7.5: Recognizing contamination}{Treat trusted and possibly contaminated sequences as separate colors. Long mixed-color paths identify shared fragments, while occurrence locations trace them back to inputs. Threshold selection is an application decision; the index supplies exact shared segments, not a biological conclusion by itself.}
+\cnrow{\S7.6: Common substrings of many strings}{For each node $v$, compute the number or set of distinct input colors among descendant leaves. A deepest node whose color count meets the target yields a longest substring common to that many strings. Compact counters or offline traversal avoid materializing a large set at every node.}
+\cnrow{\S7.7: A smaller exact-matching graph}{Merge suffix-equivalent states to obtain a directed acyclic representation of substrings, often viewed as a suffix automaton or directed acyclic word graph. It can recognize all text substrings with fewer explicit tree paths, trading tree simplicity for transition and suffix-link semantics.}
+\cnrow{\S7.8: What are matching statistics?}{For each position $i$ of a query string, record the length of the longest prefix of the suffix beginning at $i$ that occurs in the indexed text, often with an occurrence witness. Suffix links and continued traversal reuse work across positions, providing a reverse role and enabling space reductions in later tasks.}
+\cnrow{\S7.9: Space-efficient longest common substring}{Compute matching statistics of one string against an index for the other and take the maximum value. Only the index and streaming statistics are needed; the result can be recovered from the maximizing position and witness without building a two-string generalized tree.}
+\cnrow{\S7.10: All-pairs suffix-prefix matching}{For every ordered pair of strings, seek the longest suffix of one equal to a prefix of the other. A generalized index plus ancestor and color information shares work across pairs. Output size can be quadratic, so linear preprocessing must be distinguished from result enumeration.}
+\cnrow{\S7.11: What is a repetitive structure?}{A repeat is a substring occurring at least twice. A tandem repeat places copies adjacently. A pair is maximal when neither occurrence pair can be extended left or right while preserving equality; a supermaximal repeat is not contained in a longer repeated substring and occurs with diverse neighboring contexts.}
+\cnrow{\S7.12: How are maximal repeats found?}{An internal node represents a repeated path label. Right diversity follows from branching; left diversity is tested from the characters preceding descendant suffixes. Nodes diverse on both sides identify maximal repeats, and leaf-pair organization reports maximal pairs with output-sensitive cost.}
+\cnrow{\S7.13: Circular string linearization}{To choose a canonical rotation, examine length-$n$ substrings beginning in the first $n$ positions of $SS$. A suffix tree or suffix ordering identifies the lexicographically least eligible rotation while respecting the fixed-length boundary.}
+\cnrow{\S7.14: What does a suffix array retain?}{Sort suffix start positions lexicographically and store their longest-common-prefix values. Binary search finds a pattern interval; cached LCP information avoids re-comparing known prefixes. A suffix array uses smaller constants and contiguous memory, though some tree operations need additional structures.}
+\cnrow{How are search bounds accelerated?}{Plain binary search can compare up to $O(|P|\log n)$ characters. Remembering LCPs at interval boundaries avoids repeated prefix work, giving bounds near $O(|P|+\log n)$ plus output. Adjacent suffix LCP values encode enough information to reconstruct implicit tree relationships.}
+\cnrow{\S7.15: What changes at genome scale?}{Scale makes representation constants, external memory, construction strategy, and output control decisive. Exact indexes support anchoring, repeat discovery, and sequence comparison, but highly repetitive data may require compressed variants and careful reporting policies.}
+\cnrow{\S7.16: Boyer-Moore for a pattern set}{Generalize bad-character and good-suffix reasoning across a pattern dictionary so one alignment can exclude many candidates. Preprocessing must capture suffix relationships among patterns, and the search must preserve which pattern lengths remain viable.}
+\cnrow{\S7.17: How does Lempel-Ziv use suffix structure?}{Parse the text into phrases chosen from earlier text plus a new symbol or as longest previous factors, depending on the variant. A suffix tree can locate the longest prior match for each phrase start; online construction supports one-pass parsing. Phrase references expose repeated structure for compression.}
+\cnrow{\S7.18: Minimum-length DNA encoding}{Represent a target sequence through references to available substrings plus literal material and delimiters. Suffix-tree matches generate candidate phrases; an optimization layer chooses a minimum-cost encoding under the specified code-length model. The cost model, not match length alone, determines the optimum.}
+\cnrow{\S7.19: What unifies the additional applications?}{Most applications attach a small annotation to nodes or leaves, then perform one or more traversals. Useful annotations include string depth, color summaries, left contexts, occurrence counts, and lexicographic ranks.}
+\cnrow{\S7.20: What should practice emphasize?}{For each problem, identify the exact locus or node property that represents a solution, prove the descendant-leaf interpretation, and include preprocessing, query, and output costs separately.}
+\end{longtable}
+
+
+\begin{tcolorbox}[enhanced,breakable,title={Chapter synthesis},
+  colback=Accent!5,colframe=Accent,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+Suffix trees are less a single algorithm than a reusable geometric view of all substrings. Loci answer membership, colors express cross-string participation, node depth measures substring length, contexts characterize maximality, and lexicographic order yields arrays and circular representatives. Matching statistics and phrase parsing show how the same structure supports space reduction and compression.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Key takeaways},
+  colback=white,colframe=Primary,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item A pattern locus plus descendant leaves gives exact occurrences.
+  \item Leaf colors convert shared-substring questions into subtree aggregation.
+  \item String depth turns deepest qualifying nodes into longest substrings.
+  \item Maximal repeats require both left and right diversity.
+  \item Suffix arrays preserve lexicographic suffix order with smaller space constants.
+  \item Matching statistics summarize one longest indexed match per query position.
+  \item Output size must remain explicit in multi-result bounds.
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Algorithm selection / when to use this},
+  colback=Primary!3,colframe=Primary,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item Use colored generalized trees for commonality across several strings.
+  \item Use matching statistics when one longest match per position is the needed primitive.
+  \item Use suffix arrays for compact lexicographic indexing.
+  \item Use left/right context tests for maximal repeats.
+  \item Use online suffix indexing to support Lempel-Ziv parsing.
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Self-test questions},
+  colback=white,colframe=Accent,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item Why does the deepest mixed-color node solve two-string longest common substring?
+  \item Define matching statistics and state what a witness adds.
+  \item What distinguishes a maximal repeat from an arbitrary repeat?
+  \item How can LCP values accelerate suffix-array binary search?
+  \item Why may an all-pairs problem require quadratic output time?
+\end{itemize}
+\end{tcolorbox}
+
+{\footnotesize
+\textbf{Terms and notation to remember.} leaf color, string depth, matching statistics, maximal repeat, suffix array, LCP array, phrase factor.
+
+\textbf{Connections.} Constant-time LCA adds $O(1)$ longest-common extension; later alignment methods use exact anchors.
+}
+
+\end{document}

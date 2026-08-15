@@ -1,0 +1,131 @@
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=0.72in,top=0.82in,bottom=0.72in,headheight=22pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[table]{xcolor}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{array,longtable,booktabs,tabularx}
+\usepackage[inline]{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+
+\definecolor{Primary}{HTML}{17324D}
+\definecolor{Accent}{HTML}{2C7A7B}
+\definecolor{CueTint}{HTML}{EAF1F5}
+\definecolor{NoteTint}{HTML}{F8FAFB}
+\definecolor{Rule}{HTML}{B8C6CF}
+\hypersetup{hidelinks,pdftitle={Chapter 4: Seminumerical String Matching},pdfsubject={Cornell notes}}
+\setlist[itemize]{leftmargin=1.25em,itemsep=1pt,topsep=1.5pt,parsep=0pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\renewcommand{\arraystretch}{1.16}
+\emergencystretch=2em
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\sffamily\small\color{Primary} Chapter 4}
+\fancyhead[R]{\sffamily\small\color{Primary} Seminumerical matching}
+\fancyfoot[C]{\sffamily\small\color{Primary}\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{Accent}\leaders\hrule height \headrulewidth\hfill}}
+
+\newcolumntype{C}{>{\raggedright\arraybackslash}p{0.275\textwidth}}
+\newcolumntype{N}{>{\raggedright\arraybackslash}p{0.655\textwidth}}
+\newcommand{\cnrow}[2]{%
+  \cellcolor{CueTint}\textbf{\sffamily\color{Primary}#1} &
+  \cellcolor{NoteTint}#2 \\[4pt]\arrayrulecolor{Rule}\hline}
+
+\begin{document}
+
+\begin{tcolorbox}[
+  enhanced,breakable,colback=Primary!4,colframe=Primary,boxrule=0.9pt,
+  arc=2mm,left=3mm,right=3mm,top=2.5mm,bottom=2.5mm]
+{\sffamily\color{Accent}\bfseries CHAPTER 4}\\[-1pt]
+{\sffamily\LARGE\bfseries\color{Primary} Seminumerical String Matching}
+
+\vspace{2pt}
+\textbf{Purpose.} Use machine words, convolution, and fingerprints to transform character matching into compact arithmetic computations.
+
+\textbf{Learning objectives}
+\begin{itemize}
+  \item Simulate many pattern-prefix states with Shift-And bit vectors.
+  \item Relate match counts to convolution and the Fast Fourier Transform.
+  \item Derive a rolling Karp-Rabin fingerprint update.
+  \item Separate deterministic verification from probabilistic filtering.
+\end{itemize}
+
+\textbf{Prerequisites.} Bit operations, modular arithmetic, polynomial evaluation, convolution, and exact matching.
+\end{tcolorbox}
+
+\begin{longtable}{@{}C!{\color{Accent}\vrule width 0.8pt}N@{}}
+\rowcolor{Primary}
+\color{white}\sffamily\bfseries Cue / question &
+\color{white}\sffamily\bfseries Notes \\ \hline
+\endfirsthead
+\rowcolor{Primary}
+\color{white}\sffamily\bfseries Cue / question &
+\color{white}\sffamily\bfseries Notes (continued) \\ \hline
+\endhead
+\cnrow{\S4.1: What makes a method seminumerical?}{Instead of deciding every alignment solely through explicit character comparisons, encode many comparisons into word-level bit operations or arithmetic identities. Speed depends on the machine-word model, number representation, alphabet encoding, and the cost of avoiding numerical error.}
+\cnrow{\S4.2: How does Shift-And encode states?}{For each character $c$, build a bit mask $M_c$ whose $j$th bit is $1$ exactly when $P[j]=c$. A state word $D$ records which pattern prefixes match a suffix ending at the current text position. Update with $D\leftarrow((D\ll1)\lor1)\land M_c$; the bit for $|P|$ signals a match.}
+\cnrow{When is Shift-And effective?}{If the pattern fits in one machine word, each text character costs a few constant-time operations. Longer patterns require multiple words, making the bound proportional to $\lceil m/w\rceil$ per text character. It is attractive for small patterns and compact automaton simulation.}
+\cnrow{How are errors incorporated?}{Maintain bit vectors for states reachable with at most $e$ edits or mismatches. Updates combine exact-extension states with states created by substitution, insertion, or deletion, depending on the error model. Parallel word operations evaluate many dynamic-programming cells at once.}
+\cnrow{\S4.3: What is the match-count problem?}{For each alignment, count how many aligned positions agree. Encode each alphabet symbol with indicator vectors. A cross-correlation between the pattern indicator and reversed text indicator yields counts for that symbol; summing over symbols gives total matches.}
+\cnrow{Why use the FFT?}{Cross-correlation is a convolution after reversing one sequence. Polynomial multiplication via FFT computes all alignment contributions together in near-linearithmic arithmetic time. Exactness requires careful rounding or number-theoretic alternatives, and a large alphabet may require several convolutions or a more compact encoding.}
+\cnrow{\S4.4: What is a Karp-Rabin fingerprint?}{Interpret a length-$m$ string as a base-$b$ polynomial modulo a chosen modulus $q$. The next window hash is obtained by removing the outgoing high-order contribution, multiplying by $b$, and adding the incoming character. Thus every window can be filtered in $O(1)$ arithmetic after initial setup.}
+\cnrow{How are collisions handled?}{Equal strings always have equal fingerprints, but unequal strings may collide. Verify every hash hit character by character for a Las Vegas-style exact result, or choose random parameters and accept a bounded false-positive probability. Multiple independent moduli reduce collision risk.}
+\cnrow{What is the Karp-Rabin profile?}{\textbf{Input/output:} $P,T$ and candidate or verified occurrences. \textbf{Preprocess:} $h(P)$, $h(T[1..m])$, and $b^{m-1}\bmod q$. \textbf{Invariant:} the rolling hash equals the current window polynomial modulo $q$. \textbf{Cost:} $O(n+m)$ expected filtering work; verification determines worst-case behavior.}
+\cnrow{\S4.5: What should practice emphasize?}{Trace masks and rolling hashes on small inputs, state the word-RAM assumptions explicitly, and distinguish arithmetic operation counts from bit complexity. Construct collision examples to understand why verification or randomization is needed.}
+\end{longtable}
+
+
+\begin{tcolorbox}[enhanced,breakable,title={Chapter synthesis},
+  colback=Accent!5,colframe=Accent,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+Seminumerical matching compresses repeated comparison structure. Bit-parallel methods simulate many prefix states in one word, FFT methods batch all alignment counts through convolution, and rolling fingerprints filter windows with constant arithmetic per shift. Their guarantees depend on explicit machine and error assumptions.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Key takeaways},
+  colback=white,colframe=Primary,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item Shift-And is a bit-parallel automaton simulation.
+  \item Pattern length relative to word size controls bit-parallel cost.
+  \item Match counts can be expressed as sums of correlations.
+  \item FFT speedups require a plan for numerical exactness.
+  \item Rolling hashes have one-sided evidence: unequal hashes disprove equality.
+  \item Verification converts hash filtering into an exact algorithm.
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Algorithm selection / when to use this},
+  colback=Primary!3,colframe=Primary,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item Use Shift-And for short patterns and extensions with a small error budget.
+  \item Use convolution when values for all alignments are needed together.
+  \item Use Karp-Rabin for simple rolling filters, many patterns of one length, or multidimensional extensions.
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,title={Self-test questions},
+  colback=white,colframe=Accent,fonttitle=\small\sffamily\bfseries,fontupper=\footnotesize,
+  boxsep=0.6mm,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm,before skip=3pt,after skip=3pt]
+\begin{itemize}
+  \item Derive the Shift-And update and explain every bit operation.
+  \item Why must one vector be reversed before convolution?
+  \item Write the rolling-hash update including removal of the outgoing symbol.
+  \item What is the difference between Monte Carlo and verified fingerprint matching?
+  \item How does a multiword pattern change the Shift-And bound?
+\end{itemize}
+\end{tcolorbox}
+
+{\footnotesize
+\textbf{Terms and notation to remember.} bit mask, state word, word size $w$, cross-correlation, convolution, FFT, fingerprint, rolling hash, modulus, collision.
+
+\textbf{Connections.} Bit-parallel updates resemble packed dynamic programming, while fingerprints and convolution reappear in approximate matching and large-scale filtering.
+}
+
+\end{document}

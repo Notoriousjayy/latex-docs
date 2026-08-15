@@ -17,6 +17,13 @@ from tooling.scripts.style_migration import (
 
 
 class StyleMigrationTests(unittest.TestCase):
+    @staticmethod
+    def _all_cornell_roots(repo_root: Path) -> list[Path]:
+        electronics = sorted((repo_root / "src" / "cornell-notes" / "electronics" / "electronic-circuits").rglob("*.tex"))
+        cissp = sorted((repo_root / "src" / "cornell-notes" / "security" / "certifications" / "cissp").glob("*.tex"))
+        numerical = sorted((repo_root / "src" / "cornell-notes" / "mathematics" / "numerical-methods").rglob("*.tex"))
+        return electronics + cissp + numerical
+
     def test_classify_latex_style_for_personal_documents(self) -> None:
         path = Path("src/personal/finance/example.tex")
         self.assertEqual("financial", classify_latex_style(path))
@@ -26,11 +33,15 @@ class StyleMigrationTests(unittest.TestCase):
         self.assertEqual("technical-design-spec", classify_latex_style(path))
 
     def test_classify_latex_style_for_cornell_notes_path(self) -> None:
-        path = Path("src/security/certifications/cissp/cornell-notes/01-security-and-risk-management-cornell-notes.tex")
+        path = Path("src/cornell-notes/security/certifications/cissp/01-security-and-risk-management-cornell-notes.tex")
         self.assertEqual("cornell-notes", classify_latex_style(path))
 
     def test_classify_latex_style_cornell_precedence_inside_security(self) -> None:
-        path = Path("src/security/certifications/cissp/cornell-notes/06-security-assessment-and-testing-cornell-notes.tex")
+        path = Path("src/cornell-notes/security/certifications/cissp/06-security-assessment-and-testing-cornell-notes.tex")
+        self.assertEqual("cornell-notes", classify_latex_style(path))
+
+    def test_classify_latex_style_for_numerical_methods_cornell_path(self) -> None:
+        path = Path("src/cornell-notes/mathematics/numerical-methods/foundations/ch01-preliminaries-notes.tex")
         self.assertEqual("cornell-notes", classify_latex_style(path))
 
     def test_classify_plantuml_style_for_activity_diagrams(self) -> None:
@@ -102,15 +113,13 @@ class StyleMigrationTests(unittest.TestCase):
 
     def test_cornell_notes_documents_use_cornell_package(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
-        cornell_dir = repo_root / "src" / "security" / "certifications" / "cissp" / "cornell-notes"
-        for tex_path in sorted(cornell_dir.glob("*.tex")):
+        for tex_path in self._all_cornell_roots(repo_root):
             text = tex_path.read_text(encoding="utf-8", errors="ignore")
             self.assertIn("\\usepackage{cornell-notes}", text, str(tex_path))
 
     def test_cornell_notes_documents_use_standard_title_contract(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
-        cornell_dir = repo_root / "src" / "security" / "certifications" / "cissp" / "cornell-notes"
-        for tex_path in sorted(cornell_dir.glob("*.tex")):
+        for tex_path in self._all_cornell_roots(repo_root):
             text = strip_latex_comments(tex_path.read_text(encoding="utf-8", errors="ignore"))
             self.assertRegex(text, r"\\title\s*\{[^{}]+\}", str(tex_path))
             self.assertRegex(text, r"\\author\s*\{[^{}]*\}", str(tex_path))
@@ -119,8 +128,7 @@ class StyleMigrationTests(unittest.TestCase):
 
     def test_cornell_notes_documents_avoid_legacy_title_page_calls(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
-        cornell_dir = repo_root / "src" / "security" / "certifications" / "cissp" / "cornell-notes"
-        for tex_path in sorted(cornell_dir.glob("*.tex")):
+        for tex_path in self._all_cornell_roots(repo_root):
             text = strip_latex_comments(tex_path.read_text(encoding="utf-8", errors="ignore"))
             self.assertNotIn("\\makecornelltitle", text, str(tex_path))
             self.assertNotIn("\\begin{titlepage}", text, str(tex_path))
@@ -248,7 +256,7 @@ class StyleMigrationTests(unittest.TestCase):
     def test_repo_validator_rejects_cornell_document_missing_title(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = Path(temp_dir)
-            tex_path = repo_root / "src" / "security" / "certifications" / "cissp" / "cornell-notes" / "01-domain-cornell-notes.tex"
+            tex_path = repo_root / "src" / "cornell-notes" / "security" / "certifications" / "cissp" / "01-domain-cornell-notes.tex"
             tex_path.parent.mkdir(parents=True, exist_ok=True)
             tex_path.write_text(
                 "\\documentclass[10pt,letterpaper]{article}\n"
