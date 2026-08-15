@@ -84,6 +84,40 @@ EXPECTED_ELECTRONICS = {
     ],
 }
 
+EXPECTED_COMBINATORIAL_ALGORITHMS = {
+    "subset-generation": ["ch01-next-subset-of-an-n-set-notes.tex", "ch02-random-subset-of-an-n-set-notes.tex", "ch03-next-k-subset-of-an-n-set-notes.tex", "ch04-random-k-subset-of-an-n-set-notes.tex"],
+    "compositions": ["ch05-next-composition-of-n-into-k-parts-notes.tex", "ch06-random-composition-of-n-into-k-parts-notes.tex"],
+    "permutations": ["ch07-next-permutation-of-n-letters-notes.tex", "ch08-random-permutation-of-n-letters-notes.tex", "ch16-cycle-structure-of-a-permutation-notes.tex"],
+    "integer-partitions": ["ch09-next-partition-of-integer-n-notes.tex", "ch10-random-partition-of-an-integer-n-notes.tex"],
+    "set-partitions": ["ch11-next-partition-of-an-n-set-notes.tex", "ch12-random-partition-of-an-n-set-notes.tex"],
+    "general-frameworks": ["ch13-general-combinatorial-family-algorithms-notes.tex"],
+    "young-tableaux": ["ch14-young-tableaux-notes.tex"], "sorting": ["ch15-sorting-notes.tex"],
+    "array-reindexing": ["ch17-renumbering-rows-and-columns-of-an-array-notes.tex"],
+    "graph-algorithms": ["ch18-spanning-forest-of-a-graph-notes.tex", "ch20-chromatic-polynomial-of-a-graph-notes.tex", "ch22-network-flows-notes.tex"],
+    "polynomial-algorithms": ["ch19-newton-forms-of-a-polynomial-notes.tex", "ch21-composition-of-power-series-notes.tex"],
+    "matrix-and-array-algorithms": ["ch23-permanent-function-notes.tex", "ch24-invert-a-triangular-array-notes.tex"],
+    "partially-ordered-sets": ["ch25-triangular-numbering-in-partially-ordered-sets-notes.tex", "ch26-mobius-function-notes.tex"],
+    "backtracking": ["ch27-backtrack-method-notes.tex"],
+    "tree-algorithms": ["ch28-labeled-trees-notes.tex", "ch29-random-unlabeled-rooted-trees-notes.tex", "ch30-tree-of-minimal-length-notes.tex"],
+}
+
+EXPECTED_COMPUTER_NETWORKS = {
+    "foundations": ["ch01-introduction-cornell-notes.tex"], "physical-layer": ["ch02-physical-layer-cornell-notes.tex"],
+    "data-link-layer": ["ch03-data-link-layer-cornell-notes.tex"], "medium-access-control": ["ch04-medium-access-control-sublayer-cornell-notes.tex"],
+    "network-layer": ["ch05-network-layer-cornell-notes.tex"], "transport-layer": ["ch06-transport-layer-cornell-notes.tex"],
+    "application-layer": ["ch07-application-layer-cornell-notes.tex"], "network-security": ["ch08-network-security-cornell-notes.tex"],
+    "reference-material": ["ch09-reading-list-and-bibliography-cornell-notes.tex"],
+}
+
+EXPECTED_OPERATING_SYSTEMS = {
+    "foundations": ["ch01-introduction-cornell-notes.tex"], "processes-and-threads": ["ch02-processes-and-threads-cornell-notes.tex"],
+    "memory-management": ["ch03-memory-management-cornell-notes.tex"], "file-systems": ["ch04-file-systems-cornell-notes.tex"],
+    "input-output": ["ch05-input-output-cornell-notes.tex"], "deadlocks": ["ch06-deadlocks-cornell-notes.tex"],
+    "virtualization-and-cloud": ["ch07-virtualization-and-the-cloud-cornell-notes.tex"], "multiple-processor-systems": ["ch08-multiple-processor-systems-cornell-notes.tex"],
+    "security": ["ch09-security-cornell-notes.tex"], "case-studies": ["ch10-case-study-1-unix-linux-and-android-cornell-notes.tex", "ch11-case-study-2-windows-8-cornell-notes.tex"],
+    "operating-system-design": ["ch12-operating-system-design-cornell-notes.tex"], "reference-material": ["ch13-reading-list-and-bibliography-cornell-notes.tex"],
+}
+
 EXPECTED_TITLES = {
     "ch01-preliminaries-notes.tex": "Chapter 1: Preliminaries",
     "ch02-linear-equations-notes.tex": "Chapter 2: Solution of Linear Algebraic Equations",
@@ -134,6 +168,67 @@ class CornellNumericalMethodsCollectionTests(unittest.TestCase):
         found = {path.name for path in electronics_root.rglob("*.tex")}
         self.assertEqual(15, len(found))
         self.assertEqual(expected, found)
+
+    def test_new_computer_science_collections_match_canonical_topics(self) -> None:
+        collections = {
+            "combinatorial-algorithms": EXPECTED_COMBINATORIAL_ALGORITHMS,
+            "computer-networks": EXPECTED_COMPUTER_NETWORKS,
+            "operating-systems": EXPECTED_OPERATING_SYSTEMS,
+        }
+        root = self.repo_root / "src" / "cornell-notes" / "computer-science"
+        for collection, expected_topics in collections.items():
+            collection_root = root / collection
+            expected_paths = {collection_root / topic / name for topic, names in expected_topics.items() for name in names}
+            self.assertEqual(expected_paths, set(collection_root.rglob("*.tex")))
+
+    def test_new_computer_science_collections_follow_shared_contract(self) -> None:
+        root = self.repo_root / "src" / "cornell-notes" / "computer-science"
+        paths = list((root / "combinatorial-algorithms").rglob("*.tex")) + list((root / "computer-networks").rglob("*.tex")) + list((root / "operating-systems").rglob("*.tex"))
+        self.assertEqual(52, len(paths))
+        for path in paths:
+            text = strip_latex_comments(path.read_text(encoding="utf-8", errors="ignore"))
+            self.assertIn("\\usepackage{cornell-notes}", text, str(path))
+            self.assertEqual(1, text.count("\\documentclass"), str(path))
+            self.assertEqual(1, text.count("\\begin{document}"), str(path))
+            self.assertEqual(1, text.count("\\end{document}"), str(path))
+            self.assertEqual(1, text.count("\\maketitle"), str(path))
+            self.assertRegex(text, r"\\title\s*\{[^{}]+\}", str(path))
+            self.assertLess(text.index("\\begin{document}"), text.index("\\maketitle"), str(path))
+            self.assertNotRegex(path.as_posix(), r"\(\d+\)")
+            self.assertNotIn("\\usepackage{listings}", text, str(path))
+
+    def test_same_named_introduction_roots_have_unique_source_relative_outputs(self) -> None:
+        cs_root = self.repo_root / "src" / "cornell-notes" / "computer-science"
+        network = cs_root / "computer-networks" / "foundations" / "ch01-introduction-cornell-notes.tex"
+        operating_systems = cs_root / "operating-systems" / "foundations" / "ch01-introduction-cornell-notes.tex"
+        self.assertTrue(network.exists())
+        self.assertTrue(operating_systems.exists())
+        self.assertNotEqual(network.relative_to(self.repo_root / "src").with_suffix(".pdf"), operating_systems.relative_to(self.repo_root / "src").with_suffix(".pdf"))
+
+    def test_stage_pages_groups_new_computer_science_collections(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            pdf_dir = Path(temp_dir) / "pdfs"
+            site_dir = Path(temp_dir) / "site"
+            paths = (
+                list((self.repo_root / "src" / "cornell-notes" / "computer-science" / "combinatorial-algorithms").rglob("*.tex"))
+                + list((self.repo_root / "src" / "cornell-notes" / "computer-science" / "computer-networks").rglob("*.tex"))
+                + list((self.repo_root / "src" / "cornell-notes" / "computer-science" / "operating-systems").rglob("*.tex"))
+            )
+            for path in paths:
+                output = pdf_dir / path.relative_to(self.repo_root / "src").with_suffix(".pdf")
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_bytes(b"%PDF-1.4\n")
+
+            staged = stage_pages_site(pdf_dir, site_dir)
+            self.assertEqual(52, len(staged))
+            index_text = (site_dir / "index.html").read_text(encoding="utf-8")
+            for label in ("Combinatorial Algorithms", "Computer Networks", "Operating Systems"):
+                self.assertIn(label, index_text)
+            for topic in ("permutations", "graph-algorithms", "polynomial-algorithms", "transport-layer", "deadlocks", "operating-system-design"):
+                self.assertIn(topic, index_text)
+            self.assertIn("computer-networks/foundations/ch01-introduction-cornell-notes.pdf", index_text)
+            self.assertIn("operating-systems/foundations/ch01-introduction-cornell-notes.pdf", index_text)
+            self.assertNotRegex(index_text, r"\(\d+\)")
 
     def test_no_upload_copy_suffixes_in_numerical_method_filenames(self) -> None:
         for path in self._iter_expected_files():
@@ -253,7 +348,7 @@ class CornellNumericalMethodsCollectionTests(unittest.TestCase):
     def test_centralized_cornell_collection_counts_and_groups(self) -> None:
         cornell_root = self.repo_root / "src" / "cornell-notes"
         all_roots = sorted(cornell_root.rglob("*.tex"))
-        self.assertEqual(64, len(all_roots))
+        self.assertEqual(116, len(all_roots))
 
         cissp = list((cornell_root / "security" / "certifications" / "cissp").glob("*.tex"))
         string_notes = list((cornell_root / "computer-science" / "string-algorithms").rglob("*.tex"))
@@ -263,6 +358,9 @@ class CornellNumericalMethodsCollectionTests(unittest.TestCase):
         self.assertEqual(19, len(string_notes))
         self.assertEqual(15, len(list((cornell_root / "electronics" / "electronic-circuits").rglob("*.tex"))))
         self.assertEqual(22, len(numerical))
+        self.assertEqual(30, len(list((cornell_root / "computer-science" / "combinatorial-algorithms").rglob("*.tex"))))
+        self.assertEqual(9, len(list((cornell_root / "computer-science" / "computer-networks").rglob("*.tex"))))
+        self.assertEqual(13, len(list((cornell_root / "computer-science" / "operating-systems").rglob("*.tex"))))
 
 
 if __name__ == "__main__":

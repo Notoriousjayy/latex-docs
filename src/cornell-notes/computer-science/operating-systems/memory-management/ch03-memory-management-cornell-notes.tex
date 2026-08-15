@@ -1,0 +1,185 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage{cornell-notes}
+
+\title{Chapter 3: Memory Management}
+\author{}
+\date{}
+
+\setDocTitle{Chapter 3: Memory Management}
+\setDocSubtitle{Operating Systems}
+\setDocVersion{v1.0}
+\setDocStatus{Study Companion}
+\setDocOwner{Operating Systems Cornell Notes}
+\setDocAuthor{}
+\setDocDate{\today}
+\setDocSummary{Cornell-format study and review notes for Chapter 3: Memory Management.}
+
+\setCornellCollection{Operating Systems Cornell Notes}
+\setCornellUnitType{Chapter}
+\setCornellUnitNumber{3}
+\setCornellUnitTitle{Memory Management}
+\setCornellCompanionLabel{Study and review companion}
+
+\hypersetup{pdftitle={Chapter 3: Memory Management},pdfsubject={Cornell notes},pdfauthor={}}
+
+\begin{document}
+\maketitle
+\section*{Learning Objectives}
+\begin{studybox}{By the end of this chapter, you should be able to}
+\begin{enumerate}
+  \item Explain why relocation and protection are necessary when several programs share memory.
+  \item Compare swapping, bitmaps, and linked free-list management.
+  \item Translate a virtual address into a page number and offset and trace page-table lookup.
+  \item Explain translation lookaside buffers and multilevel or inverted page tables.
+  \item Compare the principal page-replacement algorithms and their approximations.
+  \item Evaluate page size, allocation scope, load control, sharing, mapped files, and cleaning policies.
+  \item Trace page-fault handling from hardware trap through instruction restart.
+  \item Distinguish segmentation from paging and explain systems that combine them.
+\end{enumerate}
+\end{studybox}
+
+\begin{studybox}{Section Map}
+\hyperlink{sec-3-1}{3.1} \quad \hyperlink{sec-3-2}{3.2} \quad \hyperlink{sec-3-3}{3.3} \quad \hyperlink{sec-3-4}{3.4} \quad \hyperlink{sec-3-5}{3.5} \quad \hyperlink{sec-3-6}{3.6} \quad \hyperlink{sec-3-7}{3.7} \quad \hyperlink{sec-3-8}{3.8} \quad \hyperlink{sec-3-9}{3.9}
+\end{studybox}
+
+\section*{Cornell Cue-and-Notes Area}
+\small
+\begin{longtable}{C N}
+\rowcolor{navy}
+\color{white}\textbf{Cue / Recall Prompt} &
+\color{white}\textbf{Notes}\\
+\endfirsthead
+\rowcolor{navy}
+\color{white}\textbf{Cue / Recall Prompt} &
+\color{white}\textbf{Notes (continued)}\\
+\endhead
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-3-1}{}\textbf{Section 3.1: No Memory Abstraction}}\\*\hline
+\textbf{Single address space} & The simplest systems expose physical memory directly and run one program at a time or rely on fixed partitions. Without relocation and protection, programs can collide with the operating system or one another.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-3-2}{}\textbf{Section 3.2: A Memory Abstraction: Address Spaces}}\\*\hline
+\textbf{3.2.1 Address-space idea} & Each process sees a private range of addresses. Base-and-limit relocation adds a base to generated addresses and checks bounds, allowing the same program to occupy different physical locations.\\\hline
+\textbf{3.2.2 Swapping} & A complete process image can move between memory and backing storage. Swapping expands the runnable population but adds transfer cost and creates allocation and growth problems.\\\hline
+\textbf{3.2.3 Free-memory tracking} & Bitmaps represent fixed allocation units compactly; linked lists represent alternating holes and allocated regions. First fit, next fit, best fit, worst fit, and quick fit trade search time against fragmentation.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-3-3}{}\textbf{Section 3.3: Virtual Memory}}\\*\hline
+\textbf{Virtual-memory principle} & Only the actively needed part of an address space must be resident. Hardware translation and page faults let a process use a larger logical space than available physical memory.\\\hline
+\textbf{3.3.1 Paging} & Virtual memory is divided into pages and physical memory into equal-size frames. A virtual address separates into page number and offset; the page-table entry maps the page to a frame and supplies status bits.\\\hline
+\textbf{3.3.2 Page tables} & A page table records frame numbers plus present, protection, referenced, and modified information. Translation must be fast, yet the table can be large for wide address spaces.\\\hline
+\textbf{3.3.3 Faster paging} & A translation lookaside buffer caches recent page translations. A hit avoids the page-table memory access; a miss triggers hardware or software table walking before the entry is cached.\\\hline
+\textbf{3.3.4 Large memories} & Multilevel tables allocate lower levels only for used regions; inverted tables keep one entry per physical frame and search by process and virtual page, often aided by hashing.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-3-4}{}\textbf{Section 3.4: Page Replacement Algorithms}}\\*\hline
+\textbf{Replacement objective} & When no free frame is available, the kernel selects a victim whose removal is expected to cause little future fault cost. A modified victim must be written before reuse.\\\hline
+\textbf{3.4.1 Optimal} & Replace the page whose next use lies farthest in the future. The algorithm is not implementable online but establishes a benchmark for comparing practical policies.\\\hline
+\textbf{3.4.2 NRU} & Classify pages by referenced and modified bits and select from the lowest nonempty class. Periodically clearing referenced bits gives a coarse, inexpensive recency approximation.\\\hline
+\textbf{3.4.3 FIFO} & Replace the page resident longest. FIFO is simple but ignores usage and can exhibit Belady's anomaly, where adding frames increases faults.\\\hline
+\textbf{3.4.4 Second chance} & Inspect the oldest page; if referenced, clear the bit and move it to the back, otherwise evict it. This protects recently used pages while retaining FIFO structure.\\\hline
+\textbf{3.4.5 Clock} & Arrange frames in a circle and advance a hand until it finds an unreferenced victim, clearing reference bits along the way. Clock implements second chance without list movement.\\\hline
+\textbf{3.4.6 LRU} & Replace the page not used for the longest past interval. Exact LRU predicts from temporal locality but needs hardware or costly bookkeeping to maintain a total access order.\\\hline
+\textbf{3.4.7 Software LRU approximations} & NFU counts periodic reference observations; aging shifts counters and inserts the current reference bit, retaining a bounded history that better distinguishes recent use.\\\hline
+\textbf{3.4.8 Working set} & The working set contains pages referenced during a recent time window. Keeping it resident reduces thrashing; eviction favors pages outside the current working set.\\\hline
+\textbf{3.4.9 WSClock} & WSClock combines a circular scan with working-set age and modified-state tests. Old clean pages are immediate victims; old dirty pages can be scheduled for writeback.\\\hline
+\textbf{3.4.10 Comparison} & Optimal is a benchmark; FIFO is weak; exact LRU is expensive; aging and WSClock provide practical approximations. Workload locality and implementation cost determine the useful choice.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-3-5}{}\textbf{Section 3.5: Design Issues for Paging Systems}}\\*\hline
+\textbf{3.5.1 Local vs. global} & Local replacement chooses among one process's frames and isolates its fault behavior; global replacement chooses system-wide and can adapt allocation but lets processes interfere.\\\hline
+\textbf{3.5.2 Load control} & If total working sets exceed memory, replacement alone cannot stop thrashing. Suspending or swapping out processes reduces the multiprogramming degree.\\\hline
+\textbf{3.5.3 Page size} & Small pages reduce internal fragmentation and unnecessary transfer but enlarge page tables and increase I/O operations. Large pages improve transfer and TLB reach but waste memory and fetch unused data.\\\hline
+\textbf{3.5.4 Separate I and D} & Separate instruction and data spaces expand usable program size and permit distinct protection or sharing, but require separate translation contexts.\\\hline
+\textbf{3.5.5 Shared pages} & Processes can map the same frames for shared libraries or communication. The kernel must coordinate permissions, identity, accounting, and lifetime.\\\hline
+\textbf{3.5.6 Shared libraries} & Position-independent library code can be mapped once and shared by many processes, while writable per-process data remains private.\\\hline
+\textbf{3.5.7 Mapped files} & Memory mapping associates file offsets with virtual pages. Page faults load data and modified pages eventually write back, unifying file access with paging.\\\hline
+\textbf{3.5.8 Cleaning policy} & A background paging daemon can write dirty pages before memory pressure becomes critical, keeping clean frames ready for rapid reuse.\\\hline
+\textbf{3.5.9 VM interface} & Applications benefit from operations that map files, share regions, set protection, lock pages, or advise access patterns without dictating the replacement mechanism.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-3-6}{}\textbf{Section 3.6: Implementation Issues}}\\*\hline
+\textbf{3.6.1 OS involvement} & Process creation, scheduling, and termination require page-table construction, translation-context changes, TLB handling, accounting, and reclamation.\\\hline
+\textbf{3.6.2 Page-fault handling} & Hardware traps on an absent mapping; the kernel validates the reference, locates or creates backing data, obtains a frame, performs I/O if needed, updates tables and TLB state, and restarts the instruction.\\\hline
+\textbf{3.6.3 Instruction backup} & A fault may occur after an instruction has partly changed machine state. The architecture must expose enough information for the kernel to restart safely or complete the operation.\\\hline
+\textbf{3.6.4 Locked pages} & Pages involved in DMA, critical kernel paths, or real-time operations may be pinned so replacement cannot move them during use; excessive pinning reduces replacement flexibility.\\\hline
+\textbf{3.6.5 Backing store} & Swap areas may reserve fixed slots or allocate space dynamically. Executable and mapped-file pages can sometimes be re-read from their files rather than copied to swap.\\\hline
+\textbf{3.6.6 Policy and mechanism} & Hardware and low-level handlers implement translation and fault mechanics, while a replaceable policy decides allocation, admission, and victim selection.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-3-7}{}\textbf{Section 3.7: Segmentation}}\\*\hline
+\textbf{Segmentation model} & A segmented address contains a segment identifier and offset. Variable-length logical objects can grow independently and receive distinct sharing and protection attributes.\\\hline
+\textbf{3.7.1 Pure segmentation} & A segment table supplies each segment's physical base, limit, and protection. Variable-size placement creates external fragmentation and may require compaction.\\\hline
+\textbf{3.7.2 MULTICS} & \textcolor{legacy}{\textbf{Historical or legacy context:}} MULTICS combined segmentation for logical modules with paging for physical placement, giving each segment a paged address space and fine-grained protection.\\\hline
+\textbf{3.7.3 Intel x86} & \textcolor{legacy}{\textbf{Historical or legacy context:}} 32-bit x86 could translate a selector and offset through segmentation and then page the resulting linear address. Later 64-bit practice largely deemphasized general segmentation.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-3-8}{}\textbf{Section 3.8: Research on Memory Management}}\\*\hline
+\textbf{Research themes} & Research studies scalable translation, page-placement policy, nonvolatile memory, huge pages, deduplication, memory compression, NUMA locality, and workload-aware reclamation.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-3-9}{}\textbf{Section 3.9: Summary}}\\*\hline
+\textbf{Memory hierarchy} & Address spaces isolate programs; virtual memory maps pages to frames; replacement and load-control policies manage scarcity; segmentation represents logical variable-size objects and can be combined with paging.\\\hline
+\end{longtable}
+\normalsize
+
+\section*{Chapter Synthesis}
+\begin{studybox}{Chapter Summary}
+Memory management evolves from direct physical allocation through relocation and swapping to paged virtual memory. Page tables and TLBs translate addresses, while replacement, allocation, cleaning, and load control determine performance under pressure. Segmentation offers a logical object view with different fragmentation and protection properties.
+\end{studybox}
+
+\begin{studybox}{Key Relationships}
+\begin{itemize}
+  \item The MMU enforces address-space isolation and turns a missing mapping into a page fault for the kernel to resolve.
+  \item TLB reach depends on entry count and page size, linking translation cost to the page-size tradeoff.
+  \item Working-set demand drives both replacement decisions and system-level load control.
+  \item Mapped files use the paging path to connect virtual addresses with persistent file data.
+\end{itemize}
+\end{studybox}
+
+\begin{studybox}{Design Tradeoffs}
+\begin{itemize}
+  \item Small pages reduce waste but increase translation metadata and I/O frequency.
+  \item Global replacement adapts allocation but weakens performance isolation between processes.
+  \item Exact recency information can improve choices but costs hardware or frequent bookkeeping.
+  \item Pinning supports DMA and timing guarantees but removes frames from the replaceable pool.
+\end{itemize}
+\end{studybox}
+
+\begin{studybox}{Common Confusions}
+\begin{itemize}
+  \item A virtual page is an address-space unit; a page frame is the physical-memory unit that may hold it.
+  \item A TLB miss requires translation lookup, whereas a page fault means the required page is not currently mapped as present.
+  \item Paging mainly creates internal fragmentation; variable-size segmentation can create external fragmentation.
+\end{itemize}
+\end{studybox}
+
+\section*{Key Terms}
+\small
+\begin{longtable}{C N}
+\rowcolor{navy}\color{white}\textbf{Term} & \color{white}\textbf{Concise definition}\\
+\endfirsthead
+\rowcolor{navy}\color{white}\textbf{Term} & \color{white}\textbf{Concise definition (continued)}\\
+\endhead
+\textbf{Virtual address} & Address generated within a process's virtual address space.\\\hline
+\textbf{Physical address} & Address presented to physical memory after translation.\\\hline
+\textbf{Page} & Fixed-size block of virtual address space.\\\hline
+\textbf{Page frame} & Fixed-size block of physical memory able to hold one page.\\\hline
+\textbf{Page table} & Mapping and status metadata from virtual pages to frames.\\\hline
+\textbf{TLB} & Associative cache of recent address translations.\\\hline
+\textbf{Page fault} & Trap raised when a referenced mapping cannot presently satisfy access.\\\hline
+\textbf{Dirty bit} & Indicator that a resident page has been modified.\\\hline
+\textbf{Reference bit} & Indicator that a page has been accessed during an observation interval.\\\hline
+\textbf{Working set} & Pages used during a recent execution window.\\\hline
+\textbf{Thrashing} & Excessive paging caused when active demand exceeds available frames.\\\hline
+\textbf{Backing store} & Secondary storage holding nonresident page data.\\\hline
+\textbf{Segmentation} & Addressing model based on variable-size logical regions.\\\hline
+\textbf{Copy on write} & Deferred copying of shared data until a participant attempts modification.\\\hline
+\textbf{Memory mapping} & Association of virtual-address ranges with files or shared objects.\\\hline
+\end{longtable}
+\normalsize
+
+\enlargethispage{2\baselineskip}
+\begin{studybox}{Active-Recall Review}
+\small
+\begin{enumerate}
+  \item How do base and limit registers provide relocation and protection?
+  \item How do bitmap and linked-list free-memory representations differ?
+  \item What fields split a virtual address for paging?
+  \item Why does a TLB improve translation but not remove page faults?
+  \item Why is optimal replacement useful even though it cannot be implemented online?
+  \item How can FIFO produce Belady's anomaly?
+  \item When should load control replace ordinary victim selection?
+  \item What steps must the kernel complete before restarting a faulting instruction?
+  \item How do segmentation and paging express different views of memory?
+\end{enumerate}
+\end{studybox}
+
+\par\medskip
+{\color{navy}\bfseries Next-Chapter Connections}\par\smallskip
+Chapter 4 uses memory-management ideas such as allocation, caching, mapping, protection, and consistency to organize persistent files and directories.
+\normalsize
+\end{document}

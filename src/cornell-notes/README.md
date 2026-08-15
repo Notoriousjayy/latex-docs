@@ -5,6 +5,9 @@ Centralized Cornell Notes sources live under `src/cornell-notes/` and use the sh
 ## Collections
 
 - Computer Science
+  - Combinatorial Algorithms
+  - Computer Networks
+  - Operating Systems
   - String Algorithms
 - Electronics
   - Electronic Circuits
@@ -92,6 +95,57 @@ The Electronic Circuits collection provides 15 chapter-ordered Cornell notes und
 7. embedded-systems
 
 The chapter sequence is complete only for chapters 1--15; no placeholder chapters 16--20 are included. Each source compiles to `public/pdfs/cornell-notes/electronics/electronic-circuits/<topic>/<filename>.pdf`.
+
+## Combinatorial Algorithms
+
+The Combinatorial Algorithms collection contains Chapters 1--30 under `src/cornell-notes/computer-science/combinatorial-algorithms/`. Topic groups are `subset-generation`, `compositions`, `permutations`, `integer-partitions`, `set-partitions`, `general-frameworks`, `young-tableaux`, `sorting`, `array-reindexing`, `graph-algorithms`, `polynomial-algorithms`, `matrix-and-array-algorithms`, `partially-ordered-sets`, `backtracking`, and `tree-algorithms`.
+
+### Chapter index (1-30)
+
+1. `subset-generation/ch01-next-subset-of-an-n-set-notes.tex`
+2. `subset-generation/ch02-random-subset-of-an-n-set-notes.tex`
+3. `subset-generation/ch03-next-k-subset-of-an-n-set-notes.tex`
+4. `subset-generation/ch04-random-k-subset-of-an-n-set-notes.tex`
+5. `compositions/ch05-next-composition-of-n-into-k-parts-notes.tex`
+6. `compositions/ch06-random-composition-of-n-into-k-parts-notes.tex`
+7. `permutations/ch07-next-permutation-of-n-letters-notes.tex`
+8. `permutations/ch08-random-permutation-of-n-letters-notes.tex`
+9. `integer-partitions/ch09-next-partition-of-integer-n-notes.tex`
+10. `integer-partitions/ch10-random-partition-of-an-integer-n-notes.tex`
+11. `set-partitions/ch11-next-partition-of-an-n-set-notes.tex`
+12. `set-partitions/ch12-random-partition-of-an-n-set-notes.tex`
+13. `general-frameworks/ch13-general-combinatorial-family-algorithms-notes.tex`
+14. `young-tableaux/ch14-young-tableaux-notes.tex`
+15. `sorting/ch15-sorting-notes.tex`
+16. `permutations/ch16-cycle-structure-of-a-permutation-notes.tex`
+17. `array-reindexing/ch17-renumbering-rows-and-columns-of-an-array-notes.tex`
+18. `graph-algorithms/ch18-spanning-forest-of-a-graph-notes.tex`
+19. `polynomial-algorithms/ch19-newton-forms-of-a-polynomial-notes.tex`
+20. `graph-algorithms/ch20-chromatic-polynomial-of-a-graph-notes.tex`
+21. `polynomial-algorithms/ch21-composition-of-power-series-notes.tex`
+22. `graph-algorithms/ch22-network-flows-notes.tex`
+23. `matrix-and-array-algorithms/ch23-permanent-function-notes.tex`
+24. `matrix-and-array-algorithms/ch24-invert-a-triangular-array-notes.tex`
+25. `partially-ordered-sets/ch25-triangular-numbering-in-partially-ordered-sets-notes.tex`
+26. `partially-ordered-sets/ch26-mobius-function-notes.tex`
+27. `backtracking/ch27-backtrack-method-notes.tex`
+28. `tree-algorithms/ch28-labeled-trees-notes.tex`
+29. `tree-algorithms/ch29-random-unlabeled-rooted-trees-notes.tex`
+30. `tree-algorithms/ch30-tree-of-minimal-length-notes.tex`
+
+## Computer Networks
+
+The Computer Networks collection contains Chapters 1--9 under `src/cornell-notes/computer-science/computer-networks/`: `foundations/ch01-introduction-cornell-notes.tex`, `physical-layer/ch02-physical-layer-cornell-notes.tex`, `data-link-layer/ch03-data-link-layer-cornell-notes.tex`, `medium-access-control/ch04-medium-access-control-sublayer-cornell-notes.tex`, `network-layer/ch05-network-layer-cornell-notes.tex`, `transport-layer/ch06-transport-layer-cornell-notes.tex`, `application-layer/ch07-application-layer-cornell-notes.tex`, `network-security/ch08-network-security-cornell-notes.tex`, and `reference-material/ch09-reading-list-and-bibliography-cornell-notes.tex`.
+
+## Operating Systems
+
+The Operating Systems collection contains Chapters 1--13 under `src/cornell-notes/computer-science/operating-systems/`: `foundations/ch01-introduction-cornell-notes.tex`, `processes-and-threads/ch02-processes-and-threads-cornell-notes.tex`, `memory-management/ch03-memory-management-cornell-notes.tex`, `file-systems/ch04-file-systems-cornell-notes.tex`, `input-output/ch05-input-output-cornell-notes.tex`, `deadlocks/ch06-deadlocks-cornell-notes.tex`, `virtualization-and-cloud/ch07-virtualization-and-the-cloud-cornell-notes.tex`, `multiple-processor-systems/ch08-multiple-processor-systems-cornell-notes.tex`, `security/ch09-security-cornell-notes.tex`, `case-studies/ch10-case-study-1-unix-linux-and-android-cornell-notes.tex`, `case-studies/ch11-case-study-2-windows-8-cornell-notes.tex`, `operating-system-design/ch12-operating-system-design-cornell-notes.tex`, and `reference-material/ch13-reading-list-and-bibliography-cornell-notes.tex`.
+
+### Shared publication contract
+
+All three collections use `cornell-notes` and publish source-relative PDFs under `public/pdfs/cornell-notes/computer-science/<collection>/<topic>/<filename>.pdf`. Build them through `python3 tooling/scripts/latex_build.py build-category cornell-notes --output-dir public/pdfs --log-dir public/logs --clean-output`. Upload-copy suffixes are prohibited from source, PDF, log, and Pages paths.
+
+The supplied import is complete at 52 traceable documents: 30 Combinatorial Algorithms, 9 Computer Networks, and 13 Operating Systems. The earlier 56-file estimate is reconciled as a four-document discrepancy; no additional related source files were found or invented.
 
 ### Expected PDF output path
 

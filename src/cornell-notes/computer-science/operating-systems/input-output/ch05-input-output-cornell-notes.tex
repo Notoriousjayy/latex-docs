@@ -1,0 +1,173 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage{cornell-notes}
+
+\title{Chapter 5: Input/Output}
+\author{}
+\date{}
+
+\setDocTitle{Chapter 5: Input/Output}
+\setDocSubtitle{Operating Systems}
+\setDocVersion{v1.0}
+\setDocStatus{Study Companion}
+\setDocOwner{Operating Systems Cornell Notes}
+\setDocAuthor{}
+\setDocDate{\today}
+\setDocSummary{Cornell-format study and review notes for Chapter 5: Input/Output.}
+
+\setCornellCollection{Operating Systems Cornell Notes}
+\setCornellUnitType{Chapter}
+\setCornellUnitNumber{5}
+\setCornellUnitTitle{Input/Output}
+\setCornellCompanionLabel{Study and review companion}
+
+\hypersetup{pdftitle={Chapter 5: Input/Output},pdfsubject={Cornell notes},pdfauthor={}}
+
+\begin{document}
+\maketitle
+\section*{Learning Objectives}
+\begin{studybox}{By the end of this chapter, you should be able to}
+\begin{enumerate}
+  \item Explain how devices, controllers, registers, interrupts, and DMA cooperate.
+  \item Compare programmed, interrupt-driven, and DMA-based I/O.
+  \item Trace an I/O request through user software, device-independent code, a driver, and an interrupt handler.
+  \item Evaluate buffering, caching, spooling, naming, allocation, and error-reporting responsibilities.
+  \item Compare disk organization, formatting, scheduling, error recovery, and stable storage.
+  \item Explain clock hardware, timer services, input processing, display output, and event-driven interfaces.
+  \item Analyze operating-system and application techniques for reducing energy use.
+\end{enumerate}
+\end{studybox}
+
+\begin{studybox}{Section Map}
+\hyperlink{sec-5-1}{5.1} \quad \hyperlink{sec-5-2}{5.2} \quad \hyperlink{sec-5-3}{5.3} \quad \hyperlink{sec-5-4}{5.4} \quad \hyperlink{sec-5-5}{5.5} \quad \hyperlink{sec-5-6}{5.6} \quad \hyperlink{sec-5-7}{5.7} \quad \hyperlink{sec-5-8}{5.8} \quad \hyperlink{sec-5-9}{5.9} \quad \hyperlink{sec-5-10}{5.10}
+\end{studybox}
+
+\section*{Cornell Cue-and-Notes Area}
+\small
+\begin{longtable}{C N}
+\rowcolor{navy}
+\color{white}\textbf{Cue / Recall Prompt} &
+\color{white}\textbf{Notes}\\
+\endfirsthead
+\rowcolor{navy}
+\color{white}\textbf{Cue / Recall Prompt} &
+\color{white}\textbf{Notes (continued)}\\
+\endhead
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-5-1}{}\textbf{Section 5.1: Principles of I/O Hardware}}\\*\hline
+\textbf{5.1.1 I/O devices} & Block devices transfer addressable blocks; character devices deliver streams; other devices fit neither class cleanly. Transfer rate, sharing, error behavior, and access pattern shape the interface.\\\hline
+\textbf{5.1.2 Controllers} & A controller translates generic CPU requests into device actions and exposes data, status, and command registers. It may buffer, check errors, and perform low-level sequencing.\\\hline
+\textbf{5.1.3 Memory-mapped I/O} & Device registers can occupy the memory address space or a separate I/O space. Memory mapping reuses ordinary load/store instructions but requires careful caching and protection rules.\\\hline
+\textbf{5.1.4 DMA} & The CPU programs a DMA controller with memory address, device direction, and count. The controller transfers a block and interrupts on completion, reducing per-byte CPU work but competing for memory bandwidth.\\\hline
+\textbf{5.1.5 Interrupt path} & A device asserts an interrupt; hardware identifies or prioritizes it; the CPU saves minimal state and enters a handler; software acknowledges the device, records completion, wakes waiters, and resumes schedulable work.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-5-2}{}\textbf{Section 5.2: Principles of I/O Software}}\\*\hline
+\textbf{5.2.1 Goals} & I/O software seeks device independence, uniform naming, protected sharing, consistent error handling, synchronous and asynchronous choices, buffering, and efficient allocation.\\\hline
+\textbf{5.2.2 Programmed I/O} & The CPU polls device readiness and moves each unit itself. It is simple and predictable but wastes processor cycles while a slow device progresses.\\\hline
+\textbf{5.2.3 Interrupt-driven I/O} & The CPU initiates a transfer and runs other work until the device interrupts. This removes continuous polling but incurs an interrupt and software handling cost per transfer unit or small group.\\\hline
+\textbf{5.2.4 DMA I/O} & DMA handles an entire block between device and memory. The CPU performs setup and completion work, making it attractive for large transfers.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-5-3}{}\textbf{Section 5.3: I/O Software Layers}}\\*\hline
+\textbf{5.3.1 Interrupt handlers} & Handlers should do urgent device acknowledgment and state capture quickly, defer lengthy work, and convert hardware completion into a wakeup or callback for blocked software.\\\hline
+\textbf{5.3.2 Device drivers} & A driver understands controller commands and device state, queues requests, starts transfers, handles timeouts and errors, and implements the standard operations expected by higher layers.\\\hline
+\textbf{5.3.3 Device-independent I/O} & Common code supplies naming, protection, block-size adaptation, buffering, caching, allocation, spooling, and consistent error translation without knowing device registers.\\\hline
+\textbf{5.3.4 User-space I/O} & Libraries format data and wrap system calls; daemons can spool or manage devices; application runtimes may add buffering. Privileged device control remains protected.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-5-4}{}\textbf{Section 5.4: Disks}}\\*\hline
+\textbf{5.4.1 Hardware} & Magnetic disks incur seek, rotational, and transfer time. RAID combines disks for performance or redundancy; solid-state and optical devices have different access and failure characteristics.\\\hline
+\textbf{5.4.2 Formatting} & Low-level formatting establishes sectors; partitioning divides a device; logical formatting creates file-system metadata. Boot records and bad-block handling occupy defined regions.\\\hline
+\textbf{5.4.3 Arm scheduling} & FCFS preserves arrival order; shortest-seek-first reduces immediate movement but may starve distant requests; elevator variants scan in one direction to combine throughput with bounded service.\\\hline
+\textbf{5.4.4 Error handling} & Controllers use error-correcting codes, retries, remapping, and spare sectors. Software must distinguish transient errors, recoverable media defects, and permanent device failure.\\\hline
+\textbf{5.4.5 Stable storage} & Redundant copies plus ordered writes and recovery rules can make a logical block survive a single crash or media error during update. Correctness depends on never destroying every valid copy at once.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-5-5}{}\textbf{Section 5.5: Clocks}}\\*\hline
+\textbf{5.5.1 Hardware clocks} & A programmable timer counts oscillator ticks and interrupts at expiration or periodically. A battery-backed clock preserves calendar time across power loss.\\\hline
+\textbf{5.5.2 Clock software} & Timer interrupts update time, enforce quanta, account CPU use, process alarms, monitor devices, and trigger maintenance. Ordered timer queues reduce per-tick work.\\\hline
+\textbf{5.5.3 Soft timers} & Software can check for expired events at convenient kernel transitions instead of requesting a hardware interrupt, reducing interrupt load at the cost of less precise firing.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-5-6}{}\textbf{Section 5.6: User Interfaces: Keyboard, Mouse, Monitor}}\\*\hline
+\textbf{5.6.1 Input software} & Keyboard and pointing-device drivers translate scan codes and movement into events. Line disciplines can provide raw or cooked input, editing, echoing, and special-character handling.\\\hline
+\textbf{5.6.2 Output software} & Text terminals interpret characters and escape sequences; graphical interfaces manage pixels, windows, fonts, clipping, and event-driven applications. A window system separates display service from clients.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-5-7}{}\textbf{Section 5.7: Thin Clients}}\\*\hline
+\textbf{Centralized execution} & A thin client leaves most application execution and administration on servers while handling presentation and input locally. Central control simplifies maintenance but depends on network and server availability.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-5-8}{}\textbf{Section 5.8: Power Management}}\\*\hline
+\textbf{5.8.1 Hardware issues} & Dynamic voltage and frequency control, sleep states, device power modes, and component shutdown save energy but impose transition latency and sometimes lost context.\\\hline
+\textbf{5.8.2 OS policy} & The kernel consolidates work, selects processor states, spins down devices, dims displays, and coordinates suspend or hibernation. Prediction errors can waste energy or hurt responsiveness.\\\hline
+\textbf{5.8.3 Application role} & Applications can batch communication, avoid polling, reduce needless redraws or computation, and trade quality for energy when the user or workload permits.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-5-9}{}\textbf{Section 5.9: Research on Input/Output}}\\*\hline
+\textbf{Research themes} & Research includes high-speed networking, zero-copy paths, flash scheduling, persistent memory, programmable devices, interrupt moderation, energy-aware systems, and secure driver isolation.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-5-10}{}\textbf{Section 5.10: Summary}}\\*\hline
+\textbf{Layered I/O} & I/O combines hardware transfer mechanisms with interrupt handlers, drivers, device-independent services, libraries, and daemons. Storage, time, interfaces, and energy management all depend on this layered path.\\\hline
+\end{longtable}
+\normalsize
+
+\section*{Chapter Synthesis}
+\begin{studybox}{Chapter Summary}
+I/O software converts diverse, asynchronous devices into uniform protected services. Polling, interrupts, and DMA place different amounts of work on the CPU; layered handlers, drivers, common services, and user software divide responsibility. Disk, clock, interface, and power-management policies then optimize performance, reliability, usability, and energy.
+\end{studybox}
+
+\begin{studybox}{Key Relationships}
+\begin{itemize}
+  \item A system call reaches device-independent code, which dispatches to a driver; completion returns through an interrupt path.
+  \item DMA lowers CPU copying work but still needs setup, synchronization, cache coherence, and completion handling.
+  \item Buffering decouples producer and consumer timing, while caching reuses data and spooling serializes exclusive devices.
+  \item Timer interrupts support both process scheduling and device timeout recovery.
+\end{itemize}
+\end{studybox}
+
+\begin{studybox}{Design Tradeoffs}
+\begin{itemize}
+  \item Polling avoids interrupt overhead for very fast events but wastes cycles while waiting.
+  \item Aggressive disk scheduling improves throughput but can weaken fairness or predictability.
+  \item Caching and delayed I/O improve speed but complicate consistency and durability.
+  \item Deep power states save energy but add wakeup latency and transition cost.
+\end{itemize}
+\end{studybox}
+
+\begin{studybox}{Common Confusions}
+\begin{itemize}
+  \item An interrupt reports an event; DMA performs the data transfer. The two mechanisms are often used together.
+  \item Buffering handles timing or size mismatch, caching retains reusable data, and spooling queues work for a serialized device.
+  \item A device driver is device-specific kernel software; a controller is hardware or firmware operating the device.
+\end{itemize}
+\end{studybox}
+
+\section*{Key Terms}
+\small
+\begin{longtable}{C N}
+\rowcolor{navy}\color{white}\textbf{Term} & \color{white}\textbf{Concise definition}\\
+\endfirsthead
+\rowcolor{navy}\color{white}\textbf{Term} & \color{white}\textbf{Concise definition (continued)}\\
+\endhead
+\textbf{Device controller} & Hardware interface that operates a device and exposes registers or queues.\\\hline
+\textbf{Programmed I/O} & CPU-controlled transfer with explicit readiness polling.\\\hline
+\textbf{Interrupt-driven I/O} & Transfer in which device events notify the CPU asynchronously.\\\hline
+\textbf{DMA} & Controller-performed memory-device block transfer.\\\hline
+\textbf{Device driver} & Software implementing device-specific control behind a common interface.\\\hline
+\textbf{Buffer} & Temporary storage that decouples transfer timing or granularity.\\\hline
+\textbf{Cache} & Storage retaining data expected to be reused.\\\hline
+\textbf{Spooling} & Disk-backed queue for work sent to a serially used device.\\\hline
+\textbf{RAID} & Organization of multiple disks for performance, capacity, or redundancy.\\\hline
+\textbf{Seek time} & Delay moving a disk head to the target track.\\\hline
+\textbf{Rotational latency} & Delay waiting for a target sector to rotate under the head.\\\hline
+\textbf{Stable storage} & Redundant update protocol intended to preserve a logical block across failures.\\\hline
+\textbf{Line discipline} & Software transformation layer for terminal input and output.\\\hline
+\textbf{Soft timer} & Timer checked at software transition points rather than a dedicated interrupt.\\\hline
+\textbf{Hibernation} & Power state that saves volatile system state to persistent storage.\\\hline
+\end{longtable}
+\normalsize
+
+\enlargethispage{2\baselineskip}
+\begin{studybox}{Active-Recall Review}
+\small
+\begin{enumerate}
+  \item How do programmed, interrupt-driven, and DMA I/O divide work?
+  \item What urgent work belongs in an interrupt handler?
+  \item Which services can be device independent?
+  \item Why can shortest-seek-first starve requests?
+  \item How do redundant copies support stable storage?
+  \item Which kernel services depend on periodic clock interrupts?
+  \item How do raw and cooked terminal input differ?
+  \item Why can an energy-saving transition reduce responsiveness?
+  \item How can an application reduce power consumption without kernel changes?
+\end{enumerate}
+\end{studybox}
+
+\par\medskip
+{\color{navy}\bfseries Next-Chapter Connections}\par\smallskip
+Chapter 6 studies what happens when processes compete for nonpreemptable resources or wait on one another in cycles, and how systems detect, avoid, prevent, or tolerate deadlock.
+\normalsize
+\end{document}

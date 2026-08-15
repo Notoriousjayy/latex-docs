@@ -623,6 +623,28 @@ class BuildToolTests(unittest.TestCase):
 
             self.assertEqual(["src/architecture/sample-document.tex"], changed)
 
+    def test_collect_changed_paths_includes_untracked_worktree_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src_dir = root / "src" / "docs"
+            src_dir.mkdir(parents=True)
+            tracked = src_dir / "tracked.tex"
+            tracked.write_text("\\documentclass{article}\n\\begin{document}\nTracked\n\\end{document}\n", encoding="utf-8")
+
+            subprocess.run(["git", "init"], cwd=root, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=root, check=True)
+            subprocess.run(["git", "config", "user.name", "Test User"], cwd=root, check=True)
+            subprocess.run(["git", "add", "."], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-m", "initial"], cwd=root, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+            untracked = src_dir / "untracked.tex"
+            untracked.write_text("\\documentclass{article}\n\\begin{document}\nUntracked\n\\end{document}\n", encoding="utf-8")
+
+            with patch("tooling.scripts.latex_build.ROOT", root):
+                changed = latex_build.collect_changed_paths(base_ref="HEAD")
+
+            self.assertEqual(["src/docs/untracked.tex"], changed)
+
     def test_collect_dependencies_tracks_transitive_style_packages(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

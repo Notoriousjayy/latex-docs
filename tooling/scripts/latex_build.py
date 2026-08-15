@@ -753,15 +753,43 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path) -> List[Path]:
         if cornell_paths:
             handle.write("<h2>Cornell Notes</h2>")
 
-            cs_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "computer-science", "string-algorithms")]
+            string_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "computer-science", "string-algorithms")]
+            combinatorial_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "computer-science", "combinatorial-algorithms")]
+            network_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "computer-science", "computer-networks")]
+            operating_system_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "computer-science", "operating-systems")]
             elec_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "electronics", "electronic-circuits")]
             math_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "mathematics", "numerical-methods")]
             sec_paths = [path for path in cornell_paths if path.parts[:4] == ("cornell-notes", "security", "certifications", "cissp")]
-            other_cornell = [path for path in cornell_paths if path not in cs_paths and path not in elec_paths and path not in math_paths and path not in sec_paths]
+            computer_science_paths = string_paths + combinatorial_paths + network_paths + operating_system_paths
+            other_cornell = [path for path in cornell_paths if path not in computer_science_paths and path not in elec_paths and path not in math_paths and path not in sec_paths]
 
-            if cs_paths:
-                handle.write("<h3>Computer Science</h3><h4>String Algorithms</h4>")
-                _emit_links(handle, cs_paths, sort_by_chapter=True)
+            if computer_science_paths:
+                handle.write("<h3>Computer Science</h3>")
+                if string_paths:
+                    handle.write("<h4>String Algorithms</h4>")
+                    _emit_links(handle, string_paths, sort_by_chapter=True)
+
+                for label, collection_paths, topic_order in (
+                    ("Combinatorial Algorithms", combinatorial_paths, ["subset-generation", "compositions", "permutations", "integer-partitions", "set-partitions", "general-frameworks", "young-tableaux", "sorting", "array-reindexing", "graph-algorithms", "polynomial-algorithms", "matrix-and-array-algorithms", "partially-ordered-sets", "backtracking", "tree-algorithms"]),
+                    ("Computer Networks", network_paths, ["foundations", "physical-layer", "data-link-layer", "medium-access-control", "network-layer", "transport-layer", "application-layer", "network-security", "reference-material"]),
+                    ("Operating Systems", operating_system_paths, ["foundations", "processes-and-threads", "memory-management", "file-systems", "input-output", "deadlocks", "virtualization-and-cloud", "multiple-processor-systems", "security", "case-studies", "operating-system-design", "reference-material"]),
+                ):
+                    if not collection_paths:
+                        continue
+                    handle.write(f"<h4>{label}</h4>")
+                    handle.write("<h5>Chapter index</h5>")
+                    _emit_links(handle, collection_paths, sort_by_chapter=True)
+                    grouped: dict[str, list[Path]] = {}
+                    for path in collection_paths:
+                        topic = path.parts[3] if len(path.parts) > 4 else "(uncategorized)"
+                        grouped.setdefault(topic, []).append(path)
+                    for topic in topic_order:
+                        if topic in grouped:
+                            handle.write(f"<h5>{html.escape(topic)}</h5>")
+                            _emit_links(handle, grouped.pop(topic), sort_by_chapter=True)
+                    for topic in sorted(grouped):
+                        handle.write(f"<h5>{html.escape(topic)}</h5>")
+                        _emit_links(handle, grouped[topic], sort_by_chapter=True)
 
             if elec_paths:
                 handle.write("<h3>Electronics</h3><h4>Electronic Circuits</h4>")
@@ -1112,7 +1140,21 @@ def collect_changed_paths(base_ref: str | None = None, head_ref: str | None = No
             f"unable to calculate changed paths for base={base_ref or '-'} head={head_ref or '-'}: {detail}"
         )
 
-    return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    changed_paths = {line.strip() for line in result.stdout.splitlines() if line.strip()}
+    if head_ref is None:
+        untracked = subprocess.run(
+            ["git", "ls-files", "--others", "--exclude-standard"],
+            cwd=str(ROOT),
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if untracked.returncode != 0:
+            detail = (untracked.stderr or untracked.stdout or "git ls-files failed").strip().splitlines()[-1]
+            raise RevisionResolutionError(f"unable to discover untracked changed paths: {detail}")
+        changed_paths.update(line.strip() for line in untracked.stdout.splitlines() if line.strip())
+
+    return sorted(changed_paths)
 
 
 def build_changed(

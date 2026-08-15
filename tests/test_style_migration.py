@@ -19,10 +19,16 @@ from tooling.scripts.style_migration import (
 class StyleMigrationTests(unittest.TestCase):
     @staticmethod
     def _all_cornell_roots(repo_root: Path) -> list[Path]:
+        computer_science_root = repo_root / "src" / "cornell-notes" / "computer-science"
+        computer_science = (
+            sorted((computer_science_root / "combinatorial-algorithms").rglob("*.tex"))
+            + sorted((computer_science_root / "computer-networks").rglob("*.tex"))
+            + sorted((computer_science_root / "operating-systems").rglob("*.tex"))
+        )
         electronics = sorted((repo_root / "src" / "cornell-notes" / "electronics" / "electronic-circuits").rglob("*.tex"))
         cissp = sorted((repo_root / "src" / "cornell-notes" / "security" / "certifications" / "cissp").glob("*.tex"))
         numerical = sorted((repo_root / "src" / "cornell-notes" / "mathematics" / "numerical-methods").rglob("*.tex"))
-        return electronics + cissp + numerical
+        return computer_science + electronics + cissp + numerical
 
     def test_classify_latex_style_for_personal_documents(self) -> None:
         path = Path("src/personal/finance/example.tex")

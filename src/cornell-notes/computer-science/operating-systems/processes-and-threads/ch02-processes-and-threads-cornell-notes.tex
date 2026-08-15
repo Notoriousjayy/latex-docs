@@ -1,0 +1,177 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage{cornell-notes}
+
+\title{Chapter 2: Processes and Threads}
+\author{}
+\date{}
+
+\setDocTitle{Chapter 2: Processes and Threads}
+\setDocSubtitle{Operating Systems}
+\setDocVersion{v1.0}
+\setDocStatus{Study Companion}
+\setDocOwner{Operating Systems Cornell Notes}
+\setDocAuthor{}
+\setDocDate{\today}
+\setDocSummary{Cornell-format study and review notes for Chapter 2: Processes and Threads.}
+
+\setCornellCollection{Operating Systems Cornell Notes}
+\setCornellUnitType{Chapter}
+\setCornellUnitNumber{2}
+\setCornellUnitTitle{Processes and Threads}
+\setCornellCompanionLabel{Study and review companion}
+
+\hypersetup{pdftitle={Chapter 2: Processes and Threads},pdfsubject={Cornell notes},pdfauthor={}}
+
+\begin{document}
+\maketitle
+\section*{Learning Objectives}
+\begin{studybox}{By the end of this chapter, you should be able to}
+\begin{enumerate}
+  \item Trace process creation, termination, hierarchy, and state transitions.
+  \item Distinguish process resources from per-thread execution state.
+  \item Compare user-level, kernel-level, and hybrid thread implementations.
+  \item Recognize race conditions and state the requirements for correct critical-region solutions.
+  \item Apply semaphores, mutexes, monitors, message passing, barriers, and read-copy-update to coordination problems.
+  \item Compare scheduling goals and algorithms for batch, interactive, and real-time systems.
+  \item Analyze the dining-philosophers and readers-writers problems as models of reusable synchronization hazards.
+\end{enumerate}
+\end{studybox}
+
+\begin{studybox}{Section Map}
+\hyperlink{sec-2-1}{2.1} \quad \hyperlink{sec-2-2}{2.2} \quad \hyperlink{sec-2-3}{2.3} \quad \hyperlink{sec-2-4}{2.4} \quad \hyperlink{sec-2-5}{2.5} \quad \hyperlink{sec-2-6}{2.6} \quad \hyperlink{sec-2-7}{2.7}
+\end{studybox}
+
+\section*{Cornell Cue-and-Notes Area}
+\small
+\begin{longtable}{C N}
+\rowcolor{navy}
+\color{white}\textbf{Cue / Recall Prompt} &
+\color{white}\textbf{Notes}\\
+\endfirsthead
+\rowcolor{navy}
+\color{white}\textbf{Cue / Recall Prompt} &
+\color{white}\textbf{Notes (continued)}\\
+\endhead
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-2-1}{}\textbf{Section 2.1: Processes}}\\*\hline
+\textbf{2.1.1 Process model} & A process models a sequential execution stream with its own program counter, registers, address space, and resources. Multiprogramming interleaves these streams while preserving the illusion of independent progress.\\\hline
+\textbf{2.1.2 Creation} & Processes arise during initialization, at a running process's request, from a user command, or as a batch job. Creation establishes identifiers, inherited state, and an initial address-space relationship.\\\hline
+\textbf{2.1.3 Termination} & A process may exit normally, report an error, fail because of an exception, or be terminated by another process. The kernel reclaims resources while preserving status long enough for a parent to collect it.\\\hline
+\textbf{2.1.4 Hierarchies} & Some systems organize parent-child relationships into trees or groups. These relationships support waiting, signaling, shared credentials, and coordinated termination.\\\hline
+\textbf{2.1.5 States} & The basic states are running, ready, and blocked. Dispatch moves ready to running; waiting for an event blocks; event completion makes a process ready; preemption returns running to ready.\\\hline
+\textbf{2.1.6 Implementation} & A process table stores scheduling, memory, file, signal, credential, and register state. A context switch saves the outgoing execution context and restores the selected process.\\\hline
+\textbf{2.1.7 Multiprogramming model} & If each of n independent processes waits for I/O with probability p, the simple model estimates CPU idle probability as p\textasciicircum{}n and utilization as 1 - p\textasciicircum{}n; its independence assumption limits realism.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-2-2}{}\textbf{Section 2.2: Threads}}\\*\hline
+\textbf{2.2.1 Why threads?} & Threads support parallel activities inside one application, cheaper creation and switching than full processes, shared-memory communication, and overlap of computation with blocking I/O.\\\hline
+\textbf{2.2.2 Classical model} & Threads in one process share code, data, address space, and open resources. Each thread retains its own program counter, registers, stack, and scheduling state.\\\hline
+\textbf{2.2.3 POSIX threads} & The POSIX interface provides creation, termination, joining, mutexes, and condition variables. Calls define portable behavior while implementations choose user or kernel mechanisms.\\\hline
+\textbf{2.2.4 User-space threads} & A runtime library schedules threads without kernel awareness. Operations can be fast and customizable, but one blocking system call or page fault may block the whole process.\\\hline
+\textbf{2.2.5 Kernel threads} & The kernel knows each thread and can schedule another thread from the same process when one blocks. System calls and context management add overhead.\\\hline
+\textbf{2.2.6 Hybrid models} & Many user threads may be multiplexed over a set of kernel scheduling entities, seeking user-level flexibility with kernel-level blocking and parallelism support.\\\hline
+\textbf{2.2.7 Scheduler activations} & The kernel informs the user runtime about processor allocation and blocking events through upcalls so the runtime can maintain a consistent user-level schedule.\\\hline
+\textbf{2.2.8 Pop-up threads} & A new thread can be created on message arrival to handle an event immediately. The method avoids blocked receiver state but makes creation latency part of service time.\\\hline
+\textbf{2.2.9 Retrofitting threads} & Shared global state, nonreentrant libraries, signals, stacks, and per-thread errors complicate conversion. Thread-safe design requires identifying all state that must be private or synchronized.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-2-3}{}\textbf{Section 2.3: Interprocess Communication}}\\*\hline
+\textbf{2.3.1 Race conditions} & A race occurs when results depend on the timing of unsynchronized accesses to shared state. Atomicity boundaries and ordering must be explicit.\\\hline
+\textbf{2.3.2 Critical regions} & A correct solution provides mutual exclusion, makes no assumptions about relative speed, prevents unrelated processes from blocking progress, and avoids indefinite waiting.\\\hline
+\textbf{2.3.3 Busy waiting} & Disabling interrupts, lock variables, strict alternation, Peterson's algorithm, and atomic instructions illustrate approaches to mutual exclusion. Spinning wastes CPU unless waits are expected to be short.\\\hline
+\textbf{2.3.4 Sleep and wakeup} & Blocking avoids spin waste, but a wakeup sent before the receiver sleeps can be lost. Correct protocols must make condition testing and blocking atomic with respect to notification.\\\hline
+\textbf{2.3.5 Semaphores} & A semaphore combines an integer state with atomic down and up operations. Binary semaphores provide exclusion; counting semaphores track multiple units or events.\\\hline
+\textbf{2.3.6 Mutexes} & A mutex protects a critical region with lock and unlock operations. Implementations may spin briefly, block, or combine both; ownership rules help detect misuse.\\\hline
+\textbf{2.3.7 Monitors} & A monitor packages shared state with procedures that execute under implicit mutual exclusion. Condition variables let a thread wait and be signaled when a predicate may have become true.\\\hline
+\textbf{2.3.8 Message passing} & Send and receive exchange explicit messages. Design choices include blocking versus nonblocking calls, buffering, naming, reliability, acknowledgments, and duplicate suppression.\\\hline
+\textbf{2.3.9 Barriers} & A barrier prevents participants from entering the next phase until all have completed the current phase. It coordinates phases but does not by itself protect arbitrary shared updates.\\\hline
+\textbf{2.3.10 Read-copy-update} & Readers traverse a stable version without ordinary locks while an updater publishes a replacement and defers reclamation until preexisting readers have finished.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-2-4}{}\textbf{Section 2.4: Scheduling}}\\*\hline
+\textbf{2.4.1 Goals and context} & Scheduling balances fairness, policy enforcement, utilization, throughput, turnaround, response time, and deadlines. Preemptive scheduling can interrupt a running task; nonpreemptive scheduling waits for release or blocking.\\\hline
+\textbf{2.4.2 Batch scheduling} & First-come first-served is simple; shortest job first minimizes mean turnaround when service times are known; shortest remaining time is its preemptive form; three-level scheduling controls admission, memory, and CPU choice.\\\hline
+\textbf{2.4.3 Interactive scheduling} & Round robin bounds CPU bursts by a quantum. Priority, multilevel feedback, guaranteed, lottery, and fair-share methods express different notions of responsiveness and entitlement.\\\hline
+\textbf{2.4.4 Real-time scheduling} & Real-time tasks may be periodic or aperiodic and hard or soft. Feasibility depends on execution times, periods, deadlines, and whether preemption and admission control are available.\\\hline
+\textbf{2.4.5 Policy vs. mechanism} & A kernel can provide dispatch and accounting mechanisms while allowing a server, process, or administrator to choose priorities and allocation policy.\\\hline
+\textbf{2.4.6 Thread scheduling} & User runtimes schedule within their processes, whereas the kernel schedules visible entities across the system. Multiprocessors add affinity, load distribution, and coordination of related threads.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-2-5}{}\textbf{Section 2.5: Classical IPC Problems}}\\*\hline
+\textbf{2.5.1 Dining philosophers} & The problem models processes that require multiple resources. Naive symmetric acquisition can deadlock; serialization, limited admission, asymmetric ordering, or monitored predicates can preserve progress.\\\hline
+\textbf{2.5.2 Readers and writers} & Concurrent readers may share a resource, but writers require exclusive access. Reader- or writer-preference policies can starve the other class; fair queues bound waiting.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-2-6}{}\textbf{Section 2.6: Research on Processes and Threads}}\\*\hline
+\textbf{Research themes} & Work explores scalable synchronization, multicore scheduling, nonblocking structures, deterministic execution, energy-aware allocation, and tools that expose concurrency errors.\\\hline
+\rowcolor{ice}\multicolumn{2}{l}{\hypertarget{sec-2-7}{}\textbf{Section 2.7: Summary}}\\*\hline
+\textbf{Execution and coordination} & Processes isolate resources; threads share a process while retaining independent execution state. IPC supplies ordering and exclusion, and scheduling decides which eligible execution entity runs.\\\hline
+\end{longtable}
+\normalsize
+
+\section*{Chapter Synthesis}
+\begin{studybox}{Chapter Summary}
+Processes turn interrupt-driven hardware into manageable sequential abstractions, while threads permit several execution streams to share one process. Correct cooperation requires atomic coordination mechanisms, careful condition protocols, and policies that avoid races, deadlock, and starvation. Scheduling then maps ready work to processors according to workload-specific goals.
+\end{studybox}
+
+\begin{studybox}{Key Relationships}
+\begin{itemize}
+  \item A context switch implements transitions between running and ready or blocked process states.
+  \item Threads reduce isolation boundaries, so shared-state synchronization becomes more important.
+  \item IPC mechanisms determine when tasks block and wake, directly changing the scheduler's ready set.
+  \item Classical synchronization problems expose the same safety and liveness properties found in real systems.
+\end{itemize}
+\end{studybox}
+
+\begin{studybox}{Design Tradeoffs}
+\begin{itemize}
+  \item User-level threads provide cheap operations but weaker integration with blocking and multiple CPUs.
+  \item Spinning minimizes handoff latency for short waits; sleeping saves CPU for longer waits.
+  \item Throughput-oriented scheduling can increase interactive response time or unfairness.
+  \item Reader or writer preference improves one class's latency while risking starvation of the other.
+\end{itemize}
+\end{studybox}
+
+\begin{studybox}{Common Confusions}
+\begin{itemize}
+  \item Concurrency means overlapping progress; parallelism means simultaneous execution on multiple processors.
+  \item A process owns resources, whereas a thread is primarily an execution and scheduling entity within that ownership context.
+  \item Mutual exclusion is a safety property; deadlock freedom and starvation freedom are separate liveness properties.
+\end{itemize}
+\end{studybox}
+
+\section*{Key Terms}
+\small
+\begin{longtable}{C N}
+\rowcolor{navy}\color{white}\textbf{Term} & \color{white}\textbf{Concise definition}\\
+\endfirsthead
+\rowcolor{navy}\color{white}\textbf{Term} & \color{white}\textbf{Concise definition (continued)}\\
+\endhead
+\textbf{Process control block} & Kernel record containing the state needed to manage and resume a process.\\\hline
+\textbf{Context switch} & Save of one execution context and restoration of another.\\\hline
+\textbf{Thread} & Independent execution stream sharing a process's resources.\\\hline
+\textbf{Race condition} & Timing-dependent behavior caused by unsynchronized shared access.\\\hline
+\textbf{Critical region} & Code that accesses shared state and must obey an exclusion protocol.\\\hline
+\textbf{Semaphore} & Atomic counter-based synchronization object.\\\hline
+\textbf{Mutex} & Lock intended to provide exclusive ownership of a critical region.\\\hline
+\textbf{Monitor} & Shared state and procedures protected by implicit mutual exclusion.\\\hline
+\textbf{Condition variable} & Monitor-associated wait and notification mechanism for state predicates.\\\hline
+\textbf{Barrier} & Phase boundary that releases participants after all arrive.\\\hline
+\textbf{Preemption} & Forced suspension of a running task so another may execute.\\\hline
+\textbf{Quantum} & Maximum CPU interval granted in one round-robin turn.\\\hline
+\textbf{Turnaround time} & Elapsed time from job submission to completion.\\\hline
+\textbf{Response time} & Delay from a request to the first observable response.\\\hline
+\textbf{Starvation} & Indefinite postponement despite continued system progress.\\\hline
+\end{longtable}
+\normalsize
+
+\enlargethispage{2\baselineskip}
+\begin{studybox}{Active-Recall Review}
+\small
+\begin{enumerate}
+  \item Which transitions connect running, ready, and blocked states?
+  \item Which resources are shared by threads, and which state remains private?
+  \item Why can a blocking call defeat a pure user-level thread package?
+  \item What properties must a critical-region protocol guarantee?
+  \item How does a condition variable differ from a semaphore?
+  \item When is spinning preferable to blocking?
+  \item How do batch and interactive scheduling objectives differ?
+  \item Which dining-philosophers solutions break deadlock without sacrificing all concurrency?
+  \item How can a readers-writers policy cause starvation?
+\end{enumerate}
+\end{studybox}
+
+\par\medskip
+{\color{navy}\bfseries Next-Chapter Connections}\par\smallskip
+Chapter 3 applies the same ideas of abstraction, isolation, sharing, and policy to address spaces, paging, replacement, and segmentation.
+\normalsize
+\end{document}
