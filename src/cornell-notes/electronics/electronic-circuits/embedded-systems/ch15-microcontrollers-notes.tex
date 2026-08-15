@@ -1,10 +1,133 @@
-\documentclass[10pt]{article}
+\documentclass[10pt,letterpaper]{article}
 \usepackage{cornell-notes}
-\title{Chapter 15: Microcontrollers}\author{}\date{}
-\setDocTitle{Chapter 15: Microcontrollers}\setDocSubtitle{Electronics}\setDocOwner{Electronics Cornell Notes}\setDocDate{\today}
-\setCornellCollection{Electronics Cornell Notes}\setCornellUnitType{Chapter}\setCornellUnitNumber{15}\setCornellUnitTitle{Microcontrollers}
+
+\title{Chapter 15: Microcontrollers}
+\author{}
+\date{}
+\setDocTitle{Chapter 15: Microcontrollers}
+\setDocSubtitle{Electronics}
+\setDocOwner{Electronics Cornell Notes}
+\setDocDate{\today}
+\setCornellCollection{Electronics Cornell Notes}
+\setCornellUnitType{Chapter}
+\setCornellUnitNumber{15}
+\setCornellUnitTitle{Microcontrollers}
 \hypersetup{pdftitle={Chapter 15: Microcontrollers},pdfsubject={Cornell notes},pdfauthor={}}
-\begin{document}\maketitle
-\begin{cornell}\noterow{Core idea}{Microcontroller systems coordinate execution, memory, interrupts, peripherals, and power.}\noterow{Validation}{Check reset paths, timing, resource bounds, interrupt interactions, and fault recovery.}\end{cornell}
-\begin{summarybox}{Section summary}Robust firmware follows from explicit state, timing, and hardware assumptions.\end{summarybox}
+\begin{document}
+\maketitle
+
+\begin{CornellOverviewBox}{Concept}
+Microcontrollers integrate CPU, memory, clocks, timers, analog functions, communication peripherals, and GPIO for embedded control. Practical design co-develops hardware, firmware, timing, power, safety, and test. Examples involving measurement, power control, synthesis, thermal regulation, motion stabilization, and peripheral expansion illustrate sensing-to-actuation loops and real-time constraints.
+\end{CornellOverviewBox}
+\begin{CornellOverviewBox}{Concept}
+\textbf{Prerequisites.} Digital logic, data conversion, buses, interrupts, feedback/control intuition, power interfacing, and structured programming.
+
+\textbf{After studying this chapter, you should be able to:}
+\begin{itemize}
+  \item Select a microcontroller from peripherals, timing, memory, analog, power, safety, toolchain, and lifecycle needs.
+  \item Partition sensor, actuator, control, communication, and diagnostic responsibilities between hardware and firmware.
+  \item Design interrupt-driven real-time behavior without blocking, races, or unbounded latency.
+  \item Bring up and validate SPI, I$^2$C, GPIO, ADC, timers, watchdogs, and power/reset circuitry.
+\end{itemize}\textbf{Central design questions.}
+\begin{itemize}
+  \item What deadlines and failure responses must be guaranteed independent of average CPU load?
+  \item Which safety action belongs in hardware even if firmware also monitors it?
+  \item How will the system be programmed, observed, updated, recovered, and tested throughout its lifecycle?
+\end{itemize}\end{CornellOverviewBox}
+\section{Cornell Notes}
+\begin{CornellNotesTable}
+\CornellNoteRow{15.1: Embedded integration}{A microcontroller is selected as a system of CPU core, flash/RAM, clock/reset, GPIO, timers/PWM, ADC/DAC/comparators, communication, DMA, watchdog, security, debug, package, and power modes. Data-sheet headline speed is secondary to peripheral fit, deterministic timing, analog quality, toolchain, errata, supply, temperature, availability, and software ecosystem.}
+\CornellNoteRow{15.2: Measurement/control example}{A monitor combines sensor conditioning, ADC sampling, calibration, accumulated exposure or state, display/output, and power management. Partition range and protection in hardware; use firmware for scaling, filtering, integration, UI, and diagnostics. Define sample timing, units, overflow, persistent storage wear, sensor disconnection, reference error, and reset behavior.}
+\CornellNoteRow{15.3: Families and peripherals}{Compare architectures by timer resolution, ADC performance, serial instances, pin multiplexing, DMA, memory, interrupt structure, low-power modes, safety/security features, bootloader, and package. Pin multiplexing can make individually present peripherals mutually exclusive. Verify electrical characteristics and errata at the chosen supply/clock, not only a feature table.}
+\CornellNoteRow{15.4: AC power control}{Phase or burst control needs isolated zero-cross/event sensing, timer scheduling, gate drive, noise immunity, and hardware shutdown. Mains timing is asynchronous to the CPU clock; synchronize safely. EMI and load type affect control strategy. Firmware must reject false crossings and bound firing angle, but isolation, fusing, creepage, and overcurrent protection cannot depend solely on software.}
+\CornellNoteRow{15.5: Frequency synthesis}{Timers, capture/compare, PWM, DDS, or external PLL/synthesizer peripherals generate frequency. Compute tuning resolution, phase update, jitter, clock accuracy, and output filtering. Use hardware timers rather than software delay loops for precision. Updates shared between interrupt and foreground code need atomic transfer or double buffering.}
+\CornellNoteRow{15.6: Thermal controller}{A control loop samples temperature, filters/linearizes it, compares with setpoint, and drives a heater/cooler. Sampling must be fast relative to plant dynamics but not dominated by noise. Anti-windup, sensor-fault detection, actuator limits, independent overtemperature cutoff, and safe startup are essential. Tune and validate across thermal mass, airflow, ambient, and supply extremes.}
+\CornellNoteRow{15.7: Stabilized platform}{Motion control combines sensors, calibration, coordinate/sign conventions, filtering, control computation, PWM/commutation, actuators, and mechanical dynamics. Latency and jitter erode phase margin. Saturation, backlash, friction, resonance, and sensor bias cause behavior absent from a simple linear model. Log timestamped signals and test with restrained energy before full authority.}
+\CornellNoteRow{15.8: Peripheral ICs}{Direct GPIO devices are simple but consume pins and CPU timing. SPI offers full-duplex clocked transfers and chip selects; I$^2$C offers addressed shared wiring with pull-up and capacitance limits. Verify modes, bit order, maximum clock, setup/hold, repeated-start behavior, reset, power sequencing, level compatibility, and bus recovery. Use DMA when data rate or timing warrants it.}
+\CornellNoteRow{15.9: Development environment}{A reproducible environment includes compiler, linker script, startup code, HAL/drivers, build system, debugger/programmer, tests, static analysis, versioned configuration, and hardware revision. Real-time code avoids unbounded work in interrupts, blocking in critical paths, dynamic allocation where fragmentation is unacceptable, and shared-state races. Watchdogs need independent health logic, not unconditional feeding.}
+\CornellNoteRow{15.10: Selection and wrapup}{Use a requirements matrix and prototype the riskiest peripheral/analog/timing function. Prefer adequate headroom in flash/RAM/timers/pins but avoid unnecessary complexity. Evaluate longevity, second source or migration path, boot/update security, production programming, unique identity, calibration storage, diagnostics, regulatory needs, and team competence. Choose a microcontroller when software flexibility outweighs a simpler hardware solution.}
+\end{CornellNotesTable}
+\begin{CornellSummaryBox}{Summary}
+Microcontroller systems are hardware-software control systems with physical consequences. Reliable designs use hardware peripherals for timing, define real-time budgets, isolate and protect energy paths, handle sensor/communication faults, and preserve observability and recovery. Selection is driven by complete peripheral and lifecycle fit, not only core speed or memory size.
+\end{CornellSummaryBox}
+\section{Worked Examples}
+\begin{CornellExamBox}{CPU utilization budget}
+A control ISR runs at $10\,\mathrm{kHz}$ for $3.2\,\mu\mathrm{s}$, communication consumes $8\%$, and background processing averages $25\%$. ISR load is $3.2\%$, so average total is $36.2\%$. This does not prove deadlines: analyze worst-case interrupt nesting, blocking, DMA contention, flash waits, and burst traffic.
+\end{CornellExamBox}
+\begin{CornellExamBox}{Timer frequency}
+A $48\,\mathrm{MHz}$ timer with prescaler 48 ticks at $1\,\mathrm{MHz}$. For $2.5\,\mathrm{kHz}$ PWM, period count is $1\,\mathrm{MHz}/2.5\,\mathrm{kHz}=400$. Duty resolution is one count or $0.25\%$ of full scale, subject to timer convention and reserved endpoints.
+\end{CornellExamBox}
+\begin{CornellExamBox}{I$^2$C pull-up}
+A $3.3\,\mathrm{V}$ bus has $C=200\,\mathrm{pF}$ and target $10$--$90\%$ rise below $600\,\mathrm{ns}$. $R\le600\,\mathrm{ns}/(2.2C)=1.36\,\mathrm{k\Omega}$. A $1.2\,\mathrm{k\Omega}$ pull-up draws $2.75\,\mathrm{mA}$ when low; verify every device's sink capability and protocol rise definition.
+\end{CornellExamBox}
+\section{Design and Troubleshooting}
+\begin{CornellExamBox}{Design and Troubleshooting}
+\begin{enumerate}
+  \item Capture sensing, actuation, interfaces, deadlines, safety, power, environment, update, security, production, and lifecycle requirements.
+  \item Select MCU and partition hardware/firmware; define clocks, power/reset, pins, peripherals, memory map, tasks/ISRs, and fault state machine.
+  \item Prototype risky analog/timing/interfaces; implement drivers with timeouts, bounded ISRs, concurrency rules, diagnostics, watchdog, and tests.
+  \item Validate timing, stack/memory, power modes, reset/brownout, communications, sensor/actuator faults, temperature, EMI, updates, and long-duration operation.
+\end{enumerate}\end{CornellExamBox}
+\begin{CornellExamBox}{Symptoms, likely causes, and checks}
+\begin{itemize}
+  \item Firmware never starts: power/reset/clock, boot pins, linker/startup mismatch, watchdog, or programming interface.
+  \item Intermittent peripheral: pin mux, mode/bit order, timing, pull-ups, power sequencing, DMA/cache/volatile, or missing timeout recovery.
+  \item Control oscillates: wrong sign/units, latency/jitter, aggressive gain, saturation/windup, sensor filtering, or plant resonance.
+  \item Random resets: brownout, EMI, watchdog starvation, stack overflow, memory corruption, or thermal fault.
+  \item Works under debugger only: timing changed by breakpoints, uninitialized state, optimizer-sensitive race, or debugger-held reset/watchdog.
+\end{itemize}\end{CornellExamBox}
+\begin{CornellWarningBox}{Safety and Limitations}
+Software is not an adequate sole barrier for mains, heaters, motors, batteries, or other hazardous energy. Use independent hardware limits, isolation, current protection, safe outputs during reset/programming, and a defined de-energized fault state. Debug connectors and grounds can bypass isolation; use approved isolated tools where required.
+\end{CornellWarningBox}
+\section{Key-Equation Sheet}
+\begin{CornellExamBox}{Key Equations}
+\begin{itemize}
+  \item Periodic CPU utilization estimate: $U=\sum_i C_i/T_i$; deadline proof needs a suitable worst-case scheduling analysis.
+  \item Timer tick: $f_{tick}=f_{clk}/P$; event period depends on count convention and compare/reload behavior.
+  \item PWM ideal average after sufficient filtering: $V_{avg}\approx DV_{logic}$.
+  \item Discrete integral update: $x_k=x_{k-1}+T_su_k$; guard scale, overflow, and anti-windup.
+  \item Open-drain rise estimate: $t_r\approx2.2R_PC_{bus}$.
+  \item Watchdog timeout must exceed proven worst-case healthy service interval yet remain below the maximum safe fault duration.
+\end{itemize}\end{CornellExamBox}
+\section{Study and Review}
+\subsection{Design checklist}
+\begin{itemize}
+  \item Clock, reset/brownout, decoupling, boot, debug, and safe pin states are correct.
+  \item Peripheral/pin/DMA/timer resources and electrical levels are conflict-free.
+  \item Worst-case task/ISR latency, stack, memory, and concurrency are analyzed.
+  \item Timeout, retry, watchdog, fault logging, and safe-state transitions are testable.
+  \item Programming, calibration, identity, secure update, rollback, production test, and lifecycle are planned.
+\end{itemize}\subsection{Common misconceptions}
+\begin{itemize}
+  \item Low average CPU utilization does not prove real-time deadlines.
+  \item A watchdog fed from a timer interrupt does not prove application health.
+  \item A peripheral listed on the chip may not be simultaneously available on chosen pins.
+  \item Software delay loops are not precision timers.
+  \item Debug success does not reproduce release timing or power behavior.
+\end{itemize}\subsection{Active-recall questions}
+\begin{enumerate}
+  \item Which requirements drive MCU selection beyond CPU speed?
+  \item Why should ISRs be bounded?
+  \item How does DMA change ownership?
+  \item What makes a watchdog meaningful?
+  \item Why use hardware timers for waveform generation?
+  \item Which faults require hardware shutdown?
+  \item How does pin multiplexing create conflicts?
+  \item What causes I$^2$C bus lock and how is it recovered?
+  \item Why do latency and jitter affect control stability?
+  \item What belongs in a production programming plan?
+\end{enumerate}\subsection{Original practice problems}
+\begin{enumerate}
+  \item A $72\,\mathrm{MHz}$ timer uses prescaler 72 and period 1000. Find update rate assuming count length 1000.
+  \item Tasks use $C/T$ of $1/10$, $2/20$, and $5/100$ ms. Find simple utilization.
+  \item A 12-bit ADC with $3.3\,\mathrm{V}$ range reads code 2480. Estimate ideal voltage.
+\end{enumerate}\subsection{Answer key / solution outline}
+\begin{enumerate}
+  \item Tick $=1\,\mathrm{MHz}$ and update $=1\,\mathrm{kHz}$; verify whether the register encodes $P-1$ or count length directly.
+  \item $0.10+0.10+0.05=25\%$; this alone does not include blocking, ISRs, or prove schedulability.
+  \item Using $V\approx code\times3.3/4095$, result is $1.999\,\mathrm{V}$; actual conversion includes reference, gain, offset, and quantization conventions.
+\end{enumerate}\begin{CornellSummaryBox}{Summary}
+Co-design hardware, firmware, timing, and safety. Use peripherals for deterministic work, bound every interrupt and wait, provide independent protection and a safe reset state, and validate faults, updates, power, temperature, and EMI as seriously as nominal function.
+\end{CornellSummaryBox}
+
 \end{document}

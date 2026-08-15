@@ -1,10 +1,129 @@
-\documentclass[10pt]{article}
+\documentclass[10pt,letterpaper]{article}
 \usepackage{cornell-notes}
-\title{Chapter 11: Programmable Logic Devices}\author{}\date{}
-\setDocTitle{Chapter 11: Programmable Logic Devices}\setDocSubtitle{Electronics}\setDocOwner{Electronics Cornell Notes}\setDocDate{\today}
-\setCornellCollection{Electronics Cornell Notes}\setCornellUnitType{Chapter}\setCornellUnitNumber{11}\setCornellUnitTitle{Programmable Logic Devices}
+
+\title{Chapter 11: Programmable Logic Devices}
+\author{}
+\date{}
+\setDocTitle{Chapter 11: Programmable Logic Devices}
+\setDocSubtitle{Electronics}
+\setDocOwner{Electronics Cornell Notes}
+\setDocDate{\today}
+\setCornellCollection{Electronics Cornell Notes}
+\setCornellUnitType{Chapter}
+\setCornellUnitNumber{11}
+\setCornellUnitTitle{Programmable Logic Devices}
 \hypersetup{pdftitle={Chapter 11: Programmable Logic Devices},pdfsubject={Cornell notes},pdfauthor={}}
-\begin{document}\maketitle
-\begin{cornell}\noterow{Core idea}{PLDs implement hardware logic through programmable resources, routing, timing, and constraints.}\noterow{Validation}{Check synthesis intent, timing closure, pin assignments, and reset behavior.}\end{cornell}
-\begin{summarybox}{Section summary}Programmable logic remains a hardware design with physical timing constraints.\end{summarybox}
+\begin{document}
+\maketitle
+
+\begin{CornellOverviewBox}{Concept}
+Programmable logic moves Boolean and sequential functions into configurable hardware. PAL/PLA concepts lead to CPLDs and FPGAs with lookup tables, registers, routing, memories, clock networks, and specialized blocks. Hardware description languages express concurrency, but correctness depends on synthesizable intent, clocks, reset, timing constraints, CDC, simulation, and implementation reports.
+\end{CornellOverviewBox}
+\begin{CornellOverviewBox}{Concept}
+\textbf{Prerequisites.} Combinational and sequential logic, Boolean minimization, flip-flop timing, counters, shift registers, and binary arithmetic.
+
+\textbf{After studying this chapter, you should be able to:}
+\begin{itemize}
+  \item Explain product-term, lookup-table, routing, register, and configuration architectures.
+  \item Express and verify synchronous hardware in an HDL without importing software-sequential assumptions.
+  \item Implement and test an LFSR-based pseudorandom generator.
+  \item Choose among discrete logic, programmable logic, and microcontrollers from concurrency, timing, power, and lifecycle needs.
+\end{itemize}\textbf{Central design questions.}
+\begin{itemize}
+  \item Which behavior must occur concurrently or with deterministic cycle timing?
+  \item What are the clocks, generated-clock assumptions, asynchronous boundaries, and reset strategy?
+  \item Are pin, electrical, timing, configuration, and tool-version constraints complete and reproducible?
+\end{itemize}\end{CornellOverviewBox}
+\section{Cornell Notes}
+\begin{CornellNotesTable}
+\CornellNoteRow{11.1: Architectural evolution}{Early programmable arrays configured sums of products; later devices added macrocells, registers, richer routing, lookup tables, block memories, arithmetic units, transceivers, and clock management. The abstraction changed from programming gates to describing synchronous data paths and state machines. Architecture still matters because routing, clocking, I/O banks, and hard blocks set performance and power.}
+\CornellNoteRow{11.2.1--11.2.3: PAL, PLA, FPGA}{A PAL commonly has a programmable AND plane and fixed OR structure; a PLA makes both planes programmable. An FPGA uses configurable lookup tables and registers connected by programmable routing. LUT size affects how logic maps; routing delay often dominates logic delay. CPLD-style devices favor predictable product-term timing; FPGAs favor scale and resources.}
+\CornellNoteRow{11.2.4--11.2.6: Configuration and tools}{Configuration may be volatile or nonvolatile and may load from external memory. Secure boot, bitstream authentication/encryption, fallback images, brownout, and configuration time can be system requirements. The tool flow elaborates, synthesizes, maps, places, routes, and analyzes timing. Pin assignments, I/O standards, clocks, false/multicycle paths, and generated clocks must be constrained rather than inferred casually.}
+\CornellNoteRow{11.3.1--11.3.3: Pseudorandom bytes}{A linear-feedback shift register (LFSR) updates bits using XOR feedback. With a primitive polynomial and any nonzero state, an $n$-bit maximal LFSR cycles through $2^n-1$ states. It is deterministic and unsuitable for cryptographic secrecy. Parallel byte generation may advance several steps combinationally or collect serial bits; confirm bit order and polynomial convention.}
+\CornellNoteRow{11.3.4: HDL entry}{HDL statements describe hardware that operates concurrently. Use clocked processes with nonblocking signal-update semantics for registers and complete combinational assignments to avoid latches. Parameterize widths, make signedness explicit, and avoid unsynthesizable timing/test constructs in production logic. Simulate reset, normal, boundary, illegal, and randomized cases; then verify post-synthesis assumptions with lint and timing.}
+\CornellNoteRow{11.3.5: Microcontroller comparison}{A microcontroller executes instructions sequentially and excels at control, protocols, and software flexibility; programmable logic excels at parallelism, custom timing, high-rate data paths, and deterministic I/O. Many systems combine both. Compare latency, throughput, analog/peripheral needs, development skill, power, unit cost, startup, update path, security, and lifecycle rather than gate count alone.}
+\CornellNoteRow{11.4: Engineering advice}{Choose a mature device/tool chain with sufficient resources and lifecycle. Keep one primary clock where practical, use clock enables instead of fabric-divided clocks, synchronize external inputs, and design resets intentionally. Register interfaces, pipeline long paths, constrain every clock, review warnings, preserve reproducible builds, and test actual hardware under voltage/temperature and I/O stress.}
+\end{CornellNotesTable}
+\begin{CornellSummaryBox}{Summary}
+Programmable logic converts a concurrent hardware specification into placed and routed resources. HDL syntax is only one layer; deterministic function requires an explicit synchronous architecture, complete constraints, CDC/reset discipline, verification, resource/timing closure, reliable configuration, and reproducible tools. An LFSR is a useful example of compact parallel state logic, not a secure random generator.
+\end{CornellSummaryBox}
+\section{Worked Examples}
+\begin{CornellExamBox}{LFSR period}
+An 11-bit maximal LFSR has period $2^{11}-1=2047$ nonzero states. At one update per $20\,\mathrm{MHz}$ clock, the sequence repeats every $2047/20\,\mathrm{MHz}=102.35\,\mu\mathrm{s}$. An all-zero reset state would lock the XOR-feedback form, so choose a defined nonzero seed.
+\end{CornellExamBox}
+\begin{CornellExamBox}{Timing slack}
+A clock period is $8.0\,\mathrm{ns}$. The constrained path requires $6.6\,\mathrm{ns}$ data delay plus $0.7\,\mathrm{ns}$ setup/uncertainty allowance. Slack is $8.0-7.3=0.7\,\mathrm{ns}$. Positive slack passes this corner; additional PVT corners and hold checks still matter.
+\end{CornellExamBox}
+\begin{CornellExamBox}{Pipeline throughput}
+A combinational block takes $18\,\mathrm{ns}$ and must run at $100\,\mathrm{MHz}$ ($10\,\mathrm{ns}$ period). Splitting it into two balanced registered stages near $9\,\mathrm{ns}$ can meet throughput after overhead, at the cost of one extra cycle latency. Verify register setup, clock uncertainty, routing, and stage balance.
+\end{CornellExamBox}
+\section{Design and Troubleshooting}
+\begin{CornellExamBox}{Design and Troubleshooting}
+\begin{enumerate}
+  \item Partition requirements into clocks, interfaces, data paths, state machines, throughput/latency, safety, and configuration.
+  \item Write synthesizable RTL plus assertions/testbenches; define reset, CDC, widths, signedness, and illegal states.
+  \item Apply pin/electrical/timing constraints; synthesize, place/route, review utilization, warnings, timing, power, and CDC reports.
+  \item Program hardware and test I/O levels, clocks, reset/configuration, corner data patterns, long runs, temperature, and update/fallback behavior.
+\end{enumerate}\end{CornellExamBox}
+\begin{CornellExamBox}{Symptoms, likely causes, and checks}
+\begin{itemize}
+  \item Simulation passes, hardware fails: missing constraints, CDC, reset release, I/O standard, pin mapping, or simulation/synthesis mismatch.
+  \item Timing fails after routing: excessive logic depth, fanout, routing congestion, poor clock structure, or unconstrained derived clocks.
+  \item Random startup state: incomplete reset/initialization, configuration sequencing, or external pins active too early.
+  \item LFSR stuck: zero seed, wrong tap convention, width truncation, or update-order error.
+  \item Build changes unexpectedly: unconstrained paths, nondeterministic seeds, tool-version differences, or untracked IP/configuration.
+\end{itemize}\end{CornellExamBox}
+\begin{CornellWarningBox}{Safety and Limitations}
+Incorrect I/O standards, bank voltages, pin assignments, or bus contention can damage programmable devices and connected hardware. Verify configuration pins, current limits, and power sequencing before programming. High-current or inductive loads require external rated drivers and protection; FPGA pins are logic interfaces, not power switches.
+\end{CornellWarningBox}
+\section{Key-Equation Sheet}
+\begin{CornellExamBox}{Key Equations}
+\begin{itemize}
+  \item Maximal $n$-bit LFSR period: $2^n-1$ for a primitive feedback polynomial and nonzero state.
+  \item Setup slack concept: $T_{clk}-(t_{cq}+t_{comb}+t_{setup}+t_{uncertainty})$.
+  \item Throughput for one-result-per-cycle pipeline: $f_{clk}$ after pipeline fill; latency is the number of registered stages times the period.
+  \item Resource estimates must include LUTs, registers, memories, multipliers, I/O, clocking, and routing -- not only Boolean gates.
+  \item Metastability risk decreases exponentially with available resolution time but is not reduced to zero.
+\end{itemize}\end{CornellExamBox}
+\section{Study and Review}
+\subsection{Design checklist}
+\begin{itemize}
+  \item All clocks, generated clocks, I/O delays, and exceptions are constrained.
+  \item CDC and reset-domain crossings use reviewed structures.
+  \item RTL has explicit widths, signedness, defaults, and no unintended latches.
+  \item Timing, hold, utilization, power, and warnings are reviewed after routing.
+  \item Configuration security, fallback, tool versions, IP, and build reproducibility are controlled.
+\end{itemize}\subsection{Common misconceptions}
+\begin{itemize}
+  \item HDL executes like ordinary sequential software.
+  \item Passing RTL simulation does not prove timing closure or CDC safety.
+  \item A divided fabric signal is not automatically a well-behaved clock.
+  \item An LFSR is pseudorandom, not cryptographically random.
+  \item Unused FPGA resources do not guarantee routing or timing success.
+\end{itemize}\subsection{Active-recall questions}
+\begin{enumerate}
+  \item How do PAL, PLA, and FPGA structures differ?
+  \item Why can routing dominate FPGA delay?
+  \item What makes an LFSR maximal length?
+  \item Why must the seed be nonzero?
+  \item What causes an unintended latch?
+  \item Why use clock enables?
+  \item What belongs in a timing constraint set?
+  \item How do throughput and latency differ?
+  \item When is a microcontroller preferable?
+  \item Which reports constitute timing closure evidence?
+\end{enumerate}\subsection{Original practice problems}
+\begin{enumerate}
+  \item Find the maximal period of a 16-bit LFSR and repeat time at $1\,\mathrm{MHz}$.
+  \item A $50\,\mathrm{MHz}$ path has $13\,\mathrm{ns}$ data delay and $2\,\mathrm{ns}$ total setup/uncertainty. Find setup slack.
+  \item A pipeline emits one 32-bit word per $125\,\mathrm{MHz}$ cycle. Find peak payload throughput.
+\end{enumerate}\subsection{Answer key / solution outline}
+\begin{enumerate}
+  \item Period $=65535$ states; repeat time $=65.535\,\mathrm{ms}$.
+  \item Period $20\,\mathrm{ns}$; slack $=20-15=5\,\mathrm{ns}$, before checking hold/other corners.
+  \item $4.0\,\mathrm{Gbit/s}$ or $500\,\mathrm{MB/s}$ before protocol bubbles/overhead.
+\end{enumerate}\begin{CornellSummaryBox}{Summary}
+Design synchronous concurrent hardware, not software written in HDL. Constrain clocks and I/O, control CDC/reset/configuration, verify function and timing, and preserve reproducible implementation evidence.
+\end{CornellSummaryBox}
+
 \end{document}
