@@ -4,16 +4,12 @@ Centralized Cornell Notes sources live under `src/cornell-notes/` and use the sh
 
 ## Collections
 
-- Computer Science
   - Combinatorial Algorithms
   - Computer Networks
   - Operating Systems
   - String Algorithms
-- Electronics
   - Electronic Circuits
-- Mathematics
   - Numerical Methods
-- Security
   - CISSP
 
 ## Numerical Methods
@@ -159,15 +155,35 @@ Example:
 
 ### Build commands
 
-- Build one chapter:
   - `cd src/cornell-notes/mathematics/numerical-methods/foundations`
   - `TEXINPUTS="$(pwd)/../../../../../tooling/latex//:$(pwd)/../../../../../tooling/styles/latex//:$TEXINPUTS" latexmk -pdf -shell-escape -interaction=nonstopmode -halt-on-error -file-line-error ch01-preliminaries-notes.tex`
-- Build one collection:
   - `python3 tooling/scripts/latex_build.py build-category cornell-notes --output-dir public/pdfs --log-dir public/logs --clean-output`
-- Build all Cornell Notes (or all changed roots in Cornell Notes):
   - `make build-changed BASE_REF=HEAD~1 HEAD_REF=HEAD`
   - `make publish-parallel JOBS=8`
 
 ### Filename policy note
 
 Upload-attachment suffixes such as `(1)` are not valid repository names. Cornell source paths, manifests, generated PDFs, logs, and Pages URLs must use canonical kebab-case basenames without upload suffixes.
+## ISO/IEC/IEEE 42010:2022
+
+The ISO/IEC/IEEE 42010:2022 Cornell collection is organized under
+`src/cornell-notes/architecture/standards/iso-iec-ieee-42010-2022/` with
+`introduction/`, `clauses/<top-level-topic>/`, and
+`annexes/annex-<letter>-<topic>/` groups. The ISO phase contains 115 canonical
+roots. Its source manifest and resumable state are stored under
+`tooling/manifests/cornell-migration/`.
+
+ISO PDFs, logs, and Pages artifacts preserve this source-relative topology under
+`public/pdfs/cornell-notes/`, `public/logs/cornell-notes/`, and
+`public/site/pdfs/cornell-notes/`. Build and stage the collection with:
+
+```bash
+python3 tooling/scripts/latex_build.py build-category cornell-notes \
+  --jobs 1 --output-dir public/pdfs --log-dir public/logs --clean-output
+python3 tooling/scripts/latex_build.py stage-pages \
+  --pdf-dir public/pdfs --site-dir public/site
+```
+
+The collection-scoped migration utility is
+`tooling/scripts/migrate_cornell_collections.py`. The ISO phase is complete;
+the C++ 2024 phase remains pending restoration of its 2,547 root-level sources.

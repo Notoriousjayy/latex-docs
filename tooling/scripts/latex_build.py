@@ -734,11 +734,20 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path) -> List[Path]:
             return int(match.group(1)), path.name
         return (10**9, path.name)
 
+    def _collection_path_key(path: Path) -> tuple[object, ...]:
+        name = path.name.lower()
+        annex = re.match(r"annex-([a-f])-([0-9-]+)-", name)
+        if annex:
+            numbers = tuple(int(part) for part in annex.group(2).split("-"))
+            return (1, annex.group(1), numbers, name)
+        numbers = tuple(int(part) for part in re.match(r"([0-9]+(?:-[0-9]+)*)-", name).group(1).split("-")) if re.match(r"([0-9]+(?:-[0-9]+)*)-", name) else (10**9,)
+        return (0, numbers, name)
+
     cornell_paths = sorted(path for path in pdf_rel_paths if path.parts and path.parts[0] == "cornell-notes")
     non_cornell_paths = sorted(path for path in pdf_rel_paths if not (path.parts and path.parts[0] == "cornell-notes"))
 
     def _emit_links(handle: Any, paths: list[Path], sort_by_chapter: bool = False) -> None:
-        ordered = sorted(paths, key=_numeric_chapter_key) if sort_by_chapter else sorted(paths)
+        ordered = sorted(paths, key=_collection_path_key if sort_by_chapter else lambda path: (path.as_posix(),))
         handle.write("<ul>")
         for rel_path in ordered:
             rel_posix = rel_path.as_posix()
@@ -760,8 +769,36 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path) -> List[Path]:
             elec_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "electronics", "electronic-circuits")]
             math_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "mathematics", "numerical-methods")]
             sec_paths = [path for path in cornell_paths if path.parts[:4] == ("cornell-notes", "security", "certifications", "cissp")]
+            iso_paths = [path for path in cornell_paths if path.parts[:4] == ("cornell-notes", "architecture", "standards", "iso-iec-ieee-42010-2022")]
+            cpp_paths = [path for path in cornell_paths if path.parts[:5] == ("cornell-notes", "programming", "languages", "cpp", "cpp-2024")]
             computer_science_paths = string_paths + combinatorial_paths + network_paths + operating_system_paths
-            other_cornell = [path for path in cornell_paths if path not in computer_science_paths and path not in elec_paths and path not in math_paths and path not in sec_paths]
+            other_cornell = [path for path in cornell_paths if path not in computer_science_paths and path not in elec_paths and path not in math_paths and path not in sec_paths and path not in iso_paths and path not in cpp_paths]
+
+            def _emit_new_collection(heading: str, paths: list[Path]) -> None:
+                if not paths:
+                    return
+                handle.write(f"<h3>{html.escape(heading)}</h3>")
+                grouped: dict[str, list[Path]] = {}
+                for path in paths:
+                    if path.parts[4] == "introduction":
+                        grouped.setdefault("Introduction", []).append(path)
+                    else:
+                        section = path.parts[4].title()
+                        topic = path.parts[5] if len(path.parts) > 6 else "(uncategorized)"
+                        grouped.setdefault(section, [])
+                        grouped.setdefault(f"{section}: {topic}", []).append(path)
+                for label in ("Introduction", "Clauses", "Annexes"):
+                    matching = [key for key in grouped if key == label or key.startswith(label + ":")]
+                    if not matching:
+                        continue
+                    handle.write(f"<h4>{label}</h4>")
+                    for key in sorted(matching, key=lambda value: (0, value) if value == label else (1, value)):
+                        if key != label:
+                            handle.write(f"<h5>{html.escape(key.split(': ', 1)[1])}</h5>")
+                        _emit_links(handle, grouped[key], sort_by_chapter=True)
+
+            _emit_new_collection("Architecture: ISO/IEC/IEEE 42010:2022", iso_paths)
+            _emit_new_collection("Programming: C++ 2024", cpp_paths)
 
             if computer_science_paths:
                 handle.write("<h3>Computer Science</h3>")

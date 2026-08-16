@@ -60,7 +60,7 @@ PLANTUML_START_PATTERN = re.compile(
 PLANTUML_DIRECT_STYLE_PATTERN = re.compile(r"!include(?:_once)?\s+.*tooling/styles/plantuml/.+\.iuml")
 FORBIDDEN_PLANTUML_WRAPPER_FILES = {"appsec-style.puml"}
 CORNELL_NOTES_PATH_PATTERN = re.compile(
-    r"src/cornell-notes/(computer-science/(combinatorial-algorithms|computer-networks|operating-systems|string-algorithms)|electronics/electronic-circuits|security/certifications/cissp|mathematics/numerical-methods)/.+\.tex$"
+    r"src/cornell-notes/(computer-science/(combinatorial-algorithms|computer-networks|operating-systems|string-algorithms)|electronics/electronic-circuits|security/certifications/cissp|mathematics/numerical-methods|architecture/standards/iso-iec-ieee-42010-2022|programming/languages/cpp/cpp-2024)/.+\.tex$"
 )
 
 SEMANTIC_STYLE_PACKAGES = {
@@ -368,6 +368,8 @@ def validate_repo() -> int:
             rel.startswith("src/cornell-notes/electronics/electronic-circuits/")
             or rel.startswith("src/cornell-notes/security/certifications/cissp/")
             or rel.startswith("src/cornell-notes/mathematics/numerical-methods/")
+            or rel.startswith("src/cornell-notes/architecture/standards/iso-iec-ieee-42010-2022/")
+            or rel.startswith("src/cornell-notes/programming/languages/cpp/cpp-2024/")
             or rel == "src/architecture/style-system/examples/cornell-notes-study-sheet.tex"
         )
         uses_cornell_notes = bool(re.search(r"\\usepackage(?:\[[^\]]*\])?\{[^}]*\bcornell-notes\b[^}]*\}", active_text))
