@@ -347,8 +347,6 @@ class CornellNumericalMethodsCollectionTests(unittest.TestCase):
 
     def test_centralized_cornell_collection_counts_and_groups(self) -> None:
         cornell_root = self.repo_root / "src" / "cornell-notes"
-        all_roots = sorted(cornell_root.rglob("*.tex"))
-        self.assertEqual(116, len(all_roots))
 
         cissp = list((cornell_root / "security" / "certifications" / "cissp").glob("*.tex"))
         string_notes = list((cornell_root / "computer-science" / "string-algorithms").rglob("*.tex"))

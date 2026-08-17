@@ -4,15 +4,23 @@ description: 'Delegate LaTeX builds to the canonical Makefile/build-script contr
 
 inputs:
   mode:
-    description: 'Build mode: full, changed, publish, or category'
+    description: 'Build mode: shard, full, changed, publish, or category'
     required: false
     default: 'changed'
+  plan:
+    description: 'Path to a build plan JSON file (required when mode is shard)'
+    required: false
+    default: ''
+  shard-index:
+    description: 'Zero-based shard index within the plan (mode: shard)'
+    required: false
+    default: '0'
   category:
     description: 'Category name when mode is category'
     required: false
     default: ''
   jobs:
-    description: 'Parallel job count for the canonical build layer'
+    description: 'Concurrent latexmk processes on this runner'
     required: false
     default: '4'
   base-ref:
@@ -23,6 +31,10 @@ inputs:
     description: 'Head revision for changed-root builds'
     required: false
     default: ''
+  clean-output:
+    description: 'Reset the output/log trees before building'
+    required: false
+    default: 'true'
 
 outputs:
   root-count:
@@ -43,6 +55,12 @@ outputs:
   log-count:
     description: 'Number of log files generated'
     value: ${{ steps.run.outputs.log-count }}
+  wall-clock-seconds:
+    description: 'Wall-clock duration of the compilation phase'
+    value: ${{ steps.run.outputs.wall-clock-seconds }}
+  compile-seconds:
+    description: 'Sum of per-document compilation durations'
+    value: ${{ steps.run.outputs.compile-seconds }}
   has-pdfs:
     description: 'Whether valid current PDFs were produced'
     value: ${{ steps.run.outputs.has-pdfs }}
@@ -61,113 +79,88 @@ runs:
       shell: bash
       run: |
         set -uo pipefail
-        export TEXINPUTS="${GITHUB_WORKSPACE}/tooling/latex//:${GITHUB_WORKSPACE}/tooling/styles/latex//:${TEXINPUTS:-}"
-        mkdir -p "${GITHUB_WORKSPACE}/public/pdfs" "${GITHUB_WORKSPACE}/public/logs"
-
-        mode="${{ inputs.mode }}"
-        category="${{ inputs.category }}"
-        jobs="${{ inputs.jobs }}"
-        base_ref="${{ inputs.base-ref }}"
-        head_ref="${{ inputs.head-ref }}"
+        cd "${GITHUB_WORKSPACE}"
+        mkdir -p public/pdfs public/logs
 
         make_args=(
           OUTPUT_DIR=public/pdfs
           LOG_DIR=public/logs
-          CLEAN_OUTPUT=true
-          JOBS="$jobs"
-          MODE_NAME="$mode"
-          BASE_REF="$base_ref"
-          HEAD_REF="$head_ref"
+          JOBS="${{ inputs.jobs }}"
+          MODE_NAME="${{ inputs.mode }}"
+          BASE_REF="${{ inputs.base-ref }}"
+          HEAD_REF="${{ inputs.head-ref }}"
         )
+        if [[ "${{ inputs.clean-output }}" == "true" ]]; then
+          make_args+=(CLEAN_OUTPUT=true)
+        fi
 
+        # Capture the build status without aborting so the outputs below are
+        # always emitted before the step propagates the original exit code.
         set +e
-
-        case "$mode" in
+        case "${{ inputs.mode }}" in
+          shard)
+            if [[ -z "${{ inputs.plan }}" ]]; then
+              echo "::error::shard mode requires a plan file"
+              exit 2
+            fi
+            make build-shard \
+              PLAN="${{ inputs.plan }}" \
+              SHARD_INDEX="${{ inputs.shard-index }}" \
+              "${make_args[@]}"
+            ;;
           full)
-            make build-all "${make_args[@]}"
+            make build-parallel "${make_args[@]}"
             ;;
           changed)
             make build-changed "${make_args[@]}"
             ;;
           publish)
-            make publish-parallel JOBS="$jobs"
+            make publish-parallel "${make_args[@]}"
             ;;
           category)
-            if [[ -z "$category" ]]; then
+            if [[ -z "${{ inputs.category }}" ]]; then
               echo "::error::category mode requires a non-empty category"
-              exit 1
+              exit 2
             fi
-            make "build-category-${category}" "${make_args[@]}"
+            make "build-category-${{ inputs.category }}" "${make_args[@]}"
             ;;
           *)
-            echo "::error::Unsupported mode: $mode"
-            exit 1
+            echo "::error::Unsupported mode: ${{ inputs.mode }}"
+            exit 2
             ;;
         esac
-
         build_status_code=$?
         set -e
 
-        summary_json="${GITHUB_WORKSPACE}/public/logs/build-summary.json"
-        if [[ -f "$summary_json" ]]; then
-          eval "$(python3 - <<'PY'
+        python3 - "$build_status_code" >> "$GITHUB_OUTPUT" <<'PY'
         import json
+        import sys
         from pathlib import Path
 
-        summary = json.loads(Path('public/logs/build-summary.json').read_text(encoding='utf-8'))
+        exit_code = int(sys.argv[1])
+        summary_path = Path('public/logs/build-summary.json')
+        pdf_dir = Path('public/pdfs')
 
-        def emit(name: str, value) -> None:
-            text = str(value).replace('"', '\\"')
-            print(f'{name}="{text}"')
+        if summary_path.is_file():
+            summary = json.loads(summary_path.read_text(encoding='utf-8'))
+        else:
+            summary = {
+                'pdf_count': sum(1 for _ in pdf_dir.rglob('*.pdf')) if pdf_dir.is_dir() else 0,
+                'build_status': {0: 'success', 1: 'failed'}.get(exit_code, 'invalid'),
+            }
 
-        emit('root_count', summary.get('root_count', 0))
-        emit('attempted_count', summary.get('attempted_count', 0))
-        emit('success_count', summary.get('succeeded_count', 0))
-        emit('failure_count', summary.get('failed_count', 0))
-        emit('pdf_count', summary.get('pdf_count', 0))
-        emit('log_count', summary.get('log_count', 0))
-        emit('build_status', summary.get('build_status', 'invalid'))
+        pdf_count = int(summary.get('pdf_count', 0))
+        print(f"root-count={summary.get('root_count', 0)}")
+        print(f"attempted-count={summary.get('attempted_count', 0)}")
+        print(f"success-count={summary.get('succeeded_count', 0)}")
+        print(f"failure-count={summary.get('failed_count', 0)}")
+        print(f"pdf-count={pdf_count}")
+        print(f"log-count={summary.get('log_count', 0)}")
+        print(f"wall-clock-seconds={summary.get('wall_clock_seconds', 0)}")
+        print(f"compile-seconds={summary.get('compile_seconds', 0)}")
+        print(f"has-pdfs={'true' if pdf_count > 0 else 'false'}")
+        print(f"has-logs={'true' if summary_path.is_file() else 'false'}")
+        print(f"build-status={summary.get('build_status', 'invalid')}")
         PY
-        )"
-        else
-          root_count=0
-          attempted_count=0
-          success_count=0
-          failure_count=0
-          pdf_count=$(find public/pdfs -type f -name '*.pdf' 2>/dev/null | wc -l | tr -d ' ')
-          log_count=$(find public/logs -type f 2>/dev/null | wc -l | tr -d ' ')
-          if [[ "$build_status_code" -eq 0 ]]; then
-            build_status="success"
-          elif [[ "$build_status_code" -eq 1 ]]; then
-            build_status="failed"
-          else
-            build_status="invalid"
-          fi
-        fi
-
-        has_pdfs=false
-        if [[ "${pdf_count:-0}" -gt 0 ]]; then
-          has_pdfs=true
-        fi
-
-        has_logs=false
-        if [[ -f "public/logs/build-summary.json" ]]; then
-          has_logs=true
-        fi
-
-        {
-          echo "root-count=${root_count:-0}"
-          echo "attempted-count=${attempted_count:-0}"
-          echo "success-count=${success_count:-0}"
-          echo "failure-count=${failure_count:-0}"
-          echo "pdf-count=${pdf_count:-0}"
-          echo "log-count=${log_count:-0}"
-          echo "has-pdfs=$has_pdfs"
-          echo "has-logs=$has_logs"
-          echo "build-status=${build_status:-invalid}"
-        } >> "$GITHUB_OUTPUT"
 
         exit "$build_status_code"
-
-
-

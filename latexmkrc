@@ -22,21 +22,28 @@ use Cwd            qw(abs_path);
 
 my $root = dirname(abs_path(__FILE__));
 
-# Recursive search paths for custom .sty / .cls / .tex includes.
+# Search paths for custom .sty / .cls / .tex includes.
+#
+# PERFORMANCE: these paths must stay narrow. A recursive "$root/src//" entry
+# used to live here. Because kpathsea re-walks every recursive entry on each
+# lookup (and latexmk performs one lookup per recorded dependency), that single
+# entry made kpathsea stat the whole 4,900-file src/ tree thousands of times per
+# document: 63s/document instead of 2s/document. There are zero .sty/.cls files
+# under src/, so it never resolved anything. Keep style trees explicit here and
+# never add a recursive path over a large content directory.
 my @texinputs = (
     "$root/tooling/latex//",         # canonical house style (style.sty + helpers)
     "$root/tooling/styles/latex//",  # domain modules (technical-*, financial, hr, ...)
-    "$root/src/architecture/style-system//",
-    "$root/src//",     # catches any other in-tree .sty co-located with docs
     "$root/sty//",     # harmless if absent
     "$root/tex//",     # harmless if absent
 );
 
 $ENV{TEXINPUTS} = ':' . join(':', @texinputs) . ':' . ($ENV{TEXINPUTS} // '') . ':';
 
-# Same treatment for BibTeX inputs and styles (no-op until you add bibs).
-$ENV{BIBINPUTS} = ":$root/src//:" . ($ENV{BIBINPUTS} // '') . ':';
-$ENV{BSTINPUTS} = ":$root/src//:" . ($ENV{BSTINPUTS} // '') . ':';
+# BibTeX inputs/styles are resolved relative to each document directory; no
+# recursive repository-wide entry (same kpathsea cost as above).
+$ENV{BIBINPUTS} = ':' . ($ENV{BIBINPUTS} // '') . ':';
+$ENV{BSTINPUTS} = ':' . ($ENV{BSTINPUTS} // '') . ':';
 
 # Engine: pdflatex (matches your CI matrix).
 my $pdf_mode = 1;

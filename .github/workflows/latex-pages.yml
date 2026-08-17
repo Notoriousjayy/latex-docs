@@ -1,21 +1,37 @@
 name: Deploy PDFs to GitHub Pages
 
+# The authoritative build for `main`.
+#
+# This workflow both validates the commit and publishes it, so a push to main
+# compiles each affected document exactly once. The published corpus is always
+# complete: the previous validated corpus is restored, freshly built PDFs are
+# overlaid, PDFs for deleted/renamed roots are pruned, and the result is
+# verified against the current root manifest before deployment.
+
 on:
   workflow_dispatch:
+    inputs:
+      build-mode:
+        description: 'changed (incremental publish) or full (clean verification rebuild)'
+        type: choice
+        default: 'changed'
+        options:
+          - changed
+          - full
+  schedule:
+    # Weekly clean full verification of every root, independent of the
+    # incremental path, so drift or cache corruption cannot accumulate.
+    - cron: '17 4 * * 0'
   push:
     branches: [main]
     paths:
-      - '.github/workflows/latex-pages.yml'
-      - 'src/**/*.tex'
-      - 'src/**/*.puml'
-      - 'tooling/**/*.sty'
-      - 'tooling/**/*.tex'
-      - 'tooling/**/*.iuml'
-      - 'tooling/scripts/**'
+      - 'src/**'
+      - 'tooling/**'
       - 'Makefile'
-      - '.latexmkrc'
       - 'latexmkrc'
+      - '.latexmkrc'
       - '.github/actions/**'
+      - '.github/workflows/latex-pages.yml'
       - '.github/workflows/_build-latex.yml'
 
 permissions:
@@ -27,6 +43,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 concurrency:
+  # Never let an older commit's deployment land after a newer one.
   group: pages
   cancel-in-progress: true
 
@@ -34,26 +51,36 @@ jobs:
   build:
     uses: ./.github/workflows/_build-latex.yml
     with:
-      build-mode: publish
-      jobs: 4
-      upload-artifacts: true
+      build-mode: ${{ github.event_name == 'schedule' && 'full' || (github.event_name == 'workflow_dispatch' && inputs.build-mode || 'changed') }}
+      base-ref: ${{ github.event.before }}
+      head-ref: ${{ github.sha }}
+      max-shards: 12
+      max-parallel-shards: 12
+      local-build-jobs: 4
+      publish: true
       render-plantuml: true
 
   stage:
     needs: build
+    if: ${{ needs.build.outputs.build-status == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-      - name: Download PDFs artifact
+
+      - name: Download verified PDF corpus
         uses: actions/download-artifact@v7
         with:
-          name: latex-pdfs
+          name: ${{ needs.build.outputs.pdf-artifact }}
           path: artifact/latex-pdfs
+
       - name: Stage PDFs and generate Pages index
         run: |
           set -euo pipefail
-          python3 tooling/scripts/latex_build.py stage-pages --pdf-dir artifact/latex-pdfs --site-dir site
+          python3 tooling/scripts/latex_build.py stage-pages \
+            --pdf-dir artifact/latex-pdfs --site-dir site
+          echo "Staged $(find site/pdfs -name '*.pdf' | wc -l) PDFs" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

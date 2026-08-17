@@ -8,6 +8,7 @@ JOBS ?= $(shell nproc 2>/dev/null | awk '{print int($$1 * 0.75)}' || echo 4)
 SRC_DIR := src
 BUILD_DIR := public/pdfs
 LOG_DIR := public/logs
+SITE_DIR ?= public/site
 BASE_REF ?=
 HEAD_REF ?=
 OUTPUT_DIR ?=
@@ -15,6 +16,16 @@ MODE_NAME ?=
 BASE_REVISION ?=
 HEAD_REVISION ?=
 CLEAN_OUTPUT ?=
+
+# Planning / sharding knobs. MAX_SHARDS bounds GitHub Actions runner fan-out;
+# JOBS bounds concurrent latexmk processes inside a single runner. Tune them
+# independently: total concurrency is MAX_SHARDS x JOBS.
+BUILD ?= python3 tooling/scripts/latex_build.py
+PLAN ?= public/logs/build-plan.json
+PLAN_MODE ?= changed
+MAX_SHARDS ?= 12
+MIN_ROOTS_PER_SHARD ?= 25
+SHARD_INDEX ?= 0
 
 BUILD_ARGS :=
 ifneq ($(strip $(OUTPUT_DIR)),)
@@ -51,6 +62,9 @@ help:
 	@echo "  make build-parallel JOBS=8"
 	@echo "  make build-category-<name>"
 	@echo "  make build-changed BASE_REF=<sha> HEAD_REF=<sha>"
+	@echo "  make plan PLAN_MODE=changed|full MAX_SHARDS=N"
+	@echo "  make build-shard PLAN=<plan.json> SHARD_INDEX=N"
+	@echo "  make verify-corpus PLAN=<plan.json>"
 	@echo "  make render-plantuml"
 	@echo "  make publish"
 	@echo "  make publish-parallel"
@@ -59,50 +73,68 @@ help:
 
 .PHONY: list-roots
 list-roots:
-	@python3 tooling/scripts/latex_build.py list-roots
+	@$(BUILD) list-roots
 
 .PHONY: list-categories
 list-categories:
-	@python3 tooling/scripts/latex_build.py list-categories
+	@$(BUILD) list-categories
 
 .PHONY: build-all
 build-all:
-	@python3 tooling/scripts/latex_build.py build-all $(BUILD_ARGS)
+	@$(BUILD) build-all $(BUILD_ARGS)
 
 .PHONY: build-parallel
 build-parallel:
-	@python3 tooling/scripts/latex_build.py build-all --parallel --jobs $(JOBS) $(BUILD_ARGS)
+	@$(BUILD) build-all --parallel --jobs $(JOBS) $(BUILD_ARGS)
 
 define category_rule
 .PHONY: build-category-$(1)
 build-category-$(1):
-	@python3 tooling/scripts/latex_build.py build-category $(1) $(BUILD_ARGS)
+	@$(BUILD) build-category $(1) $(BUILD_ARGS)
 endef
 
-CATEGORIES := $(shell python3 tooling/scripts/latex_build.py list-categories)
+CATEGORIES := $(shell $(BUILD) list-categories)
 $(foreach cat,$(CATEGORIES),$(eval $(call category_rule,$(cat))))
 
 .PHONY: build-changed
 build-changed:
-	@python3 tooling/scripts/latex_build.py build-changed --jobs $(JOBS) $(BUILD_ARGS)
+	@$(BUILD) build-changed --jobs $(JOBS) $(BUILD_ARGS)
 
 .PHONY: render-plantuml
 render-plantuml:
-	@python3 tooling/scripts/latex_build.py render-plantuml
+	@$(BUILD) render-plantuml
 
 .PHONY: publish
 publish:
 	@echo "Publishing PDFs to $(BUILD_DIR)"
-	@python3 tooling/scripts/latex_build.py build-all --output-dir $(BUILD_DIR) --log-dir $(LOG_DIR) --clean-output --mode-name publish
+	@$(BUILD) build-all --output-dir $(BUILD_DIR) --log-dir $(LOG_DIR) --clean-output --mode-name publish
 
 .PHONY: publish-parallel
 publish-parallel:
 	@echo "Publishing PDFs in parallel to $(BUILD_DIR)"
-	@python3 tooling/scripts/latex_build.py build-all --parallel --jobs $(JOBS) --output-dir $(BUILD_DIR) --log-dir $(LOG_DIR) --clean-output --mode-name publish
+	@$(BUILD) build-all --parallel --jobs $(JOBS) --output-dir $(BUILD_DIR) --log-dir $(LOG_DIR) --clean-output --mode-name publish
+
+.PHONY: plan
+plan:
+	@$(BUILD) plan --mode $(PLAN_MODE) --base "$(BASE_REF)" --head "$(HEAD_REF)" \
+		--max-shards $(MAX_SHARDS) --min-roots-per-shard $(MIN_ROOTS_PER_SHARD) \
+		--output $(PLAN) --emit summary
+
+.PHONY: build-shard
+build-shard:
+	@$(BUILD) build-selection --plan $(PLAN) --shard-index $(SHARD_INDEX) --jobs $(JOBS) $(BUILD_ARGS)
+
+.PHONY: verify-corpus
+verify-corpus:
+	@$(BUILD) verify-corpus --pdf-dir $(BUILD_DIR) --plan $(PLAN)
+
+.PHONY: stage-pages
+stage-pages:
+	@$(BUILD) stage-pages --pdf-dir $(BUILD_DIR) --site-dir $(SITE_DIR)
 
 .PHONY: clean
 clean:
-	@python3 tooling/scripts/latex_build.py clean
+	@$(BUILD) clean
 
 .PHONY: distclean
 distclean: clean

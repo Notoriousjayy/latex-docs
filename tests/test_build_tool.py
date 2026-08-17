@@ -2,6 +2,7 @@ import subprocess
 import tempfile
 import unittest
 import shutil
+import fnmatch
 import json
 import re
 import shlex
@@ -15,6 +16,13 @@ from tooling.scripts.latex_build import determine_affected_roots, discover_roots
 
 
 class BuildToolTests(unittest.TestCase):
+    @staticmethod
+    def _step_by_name(job: dict, name: str) -> dict:
+        for step in job["steps"]:
+            if isinstance(step, dict) and step.get("name") == name:
+                return step
+        raise AssertionError(f"step {name!r} not found")
+
     def _make_dry_run_command(self, *make_args: str) -> str:
         repo_root = Path(__file__).resolve().parents[1]
         result = subprocess.run(
@@ -949,29 +957,132 @@ class BuildToolTests(unittest.TestCase):
         )
 
     def test_pages_workflow_trigger_paths_cover_publication_inputs(self) -> None:
-        repo_root = Path(__file__).resolve().parents[1]
-        workflow_text = (repo_root / ".github" / "workflows" / "latex-pages.yml").read_text(encoding="utf-8")
+        try:
+            import yaml  # type: ignore
+        except ImportError:
+            self.skipTest("PyYAML is not available")
 
-        self.assertIn("'src/**/*.tex'", workflow_text)
-        self.assertIn("'tooling/**/*.sty'", workflow_text)
-        self.assertIn("'tooling/scripts/**'", workflow_text)
-        self.assertIn("'Makefile'", workflow_text)
-        self.assertIn("'.latexmkrc'", workflow_text)
-        self.assertIn("'.github/workflows/latex-pages.yml'", workflow_text)
+        repo_root = Path(__file__).resolve().parents[1]
+        workflow = yaml.safe_load((repo_root / ".github" / "workflows" / "latex-pages.yml").read_text(encoding="utf-8"))
+        paths = workflow[True]["push"]["paths"]
+
+        def covered(candidate: str) -> bool:
+            return any(fnmatch.fnmatch(candidate, pattern) for pattern in paths)
+
+        for candidate in (
+            "src/security/notes/doc.tex",
+            "src/architecture/diagrams/flow.puml",
+            "tooling/styles/latex/base.sty",
+            "tooling/latex/style.sty",
+            "tooling/scripts/latex_build.py",
+            "Makefile",
+            "latexmkrc",
+            ".latexmkrc",
+            ".github/workflows/latex-pages.yml",
+            ".github/workflows/_build-latex.yml",
+        ):
+            self.assertTrue(covered(candidate), f"{candidate} does not trigger publication")
+
+    def test_main_branch_is_built_exactly_once_per_commit(self) -> None:
+        try:
+            import yaml  # type: ignore
+        except ImportError:
+            self.skipTest("PyYAML is not available")
+
+        repo_root = Path(__file__).resolve().parents[1]
+        workflows = repo_root / ".github" / "workflows"
+
+        # Only the authoritative publication workflow may compile pushes to
+        # main; a second workflow doing so would double every main build.
+        compiling_on_main = []
+        for path in sorted(workflows.glob("*.yml")):
+            workflow = yaml.safe_load(path.read_text(encoding="utf-8"))
+            triggers = workflow.get(True) or workflow.get("on") or {}
+            push = triggers.get("push") if isinstance(triggers, dict) else None
+            if not isinstance(push, dict) or "main" not in (push.get("branches") or []):
+                continue
+            uses_builder = any(
+                str(job.get("uses", "")).endswith("_build-latex.yml")
+                for job in (workflow.get("jobs") or {}).values()
+                if isinstance(job, dict)
+            )
+            if uses_builder:
+                compiling_on_main.append(path.name)
+
+        self.assertEqual(["latex-pages.yml"], compiling_on_main)
+
+    def test_ci_workflow_does_not_duplicate_main_builds(self) -> None:
+        try:
+            import yaml  # type: ignore
+        except ImportError:
+            self.skipTest("PyYAML is not available")
+
+        repo_root = Path(__file__).resolve().parents[1]
+        workflow = yaml.safe_load((repo_root / ".github" / "workflows" / "latex-ci.yml").read_text(encoding="utf-8"))
+        self.assertNotIn("push", workflow[True], "latex-ci must not rebuild commits already built by latex-pages")
+        self.assertIn("pull_request", workflow[True])
 
     def test_reusable_workflow_uploads_logs_on_failure(self) -> None:
-        repo_root = Path(__file__).resolve().parents[1]
-        workflow_text = (repo_root / ".github" / "workflows" / "_build-latex.yml").read_text(encoding="utf-8")
+        try:
+            import yaml  # type: ignore
+        except ImportError:
+            self.skipTest("PyYAML is not available")
 
-        self.assertIn("if: ${{ always() && inputs.upload-artifacts && steps.build-docs.outputs.has-logs == 'true' }}", workflow_text)
-        self.assertIn("name: latex-logs", workflow_text)
+        repo_root = Path(__file__).resolve().parents[1]
+        workflow = yaml.safe_load((repo_root / ".github" / "workflows" / "_build-latex.yml").read_text(encoding="utf-8"))
+
+        shard_logs = self._step_by_name(workflow["jobs"]["build"], "Upload shard diagnostics")
+        self.assertIn("always()", str(shard_logs["if"]))
+
+        report = self._step_by_name(workflow["jobs"]["aggregate"], "Upload build report")
+        self.assertIn("always()", str(report["if"]))
 
     def test_reusable_workflow_uploads_pdfs_only_when_valid_outputs_exist(self) -> None:
-        repo_root = Path(__file__).resolve().parents[1]
-        workflow_text = (repo_root / ".github" / "workflows" / "_build-latex.yml").read_text(encoding="utf-8")
+        try:
+            import yaml  # type: ignore
+        except ImportError:
+            self.skipTest("PyYAML is not available")
 
-        self.assertIn("steps.build-docs.outputs.build-status == 'success'", workflow_text)
-        self.assertIn("steps.build-docs.outputs.has-pdfs == 'true'", workflow_text)
+        repo_root = Path(__file__).resolve().parents[1]
+        workflow = yaml.safe_load((repo_root / ".github" / "workflows" / "_build-latex.yml").read_text(encoding="utf-8"))
+        aggregate = workflow["jobs"]["aggregate"]
+
+        upload = self._step_by_name(aggregate, "Upload PDF corpus")
+        self.assertIn("build-status == 'success'", str(upload["if"]))
+
+        # A cached corpus must never be promoted without verification.
+        for step_name in ("Save published PDF corpus", "Save published corpus manifest"):
+            step = self._step_by_name(aggregate, step_name)
+            self.assertIn("build-status == 'success'", str(step["if"]))
+
+    def test_shards_do_not_fail_fast_and_expose_concurrency_controls(self) -> None:
+        try:
+            import yaml  # type: ignore
+        except ImportError:
+            self.skipTest("PyYAML is not available")
+
+        repo_root = Path(__file__).resolve().parents[1]
+        workflow = yaml.safe_load((repo_root / ".github" / "workflows" / "_build-latex.yml").read_text(encoding="utf-8"))
+        strategy = workflow["jobs"]["build"]["strategy"]
+
+        self.assertIs(False, strategy["fail-fast"])
+        self.assertIn("max-parallel-shards", str(strategy["max-parallel"]))
+
+        inputs = workflow[True]["workflow_call"]["inputs"]
+        for knob in ("max-shards", "max-parallel-shards", "local-build-jobs"):
+            self.assertIn(knob, inputs)
+
+    def test_plan_job_does_not_install_a_tex_distribution(self) -> None:
+        try:
+            import yaml  # type: ignore
+        except ImportError:
+            self.skipTest("PyYAML is not available")
+
+        repo_root = Path(__file__).resolve().parents[1]
+        workflow = yaml.safe_load((repo_root / ".github" / "workflows" / "_build-latex.yml").read_text(encoding="utf-8"))
+
+        for step in workflow["jobs"]["plan"]["steps"]:
+            self.assertNotEqual("./.github/actions/setup-latex", step.get("uses"))
 
     def test_build_documents_action_exposes_artifact_contract_outputs(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
@@ -998,8 +1109,8 @@ class BuildToolTests(unittest.TestCase):
         repo_root = Path(__file__).resolve().parents[1]
         action_text = (repo_root / ".github" / "actions" / "build-documents" / "action.yml").read_text(encoding="utf-8")
 
-        self.assertIn('BASE_REF="$base_ref"', action_text)
-        self.assertIn('HEAD_REF="$head_ref"', action_text)
+        self.assertIn('BASE_REF="${{ inputs.base-ref }}"', action_text)
+        self.assertIn('HEAD_REF="${{ inputs.head-ref }}"', action_text)
         self.assertNotIn("BASE_REVISION", action_text)
         self.assertNotIn("HEAD_REVISION", action_text)
 
@@ -1046,7 +1157,10 @@ class BuildToolTests(unittest.TestCase):
             for ref_id in re.findall(r"steps\.([A-Za-z0-9_-]+)\.outputs", value):
                 self.assertIn(ref_id, step_ids)
 
-        expected_inputs = {"mode", "category", "jobs", "base-ref", "head-ref"}
+        expected_inputs = {
+            "mode", "plan", "shard-index", "category", "jobs",
+            "base-ref", "head-ref", "clean-output",
+        }
         self.assertEqual(expected_inputs, set(data.get("inputs", {}).keys()))
 
         workflow = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
@@ -1058,7 +1172,9 @@ class BuildToolTests(unittest.TestCase):
             if isinstance(step, dict) and step.get("uses") == "./.github/actions/build-documents"
         ]
         self.assertEqual(1, len(matching))
-        self.assertEqual(expected_inputs, set(matching[0].get("with", {}).keys()))
+        # The caller need not pass every optional input, but every input it does
+        # pass must be declared by the action.
+        self.assertTrue(set(matching[0].get("with", {}).keys()).issubset(expected_inputs))
 
     def test_main_parses_build_changed_base_and_head_into_build_changed_call(self) -> None:
         with patch("tooling.scripts.latex_build.build_changed", return_value=0) as build_changed_mock:
@@ -1126,18 +1242,22 @@ class BuildToolTests(unittest.TestCase):
 
     def test_make_build_changed_command_is_accepted_by_python_parser(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
-        command = self._make_dry_run_command(
-            "build-changed",
-            "OUTPUT_DIR=public/pdfs",
-            "LOG_DIR=public/logs",
-            "CLEAN_OUTPUT=true",
-            "MODE_NAME=changed",
-            "JOBS=1",
-            "BASE_REF=HEAD",
-            "HEAD_REF=HEAD",
-        )
+        # This test really executes the generated command, and CLEAN_OUTPUT
+        # resets the output tree, so it must never point at public/. Doing so
+        # deletes a developer's or a concurrent build's PDFs.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            command = self._make_dry_run_command(
+                "build-changed",
+                f"OUTPUT_DIR={temp_dir}/pdfs",
+                f"LOG_DIR={temp_dir}/logs",
+                "CLEAN_OUTPUT=true",
+                "MODE_NAME=changed",
+                "JOBS=1",
+                "BASE_REF=HEAD",
+                "HEAD_REF=HEAD",
+            )
 
-        result = subprocess.run(shlex.split(command), cwd=repo_root, check=False, capture_output=True, text=True)
+            result = subprocess.run(shlex.split(command), cwd=repo_root, check=False, capture_output=True, text=True)
 
         self.assertEqual(0, result.returncode, result.stderr)
 
@@ -1145,8 +1265,8 @@ class BuildToolTests(unittest.TestCase):
         repo_root = Path(__file__).resolve().parents[1]
         action_text = (repo_root / ".github" / "actions" / "build-documents" / "action.yml").read_text(encoding="utf-8")
 
-        self.assertIn("if [[ -f \"public/logs/build-summary.json\" ]]; then", action_text)
-        self.assertIn("has_logs=true", action_text)
+        self.assertIn("build-summary.json", action_text)
+        self.assertIn("has-logs=", action_text)
 
     def test_pages_workflow_permissions_and_job_dependencies(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]

@@ -1,33 +1,38 @@
-name: PlantUML Render CI
+name: Render PlantUML Diagrams
+
+# Diagram regeneration is decoupled from LaTeX compilation.
+#
+# Rendered PNG/SVG output is committed to the repository, so ordinary document
+# builds consume it directly and never pay for Java, Graphviz and PlantUML
+# provisioning. This workflow only runs when diagram sources or diagram styles
+# actually change.
 
 on:
   workflow_dispatch:
     inputs:
       generate-jpg:
-        description: 'Generate JPG files from PNG'
+        description: 'Also generate JPG output'
         type: boolean
         default: false
-  pull_request:
-    paths:
-      - 'src/**/*.puml'
-      - '.github/actions/render-plantuml/**'
-      - '.github/workflows/render-plantuml.yml'
   push:
     branches: [main]
     paths:
       - 'src/**/*.puml'
+      - 'src/**/*.iuml'
+      - 'tooling/plantuml/**'
+      - 'tooling/styles/plantuml/**'
       - '.github/actions/render-plantuml/**'
       - '.github/workflows/render-plantuml.yml'
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: render-plantuml-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
-concurrency:
-  group: plantuml-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   render:
@@ -35,49 +40,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-      - name: Render PlantUML diagrams
-        id: plantuml
-        uses: ./.github/actions/render-plantuml
-        with:
-          source-dir: 'src'
-          formats: 'png svg'
-          generate-jpg: ${{ inputs.generate-jpg || 'false' }}
-          fail-on-error: 'true'
-      - name: Upload rendered diagrams artifact
-        uses: actions/upload-artifact@v6
-        with:
-          name: plantuml-diagrams
-          path: src
-          retention-days: 14
-          if-no-files-found: ignore
-
-  commit-images:
-    needs: render
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
       - name: Render PlantUML diagrams
         uses: ./.github/actions/render-plantuml
         with:
           source-dir: 'src'
           formats: 'png svg'
-          generate-jpg: ${{ inputs.generate-jpg || 'false' }}
+          generate-jpg: ${{ inputs.generate-jpg && 'true' || 'false' }}
           fail-on-error: 'true'
+
       - name: Commit rendered images
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/**/png/*.png src/**/svg/*.svg src/**/jpg/*.jpg 2>/dev/null || true
+          git add -A 'src/**/png/*.png' 'src/**/svg/*.svg' 'src/**/jpg/*.jpg' 2>/dev/null || true
           if git diff --cached --quiet; then
-            echo 'No changes to commit'
+            echo 'No diagram changes to commit'
             exit 0
           fi
-          git commit -m 'chore(diagrams): render PlantUML images [skip ci]'
-          git push origin main
+          # The resulting push re-triggers latex-pages.yml, whose dependency
+          # analysis rebuilds exactly the documents consuming these diagrams.
+          git commit -m 'chore(diagrams): render PlantUML images'
+          git push origin HEAD:main

@@ -7,16 +7,48 @@ inputs:
     description: 'Additional apt packages to install (space-separated)'
     required: false
     default: ''
+  skip-install:
+    description: 'Skip provisioning (the job already runs in a prebuilt TeX image)'
+    required: false
+    default: 'false'
+  cache-apt:
+    description: 'Cache downloaded .deb archives between runs'
+    required: false
+    default: 'true'
+
+outputs:
+  toolchain-version:
+    description: 'Identifier of the provisioned toolchain, for fingerprints and cache keys'
+    value: ${{ steps.verify.outputs.toolchain-version }}
 
 runs:
   using: 'composite'
   steps:
+    # The TeX package set is the single largest fixed cost per shard runner.
+    # Caching the downloaded archives removes the mirror round-trip; the
+    # remaining cost is dpkg unpacking. For a further reduction, build the
+    # pinned image in .github/docker/texlive and pass `container-image` to the
+    # reusable workflow, which sets skip-install=true here.
+    - name: Restore apt archive cache
+      if: ${{ inputs.skip-install != 'true' && inputs.cache-apt == 'true' }}
+      uses: actions/cache@v4
+      with:
+        path: /var/cache/apt/archives/*.deb
+        key: apt-texlive-v2-${{ runner.os }}-${{ hashFiles('.github/actions/setup-latex/action.yml') }}
+        restore-keys: |
+          apt-texlive-v2-${{ runner.os }}-
+
     - name: Install TeX Live and Python dependencies
+      if: ${{ inputs.skip-install != 'true' }}
       shell: bash
       run: |
         set -euo pipefail
-
         echo "::group::Installing TeX toolchain"
+        # Keep archives so the cache above stays populated for the next run.
+        sudo rm -f /etc/apt/apt.conf.d/docker-clean
+        echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' \
+          | sudo tee /etc/apt/apt.conf.d/99keep-downloads >/dev/null
+
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends \
           texlive-latex-recommended \
@@ -36,9 +68,8 @@ runs:
           ${{ inputs.extra-packages }}
         echo "::endgroup::"
 
-        sudo rm -rf /var/lib/apt/lists/* || true
-
     - name: Verify toolchain
+      id: verify
       shell: bash
       run: |
         set -euo pipefail
@@ -53,3 +84,12 @@ runs:
         if [[ ! -f /usr/bin/pygmentize ]]; then
           sudo ln -sf "$(which pygmentize)" /usr/bin/pygmentize 2>/dev/null || true
         fi
+
+        # A stable identifier for the compiling toolchain. It participates in
+        # every root fingerprint and in cache keys, so a TeX Live upgrade
+        # correctly invalidates cached results instead of silently reusing
+        # PDFs produced by a different engine.
+        version="$(pdflatex --version | head -1 | tr -cd '[:alnum:]._-')"
+        echo "toolchain-version=$version" >> "$GITHUB_OUTPUT"
+        echo "LATEX_TOOLCHAIN_VERSION=$version" >> "$GITHUB_ENV"
+        echo "Toolchain version: $version"

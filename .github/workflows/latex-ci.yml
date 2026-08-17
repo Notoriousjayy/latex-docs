@@ -1,46 +1,43 @@
 name: LaTeX CI
 
+# Pull-request validation only.
+#
+# Pushes to `main` are handled exclusively by latex-pages.yml, which performs
+# the single authoritative build for the commit and then deploys it. Running
+# this workflow on `main` as well would compile the same commit twice.
+
 on:
   workflow_dispatch:
     inputs:
       build-mode:
-        description: 'Build mode: changed or full'
+        description: 'Build mode'
         type: choice
         default: 'changed'
         options:
           - changed
           - full
+      max-shards:
+        description: 'Maximum build shards'
+        type: string
+        default: '12'
   pull_request:
     paths:
-      - 'src/**/*.tex'
-      - 'src/**/*.puml'
-      - 'tooling/**/*.sty'
-      - 'tooling/**/*.tex'
-      - 'tooling/**/*.iuml'
-      - 'tooling/scripts/**'
+      - 'src/**'
+      - 'tooling/**'
       - 'Makefile'
       - 'latexmkrc'
+      - '.latexmkrc'
       - '.github/actions/**'
-      - '.github/workflows/_build-latex.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'src/**/*.tex'
-      - 'src/**/*.puml'
-      - 'tooling/**/*.sty'
-      - 'tooling/**/*.tex'
-      - 'tooling/**/*.iuml'
-      - 'tooling/scripts/**'
-      - 'Makefile'
-      - 'latexmkrc'
-      - '.github/actions/**'
+      - '.github/workflows/latex-ci.yml'
       - '.github/workflows/_build-latex.yml'
 
 permissions:
   contents: read
 
 concurrency:
-  group: latex-ci-${{ github.ref }}
+  # A new commit on the same PR supersedes the previous one; do not spend
+  # runner minutes compiling an obsolete revision.
+  group: latex-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -48,7 +45,10 @@ jobs:
     uses: ./.github/workflows/_build-latex.yml
     with:
       build-mode: ${{ github.event_name == 'workflow_dispatch' && inputs.build-mode || 'changed' }}
-      base-ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
-      head-ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-      upload-artifacts: true
+      base-ref: ${{ github.event.pull_request.base.sha }}
+      head-ref: ${{ github.event.pull_request.head.sha }}
+      max-shards: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.max-shards || '12') }}
+      max-parallel-shards: 12
+      local-build-jobs: 4
+      publish: false
       render-plantuml: true

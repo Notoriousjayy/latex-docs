@@ -10,15 +10,20 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, List, Sequence, Set
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import build_graph  # noqa: E402  (local module, resolved via the path insert above)
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = ROOT / "src"
 LATEXMK = os.environ.get("LATEXMK", "latexmk")
+TIMING_HISTORY_PATH = ROOT / "tooling" / "manifests" / "build-timings.json"
 
 FATAL_PATTERNS = [
     re.compile(r"LaTeX Error:\s+.+"),
@@ -74,6 +79,40 @@ class BuildSummary:
     build_status: str
     first_errors: list[dict[str, Any]]
     failure_clusters: list[dict[str, str | int]]
+    shard_index: int = 0
+    shard_total: int = 1
+    wall_clock_seconds: float = 0.0
+    compile_seconds: float = 0.0
+    durations: dict[str, float] = field(default_factory=dict)
+    timing_stats: dict[str, float] = field(default_factory=dict)
+    slowest_roots: list[dict[str, Any]] = field(default_factory=list)
+    cache_hits: int = 0
+    cache_misses: int = 0
+
+
+def _percentile(values: Sequence[float], fraction: float) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(values)
+    index = min(len(ordered) - 1, max(0, int(round(fraction * (len(ordered) - 1)))))
+    return round(ordered[index], 3)
+
+
+def _timing_stats(durations: Sequence[float]) -> dict[str, float]:
+    if not durations:
+        return {}
+    total = sum(durations)
+    return {
+        "count": len(durations),
+        "total": round(total, 3),
+        "mean": round(total / len(durations), 3),
+        "median": _percentile(durations, 0.50),
+        "p90": _percentile(durations, 0.90),
+        "p95": _percentile(durations, 0.95),
+        "p99": _percentile(durations, 0.99),
+        "max": round(max(durations), 3),
+        "min": round(min(durations), 3),
+    }
 
 
 def _resolve_repo_path(path: Path | None) -> Path | None:
@@ -116,16 +155,40 @@ def _write_build_summary(log_dir: Path | None, summary: BuildSummary, output_dir
         f"mode: {summary.mode}",
         f"base revision: {summary.base_revision or '-'}",
         f"head revision: {summary.head_revision or '-'}",
+        f"shard: {summary.shard_index + 1}/{summary.shard_total}",
         f"root count: {summary.root_count}",
         f"attempted count: {summary.attempted_count}",
         f"succeeded count: {summary.succeeded_count}",
         f"failed count: {summary.failed_count}",
         f"skipped count: {summary.skipped_count}",
+        f"cache hits: {summary.cache_hits}",
         f"PDF count: {summary.pdf_count}",
         f"log count: {summary.log_count}",
+        f"wall clock seconds: {summary.wall_clock_seconds}",
+        f"compile seconds: {summary.compile_seconds}",
         f"build status: {summary.build_status}",
     ]
+    for key, value in sorted(summary.timing_stats.items()):
+        lines.append(f"timing {key}: {value}")
     text_summary_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    (log_dir / "build-timings.json").write_text(
+        json.dumps(
+            {
+                "shard_index": summary.shard_index,
+                "shard_total": summary.shard_total,
+                "wall_clock_seconds": summary.wall_clock_seconds,
+                "compile_seconds": summary.compile_seconds,
+                "stats": summary.timing_stats,
+                "slowest_roots": summary.slowest_roots,
+                "durations": summary.durations,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
     first_errors_path.write_text(json.dumps(summary.first_errors, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     failure_clusters_path.write_text(json.dumps(summary.failure_clusters, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -183,11 +246,16 @@ def contains_documentclass(path: Path) -> bool:
 
 
 def resolve_texinputs() -> str:
+    """Return the TEXINPUTS prefix for document builds.
+
+    PERFORMANCE: keep this list narrow and never add a recursive entry over a
+    large content tree. A recursive ``src//`` entry previously forced kpathsea
+    to re-walk the whole 4,900-file src/ tree on every file lookup, costing
+    ~63s per document instead of ~2s. No .sty/.cls files live under src/.
+    """
     paths = [
         ROOT / "tooling" / "latex",
         ROOT / "tooling" / "styles" / "latex",
-        ROOT / "src",
-        ROOT / "src" / "architecture" / "style-system",
         ROOT / "sty",
         ROOT / "tex",
     ]
@@ -963,7 +1031,11 @@ def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | N
 
     source_log_path = work_dir / f"{stem}.log"
     if native_log_copy_path is not None and source_log_path.exists():
-        shutil.copy2(source_log_path, native_log_copy_path)
+        try:
+            native_log_copy_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source_log_path, native_log_copy_path)
+        except OSError:
+            pass
 
     source_pdf_path = work_dir / f"{stem}.pdf"
     published_pdf_path = build_dir / f"{stem}.pdf"
@@ -1015,6 +1087,30 @@ def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | N
     return result.returncode
 
 
+def _repo_relative(path: Path) -> str:
+    resolved = path.resolve()
+    return resolved.relative_to(ROOT).as_posix() if resolved.is_relative_to(ROOT) else str(resolved)
+
+
+def _prune_success_logs(tex_path: Path, log_dir: Path | None) -> None:
+    """Drop per-document logs for a successful build.
+
+    A full build produces three log files per root. At ~3,000 roots that is
+    ~9,000 files of no diagnostic value that dominate artifact compression and
+    upload time. Failure logs are always retained by ``report_failure``.
+    """
+    if log_dir is None:
+        return
+    stdout_path, stderr_path = _log_paths(tex_path, log_dir)
+    for candidate in (stdout_path, stderr_path, _native_log_copy_path(tex_path, log_dir)):
+        if candidate is None:
+            continue
+        try:
+            candidate.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
 def build_roots(
     tex_paths: Sequence[Path],
     jobs: int = 1,
@@ -1025,6 +1121,10 @@ def build_roots(
     mode: str = "full",
     base_revision: str = "",
     head_revision: str = "",
+    shard_index: int = 0,
+    shard_total: int = 1,
+    skipped_count: int = 0,
+    cache_hits: int = 0,
 ) -> int:
     output_dir = _resolve_repo_path(output_dir)
     log_dir = _resolve_repo_path(log_dir)
@@ -1058,74 +1158,52 @@ def build_roots(
         print(message, file=sys.stderr)
         failures.append((tex_path, result_code, details))
 
-    if jobs <= 1:
-        failure_count = 0
-        for tex_path in tex_paths:
-            result_code = build_root(tex_path, output_dir=output_dir, log_dir=log_dir, artifact_dir=artifact_dir)
-            if result_code != 0:
-                failure_count += 1
-                report_failure(tex_path, result_code)
-        print(f"Build summary: {len(tex_paths) - failure_count} succeeded, {failure_count} failed, {len(tex_paths)} total", file=sys.stderr)
-        exit_code = 0
-        if failure_count:
-            clusters = Counter(detail.get("signature", "UNKNOWN") for _, _, detail in failures)
-            print("Failure clusters:", file=sys.stderr)
-            for signature, count in clusters.most_common(10):
-                print(f"  {count} x {signature}", file=sys.stderr)
-            exit_code = 1
+    started = time.perf_counter()
+    durations: dict[str, float] = {}
 
-        cluster_counts = Counter(detail.get("signature", "UNKNOWN") for _, _, detail in failures)
-        summary = BuildSummary(
-            mode=mode,
-            base_revision=base_revision,
-            head_revision=head_revision,
-            root_count=len(tex_paths),
-            attempted_count=len(tex_paths),
-            succeeded_count=len(tex_paths) - failure_count,
-            failed_count=failure_count,
-            skipped_count=0,
-            pdf_count=_count_files(output_dir, "*.pdf"),
-            log_count=_count_files(log_dir),
-            build_status=_normalize_build_status(exit_code),
-            first_errors=[
-                {
-                    "root": tex_path.relative_to(ROOT).as_posix() if tex_path.is_relative_to(ROOT) else str(tex_path),
-                    "signature": details.get("signature", "UNKNOWN"),
-                    "exit_code": str(result_code),
-                    "message": details.get("message", ""),
-                    "line": details.get("line", ""),
-                    "line_ref": details.get("line_ref", ""),
-                    "context": details.get("context", ""),
-                    "source": details.get("source", ""),
-                }
-                for tex_path, result_code, details in failures
-            ],
-            failure_clusters=[
-                {"signature": signature, "count": count}
-                for signature, count in cluster_counts.most_common()
-            ],
-        )
-        _write_build_summary(log_dir, summary, output_dir)
-        return exit_code
+    def run_one(tex_path: Path) -> tuple[Path, int, float]:
+        job_started = time.perf_counter()
+        try:
+            result_code = build_root(tex_path, output_dir=output_dir, log_dir=log_dir, artifact_dir=artifact_dir)
+        except Exception as exc:  # one bad document must not abort the shard
+            print(f"Unexpected build error for {tex_path}: {exc!r}", file=sys.stderr)
+            result_code = 3
+        return tex_path, result_code, time.perf_counter() - job_started
+
+    results: List[tuple[Path, int, float]] = []
+    if jobs <= 1:
+        results = [run_one(tex_path) for tex_path in tex_paths]
+    else:
+        with ThreadPoolExecutor(max_workers=max(1, jobs)) as executor:
+            results = list(executor.map(run_one, tex_paths))
 
     failure_count = 0
-    with ThreadPoolExecutor(max_workers=max(1, jobs)) as executor:
-        futures = [executor.submit(build_root, tex_path, output_dir, log_dir, artifact_dir) for tex_path in tex_paths]
-        for tex_path, future in zip(tex_paths, futures):
-            result = future.result()
-            if result != 0:
-                failure_count += 1
-                report_failure(tex_path, result)
-    print(f"Build summary: {len(tex_paths) - failure_count} succeeded, {failure_count} failed, {len(tex_paths)} total", file=sys.stderr)
+    for tex_path, result_code, duration in results:
+        durations[_repo_relative(tex_path)] = round(duration, 3)
+        if result_code != 0:
+            failure_count += 1
+            report_failure(tex_path, result_code)
+        else:
+            _prune_success_logs(tex_path, log_dir)
+
+    wall_clock = time.perf_counter() - started
+    compile_seconds = sum(durations.values())
+
+    print(
+        f"Build summary: {len(tex_paths) - failure_count} succeeded, {failure_count} failed, "
+        f"{len(tex_paths)} total in {wall_clock:.1f}s wall / {compile_seconds:.1f}s compile",
+        file=sys.stderr,
+    )
+
     exit_code = 0
+    cluster_counts = Counter(detail.get("signature", "UNKNOWN") for _, _, detail in failures)
     if failure_count:
-        clusters = Counter(detail.get("signature", "UNKNOWN") for _, _, detail in failures)
         print("Failure clusters:", file=sys.stderr)
-        for signature, count in clusters.most_common(10):
+        for signature, count in cluster_counts.most_common(10):
             print(f"  {count} x {signature}", file=sys.stderr)
         exit_code = 1
 
-    cluster_counts = Counter(detail.get("signature", "UNKNOWN") for _, _, detail in failures)
+    slowest = sorted(durations.items(), key=lambda item: -item[1])[:25]
     summary = BuildSummary(
         mode=mode,
         base_revision=base_revision,
@@ -1134,13 +1212,13 @@ def build_roots(
         attempted_count=len(tex_paths),
         succeeded_count=len(tex_paths) - failure_count,
         failed_count=failure_count,
-        skipped_count=0,
+        skipped_count=skipped_count,
         pdf_count=_count_files(output_dir, "*.pdf"),
         log_count=_count_files(log_dir),
         build_status=_normalize_build_status(exit_code),
         first_errors=[
             {
-                "root": tex_path.relative_to(ROOT).as_posix() if tex_path.is_relative_to(ROOT) else str(tex_path),
+                "root": _repo_relative(tex_path),
                 "signature": details.get("signature", "UNKNOWN"),
                 "exit_code": str(result_code),
                 "message": details.get("message", ""),
@@ -1155,6 +1233,15 @@ def build_roots(
             {"signature": signature, "count": count}
             for signature, count in cluster_counts.most_common()
         ],
+        shard_index=shard_index,
+        shard_total=shard_total,
+        wall_clock_seconds=round(wall_clock, 3),
+        compile_seconds=round(compile_seconds, 3),
+        durations=durations,
+        timing_stats=_timing_stats(list(durations.values())),
+        slowest_roots=[{"root": source, "seconds": seconds} for source, seconds in slowest],
+        cache_hits=cache_hits,
+        cache_misses=len(tex_paths),
     )
     _write_build_summary(log_dir, summary, output_dir)
     return exit_code
@@ -1240,15 +1327,17 @@ def build_changed(
             head_revision=head_ref or "",
         )
 
-    affected = []
-    for changed_path in changed_paths:
-        path = (ROOT / changed_path).resolve()
-        if not path.exists():
-            continue
-        if path.suffix.lower() not in {".tex", ".sty", ".cls"}:
-            continue
-        affected.extend(determine_affected_roots(roots, path))
-    unique_roots = sorted({path.resolve() for path in affected})
+    # Dependency-aware selection: a changed path selects the roots that
+    # transitively depend on it (styles, inputs, graphics, bibliographies),
+    # not merely roots whose own .tex file changed.
+    graph = build_graph.build_graph(roots, toolchain_version=build_graph.toolchain_version())
+    selected_sources, reason = build_graph.select_affected(graph, changed_paths)
+    unique_roots = [ROOT / source for source in selected_sources]
+    print(
+        f"Changed-root selection ({reason}): {len(unique_roots)} of {len(roots)} roots "
+        f"from {len(changed_paths)} changed paths",
+        file=sys.stderr,
+    )
     return build_roots(
         unique_roots,
         jobs=jobs,
@@ -1259,24 +1348,415 @@ def build_changed(
         mode=mode_name,
         base_revision=base_ref or "",
         head_revision=head_ref or "",
+        skipped_count=len(roots) - len(unique_roots),
     )
 
 
-def render_plantuml(source_dir: Path | None = None, formats: Sequence[str] | None = None) -> int:
+def _selection_for_plan(
+    graph: "build_graph.DependencyGraph",
+    mode: str,
+    base_ref: str | None,
+    head_ref: str | None,
+) -> tuple[list[str], str]:
+    if mode == "full":
+        return graph.root_sources(), "full"
+    changed_paths = collect_changed_paths(base_ref=base_ref, head_ref=head_ref)
+    selected, reason = build_graph.select_affected(graph, changed_paths)
+    return selected, reason
+
+
+def plan_build(
+    *,
+    mode: str = "changed",
+    base_ref: str | None = None,
+    head_ref: str | None = None,
+    max_shards: int = 12,
+    min_roots_per_shard: int = 25,
+    output_path: Path | None = None,
+) -> dict[str, Any]:
+    """Produce the build plan (affected roots, shard matrix, manifest).
+
+    Runs without any TeX dependency so the CI planning job stays cheap.
+    """
+    toolchain = build_graph.toolchain_version()
+    weights = build_graph.load_timing_history(TIMING_HISTORY_PATH)
+    graph = build_graph.build_graph(toolchain_version=toolchain, weights=weights)
+
+    selected, reason = _selection_for_plan(graph, mode, base_ref, head_ref)
+    by_source = graph.by_source()
+    records = [by_source[source] for source in selected if source in by_source]
+
+    shards = build_graph.plan_shards(records, max_shards, min_roots_per_shard=min_roots_per_shard)
+    matrix = [
+        {
+            "index": index,
+            "name": f"shard-{index:02d}",
+            "roots": [record.source for record in bucket],
+            "count": len(bucket),
+            "estimated_seconds": round(sum(record.weight for record in bucket), 2),
+        }
+        for index, bucket in enumerate(shards)
+    ]
+
+    plan = {
+        "mode": mode,
+        "reason": reason,
+        "base_ref": base_ref or "",
+        "head_ref": head_ref or "",
+        "toolchain_version": toolchain,
+        "build_config_version": build_graph.BUILD_CONFIG_VERSION,
+        "total_roots": len(graph.roots),
+        "selected_roots": len(records),
+        "skipped_roots": len(graph.roots) - len(records),
+        "shard_count": len(matrix),
+        "estimated_total_seconds": round(sum(record.weight for record in records), 2),
+        "estimated_wall_seconds": round(max((entry["estimated_seconds"] for entry in matrix), default=0.0), 2),
+        "timing_history_entries": len(weights),
+        "shards": matrix,
+        "expected_pdfs": sorted(record.pdf for record in graph.roots),
+        "manifest": [
+            {
+                "source": record.source,
+                "pdf": record.pdf,
+                "category": record.category,
+                "fingerprint": record.fingerprint,
+                "dependencies": record.dependencies,
+                "selected": record.source in set(selected),
+            }
+            for record in graph.roots
+        ],
+    }
+
+    if output_path is not None:
+        output_path = _resolve_repo_path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    return plan
+
+
+def verify_corpus(pdf_dir: Path, plan_path: Path, *, prune: bool = True) -> int:
+    """Validate the published PDF corpus against the expected root manifest.
+
+    Removes PDFs belonging to deleted or renamed roots and fails when an
+    expected PDF is missing, so an incomplete corpus can never be deployed as
+    though it were complete.
+    """
+    pdf_dir = _resolve_repo_path(pdf_dir)
+    plan = json.loads(_resolve_repo_path(plan_path).read_text(encoding="utf-8"))
+    expected = set(plan.get("expected_pdfs", []))
+
+    present = {
+        path.relative_to(pdf_dir).as_posix()
+        for path in pdf_dir.rglob("*.pdf")
+        if path.is_file()
+    } if pdf_dir.exists() else set()
+
+    stale = sorted(present - expected)
+    missing = sorted(expected - present)
+
+    if prune:
+        for rel in stale:
+            try:
+                (pdf_dir / rel).unlink()
+            except OSError:
+                pass
+        for directory in sorted((path for path in pdf_dir.rglob("*") if path.is_dir()), reverse=True):
+            try:
+                directory.rmdir()
+            except OSError:
+                pass
+
+    print(f"Corpus verification: expected={len(expected)} present={len(present)} stale={len(stale)} missing={len(missing)}", file=sys.stderr)
+    for rel in missing[:25]:
+        print(f"  missing: {rel}", file=sys.stderr)
+    for rel in stale[:25]:
+        print(f"  stale (removed): {rel}", file=sys.stderr)
+
+    return 1 if missing else 0
+
+
+def plan_outputs(plan_path: Path, *, markdown: bool = False) -> str:
+    """Render a plan as GitHub Actions step outputs or a job-summary table."""
+    plan = json.loads(_resolve_repo_path(plan_path).read_text(encoding="utf-8"))
+
+    if not markdown:
+        matrix = {
+            "shard": [
+                {"index": shard["index"], "name": shard["name"], "count": shard["count"]}
+                for shard in plan["shards"]
+            ]
+        }
+        return "\n".join(
+            [
+                "matrix=" + json.dumps(matrix, separators=(",", ":")),
+                f"shard-count={len(plan['shards'])}",
+                f"selected-roots={plan['selected_roots']}",
+                f"total-roots={plan['total_roots']}",
+            ]
+        )
+
+    rows = [
+        ("Mode", plan["mode"]),
+        ("Selection reason", plan["reason"]),
+        ("Total roots", plan["total_roots"]),
+        ("Selected roots", plan["selected_roots"]),
+        ("Skipped roots", plan["skipped_roots"]),
+        ("Shards", plan["shard_count"]),
+        ("Estimated shard wall time (s)", plan["estimated_wall_seconds"]),
+        ("Estimated total compile time (s)", plan["estimated_total_seconds"]),
+        ("Timing history entries", plan["timing_history_entries"]),
+        ("Toolchain version", plan["toolchain_version"]),
+    ]
+    lines = ["### LaTeX build plan", "", "| Metric | Value |", "| --- | --- |"]
+    lines.extend(f"| {label} | {value} |" for label, value in rows)
+    return "\n".join(lines)
+
+
+def check_corpus_manifest(manifest_path: Path, plan_path: Path) -> int:
+    """Verify a cached corpus manifest covers every currently expected PDF.
+
+    Returns 0 when an incremental publish is safe, 1 when the caller must
+    promote to a full rebuild. Any doubt resolves to "rebuild".
+    """
+    manifest_path = _resolve_repo_path(manifest_path)
+    if not manifest_path.is_file():
+        print("No cached corpus manifest; full rebuild required.", file=sys.stderr)
+        return 1
+    try:
+        have = set(json.loads(manifest_path.read_text(encoding="utf-8"))["pdfs"])
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        print(f"Unreadable corpus manifest ({exc}); full rebuild required.", file=sys.stderr)
+        return 1
+
+    want = set(json.loads(_resolve_repo_path(plan_path).read_text(encoding="utf-8"))["expected_pdfs"])
+    missing = want - have
+    if missing:
+        print(f"Cached corpus is missing {len(missing)} of {len(want)} expected PDFs; full rebuild required.", file=sys.stderr)
+        return 1
+
+    print(f"Cached corpus covers all {len(want)} expected PDFs; incremental publish is safe.", file=sys.stderr)
+    return 0
+
+
+def aggregate_shards(
+    *,
+    plan_path: Path,
+    logs_dir: Path,
+    pdf_dir: Path,
+    output_dir: Path,
+    manifest_path: Path | None = None,
+    shard_result: str = "success",
+    require_complete_corpus: bool = False,
+) -> int:
+    """Merge shard summaries, validate the corpus and emit the build report."""
+    plan = json.loads(_resolve_repo_path(plan_path).read_text(encoding="utf-8"))
+    logs_dir = _resolve_repo_path(logs_dir)
+    pdf_dir = _resolve_repo_path(pdf_dir)
+    output_dir = _resolve_repo_path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    summaries: list[dict[str, Any]] = []
+    if logs_dir.exists():
+        for summary_path in sorted(logs_dir.rglob("build-summary.json")):
+            try:
+                summaries.append(json.loads(summary_path.read_text(encoding="utf-8")))
+            except (OSError, ValueError):
+                continue
+
+    attempted = sum(int(item.get("attempted_count", 0)) for item in summaries)
+    succeeded = sum(int(item.get("succeeded_count", 0)) for item in summaries)
+    failed = sum(int(item.get("failed_count", 0)) for item in summaries)
+    compile_seconds = sum(float(item.get("compile_seconds", 0.0)) for item in summaries)
+    wall_seconds = max((float(item.get("wall_clock_seconds", 0.0)) for item in summaries), default=0.0)
+
+    first_errors: list[dict[str, Any]] = []
+    clusters: Counter[str] = Counter()
+    durations: dict[str, float] = {}
+    for item in summaries:
+        first_errors.extend(item.get("first_errors", []))
+        for cluster in item.get("failure_clusters", []):
+            clusters[str(cluster.get("signature", "UNKNOWN"))] += int(cluster.get("count", 0))
+        durations.update(item.get("durations", {}))
+
+    expected = set(plan.get("expected_pdfs", []))
+    selected_pdfs = {
+        entry["pdf"] for entry in plan.get("manifest", []) if entry.get("selected")
+    }
+    present = (
+        {path.relative_to(pdf_dir).as_posix() for path in pdf_dir.rglob("*.pdf") if path.is_file()}
+        if pdf_dir.exists()
+        else set()
+    )
+
+    # Roots removed or renamed since the cached corpus was produced must not
+    # linger in the published site.
+    stale = sorted(present - expected)
+    for rel in stale:
+        try:
+            (pdf_dir / rel).unlink()
+        except OSError:
+            pass
+    if pdf_dir.exists():
+        for directory in sorted((path for path in pdf_dir.rglob("*") if path.is_dir()), reverse=True):
+            try:
+                directory.rmdir()
+            except OSError:
+                pass
+        present = {path.relative_to(pdf_dir).as_posix() for path in pdf_dir.rglob("*.pdf") if path.is_file()}
+
+    missing_selected = sorted(selected_pdfs - present)
+    missing_corpus = sorted(expected - present)
+
+    shards_expected = len(plan.get("shards", []))
+    shards_reported = len(summaries)
+
+    problems: list[str] = []
+    if shard_result not in {"success", "skipped"}:
+        problems.append(f"one or more build shards reported `{shard_result}`")
+    if failed:
+        problems.append(f"{failed} document(s) failed to compile")
+    if shards_reported < shards_expected:
+        problems.append(f"only {shards_reported} of {shards_expected} shards reported results")
+    if missing_selected:
+        problems.append(f"{len(missing_selected)} selected document(s) produced no PDF")
+    if require_complete_corpus and missing_corpus:
+        problems.append(f"published corpus is missing {len(missing_corpus)} PDF(s)")
+
+    status = "failed" if problems else "success"
+
+    if status == "success" and manifest_path is not None:
+        manifest_path = _resolve_repo_path(manifest_path)
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        manifest_path.write_text(
+            json.dumps({"commit": os.environ.get("GITHUB_SHA", ""), "pdfs": sorted(present)}, indent=0, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+    aggregate = {
+        "status": status,
+        "mode": plan.get("mode"),
+        "reason": plan.get("reason"),
+        "total_roots": plan.get("total_roots", 0),
+        "selected_roots": plan.get("selected_roots", 0),
+        "skipped_roots": plan.get("skipped_roots", 0),
+        "attempted_roots": attempted,
+        "succeeded_roots": succeeded,
+        "failed_roots": failed,
+        "shards_expected": shards_expected,
+        "shards_reported": shards_reported,
+        "expected_pdfs": len(expected),
+        "present_pdfs": len(present),
+        "stale_pdfs_removed": stale,
+        "missing_selected_pdfs": missing_selected,
+        "missing_corpus_pdfs": missing_corpus[:100],
+        "missing_corpus_pdf_count": len(missing_corpus),
+        "shard_wall_seconds": round(wall_seconds, 2),
+        "compile_seconds": round(compile_seconds, 2),
+        "runner_minutes_estimate": round(compile_seconds / 60.0, 2),
+        "slowest_roots": [
+            {"root": source, "seconds": seconds}
+            for source, seconds in sorted(durations.items(), key=lambda item: -item[1])[:25]
+        ],
+        "failure_clusters": [{"signature": signature, "count": count} for signature, count in clusters.most_common()],
+        "first_errors": first_errors[:100],
+        "problems": problems,
+    }
+
+    (output_dir / "build-aggregate.json").write_text(json.dumps(aggregate, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    report = [
+        f"### LaTeX build result: **{status}**",
+        "",
+        "| Metric | Value |",
+        "| --- | --- |",
+        f"| Mode | {aggregate['mode']} ({aggregate['reason']}) |",
+        f"| Total roots | {aggregate['total_roots']} |",
+        f"| Selected roots | {aggregate['selected_roots']} |",
+        f"| Skipped (unaffected) roots | {aggregate['skipped_roots']} |",
+        f"| Attempted | {attempted} |",
+        f"| Succeeded | {succeeded} |",
+        f"| Failed | {failed} |",
+        f"| Shards reported | {shards_reported}/{shards_expected} |",
+        f"| PDFs present / expected | {len(present)}/{len(expected)} |",
+        f"| Stale PDFs removed | {len(stale)} |",
+        f"| Missing corpus PDFs | {len(missing_corpus)} |",
+        f"| Slowest shard wall time | {aggregate['shard_wall_seconds']}s |",
+        f"| Total compile time | {aggregate['compile_seconds']}s |",
+    ]
+    if problems:
+        report += ["", "#### Problems", ""] + [f"- {problem}" for problem in problems]
+    if aggregate["failure_clusters"]:
+        report += ["", "#### Failure clusters", "", "| Count | Signature |", "| --- | --- |"]
+        report += [f"| {item['count']} | {item['signature'][:180]} |" for item in aggregate["failure_clusters"][:15]]
+    if aggregate["slowest_roots"]:
+        report += ["", "<details><summary>Slowest 25 documents</summary>", "", "| Seconds | Root |", "| --- | --- |"]
+        report += [f"| {item['seconds']} | {item['root']} |" for item in aggregate["slowest_roots"]]
+        report += ["", "</details>"]
+
+    (output_dir / "build-report.md").write_text("\n".join(report) + "\n", encoding="utf-8")
+    print("\n".join(report[:20]), file=sys.stderr)
+
+    return 1 if problems else 0
+
+
+def _plantuml_config_for(path: Path, config_names: Sequence[str]) -> Path | None:
+    current = path.parent
+    while current != current.parent:
+        for config_name in config_names:
+            candidate = current / config_name
+            if candidate.exists():
+                return candidate
+        current = current.parent
+    return None
+
+
+def _plantuml_is_current(source: Path, config: Path | None, outputs: Sequence[Path]) -> bool:
+    """Whether every rendered output is newer than the diagram and its config."""
+    try:
+        newest_input = source.stat().st_mtime
+        if config is not None:
+            newest_input = max(newest_input, config.stat().st_mtime)
+        return all(output.exists() and output.stat().st_mtime >= newest_input for output in outputs)
+    except OSError:
+        return False
+
+
+def render_plantuml(
+    source_dir: Path | None = None,
+    formats: Sequence[str] | None = None,
+    *,
+    force: bool = False,
+) -> int:
+    """Render PlantUML diagrams incrementally, batching JVM invocations.
+
+    Two costs dominated the previous implementation: it spawned one JVM per
+    (diagram x format) pair, and it re-rendered the whole corpus even when
+    nothing had changed. Diagrams whose committed output is already newer than
+    their source and config are skipped, and the rest are rendered in batches
+    that share a single JVM start.
+    """
     search_root = (source_dir or SRC_DIR).resolve()
     if not search_root.exists():
         return 0
 
     config_names = ["plantuml-config.puml", "config.puml"]
+    lowered_config_names = {name.lower() for name in config_names}
     formats = list(formats or ["png", "svg"])
+
     include_paths = [ROOT / "tooling" / "plantuml", ROOT / "tooling" / "styles" / "plantuml"]
     env = os.environ.copy()
     env["PLANTUML_INCLUDE_PATH"] = ":".join(str(path) for path in include_paths if path.exists())
 
+    # Batch key: (working directory, config, format). PlantUML resolves a
+    # relative -o against each input file's own directory, and every batched
+    # file shares a directory here, so outputs stay co-located with sources.
+    batches: dict[tuple[Path, str, str], list[str]] = {}
     diagram_count = 0
-    failures = 0
+    skipped = 0
+
     for path in sorted(search_root.rglob("*.puml")):
-        if not path.is_file() or path.name.lower() in {name.lower() for name in config_names}:
+        if not path.is_file() or path.name.lower() in lowered_config_names:
             continue
         try:
             text = path.read_text(encoding="utf-8", errors="ignore")
@@ -1286,28 +1766,47 @@ def render_plantuml(source_dir: Path | None = None, formats: Sequence[str] | Non
             continue
 
         diagram_count += 1
-        config_path = None
-        current = path.parent
-        while current != current.parent:
-            for config_name in config_names:
-                candidate = current / config_name
-                if candidate.exists():
-                    config_path = candidate
-                    break
-            if config_path is not None:
-                break
-            current = current.parent
+        config_path = _plantuml_config_for(path, config_names)
 
         for fmt in formats:
-            output_dir = path.parent / fmt
-            output_dir.mkdir(parents=True, exist_ok=True)
-            cmd = ["plantuml", f"-t{fmt}", "-o", str(output_dir)]
-            if config_path is not None:
-                cmd.extend(["-config", str(config_path)])
-            cmd.append(str(path.name))
-            result = subprocess.run(cmd, cwd=str(path.parent), env=env, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            if result.returncode != 0:
-                failures += 1
+            output_path = path.parent / fmt / f"{path.stem}.{fmt}"
+            if not force and _plantuml_is_current(path, config_path, [output_path]):
+                skipped += 1
+                continue
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            key = (path.parent, str(config_path) if config_path else "", fmt)
+            batches.setdefault(key, []).append(path.name)
+
+    failures = 0
+    rendered = 0
+    for (work_dir, config, fmt), names in sorted(batches.items(), key=lambda item: str(item[0])):
+        cmd = ["plantuml", f"-t{fmt}", "-o", fmt]
+        if config:
+            cmd.extend(["-config", config])
+        cmd.extend(names)
+        result = subprocess.run(
+            cmd,
+            cwd=str(work_dir),
+            env=env,
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+        )
+        if result.returncode != 0:
+            failures += 1
+            detail = (result.stderr or b"").decode("utf-8", errors="ignore").strip().splitlines()
+            print(
+                f"PlantUML failed in {work_dir} ({fmt}): {detail[-1] if detail else 'unknown error'}",
+                file=sys.stderr,
+            )
+        else:
+            rendered += len(names)
+
+    print(
+        f"PlantUML: {diagram_count} diagrams, {rendered} rendered, {skipped} already current, "
+        f"{len(batches)} JVM invocations, {failures} failed batches",
+        file=sys.stderr,
+    )
     return 1 if failures else 0
 
 
@@ -1357,9 +1856,55 @@ def main(argv: Sequence[str] | None = None) -> int:
     changed_parser.add_argument("--clean-output", action="store_true")
     changed_parser.add_argument("--mode-name", default="changed")
 
+    plan_parser = subparsers.add_parser("plan", help="Emit the affected-root set and shard matrix (no TeX required)")
+    plan_parser.add_argument("--mode", choices=["changed", "full"], default="changed")
+    plan_parser.add_argument("--base", dest="base_ref", default=None)
+    plan_parser.add_argument("--head", dest="head_ref", default=None)
+    plan_parser.add_argument("--max-shards", type=int, default=12)
+    plan_parser.add_argument("--min-roots-per-shard", type=int, default=25)
+    plan_parser.add_argument("--output", type=Path, default=None)
+    plan_parser.add_argument("--emit", choices=["plan", "matrix", "summary"], default="summary")
+
+    selection_parser = subparsers.add_parser("build-selection", help="Build an explicit list of roots (one shard)")
+    selection_parser.add_argument("--plan", type=Path, required=True)
+    selection_parser.add_argument("--shard-index", type=int, default=0)
+    selection_parser.add_argument("--jobs", type=int, default=1)
+    selection_parser.add_argument("--output-dir", type=Path, default=None)
+    selection_parser.add_argument("--log-dir", type=Path, default=None)
+    selection_parser.add_argument("--artifact-dir", type=Path, default=None)
+    selection_parser.add_argument("--clean-output", action="store_true")
+    selection_parser.add_argument("--mode-name", default="shard")
+
+    verify_parser = subparsers.add_parser("verify-corpus", help="Validate published PDFs against the expected root manifest")
+    verify_parser.add_argument("--pdf-dir", type=Path, required=True)
+    verify_parser.add_argument("--plan", type=Path, required=True)
+    verify_parser.add_argument("--no-prune", action="store_true")
+
+    timings_parser = subparsers.add_parser("merge-timings", help="Merge shard timing reports into the persisted history")
+    timings_parser.add_argument("inputs", nargs="*", type=Path)
+    timings_parser.add_argument("--history", type=Path, default=TIMING_HISTORY_PATH)
+
+    plan_outputs_parser = subparsers.add_parser("plan-outputs", help="Render plan data as GitHub Actions outputs or a summary table")
+    plan_outputs_parser.add_argument("--plan", type=Path, required=True)
+    plan_outputs_parser.add_argument("--markdown", action="store_true")
+
+    check_manifest_parser = subparsers.add_parser("check-corpus-manifest", help="Decide whether an incremental publish is safe")
+    check_manifest_parser.add_argument("--manifest", type=Path, required=True)
+    check_manifest_parser.add_argument("--plan", type=Path, required=True)
+
+    aggregate_parser = subparsers.add_parser("aggregate-shards", help="Merge shard results and validate the corpus")
+    aggregate_parser.add_argument("--plan", type=Path, required=True)
+    aggregate_parser.add_argument("--logs", type=Path, required=True)
+    aggregate_parser.add_argument("--pdf-dir", type=Path, required=True)
+    aggregate_parser.add_argument("--output", type=Path, required=True)
+    aggregate_parser.add_argument("--manifest", type=Path, default=None)
+    aggregate_parser.add_argument("--shard-result", default="success")
+    aggregate_parser.add_argument("--require-complete-corpus", default="false")
+
     render_parser = subparsers.add_parser("render-plantuml")
     render_parser.add_argument("--source-dir", type=Path, default=None)
     render_parser.add_argument("--formats", nargs="*", default=["png", "svg"])
+    render_parser.add_argument("--force", action="store_true", help="Re-render diagrams even when outputs are current")
 
     stage_parser = subparsers.add_parser("stage-pages")
     stage_parser.add_argument("--pdf-dir", type=Path, required=True)
@@ -1420,12 +1965,99 @@ def main(argv: Sequence[str] | None = None) -> int:
             mode_name=args.mode_name,
         )
 
+    if args.command == "plan":
+        plan = plan_build(
+            mode=args.mode,
+            base_ref=args.base_ref,
+            head_ref=args.head_ref,
+            max_shards=args.max_shards,
+            min_roots_per_shard=args.min_roots_per_shard,
+            output_path=args.output,
+        )
+        if args.emit == "plan":
+            print(json.dumps(plan, indent=2, sort_keys=True))
+        elif args.emit == "matrix":
+            print(json.dumps([{"index": shard["index"], "name": shard["name"], "count": shard["count"]} for shard in plan["shards"]], separators=(",", ":")))
+        else:
+            print(
+                f"mode={plan['mode']} reason={plan['reason']} selected={plan['selected_roots']}"
+                f"/{plan['total_roots']} shards={plan['shard_count']}"
+                f" est_wall={plan['estimated_wall_seconds']}s"
+            )
+        return 0
+
+    if args.command == "build-selection":
+        plan = json.loads(_resolve_repo_path(args.plan).read_text(encoding="utf-8"))
+        shards = plan.get("shards", [])
+        selected = next((shard for shard in shards if shard["index"] == args.shard_index), None)
+        if selected is None:
+            print(f"::error::shard index {args.shard_index} is not present in the plan", file=sys.stderr)
+            return 2
+        roots = [ROOT / source for source in selected["roots"]]
+        return build_roots(
+            roots,
+            jobs=args.jobs,
+            output_dir=args.output_dir,
+            log_dir=args.log_dir,
+            artifact_dir=args.artifact_dir,
+            clean_output=args.clean_output,
+            mode=args.mode_name,
+            base_revision=plan.get("base_ref", ""),
+            head_revision=plan.get("head_ref", ""),
+            shard_index=args.shard_index,
+            shard_total=len(shards),
+            skipped_count=plan.get("skipped_roots", 0),
+        )
+
+    if args.command == "plan-outputs":
+        print(plan_outputs(args.plan, markdown=args.markdown))
+        return 0
+
+    if args.command == "check-corpus-manifest":
+        return check_corpus_manifest(args.manifest, args.plan)
+
+    if args.command == "aggregate-shards":
+        return aggregate_shards(
+            plan_path=args.plan,
+            logs_dir=args.logs,
+            pdf_dir=args.pdf_dir,
+            output_dir=args.output,
+            manifest_path=args.manifest,
+            shard_result=args.shard_result,
+            require_complete_corpus=str(args.require_complete_corpus).lower() == "true",
+        )
+
+    if args.command == "verify-corpus":
+        return verify_corpus(args.pdf_dir, args.plan, prune=not args.no_prune)
+
+    if args.command == "merge-timings":
+        history_path = _resolve_repo_path(args.history)
+        history = build_graph.load_timing_history(history_path)
+        observed: dict[str, float] = {}
+        for input_path in args.inputs:
+            resolved = _resolve_repo_path(input_path)
+            candidates = sorted(resolved.rglob("build-timings.json")) if resolved.is_dir() else [resolved]
+            for candidate in candidates:
+                try:
+                    payload = json.loads(candidate.read_text(encoding="utf-8"))
+                except (OSError, ValueError):
+                    continue
+                observed.update(payload.get("durations", {}))
+        merged = build_graph.merge_timing_history(history, observed)
+        history_path.parent.mkdir(parents=True, exist_ok=True)
+        history_path.write_text(
+            json.dumps({"durations": {key: round(value, 3) for key, value in sorted(merged.items())}}, indent=0, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        print(f"Timing history: {len(merged)} roots ({len(observed)} updated this run)", file=sys.stderr)
+        return 0
+
     if args.command == "stage-pages":
         stage_pages_site(args.pdf_dir, args.site_dir)
         return 0
 
     if args.command == "render-plantuml":
-        return render_plantuml(source_dir=args.source_dir, formats=args.formats)
+        return render_plantuml(source_dir=args.source_dir, formats=args.formats, force=args.force)
 
     if args.command == "clean":
         return clean()
