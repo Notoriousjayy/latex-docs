@@ -848,6 +848,17 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path) -> List[Path]:
                 handle.write(f"<h3>{html.escape(heading)}</h3>")
                 grouped: dict[str, list[Path]] = {}
                 for path in paths:
+                    if len(path.parts) >= 6 and path.parts[4] == "cpp-2024":
+                        section = path.parts[5]
+                        topic = path.parts[6] if len(path.parts) > 6 else "(uncategorized)"
+                        label = section.title()
+                        grouped.setdefault(label, [])
+                        grouped.setdefault(f"{label}: {topic}", []).append(path)
+                        if section == "introduction":
+                            grouped.setdefault("Introduction", []).append(path)
+                            grouped.setdefault("Introduction: " + topic, []).append(path)
+                        continue
+
                     if path.parts[4] == "introduction":
                         grouped.setdefault("Introduction", []).append(path)
                     else:

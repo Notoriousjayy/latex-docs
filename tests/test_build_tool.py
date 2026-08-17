@@ -937,6 +937,29 @@ class BuildToolTests(unittest.TestCase):
             self.assertIn('href="pdfs/cornell-notes/security/certifications/cissp/01-security-and-risk-management-cornell-notes.pdf"', index_text)
             self.assertIn('href="pdfs/architecture/guide.pdf"', index_text)
 
+    def test_stage_pages_site_groups_cpp_cornell_sections(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            pdf_dir = root / "public" / "pdfs"
+
+            intro_pdf = pdf_dir / "cornell-notes" / "programming" / "languages" / "cpp" / "cpp-2024" / "introduction" / "introduction-cornell-notes.pdf"
+            clause_pdf = pdf_dir / "cornell-notes" / "programming" / "languages" / "cpp" / "cpp-2024" / "clauses" / "01-scope" / "01-scope-cornell-notes.pdf"
+            annex_pdf = pdf_dir / "cornell-notes" / "programming" / "languages" / "cpp" / "cpp-2024" / "annexes" / "annex-a-01" / "annex-a-01-cornell-notes.pdf"
+            for pdf_path in (intro_pdf, clause_pdf, annex_pdf):
+                pdf_path.parent.mkdir(parents=True, exist_ok=True)
+                pdf_path.write_bytes(b"%PDF-1.4")
+
+            site_dir = root / "site"
+            latex_build.stage_pages_site(pdf_dir, site_dir)
+
+            index_text = (site_dir / "index.html").read_text(encoding="utf-8")
+            self.assertIn("Programming: C++ 2024", index_text)
+            self.assertIn("Introduction", index_text)
+            self.assertIn("Clauses", index_text)
+            self.assertIn("Annexes", index_text)
+            self.assertIn('href="pdfs/cornell-notes/programming/languages/cpp/cpp-2024/clauses/01-scope/01-scope-cornell-notes.pdf"', index_text)
+            self.assertIn('href="pdfs/cornell-notes/programming/languages/cpp/cpp-2024/annexes/annex-a-01/annex-a-01-cornell-notes.pdf"', index_text)
+
     def test_discover_roots_includes_all_canonical_cornell_documents(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
         roots = discover_roots(repo_root / "src")
