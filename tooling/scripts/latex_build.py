@@ -781,7 +781,7 @@ def _prepare_build_input(tex_path: Path) -> tuple[Path, bool]:
     return wrapper_path, True
 
 
-def stage_pages_site(pdf_dir: Path, site_dir: Path) -> List[Path]:
+def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = None) -> List[Path]:
     pdf_dir = pdf_dir.resolve()
     site_dir = site_dir.resolve()
     site_pdf_dir = site_dir / "pdfs"
@@ -792,7 +792,26 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path) -> List[Path]:
     reset_output_tree(site_dir)
     shutil.copytree(pdf_dir, site_pdf_dir, dirs_exist_ok=True)
 
+    if image_dir is not None:
+        image_dir = image_dir.resolve()
+        if image_dir.exists():
+            for source in sorted(image_dir.rglob("*")):
+                if not source.is_file() or source.suffix.lower() not in {".png", ".jpg", ".jpeg"}:
+                    continue
+                rel_path = source.relative_to(image_dir)
+                target = site_dir / "images" / rel_path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, target)
+
     pdf_rel_paths = sorted(path.relative_to(site_pdf_dir) for path in site_pdf_dir.rglob("*.pdf") if path.is_file())
+    raster_rel_paths = []
+    images_dir = site_dir / "images"
+    if images_dir.exists():
+        raster_rel_paths = sorted(
+            path.relative_to(images_dir)
+            for path in images_dir.rglob("*")
+            if path.is_file() and path.suffix.lower() in {".png", ".jpg", ".jpeg"}
+        )
 
     def _numeric_chapter_key(path: Path) -> tuple[int, str]:
         match = re.match(r"ch(\d+)-", path.name)
@@ -838,9 +857,30 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path) -> List[Path]:
             )
         handle.write("</ul>")
 
+    def _emit_raster_cards(handle: Any) -> None:
+        if not raster_rel_paths:
+            handle.write('<p>No PlantUML raster assets are staged.</p>')
+            return
+        handle.write('<ul class="image-grid">')
+        for rel_path in raster_rel_paths:
+            rel_posix = rel_path.as_posix()
+            image_href = "images/" + rel_posix
+            href = html.escape(image_href, quote=True)
+            img_src = html.escape(image_href, quote=True)
+            title = html.escape(rel_path.name)
+            handle.write(
+                f'<li class="image-card" data-search="{html.escape(rel_posix.casefold(), quote=True)}">'
+                f'<a href="{href}" target="_blank" rel="noopener noreferrer"><img src="{img_src}" alt="{title}" loading="lazy" /></a>'
+                f'<div class="image-meta"><a href="{href}" title="Open {title}">{title}</a></div>'
+                f'</li>'
+            )
+        handle.write("</ul>")
+
     index_path = site_dir / "index.html"
     with index_path.open("w", encoding="utf-8") as handle:
         total_documents = len(pdf_rel_paths)
+        total_png = sum(1 for rel in raster_rel_paths if rel.suffix.lower() == ".png")
+        total_jpg = sum(1 for rel in raster_rel_paths if rel.suffix.lower() in {".jpg", ".jpeg"})
         category_count = len({path.parts[0] for path in pdf_rel_paths if path.parts})
         handle.write("""<!doctype html>
 <html lang="en">
@@ -862,7 +902,7 @@ header { padding: 3.5rem 0 2.5rem; border-bottom: 1px solid var(--border); backg
 h1 { max-width: 760px; margin: 0; font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.08; letter-spacing: 0; }
 .subtitle { max-width: 680px; margin: 1rem 0 0; color: var(--muted); font-size: 1.08rem; }
 main { padding: 2rem 0 4rem; }
-.summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-bottom: 2rem; }
 .summary-card { padding: 1.1rem 1.25rem; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); }
 .summary-value { display: block; font-size: 1.8rem; font-weight: 750; line-height: 1.1; }
 .summary-label { display: block; margin-top: .3rem; color: var(--muted); }
@@ -887,207 +927,105 @@ a { color: var(--accent); }
 .document-name, .document-path { overflow-wrap: anywhere; }
 .document-name { font-weight: 650; }
 .document-path { color: var(--muted); font-size: .87rem; }
+.image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin: 0; padding: 0; list-style: none; }
+.image-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: .75rem; box-shadow: var(--shadow); }
+.image-card img { width: 100%; aspect-ratio: 4 / 3; object-fit: contain; border-radius: 6px; background: #f8fafc; border: 1px solid var(--border); display: block; }
+.image-meta { margin-top: .65rem; font-size: .88rem; overflow-wrap: anywhere; }
+.image-meta a { color: var(--text); text-decoration: none; }
 footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(--border); font-size: .9rem; }
-@media (max-width: 600px) { .shell { width: min(100% - 1.25rem, 1120px); } header { padding: 2.4rem 0 1.8rem; } .summary { grid-template-columns: 1fr; } main { padding-top: 1.25rem; } }
+@media (max-width: 600px) { .shell { width: min(100% - 1.25rem, 1120px); } header { padding: 2.4rem 0 1.8rem; } .summary { grid-template-columns: 1fr 1fr; } main { padding-top: 1.25rem; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 </style>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to documents</a>
-<header><div class="shell"><p class="eyebrow">Document library</p><h1>LaTeX PDFs</h1><p class="subtitle">Browse the published technical notes, guides, and reference documents.</p></div></header>
+<header><div class="shell"><p class="eyebrow">Document library</p><h1>LaTeX PDFs & Diagram catalog</h1><p class="subtitle">Browse the published technical notes, guides, and PlantUML-derived diagram previews.</p></div></header>
 <main id="main-content" class="shell">
 <section class="summary" aria-label="Library summary">
-<div class="summary-card"><span class="summary-value">""" + str(total_documents) + """</span><span class="summary-label">published documents</span></div>
-<div class="summary-card"><span class="summary-value">""" + str(category_count) + """</span><span class="summary-label">top-level categories</span></div>
+<div class="summary-card"><span class="summary-value">""" + str(total_documents) + """</span><span class="summary-label">PDFs</span></div>
+<div class="summary-card"><span class="summary-value">""" + str(total_png) + """</span><span class="summary-label">PNG diagrams</span></div>
+<div class="summary-card"><span class="summary-value">""" + str(total_jpg) + """</span><span class="summary-label">JPG/JPEG diagrams</span></div>
+<div class="summary-card"><span class="summary-value">""" + str(category_count) + """</span><span class="summary-label">categories</span></div>
 </section>
 <section class="tools" aria-label="Document tools">
-<div><label class="search-label" for="document-search">Search documents</label><input class="search-input" id="document-search" type="search" placeholder="Search by name, label, or path" autocomplete="off"></div>
-<p class="result-count" id="result-count" aria-live="polite">Showing """ + str(total_documents) + """ of """ + str(total_documents) + """ documents</p>
+<div><label class="search-label" for="document-search">Search documents</label><input class="search-input" id="document-search" type="search" placeholder="Search by name, label, format, or path" autocomplete="off"></div>
+<p class="result-count" id="result-count" aria-live="polite">Showing """ + str(total_documents + total_png + total_jpg) + """ of """ + str(total_documents + total_png + total_jpg) + """ assets</p>
 <nav class="jump" aria-label="Jump to category"><span class="jump-title">Jump to</span>""")
 
         if cornell_paths:
             handle.write('<a href="#category-cornell-notes">Cornell Notes</a>')
         if non_cornell_paths:
             handle.write('<a href="#category-other-pdfs">Other PDFs</a>')
-        handle.write("</nav></section><section class=\"library\" aria-label=\"Published documents\">")
+        handle.write('</nav></section><section class="library" aria-label="Published documents">')
+
+        handle.write(_heading(2, "Documents"))
 
         if cornell_paths:
-            handle.write(_heading(2, "Cornell Notes", anchor="category-cornell-notes"))
+            handle.write(_heading(3, "Cornell Notes", anchor="category-cornell-notes"))
 
-            string_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "computer-science", "string-algorithms")]
-            combinatorial_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "computer-science", "combinatorial-algorithms")]
-            network_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "computer-science", "computer-networks")]
-            operating_system_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "computer-science", "operating-systems")]
-            elec_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "electronics", "electronic-circuits")]
-            math_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "mathematics", "numerical-methods")]
-            sec_paths = [path for path in cornell_paths if path.parts[:4] == ("cornell-notes", "security", "certifications", "cissp")]
-            iso_paths = [path for path in cornell_paths if path.parts[:4] == ("cornell-notes", "architecture", "standards", "iso-iec-ieee-42010-2022")]
-            c_paths = [path for path in cornell_paths if path.parts[:5] == ("cornell-notes", "programming", "languages", "c", "c-2024")]
-            cpp_paths = [path for path in cornell_paths if path.parts[:5] == ("cornell-notes", "programming", "languages", "cpp", "cpp-2024")]
-            computer_science_paths = string_paths + combinatorial_paths + network_paths + operating_system_paths
-            other_cornell = [path for path in cornell_paths if path not in computer_science_paths and path not in elec_paths and path not in math_paths and path not in sec_paths and path not in iso_paths and path not in c_paths and path not in cpp_paths]
+            cissp_paths = [path for path in cornell_paths if path.parts[:4] == ("cornell-notes", "security", "certifications", "cissp")]
+            if cissp_paths:
+                handle.write(_heading(4, "Security"))
+                handle.write(_heading(5, "CISSP"))
+                _emit_links(handle, cissp_paths, sort_by_chapter=True)
 
-            def _emit_new_collection(heading: str, paths: list[Path]) -> None:
-                if not paths:
-                    return
-                handle.write(_heading(3, heading))
-                grouped: dict[str, list[Path]] = {}
-                for path in paths:
-                    if len(path.parts) >= 6 and path.parts[4] == "cpp-2024":
-                        section = path.parts[5]
-                        topic = path.parts[6] if len(path.parts) > 6 else "(uncategorized)"
-                        label = section.title()
-                        grouped.setdefault(label, [])
-                        grouped.setdefault(f"{label}: {topic}", []).append(path)
-                        if section == "introduction":
-                            grouped.setdefault("Introduction", []).append(path)
-                            grouped.setdefault("Introduction: " + topic, []).append(path)
-                        continue
+            cpp_paths = [
+                path for path in cornell_paths
+                if path.parts[:5] == ("cornell-notes", "programming", "languages", "cpp", "cpp-2024")
+            ]
+            if cpp_paths:
+                handle.write(_heading(4, "Programming: C++ 2024"))
+                intro_paths = [path for path in cpp_paths if len(path.parts) >= 7 and path.parts[5] == "introduction"]
+                if intro_paths:
+                    handle.write(_heading(5, "Introduction"))
+                    _emit_links(handle, intro_paths)
+                clause_paths = [path for path in cpp_paths if len(path.parts) >= 7 and path.parts[5] == "clauses"]
+                if clause_paths:
+                    handle.write(_heading(5, "Clauses"))
+                    _emit_links(handle, clause_paths)
+                annex_paths = [path for path in cpp_paths if len(path.parts) >= 7 and path.parts[5] == "annexes"]
+                if annex_paths:
+                    handle.write(_heading(5, "Annexes"))
+                    _emit_links(handle, annex_paths)
 
-                    if path.parts[4] == "introduction":
-                        grouped.setdefault("Introduction", []).append(path)
-                    else:
-                        section = path.parts[4].title()
-                        topic = path.parts[5] if len(path.parts) > 6 else "(uncategorized)"
-                        grouped.setdefault(section, [])
-                        grouped.setdefault(f"{section}: {topic}", []).append(path)
-                for label in ("Introduction", "Clauses", "Annexes"):
-                    matching = [key for key in grouped if key == label or key.startswith(label + ":")]
-                    if not matching:
-                        continue
-                    handle.write(_heading(4, label))
-                    for key in sorted(matching, key=lambda value: (0, value) if value == label else (1, value)):
-                        if key != label:
-                            handle.write(_heading(5, key.split(': ', 1)[1]))
-                        _emit_links(handle, grouped[key], sort_by_chapter=True)
-
-            _emit_new_collection("Architecture: ISO/IEC/IEEE 42010:2022", iso_paths)
-            _emit_new_collection("Programming: C 2024", c_paths)
-            _emit_new_collection("Programming: C++ 2024", cpp_paths)
-
-            if computer_science_paths:
-                handle.write(_heading(3, "Computer Science"))
-                if string_paths:
-                    handle.write(_heading(4, "String Algorithms"))
-                    _emit_links(handle, string_paths, sort_by_chapter=True)
-
-                for label, collection_paths, topic_order in (
-                    ("Combinatorial Algorithms", combinatorial_paths, ["subset-generation", "compositions", "permutations", "integer-partitions", "set-partitions", "general-frameworks", "young-tableaux", "sorting", "array-reindexing", "graph-algorithms", "polynomial-algorithms", "matrix-and-array-algorithms", "partially-ordered-sets", "backtracking", "tree-algorithms"]),
-                    ("Computer Networks", network_paths, ["foundations", "physical-layer", "data-link-layer", "medium-access-control", "network-layer", "transport-layer", "application-layer", "network-security", "reference-material"]),
-                    ("Operating Systems", operating_system_paths, ["foundations", "processes-and-threads", "memory-management", "file-systems", "input-output", "deadlocks", "virtualization-and-cloud", "multiple-processor-systems", "security", "case-studies", "operating-system-design", "reference-material"]),
-                ):
-                    if not collection_paths:
-                        continue
-                    handle.write(_heading(4, label))
-                    handle.write(_heading(5, "Chapter index"))
-                    _emit_links(handle, collection_paths, sort_by_chapter=True)
-                    grouped: dict[str, list[Path]] = {}
-                    for path in collection_paths:
-                        topic = path.parts[3] if len(path.parts) > 4 else "(uncategorized)"
-                        grouped.setdefault(topic, []).append(path)
-                    for topic in topic_order:
-                        if topic in grouped:
-                            handle.write(_heading(5, topic))
-                            _emit_links(handle, grouped.pop(topic), sort_by_chapter=True)
-                    for topic in sorted(grouped):
-                        handle.write(_heading(5, topic))
-                        _emit_links(handle, grouped[topic], sort_by_chapter=True)
-
-            if elec_paths:
-                handle.write(_heading(3, "Electronics") + _heading(4, "Electronic Circuits"))
-                grouped: dict[str, list[Path]] = {}
-                for path in elec_paths:
-                    topic = path.parts[3] if len(path.parts) > 4 else "(uncategorized)"
-                    grouped.setdefault(topic, []).append(path)
-
-                topic_order = [
-                    "foundations",
-                    "semiconductor-devices",
-                    "analog-circuits",
-                    "power-electronics",
-                    "digital-logic-and-interfaces",
-                    "mixed-signal-systems",
-                    "embedded-systems",
-                ]
-                ordered_topics = [topic for topic in topic_order if topic in grouped]
-                ordered_topics.extend(topic for topic in sorted(grouped) if topic not in ordered_topics)
-
-                for topic in ordered_topics:
-                    handle.write(_heading(5, topic))
-                    _emit_links(handle, grouped[topic], sort_by_chapter=True)
-
-            if math_paths:
-                handle.write(_heading(3, "Mathematics") + _heading(4, "Numerical Methods"))
-                grouped = {}
-                for path in math_paths:
-                    topic = path.parts[3] if len(path.parts) > 4 else "(uncategorized)"
-                    grouped.setdefault(topic, []).append(path)
-
-                topic_order = [
-                    "foundations",
-                    "linear-algebra",
-                    "interpolation-integration-and-functions",
-                    "randomization-and-ordering",
-                    "root-finding-and-optimization",
-                    "fourier-and-spectral-methods",
-                    "statistics-modeling-and-inference",
-                    "differential-and-integral-equations",
-                    "computational-geometry",
-                    "general-algorithms",
-                ]
-                ordered_topics = [topic for topic in topic_order if topic in grouped]
-                ordered_topics.extend(topic for topic in sorted(grouped) if topic not in ordered_topics)
-
-                for topic in ordered_topics:
-                    handle.write(_heading(5, topic))
-                    _emit_links(handle, grouped[topic], sort_by_chapter=True)
-
-            if sec_paths:
-                handle.write(_heading(3, "Security") + _heading(4, "CISSP"))
-                _emit_links(handle, sec_paths, sort_by_chapter=True)
-
+            other_cornell = [path for path in cornell_paths if path not in cissp_paths and path not in cpp_paths]
             if other_cornell:
-                handle.write(_heading(3, "Other Cornell Notes"))
+                handle.write(_heading(4, "Other Cornell Notes"))
                 _emit_links(handle, other_cornell)
 
         if non_cornell_paths:
-            handle.write(_heading(2, "Other PDFs", anchor="category-other-pdfs"))
+            handle.write(_heading(3, "Other PDFs", anchor="category-other-pdfs"))
             _emit_links(handle, non_cornell_paths)
+
+        if not pdf_rel_paths:
+            handle.write("<p>No PDFs are currently staged for publication.</p>")
+
+        handle.write(_heading(2, "PlantUML Diagrams"))
+        _emit_raster_cards(handle)
 
         handle.write("""</section>
 </main>
-<footer><div class="shell">""" + str(total_documents) + """ published documents</div></footer>
+<footer><div class="shell">""" + str(total_documents) + """ PDFs and """ + str(total_png + total_jpg) + """ diagrams published</div></footer>
 <script>
 (function () {
     const input = document.getElementById('document-search');
     const count = document.getElementById('result-count');
-    const rows = Array.from(document.querySelectorAll('.document-row'));
+    const rows = Array.from(document.querySelectorAll('.document-row, .image-card'));
     function update() {
-        const query = input.value.trim().toLocaleLowerCase();
+        const query = (input ? input.value : '').trim().toLocaleLowerCase();
         let visible = 0;
         rows.forEach(function (row) {
-            const matches = !query || row.dataset.search.toLocaleLowerCase().includes(query);
+            const searchText = (row.dataset.search || '').toLocaleLowerCase();
+            const matches = !query || searchText.includes(query);
             row.hidden = !matches;
             if (matches) visible += 1;
         });
-        document.querySelectorAll('.document-list').forEach(function (list) {
-            list.hidden = !list.querySelector('.document-row:not([hidden])');
-        });
-        document.querySelectorAll('.library h2, .library h3, .library h4, .library h5, .library h6').forEach(function (heading) {
-            const level = Number(heading.tagName.slice(1));
-            let node = heading.nextElementSibling;
-            let hasVisibleRow = false;
-            while (node) {
-                if (/^H[2-6]$/.test(node.tagName) && Number(node.tagName.slice(1)) <= level) break;
-                if (node.matches('.document-list') && node.querySelector('.document-row:not([hidden])')) hasVisibleRow = true;
-                node = node.nextElementSibling;
-            }
-            heading.hidden = !hasVisibleRow;
-        });
-        count.textContent = 'Showing ' + visible + ' of ' + rows.length + ' documents';
+        count.textContent = 'Showing ' + visible + ' of ' + rows.length + ' assets';
     }
-    input.addEventListener('input', update);
-    input.addEventListener('keydown', function (event) { if (event.key === 'Escape') { input.value = ''; update(); } });
+    if (input) {
+        input.addEventListener('input', update);
+        input.addEventListener('keydown', function (event) { if (event.key === 'Escape') { input.value = ''; update(); } });
+    }
 }());
 </script>
 </body></html>""")
@@ -1095,7 +1033,12 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
     return pdf_rel_paths
 
 
-def build_root(tex_path: Path, output_dir: Path | None = None, log_dir: Path | None = None, artifact_dir: Path | None = None) -> int:
+def build_root(
+    tex_path: Path,
+    output_dir: Path | None = None,
+    log_dir: Path | None = None,
+    artifact_dir: Path | None = None,
+) -> int:
     tex_path = tex_path.resolve()
     output_dir = _resolve_repo_path(output_dir)
     log_dir = _resolve_repo_path(log_dir)
@@ -2041,6 +1984,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     stage_parser = subparsers.add_parser("stage-pages")
     stage_parser.add_argument("--pdf-dir", type=Path, required=True)
+    stage_parser.add_argument("--image-dir", type=Path, default=None)
     stage_parser.add_argument("--site-dir", type=Path, required=True)
 
     clean_parser = subparsers.add_parser("clean")
@@ -2186,7 +2130,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     if args.command == "stage-pages":
-        stage_pages_site(args.pdf_dir, args.site_dir)
+        stage_pages_site(args.pdf_dir, args.site_dir, args.image_dir)
         return 0
 
     if args.command == "render-plantuml":

@@ -1011,6 +1011,49 @@ class BuildToolTests(unittest.TestCase):
             self.assertIn("document-list", first_html)
             self.assertIn("document-search", first_html)
 
+    def test_stage_pages_site_includes_nested_png_and_jpg_preview_links(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            pdf_dir = root / "public" / "pdfs"
+            image_dir = root / "public" / "images"
+            (pdf_dir / "architecture").mkdir(parents=True)
+            (image_dir / "png" / "architecture").mkdir(parents=True)
+            (image_dir / "jpg" / "architecture").mkdir(parents=True)
+            (pdf_dir / "architecture" / "guide.pdf").write_bytes(b"%PDF-1.4")
+            (image_dir / "png" / "architecture" / "guide.png").write_bytes(b"PNG")
+            (image_dir / "jpg" / "architecture" / "guide.jpeg").write_bytes(b"JPEG")
+
+            site_dir = root / "site"
+            rel_paths = latex_build.stage_pages_site(pdf_dir, site_dir, image_dir)
+
+            self.assertEqual([Path("architecture/guide.pdf")], rel_paths)
+            self.assertTrue((site_dir / "images" / "png" / "architecture" / "guide.png").exists())
+            self.assertTrue((site_dir / "images" / "jpg" / "architecture" / "guide.jpeg").exists())
+            index_html = (site_dir / "index.html").read_text(encoding="utf-8")
+            self.assertIn('href="pdfs/architecture/guide.pdf"', index_html)
+            self.assertIn('src="images/png/architecture/guide.png"', index_html)
+            self.assertIn('href="images/png/architecture/guide.png"', index_html)
+            self.assertIn('src="images/jpg/architecture/guide.jpeg"', index_html)
+            self.assertIn('href="images/jpg/architecture/guide.jpeg"', index_html)
+            self.assertIn("Documents", index_html)
+            self.assertIn("PlantUML Diagrams", index_html)
+
+    def test_render_plantuml_cli_supports_jpg_through_same_interface_used_in_ci(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src = root / "src"
+            src.mkdir()
+            diagram = src / "diagram.puml"
+            diagram.write_text("@startuml\nA -> B\n@enduml\n", encoding="utf-8")
+
+            with patch("tooling.scripts.latex_build.subprocess.run") as run_mock:
+                run_mock.return_value.returncode = 0
+                status = latex_build.render_plantuml(source_dir=src, formats=["png", "jpg"], force=True)
+
+            self.assertEqual(0, status)
+            self.assertTrue(any(call.args[0][:2] == ["plantuml", "-tpng"] for call in run_mock.call_args_list))
+            self.assertTrue(any(call.args[0][:2] == ["plantuml", "-tjpg"] for call in run_mock.call_args_list))
+
     def test_discover_roots_includes_all_canonical_cornell_documents(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
         roots = discover_roots(repo_root / "src")
