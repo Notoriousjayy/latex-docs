@@ -1231,6 +1231,77 @@ class BuildToolTests(unittest.TestCase):
         self.assertNotIn("BASE_REVISION", action_text)
         self.assertNotIn("HEAD_REVISION", action_text)
 
+    def test_local_composite_action_manifests_are_structurally_valid(self) -> None:
+        try:
+            import yaml  # type: ignore
+        except ImportError:
+            self.skipTest("PyYAML is not available")
+
+        repo_root = Path(__file__).resolve().parents[1]
+        action_paths = sorted((repo_root / ".github" / "actions").glob("*/action.yml"))
+        self.assertTrue(action_paths, "expected local action manifests")
+
+        for action_path in action_paths:
+            with self.subTest(action=action_path.relative_to(repo_root).as_posix()):
+                raw = action_path.read_text(encoding="utf-8")
+                self.assertTrue(raw.endswith("\n"))
+                self.assertNotIn("\t", raw)
+                self.assertNotRegex(raw, r"^(<<<<<<<|=======|>>>>>>>)", msg="merge conflict marker found")
+
+                documents = list(yaml.safe_load_all(raw))
+                self.assertEqual(1, len(documents))
+                data = documents[0]
+                self.assertIsInstance(data, dict)
+                self.assertIsInstance(data.get("inputs", {}), dict)
+                self.assertIsInstance(data.get("outputs", {}), dict)
+                self.assertIn("name", data)
+                self.assertIn("description", data)
+
+                runs = data.get("runs")
+                self.assertIsInstance(runs, dict)
+                self.assertEqual("composite", runs.get("using"))
+                steps = runs.get("steps")
+                self.assertIsInstance(steps, list)
+                self.assertGreater(len(steps), 0)
+                for step in steps:
+                    self.assertIsInstance(step, dict)
+                    if "run" in step:
+                        self.assertIn("shell", step)
+
+    def test_render_plantuml_action_manifest_schema_and_caller_compatibility(self) -> None:
+        try:
+            import yaml  # type: ignore
+        except ImportError:
+            self.skipTest("PyYAML is not available")
+
+        repo_root = Path(__file__).resolve().parents[1]
+        action_path = repo_root / ".github" / "actions" / "render-plantuml" / "action.yml"
+        raw = action_path.read_text(encoding="utf-8")
+        data = yaml.safe_load(raw)
+        self.assertIsInstance(data, dict)
+
+        expected_inputs = {
+            "source-dir", "formats", "generate-jpg", "fail-on-error", "config-names", "plantuml-version",
+        }
+        expected_outputs = {
+            "diagram-count", "rendered-count", "failed-count", "skipped-count", "rendered-files", "has-changes",
+        }
+        self.assertEqual(expected_inputs, set(data.get("inputs", {}).keys()))
+        self.assertEqual(expected_outputs, set(data.get("outputs", {}).keys()))
+
+        for workflow_name in ("_build-latex.yml", "render-plantuml.yml"):
+            workflow = yaml.safe_load((repo_root / ".github" / "workflows" / workflow_name).read_text(encoding="utf-8"))
+            matching = [
+                step
+                for job in workflow.get("jobs", {}).values()
+                if isinstance(job, dict)
+                for step in job.get("steps", [])
+                if isinstance(step, dict) and step.get("uses") == "./.github/actions/render-plantuml"
+            ]
+            self.assertGreater(len(matching), 0, workflow_name)
+            for step in matching:
+                self.assertTrue(set(step.get("with", {}).keys()).issubset(expected_inputs))
+
     def test_build_documents_action_manifest_schema_and_caller_compatibility(self) -> None:
         try:
             import yaml  # type: ignore
