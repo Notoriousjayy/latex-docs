@@ -1,0 +1,195 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage{cornell-notes}
+\usepackage{needspace}
+
+\title{Chapter 6: C Language Issues}
+\author{}
+\date{}
+
+\setDocTitle{Chapter 6: C Language Issues}
+\setDocSubtitle{Application Security Review}
+\setCornellCollection{Software Security Assessment}
+\setCornellUnitType{Chapter}
+\setCornellUnitNumber{6}
+\setCornellUnitTitle{C Language Issues}
+\setCornellCompanionLabel{Study and audit reference}
+\setCornellSourceRange{pp. 203--296}
+\begin{document}
+\maketitle
+
+\begin{center}
+\small\color{Meta}\textbf{Coverage range:} pp. 203--296 \quad\textbullet\quad \textbf{Format:} Cornell cue-and-notes
+\end{center}
+\vspace{0.25em}
+\begin{CornellOverviewBox}{Review Orientation}
+\textbf{Central problem.} Audit the representation, conversion, arithmetic, pointer, and evaluation rules of C that can turn apparently reasonable expressions into dangerous sizes, bounds, and memory accesses.
+\textbf{Why it matters.} Security reviewers use this material to connect attacker-controlled conditions to violated invariants, consequential operations, and defensible remediation.
+\textbf{Prerequisites.} C expressions, integer types, pointers, arrays, structures, operators, and compilation.
+\textbf{Assessment relationship.} It explains language-level causes that underlie memory corruption and many higher-level program-building-block failures.
+\end{CornellOverviewBox}
+\section{Learning Objectives}
+\begin{itemize}
+\item Explain the security significance of binary encoding.
+\item Identify attacker influence and failed assumptions associated with byte order.
+\item Trace security-relevant data or state through implementation variation.
+\item Evaluate whether controls addressing unsigned boundaries preserve the intended invariant.
+\item Audit implementation and error paths related to signed boundaries.
+\item Distinguish safe and unsafe uses of conversion rules.
+\item Diagnose a failure involving signed and unsigned mixing from concrete evidence.
+\item Verify remediation and test coverage for sign extension.
+\end{itemize}
+\section{Cornell Cue-and-Notes}
+\Needspace{8\baselineskip}
+\subsection{Data Storage and Representation}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Binary encoding}\\[-0.1em]{\small How are values represented in finite storage?} & Objects have fixed widths and encodings; the same bit pattern can represent different values under signed and unsigned interpretations. Boundary behavior follows the C type and implementation, not ordinary arithmetic intuition.\par\smallskip\textbf{Audit move:} Record width, signedness, and representation for every security-sensitive quantity. \\\hline
+\term{Byte order}\\[-0.1em]{\small Where can endianness change validation?} & Multibyte values may be serialized in an order different from host storage. Comparing, masking, or sizing before the correct conversion can validate one value and use another.\par\smallskip\textbf{Audit move:} Trace byte-order conversions and require one canonical representation at each interface. \\\hline
+\term{Implementation variation}\\[-0.1em]{\small Which assumptions are platform-dependent?} & Type widths, signedness of plain character types, alignment, and compiler behavior vary. Code that is safe on one target can truncate, sign-extend, or misalign data on another.\par\smallskip\textbf{Audit move:} Compile and test against supported data models and enable portability diagnostics. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Security reasoning must use the implementation's actual widths, encodings, and byte order rather than an abstract mathematical integer model.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Arithmetic Boundary Conditions}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Unsigned boundaries}\\[-0.1em]{\small Why is unsigned wraparound both defined and dangerous?} & Unsigned arithmetic wraps modulo its range. Code can therefore compute a small allocation or pass a bounds check after addition, multiplication, subtraction, or negation wraps.\par\smallskip\textbf{Audit move:} Prove operands fit before performing security-sensitive unsigned arithmetic. \\\hline
+\term{Signed boundaries}\\[-0.1em]{\small What makes signed overflow especially hazardous?} & A mathematical result outside the representable signed range invokes undefined behavior, allowing incorrect runtime results and optimizer transformations that invalidate assumed checks.\par\smallskip\textbf{Audit move:} Use precondition checks or suitable wider/checked arithmetic before the operation. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Overflow and wraparound can invalidate allocation, bounds, and loop reasoning before memory is touched.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Type Conversions}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Conversion rules}\\[-0.1em]{\small Which type controls an expression?} & Integer promotions and usual arithmetic conversions select a common type based on rank and signedness. A negative operand can become a large unsigned value, and a narrow value may be promoted before or after an unsafe calculation.\par\smallskip\textbf{Audit move:} Annotate effective operand and result types for boundary-sensitive expressions. \\\hline
+\term{Signed and unsigned mixing}\\[-0.1em]{\small How can a negative value bypass a check?} & When compared with or converted to an unsigned type, a negative signed value can become a large positive value. Tests that appear to reject large values may behave differently from the source-level intuition.\par\smallskip\textbf{Audit move:} Search comparisons and calls that mix signed lengths, indices, return values, and size types. \\\hline
+\term{Sign extension}\\[-0.1em]{\small When does widening preserve an attacker's high bit?} & Converting a negative narrow signed value to a wider signed type replicates the sign bit; later conversion to unsigned can create a very large value. Byte-oriented data is particularly error-prone when plain character types are signed.\par\smallskip\textbf{Audit move:} Trace character and short values through promotions before indexing or sizing. \\\hline
+\term{Truncation}\\[-0.1em]{\small What is lost during narrowing?} & Narrowing discards high-order bits or changes representable range. If validation uses a wide value but storage or use narrows it--or the reverse--the program can allocate and process inconsistent lengths.\par\smallskip\textbf{Audit move:} Compare the type used at input, validation, storage, allocation, and final use. \\\hline
+\term{Comparisons}\\[-0.1em]{\small Can two values be compared under an unintended interpretation?} & Conversions occur before comparison, so relational checks may evaluate in an unsigned or wider domain. Sentinel values and negative error returns are common sources of mistakes.\par\smallskip\textbf{Audit move:} Expand implicit conversions mentally or with compiler tooling for every critical comparison. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Implicit conversions can change range and meaning before a comparison, allocation, or pointer operation evaluates.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Operators and Pointer Arithmetic}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Size operator}\\[-0.1em]{\small What exactly does a size expression measure?} & The size operator reports the size of a type or object, not the dynamic extent of memory behind a pointer. Array-to-pointer adjustment in parameters makes apparently identical expressions yield different values.\par\smallskip\textbf{Audit move:} Distinguish arrays, pointers, element counts, and byte counts at every size calculation. \\\hline
+\term{Unexpected operator results}\\[-0.1em]{\small Where do precedence and operand types alter intent?} & Bitwise, logical, shift, and arithmetic operators follow precise precedence, promotion, and width rules. Shifts by invalid counts and calculations in a narrow type can create undefined or unintended results.\par\smallskip\textbf{Audit move:} Parenthesize security-sensitive expressions and verify types before shifts or masks. \\\hline
+\term{Pointer arithmetic}\\[-0.1em]{\small How is pointer movement scaled and bounded?} & Adding to a typed pointer advances in units of the pointed-to type. Arithmetic is defined only within an array object and one-past position; integer overflow or incorrect element counts can produce invalid addresses.\par\smallskip\textbf{Audit move:} Track base object, element type, count, and valid interval for every derived pointer. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Operator semantics and scaled pointer movement can hide the true size and address calculation.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Other C Nuances}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Order of evaluation}\\[-0.1em]{\small Can side effects occur in an assumed sequence?} & Many subexpressions do not have a programmer-selected evaluation order, and unsequenced modifications can be undefined. Security checks must not rely on a call or increment happening first unless the language guarantees it.\par\smallskip\textbf{Audit move:} Separate side effects into explicit statements on sensitive paths. \\\hline
+\term{Structure padding}\\[-0.1em]{\small Why can copying or comparing raw structures be unsafe?} & Compilers insert padding for alignment, and padding bytes may be indeterminate or disclose prior data. Layout also differs across ABIs and packing choices.\par\smallskip\textbf{Audit move:} Serialize fields explicitly and avoid exposing or comparing uninitialized padding. \\\hline
+\term{Precedence and macros}\\[-0.1em]{\small How can text substitution change an expression?} & Missing parentheses, repeated macro arguments, and precedence surprises can evaluate inputs multiple times or combine them differently than intended. Macro safety depends on both definition and call-site context.\par\smallskip\textbf{Audit move:} Inspect macro expansions used for bounds, allocation, validation, or privilege decisions. \\\hline
+\term{Typos and visual ambiguity}\\[-0.1em]{\small Why do small source mistakes survive review?} & Assignments in conditions, wrong variables, missing checks, and similar identifiers can compile cleanly while changing control flow. Dense expressions and weak diagnostics make these errors harder to notice.\par\smallskip\textbf{Audit move:} Enable strict warnings and desk-check conditions against their intended invariant. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Evaluation order, layout, macros, and small source mistakes can violate invariants despite locally plausible code.
+\end{CornellSummaryBox}
+\begin{CornellLegacyBox}{Historical Context}
+Compiler optimizations and language-standard interpretations have made undefined behavior increasingly significant. Validate conclusions against the exact language mode, compiler, ABI, and warning or sanitizer configuration in use.
+\end{CornellLegacyBox}
+\section{Security-Review Checklist}
+\begin{CornellChecklist}
+\item \textbf{Scoping}
+Record width, signedness, and representation for every security-sensitive quantity.
+\item \textbf{Attack-surface identification}
+Trace byte-order conversions and require one canonical representation at each interface.
+\item \textbf{Input and data-flow analysis}
+Compile and test against supported data models and enable portability diagnostics.
+\item \textbf{Trust-boundary review}
+Prove operands fit before performing security-sensitive unsigned arithmetic.
+\item \textbf{Candidate-point inspection}
+Use precondition checks or suitable wider/checked arithmetic before the operation.
+\item \textbf{Control-flow review}
+Annotate effective operand and result types for boundary-sensitive expressions.
+\item \textbf{Resource and lifetime review}
+Search comparisons and calls that mix signed lengths, indices, return values, and size types.
+\item \textbf{Error-path analysis}
+Trace character and short values through promotions before indexing or sizing.
+\item \textbf{Mitigation validation}
+Compare the type used at input, validation, storage, allocation, and final use.
+\item \textbf{Evidence and reporting}
+Expand implicit conversions mentally or with compiler tooling for every critical comparison.
+\item \textbf{Scoping}
+Distinguish arrays, pointers, element counts, and byte counts at every size calculation.
+\item \textbf{Attack-surface identification}
+Parenthesize security-sensitive expressions and verify types before shifts or masks.
+\end{CornellChecklist}
+\section{Chapter Synthesis}
+C security review requires evaluating the program the language and implementation define, not the arithmetic or sequencing a reader informally expects. Width, signedness, promotions, narrowing, object bounds, layout, and evaluation order interact. Prioritize values that control allocation, copying, indexing, loop termination, parsing, and privilege decisions, and follow their effective type through the entire flow.
+\section{Self-Test Questions}
+\begin{enumerate}
+\item How are values represented in finite storage?
+\item Where can endianness change validation?
+\item Which assumptions are platform-dependent?
+\item Why is unsigned wraparound both defined and dangerous?
+\item What makes signed overflow especially hazardous?
+\item Which type controls an expression?
+\item \textbf{Scenario:} A signed length is checked against a maximum and then passed to an interface expecting an unsigned size. What must the reviewer prove?
+\item \textbf{Scenario:} Code allocates count times element\_size bytes without checking the multiplication. Both operands passed individual maximum checks. Is that sufficient?
+\end{enumerate}
+\clearpage
+\subsection*{Answer Key}
+\begin{enumerate}
+\item Objects have fixed widths and encodings; the same bit pattern can represent different values under signed and unsigned interpretations. Boundary behavior follows the C type and implementation, not ordinary arithmetic intuition.
+\item Multibyte values may be serialized in an order different from host storage. Comparing, masking, or sizing before the correct conversion can validate one value and use another.
+\item Type widths, signedness of plain character types, alignment, and compiler behavior vary. Code that is safe on one target can truncate, sign-extend, or misalign data on another.
+\item Unsigned arithmetic wraps modulo its range. Code can therefore compute a small allocation or pass a bounds check after addition, multiplication, subtraction, or negation wraps.
+\item A mathematical result outside the representable signed range invokes undefined behavior, allowing incorrect runtime results and optimizer transformations that invalidate assumed checks.
+\item Integer promotions and usual arithmetic conversions select a common type based on rank and signedness. A negative operand can become a large unsigned value, and a narrow value may be promoted before or after an unsafe calculation.
+\item Prove the value is nonnegative before conversion, fits the destination type, and cannot change through truncation or promotion. A negative value may become a very large unsigned size.
+\item No. The product can overflow even when each operand is individually valid. Check the multiplication precondition before computing or use a checked-allocation primitive.
+\end{enumerate}
+\section{Key-Term Recap}
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.27\textwidth}p{0.65\textwidth}}
+\toprule
+\textbf{Term} & \textbf{Working meaning for review} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Term} & \textbf{Working meaning for review} \\
+\midrule
+\endhead
+Binary encoding & Objects have fixed widths and encodings; the same bit pattern can represent different values under signed and unsigned interpretations. \\
+Byte order & Multibyte values may be serialized in an order different from host storage. \\
+Implementation variation & Type widths, signedness of plain character types, alignment, and compiler behavior vary. \\
+Unsigned boundaries & Unsigned arithmetic wraps modulo its range. \\
+Signed boundaries & A mathematical result outside the representable signed range invokes undefined behavior, allowing incorrect runtime results and optimizer transformations that invalidate assumed checks. \\
+Conversion rules & Integer promotions and usual arithmetic conversions select a common type based on rank and signedness. \\
+Signed and unsigned mixing & When compared with or converted to an unsigned type, a negative signed value can become a large positive value. \\
+Sign extension & Converting a negative narrow signed value to a wider signed type replicates the sign bit; later conversion to unsigned can create a very large value. \\
+Truncation & Narrowing discards high-order bits or changes representable range. \\
+Comparisons & Conversions occur before comparison, so relational checks may evaluate in an unsigned or wider domain. \\
+\bottomrule
+\end{longtable}
+\section{One-Sentence Takeaway}
+\begin{CornellExamBox}{One-Sentence Takeaway}
+\textbf{In C, every security-sensitive calculation must be reviewed in terms of actual types, representations, evaluation rules, and object bounds rather than mathematical intent alone.}
+\end{CornellExamBox}
+\end{document}

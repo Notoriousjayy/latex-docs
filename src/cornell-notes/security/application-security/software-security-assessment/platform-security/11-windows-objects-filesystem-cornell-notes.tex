@@ -1,0 +1,193 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage{cornell-notes}
+\usepackage{needspace}
+
+\title{Chapter 11: Windows I: Objects and the File System}
+\author{}
+\date{}
+
+\setDocTitle{Chapter 11: Windows I: Objects and the File System}
+\setDocSubtitle{Application Security Review}
+\setCornellCollection{Software Security Assessment}
+\setCornellUnitType{Chapter}
+\setCornellUnitNumber{11}
+\setCornellUnitTitle{Windows I: Objects and the File System}
+\setCornellCompanionLabel{Study and audit reference}
+\setCornellSourceRange{pp. 625--684}
+\begin{document}
+\maketitle
+
+\begin{center}
+\small\color{Meta}\textbf{Coverage range:} pp. 625--684 \quad\textbullet\quad \textbf{Format:} Cornell cue-and-notes
+\end{center}
+\vspace{0.25em}
+\begin{CornellOverviewBox}{Review Orientation}
+\textbf{Central problem.} Audit Windows object namespaces, handles, tokens, security descriptors, process loading, file access, links, and registry permissions as interconnected access-control mechanisms.
+\textbf{Why it matters.} Security reviewers use this material to connect attacker-controlled conditions to violated invariants, consequential operations, and defensible remediation.
+\textbf{Prerequisites.} Windows processes, object manager concepts, identities, access control lists, files, dynamic libraries, services, and registry basics.
+\textbf{Assessment relationship.} It provides the Windows authority and object model needed to analyze interprocess communication in the next chapter.
+\end{CornellOverviewBox}
+\section{Learning Objectives}
+\begin{itemize}
+\item Explain the security significance of object namespaces.
+\item Identify attacker influence and failed assumptions associated with object handles.
+\item Trace security-relevant data or state through security identifiers and logon rights.
+\item Evaluate whether controls addressing access tokens preserve the intended invariant.
+\item Audit implementation and error paths related to privileges.
+\item Distinguish safe and unsafe uses of access masks.
+\item Diagnose a failure involving acl inheritance from concrete evidence.
+\item Verify remediation and test coverage for descriptor apis.
+\end{itemize}
+\section{Cornell Cue-and-Notes}
+\Needspace{8\baselineskip}
+\subsection{Objects and Namespaces}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Object namespaces}\\[-0.1em]{\small Can an attacker precreate or collide with a named object?} & Named objects may exist in global, session, or private namespaces. Predictable names and permissive creation can let another principal squat on an object or redirect synchronization and IPC behavior.\par\smallskip\textbf{Audit move:} Identify namespace, creation rights, collision handling, and object type for every security-sensitive name. \\\hline
+\term{Object handles}\\[-0.1em]{\small What authority does a handle carry?} & A handle refers to an object with granted access rights. Inheritance, duplication, reuse, and confused handle values can transfer capabilities independently of later name-based checks.\par\smallskip\textbf{Audit move:} Audit requested access masks, inheritance, duplication, closure, and validation of received handles. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Windows exposes many resources as named kernel objects whose namespace and handle semantics influence access and isolation.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Sessions, Tokens, and Rights}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Security identifiers and logon rights}\\[-0.1em]{\small How is a principal represented and allowed to log on?} & Security identifiers identify users and groups, while policy grants logon types and other rights. Display names or account strings are not stable authority identifiers.\par\smallskip\textbf{Audit move:} Use canonical identities and review service or batch logon grants for least privilege. \\\hline
+\term{Access tokens}\\[-0.1em]{\small Which identity and privileges does a thread or process present?} & Tokens contain identities, groups, privileges, restrictions, and impersonation information. Enabling a privilege or using an unintended token can broaden access far beyond a single file operation.\par\smallskip\textbf{Audit move:} Capture primary and impersonation tokens at each protected action. \\\hline
+\term{Privileges}\\[-0.1em]{\small When can a privilege bypass ordinary access checks?} & System privileges authorize exceptional operations such as backup, restore, debugging, or ownership changes. They should be enabled only for the minimum operation and checked for successful adjustment.\par\smallskip\textbf{Audit move:} Inventory assigned privileges and verify enable-use-disable sequencing and errors. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Access decisions combine security identifiers, token contents, privileges, integrity context, and the object's descriptor.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Security Descriptors and ACLs}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Access masks}\\[-0.1em]{\small What exact operation does a requested mask authorize?} & Generic rights map to object-specific permissions, and broad requests can fail or grant more authority than needed. Code must distinguish read, write, execute, delete, and control rights.\par\smallskip\textbf{Audit move:} Request the narrowest mask and decode generic mappings for the object type. \\\hline
+\term{ACL inheritance}\\[-0.1em]{\small Can parent permissions unintentionally reach a child?} & Inherited entries combine with explicit entries according to flags and object hierarchy. Moving or creating an object can produce permissions different from the developer's expectation.\par\smallskip\textbf{Audit move:} Inspect the final effective descriptor on deployed objects rather than templates alone. \\\hline
+\term{Descriptor APIs}\\[-0.1em]{\small How can descriptor construction fail insecurely?} & Null, absent, defaulted, self-relative, and absolute descriptors have distinct meanings. Incorrect initialization or ignored conversion errors can create permissive objects.\par\smallskip\textbf{Audit move:} Build descriptors explicitly, check every API result, and read back the applied descriptor. \\\hline
+\term{ACL auditing}\\[-0.1em]{\small What evidence proves a permission is safe?} & Review trustee identities, allow and deny entries, inheritance, owner, mandatory context, and all rights that permit modification or replacement. Test access using representative tokens.\par\smallskip\textbf{Audit move:} Calculate effective access for low-privilege, service, administrator, and impersonated identities. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+The effective authorization result depends on masks, ACE ordering and inheritance, object type, identity, and requested access.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Processes, Loading, and Services}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Process loading}\\[-0.1em]{\small How is the executable selected and configured?} & Path parsing, quoting, environment, current directory, and inherited handles affect process creation. Ambiguous command lines or writable executable locations can redirect execution.\par\smallskip\textbf{Audit move:} Use explicit executable paths, correct quoting, and a controlled child environment. \\\hline
+\term{Library loading}\\[-0.1em]{\small Where can dynamic-library search be hijacked?} & Search order can load a same-named library from an attacker-writable directory. The risk depends on path specification, current directory, application directory, and platform configuration.\par\smallskip\textbf{Audit move:} Enumerate imported and dynamically loaded libraries and verify trusted resolution. \\\hline
+\term{Services}\\[-0.1em]{\small Why are service configurations sensitive?} & Service executable paths, accounts, permissions, recovery actions, and dependencies execute under durable authority. Writable binaries, directories, or configuration can produce privilege escalation.\par\smallskip\textbf{Audit move:} Audit service object ACLs and every file or registry location that controls service launch. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Executable and library selection are namespace decisions that can turn writable locations into code execution.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Files and Registry}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{File permissions and I/O}\\[-0.1em]{\small Which access, sharing, and creation flags matter?} & File APIs combine desired access, sharing, disposition, attributes, and security descriptors. Permissive sharing or nonexclusive creation can enable replacement, races, or unintended disclosure.\par\smallskip\textbf{Audit move:} Review all creation parameters and verify the final handle's object and security descriptor. \\\hline
+\term{Links}\\[-0.1em]{\small Can a name resolve to an unintended object?} & Filesystem links and reparse-like behavior can redirect operations across locations. Privileged code should bind validation and use to the same opened object.\par\smallskip\textbf{Audit move:} Resolve and verify the target through handle-based inspection before sensitive use. \\\hline
+\term{Registry permissions and squatting}\\[-0.1em]{\small How can registry namespaces redirect configuration?} & Writable parent keys, predictable names, and per-user versus machine resolution can let attackers precreate or replace configuration. Values also require type, length, and termination validation.\par\smallskip\textbf{Audit move:} Audit key creation, effective ACLs, view selection, value types, and collision handling. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Files, links, and registry keys are securable objects whose naming and replacement semantics can defeat superficial checks.
+\end{CornellSummaryBox}
+\begin{CornellLegacyBox}{Historical Context}
+Windows has added isolation, integrity, and safer-loading features over time. Verify the behavior and defaults of the exact supported release rather than assuming older namespace or search-order behavior.
+\end{CornellLegacyBox}
+\section{Security-Review Checklist}
+\begin{CornellChecklist}
+\item \textbf{Scoping}
+Identify namespace, creation rights, collision handling, and object type for every security-sensitive name.
+\item \textbf{Attack-surface identification}
+Audit requested access masks, inheritance, duplication, closure, and validation of received handles.
+\item \textbf{Input and data-flow analysis}
+Use canonical identities and review service or batch logon grants for least privilege.
+\item \textbf{Trust-boundary review}
+Capture primary and impersonation tokens at each protected action.
+\item \textbf{Candidate-point inspection}
+Inventory assigned privileges and verify enable-use-disable sequencing and errors.
+\item \textbf{Control-flow review}
+Request the narrowest mask and decode generic mappings for the object type.
+\item \textbf{Resource and lifetime review}
+Inspect the final effective descriptor on deployed objects rather than templates alone.
+\item \textbf{Error-path analysis}
+Build descriptors explicitly, check every API result, and read back the applied descriptor.
+\item \textbf{Mitigation validation}
+Calculate effective access for low-privilege, service, administrator, and impersonated identities.
+\item \textbf{Evidence and reporting}
+Use explicit executable paths, correct quoting, and a controlled child environment.
+\item \textbf{Scoping}
+Enumerate imported and dynamically loaded libraries and verify trusted resolution.
+\item \textbf{Attack-surface identification}
+Audit service object ACLs and every file or registry location that controls service launch.
+\end{CornellChecklist}
+\section{Chapter Synthesis}
+Windows security review centers on capabilities represented by tokens and handles and policy represented by security descriptors. Namespaces select the object before access control can protect it, so squatting, replacement, and search order are as important as ACL entries. Prioritize privileged services or processes whose executable, library, file, or registry inputs can be modified by a less-trusted principal.
+\section{Self-Test Questions}
+\begin{enumerate}
+\item Can an attacker precreate or collide with a named object?
+\item What authority does a handle carry?
+\item How is a principal represented and allowed to log on?
+\item Which identity and privileges does a thread or process present?
+\item When can a privilege bypass ordinary access checks?
+\item What exact operation does a requested mask authorize?
+\item \textbf{Scenario:} A service executable path contains spaces and is launched without unambiguous quoting. What should the reviewer investigate?
+\item \textbf{Scenario:} A program creates a globally named synchronization object with a predictable name and accepts an existing handle without checking its type or owner. What can go wrong?
+\end{enumerate}
+\clearpage
+\subsection*{Answer Key}
+\begin{enumerate}
+\item Named objects may exist in global, session, or private namespaces. Predictable names and permissive creation can let another principal squat on an object or redirect synchronization and IPC behavior.
+\item A handle refers to an object with granted access rights. Inheritance, duplication, reuse, and confused handle values can transfer capabilities independently of later name-based checks.
+\item Security identifiers identify users and groups, while policy grants logon types and other rights. Display names or account strings are not stable authority identifiers.
+\item Tokens contain identities, groups, privileges, restrictions, and impersonation information. Enabling a privilege or using an unintended token can broaden access far beyond a single file operation.
+\item System privileges authorize exceptional operations such as backup, restore, debugging, or ownership changes. They should be enabled only for the minimum operation and checked for successful adjustment.
+\item Generic rights map to object-specific permissions, and broad requests can fail or grant more authority than needed. Code must distinguish read, write, execute, delete, and control rights.
+\item Determine how the process-creation API parses the path and whether an attacker can create an earlier executable candidate. Use an explicit application path, correct quoting, and protected directories.
+\item Another principal may precreate or substitute the object and influence synchronization. Use an appropriate namespace, restrictive descriptor, collision handling, and object verification.
+\end{enumerate}
+\section{Key-Term Recap}
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.27\textwidth}p{0.65\textwidth}}
+\toprule
+\textbf{Term} & \textbf{Working meaning for review} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Term} & \textbf{Working meaning for review} \\
+\midrule
+\endhead
+Object namespaces & Named objects may exist in global, session, or private namespaces. \\
+Object handles & A handle refers to an object with granted access rights. \\
+Security identifiers and logon rights & Security identifiers identify users and groups, while policy grants logon types and other rights. \\
+Access tokens & Tokens contain identities, groups, privileges, restrictions, and impersonation information. \\
+Privileges & System privileges authorize exceptional operations such as backup, restore, debugging, or ownership changes. \\
+Access masks & Generic rights map to object-specific permissions, and broad requests can fail or grant more authority than needed. \\
+ACL inheritance & Inherited entries combine with explicit entries according to flags and object hierarchy. \\
+Descriptor APIs & Null, absent, defaulted, self-relative, and absolute descriptors have distinct meanings. \\
+ACL auditing & Review trustee identities, allow and deny entries, inheritance, owner, mandatory context, and all rights that permit modification or replacement. \\
+Process loading & Path parsing, quoting, environment, current directory, and inherited handles affect process creation. \\
+\bottomrule
+\end{longtable}
+\section{One-Sentence Takeaway}
+\begin{CornellExamBox}{One-Sentence Takeaway}
+\textbf{Windows access control is secure only when object selection, token authority, requested rights, handle lifecycle, and the final effective descriptor all agree.}
+\end{CornellExamBox}
+\end{document}

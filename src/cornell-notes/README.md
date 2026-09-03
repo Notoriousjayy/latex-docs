@@ -11,6 +11,7 @@ Centralized Cornell Notes sources live under `src/cornell-notes/` and use the sh
   - Electronic Circuits
   - Numerical Methods
   - CISSP
+  - Software Security Assessment
 
 ## Numerical Methods
 

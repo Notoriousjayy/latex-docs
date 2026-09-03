@@ -1,0 +1,196 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage{cornell-notes}
+\usepackage{needspace}
+
+\title{Chapter 9: UNIX I: Privileges and Files}
+\author{}
+\date{}
+
+\setDocTitle{Chapter 9: UNIX I: Privileges and Files}
+\setDocSubtitle{Application Security Review}
+\setCornellCollection{Software Security Assessment}
+\setCornellUnitType{Chapter}
+\setCornellUnitNumber{9}
+\setCornellUnitTitle{UNIX I: Privileges and Files}
+\setCornellCompanionLabel{Study and audit reference}
+\setCornellSourceRange{pp. 459--557}
+\begin{document}
+\maketitle
+
+\begin{center}
+\small\color{Meta}\textbf{Coverage range:} pp. 459--557 \quad\textbullet\quad \textbf{Format:} Cornell cue-and-notes
+\end{center}
+\vspace{0.25em}
+\begin{CornellOverviewBox}{Review Orientation}
+\textbf{Central problem.} Audit UNIX identity, privilege transitions, path resolution, file permissions, links, races, temporary files, and stream I/O as one coherent authority model.
+\textbf{Why it matters.} Security reviewers use this material to connect attacker-controlled conditions to violated invariants, consequential operations, and defensible remediation.
+\textbf{Prerequisites.} UNIX users and groups, processes, filesystem namespaces, permissions, links, descriptors, and C file APIs.
+\textbf{Assessment relationship.} It applies trust and lifetime analysis to operating-system resources that frequently mediate privileged application behavior.
+\end{CornellOverviewBox}
+\section{Learning Objectives}
+\begin{itemize}
+\item Explain the security significance of users, groups, and processes.
+\item Identify attacker influence and failed assumptions associated with privileged programs.
+\item Trace security-relevant data or state through permanent privilege drop.
+\item Evaluate whether controls addressing temporary privilege drop preserve the intended invariant.
+\item Audit implementation and error paths related to file and directory permissions.
+\item Distinguish safe and unsafe uses of file creation.
+\item Diagnose a failure involving directory safety and dangerous places from concrete evidence.
+\item Verify remediation and test coverage for filenames and paths.
+\end{itemize}
+\section{Cornell Cue-and-Notes}
+\Needspace{8\baselineskip}
+\subsection{UNIX Identity and Privilege}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Users, groups, and processes}\\[-0.1em]{\small Which identity does the kernel use for an access decision?} & Processes carry multiple user and group identities, and files carry owners and mode bits. The relevant identity can differ across system calls and privilege transitions.\par\smallskip\textbf{Audit move:} Record real, effective, saved, and supplementary identities at each sensitive operation. \\\hline
+\term{Privileged programs}\\[-0.1em]{\small Why are set-user-ID and similar programs high risk?} & They process less-trusted input while holding another principal's authority. Environment, files, descriptors, signals, and invoked programs become part of the attack surface.\par\smallskip\textbf{Audit move:} Minimize privileged code and inventory every input accepted before privilege is reduced. \\\hline
+\term{Permanent privilege drop}\\[-0.1em]{\small What proves that privilege cannot be regained?} & A permanent drop must update all relevant identities and groups, check errors, and verify the resulting state. Partial changes may leave a saved identity or capability that restores authority.\par\smallskip\textbf{Audit move:} Check every identity-changing return value and test attempted regain. \\\hline
+\term{Temporary privilege drop}\\[-0.1em]{\small What additional state must be controlled?} & Temporarily changing effective identity can support a narrow task, but restoration, signals, threads, descriptors, and concurrent work complicate the model. Untrusted work must not run while elevated.\par\smallskip\textbf{Audit move:} Bracket the minimal operation and verify state on normal and exceptional exits. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Real, effective, and saved identities determine what a process can access and whether dropped authority can return.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{File Security and Paths}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{File and directory permissions}\\[-0.1em]{\small What authority follows from directory permissions?} & Directory search, create, remove, and rename rights differ from permissions on the target file. A protected file can still be replaced or redirected when an attacker controls a containing directory.\par\smallskip\textbf{Audit move:} Audit permissions and ownership on the full path, not only the final object. \\\hline
+\term{File creation}\\[-0.1em]{\small How should a new file acquire secure permissions?} & Creation mode, process mask, inherited context, flags, and preexisting names determine the resulting object. Opening and then fixing permissions leaves a window and may operate on an attacker-chosen file.\par\smallskip\textbf{Audit move:} Use atomic creation with restrictive initial permissions and verify the opened object. \\\hline
+\term{Directory safety and dangerous places}\\[-0.1em]{\small Which directories are unsuitable for privileged path operations?} & World-writable or attacker-controlled directories permit name replacement, link insertion, and cleanup races. Relative paths also depend on mutable working-directory state.\par\smallskip\textbf{Audit move:} Avoid privileged resolution through untrusted directories and use trusted directory handles where possible. \\\hline
+\term{Filenames and paths}\\[-0.1em]{\small Why is textual path validation insufficient?} & Repeated separators, parent components, alternate roots, mount changes, and links can make textual form diverge from the resolved object. The namespace can change between operations.\par\smallskip\textbf{Audit move:} Bind policy to a resolved object or trusted directory-relative operation rather than a string alone. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Path-based access is a name-resolution process influenced by every directory component, link, mount, and caller-controlled string.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{File Internals and Links}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Descriptors, inodes, and directories}\\[-0.1em]{\small What does an open descriptor guarantee?} & A descriptor refers to an opened object independently of later renaming, while an inode identifies filesystem metadata within its context. Descriptor reuse and inherited descriptors can still cause confusion.\par\smallskip\textbf{Audit move:} Verify type, owner, permissions, and flags on the opened descriptor before use. \\\hline
+\term{Symbolic links}\\[-0.1em]{\small How do symbolic links redirect privileged access?} & A symbolic link stores another path and can redirect lookup across directories or filesystems. Attackers exploit applications that check one pathname but later follow a substituted link.\par\smallskip\textbf{Audit move:} Use no-follow and directory-relative primitives where supported, then verify the opened object. \\\hline
+\term{Hard links}\\[-0.1em]{\small Why can a second name affect policy?} & Hard links give one underlying object multiple names. Name-based ownership or location assumptions may fail when an attacker can create a link to a sensitive object.\par\smallskip\textbf{Audit move:} Review link-creation permissions and avoid treating pathname uniqueness as object identity. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Descriptors and object identifiers are more stable than names, but reuse and link semantics still require careful verification.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Race Conditions and Temporary Files}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{TOCTOU}\\[-0.1em]{\small What changes between check and use?} & A pathname check followed by a separate open, create, chmod, or delete creates a race if another principal can replace a component or target. Faster checks do not make the sequence atomic.\par\smallskip\textbf{Audit move:} Replace check-then-use sequences with one atomic operation or descriptor-based validation. \\\hline
+\term{Permission and ownership races}\\[-0.1em]{\small Can access rights change mid-operation?} & Multiple calls that establish ownership, mode, and content may expose intermediate states. Signals, threads, and cooperating processes can enlarge the race window.\par\smallskip\textbf{Audit move:} Create securely from the start and verify postconditions on the same descriptor. \\\hline
+\term{Unique temporary files}\\[-0.1em]{\small What properties must a temporary file have?} & The name must be unpredictable or atomically exclusive, the directory trustworthy, permissions restrictive, and cleanup bound to the correct object. Predictable-name generation followed by open is unsafe.\par\smallskip\textbf{Audit move:} Use a secure creation primitive and retain the returned descriptor. \\\hline
+\term{Reuse and cleaners}\\[-0.1em]{\small How can cleanup create a vulnerability?} & Reusing names or relying on external cleaners can remove, replace, or expose a file while the application still expects it. Long-lived temporary objects invite namespace races.\par\smallskip\textbf{Audit move:} Unlink early when appropriate and coordinate lifetime without trusting pathname persistence. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Separate checks and uses are unsafe when an attacker can mutate the namespace or permissions between them.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Stdio Interface}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Opening streams}\\[-0.1em]{\small Which mode and pathname assumptions affect stream safety?} & Stream modes can create, truncate, append, or reuse files, and path lookup retains the same race concerns as lower-level open operations. Conversion from descriptors must preserve flags and ownership.\par\smallskip\textbf{Audit move:} Review mode strings, creation semantics, and the security of the resolved object. \\\hline
+\term{Reading and writing}\\[-0.1em]{\small Can partial or buffered I/O change program state?} & Reads and writes may process fewer elements than requested, encounter end-of-file, or defer errors until a flush. Text transformations and formatted conversion add parsing risks.\par\smallskip\textbf{Audit move:} Check counts, error indicators, buffer state, and the distinction between EOF and failure. \\\hline
+\term{Closing}\\[-0.1em]{\small Why does close handling matter?} & Buffered data may fail during flush or close, so earlier successful writes do not prove durable output. Cleanup errors can also interact with retries and descriptor reuse.\par\smallskip\textbf{Audit move:} Check finalization errors and avoid retry logic that can act on a reused descriptor. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Buffered streams add state and error semantics above descriptors that must be handled explicitly.
+\end{CornellSummaryBox}
+\begin{CornellLegacyBox}{Historical Context}
+Available descriptor-relative and no-follow interfaces differ across UNIX variants and versions. Assess the exact target platform and prefer its current race-resistant primitives.
+\end{CornellLegacyBox}
+\section{Security-Review Checklist}
+\begin{CornellChecklist}
+\item \textbf{Scoping}
+Record real, effective, saved, and supplementary identities at each sensitive operation.
+\item \textbf{Attack-surface identification}
+Minimize privileged code and inventory every input accepted before privilege is reduced.
+\item \textbf{Input and data-flow analysis}
+Check every identity-changing return value and test attempted regain.
+\item \textbf{Trust-boundary review}
+Bracket the minimal operation and verify state on normal and exceptional exits.
+\item \textbf{Candidate-point inspection}
+Audit permissions and ownership on the full path, not only the final object.
+\item \textbf{Control-flow review}
+Use atomic creation with restrictive initial permissions and verify the opened object.
+\item \textbf{Resource and lifetime review}
+Avoid privileged resolution through untrusted directories and use trusted directory handles where possible.
+\item \textbf{Error-path analysis}
+Bind policy to a resolved object or trusted directory-relative operation rather than a string alone.
+\item \textbf{Mitigation validation}
+Verify type, owner, permissions, and flags on the opened descriptor before use.
+\item \textbf{Evidence and reporting}
+Use no-follow and directory-relative primitives where supported, then verify the opened object.
+\item \textbf{Scoping}
+Review link-creation permissions and avoid treating pathname uniqueness as object identity.
+\item \textbf{Attack-surface identification}
+Replace check-then-use sequences with one atomic operation or descriptor-based validation.
+\end{CornellChecklist}
+\section{Chapter Synthesis}
+UNIX file security is fundamentally about identity, namespace control, and atomicity. A reviewer must follow effective authority, inspect every directory in a path, prefer stable handles over repeated names, and eliminate check-use gaps. Prioritize privileged operations in writable directories, unsafe temporary-file creation, incomplete privilege drops, and descriptor or stream errors that alter protected data.
+\section{Self-Test Questions}
+\begin{enumerate}
+\item Which identity does the kernel use for an access decision?
+\item Why are set-user-ID and similar programs high risk?
+\item What proves that privilege cannot be regained?
+\item What additional state must be controlled?
+\item What authority follows from directory permissions?
+\item How should a new file acquire secure permissions?
+\item \textbf{Scenario:} A privileged program checks that a temporary pathname is unused and then opens it for writing. Why is this unsafe?
+\item \textbf{Scenario:} A process changes only its effective user ID before parsing untrusted input and retains a saved privileged ID. Has it permanently dropped privilege?
+\end{enumerate}
+\clearpage
+\subsection*{Answer Key}
+\begin{enumerate}
+\item Processes carry multiple user and group identities, and files carry owners and mode bits. The relevant identity can differ across system calls and privilege transitions.
+\item They process less-trusted input while holding another principal's authority. Environment, files, descriptors, signals, and invoked programs become part of the attack surface.
+\item A permanent drop must update all relevant identities and groups, check errors, and verify the resulting state. Partial changes may leave a saved identity or capability that restores authority.
+\item Temporarily changing effective identity can support a narrow task, but restoration, signals, threads, descriptors, and concurrent work complicate the model. Untrusted work must not run while elevated.
+\item Directory search, create, remove, and rename rights differ from permissions on the target file. A protected file can still be replaced or redirected when an attacker controls a containing directory.
+\item Creation mode, process mask, inherited context, flags, and preexisting names determine the resulting object. Opening and then fixing permissions leaves a window and may operate on an attacker-chosen file.
+\item An attacker can create or redirect the name between the check and open. Use an atomic exclusive-creation primitive in a trustworthy directory and operate through the returned descriptor.
+\item No. The saved identity may permit regain, and parsing occurs within a complex reversible state. A permanent drop must update all relevant credentials, supplementary groups, and verify that regain fails.
+\end{enumerate}
+\section{Key-Term Recap}
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.27\textwidth}p{0.65\textwidth}}
+\toprule
+\textbf{Term} & \textbf{Working meaning for review} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Term} & \textbf{Working meaning for review} \\
+\midrule
+\endhead
+Users, groups, and processes & Processes carry multiple user and group identities, and files carry owners and mode bits. \\
+Privileged programs & They process less-trusted input while holding another principal's authority. \\
+Permanent privilege drop & A permanent drop must update all relevant identities and groups, check errors, and verify the resulting state. \\
+Temporary privilege drop & Temporarily changing effective identity can support a narrow task, but restoration, signals, threads, descriptors, and concurrent work complicate the model. \\
+File and directory permissions & Directory search, create, remove, and rename rights differ from permissions on the target file. \\
+File creation & Creation mode, process mask, inherited context, flags, and preexisting names determine the resulting object. \\
+Directory safety and dangerous places & World-writable or attacker-controlled directories permit name replacement, link insertion, and cleanup races. \\
+Filenames and paths & Repeated separators, parent components, alternate roots, mount changes, and links can make textual form diverge from the resolved object. \\
+Descriptors, inodes, and directories & A descriptor refers to an opened object independently of later renaming, while an inode identifies filesystem metadata within its context. \\
+Symbolic links & A symbolic link stores another path and can redirect lookup across directories or filesystems. \\
+\bottomrule
+\end{longtable}
+\section{One-Sentence Takeaway}
+\begin{CornellExamBox}{One-Sentence Takeaway}
+\textbf{Secure UNIX resource handling binds least privilege to atomic, descriptor-based operations on verified objects rather than mutable pathnames.}
+\end{CornellExamBox}
+\end{document}

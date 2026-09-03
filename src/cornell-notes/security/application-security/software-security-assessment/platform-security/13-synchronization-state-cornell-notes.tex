@@ -1,0 +1,180 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage{cornell-notes}
+\usepackage{needspace}
+
+\title{Chapter 13: Synchronization and State}
+\author{}
+\date{}
+
+\setDocTitle{Chapter 13: Synchronization and State}
+\setDocSubtitle{Application Security Review}
+\setCornellCollection{Software Security Assessment}
+\setCornellUnitType{Chapter}
+\setCornellUnitNumber{13}
+\setCornellUnitTitle{Synchronization and State}
+\setCornellCompanionLabel{Study and audit reference}
+\setCornellSourceRange{pp. 755--825}
+\begin{document}
+\maketitle
+
+\begin{center}
+\small\color{Meta}\textbf{Coverage range:} pp. 755--825 \quad\textbullet\quad \textbf{Format:} Cornell cue-and-notes
+\end{center}
+\vspace{0.25em}
+\begin{CornellOverviewBox}{Review Orientation}
+\textbf{Central problem.} Identify concurrency, reentrancy, signal, and lifetime failures that let interleavings violate security invariants even when each individual operation appears correct.
+\textbf{Why it matters.} Security reviewers use this material to connect attacker-controlled conditions to violated invariants, consequential operations, and defensible remediation.
+\textbf{Prerequisites.} Threads, processes, shared memory, locks, condition variables, signals, callbacks, and object lifetime.
+\textbf{Assessment relationship.} It generalizes check-use races from files and IPC into a systematic model for concurrent application state.
+\end{CornellOverviewBox}
+\section{Learning Objectives}
+\begin{itemize}
+\item Explain the security significance of reentrancy and asynchronous safety.
+\item Identify attacker influence and failed assumptions associated with race conditions.
+\item Trace security-relevant data or state through starvation and deadlock.
+\item Evaluate whether controls addressing system v synchronization preserve the intended invariant.
+\item Audit implementation and error paths related to windows synchronization.
+\item Distinguish safe and unsafe uses of synchronization vulnerabilities.
+\item Diagnose a failure involving sending and permissions from concrete evidence.
+\item Verify remediation and test coverage for handling signals.
+\end{itemize}
+\section{Cornell Cue-and-Notes}
+\Needspace{8\baselineskip}
+\subsection{Synchronization Problems}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Reentrancy and asynchronous safety}\\[-0.1em]{\small Can code be entered again before its state is consistent?} & Callbacks, signals, destructors, and nested event processing can reenter code that assumes exclusive progress. Functions safe in ordinary flow may be unsafe in an asynchronous context because they use locks, allocation, or global state.\par\smallskip\textbf{Audit move:} Identify reentry points and limit asynchronous handlers to operations guaranteed safe. \\\hline
+\term{Race conditions}\\[-0.1em]{\small Which interleaving violates the invariant?} & A race exists when correctness depends on relative timing of unsynchronized operations. Security review must describe shared state, actors, operations, and a feasible harmful ordering.\par\smallskip\textbf{Audit move:} Write the invariant and construct an explicit interleaving that breaks it. \\\hline
+\term{Starvation and deadlock}\\[-0.1em]{\small How can synchronization harm availability?} & Unfair acquisition can indefinitely delay work, while circular waits can stop all participants. Attackers may control timing, resource order, or requests that make these states repeatable.\par\smallskip\textbf{Audit move:} Build a lock-order graph and test sustained adversarial contention. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Concurrency vulnerabilities arise when a security invariant spans multiple operations that other execution contexts can interleave.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Process Synchronization}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{System V synchronization}\\[-0.1em]{\small What object-lifetime and permission issues matter?} & Shared synchronization objects persist in system namespaces and may outlive creators. Keys, initialization races, permissions, and stale state can let unrelated principals interfere.\par\smallskip\textbf{Audit move:} Audit atomic creation, ownership, permissions, initialization, and cleanup. \\\hline
+\term{Windows synchronization}\\[-0.1em]{\small How do named objects change trust?} & Mutexes, events, semaphores, and related objects have names and security descriptors. Predictable names can be precreated, and abandoned ownership requires explicit recovery.\par\smallskip\textbf{Audit move:} Use protected namespaces and verify type, descriptor, initial state, and collision behavior. \\\hline
+\term{Synchronization vulnerabilities}\\[-0.1em]{\small Can a lock protect the wrong abstraction?} & Using different locks for one invariant, checking outside a lock, exposing mutable pointers, or releasing before use leaves gaps. Locking individual variables is insufficient when a relationship spans them.\par\smallskip\textbf{Audit move:} Map each invariant to one clearly scoped synchronization strategy. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Cross-process synchronization adds namespaces, permissions, abandonment, and crash recovery to ordinary ordering concerns.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Signals}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Sending and permissions}\\[-0.1em]{\small Who can influence signal delivery?} & Signal permissions follow process identity and system rules, but same-user or related processes may still be attacker-controlled. Signal numbers and queued values are untrusted input.\par\smallskip\textbf{Audit move:} Document senders, signal masks, and data accepted from signal delivery. \\\hline
+\term{Handling signals}\\[-0.1em]{\small What may a handler safely do?} & Handlers run asynchronously with respect to ordinary code. Calling non-safe functions, touching shared structures, or taking locks can corrupt state or deadlock.\par\smallskip\textbf{Audit move:} Keep handlers minimal, set bounded atomic state, and defer complex work. \\\hline
+\term{Jump locations}\\[-0.1em]{\small Why are nonlocal jumps from handlers dangerous?} & A jump can bypass cleanup, leave locks held, abandon partially updated objects, or invalidate stack assumptions. The target context may no longer represent a safe recovery point.\par\smallskip\textbf{Audit move:} Avoid nonlocal recovery across resource-owning frames and prove all postconditions. \\\hline
+\term{Signal scoreboard}\\[-0.1em]{\small How can signal behavior be audited systematically?} & Catalog handlers, installation flags, masks, shared variables, interrupted operations, restart behavior, and allowed calls. The table exposes inconsistent assumptions across the program.\par\smallskip\textbf{Audit move:} Maintain a per-signal contract and test delivery at critical instruction windows. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Signals interrupt ordinary control flow and can transform safe-looking operations into reentrant or state-corrupting behavior.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Threads}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Thread APIs}\\[-0.1em]{\small Which creation and join semantics shape security?} & Thread attributes, detached state, stacks, cancellation, cleanup, and join behavior determine lifetime and resource release. Failure to check API results can leave code running under unexpected assumptions.\par\smallskip\textbf{Audit move:} Audit creation attributes, cleanup handlers, joins, cancellation points, and errors. \\\hline
+\term{Threading vulnerabilities}\\[-0.1em]{\small Which shared-state failures recur?} & Data races, stale pointers, double initialization, unsafe lazy construction, reference-count races, lock-order inversion, and thread-unsafe library calls can corrupt memory or authorization state.\par\smallskip\textbf{Audit move:} Trace object ownership and synchronization from publication through final destruction. \\\hline
+\term{Atomicity and compound operations}\\[-0.1em]{\small Does an atomic variable make a workflow atomic?} & Atomic reads and writes protect individual operations but not a multi-step invariant unless the algorithm establishes the needed ordering. Check-then-act sequences still race without a combined operation or lock.\par\smallskip\textbf{Audit move:} Identify the full transaction boundary and justify memory ordering or locking. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Thread safety requires coherent ownership, lifetime, synchronization, and error handling across every shared object.
+\end{CornellSummaryBox}
+\begin{CornellLegacyBox}{Historical Context}
+Thread and process APIs vary, and contemporary language memory models formalize behavior differently. Validate atomicity and ordering claims against the exact platform and compiler model.
+\end{CornellLegacyBox}
+\section{Security-Review Checklist}
+\begin{CornellChecklist}
+\item \textbf{Scoping}
+Identify reentry points and limit asynchronous handlers to operations guaranteed safe.
+\item \textbf{Attack-surface identification}
+Write the invariant and construct an explicit interleaving that breaks it.
+\item \textbf{Input and data-flow analysis}
+Build a lock-order graph and test sustained adversarial contention.
+\item \textbf{Trust-boundary review}
+Audit atomic creation, ownership, permissions, initialization, and cleanup.
+\item \textbf{Candidate-point inspection}
+Use protected namespaces and verify type, descriptor, initial state, and collision behavior.
+\item \textbf{Control-flow review}
+Map each invariant to one clearly scoped synchronization strategy.
+\item \textbf{Resource and lifetime review}
+Document senders, signal masks, and data accepted from signal delivery.
+\item \textbf{Error-path analysis}
+Keep handlers minimal, set bounded atomic state, and defer complex work.
+\item \textbf{Mitigation validation}
+Avoid nonlocal recovery across resource-owning frames and prove all postconditions.
+\item \textbf{Evidence and reporting}
+Maintain a per-signal contract and test delivery at critical instruction windows.
+\item \textbf{Scoping}
+Audit creation attributes, cleanup handlers, joins, cancellation points, and errors.
+\item \textbf{Attack-surface identification}
+Trace object ownership and synchronization from publication through final destruction.
+\end{CornellChecklist}
+\section{Chapter Synthesis}
+Concurrency review starts from invariants, not from a list of locks. The reviewer identifies all actors and asynchronous entry points, then proves that every transition preserves ownership, lifetime, authorization, and resource state under adverse interleavings. Prioritize races that affect object lifetime, privilege, file or IPC identity, and persistent security state.
+\section{Self-Test Questions}
+\begin{enumerate}
+\item Can code be entered again before its state is consistent?
+\item Which interleaving violates the invariant?
+\item How can synchronization harm availability?
+\item What object-lifetime and permission issues matter?
+\item How do named objects change trust?
+\item Can a lock protect the wrong abstraction?
+\item \textbf{Scenario:} Two threads check that a session is unauthenticated and then both initialize it using different identities. What should protect the operation?
+\item \textbf{Scenario:} A signal handler logs an error using a routine that allocates memory while the interrupted thread holds the allocator lock. What failure can occur?
+\end{enumerate}
+\clearpage
+\subsection*{Answer Key}
+\begin{enumerate}
+\item Callbacks, signals, destructors, and nested event processing can reenter code that assumes exclusive progress. Functions safe in ordinary flow may be unsafe in an asynchronous context because they use locks, allocation, or global state.
+\item A race exists when correctness depends on relative timing of unsynchronized operations. Security review must describe shared state, actors, operations, and a feasible harmful ordering.
+\item Unfair acquisition can indefinitely delay work, while circular waits can stop all participants. Attackers may control timing, resource order, or requests that make these states repeatable.
+\item Shared synchronization objects persist in system namespaces and may outlive creators. Keys, initialization races, permissions, and stale state can let unrelated principals interfere.
+\item Mutexes, events, semaphores, and related objects have names and security descriptors. Predictable names can be precreated, and abandoned ownership requires explicit recovery.
+\item Using different locks for one invariant, checking outside a lock, exposing mutable pointers, or releasing before use leaves gaps. Locking individual variables is insufficient when a relationship spans them.
+\item The check and state transition form one invariant and need a single atomic or locked operation. Protecting individual fields separately does not prevent identity mixing or double initialization.
+\item The handler can reenter the allocator and deadlock or corrupt internal state. Restrict the handler to asynchronous-safe operations and defer logging to normal execution.
+\end{enumerate}
+\section{Key-Term Recap}
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.27\textwidth}p{0.65\textwidth}}
+\toprule
+\textbf{Term} & \textbf{Working meaning for review} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Term} & \textbf{Working meaning for review} \\
+\midrule
+\endhead
+Reentrancy and asynchronous safety & Callbacks, signals, destructors, and nested event processing can reenter code that assumes exclusive progress. \\
+Race conditions & A race exists when correctness depends on relative timing of unsynchronized operations. \\
+Starvation and deadlock & Unfair acquisition can indefinitely delay work, while circular waits can stop all participants. \\
+System V synchronization & Shared synchronization objects persist in system namespaces and may outlive creators. \\
+Windows synchronization & Mutexes, events, semaphores, and related objects have names and security descriptors. \\
+Synchronization vulnerabilities & Using different locks for one invariant, checking outside a lock, exposing mutable pointers, or releasing before use leaves gaps. \\
+Sending and permissions & Signal permissions follow process identity and system rules, but same-user or related processes may still be attacker-controlled. \\
+Handling signals & Handlers run asynchronously with respect to ordinary code. \\
+Jump locations & A jump can bypass cleanup, leave locks held, abandon partially updated objects, or invalidate stack assumptions. \\
+Signal scoreboard & Catalog handlers, installation flags, masks, shared variables, interrupted operations, restart behavior, and allowed calls. \\
+\bottomrule
+\end{longtable}
+\section{One-Sentence Takeaway}
+\begin{CornellExamBox}{One-Sentence Takeaway}
+\textbf{Concurrency becomes a security problem whenever an invariant spans operations that another thread, process, signal, or callback can interleave.}
+\end{CornellExamBox}
+\end{document}

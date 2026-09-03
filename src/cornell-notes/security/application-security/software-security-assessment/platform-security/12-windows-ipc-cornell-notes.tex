@@ -1,0 +1,184 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage{cornell-notes}
+\usepackage{needspace}
+
+\title{Chapter 12: Windows II: Interprocess Communication}
+\author{}
+\date{}
+
+\setDocTitle{Chapter 12: Windows II: Interprocess Communication}
+\setDocSubtitle{Application Security Review}
+\setCornellCollection{Software Security Assessment}
+\setCornellUnitType{Chapter}
+\setCornellUnitNumber{12}
+\setCornellUnitTitle{Windows II: Interprocess Communication}
+\setCornellCompanionLabel{Study and audit reference}
+\setCornellSourceRange{pp. 685--754}
+\begin{document}
+\maketitle
+
+\begin{center}
+\small\color{Meta}\textbf{Coverage range:} pp. 685--754 \quad\textbullet\quad \textbf{Format:} Cornell cue-and-notes
+\end{center}
+\vspace{0.25em}
+\begin{CornellOverviewBox}{Review Orientation}
+\textbf{Central problem.} Audit Windows IPC endpoints, permissions, impersonation, state, and message parsing so less-trusted clients cannot redirect or borrow server authority.
+\textbf{Why it matters.} Security reviewers use this material to connect attacker-controlled conditions to violated invariants, consequential operations, and defensible remediation.
+\textbf{Prerequisites.} Windows objects, tokens, security descriptors, handles, sessions, processes, and basic RPC and COM concepts.
+\textbf{Assessment relationship.} It applies the Windows object and identity model to concrete communication mechanisms and privileged server designs.
+\end{CornellOverviewBox}
+\section{Learning Objectives}
+\begin{itemize}
+\item Explain the security significance of redirector and impersonation.
+\item Identify attacker influence and failed assumptions associated with window stations and desktops.
+\item Trace security-relevant data or state through window messages and shatter-style attacks.
+\item Evaluate whether controls addressing dde and terminal sessions preserve the intended invariant.
+\item Audit implementation and error paths related to pipe permissions and creation.
+\item Distinguish safe and unsafe uses of named-pipe impersonation.
+\item Diagnose a failure involving pipe squatting from concrete evidence.
+\item Verify remediation and test coverage for mailslots.
+\end{itemize}
+\section{Cornell Cue-and-Notes}
+\Needspace{8\baselineskip}
+\subsection{IPC Security and Window Messaging}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Redirector and impersonation}\\[-0.1em]{\small Whose identity is used for a remote or delegated access?} & Network redirection and impersonation can cause a server to access resources as itself or as a client. Incorrect token selection creates confused-deputy behavior or unintended credential use.\par\smallskip\textbf{Audit move:} Record primary and impersonation identity at each local and remote resource access. \\\hline
+\term{Window stations and desktops}\\[-0.1em]{\small How do graphical object boundaries affect security?} & Window stations and desktops contain user-interface objects with access controls and session scope. Sharing high-privilege interactive objects with less-trusted processes can expose input or message channels.\par\smallskip\textbf{Audit move:} Verify session, station, desktop, and ACL isolation for privileged UI processes. \\\hline
+\term{Window messages and shatter-style attacks}\\[-0.1em]{\small Can a lower-privilege process drive a privileged handler?} & Messages carry identifiers and pointer-like or structured data interpreted by recipient code. If isolation is weak, crafted messages can invoke unsafe handlers or privileged actions.\par\smallskip\textbf{Audit move:} Enumerate privileged message handlers and validate sender reachability plus parameter semantics. \\\hline
+\term{DDE and terminal sessions}\\[-0.1em]{\small What legacy or session-scoped channels remain reachable?} & Higher-level messaging layers and terminal sessions introduce discovery, naming, and cross-session assumptions. Exposure must be measured on the deployed system.\par\smallskip\textbf{Audit move:} Disable unused mechanisms and test reachability from each user and session boundary. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Every IPC mechanism has a namespace, access policy, peer identity model, and message semantics that must be reviewed together.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Pipes and Mailslots}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Pipe permissions and creation}\\[-0.1em]{\small Who can create, connect to, or control a pipe?} & The pipe object's descriptor and namespace determine which clients and servers participate. Default descriptors and predictable names can allow unauthorized connection or precreation.\par\smallskip\textbf{Audit move:} Apply an explicit descriptor and handle existing-name collisions as a security event. \\\hline
+\term{Named-pipe impersonation}\\[-0.1em]{\small When should a server borrow client identity?} & Impersonation should cover only the operation authorized for that authenticated client and must be reverted on every exit. Acting before peer identity is established can grant server authority to untrusted requests.\par\smallskip\textbf{Audit move:} Verify impersonate-authorize-act-revert sequencing, including errors and asynchronous work. \\\hline
+\term{Pipe squatting}\\[-0.1em]{\small How can endpoint precreation redirect trust?} & An attacker can create a predictable endpoint before the legitimate server or client and receive secrets or commands. Both sides need a trustworthy way to identify the peer.\par\smallskip\textbf{Audit move:} Test startup races and verify server identity rather than trusting the endpoint name. \\\hline
+\term{Mailslots}\\[-0.1em]{\small What security limitations follow from datagram-like IPC?} & Mailslots emphasize one-way, message-oriented delivery and may provide weaker peer assurance. Namespace permissions, message size, and untrusted sender data remain central concerns.\par\smallskip\textbf{Audit move:} Validate sender assumptions and bound every message before parsing. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Named IPC endpoints can be squatted, mispermissioned, or misused through weak framing and impersonation logic.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{RPC}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Connections and transports}\\[-0.1em]{\small Which clients can reach the RPC endpoint?} & Transport choice, endpoint registration, network exposure, and authentication service define reachability. Local transport does not automatically imply a trusted caller.\par\smallskip\textbf{Audit move:} Enumerate bindings and require authentication and authorization appropriate to each transport. \\\hline
+\term{Interface definition and IDL}\\[-0.1em]{\small How does the interface contract affect generated code?} & IDL types, size relationships, direction attributes, unions, pointers, and bounds guide marshaling. Incorrect relationships can create allocation mismatches or expose unintended functionality.\par\smallskip\textbf{Audit move:} Review IDL and generated assumptions alongside hand-written manager code. \\\hline
+\term{Server authentication and impersonation}\\[-0.1em]{\small Where must an RPC server authorize the caller?} & Transport authentication establishes identity, while the server must still authorize each method and resource. Impersonation level and delegation scope determine what downstream access is possible.\par\smallskip\textbf{Audit move:} Check method-level authorization before state change and constrain impersonation level. \\\hline
+\term{Context handles and state}\\[-0.1em]{\small How can stateful RPC objects fail?} & Context handles bind client-visible references to server state and lifetime. Races, stale handles, weak rundown, and type confusion can produce use-after-free or cross-client access.\par\smallskip\textbf{Audit move:} Audit creation, lookup, synchronization, teardown, and client binding of every context. \\\hline
+\term{Threading and auditing}\\[-0.1em]{\small Why does concurrent dispatch matter?} & RPC servers may process calls concurrently, exposing shared state and impersonation to races. An audit must cover interface reachability, marshaling, authorization, state, and error paths.\par\smallskip\textbf{Audit move:} Test parallel calls and ensure thread-local security context is not stored globally. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+RPC stubs and server implementations turn untrusted serialized data into allocations, state transitions, callbacks, and privileged operations.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{COM, DCOM, and ActiveX}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{COM identity and activation}\\[-0.1em]{\small Which server is activated under whose identity?} & Class registration and activation configuration select executable code and account context. Writable registration or unsafe identity choices can redirect privileged activation.\par\smallskip\textbf{Audit move:} Audit class registration, executable paths, launch identity, and controlling ACLs. \\\hline
+\term{DCOM access controls}\\[-0.1em]{\small Who can launch, activate, and call a remote component?} & Launch and access permissions are distinct and combine machine and application configuration. Broad defaults can expose a privileged component beyond its intended clients.\par\smallskip\textbf{Audit move:} Calculate effective launch and access permissions for representative principals. \\\hline
+\term{MIDL and marshaling}\\[-0.1em]{\small Can interface data violate server assumptions?} & Automation and custom marshaling transform untrusted fields into language objects. Length, variant type, ownership, and reference-count assumptions require review beyond generated stubs.\par\smallskip\textbf{Audit move:} Trace complex parameters from unmarshaling through validation and lifetime management. \\\hline
+\term{ATL and ActiveX}\\[-0.1em]{\small Why are reusable component frameworks high-value audit targets?} & Frameworks reduce boilerplate but expose configuration, scripting, persistence, and browser-hosted interfaces. Unsafe methods or object-safety claims can widen attacker reach.\par\smallskip\textbf{Audit move:} Inventory exposed methods, instantiation contexts, safety flags, and input validation. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Component activation combines registry configuration, class identity, server process authority, marshaling, and interface permissions.
+\end{CornellSummaryBox}
+\begin{CornellLegacyBox}{Historical Context}
+Several graphical and component technologies have changed in prevalence and isolation. Treat them as platform-specific examples of endpoint, message, activation, and impersonation review, and verify current reachability.
+\end{CornellLegacyBox}
+\section{Security-Review Checklist}
+\begin{CornellChecklist}
+\item \textbf{Scoping}
+Record primary and impersonation identity at each local and remote resource access.
+\item \textbf{Attack-surface identification}
+Verify session, station, desktop, and ACL isolation for privileged UI processes.
+\item \textbf{Input and data-flow analysis}
+Enumerate privileged message handlers and validate sender reachability plus parameter semantics.
+\item \textbf{Trust-boundary review}
+Disable unused mechanisms and test reachability from each user and session boundary.
+\item \textbf{Candidate-point inspection}
+Apply an explicit descriptor and handle existing-name collisions as a security event.
+\item \textbf{Control-flow review}
+Verify impersonate-authorize-act-revert sequencing, including errors and asynchronous work.
+\item \textbf{Resource and lifetime review}
+Test startup races and verify server identity rather than trusting the endpoint name.
+\item \textbf{Error-path analysis}
+Validate sender assumptions and bound every message before parsing.
+\item \textbf{Mitigation validation}
+Enumerate bindings and require authentication and authorization appropriate to each transport.
+\item \textbf{Evidence and reporting}
+Review IDL and generated assumptions alongside hand-written manager code.
+\item \textbf{Scoping}
+Check method-level authorization before state change and constrain impersonation level.
+\item \textbf{Attack-surface identification}
+Audit creation, lookup, synchronization, teardown, and client binding of every context.
+\end{CornellChecklist}
+\section{Chapter Synthesis}
+Windows IPC security depends on trustworthy endpoint selection, explicit permissions, authenticated peers, narrow authorization, correct impersonation, and safe parsing of structured messages. Stateful and concurrent servers add lifetime and synchronization risks. Prioritize privileged endpoints reachable by low-privilege or remote clients, especially where names can be squatted or server identity is assumed rather than verified.
+\section{Self-Test Questions}
+\begin{enumerate}
+\item Whose identity is used for a remote or delegated access?
+\item How do graphical object boundaries affect security?
+\item Can a lower-privilege process drive a privileged handler?
+\item What legacy or session-scoped channels remain reachable?
+\item Who can create, connect to, or control a pipe?
+\item When should a server borrow client identity?
+\item \textbf{Scenario:} A client connects to a predictable named pipe and immediately sends credentials, assuming the pipe name proves server identity. What is the risk?
+\item \textbf{Scenario:} An RPC server impersonates a caller and queues work to another thread that executes after the request returns. What should be reviewed?
+\end{enumerate}
+\clearpage
+\subsection*{Answer Key}
+\begin{enumerate}
+\item Network redirection and impersonation can cause a server to access resources as itself or as a client. Incorrect token selection creates confused-deputy behavior or unintended credential use.
+\item Window stations and desktops contain user-interface objects with access controls and session scope. Sharing high-privilege interactive objects with less-trusted processes can expose input or message channels.
+\item Messages carry identifiers and pointer-like or structured data interpreted by recipient code. If isolation is weak, crafted messages can invoke unsafe handlers or privileged actions.
+\item Higher-level messaging layers and terminal sessions introduce discovery, naming, and cross-session assumptions. Exposure must be measured on the deployed system.
+\item The pipe object's descriptor and namespace determine which clients and servers participate. Default descriptors and predictable names can allow unauthorized connection or precreation.
+\item Impersonation should cover only the operation authorized for that authenticated client and must be reverted on every exit. Acting before peer identity is established can grant server authority to untrusted requests.
+\item An attacker may precreate the endpoint and capture the credentials. The client must authenticate the server, while creation permissions and collision handling reduce squatting opportunities.
+\item Determine whether the impersonation token is safely captured, constrained, reverted, and bound to authorized work. Global or thread-confused identity can execute the task with server or another client's authority.
+\end{enumerate}
+\section{Key-Term Recap}
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.27\textwidth}p{0.65\textwidth}}
+\toprule
+\textbf{Term} & \textbf{Working meaning for review} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Term} & \textbf{Working meaning for review} \\
+\midrule
+\endhead
+Redirector and impersonation & Network redirection and impersonation can cause a server to access resources as itself or as a client. \\
+Window stations and desktops & Window stations and desktops contain user-interface objects with access controls and session scope. \\
+Window messages and shatter-style attacks & Messages carry identifiers and pointer-like or structured data interpreted by recipient code. \\
+DDE and terminal sessions & Higher-level messaging layers and terminal sessions introduce discovery, naming, and cross-session assumptions. \\
+Pipe permissions and creation & The pipe object's descriptor and namespace determine which clients and servers participate. \\
+Named-pipe impersonation & Impersonation should cover only the operation authorized for that authenticated client and must be reverted on every exit. \\
+Pipe squatting & An attacker can create a predictable endpoint before the legitimate server or client and receive secrets or commands. \\
+Mailslots & Mailslots emphasize one-way, message-oriented delivery and may provide weaker peer assurance. \\
+Connections and transports & Transport choice, endpoint registration, network exposure, and authentication service define reachability. \\
+Interface definition and IDL & IDL types, size relationships, direction attributes, unions, pointers, and bounds guide marshaling. \\
+\bottomrule
+\end{longtable}
+\section{One-Sentence Takeaway}
+\begin{CornellExamBox}{One-Sentence Takeaway}
+\textbf{An IPC name identifies a rendezvous point, not a trustworthy peer; secure communication requires explicit identity, authorization, message validation, and state discipline.}
+\end{CornellExamBox}
+\end{document}

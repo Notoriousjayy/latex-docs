@@ -1,0 +1,180 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage{cornell-notes}
+\usepackage{needspace}
+
+\title{Chapter 8: Strings and Metacharacters}
+\author{}
+\date{}
+
+\setDocTitle{Chapter 8: Strings and Metacharacters}
+\setDocSubtitle{Application Security Review}
+\setCornellCollection{Software Security Assessment}
+\setCornellUnitType{Chapter}
+\setCornellUnitNumber{8}
+\setCornellUnitTitle{Strings and Metacharacters}
+\setCornellCompanionLabel{Study and audit reference}
+\setCornellSourceRange{pp. 387--457}
+\begin{document}
+\maketitle
+
+\begin{center}
+\small\color{Meta}\textbf{Coverage range:} pp. 387--457 \quad\textbullet\quad \textbf{Format:} Cornell cue-and-notes
+\end{center}
+\vspace{0.25em}
+\begin{CornellOverviewBox}{Review Orientation}
+\textbf{Central problem.} Trace how strings cross parsers and interpreters, preserving length, encoding, and syntactic meaning so data cannot become unintended control input.
+\textbf{Why it matters.} Security reviewers use this material to connect attacker-controlled conditions to violated invariants, consequential operations, and defensible remediation.
+\textbf{Prerequisites.} C strings, parsing, encodings, command interpreters, SQL, paths, and output construction.
+\textbf{Assessment relationship.} It unifies memory-safety review with injection and canonicalization analysis across language and system boundaries.
+\end{CornellOverviewBox}
+\section{Learning Objectives}
+\begin{itemize}
+\item Explain the security significance of unbounded functions.
+\item Identify attacker influence and failed assumptions associated with bounded functions.
+\item Trace security-relevant data or state through common string issues.
+\item Evaluate whether controls addressing embedded delimiters preserve the intended invariant.
+\item Audit implementation and error paths related to null injection and truncation.
+\item Distinguish safe and unsafe uses of path metacharacters.
+\item Diagnose a failure involving format strings from concrete evidence.
+\item Verify remediation and test coverage for shell, perl open, and sql syntax.
+\end{itemize}
+\section{Cornell Cue-and-Notes}
+\Needspace{8\baselineskip}
+\subsection{C String Handling}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Unbounded functions}\\[-0.1em]{\small Why are implicit destination limits dangerous?} & Functions that copy, concatenate, scan, or format without a destination capacity can overrun storage when source length is attacker-controlled or miscalculated. The surrounding code must establish a hard bound.\par\smallskip\textbf{Audit move:} Find unbounded string operations and trace maximum input length to destination capacity. \\\hline
+\term{Bounded functions}\\[-0.1em]{\small Does a size argument make a function safe?} & Bounded APIs differ in whether the bound includes the terminator, limits input or output, reports truncation, or guarantees termination. Passing the destination size incorrectly can preserve the original flaw.\par\smallskip\textbf{Audit move:} Document exact API semantics and verify the unit and off-by-one behavior at each call. \\\hline
+\term{Common string issues}\\[-0.1em]{\small Which invariants must a valid string satisfy?} & Review termination, embedded nulls, encoding, aliasing, overlap, allocation size, concatenation growth, and error returns. A buffer can be in bounds yet semantically truncated or unterminated.\par\smallskip\textbf{Audit move:} Track length and termination as explicit properties through every transformation. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+String APIs are safe only when capacity, termination, units, overlap, and return semantics are all correct.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Metacharacters}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Embedded delimiters}\\[-0.1em]{\small How can data create an extra field or token?} & If untrusted input contains a delimiter used by the next parser, it can terminate one field and introduce another. Validation must be defined for the grammar actually consumed downstream.\par\smallskip\textbf{Audit move:} Identify every parser boundary and the complete set of structural delimiters. \\\hline
+\term{Null injection and truncation}\\[-0.1em]{\small Can components disagree about where input ends?} & One layer may track an explicit length while another stops at a null byte or narrow field. The validator and consumer can therefore operate on different logical strings.\par\smallskip\textbf{Audit move:} Compare length and termination conventions across language, protocol, and API boundaries. \\\hline
+\term{Path metacharacters}\\[-0.1em]{\small How can path syntax escape an intended namespace?} & Separators, parent traversal, alternate roots, device names, links, and encoding variants can redirect access. Textual filtering is fragile when canonicalization occurs later or differs by platform.\par\smallskip\textbf{Audit move:} Canonicalize under the intended root and enforce policy on the resolved object. \\\hline
+\term{Format strings}\\[-0.1em]{\small When does data become a formatting program?} & If attacker-controlled text is used as a format specification, conversion directives can read or write unintended memory or leak data. The format must be a trusted constant and data supplied separately.\par\smallskip\textbf{Audit move:} Search formatting calls where the format operand is not a fixed trusted value. \\\hline
+\term{Shell, Perl open, and SQL syntax}\\[-0.1em]{\small What is the common injection pattern?} & Building interpreter input by concatenation lets metacharacters alter commands, modes, or queries. The root cause is crossing a grammar boundary without structural separation.\par\smallskip\textbf{Audit move:} Prefer parameterized or direct APIs; otherwise apply grammar-specific encoding at the final boundary. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+An interpreter assigns control meaning to characters, delimiters, or structure that an upstream validator may treat as ordinary data.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Filtering and Canonicalization}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Elimination}\\[-0.1em]{\small When is rejecting metacharacters appropriate?} & Allowlisting a narrow expected language can be effective when the domain truly excludes structural characters. Broad blacklists are brittle because they miss alternate syntax and transformations.\par\smallskip\textbf{Audit move:} Define the smallest valid input language and reject values outside it before use. \\\hline
+\term{Escaping}\\[-0.1em]{\small What makes escaping context-sensitive?} & Escaping is correct only for the exact grammar and syntactic position in which data is inserted. A value safely encoded for one layer may be decoded and reinterpreted by another.\par\smallskip\textbf{Audit move:} Identify final interpreter and context, encode once at that boundary, and test round trips. \\\hline
+\term{Evasion}\\[-0.1em]{\small How do attackers bypass filters?} & Alternate encodings, repeated decoding, case folding, inserted separators, equivalent syntax, and parser differentials can transform a permitted representation into a forbidden one.\par\smallskip\textbf{Audit move:} Enumerate normalization steps and ensure validation occurs after canonicalization but before use. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+A defense must account for the final grammar, normalization order, and all representations accepted by the consumer.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Character Sets and Unicode}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Unicode representation}\\[-0.1em]{\small Why can one visible string have multiple encodings?} & Characters can have multiple code-unit sequences or normalization forms, and byte length differs from character count. Security comparisons and buffer calculations fail when components use different representations.\par\smallskip\textbf{Audit move:} Choose a canonical encoding and normalization form for identifiers and policy decisions. \\\hline
+\term{Platform Unicode interfaces}\\[-0.1em]{\small Where can wide and narrow APIs diverge?} & Conversions between multibyte and wide representations can truncate, reject, replace, or reinterpret input. Platform APIs may expose parallel interfaces with different units and path behavior.\par\smallskip\textbf{Audit move:} Trace every conversion, its error convention, destination capacity, and downstream comparison. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Text is secure only when components agree on encoding, normalization, length units, and error handling.
+\end{CornellSummaryBox}
+\begin{CornellLegacyBox}{Historical Context}
+Specific APIs and Unicode support have evolved, but mixed encodings, parser differentials, and context-mismatched escaping remain durable review concerns.
+\end{CornellLegacyBox}
+\section{Security-Review Checklist}
+\begin{CornellChecklist}
+\item \textbf{Scoping}
+Find unbounded string operations and trace maximum input length to destination capacity.
+\item \textbf{Attack-surface identification}
+Document exact API semantics and verify the unit and off-by-one behavior at each call.
+\item \textbf{Input and data-flow analysis}
+Track length and termination as explicit properties through every transformation.
+\item \textbf{Trust-boundary review}
+Identify every parser boundary and the complete set of structural delimiters.
+\item \textbf{Candidate-point inspection}
+Compare length and termination conventions across language, protocol, and API boundaries.
+\item \textbf{Control-flow review}
+Canonicalize under the intended root and enforce policy on the resolved object.
+\item \textbf{Resource and lifetime review}
+Search formatting calls where the format operand is not a fixed trusted value.
+\item \textbf{Error-path analysis}
+Prefer parameterized or direct APIs; otherwise apply grammar-specific encoding at the final boundary.
+\item \textbf{Mitigation validation}
+Define the smallest valid input language and reject values outside it before use.
+\item \textbf{Evidence and reporting}
+Identify final interpreter and context, encode once at that boundary, and test round trips.
+\item \textbf{Scoping}
+Enumerate normalization steps and ensure validation occurs after canonicalization but before use.
+\item \textbf{Attack-surface identification}
+Choose a canonical encoding and normalization form for identifiers and policy decisions.
+\end{CornellChecklist}
+\section{Chapter Synthesis}
+String security combines memory invariants with parser semantics. The reviewer must identify each grammar boundary, ensure validator and consumer operate on the same canonical representation, and preserve length and termination across conversions. Highest-risk flows place attacker-controlled text into format, shell, query, path, or configuration syntax without structural separation.
+\section{Self-Test Questions}
+\begin{enumerate}
+\item Why are implicit destination limits dangerous?
+\item Does a size argument make a function safe?
+\item Which invariants must a valid string satisfy?
+\item How can data create an extra field or token?
+\item Can components disagree about where input ends?
+\item How can path syntax escape an intended namespace?
+\item \textbf{Scenario:} Input is checked for parent-directory tokens before URL decoding, then decoded twice before file access. What is wrong with the validation order?
+\item \textbf{Scenario:} A bounded copy reports truncation but the caller ignores the return value and treats the result as a complete identifier. What risks remain?
+\end{enumerate}
+\clearpage
+\subsection*{Answer Key}
+\begin{enumerate}
+\item Functions that copy, concatenate, scan, or format without a destination capacity can overrun storage when source length is attacker-controlled or miscalculated. The surrounding code must establish a hard bound.
+\item Bounded APIs differ in whether the bound includes the terminator, limits input or output, reports truncation, or guarantees termination. Passing the destination size incorrectly can preserve the original flaw.
+\item Review termination, embedded nulls, encoding, aliasing, overlap, allocation size, concatenation growth, and error returns. A buffer can be in bounds yet semantically truncated or unterminated.
+\item If untrusted input contains a delimiter used by the next parser, it can terminate one field and introduce another. Validation must be defined for the grammar actually consumed downstream.
+\item One layer may track an explicit length while another stops at a null byte or narrow field. The validator and consumer can therefore operate on different logical strings.
+\item Separators, parent traversal, alternate roots, device names, links, and encoding variants can redirect access. Textual filtering is fragile when canonicalization occurs later or differs by platform.
+\item The consumer sees a different representation than the validator. Normalize and decode according to one defined pipeline, reject ambiguous or repeated encodings, resolve under the intended root, and enforce policy on the resolved object.
+\item Memory may stay in bounds while identity or policy semantics change. Handle truncation as an error and ensure termination, uniqueness, and downstream comparison use the complete validated value.
+\end{enumerate}
+\section{Key-Term Recap}
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.27\textwidth}p{0.65\textwidth}}
+\toprule
+\textbf{Term} & \textbf{Working meaning for review} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Term} & \textbf{Working meaning for review} \\
+\midrule
+\endhead
+Unbounded functions & Functions that copy, concatenate, scan, or format without a destination capacity can overrun storage when source length is attacker-controlled or miscalculated. \\
+Bounded functions & Bounded APIs differ in whether the bound includes the terminator, limits input or output, reports truncation, or guarantees termination. \\
+Common string issues & Review termination, embedded nulls, encoding, aliasing, overlap, allocation size, concatenation growth, and error returns. \\
+Embedded delimiters & If untrusted input contains a delimiter used by the next parser, it can terminate one field and introduce another. \\
+Null injection and truncation & One layer may track an explicit length while another stops at a null byte or narrow field. \\
+Path metacharacters & Separators, parent traversal, alternate roots, device names, links, and encoding variants can redirect access. \\
+Format strings & If attacker-controlled text is used as a format specification, conversion directives can read or write unintended memory or leak data. \\
+Shell, Perl open, and SQL syntax & Building interpreter input by concatenation lets metacharacters alter commands, modes, or queries. \\
+Elimination & Allowlisting a narrow expected language can be effective when the domain truly excludes structural characters. \\
+Escaping & Escaping is correct only for the exact grammar and syntactic position in which data is inserted. \\
+\bottomrule
+\end{longtable}
+\section{One-Sentence Takeaway}
+\begin{CornellExamBox}{One-Sentence Takeaway}
+\textbf{Secure string handling requires agreement about capacity, termination, encoding, normalization, and grammar from the first input byte to the final interpreter.}
+\end{CornellExamBox}
+\end{document}

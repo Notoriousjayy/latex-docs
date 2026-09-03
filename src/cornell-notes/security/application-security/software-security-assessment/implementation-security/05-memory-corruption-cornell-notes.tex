@@ -1,0 +1,181 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage{cornell-notes}
+\usepackage{needspace}
+
+\title{Chapter 5: Memory Corruption}
+\author{}
+\date{}
+
+\setDocTitle{Chapter 5: Memory Corruption}
+\setDocSubtitle{Application Security Review}
+\setCornellCollection{Software Security Assessment}
+\setCornellUnitType{Chapter}
+\setCornellUnitNumber{5}
+\setCornellUnitTitle{Memory Corruption}
+\setCornellCompanionLabel{Study and audit reference}
+\setCornellSourceRange{pp. 167--202}
+\begin{document}
+\maketitle
+
+\begin{center}
+\small\color{Meta}\textbf{Coverage range:} pp. 167--202 \quad\textbullet\quad \textbf{Format:} Cornell cue-and-notes
+\end{center}
+\vspace{0.25em}
+\begin{CornellOverviewBox}{Review Orientation}
+\textbf{Central problem.} Recognize how writes beyond intended object boundaries corrupt control or application data and assess whether modern or historical mitigations meaningfully reduce impact.
+\textbf{Why it matters.} Security reviewers use this material to connect attacker-controlled conditions to violated invariants, consequential operations, and defensible remediation.
+\textbf{Prerequisites.} C memory layout, pointers, calling conventions, stacks, heaps, and process address spaces.
+\textbf{Assessment relationship.} It introduces a central implementation-vulnerability family that later language and program-building-block chapters help auditors locate systematically.
+\end{CornellOverviewBox}
+\section{Learning Objectives}
+\begin{itemize}
+\item Explain the security significance of process memory layout.
+\item Identify attacker influence and failed assumptions associated with stack overflows.
+\item Trace security-relevant data or state through off-by-one errors.
+\item Evaluate whether controls addressing heap overflows preserve the intended invariant.
+\item Audit implementation and error paths related to global and static overflows.
+\item Distinguish safe and unsafe uses of payload constraints.
+\item Diagnose a failure involving finding attacker data from concrete evidence.
+\item Verify remediation and test coverage for stack cookies and safe exception handling.
+\end{itemize}
+\section{Cornell Cue-and-Notes}
+\Needspace{8\baselineskip}
+\subsection{Buffer Overflows}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Process memory layout}\\[-0.1em]{\small Why does object location matter?} & Code, stacks, heaps, globals, mappings, and metadata occupy regions with different lifetimes and neighboring targets. Exploitability depends on what lies adjacent to the corrupted object and how the process uses it later.\par\smallskip\textbf{Audit move:} Identify storage duration, allocator behavior, neighboring objects, and later dereferences. \\\hline
+\term{Stack overflows}\\[-0.1em]{\small What can a stack overwrite affect?} & An overrun of a local object can corrupt adjacent variables, saved control data, arguments, or bookkeeping. Exact consequences depend on architecture, compiler layout, and mitigations rather than on a universal stack diagram.\par\smallskip\textbf{Audit move:} Trace destination size and copy length, then inspect corrupted stack objects and control data. \\\hline
+\term{Off-by-one errors}\\[-0.1em]{\small Why can a one-byte overwrite be serious?} & A boundary mistake may alter a terminator, size byte, pointer byte, frame field, or adjacent flag. Small corruption can redirect later parsing or memory operations even when immediate control data is not replaced.\par\smallskip\textbf{Audit move:} Test exact-boundary inputs and determine the semantics of the single adjacent byte. \\\hline
+\term{Heap overflows}\\[-0.1em]{\small How does heap corruption differ from stack corruption?} & Heap overruns can modify neighboring allocations, object fields, function pointers, lengths, or allocator metadata. Allocation order, reuse, and shared memory blocks shape both reliability and impact.\par\smallskip\textbf{Audit move:} Reconstruct allocation sizes, adjacency, lifetime, reuse, and allocator integrity checks. \\\hline
+\term{Global and static overflows}\\[-0.1em]{\small What can long-lived storage corruption change?} & Overwriting global or static data can modify configuration, authentication state, pointers, dispatch tables, or other persistent process state. Predictable placement may aid an attacker, but layout is toolchain-specific.\par\smallskip\textbf{Audit move:} Inspect link layout and every later use of adjacent long-lived data. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Overflow analysis connects an incorrect length or boundary decision to the specific neighboring data that an attacker can overwrite.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Shellcode and Control}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Payload constraints}\\[-0.1em]{\small What limits injected machine code?} & An attacker may need executable storage, a usable instruction encoding, reliable addresses, and input bytes that survive transport and copying. Character restrictions and uncertain layout influence payload construction.\par\smallskip\textbf{Audit move:} Record allowed bytes, storage permissions, address knowledge, and control-transfer opportunities. \\\hline
+\term{Finding attacker data}\\[-0.1em]{\small How can execution reach a payload?} & Classic approaches rely on predictable placement or indirect references to attacker-controlled data. Even when injection is blocked, control-flow or data-only corruption can reuse existing program behavior.\par\smallskip\textbf{Audit move:} Do not equate nonexecutable data with absence of impact; examine reusable code and sensitive data targets. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Traditional exploitation redirects execution to attacker-supplied or existing code, but impact can also arise from non-control data corruption.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Protection Mechanisms}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Stack cookies and safe exception handling}\\[-0.1em]{\small What do integrity checks protect?} & Canaries and protected exception metadata detect or constrain selected control-data corruption. Coverage depends on compiler decisions, code shape, architecture, and whether attackers can target unprotected data.\par\smallskip\textbf{Audit move:} Confirm the mitigation is enabled for the exact binary and identify objects outside its protection. \\\hline
+\term{Heap hardening}\\[-0.1em]{\small How do allocators detect corruption?} & Hardened allocators validate metadata, encode links, randomize behavior, or isolate allocations. These controls can convert exploitation into termination but may not protect application object fields.\par\smallskip\textbf{Audit move:} Test the deployed allocator and separate metadata protection from object-integrity protection. \\\hline
+\term{Nonexecutable memory and randomization}\\[-0.1em]{\small What do NX and address randomization change?} & Nonexecutable mappings restrict direct code injection, while randomization reduces address predictability. Information disclosure, partial overwrite, code reuse, or low entropy can weaken these defenses.\par\smallskip\textbf{Audit move:} Verify memory permissions, entropy, module compatibility, and information-leak paths. \\\hline
+\term{Function-pointer protection}\\[-0.1em]{\small Can encoded pointers eliminate indirect-call risk?} & Encoding or obfuscating function pointers raises the bar only if keys and decode operations are protected and all sensitive pointers participate. Corruptible data used before validation remains a concern.\par\smallskip\textbf{Audit move:} Locate indirect control data and confirm consistent protection from storage through use. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Mitigations change exploitation conditions but do not make the underlying out-of-bounds write acceptable.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Assessing Impact}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Location and neighboring data}\\[-0.1em]{\small Which exact object is corrupted?} & The same overwrite length has different consequences on a stack, heap, mapping, or global region. Identify the victim object and the semantic importance of adjacent data instead of assuming code execution.\par\smallskip\textbf{Audit move:} Capture a memory layout at the vulnerable operation and at the corrupted data's next use. \\\hline
+\term{Overwrite length and content}\\[-0.1em]{\small How much control does the attacker have?} & Determine minimum and maximum overwrite, termination behavior, encoding transformations, repeated patterns, and whether values are direct or derived. Partial control may still alter lengths, flags, or pointer bytes.\par\smallskip\textbf{Audit move:} Characterize overwrite bounds and byte constraints with focused test cases. \\\hline
+\term{Shared blocks and mitigations}\\[-0.1em]{\small Can corruption cross logical ownership boundaries?} & Suballocation and pooled storage can place unrelated objects in one block, allowing an error in one object to damage another. Final severity should reflect reachable targets and deployed defenses without treating defenses as a fix.\par\smallskip\textbf{Audit move:} Inspect object co-location, allocator reuse, privilege, crash handling, and exploit mitigations together. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Impact analysis must describe controllability, affected data, overwrite extent, sharing, and active defenses.
+\end{CornellSummaryBox}
+\begin{CornellLegacyBox}{Historical Context}
+The described exploitation techniques and named mitigations reflect particular operating systems and compiler generations. Current assessments must verify the exact architecture, toolchain, binary flags, and runtime protections rather than infer them from source code.
+\end{CornellLegacyBox}
+\section{Security-Review Checklist}
+\begin{CornellChecklist}
+\item \textbf{Scoping}
+Identify storage duration, allocator behavior, neighboring objects, and later dereferences.
+\item \textbf{Attack-surface identification}
+Trace destination size and copy length, then inspect corrupted stack objects and control data.
+\item \textbf{Input and data-flow analysis}
+Test exact-boundary inputs and determine the semantics of the single adjacent byte.
+\item \textbf{Trust-boundary review}
+Reconstruct allocation sizes, adjacency, lifetime, reuse, and allocator integrity checks.
+\item \textbf{Candidate-point inspection}
+Inspect link layout and every later use of adjacent long-lived data.
+\item \textbf{Control-flow review}
+Record allowed bytes, storage permissions, address knowledge, and control-transfer opportunities.
+\item \textbf{Resource and lifetime review}
+Do not equate nonexecutable data with absence of impact; examine reusable code and sensitive data targets.
+\item \textbf{Error-path analysis}
+Confirm the mitigation is enabled for the exact binary and identify objects outside its protection.
+\item \textbf{Mitigation validation}
+Test the deployed allocator and separate metadata protection from object-integrity protection.
+\item \textbf{Evidence and reporting}
+Verify memory permissions, entropy, module compatibility, and information-leak paths.
+\item \textbf{Scoping}
+Locate indirect control data and confirm consistent protection from storage through use.
+\item \textbf{Attack-surface identification}
+Capture a memory layout at the vulnerable operation and at the corrupted data's next use.
+\end{CornellChecklist}
+\section{Chapter Synthesis}
+Memory-corruption review begins with a size or lifetime mismatch but ends with a concrete model of the victim storage, adjacent targets, attacker byte control, and later use. Modern mitigations can reduce reliability or convert compromise into a crash, yet data-only targets and mitigation gaps remain important. Prioritize reachable writes that can modify control data, authorization state, object sizes, or privileged process behavior.
+\section{Self-Test Questions}
+\begin{enumerate}
+\item Why does object location matter?
+\item What can a stack overwrite affect?
+\item Why can a one-byte overwrite be serious?
+\item How does heap corruption differ from stack corruption?
+\item What can long-lived storage corruption change?
+\item What limits injected machine code?
+\item \textbf{Scenario:} A parser writes one byte beyond a heap buffer and the adjacent object begins with a length field. Why should the issue not be dismissed as a harmless off-by-one?
+\item \textbf{Scenario:} A binary uses nonexecutable heap memory and address randomization. Does that make a confirmed overflow low severity?
+\end{enumerate}
+\clearpage
+\subsection*{Answer Key}
+\begin{enumerate}
+\item Code, stacks, heaps, globals, mappings, and metadata occupy regions with different lifetimes and neighboring targets. Exploitability depends on what lies adjacent to the corrupted object and how the process uses it later.
+\item An overrun of a local object can corrupt adjacent variables, saved control data, arguments, or bookkeeping. Exact consequences depend on architecture, compiler layout, and mitigations rather than on a universal stack diagram.
+\item A boundary mistake may alter a terminator, size byte, pointer byte, frame field, or adjacent flag. Small corruption can redirect later parsing or memory operations even when immediate control data is not replaced.
+\item Heap overruns can modify neighboring allocations, object fields, function pointers, lengths, or allocator metadata. Allocation order, reuse, and shared memory blocks shape both reliability and impact.
+\item Overwriting global or static data can modify configuration, authentication state, pointers, dispatch tables, or other persistent process state. Predictable placement may aid an attacker, but layout is toolchain-specific.
+\item An attacker may need executable storage, a usable instruction encoding, reliable addresses, and input bytes that survive transport and copying. Character restrictions and uncertain layout influence payload construction.
+\item The byte may change the neighboring object's interpreted size, enabling a later read or write beyond its bounds. Review the adjacent allocation, byte constraints, and subsequent use of the corrupted field.
+\item Not by itself. Evaluate information leaks, code reuse, partial overwrite, data-only targets, privilege, and mitigation coverage. The controls affect exploit conditions but do not remove the unsafe write.
+\end{enumerate}
+\section{Key-Term Recap}
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.27\textwidth}p{0.65\textwidth}}
+\toprule
+\textbf{Term} & \textbf{Working meaning for review} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Term} & \textbf{Working meaning for review} \\
+\midrule
+\endhead
+Process memory layout & Code, stacks, heaps, globals, mappings, and metadata occupy regions with different lifetimes and neighboring targets. \\
+Stack overflows & An overrun of a local object can corrupt adjacent variables, saved control data, arguments, or bookkeeping. \\
+Off-by-one errors & A boundary mistake may alter a terminator, size byte, pointer byte, frame field, or adjacent flag. \\
+Heap overflows & Heap overruns can modify neighboring allocations, object fields, function pointers, lengths, or allocator metadata. \\
+Global and static overflows & Overwriting global or static data can modify configuration, authentication state, pointers, dispatch tables, or other persistent process state. \\
+Payload constraints & An attacker may need executable storage, a usable instruction encoding, reliable addresses, and input bytes that survive transport and copying. \\
+Finding attacker data & Classic approaches rely on predictable placement or indirect references to attacker-controlled data. \\
+Stack cookies and safe exception handling & Canaries and protected exception metadata detect or constrain selected control-data corruption. \\
+Heap hardening & Hardened allocators validate metadata, encode links, randomize behavior, or isolate allocations. \\
+Nonexecutable memory and randomization & Nonexecutable mappings restrict direct code injection, while randomization reduces address predictability. \\
+\bottomrule
+\end{longtable}
+\section{One-Sentence Takeaway}
+\begin{CornellExamBox}{One-Sentence Takeaway}
+\textbf{Memory-corruption severity follows from what an attacker can overwrite and how the program later trusts that corrupted state, not merely from the number of bytes written out of bounds.}
+\end{CornellExamBox}
+\end{document}

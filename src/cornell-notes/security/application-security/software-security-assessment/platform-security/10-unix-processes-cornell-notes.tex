@@ -1,0 +1,180 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage{cornell-notes}
+\usepackage{needspace}
+
+\title{Chapter 10: UNIX II: Processes}
+\author{}
+\date{}
+
+\setDocTitle{Chapter 10: UNIX II: Processes}
+\setDocSubtitle{Application Security Review}
+\setCornellCollection{Software Security Assessment}
+\setCornellUnitType{Chapter}
+\setCornellUnitNumber{10}
+\setCornellUnitTitle{UNIX II: Processes}
+\setCornellCompanionLabel{Study and audit reference}
+\setCornellSourceRange{pp. 559--624}
+\begin{document}
+\maketitle
+
+\begin{center}
+\small\color{Meta}\textbf{Coverage range:} pp. 559--624 \quad\textbullet\quad \textbf{Format:} Cornell cue-and-notes
+\end{center}
+\vspace{0.25em}
+\begin{CornellOverviewBox}{Review Orientation}
+\textbf{Central problem.} Audit process creation, program invocation, inherited attributes, environments, descriptors, sessions, limits, and IPC as channels through which authority and attacker influence propagate.
+\textbf{Why it matters.} Security reviewers use this material to connect attacker-controlled conditions to violated invariants, consequential operations, and defensible remediation.
+\textbf{Prerequisites.} UNIX processes, privilege, files, signals, environment variables, and interprocess communication.
+\textbf{Assessment relationship.} It extends UNIX file and identity analysis into execution and process-to-process trust boundaries.
+\end{CornellOverviewBox}
+\section{Learning Objectives}
+\begin{itemize}
+\item Explain the security significance of process creation.
+\item Identify attacker influence and failed assumptions associated with creation variants.
+\item Trace security-relevant data or state through termination and open files.
+\item Evaluate whether controls addressing direct invocation preserve the intended invariant.
+\item Audit implementation and error paths related to indirect invocation.
+\item Distinguish safe and unsafe uses of attribute retention.
+\item Diagnose a failure involving resource limits from concrete evidence.
+\item Verify remediation and test coverage for file descriptors.
+\end{itemize}
+\section{Cornell Cue-and-Notes}
+\Needspace{8\baselineskip}
+\subsection{Processes and Creation}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Process creation}\\[-0.1em]{\small What security state crosses a process boundary?} & Creation duplicates or initializes identity, descriptors, signal state, environment, memory, and resource limits. The parent must know which properties persist and which are reset before the child handles untrusted work.\par\smallskip\textbf{Audit move:} Inventory inherited authority and close or reset everything not required. \\\hline
+\term{Creation variants}\\[-0.1em]{\small Why do different creation interfaces matter?} & Variants can share memory, descriptors, or execution context differently and may impose restrictions before a new program is loaded. Incorrect assumptions create races or unsafe actions in a partially shared state.\par\smallskip\textbf{Audit move:} Verify the documented sharing and async-safety rules of the exact primitive. \\\hline
+\term{Termination and open files}\\[-0.1em]{\small How can exit behavior affect security?} & Termination can trigger handlers, buffered I/O, and parent-visible status. Inherited descriptors may keep files, pipes, or sockets open, delaying cleanup or leaking privileged channels.\par\smallskip\textbf{Audit move:} Review all exit paths and mark sensitive descriptors close-on-exec. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+A child inherits a security context whose copied state may be inappropriate for the work it performs.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Program Invocation}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Direct invocation}\\[-0.1em]{\small How should executable identity be established?} & Use a specific trusted executable and construct arguments as separate values. Relative paths or mutable directories allow an attacker to substitute code, while argument zero and option syntax can alter behavior.\par\smallskip\textbf{Audit move:} Resolve executable identity in a trusted location and validate every argument boundary. \\\hline
+\term{Indirect invocation}\\[-0.1em]{\small Why is invoking through a shell riskier?} & A shell adds another grammar, expansions, environment behavior, and executable search. Concatenated untrusted data can become syntax rather than an argument.\par\smallskip\textbf{Audit move:} Avoid the shell for fixed operations; otherwise apply context-correct quoting and narrow the environment. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Launching another program transfers control to code selected and configured through paths, arguments, environments, and descriptors.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Process Attributes}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Attribute retention}\\[-0.1em]{\small Which settings survive transitions?} & Identity, current directory, mask, limits, signal dispositions, scheduling, and other attributes can survive fork or execution in platform-specific ways. A privileged parent may unintentionally donate dangerous state.\par\smallskip\textbf{Audit move:} Create an explicit child-state initialization checklist rather than relying on defaults. \\\hline
+\term{Resource limits}\\[-0.1em]{\small Can limits provide containment?} & Limits constrain memory, files, CPU, or processes and can reduce denial-of-service impact. They also introduce failure paths that code must handle safely.\par\smallskip\textbf{Audit move:} Set least-required limits and exercise the application at each limit boundary. \\\hline
+\term{File descriptors}\\[-0.1em]{\small How do descriptors become confused deputies?} & Children may inherit open files, sockets, pipes, or directories that bypass pathname permissions and network controls. Descriptor numbers can be reused after closure, making stale references hazardous.\par\smallskip\textbf{Audit move:} Close unknown descriptors, set inheritance flags, and verify expected endpoint type and peer. \\\hline
+\term{Environment arrays}\\[-0.1em]{\small Why is the environment untrusted input?} & Environment variables influence library loading, locale, paths, configuration, allocators, and invoked tools. Privileged programs must not inherit attacker-selected behavior.\par\smallskip\textbf{Audit move:} Construct a minimal known environment and use absolute paths for privileged execution. \\\hline
+\term{Groups, sessions, and terminals}\\[-0.1em]{\small How can process relationships change authority or input?} & Process groups, sessions, controlling terminals, and job-control signals influence which processes communicate and receive terminal data. Daemons must detach and initialize this state correctly.\par\smallskip\textbf{Audit move:} Verify session creation, terminal detachment, permissions, and signal routing. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Resource limits, descriptors, environments, and terminal relationships are inputs to security decisions and child behavior.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Interprocess Communication and RPC}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Pipes and named pipes}\\[-0.1em]{\small How is an IPC peer authenticated?} & Anonymous pipes inherit relationships, while named endpoints occupy a namespace that can be precreated or substituted. Data framing and partial I/O must also be handled correctly.\par\smallskip\textbf{Audit move:} Protect endpoint creation, verify peers where supported, and define message framing. \\\hline
+\term{System V and local sockets}\\[-0.1em]{\small What resource and permission issues recur?} & Keys, names, permissions, stale objects, queue limits, and peer credentials affect confidentiality and integrity. Local reachability should not be equated with trust.\par\smallskip\textbf{Audit move:} Audit creation permissions, cleanup, ownership, quotas, and peer identity. \\\hline
+\term{Remote procedure calls}\\[-0.1em]{\small Where does decoded input become dangerous?} & RPC definition and decoding code turn network fields into allocations, dispatch values, and object state. Authentication must be bound to the requested operation, not merely to transport reachability.\par\smallskip\textbf{Audit move:} Trace lengths and discriminators from decode through allocation and handler authorization. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+Local IPC is still a trust boundary when endpoints, messages, and credentials can be influenced by other principals.
+\end{CornellSummaryBox}
+\begin{CornellLegacyBox}{Historical Context}
+Exact inheritance and process-creation semantics vary across UNIX families. Confirm behavior using current platform documentation and targeted tests.
+\end{CornellLegacyBox}
+\section{Security-Review Checklist}
+\begin{CornellChecklist}
+\item \textbf{Scoping}
+Inventory inherited authority and close or reset everything not required.
+\item \textbf{Attack-surface identification}
+Verify the documented sharing and async-safety rules of the exact primitive.
+\item \textbf{Input and data-flow analysis}
+Review all exit paths and mark sensitive descriptors close-on-exec.
+\item \textbf{Trust-boundary review}
+Resolve executable identity in a trusted location and validate every argument boundary.
+\item \textbf{Candidate-point inspection}
+Avoid the shell for fixed operations; otherwise apply context-correct quoting and narrow the environment.
+\item \textbf{Control-flow review}
+Create an explicit child-state initialization checklist rather than relying on defaults.
+\item \textbf{Resource and lifetime review}
+Set least-required limits and exercise the application at each limit boundary.
+\item \textbf{Error-path analysis}
+Close unknown descriptors, set inheritance flags, and verify expected endpoint type and peer.
+\item \textbf{Mitigation validation}
+Construct a minimal known environment and use absolute paths for privileged execution.
+\item \textbf{Evidence and reporting}
+Verify session creation, terminal detachment, permissions, and signal routing.
+\item \textbf{Scoping}
+Protect endpoint creation, verify peers where supported, and define message framing.
+\item \textbf{Attack-surface identification}
+Audit creation permissions, cleanup, ownership, quotas, and peer identity.
+\end{CornellChecklist}
+\section{Chapter Synthesis}
+Process security review follows authority through creation, invocation, inheritance, and communication. The strongest recurring risks are attacker influence over executable selection or shell syntax, privileged descriptors and environments leaking into children, and unauthenticated IPC peers. Prioritize transitions where a more privileged process loads code, interprets arguments, or donates handles to less-trusted work.
+\section{Self-Test Questions}
+\begin{enumerate}
+\item What security state crosses a process boundary?
+\item Why do different creation interfaces matter?
+\item How can exit behavior affect security?
+\item How should executable identity be established?
+\item Why is invoking through a shell riskier?
+\item Which settings survive transitions?
+\item \textbf{Scenario:} A privileged service launches a maintenance utility by name and inherits the caller's search path. What attack path should be considered?
+\item \textbf{Scenario:} A child process does not need the parent's listening socket but inherits it across execution. Why is this important?
+\end{enumerate}
+\clearpage
+\subsection*{Answer Key}
+\begin{enumerate}
+\item Creation duplicates or initializes identity, descriptors, signal state, environment, memory, and resource limits. The parent must know which properties persist and which are reset before the child handles untrusted work.
+\item Variants can share memory, descriptors, or execution context differently and may impose restrictions before a new program is loaded. Incorrect assumptions create races or unsafe actions in a partially shared state.
+\item Termination can trigger handlers, buffered I/O, and parent-visible status. Inherited descriptors may keep files, pipes, or sockets open, delaying cleanup or leaking privileged channels.
+\item Use a specific trusted executable and construct arguments as separate values. Relative paths or mutable directories allow an attacker to substitute code, while argument zero and option syntax can alter behavior.
+\item A shell adds another grammar, expansions, environment behavior, and executable search. Concatenated untrusted data can become syntax rather than an argument.
+\item Identity, current directory, mask, limits, signal dispositions, scheduling, and other attributes can survive fork or execution in platform-specific ways. A privileged parent may unintentionally donate dangerous state.
+\item An attacker may place a different executable earlier in the search path. Invoke a verified absolute executable, build a minimal environment, and pass data as arguments rather than shell text.
+\item The child now holds a privileged communication capability and can keep the socket alive or misuse it. Apply close-on-exec and explicitly allowlist inherited descriptors.
+\end{enumerate}
+\section{Key-Term Recap}
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.27\textwidth}p{0.65\textwidth}}
+\toprule
+\textbf{Term} & \textbf{Working meaning for review} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Term} & \textbf{Working meaning for review} \\
+\midrule
+\endhead
+Process creation & Creation duplicates or initializes identity, descriptors, signal state, environment, memory, and resource limits. \\
+Creation variants & Variants can share memory, descriptors, or execution context differently and may impose restrictions before a new program is loaded. \\
+Termination and open files & Termination can trigger handlers, buffered I/O, and parent-visible status. \\
+Direct invocation & Use a specific trusted executable and construct arguments as separate values. \\
+Indirect invocation & A shell adds another grammar, expansions, environment behavior, and executable search. \\
+Attribute retention & Identity, current directory, mask, limits, signal dispositions, scheduling, and other attributes can survive fork or execution in platform-specific ways. \\
+Resource limits & Limits constrain memory, files, CPU, or processes and can reduce denial-of-service impact. \\
+File descriptors & Children may inherit open files, sockets, pipes, or directories that bypass pathname permissions and network controls. \\
+Environment arrays & Environment variables influence library loading, locale, paths, configuration, allocators, and invoked tools. \\
+Groups, sessions, and terminals & Process groups, sessions, controlling terminals, and job-control signals influence which processes communicate and receive terminal data. \\
+\bottomrule
+\end{longtable}
+\section{One-Sentence Takeaway}
+\begin{CornellExamBox}{One-Sentence Takeaway}
+\textbf{Every process transition should deliberately reconstruct identity, executable, arguments, environment, descriptors, limits, and IPC trust rather than inherit them accidentally.}
+\end{CornellExamBox}
+\end{document}

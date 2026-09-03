@@ -59,9 +59,7 @@ PLANTUML_START_PATTERN = re.compile(
 )
 PLANTUML_DIRECT_STYLE_PATTERN = re.compile(r"!include(?:_once)?\s+.*tooling/styles/plantuml/.+\.iuml")
 FORBIDDEN_PLANTUML_WRAPPER_FILES = {"appsec-style.puml"}
-CORNELL_NOTES_PATH_PATTERN = re.compile(
-    r"src/cornell-notes/(computer-science/(combinatorial-algorithms|computer-networks|operating-systems|string-algorithms)|electronics/electronic-circuits|security/certifications/cissp|mathematics/numerical-methods|architecture/standards/iso-iec-ieee-42010-2022|programming/languages/cpp/cpp-2024)/.+\.tex$"
-)
+CORNELL_NOTES_PATH_PATTERN = re.compile(r"src/cornell-notes/.+\.tex$")
 
 SEMANTIC_STYLE_PACKAGES = {
     "business-admin",

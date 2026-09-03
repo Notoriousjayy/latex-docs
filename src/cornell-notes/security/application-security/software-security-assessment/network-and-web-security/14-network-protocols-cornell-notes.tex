@@ -1,0 +1,168 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage{cornell-notes}
+\usepackage{needspace}
+
+\title{Chapter 14: Network Protocols}
+\author{}
+\date{}
+
+\setDocTitle{Chapter 14: Network Protocols}
+\setDocSubtitle{Application Security Review}
+\setCornellCollection{Software Security Assessment}
+\setCornellUnitType{Chapter}
+\setCornellUnitNumber{14}
+\setCornellUnitTitle{Network Protocols}
+\setCornellCompanionLabel{Study and audit reference}
+\setCornellSourceRange{pp. 829--890}
+\begin{document}
+\maketitle
+
+\begin{center}
+\small\color{Meta}\textbf{Coverage range:} pp. 829--890 \quad\textbullet\quad \textbf{Format:} Cornell cue-and-notes
+\end{center}
+\vspace{0.25em}
+\begin{CornellOverviewBox}{Review Orientation}
+\textbf{Central problem.} Audit IP, UDP, and TCP implementations by validating header structure, length relationships, state transitions, fragmentation, options, and stream semantics under hostile traffic.
+\textbf{Why it matters.} Security reviewers use this material to connect attacker-controlled conditions to violated invariants, consequential operations, and defensible remediation.
+\textbf{Prerequisites.} Packet headers, addressing, checksums, routing, fragmentation, transport ports, TCP state, and byte order.
+\textbf{Assessment relationship.} It applies parsing, arithmetic, state, and resource-review techniques to foundational network protocol implementations.
+\end{CornellOverviewBox}
+\section{Learning Objectives}
+\begin{itemize}
+\item Explain the security significance of addressing and packet structure.
+\item Identify attacker influence and failed assumptions associated with basic header validation.
+\item Trace security-relevant data or state through ip options.
+\item Evaluate whether controls addressing source routing preserve the intended invariant.
+\item Audit implementation and error paths related to fragmentation.
+\item Distinguish safe and unsafe uses of udp header validation.
+\item Diagnose a failure involving udp issues from concrete evidence.
+\item Verify remediation and test coverage for tcp header validation.
+\end{itemize}
+\section{Cornell Cue-and-Notes}
+\Needspace{8\baselineskip}
+\subsection{Internet Protocol}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{Addressing and packet structure}\\[-0.1em]{\small Which fields define the parse boundary?} & Version, header length, total length, flags, fragment fields, protocol, addresses, and options determine how a packet is interpreted. Every field arrives from an untrusted network source.\par\smallskip\textbf{Audit move:} Validate minimums, maximums, relationships, and available bytes before field access. \\\hline
+\term{Basic header validation}\\[-0.1em]{\small In what order should an IP header be checked?} & First ensure enough bytes exist for fixed fields, then validate version and header length, then reconcile total length with captured data. Checksums and policy checks must not read beyond validated boundaries.\par\smallskip\textbf{Audit move:} Write an ordered validation sequence and reject contradictory length combinations. \\\hline
+\term{IP options}\\[-0.1em]{\small Why are variable-length options risky?} & Options contain type, length, and value structures with special cases. Zero lengths, one-byte options, overflow, and unknown types can stall or desynchronize parsing.\par\smallskip\textbf{Audit move:} Prove forward progress and remaining-length checks for every option form. \\\hline
+\term{Source routing}\\[-0.1em]{\small How can routing options violate trust assumptions?} & Source-routing information can influence the path and apparent relationship between endpoints. Systems should not infer trust solely from address or expected route when the protocol permits routing control.\par\smallskip\textbf{Audit move:} Identify routing options and confirm explicit acceptance policy and address validation. \\\hline
+\term{Fragmentation}\\[-0.1em]{\small Which invariants must reassembly preserve?} & Fragments can overlap, arrive out of order, duplicate, exceed limits, or consume state. Reassembly must validate offsets and lengths without overflow and apply a consistent overlap policy.\par\smallskip\textbf{Audit move:} Test tiny, overlapping, duplicate, maximum-offset, incomplete, and high-volume fragment sets. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+IP parsing must reconcile captured length, header-declared length, header options, fragmentation, and local buffer capacity before deeper processing.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{User Datagram Protocol}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{UDP header validation}\\[-0.1em]{\small How should UDP length relate to IP and captured data?} & The UDP length must cover its header, fit within the enclosing validated payload, and match available bytes according to the implementation's truncation policy. Arithmetic must be performed safely.\par\smallskip\textbf{Audit move:} Cross-check all enclosing and inner lengths before checksum or payload access. \\\hline
+\term{UDP issues}\\[-0.1em]{\small What security assumptions does UDP not provide?} & Source addresses can be spoofed, delivery is unordered and unreliable, and large responses can support amplification. Applications must add authentication, replay handling, and resource controls when needed.\par\smallskip\textbf{Audit move:} Review source validation, response ratios, replay behavior, and per-peer state allocation. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+UDP offers message boundaries but limited transport state, making header validation and application-level peer assumptions critical.
+\end{CornellSummaryBox}
+\Needspace{8\baselineskip}
+\subsection{Transmission Control Protocol}
+\begin{longtable}{>{\raggedright\arraybackslash\columncolor{CornellCueBackground}}p{0.285\textwidth}|>{\raggedright\arraybackslash}p{0.625\textwidth}}
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endfirsthead
+\rowcolor{Navy}\color{white}\textbf{Cue / Recall Prompt} & \color{white}\textbf{Technical Notes and Audit Reasoning} \\
+\endhead
+\term{TCP header validation}\\[-0.1em]{\small Which fields must be validated before state processing?} & Header length, flags, sequence values, ports, checksum, and enclosing payload length must be coherent. Invalid combinations should not reach option or state logic.\par\smallskip\textbf{Audit move:} Separate structural validation from connection-state processing. \\\hline
+\term{TCP options}\\[-0.1em]{\small How do options challenge parsers?} & Options vary in length and include padding and termination. Malformed lengths or repeated options can cause loops, out-of-bounds access, or inconsistent negotiation state.\par\smallskip\textbf{Audit move:} Require minimum option sizes, remaining bytes, progress, and duplicate policy. \\\hline
+\term{Connections and state}\\[-0.1em]{\small Can unexpected segments trigger unsafe transitions?} & Implementations must handle simultaneous events, resets, retransmissions, half-open state, wraparound, and timeouts. Attackers can drive unusual flag and sequence combinations at scale.\par\smallskip\textbf{Audit move:} Model state transitions and test invalid, repeated, and boundary sequence events. \\\hline
+\term{TCP streams}\\[-0.1em]{\small Where do application message boundaries come from?} & One send does not equal one receive; data may be split or coalesced. Applications that assume record boundaries can parse partial fields or combine messages incorrectly.\par\smallskip\textbf{Audit move:} Implement explicit framing and loop over partial reads and writes. \\\hline
+\term{TCP processing and resources}\\[-0.1em]{\small How can valid-looking traffic exhaust a stack?} & Connection state, queues, reassembly, retransmission, and timers consume finite resources. Admission and cleanup policies must resist spoofed, incomplete, or slow interactions.\par\smallskip\textbf{Audit move:} Measure per-connection cost and enforce quotas, timeouts, and bounded queues. \\\hline
+\end{longtable}
+\begin{CornellSummaryBox}{Section Summary}
+TCP supplies an ordered byte stream and complex state machine, not trustworthy application records.
+\end{CornellSummaryBox}
+\begin{CornellLegacyBox}{Historical Context}
+Protocol specifications persist, but operating-system stacks and mitigations evolve. Use current specifications and implementation behavior when converting these audit patterns into present-day tests.
+\end{CornellLegacyBox}
+\section{Security-Review Checklist}
+\begin{CornellChecklist}
+\item \textbf{Scoping}
+Validate minimums, maximums, relationships, and available bytes before field access.
+\item \textbf{Attack-surface identification}
+Write an ordered validation sequence and reject contradictory length combinations.
+\item \textbf{Input and data-flow analysis}
+Prove forward progress and remaining-length checks for every option form.
+\item \textbf{Trust-boundary review}
+Identify routing options and confirm explicit acceptance policy and address validation.
+\item \textbf{Candidate-point inspection}
+Test tiny, overlapping, duplicate, maximum-offset, incomplete, and high-volume fragment sets.
+\item \textbf{Control-flow review}
+Cross-check all enclosing and inner lengths before checksum or payload access.
+\item \textbf{Resource and lifetime review}
+Review source validation, response ratios, replay behavior, and per-peer state allocation.
+\item \textbf{Error-path analysis}
+Separate structural validation from connection-state processing.
+\item \textbf{Mitigation validation}
+Require minimum option sizes, remaining bytes, progress, and duplicate policy.
+\item \textbf{Evidence and reporting}
+Model state transitions and test invalid, repeated, and boundary sequence events.
+\item \textbf{Scoping}
+Implement explicit framing and loop over partial reads and writes.
+\item \textbf{Attack-surface identification}
+Measure per-connection cost and enforce quotas, timeouts, and bounded queues.
+\end{CornellChecklist}
+\section{Chapter Synthesis}
+Network protocol security begins with layered structural validation and continues through state and resource management. Each parser must validate its own bounds against already validated enclosing data, and every variable-length loop must prove progress. Prioritize length arithmetic, fragmentation and reassembly, option parsing, TCP state transitions, and unbounded per-peer allocation.
+\section{Self-Test Questions}
+\begin{enumerate}
+\item Which fields define the parse boundary?
+\item In what order should an IP header be checked?
+\item Why are variable-length options risky?
+\item How can routing options violate trust assumptions?
+\item Which invariants must reassembly preserve?
+\item How should UDP length relate to IP and captured data?
+\item \textbf{Scenario:} An IP option parser trusts the option length and advances by that value without rejecting zero. What failure becomes possible?
+\item \textbf{Scenario:} A TCP application assumes each receive call returns exactly one complete request. What protocol property invalidates that assumption?
+\end{enumerate}
+\clearpage
+\subsection*{Answer Key}
+\begin{enumerate}
+\item Version, header length, total length, flags, fragment fields, protocol, addresses, and options determine how a packet is interpreted. Every field arrives from an untrusted network source.
+\item First ensure enough bytes exist for fixed fields, then validate version and header length, then reconcile total length with captured data. Checksums and policy checks must not read beyond validated boundaries.
+\item Options contain type, length, and value structures with special cases. Zero lengths, one-byte options, overflow, and unknown types can stall or desynchronize parsing.
+\item Source-routing information can influence the path and apparent relationship between endpoints. Systems should not infer trust solely from address or expected route when the protocol permits routing control.
+\item Fragments can overlap, arrive out of order, duplicate, exceed limits, or consume state. Reassembly must validate offsets and lengths without overflow and apply a consistent overlap policy.
+\item The UDP length must cover its header, fit within the enclosing validated payload, and match available bytes according to the implementation's truncation policy. Arithmetic must be performed safely.
+\item The loop may make no progress, causing denial of service, or later logic may repeatedly process the same bytes. Enforce option-specific minimums, remaining length, and positive progress.
+\item TCP is a byte stream; data can be split or coalesced. The application needs explicit framing, buffered partial input, maximum lengths, and safe incremental parsing.
+\end{enumerate}
+\section{Key-Term Recap}
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.27\textwidth}p{0.65\textwidth}}
+\toprule
+\textbf{Term} & \textbf{Working meaning for review} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Term} & \textbf{Working meaning for review} \\
+\midrule
+\endhead
+Addressing and packet structure & Version, header length, total length, flags, fragment fields, protocol, addresses, and options determine how a packet is interpreted. \\
+Basic header validation & First ensure enough bytes exist for fixed fields, then validate version and header length, then reconcile total length with captured data. \\
+IP options & Options contain type, length, and value structures with special cases. \\
+Source routing & Source-routing information can influence the path and apparent relationship between endpoints. \\
+Fragmentation & Fragments can overlap, arrive out of order, duplicate, exceed limits, or consume state. \\
+UDP header validation & The UDP length must cover its header, fit within the enclosing validated payload, and match available bytes according to the implementation's truncation policy. \\
+UDP issues & Source addresses can be spoofed, delivery is unordered and unreliable, and large responses can support amplification. \\
+TCP header validation & Header length, flags, sequence values, ports, checksum, and enclosing payload length must be coherent. \\
+TCP options & Options vary in length and include padding and termination. \\
+Connections and state & Implementations must handle simultaneous events, resets, retransmissions, half-open state, wraparound, and timeouts. \\
+\bottomrule
+\end{longtable}
+\section{One-Sentence Takeaway}
+\begin{CornellExamBox}{One-Sentence Takeaway}
+\textbf{A network parser must validate nested lengths and state before use while assuming attackers control ordering, fragmentation, repetition, and resource pressure.}
+\end{CornellExamBox}
+\end{document}
