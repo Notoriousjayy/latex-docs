@@ -188,3 +188,29 @@ python3 tooling/scripts/latex_build.py stage-pages \
 The collection-scoped migration utility is
 `tooling/scripts/migrate_cornell_collections.py`. The ISO phase is complete;
 the C++ 2024 phase remains pending restoration of its 2,547 root-level sources.
+
+## C++ 2024 top-level clause notes
+
+The C++ 2024 top-level clause collection contains 33 standalone documents,
+covering clauses 1 through 33. Canonical sources are organized at:
+
+`src/cornell-notes/programming/languages/cpp/cpp-2024/clauses/<clause-topic>/<filename>.tex`
+
+The corresponding PDF topology is:
+
+`public/pdfs/cornell-notes/programming/languages/cpp/cpp-2024/clauses/<clause-topic>/<filename>.pdf`
+
+Build the collection with the supported facade:
+
+```bash
+python3 tooling/scripts/latex_build.py build-category cornell-notes \
+  --output-dir public/pdfs --log-dir public/logs --clean-output
+make build-changed BASE_REF=HEAD~1 HEAD_REF=HEAD
+```
+
+The intake is tracked independently in
+`tooling/manifests/cpp-2024-top-level-intake.json` and is staged or installed
+with `python3 tooling/scripts/import_cpp_top_level.py --dry-run` or
+`--execute`. This 33-document top-level clause set is separate from the
+historical 2,547-document fine-grained C++ migration; that larger phase is not
+restored or represented by this collection.

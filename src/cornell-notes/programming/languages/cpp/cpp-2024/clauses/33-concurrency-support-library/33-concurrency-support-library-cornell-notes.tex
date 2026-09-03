@@ -1,0 +1,399 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[technical-reference]{cornell-notes}
+\usepackage{needspace}
+
+\title{Clause 33: Concurrency Support Library - Cornell Notes}
+\author{}
+\date{}
+\setDocTitle{Clause 33: Concurrency Support Library}
+\setDocSubtitle{C++ 2024 Cornell Notes}
+\setDocOwner{C++ 2024 Cornell Notes}
+\setDocAuthor{}
+\setDocDate{}
+\setCornellCollection{C++ 2024 Cornell Notes}
+\setCornellUnitType{Clause}
+\setCornellUnitNumber{33}
+\setCornellUnitTitle{Concurrency Support Library}
+\setCornellCompanionLabel{C++ Technical Reference}
+\hypersetup{pdftitle={Clause 33: Concurrency Support Library - Cornell Notes},pdfsubject={C++ technical study notes},pdfauthor={}}
+
+\begin{document}
+\maketitle
+\begin{CornellReferenceOrientationBox}
+\textbf{Purpose.} Defines stop tokens, threads, atomics, memory ordering, mutexes, locks, condition variables, semaphores, latches, barriers, futures, promises, tasks, and asynchronous launch.
+\par\textbf{Role.} The library mechanisms used to create execution agents and establish synchronization.
+\par\textbf{Principal dependencies.} Uses the library-wide rules of Clause 16 together with the applicable core-language concepts and supporting library clauses.
+\par\textbf{Primary audience.} concurrent programmers and runtime implementers.
+\par\textbf{Major subject groups.} General; Requirements; Stop tokens; Threads; Atomic operations; Mutual exclusion; Condition variables; Semaphore; Coordination types; Futures.
+\end{CornellReferenceOrientationBox}
+\section{Learning Objectives}
+\begin{itemize}[label=\textcolor{CornellReferenceTeal}{$\blacktriangleright$}]
+\item Define the governing ideas of General and apply its stated contract at a call site.
+\item Identify the governing ideas of Requirements and apply its stated contract at a call site.
+\item Distinguish the governing ideas of Stop tokens and apply its stated contract at a call site.
+\item Explain the governing ideas of Threads and apply its stated contract at a call site.
+\item Trace the governing ideas of Atomic operations and apply its stated contract at a call site.
+\item Apply the governing ideas of Mutual exclusion and apply its stated contract at a call site.
+\item Analyze the governing ideas of Condition variables and apply its stated contract at a call site.
+\item Evaluate the governing ideas of Semaphore and apply its stated contract at a call site.
+\item Diagnose the governing ideas of Coordination types and apply its stated contract at a call site.
+\item Compare the governing ideas of Futures and apply its stated contract at a call site.
+\item Verify the governing ideas of Template parameter names and apply its stated contract at a call site.
+\item Relate the governing ideas of Exceptions and apply its stated contract at a call site.
+\item Classify the governing ideas of Native handles and apply its stated contract at a call site.
+\item Justify the governing ideas of Timing specifications and apply its stated contract at a call site.
+\item Audit the governing ideas of Requirements for Cpp17Lockable types and apply its stated contract at a call site.
+\item Summarize the governing ideas of Introduction and apply its stated contract at a call site.
+\end{itemize}
+\section{Normative Structure Map}
+\small\begin{longtable}{@{}>{\RaggedRight\arraybackslash}p{0.13\textwidth}>{\RaggedRight\arraybackslash}p{0.27\textwidth}>{\RaggedRight\arraybackslash}p{0.19\textwidth}>{\RaggedRight\arraybackslash}p{0.31\textwidth}@{}}
+\toprule\textbf{Subclause} & \textbf{Subject} & \textbf{Rule category} & \textbf{Key dependencies / entities}\\\midrule\endfirsthead
+\toprule\textbf{Subclause} & \textbf{Subject} & \textbf{Rule category} & \textbf{Key dependencies / entities}\\\midrule\endhead
+\bottomrule\endfoot
+33.1 & General & library semantics & Uses the library-wide rules of Clause 16 together with the applicable core-language concepts and supporting library clauses.\\
+33.2 & Requirements & requirements & Template parameter names, Exceptions, Native handles, Timing specifications, and related subclauses\\
+33.3 & Stop tokens & syntax / lexical rules & Introduction, Header <stop\_\allowbreak{}token> synopsis, Class stop\_\allowbreak{}token, Class stop\_\allowbreak{}source, and related subclauses\\
+33.4 & Threads & concurrency contract & General, Header <thread> synopsis, Class thread, Class jthread, and related subclauses\\
+33.5 & Atomic operations & operation semantics & General, Header <atomic> synopsis, Type aliases, Order and consistency, and related subclauses\\
+33.6 & Mutual exclusion & library semantics & General, Header <mutex> synopsis, Header <shared\_\allowbreak{}mutex> synopsis, Mutex requirements, and related subclauses\\
+33.7 & Condition variables & concurrency contract & General, Header <condition\_\allowbreak{}variable> synopsis, Non-member functions, Class condition\_\allowbreak{}variable, and related subclauses\\
+33.8 & Semaphore & concurrency contract & General, Header <semaphore> synopsis, Class template counting\_\allowbreak{}semaphore\\
+33.9 & Coordination types & library semantics & General, Latches, Barriers\\
+33.10 & Futures & library semantics & Overview, Header <future> synopsis, Error handling, Class future\_\allowbreak{}error, and related subclauses\\
+\end{longtable}\normalsize
+\begin{CornellReferenceNormativeBox}A heading maps the clause; it does not replace the detailed conditions. For each operation, read requirements, effects, result, exceptions, complexity, remarks, and notes with their stated normative force.\end{CornellReferenceNormativeBox}
+\subsection*{Rule Classification Guide}
+\small\begin{longtable}{@{}>{\RaggedRight\arraybackslash}p{0.25\textwidth}>{\RaggedRight\arraybackslash}p{0.67\textwidth}@{}}\toprule\textbf{Label or category} & \textbf{How to read it}\\\midrule\endfirsthead\toprule\textbf{Label or category} & \textbf{How to read it (continued)}\\\midrule\endhead\bottomrule\endfoot
+Constraints & Conditions controlling whether a declaration, overload, or specialization participates in the relevant context.\\
+Mandates & Requirements checked for the described declaration or specialization; failure has the stated well-formedness consequence.\\
+Preconditions & Obligations the caller establishes before evaluation; violating one forfeits the operation's contract.\\
+Effects / Returns / Postconditions & Separate the state change, produced result, and state guaranteed after successful completion.\\
+Throws / Error conditions & State how failure is reported and which exceptional paths are permitted or required.\\
+Complexity & Bounds or exact counts for the operations named by the specification.\\
+Remarks / Recommended practice & Remarks refine applicability or participation; recommended practice guides implementations without silently becoming a program requirement.\\
+Exposition-only & A device for describing semantics, not a public name on which a program can depend.\\
+\end{longtable}\normalsize
+\section{Cornell Cue-and-Notes}
+\Needspace{8\baselineskip}
+\subsection*{33.1 General}
+\begin{longtable}{@{}>{\RaggedRight\arraybackslash\columncolor{CornellReferenceCueGray}}p{0.28\textwidth}>{\RaggedRight\arraybackslash}p{0.64\textwidth}@{}}
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes}\\\endfirsthead
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes (continued)}\\\endhead
+\arrayrulecolor{CornellReferenceLineGray}
+\textbf{What contract governs General?}\\[-1mm]{\scriptsize\CornellClauseRef{33.1}} & Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.\\\hline
+\end{longtable}
+\begin{CornellReferenceSummaryBox}General supplies the library semantics portion of this clause. The key review move is to connect its local wording to the clause-wide model, then classify each condition by normative force before relying on it.\end{CornellReferenceSummaryBox}
+\Needspace{8\baselineskip}
+\subsection*{33.2 Requirements}
+\begin{longtable}{@{}>{\RaggedRight\arraybackslash\columncolor{CornellReferenceCueGray}}p{0.28\textwidth}>{\RaggedRight\arraybackslash}p{0.64\textwidth}@{}}
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes}\\\endfirsthead
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes (continued)}\\\endhead
+\arrayrulecolor{CornellReferenceLineGray}
+\textbf{What contract governs Template parameter names?}\\[-1mm]{\scriptsize\CornellClauseRef{33.2.1}} & Specifies the facility family Template parameter names. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.\\\hline
+\textbf{What contract governs Exceptions?}\\[-1mm]{\scriptsize\CornellClauseRef{33.2.2}} & Defines the failure model for Exceptions, including how an error is represented, reported, propagated, or converted into a diagnostic consequence.\\\hline
+\textbf{What contract governs Native handles?}\\[-1mm]{\scriptsize\CornellClauseRef{33.2.3}} & Specifies the facility family Native handles. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.\\\hline
+\textbf{What contract governs Timing specifications?}\\[-1mm]{\scriptsize\CornellClauseRef{33.2.4}} & Specifies the facility family Timing specifications. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.\\\hline
+\textbf{Which obligations govern Requirements for Cpp17Lockable types?}\\[-1mm]{\scriptsize\CornellClauseRef{33.2.5}} & States the admissibility and semantic obligations for Requirements for Cpp17Lockable types. Separate compile-time participation rules from caller preconditions and runtime effects.\\\hline
+\end{longtable}
+\begin{CornellReferenceSummaryBox}Requirements supplies the requirements portion of this clause. The key review move is to connect its local wording to the clause-wide model, then classify each condition by normative force before relying on it.\end{CornellReferenceSummaryBox}
+\Needspace{5\baselineskip}\paragraph{Detailed coverage ledger.}
+\begin{description}[style=nextline,leftmargin=2.8cm,font=\normalfont\bfseries\color{CornellReferenceTeal}]
+\item[33.2.5.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.2.5.2] \textbf{Cpp17BasicLockable requirements.} States the admissibility and semantic obligations for Cpp17BasicLockable requirements. Separate compile-time participation rules from caller preconditions and runtime effects.
+\item[33.2.5.3] \textbf{Cpp17Lockable requirements.} States the admissibility and semantic obligations for Cpp17Lockable requirements. Separate compile-time participation rules from caller preconditions and runtime effects.
+\item[33.2.5.4] \textbf{Cpp17TimedLockable requirements.} States the admissibility and semantic obligations for Cpp17TimedLockable requirements. Separate compile-time participation rules from caller preconditions and runtime effects.
+\item[33.2.5.5] \textbf{Cpp17SharedLockable requirements.} States the admissibility and semantic obligations for Cpp17SharedLockable requirements. Separate compile-time participation rules from caller preconditions and runtime effects.
+\item[33.2.5.6] \textbf{Cpp17SharedTimedLockable requirements.} States the admissibility and semantic obligations for Cpp17SharedTimedLockable requirements. Separate compile-time participation rules from caller preconditions and runtime effects.
+\end{description}
+\Needspace{8\baselineskip}
+\subsection*{33.3 Stop tokens}
+\begin{longtable}{@{}>{\RaggedRight\arraybackslash\columncolor{CornellReferenceCueGray}}p{0.28\textwidth}>{\RaggedRight\arraybackslash}p{0.64\textwidth}@{}}
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes}\\\endfirsthead
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes (continued)}\\\endhead
+\arrayrulecolor{CornellReferenceLineGray}
+\textbf{What contract governs Introduction?}\\[-1mm]{\scriptsize\CornellClauseRef{33.3.1}} & Frames the terminology, applicability, and relationships needed to interpret Introduction; detailed rules remain in the following subclauses.\\\hline
+\textbf{What contract governs Header <stop\_\allowbreak{}token> synopsis?}\\[-1mm]{\scriptsize\CornellClauseRef{33.3.2}} & Catalogs the declarations made available by Header <stop\_\allowbreak{}token> synopsis. The synopsis is an interface map; the detailed specifications supply constraints and behavior.\\\hline
+\textbf{What contract governs Class stop\_\allowbreak{}token?}\\[-1mm]{\scriptsize\CornellClauseRef{33.3.3}} & Specifies the facility family Class stop\_\allowbreak{}token. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.\\\hline
+\textbf{What contract governs Class stop\_\allowbreak{}source?}\\[-1mm]{\scriptsize\CornellClauseRef{33.3.4}} & Specifies the facility family Class stop\_\allowbreak{}source. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.\\\hline
+\textbf{What contract governs Class template stop\_\allowbreak{}callback?}\\[-1mm]{\scriptsize\CornellClauseRef{33.3.5}} & Specifies the facility family Class template stop\_\allowbreak{}callback. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.\\\hline
+\end{longtable}
+\begin{CornellReferenceSummaryBox}Stop tokens supplies the syntax / lexical rules portion of this clause. The key review move is to connect its local wording to the clause-wide model, then classify each condition by normative force before relying on it.\end{CornellReferenceSummaryBox}
+\Needspace{5\baselineskip}\paragraph{Detailed coverage ledger.}
+\begin{description}[style=nextline,leftmargin=2.8cm,font=\normalfont\bfseries\color{CornellReferenceTeal}]
+\item[33.3.3.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.3.3.2] \textbf{Constructors, copy, and assignment.} Specifies how Constructors, copy, and assignment establishes object state, including participation constraints, initialization effects, and exceptional exits.
+\item[33.3.3.3] \textbf{Members.} Specifies the facility family Members. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.3.3.4] \textbf{Non-member functions.} Specifies the facility family Non-member functions. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.3.4.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.3.4.2] \textbf{Constructors, copy, and assignment.} Specifies how Constructors, copy, and assignment establishes object state, including participation constraints, initialization effects, and exceptional exits.
+\item[33.3.4.3] \textbf{Members.} Specifies the facility family Members. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.3.4.4] \textbf{Non-member functions.} Specifies the facility family Non-member functions. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.3.5.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.3.5.2] \textbf{Constructors and destructor.} Specifies how Constructors and destructor establishes object state, including participation constraints, initialization effects, and exceptional exits.
+\end{description}
+\Needspace{8\baselineskip}
+\subsection*{33.4 Threads}
+\begin{longtable}{@{}>{\RaggedRight\arraybackslash\columncolor{CornellReferenceCueGray}}p{0.28\textwidth}>{\RaggedRight\arraybackslash}p{0.64\textwidth}@{}}
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes}\\\endfirsthead
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes (continued)}\\\endhead
+\arrayrulecolor{CornellReferenceLineGray}
+\textbf{What contract governs General?}\\[-1mm]{\scriptsize\CornellClauseRef{33.4.1}} & Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.\\\hline
+\textbf{What contract governs Header <thread> synopsis?}\\[-1mm]{\scriptsize\CornellClauseRef{33.4.2}} & Catalogs the declarations made available by Header <thread> synopsis. The synopsis is an interface map; the detailed specifications supply constraints and behavior.\\\hline
+\textbf{What contract governs Class thread?}\\[-1mm]{\scriptsize\CornellClauseRef{33.4.3}} & Specifies the facility family Class thread. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.\\\hline
+\textbf{What contract governs Class jthread?}\\[-1mm]{\scriptsize\CornellClauseRef{33.4.4}} & Specifies the facility family Class jthread. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.\\\hline
+\textbf{What contract governs Namespace this\_\allowbreak{}thread?}\\[-1mm]{\scriptsize\CornellClauseRef{33.4.5}} & Specifies the facility family Namespace this\_\allowbreak{}thread. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.\\\hline
+\end{longtable}
+\begin{CornellReferenceSummaryBox}Threads supplies the concurrency contract portion of this clause. The key review move is to connect its local wording to the clause-wide model, then classify each condition by normative force before relying on it.\end{CornellReferenceSummaryBox}
+\Needspace{5\baselineskip}\paragraph{Detailed coverage ledger.}
+\begin{description}[style=nextline,leftmargin=2.8cm,font=\normalfont\bfseries\color{CornellReferenceTeal}]
+\item[33.4.3.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.4.3.2] \textbf{Class thread::id.} Specifies the facility family Class thread::id. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.4.3.3] \textbf{Constructors.} Specifies how Constructors establishes object state, including participation constraints, initialization effects, and exceptional exits.
+\item[33.4.3.4] \textbf{Destructor.} Specifies how Destructor ends the object's managed state and which cleanup or termination consequences apply.
+\item[33.4.3.5] \textbf{Assignment.} Governs state transfer or exchange for Assignment; check self-operation, validity after movement, exception behavior, and invalidation.
+\item[33.4.3.6] \textbf{Members.} Specifies the facility family Members. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.4.3.7] \textbf{Static members.} Specifies the facility family Static members. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.4.3.8] \textbf{Specialized algorithms.} Defines the observable result of Specialized algorithms together with applicable iterator-domain, ordering, complexity, invalidation, and exception conditions.
+\item[33.4.4.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.4.4.2] \textbf{Constructors, move, and assignment.} Specifies how Constructors, move, and assignment establishes object state, including participation constraints, initialization effects, and exceptional exits.
+\item[33.4.4.3] \textbf{Members.} Specifies the facility family Members. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.4.4.4] \textbf{Stop token handling.} Specifies the facility family Stop token handling. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.4.4.5] \textbf{Specialized algorithms.} Defines the observable result of Specialized algorithms together with applicable iterator-domain, ordering, complexity, invalidation, and exception conditions.
+\item[33.4.4.6] \textbf{Static members.} Specifies the facility family Static members. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\end{description}
+\Needspace{8\baselineskip}
+\subsection*{33.5 Atomic operations}
+\begin{longtable}{@{}>{\RaggedRight\arraybackslash\columncolor{CornellReferenceCueGray}}p{0.28\textwidth}>{\RaggedRight\arraybackslash}p{0.64\textwidth}@{}}
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes}\\\endfirsthead
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes (continued)}\\\endhead
+\arrayrulecolor{CornellReferenceLineGray}
+\textbf{What contract governs General?}\\[-1mm]{\scriptsize\CornellClauseRef{33.5.1}} & Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.\\\hline
+\textbf{What contract governs Header <atomic> synopsis?}\\[-1mm]{\scriptsize\CornellClauseRef{33.5.2}} & Catalogs the declarations made available by Header <atomic> synopsis. The synopsis is an interface map; the detailed specifications supply constraints and behavior.\\\hline
+\textbf{What contract governs Type aliases?}\\[-1mm]{\scriptsize\CornellClauseRef{33.5.3}} & Specifies the facility family Type aliases. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.\\\hline
+\textbf{What contract governs Order and consistency?}\\[-1mm]{\scriptsize\CornellClauseRef{33.5.4}} & Specifies the facility family Order and consistency. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.\\\hline
+\textbf{What contract governs Lock-free property?}\\[-1mm]{\scriptsize\CornellClauseRef{33.5.5}} & Defines the blocking and synchronization contract for Lock-free property; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.\\\hline
+\textbf{What contract governs Waiting and notifying?}\\[-1mm]{\scriptsize\CornellClauseRef{33.5.6}} & Specifies the facility family Waiting and notifying. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.\\\hline
+\textbf{What contract governs Class template atomic\_\allowbreak{}ref?}\\[-1mm]{\scriptsize\CornellClauseRef{33.5.7}} & Defines indivisibility and ordering for Class template atomic\_\allowbreak{}ref; distinguish modification order from synchronizes-with and happens-before relationships.\\\hline
+\textbf{What contract governs Class template atomic?}\\[-1mm]{\scriptsize\CornellClauseRef{33.5.8}} & Defines indivisibility and ordering for Class template atomic; distinguish modification order from synchronizes-with and happens-before relationships.\\\hline
+\textbf{What contract governs Non-member functions?}\\[-1mm]{\scriptsize\CornellClauseRef{33.5.9}} & Specifies the facility family Non-member functions. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.\\\hline
+\textbf{What contract governs Flag type and operations?}\\[-1mm]{\scriptsize\CornellClauseRef{33.5.10}} & Defines the observable result of Flag type and operations together with applicable iterator-domain, ordering, complexity, invalidation, and exception conditions.\\\hline
+\textbf{What contract governs Fences?}\\[-1mm]{\scriptsize\CornellClauseRef{33.5.11}} & Defines indivisibility and ordering for Fences; distinguish modification order from synchronizes-with and happens-before relationships.\\\hline
+\textbf{What contract governs C compatibility?}\\[-1mm]{\scriptsize\CornellClauseRef{33.5.12}} & Specifies the facility family C compatibility. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.\\\hline
+\end{longtable}
+\begin{CornellReferenceSummaryBox}Atomic operations supplies the operation semantics portion of this clause. The key review move is to connect its local wording to the clause-wide model, then classify each condition by normative force before relying on it.\end{CornellReferenceSummaryBox}
+\Needspace{5\baselineskip}\paragraph{Detailed coverage ledger.}
+\begin{description}[style=nextline,leftmargin=2.8cm,font=\normalfont\bfseries\color{CornellReferenceTeal}]
+\item[33.5.7.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.5.7.2] \textbf{Operations.} Defines the observable result of Operations together with applicable iterator-domain, ordering, complexity, invalidation, and exception conditions.
+\item[33.5.7.3] \textbf{Specializations for integral types.} Specifies the facility family Specializations for integral types. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.5.7.4] \textbf{Specializations for floating-point types.} Specifies the facility family Specializations for floating-point types. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.5.7.5] \textbf{Partial specialization for pointers.} Specifies the facility family Partial specialization for pointers. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.5.7.6] \textbf{Member operators common to integers and pointers to objects.} Specifies the facility family Member operators common to integers and pointers to objects. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.5.8.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.5.8.2] \textbf{Operations on atomic types.} Defines the observable result of Operations on atomic types together with applicable iterator-domain, ordering, complexity, invalidation, and exception conditions.
+\item[33.5.8.3] \textbf{Specializations for integers.} Specifies the facility family Specializations for integers. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.5.8.4] \textbf{Specializations for floating-point types.} Specifies the facility family Specializations for floating-point types. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.5.8.5] \textbf{Partial specialization for pointers.} Specifies the facility family Partial specialization for pointers. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.5.8.6] \textbf{Member operators common to integers and pointers to objects.} Specifies the facility family Member operators common to integers and pointers to objects. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.5.8.7] \textbf{Partial specializations for smart pointers.} Specifies the facility family Partial specializations for smart pointers. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.5.8.7.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.5.8.7.2] \textbf{Partial specialization for shared\_\allowbreak{}ptr.} Specifies the facility family Partial specialization for shared\_\allowbreak{}ptr. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.5.8.7.3] \textbf{Partial specialization for weak\_\allowbreak{}ptr.} Specifies the facility family Partial specialization for weak\_\allowbreak{}ptr. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\end{description}
+\Needspace{8\baselineskip}
+\subsection*{33.6 Mutual exclusion}
+\begin{longtable}{@{}>{\RaggedRight\arraybackslash\columncolor{CornellReferenceCueGray}}p{0.28\textwidth}>{\RaggedRight\arraybackslash}p{0.64\textwidth}@{}}
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes}\\\endfirsthead
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes (continued)}\\\endhead
+\arrayrulecolor{CornellReferenceLineGray}
+\textbf{What contract governs General?}\\[-1mm]{\scriptsize\CornellClauseRef{33.6.1}} & Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.\\\hline
+\textbf{What contract governs Header <mutex> synopsis?}\\[-1mm]{\scriptsize\CornellClauseRef{33.6.2}} & Catalogs the declarations made available by Header <mutex> synopsis. The synopsis is an interface map; the detailed specifications supply constraints and behavior.\\\hline
+\textbf{What contract governs Header <shared\_\allowbreak{}mutex> synopsis?}\\[-1mm]{\scriptsize\CornellClauseRef{33.6.3}} & Catalogs the declarations made available by Header <shared\_\allowbreak{}mutex> synopsis. The synopsis is an interface map; the detailed specifications supply constraints and behavior.\\\hline
+\textbf{Which obligations govern Mutex requirements?}\\[-1mm]{\scriptsize\CornellClauseRef{33.6.4}} & States the admissibility and semantic obligations for Mutex requirements. Separate compile-time participation rules from caller preconditions and runtime effects.\\\hline
+\textbf{What contract governs Locks?}\\[-1mm]{\scriptsize\CornellClauseRef{33.6.5}} & Defines the blocking and synchronization contract for Locks; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.\\\hline
+\textbf{What does Generic locking algorithms guarantee?}\\[-1mm]{\scriptsize\CornellClauseRef{33.6.6}} & Defines the observable result of Generic locking algorithms together with applicable iterator-domain, ordering, complexity, invalidation, and exception conditions.\\\hline
+\textbf{What contract governs Call once?}\\[-1mm]{\scriptsize\CornellClauseRef{33.6.7}} & Specifies the facility family Call once. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.\\\hline
+\end{longtable}
+\begin{CornellReferenceSummaryBox}Mutual exclusion supplies the library semantics portion of this clause. The key review move is to connect its local wording to the clause-wide model, then classify each condition by normative force before relying on it.\end{CornellReferenceSummaryBox}
+\Needspace{5\baselineskip}\paragraph{Detailed coverage ledger.}
+\begin{description}[style=nextline,leftmargin=2.8cm,font=\normalfont\bfseries\color{CornellReferenceTeal}]
+\item[33.6.4.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.6.4.2] \textbf{Mutex types.} Defines the blocking and synchronization contract for Mutex types; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.
+\item[33.6.4.2.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.6.4.2.2] \textbf{Class mutex.} Defines the blocking and synchronization contract for Class mutex; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.
+\item[33.6.4.2.3] \textbf{Class recursive\_\allowbreak{}mutex.} Defines the blocking and synchronization contract for Class recursive\_\allowbreak{}mutex; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.
+\item[33.6.4.3] \textbf{Timed mutex types.} Defines the blocking and synchronization contract for Timed mutex types; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.
+\item[33.6.4.3.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.6.4.3.2] \textbf{Class timed\_\allowbreak{}mutex.} Defines the blocking and synchronization contract for Class timed\_\allowbreak{}mutex; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.
+\item[33.6.4.3.3] \textbf{Class recursive\_\allowbreak{}timed\_\allowbreak{}mutex.} Defines the blocking and synchronization contract for Class recursive\_\allowbreak{}timed\_\allowbreak{}mutex; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.
+\item[33.6.4.4] \textbf{Shared mutex types.} Defines the blocking and synchronization contract for Shared mutex types; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.
+\item[33.6.4.4.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.6.4.4.2] \textbf{Class shared\_\allowbreak{}mutex.} Defines the blocking and synchronization contract for Class shared\_\allowbreak{}mutex; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.
+\item[33.6.4.5] \textbf{Shared timed mutex types.} Defines the blocking and synchronization contract for Shared timed mutex types; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.
+\item[33.6.4.5.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.6.4.5.2] \textbf{Class shared\_\allowbreak{}timed\_\allowbreak{}mutex.} Defines the blocking and synchronization contract for Class shared\_\allowbreak{}timed\_\allowbreak{}mutex; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.
+\item[33.6.5.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.6.5.2] \textbf{Class template lock\_\allowbreak{}guard.} Defines the blocking and synchronization contract for Class template lock\_\allowbreak{}guard; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.
+\item[33.6.5.3] \textbf{Class template scoped\_\allowbreak{}lock.} Defines the blocking and synchronization contract for Class template scoped\_\allowbreak{}lock; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.
+\item[33.6.5.4] \textbf{Class template unique\_\allowbreak{}lock.} Defines the blocking and synchronization contract for Class template unique\_\allowbreak{}lock; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.
+\item[33.6.5.4.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.6.5.4.2] \textbf{Constructors, destructor, and assignment.} Specifies how Constructors, destructor, and assignment establishes object state, including participation constraints, initialization effects, and exceptional exits.
+\item[33.6.5.4.3] \textbf{Locking.} Defines the blocking and synchronization contract for Locking; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.
+\item[33.6.5.4.4] \textbf{Modifiers.} Specifies the facility family Modifiers. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.6.5.4.5] \textbf{Observers.} Specifies the facility family Observers. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.6.5.5] \textbf{Class template shared\_\allowbreak{}lock.} Defines the blocking and synchronization contract for Class template shared\_\allowbreak{}lock; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.
+\item[33.6.5.5.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.6.5.5.2] \textbf{Constructors, destructor, and assignment.} Specifies how Constructors, destructor, and assignment establishes object state, including participation constraints, initialization effects, and exceptional exits.
+\item[33.6.5.5.3] \textbf{Locking.} Defines the blocking and synchronization contract for Locking; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.
+\item[33.6.5.5.4] \textbf{Modifiers.} Specifies the facility family Modifiers. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.6.5.5.5] \textbf{Observers.} Specifies the facility family Observers. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.6.7.1] \textbf{Struct once\_\allowbreak{}flag.} Specifies the facility family Struct once\_\allowbreak{}flag. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.6.7.2] \textbf{Function call\_\allowbreak{}once.} Specifies the facility family Function call\_\allowbreak{}once. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\end{description}
+\Needspace{8\baselineskip}
+\subsection*{33.7 Condition variables}
+\begin{longtable}{@{}>{\RaggedRight\arraybackslash\columncolor{CornellReferenceCueGray}}p{0.28\textwidth}>{\RaggedRight\arraybackslash}p{0.64\textwidth}@{}}
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes}\\\endfirsthead
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes (continued)}\\\endhead
+\arrayrulecolor{CornellReferenceLineGray}
+\textbf{What contract governs General?}\\[-1mm]{\scriptsize\CornellClauseRef{33.7.1}} & Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.\\\hline
+\textbf{What contract governs Header <condition\_\allowbreak{}variable> synopsis?}\\[-1mm]{\scriptsize\CornellClauseRef{33.7.2}} & Catalogs the declarations made available by Header <condition\_\allowbreak{}variable> synopsis. The synopsis is an interface map; the detailed specifications supply constraints and behavior.\\\hline
+\textbf{What contract governs Non-member functions?}\\[-1mm]{\scriptsize\CornellClauseRef{33.7.3}} & Specifies the facility family Non-member functions. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.\\\hline
+\textbf{What contract governs Class condition\_\allowbreak{}variable?}\\[-1mm]{\scriptsize\CornellClauseRef{33.7.4}} & Specifies the facility family Class condition\_\allowbreak{}variable. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.\\\hline
+\textbf{What contract governs Class condition\_\allowbreak{}variable\_\allowbreak{}any?}\\[-1mm]{\scriptsize\CornellClauseRef{33.7.5}} & Specifies the facility family Class condition\_\allowbreak{}variable\_\allowbreak{}any. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.\\\hline
+\end{longtable}
+\begin{CornellReferenceSummaryBox}Condition variables supplies the concurrency contract portion of this clause. The key review move is to connect its local wording to the clause-wide model, then classify each condition by normative force before relying on it.\end{CornellReferenceSummaryBox}
+\Needspace{5\baselineskip}\paragraph{Detailed coverage ledger.}
+\begin{description}[style=nextline,leftmargin=2.8cm,font=\normalfont\bfseries\color{CornellReferenceTeal}]
+\item[33.7.5.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.7.5.2] \textbf{Noninterruptible waits.} Specifies the facility family Noninterruptible waits. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.7.5.3] \textbf{Interruptible waits.} Specifies the facility family Interruptible waits. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\end{description}
+\Needspace{8\baselineskip}
+\subsection*{33.8 Semaphore}
+\begin{longtable}{@{}>{\RaggedRight\arraybackslash\columncolor{CornellReferenceCueGray}}p{0.28\textwidth}>{\RaggedRight\arraybackslash}p{0.64\textwidth}@{}}
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes}\\\endfirsthead
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes (continued)}\\\endhead
+\arrayrulecolor{CornellReferenceLineGray}
+\textbf{What contract governs General?}\\[-1mm]{\scriptsize\CornellClauseRef{33.8.1}} & Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.\\\hline
+\textbf{What contract governs Header <semaphore> synopsis?}\\[-1mm]{\scriptsize\CornellClauseRef{33.8.2}} & Catalogs the declarations made available by Header <semaphore> synopsis. The synopsis is an interface map; the detailed specifications supply constraints and behavior.\\\hline
+\textbf{What contract governs Class template counting\_\allowbreak{}semaphore?}\\[-1mm]{\scriptsize\CornellClauseRef{33.8.3}} & Defines the blocking and synchronization contract for Class template counting\_\allowbreak{}semaphore; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.\\\hline
+\end{longtable}
+\begin{CornellReferenceSummaryBox}Semaphore supplies the concurrency contract portion of this clause. The key review move is to connect its local wording to the clause-wide model, then classify each condition by normative force before relying on it.\end{CornellReferenceSummaryBox}
+\Needspace{8\baselineskip}
+\subsection*{33.9 Coordination types}
+\begin{longtable}{@{}>{\RaggedRight\arraybackslash\columncolor{CornellReferenceCueGray}}p{0.28\textwidth}>{\RaggedRight\arraybackslash}p{0.64\textwidth}@{}}
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes}\\\endfirsthead
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes (continued)}\\\endhead
+\arrayrulecolor{CornellReferenceLineGray}
+\textbf{What contract governs General?}\\[-1mm]{\scriptsize\CornellClauseRef{33.9.1}} & Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.\\\hline
+\textbf{What contract governs Latches?}\\[-1mm]{\scriptsize\CornellClauseRef{33.9.2}} & Defines the blocking and synchronization contract for Latches; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.\\\hline
+\textbf{What contract governs Barriers?}\\[-1mm]{\scriptsize\CornellClauseRef{33.9.3}} & Defines the blocking and synchronization contract for Barriers; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.\\\hline
+\end{longtable}
+\begin{CornellReferenceSummaryBox}Coordination types supplies the library semantics portion of this clause. The key review move is to connect its local wording to the clause-wide model, then classify each condition by normative force before relying on it.\end{CornellReferenceSummaryBox}
+\Needspace{5\baselineskip}\paragraph{Detailed coverage ledger.}
+\begin{description}[style=nextline,leftmargin=2.8cm,font=\normalfont\bfseries\color{CornellReferenceTeal}]
+\item[33.9.2.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.9.2.2] \textbf{Header <latch> synopsis.} Catalogs the declarations made available by Header <latch> synopsis. The synopsis is an interface map; the detailed specifications supply constraints and behavior.
+\item[33.9.2.3] \textbf{Class latch.} Defines the blocking and synchronization contract for Class latch; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.
+\item[33.9.3.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.9.3.2] \textbf{Header <barrier> synopsis.} Catalogs the declarations made available by Header <barrier> synopsis. The synopsis is an interface map; the detailed specifications supply constraints and behavior.
+\item[33.9.3.3] \textbf{Class template barrier.} Defines the blocking and synchronization contract for Class template barrier; ownership, wake conditions, timeout behavior, and happens-before edges must be analyzed together.
+\end{description}
+\Needspace{8\baselineskip}
+\subsection*{33.10 Futures}
+\begin{longtable}{@{}>{\RaggedRight\arraybackslash\columncolor{CornellReferenceCueGray}}p{0.28\textwidth}>{\RaggedRight\arraybackslash}p{0.64\textwidth}@{}}
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes}\\\endfirsthead
+\rowcolor{CornellReferenceNavy}\color{white}\textbf{Cue / recall prompt} & \color{white}\textbf{Notes (continued)}\\\endhead
+\arrayrulecolor{CornellReferenceLineGray}
+\textbf{What contract governs Overview?}\\[-1mm]{\scriptsize\CornellClauseRef{33.10.1}} & Frames the terminology, applicability, and relationships needed to interpret Overview; detailed rules remain in the following subclauses.\\\hline
+\textbf{What contract governs Header <future> synopsis?}\\[-1mm]{\scriptsize\CornellClauseRef{33.10.2}} & Catalogs the declarations made available by Header <future> synopsis. The synopsis is an interface map; the detailed specifications supply constraints and behavior.\\\hline
+\textbf{What contract governs Error handling?}\\[-1mm]{\scriptsize\CornellClauseRef{33.10.3}} & Defines the failure model for Error handling, including how an error is represented, reported, propagated, or converted into a diagnostic consequence.\\\hline
+\textbf{What contract governs Class future\_\allowbreak{}error?}\\[-1mm]{\scriptsize\CornellClauseRef{33.10.4}} & Defines the failure model for Class future\_\allowbreak{}error, including how an error is represented, reported, propagated, or converted into a diagnostic consequence.\\\hline
+\textbf{What contract governs Shared state?}\\[-1mm]{\scriptsize\CornellClauseRef{33.10.5}} & Defines asynchronous shared-state behavior for Shared state; establish producer/consumer ownership, readiness, blocking, exception transport, and destruction effects.\\\hline
+\textbf{What contract governs Class template promise?}\\[-1mm]{\scriptsize\CornellClauseRef{33.10.6}} & Defines asynchronous shared-state behavior for Class template promise; establish producer/consumer ownership, readiness, blocking, exception transport, and destruction effects.\\\hline
+\textbf{What contract governs Class template future?}\\[-1mm]{\scriptsize\CornellClauseRef{33.10.7}} & Defines asynchronous shared-state behavior for Class template future; establish producer/consumer ownership, readiness, blocking, exception transport, and destruction effects.\\\hline
+\textbf{What contract governs Class template shared\_\allowbreak{}future?}\\[-1mm]{\scriptsize\CornellClauseRef{33.10.8}} & Defines asynchronous shared-state behavior for Class template shared\_\allowbreak{}future; establish producer/consumer ownership, readiness, blocking, exception transport, and destruction effects.\\\hline
+\textbf{What contract governs Function template async?}\\[-1mm]{\scriptsize\CornellClauseRef{33.10.9}} & Defines asynchronous shared-state behavior for Function template async; establish producer/consumer ownership, readiness, blocking, exception transport, and destruction effects.\\\hline
+\textbf{What contract governs Class template packaged\_\allowbreak{}task?}\\[-1mm]{\scriptsize\CornellClauseRef{33.10.10}} & Specifies the facility family Class template packaged\_\allowbreak{}task. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.\\\hline
+\end{longtable}
+\begin{CornellReferenceSummaryBox}Futures supplies the library semantics portion of this clause. The key review move is to connect its local wording to the clause-wide model, then classify each condition by normative force before relying on it.\end{CornellReferenceSummaryBox}
+\Needspace{5\baselineskip}\paragraph{Detailed coverage ledger.}
+\begin{description}[style=nextline,leftmargin=2.8cm,font=\normalfont\bfseries\color{CornellReferenceTeal}]
+\item[33.10.10.1] \textbf{General.} Frames the terminology, applicability, and relationships needed to interpret General; detailed rules remain in the following subclauses.
+\item[33.10.10.2] \textbf{Member functions.} Specifies the facility family Member functions. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\item[33.10.10.3] \textbf{Globals.} Specifies the facility family Globals. Read its declarations together with mandates, preconditions, effects, results, exceptions, complexity, and lifetime rules.
+\end{description}
+\section{Language-Lawyer and Library-Usage Pitfalls}
+\begin{CornellReferencePitfallBox}\begin{itemize}[label=\textcolor{CornellReferenceAmber}{$\blacktriangleright$}]
+\item Reading a synopsis as the complete behavioral contract.
+\item Ignoring mandates, preconditions, exception behavior, or complexity requirements.
+\item Using an exposition-only name as though it were public API.
+\item Assuming invalidation, ownership, or thread-safety properties that are not stated.
+\item Treating successful compilation as proof that semantic requirements and preconditions are met.
+\end{itemize}\end{CornellReferencePitfallBox}
+\section{Programmer and Implementation Checklist}
+\begin{CornellReferenceChecklistBox}\begin{itemize}[label=$\square$]
+\item Identify the declaring header or module exposure for each facility.
+\item Check template arguments and mandates before evaluating an operation.
+\item Establish every precondition at the call site.
+\item Record effects, returned value, postconditions, and exceptions separately.
+\item Audit iterator, reference, pointer, and object lifetime after mutation.
+\item Verify stated complexity and synchronization assumptions.
+\item For \CornellClauseRef{33.1}, verify general against the precise rule category and all cited dependencies.
+\item For \CornellClauseRef{33.2}, verify requirements against the precise rule category and all cited dependencies.
+\item For \CornellClauseRef{33.3}, verify stop tokens against the precise rule category and all cited dependencies.
+\item For \CornellClauseRef{33.4}, verify threads against the precise rule category and all cited dependencies.
+\end{itemize}\end{CornellReferenceChecklistBox}
+\section{Clause Synthesis}
+\begin{CornellReferenceOrientationBox}Defines stop tokens, threads, atomics, memory ordering, mutexes, locks, condition variables, semaphores, latches, barriers, futures, promises, tasks, and asynchronous launch. The library mechanisms used to create execution agents and establish synchronization. A sound review distinguishes syntax and participation from runtime preconditions, keeps notes and examples non-mandatory, and follows cross-clause dependencies before making a portability claim.\end{CornellReferenceOrientationBox}
+\section{Self-Test Questions}
+\begin{enumerate}
+\item What role does General play in the clause's overall model?
+\item Which normative distinctions must be kept separate when applying Requirements?
+\item How would you audit a program or implementation that depends on Stop tokens?
+\item Compare Threads with Atomic operations; what different question does each answer?
+\item What role does Atomic operations play in the clause's overall model?
+\item Which normative distinctions must be kept separate when applying Mutual exclusion?
+\item How would you audit a program or implementation that depends on Condition variables?
+\item Compare Semaphore with Coordination types; what different question does each answer?
+\item What role does Coordination types play in the clause's overall model?
+\item Which normative distinctions must be kept separate when applying Futures?
+\item How would you audit a program or implementation that depends on Template parameter names?
+\item Compare Exceptions with Native handles; what different question does each answer?
+\item What role does Native handles play in the clause's overall model?
+\item Which normative distinctions must be kept separate when applying Timing specifications?
+\item Scenario: a program relies on an unstated implementation behavior while using Requirements for Cpp17Lockable types. What must be checked before calling the program portable?
+\item Scenario: a program relies on an unstated implementation behavior while using Introduction. What must be checked before calling the program portable?
+\end{enumerate}
+\clearpage\section{Answer Key}
+\begin{enumerate}
+\item General is one part of the clause's library semantics model. Its role is understood by connecting the local rule in 33.10.10.1 to the clause orientation and its dependent concepts.
+\item Keep formation and well-formedness separate from runtime preconditions and effects. Also distinguish mandatory wording from notes, implementation choice from undefined behavior, and interface declarations from detailed contracts; see 33.2.
+\item Audit Stop tokens by locating the controlling wording in 33.3, listing inputs and type constraints, proving any preconditions, recording effects and failure behavior, and checking lifetime, invalidation, complexity, and synchronization where applicable.
+\item Threads and Atomic operations occupy different steps or facility groups. Analyze each under its own subclause, then follow the explicit dependency between them rather than transferring one set of guarantees to the other; begin at 33.4.
+\item Atomic operations is one part of the clause's operation semantics model. Its role is understood by connecting the local rule in 33.5 to the clause orientation and its dependent concepts.
+\item Keep formation and well-formedness separate from runtime preconditions and effects. Also distinguish mandatory wording from notes, implementation choice from undefined behavior, and interface declarations from detailed contracts; see 33.6.
+\item Audit Condition variables by locating the controlling wording in 33.7, listing inputs and type constraints, proving any preconditions, recording effects and failure behavior, and checking lifetime, invalidation, complexity, and synchronization where applicable.
+\item Semaphore and Coordination types occupy different steps or facility groups. Analyze each under its own subclause, then follow the explicit dependency between them rather than transferring one set of guarantees to the other; begin at 33.8.
+\item Coordination types is one part of the clause's library semantics model. Its role is understood by connecting the local rule in 33.9 to the clause orientation and its dependent concepts.
+\item Keep formation and well-formedness separate from runtime preconditions and effects. Also distinguish mandatory wording from notes, implementation choice from undefined behavior, and interface declarations from detailed contracts; see 33.10.
+\item Audit Template parameter names by locating the controlling wording in 33.2.1, listing inputs and type constraints, proving any preconditions, recording effects and failure behavior, and checking lifetime, invalidation, complexity, and synchronization where applicable.
+\item Exceptions and Native handles occupy different steps or facility groups. Analyze each under its own subclause, then follow the explicit dependency between them rather than transferring one set of guarantees to the other; begin at 33.2.2.
+\item Native handles is one part of the clause's library semantics model. Its role is understood by connecting the local rule in 33.2.3 to the clause orientation and its dependent concepts.
+\item Keep formation and well-formedness separate from runtime preconditions and effects. Also distinguish mandatory wording from notes, implementation choice from undefined behavior, and interface declarations from detailed contracts; see 33.2.4.
+\item First identify the exact requirement in 33.2.5, then classify the relied-on behavior as required, unspecified, implementation-defined, conditionally supported, or undefined. Portability requires satisfying the program obligations and avoiding dependence on a choice not guaranteed in the target environments.
+\item First identify the exact requirement in 33.3.1, then classify the relied-on behavior as required, unspecified, implementation-defined, conditionally supported, or undefined. Portability requires satisfying the program obligations and avoiding dependence on a choice not guaranteed in the target environments.
+\end{enumerate}
+\section{Key-Term Recap}
+\begin{longtable}{@{}>{\RaggedRight\arraybackslash}p{0.28\textwidth}>{\RaggedRight\arraybackslash}p{0.64\textwidth}@{}}\toprule\textbf{Term} & \textbf{Working meaning}\\\midrule\endfirsthead\toprule\textbf{Term} & \textbf{Working meaning (continued)}\\\midrule\endhead\bottomrule\endfoot
+happens-before & An ordering relation used to determine visibility and data-race freedom.\\
+memory\_\allowbreak{}order & A tag selecting ordering constraints for atomic operations.\\
+atomic & A type supporting indivisible operations and synchronization properties.\\
+mutex & A mutual-exclusion object used to protect shared state.\\
+condition\_\allowbreak{}variable & A blocking coordination object used with a lock and predicate.\\
+stop\_\allowbreak{}token & An observer of a shared cancellation state.\\
+future & A handle used to wait for and retrieve a shared-state result.\\
+\end{longtable}
+\CornellTakeaway{Concurrency is correct only when lifetime, mutual exclusion, atomic ordering, blocking predicates, cancellation, and shared-state ownership form one coherent proof.}
+\end{document}
