@@ -144,6 +144,12 @@ flowchart TD
     G -- yes --> M
     F --> M[Dynamic matrix]
 
+    M --> RA[Raster corpus]
+    RA --> S0[Shard 0]
+    RA --> S1[Shard 1]
+    RA --> SN[Shard N]
+    RA --> PG
+
     M --> S0[Shard 0]
     M --> S1[Shard 1]
     M --> SN[Shard N]
@@ -177,7 +183,7 @@ GitHub workflow -> reusable workflow -> composite action
 | `latex-release.yml` | release, dispatch | promote artifact; rebuild only as fallback |
 | `render-plantuml.yml` | `.puml`/`.iuml`/plantuml styles change | diagram rendering only |
 | `build-ci-image.yml` | dispatch, Dockerfile change | publishes the pinned TeX image |
-| `_build-latex.yml` | `workflow_call` | plan -> shards -> aggregate |
+| `_build-latex.yml` | `workflow_call` | plan -> raster -> shards -> aggregate |
 
 ---
 
@@ -363,6 +369,9 @@ directory, and generated wrapper files are per-document
   always retained.
 - PDF artifacts upload with `compression-level: 0` — PDFs are already compressed,
   so deflating thousands of them is pure CPU on upload *and* download.
+- `latex-raster` is produced once by the reusable workflow's raster job from the
+  source-relative committed PNG/JPG/JPEG corpus, after same-run PlantUML rendering
+  when diagrams changed.
 - Shard PDFs (3-day retention) are separated from the published corpus (14 days)
   and from diagnostics/timings.
 - The whole-tree `find`/`du`/`sort` diagnostic step was removed.
@@ -397,7 +406,8 @@ make stage-pages                                  # build the Pages site tree
 ```
 
 Underlying CLI: `plan`, `build-selection`, `aggregate-shards`, `verify-corpus`,
-`check-corpus-manifest`, `plan-outputs`, `merge-timings`.
+`check-corpus-manifest`, `plan-outputs`, `merge-timings`, `render-plantuml`,
+`collect-raster`, `stage-pages --image-dir`.
 
 ---
 

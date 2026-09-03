@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import ast
 import json
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -208,6 +209,65 @@ class ShardPlanningTests(unittest.TestCase):
             path = Path(tmp) / "timings.json"
             path.write_text("{not json", encoding="utf-8")
             self.assertEqual({}, build_graph.load_timing_history(path))
+
+
+class WorkflowRegressionTests(unittest.TestCase):
+    def test_upload_artifact_steps_do_not_use_hidden_search_roots_without_opt_in(self) -> None:
+        # Prevent upload-artifact from filtering an entire dot-directory search root.
+        repo_root = Path(__file__).resolve().parents[1]
+        manifests = sorted((repo_root / ".github" / "workflows").glob("*.yml"))
+        manifests.extend(sorted((repo_root / ".github" / "actions").glob("*/action.yml")))
+
+        offenders: list[str] = []
+        for manifest_path in manifests:
+            lines = manifest_path.read_text(encoding="utf-8").splitlines()
+            for index, line in enumerate(lines):
+                if not re.search(r"uses:\s*actions/upload-artifact@", line):
+                    continue
+
+                step_indent = len(line) - len(line.lstrip())
+                step_lines = [line]
+                for following in lines[index + 1:]:
+                    stripped = following.strip()
+                    indent = len(following) - len(following.lstrip())
+                    if stripped and indent <= step_indent:
+                        break
+                    step_lines.append(following)
+
+                include_hidden = any(re.search(r"include-hidden-files:\s*true\b", item) for item in step_lines)
+                if include_hidden:
+                    continue
+
+                for entry in self._upload_artifact_path_entries(step_lines):
+                    final_component = Path(entry).name
+                    if final_component.startswith("."):
+                        rel_manifest = manifest_path.relative_to(repo_root).as_posix()
+                        offenders.append(f"{rel_manifest}: {entry}")
+
+        self.assertEqual([], offenders)
+
+    @staticmethod
+    def _upload_artifact_path_entries(step_lines: list[str]) -> list[str]:
+        entries: list[str] = []
+        for index, line in enumerate(step_lines):
+            match = re.match(r"\s*path:\s*(.*)$", line)
+            if not match:
+                continue
+            value = match.group(1).strip()
+            if value in {"|", ">"}:
+                block_indent: int | None = None
+                for following in step_lines[index + 1:]:
+                    if not following.strip():
+                        continue
+                    indent = len(following) - len(following.lstrip())
+                    if block_indent is None:
+                        block_indent = indent
+                    if indent < block_indent:
+                        break
+                    entries.append(following.strip())
+            elif value:
+                entries.append(value.strip('"\''))
+        return [entry for entry in entries if entry and not entry.startswith("#")]
 
 
 class AggregationTests(unittest.TestCase):
