@@ -1,0 +1,301 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage{cornell-notes}
+
+\title{Clause 05: Environment}
+\author{}
+\date{}
+
+\setDocTitle{Clause 05: Environment}
+\setDocSubtitle{{C 2024}}
+\setDocOwner{{C 2024 Cornell Notes}}
+\setDocDate{{\today}}
+\setCornellCollection{{C 2024 Cornell Notes}}
+\setCornellUnitType{{Clause}}
+\setCornellUnitNumber{05}
+\setCornellUnitTitle{Environment}
+\hypersetup{pdftitle={Clause 05: Environment},pdfsubject={C 2024 study notes},pdfauthor={}}
+
+\begin{document}
+\maketitle
+
+
+
+\begin{CornellOverviewBox}{Clause Orientation}
+This clause defines the conceptual translation and execution environments against which program behavior is specified. It covers source-to-program phases, diagnostic duties, hosted and freestanding startup, observable behavior, multi-threaded execution and data races, character and multibyte handling, signals, translation limits, and numerical characteristics.
+\end{CornellOverviewBox}
+
+\section{Learning Objectives}
+\begin{itemize}
+  \item Trace a source file through all eight conceptual translation phases.
+  \item Distinguish preprocessing translation units, translation units, and linked programs.
+  \item Apply the minimum diagnostic requirement to syntax and constraint violations.
+  \item Compare hosted and freestanding startup and termination.
+  \item Explain the abstract machine, side effects, sequencing, and observable behavior.
+  \item Analyze happens-before relationships and identify data races.
+  \item Relate source, execution, multibyte, and wide-character models.
+  \item Identify implementation-defined signal, display, and environmental characteristics.
+  \item Distinguish minimum translation limits from numerical type characteristics.
+  \item Use integer, binary floating, and optional decimal floating parameters without assuming a particular hardware representation.
+\end{itemize}
+
+\section{Normative Structure Map}
+\begin{CornellNotesTable}
+\CornellNoteRow{Translation environment}{Source files, preprocessing, and linkage define the compile-time model.}
+\CornellNoteRow{Execution environment}{Hosted and freestanding startup plus the abstract machine define the runtime contract.}
+\CornellNoteRow{Implementation bounds}{Minimum translation limits and numerical characteristics must be documented and satisfied.}
+\end{CornellNotesTable}
+
+\section{5.1 - Environmental Model}
+\begin{CornellNotesTable}
+\CornellNoteRow{Why are two environments defined?}{The translation environment processes source and produces program artifacts; the execution environment starts and runs the program. Their characteristics constrain the results of conforming programs.}
+\CornellNoteRow{Are the models implementation blueprints?}{No. They define required effects and observable relationships. An implementation can combine conceptual steps internally if the result behaves as required.}
+\CornellNoteRow{What review mistake should be avoided?}{Do not infer that conceptual source files, phases, or execution steps require a particular on-disk format or internal compiler pipeline.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+The environmental model specifies externally relevant behavior while preserving implementation freedom over internal mechanisms.
+\end{CornellSummaryBox}
+
+
+
+\section{5.2.1 - Translation Environment}
+\begin{CornellNotesTable}
+\CornellNoteRow{How is a program partitioned?}{A source file plus recursively included headers and source files forms a preprocessing translation unit. After preprocessing it is a translation unit. Separately translated units can communicate through external linkage and files and can later be linked.}
+\CornellNoteRow{Phase 1 - character mapping?}{Physical source characters are mapped, when needed and in an implementation-defined manner, to the source character set; line endings become new-line characters.}
+\CornellNoteRow{Phase 2 - line splicing?}{A backslash immediately followed by a new-line is deleted to form logical lines. The final source line and eligible-backslash requirements constrain valid input.}
+\CornellNoteRow{Phase 3 - tokenization?}{The source is decomposed into preprocessing tokens and whitespace. Comments become one space, new-lines remain, and treatment of other whitespace sequences is implementation-defined.}
+\CornellNoteRow{Phase 4 - preprocessing?}{Directives execute, macro invocations expand, pragma operators execute, and included material recursively passes through the early phases. Directives are removed afterward. Producing a universal-character-name-shaped sequence through token concatenation has undefined behavior.}
+\CornellNoteRow{Phases 5 and 6 - literals?}{Characters and escape sequences in literals map to execution characters, with documented handling where no counterpart exists; adjacent string literal tokens are then concatenated.}
+\CornellNoteRow{Phase 7 - language translation?}{Preprocessing tokens become language tokens, insignificant separating whitespace falls away, and the translation unit undergoes syntactic and semantic analysis and translation.}
+\CornellNoteRow{Phase 8 - linkage?}{External references are resolved and required library components are linked into a program image suitable for execution.}
+\CornellNoteRow{What diagnostic is minimally required?}{At least one diagnostic is required when a preprocessing translation unit or translation unit contains a syntax-rule or constraint violation, including cases also described as undefined or implementation-defined.}
+\CornellNoteRow{Must an invalid unit be rejected?}{Not generally. After issuing a required diagnostic, an implementation can still translate it unless another rule specifically prohibits successful translation.}
+\CornellNoteRow{What is recommended for diagnostics?}{Identify the nature and, when possible, the location of each violation. The implementation may emit additional warnings as long as valid programs remain correctly translated.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Translation is an ordered conceptual process: character mapping and splicing precede preprocessing; literal conversion and concatenation precede token translation; linkage resolves program-wide references. Diagnostics are required for syntax and constraint violations, not for every form of undefined behavior.
+\end{CornellSummaryBox}
+
+
+
+\section{5.2.2 - Execution Environments and Startup}
+\begin{CornellNotesTable}
+\CornellNoteRow{What happens before startup?}{All objects with static storage duration are initialized before the designated startup function is called; the manner and precise timing are otherwise unspecified.}
+\CornellNoteRow{What defines freestanding startup?}{The startup function name and type, available facilities beyond the required minimum, and the effect of termination are implementation-defined.}
+\CornellNoteRow{What defines hosted startup?}{The designated function is \texttt{main}, with a return type compatible with \texttt{int} and one of the permitted parameter forms or another documented form.}
+\CornellNoteRow{What must hold for \texttt{argc} and \texttt{argv}?}{\texttt{argc} is nonnegative; \texttt{argv[argc]} is null; earlier elements point to modifiable strings supplied by the host. If present, \texttt{argv[0]} represents the program name or begins with a null character when no name is available.}
+\CornellNoteRow{What facilities may hosted execution use?}{The complete library described by Clause 7, subject to each facility's own preconditions and conditional availability.}
+\CornellNoteRow{How does returning from \texttt{main} terminate?}{With a compatible return type, returning from the initial call corresponds to normal termination using the returned status. Reaching the closing brace yields zero. Other return types make the returned termination status unspecified.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Startup and termination are environmental contracts. Hosted execution standardizes \texttt{main} and full-library access; freestanding execution leaves entry and termination details to documented implementation choices.
+\end{CornellSummaryBox}
+
+
+
+\section{5.2.2.4 - Abstract Machine and Observable Behavior}
+\begin{CornellNotesTable}
+\CornellNoteRow{Why use an abstract machine?}{It defines semantic results independently of optimization. A real implementation need not reproduce every conceptual step if observable behavior remains permitted.}
+\CornellNoteRow{What is a side effect?}{A state change such as volatile access, object modification, file modification, or a function call that performs such an action. Expression evaluation includes value computations and initiation of side effects.}
+\CornellNoteRow{What does sequenced before mean?}{It is an asymmetric, transitive relation ordering evaluations within one thread. Unsequenced evaluations have no such order; indeterminately sequenced evaluations have one order or the other, but the choice is unspecified and they do not interleave.}
+\CornellNoteRow{What does a sequence point guarantee?}{Every value computation and side effect associated with the earlier evaluation is sequenced before every value computation and side effect associated with the later one.}
+\CornellNoteRow{When may evaluation be omitted?}{When the implementation can determine that a value is unused and no needed side effects, including volatile access or function side effects, would be lost.}
+\CornellNoteRow{What is minimally observable?}{Required volatile accesses, final file contents, and specified interactive-device input/output dynamics form the minimum observable behavior. What counts as an interactive device is implementation-defined.}
+\CornellNoteRow{How do signals affect ordinary objects?}{On asynchronous interruption, values or representations of objects outside the permitted atomic or signal-safe categories can become unspecified or indeterminate as defined by the signal rules.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+The as-if freedom is bounded by observable behavior. Sequencing controls intra-thread order; volatile and I/O rules preserve required interactions with the execution environment.
+\end{CornellSummaryBox}
+
+
+
+\section{5.2.2.5 - Multi-threaded Executions and Data Races}
+\begin{CornellNotesTable}
+\CornellNoteRow{What extends sequencing across threads?}{Synchronization operations create inter-thread relationships; combined with sequenced-before they contribute to happens-before ordering.}
+\CornellNoteRow{What is a visible side effect?}{For a value computation of an object, a side effect is visible when it happens before the computation and no intervening side effect on the same object lies between them in the happens-before order.}
+\CornellNoteRow{What is a conflicting action?}{Two actions conflict when one modifies a memory location and the other reads or modifies the same location.}
+\CornellNoteRow{What is a data race?}{Conflicting actions in different threads form a data race when neither applicable atomic rules nor a happens-before relation orders them. A data race produces undefined behavior.}
+\CornellNoteRow{Why do atomics matter?}{Atomic objects and memory-order rules provide defined synchronization and modification ordering unavailable to unsynchronized non-atomic conflicting accesses.}
+\CornellNoteRow{Does separate source syntax guarantee independence?}{No. The memory-location definition governs interference; adjacent bit-fields can share a memory location even when they have different member names.}
+\CornellNoteRow{What progress assumptions are available?}{Thread execution and blocking behavior follow stated forward-progress provisions; busy-wait reasoning must account for atomic operations, synchronization, and observable actions rather than assuming arbitrary progress.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Concurrency correctness requires both the right granularity and the right order: identify the memory location, identify conflicting actions, then prove atomic treatment or happens-before ordering.
+\end{CornellSummaryBox}
+
+
+
+\section{5.3.1-5.3.4 - Characters, Displays, and Signals}
+\begin{CornellNotesTable}
+\CornellNoteRow{What character sets are distinguished?}{Source and execution environments have basic and extended character sets, with rules for members, escape representations, and encodings used by literals and library facilities.}
+\CornellNoteRow{How are multibyte characters modeled?}{A multibyte sequence represents an extended character according to the active encoding state. State-dependent encodings and restartable conversion require explicit conversion-state tracking.}
+\CornellNoteRow{What does display semantics address?}{It defines environmental expectations for displaying active-position movement and basic control characters without prescribing a universal physical terminal.}
+\CornellNoteRow{How are signals and interrupts constrained?}{They can interrupt abstract-machine execution, but only limited objects and operations are safe to observe or modify in a handler. The implementation documents relevant environmental behavior.}
+\CornellNoteRow{What portability issue links these topics?}{Assuming one execution encoding, one byte-to-character mapping, one terminal model, or ordinary function safety inside a signal handler exceeds the portable guarantees.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Characters are abstract elements represented through environment-specific encodings; display devices and asynchronous signals add implementation-defined boundaries that must be documented and handled conservatively.
+\end{CornellSummaryBox}
+
+
+
+\section{5.3.5 - Environmental and Numerical Limits}
+\begin{CornellNotesTable}
+\CornellNoteRow{What is the role of a minimum translation limit?}{It guarantees that every conforming implementation can process programs meeting specified minimum structural sizes. It is a floor on implementation capability, not a recommended program size or a universal maximum.}
+\CornellNoteRow{What kinds of translation quantity are limited?}{Examples include nesting depth, identifier significance, macro parameters, block identifiers, external identifiers, included files, conditional nesting, declarator complexity, and object size.}
+\CornellNoteRow{How are integer characteristics exposed?}{The integer-characteristics header supplies widths and minimum or maximum values for standard integer and character types. Programs should query these macros instead of assuming a data model.}
+\CornellNoteRow{What is the floating model?}{A sign, radix, exponent, and sequence of significand digits describe representable values and accuracy characteristics. Header macros expose range, precision, radix, evaluation method, subnormal support, and related properties.}
+\CornellNoteRow{Why does evaluation method matter?}{Intermediate evaluation can use a format with greater range or precision than the nominal type. Assignment and cast rules determine when the value is represented in the destination type.}
+\CornellNoteRow{What is correctly rounded conversion?}{The result is the representable value selected by the current rounding direction as if unlimited range and precision had first produced the exact mathematical result.}
+\CornellNoteRow{When do decimal floating characteristics exist?}{Only when the implementation advertises the corresponding optional decimal floating feature. Dedicated macros then describe the decimal formats and evaluation method.}
+\CornellNoteRow{What is a decimal quantum?}{It records the unit associated with the coefficient's least significant digit. Equal numerical values can retain different quantum exponents, which matters for decimal arithmetic and conversions.}
+\CornellNoteRow{What must a portable program avoid?}{Hard-coded assumptions about byte width, signedness of plain character types, integer widths, floating radix, evaluation precision, subnormal behavior, or support for optional decimal formats.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Environmental limits expose capabilities through required minima and documented macros. Portable programs query rather than assume; optional arithmetic models must be guarded by their feature indicators.
+\end{CornellSummaryBox}
+
+
+
+\section{Programmer and Implementation Checklist}
+\begin{itemize}
+  \item[$\square$] Map each source transformation to the correct conceptual phase before reasoning about token spelling or macro expansion.
+  \item[$\square$] Distinguish a preprocessing translation unit from the translation unit produced after preprocessing.
+  \item[$\square$] Require at least one diagnostic for every syntax-rule or constraint violation.
+  \item[$\square$] Do not assume a diagnostic is required for undefined behavior lacking a syntax or constraint violation.
+  \item[$\square$] Validate hosted \texttt{main}, \texttt{argc}, \texttt{argv}, and termination behavior against the stated forms.
+  \item[$\square$] Document the startup function and termination effect for a freestanding target.
+  \item[$\square$] Identify every observable side effect before applying optimization or as-if reasoning.
+  \item[$\square$] Classify evaluation pairs as sequenced, indeterminately sequenced, or unsequenced.
+  \item[$\square$] For concurrent access, identify the exact memory location and prove atomicity or happens-before ordering.
+  \item[$\square$] Do not call ordinary non-signal-safe operations from an asynchronous signal handler.
+  \item[$\square$] Use conversion-state-aware facilities for state-dependent multibyte encodings.
+  \item[$\square$] Compare implementation capacities with required minimum translation limits.
+  \item[$\square$] Read integer and floating characteristics from their macros rather than assuming widths or formats.
+  \item[$\square$] Guard optional decimal or floating-point facilities with the associated feature indicators.
+  \item[$\square$] Record implementation-defined character, interactive-device, signal, and numerical choices.
+\end{itemize}
+
+\begin{CornellSummaryBox}{Clause Synthesis}
+Clause 5 supplies the machine model that makes the later language and library rules executable. Translation proceeds through ordered conceptual phases; execution is judged against an abstract machine and minimum observable behavior. Hosted and freestanding systems have different startup contracts. Multi-threaded correctness depends on memory locations, conflicts, atomics, and happens-before. Character, signal, capacity, and numerical properties expose deliberate implementation latitude through documentation and queryable macros.
+\end{CornellSummaryBox}
+
+
+\section{Subclause Coverage Index}
+The following navigation index confirms coverage of every second- and third-level subclause. Detailed function-level provisions are grouped with their governing facility family above.
+
+\begin{CornellNotesTable}
+\toprule
+Subclause & Subject \\
+\midrule
+\endfirsthead
+\toprule
+Subclause & Subject (continued) \\
+\midrule
+\endhead
+5.1 & Introduction \\
+5.2 & Conceptual models \\
+5.2.1 & Translation environment \\
+5.2.2 & Execution environments \\
+5.3 & Environmental considerations \\
+5.3.1 & Character sets \\
+5.3.2 & Multibyte characters \\
+5.3.3 & Character display semantics \\
+5.3.4 & Signals and interrupts \\
+5.3.5 & Environmental limits \\
+\bottomrule
+\end{CornellNotesTable}
+
+
+\clearpage
+\section{Self-Test Questions}
+\begin{enumerate}
+  \item What is the difference between a preprocessing translation unit and a translation unit?
+  \item In which conceptual phase are comments replaced and preprocessing tokens recognized?
+  \item When are macro invocations expanded?
+  \item When are adjacent string literal tokens concatenated?
+  \item What diagnostic is required for a constraint violation?
+  \item Must an implementation reject every invalid translation unit after diagnosing it?
+  \item What value must appear at \texttt{argv[argc]} in a hosted start?
+  \item What happens when execution reaches the closing brace of the initial hosted \texttt{main} call?
+  \item How do unsequenced and indeterminately sequenced evaluations differ?
+  \item What forms the minimum observable behavior?
+  \item Two threads write the same non-atomic scalar without synchronization. What is the result?
+  \item Two threads modify adjacent bit-fields. Why is member identity insufficient to prove safety?
+  \item Does a required minimum translation limit define the largest conforming program?
+  \item Why should code use integer and floating characteristic macros?
+  \item When may decimal floating characteristics be assumed?
+\end{enumerate}
+
+\clearpage
+\section{Answer Key}
+\begin{enumerate}
+  \item The former is a source file together with recursively included material before preprocessing completes; the latter is the result after preprocessing.
+
+  \item Phase 3.
+
+  \item During phase 4, together with directive execution and recursive inclusion processing.
+
+  \item Phase 6, after literal characters and escapes have been mapped to execution characters.
+
+  \item The implementation must produce at least one diagnostic for the affected preprocessing translation unit or translation unit.
+
+  \item No. It can continue and translate unless another requirement specifically forbids successful translation.
+
+  \item A null pointer.
+
+  \item It produces normal termination with a status corresponding to zero when the return type is compatible with \texttt{int}.
+
+  \item Unsequenced evaluations have no ordering and can interleave; indeterminately sequenced evaluations occur in one order or the other, but the selected order is unspecified and they do not interleave.
+
+  \item Required volatile accesses, final data written to files, and specified interactive-device input/output dynamics, subject to other applicable rules.
+
+  \item The actions conflict, neither happens before the other, and the resulting data race has undefined behavior.
+
+  \item The fields can occupy the same memory location. Concurrency is analyzed at that semantic granularity, not merely by distinct member names.
+
+  \item No. It is a minimum capacity every conforming implementation must meet; an implementation can support more.
+
+  \item Widths, ranges, radices, evaluation methods, and optional properties vary by implementation. The macros expose the supported model.
+
+  \item Only when the implementation advertises the associated optional feature; otherwise the decimal facilities are not part of the portable assumption set.
+\end{enumerate}
+
+\section{Key-Term Recap}
+\begin{CornellNotesTable}
+\toprule
+Term & Working meaning \\
+\midrule
+\endfirsthead
+\toprule
+Term & Working meaning (continued) \\
+\midrule
+\endhead
+Preprocessing translation unit & A source file together with all recursively included material before preprocessing completes. \\
+Translation unit & The program unit remaining after preprocessing. \\
+Translation phase & One of eight ordered conceptual stages from source mapping through linkage. \\
+Diagnostic & Implementation-designated output required for applicable syntax and constraint violations. \\
+Freestanding environment & An execution environment that can operate without hosted operating-system services. \\
+Hosted environment & An environment with standardized \texttt{main} startup and the complete required library. \\
+Abstract machine & The semantic execution model against which observable behavior is defined. \\
+Side effect & A change in execution state, including object or file modification and volatile access. \\
+Sequenced before & An intra-thread partial-order relation requiring one evaluation to precede another. \\
+Happens before & The ordering relation used to determine visibility and race freedom across evaluations and threads. \\
+Data race & Unsynchronized conflicting actions in different threads not protected by applicable atomic rules. \\
+Observable behavior & The minimum external effects a conforming implementation must preserve. \\
+Translation limit & A required minimum capacity for processing programs of stated structural complexity. \\
+Floating evaluation method & The implementation choice governing the range and precision used for intermediate floating evaluation. \\
+Decimal quantum & The power-of-ten unit associated with the least significant coefficient digit. \\
+\bottomrule
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{One-Sentence Takeaway}
+Portable execution depends on respecting the ordered translation model, the abstract machine's observable behavior, defined synchronization, and implementation-exposed environmental limits.
+\end{CornellSummaryBox}
+\end{document}

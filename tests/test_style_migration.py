@@ -108,6 +108,20 @@ class StyleMigrationTests(unittest.TestCase):
                     result = _validate_naming([file_a, file_b])
             self.assertNotEqual(0, result)
 
+    def test_c_cornell_notes_collection_has_expected_canonical_paths(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        expected = [
+            repo_root / "src" / "cornell-notes" / "programming" / "languages" / "c" / "c-2024" / "clauses" / "01-scope" / "01-scope-cornell-notes.tex",
+            repo_root / "src" / "cornell-notes" / "programming" / "languages" / "c" / "c-2024" / "clauses" / "02-normative-references" / "02-normative-references-cornell-notes.tex",
+            repo_root / "src" / "cornell-notes" / "programming" / "languages" / "c" / "c-2024" / "clauses" / "03-terms-definitions-and-symbols" / "03-terms-definitions-and-symbols-cornell-notes.tex",
+            repo_root / "src" / "cornell-notes" / "programming" / "languages" / "c" / "c-2024" / "clauses" / "04-conformance" / "04-conformance-cornell-notes.tex",
+            repo_root / "src" / "cornell-notes" / "programming" / "languages" / "c" / "c-2024" / "clauses" / "05-environment" / "05-environment-cornell-notes.tex",
+            repo_root / "src" / "cornell-notes" / "programming" / "languages" / "c" / "c-2024" / "clauses" / "06-language" / "06-language-cornell-notes.tex",
+            repo_root / "src" / "cornell-notes" / "programming" / "languages" / "c" / "c-2024" / "clauses" / "07-library" / "07-library-cornell-notes.tex",
+        ]
+        for path in expected:
+            self.assertTrue(path.exists(), msg=f"Missing canonical C Cornell file: {path}")
+
     def test_cornell_notes_documents_use_cornell_package(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
         for tex_path in self._all_cornell_roots(repo_root):

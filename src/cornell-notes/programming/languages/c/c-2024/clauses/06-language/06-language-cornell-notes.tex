@@ -1,0 +1,554 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage{cornell-notes}
+
+\title{Clause 06: Language}
+\author{}
+\date{}
+
+\setDocTitle{Clause 06: Language}
+\setDocSubtitle{{C 2024}}
+\setDocOwner{{C 2024 Cornell Notes}}
+\setDocDate{{\today}}
+\setCornellCollection{{C 2024 Cornell Notes}}
+\setCornellUnitType{{Clause}}
+\setCornellUnitNumber{06}
+\setCornellUnitTitle{Language}
+\hypersetup{pdftitle={Clause 06: Language},pdfsubject={C 2024 study notes},pdfauthor={}}
+
+\begin{document}
+\maketitle
+
+
+
+\begin{CornellOverviewBox}{Clause Orientation}
+This clause defines the core language: notation, identifiers and types, conversions, lexical elements, expressions, declarations, statements, external definitions, preprocessing, and reserved future directions. It is the primary source for deciding whether program text is syntactically valid, satisfies constraints, and has defined semantics.
+\end{CornellOverviewBox}
+
+\section{Learning Objectives}
+\begin{itemize}
+  \item Read syntax notation without confusing grammar alternatives with semantic permissions.
+  \item Determine identifier scope, linkage, name space, and object storage duration.
+  \item Classify arithmetic, pointer, aggregate, function, atomic, and derived types.
+  \item Reason from object representation and effective access rules to valid values.
+  \item Apply integer promotions, usual arithmetic conversions, and pointer conversions.
+  \item Tokenize source correctly across keywords, identifiers, constants, literals, and preprocessing tokens.
+  \item Analyze expression operands, value computations, side effects, and sequencing.
+  \item Validate pointer arithmetic, comparison, assignment, and subscript bounds.
+  \item Recognize the contexts in which an expression must be constant.
+  \item Parse declarations from specifiers through nested declarators.
+  \item Apply storage-class, qualifier, alignment, initialization, and attribute rules.
+  \item Trace control flow through selection, iteration, labels, jumps, and returns.
+  \item Distinguish declarations, definitions, tentative definitions, and linkage across translation units.
+  \item Simulate macro replacement, inclusion, conditional processing, and token rescanning.
+  \item Treat future-direction reservations as portability constraints rather than current features.
+\end{itemize}
+
+\section{Normative Structure Map}
+\begin{CornellNotesTable}
+\CornellNoteRow{Language core}{Expressions, declarations, statements, and conversions define the computational model.}
+\CornellNoteRow{Constraint handling}{Violations are diagnosed and may trigger undefined behavior depending on the relevant rule.}
+\CornellNoteRow{Implementation details}{Host assumptions, optional features, and locale-dependent behavior remain implementation-defined and documented.}
+\end{CornellNotesTable}
+
+\section{6.1 - Notation}
+\begin{CornellNotesTable}
+\CornellNoteRow{What does a syntax production define?}{It describes permitted token sequences for a syntactic category. Grammar acceptance is only the first gate; constraints and semantics can further restrict or interpret the construct.}
+\CornellNoteRow{How are alternatives and optional parts read?}{Separate alternatives represent distinct productions, while an optional marker means the element can be omitted. Repetition and descriptive conventions are interpreted exactly as introduced by the notation rules.}
+\CornellNoteRow{Why are forward references important?}{They connect a local grammar or semantic rule to definitions supplied later. They guide dependency tracing but do not weaken the rule at the current location.}
+\CornellNoteRow{What is the common mistake?}{Inferring defined behavior merely because a token sequence matches the grammar. A syntactically valid construct can violate a constraint or encounter undefined behavior during evaluation.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Syntax identifies form; constraints determine admissibility; semantics determine meaning. Complete analysis always applies all three layers.
+\end{CornellSummaryBox}
+
+
+
+\section{6.2 - Concepts}
+\begin{CornellNotesTable}
+\CornellNoteRow{Which scopes must be distinguished?}{File, block, function-prototype, and function scope determine where an identifier denotes an entity. Labels have function scope; members and tags follow their own rules.}
+\CornellNoteRow{What are the linkage categories?}{External linkage can connect declarations across translation units, internal linkage connects declarations within one translation unit, and no linkage prevents such declaration-to-declaration identity.}
+\CornellNoteRow{Why do identifier name spaces matter?}{The same spelling can denote different entities when it appears in separate name spaces, such as labels, tags, members of a particular aggregate, or ordinary identifiers. Lookup depends on syntactic context.}
+\CornellNoteRow{Which storage durations exist?}{Static, thread, automatic, and allocated duration determine object lifetime. Duration is not the same as scope: one controls lifetime, the other controls where a name is visible.}
+\CornellNoteRow{How are types organized?}{Object and function types divide the broad categories. Arithmetic types include integer and floating families; derived types include arrays, structures, unions, functions, pointers, and atomic constructions under their respective rules.}
+\CornellNoteRow{What role do compatible types play?}{Separate declarations that refer to the same entity must meet compatibility rules. When compatible declarations contribute information, a composite type can represent their combined type.}
+\CornellNoteRow{What is an object representation?}{It is the bytes that encode an object. Not every bit pattern must represent a value for every type, and padding or non-value representations affect copying, comparison, and access reasoning.}
+\CornellNoteRow{What determines valid typed access?}{The declared type, compatible types, qualified versions, corresponding signed or unsigned types, certain aggregate membership, and character-type access rules define which lvalue types may access stored representations.}
+\CornellNoteRow{What does alignment constrain?}{Complete object types impose valid address boundaries. A stricter alignment has a larger requirement; declarations and allocation facilities must provide an alignment suitable for the type used.}
+\CornellNoteRow{What are encodings doing in the type model?}{Literal prefixes, character types, execution character sets, and code-unit encodings determine how abstract characters are represented in arrays and values.}
+\CornellNoteRow{What portability trap joins these concepts?}{Assuming that spelling visibility, entity identity, lifetime, representation, or alignment follows from one another. Each property has a separate rule and must be proved independently.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+A declaration introduces several independent properties: where a name is visible, whether declarations denote one entity, how long an object exists, which type interprets its storage, and what alignment its address requires.
+\end{CornellSummaryBox}
+
+
+
+\section{6.3 - Conversions}
+\begin{CornellNotesTable}
+\CornellNoteRow{When do integer promotions occur?}{Integer types of rank no greater than the relevant promoted types, including compatible narrow and bit-field cases, convert according to representable range. Promotions precede many arithmetic operations.}
+\CornellNoteRow{How do signed and unsigned conversions behave?}{If the destination can represent the value, the value is preserved. Otherwise the applicable modulo or implementation-defined rule depends on the destination category; never infer one rule for every signed conversion.}
+\CornellNoteRow{How are real floating and integer conversions bounded?}{Conversion discards fractional parts toward zero when converting to integer, but the result must be representable under the stated rule. Integer-to-floating and floating-to-floating conversions can be exact or choose an adjacent representable value as specified.}
+\CornellNoteRow{What do the usual arithmetic conversions accomplish?}{They select a common real or complex type after promotions by considering domain, conversion rank, and signed/unsigned representable ranges. The operator then works in that common type.}
+\CornellNoteRow{What is lvalue conversion?}{In most value contexts an lvalue is converted to the value stored in its designated object, dropping top-level qualifiers from the resulting value type. Listed contexts suppress the conversion.}
+\CornellNoteRow{When does an array become a pointer?}{Except in specifically exempt contexts, an array expression converts to a pointer to its initial element. The conversion does not allocate or copy an array.}
+\CornellNoteRow{When does a function designator become a pointer?}{In most expression contexts it converts to a pointer to that function; the stated exceptions preserve the designator form.}
+\CornellNoteRow{What are the essential pointer conversions?}{Object pointers can convert through \texttt{void *} with round-trip guarantees under the stated alignment conditions; null pointer constants and \texttt{nullptr\_t} produce null pointers; qualification can be added compatibly; integer-pointer conversions are implementation-defined except where otherwise specified.}
+\CornellNoteRow{What must be checked after any conversion?}{The destination type, representability, qualification, alignment, provenance of the pointed-to object, and whether a later use satisfies the effective access and lifetime rules.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Conversions are semantic operations, not bit reinterpretation by default. Determine the source and destination categories, then apply promotions, rank, representability, qualification, and pointer-specific conditions.
+\end{CornellSummaryBox}
+
+
+
+\section{6.4 - Lexical Elements}
+\begin{CornellNotesTable}
+\CornellNoteRow{What is the tokenization principle?}{After preprocessing, the source is a sequence of tokens separated as needed by whitespace. The token categories include keywords, identifiers, constants, string literals, and punctuators.}
+\CornellNoteRow{Why can keyword spelling not be reused freely?}{A keyword is recognized as its language token in the relevant context, while identifiers are subject to spelling, normalization, reserved-name, and scope rules.}
+\CornellNoteRow{What must an identifier satisfy?}{Its characters and universal character names must meet the identifier rules and referenced character-property conditions. Predefined identifiers have specified behavior and cannot be treated as ordinary application storage.}
+\CornellNoteRow{What is a universal character name?}{A token spelling that denotes a character by code value under restrictions on which characters and values can appear in identifiers, literals, or preprocessing contexts.}
+\CornellNoteRow{Which integer-constant features matter?}{Base prefix, digit sequence, optional separators, and suffix determine candidate types. The first type in the applicable list that can represent the value becomes the type.}
+\CornellNoteRow{Which floating-constant features matter?}{Radix form, exponent, suffix, translation-time rounding, and optional decimal types determine type and value. Decimal and hexadecimal forms can have different exactness properties.}
+\CornellNoteRow{Which predefined constants need special treatment?}{\texttt{true}, \texttt{false}, and \texttt{nullptr} have specified constant roles and types; they are not merely user-defined macros in this language version.}
+\CornellNoteRow{How do string literal prefixes affect type?}{The prefix selects the character element type and encoding. Adjacent compatible literal tokens concatenate during translation, and the resulting array contains a terminating null character.}
+\CornellNoteRow{What are preprocessing numbers and header names?}{They are preprocessing-token categories intentionally broader or context-specific. Later translation must still convert a preprocessing number into a valid language token where required.}
+\CornellNoteRow{What happens to comments?}{They are recognized before macro processing and replaced by whitespace. Comment delimiters therefore cannot be manufactured later by macro replacement to create a comment.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Lexical analysis is phase-sensitive. A spelling can be a preprocessing token before it becomes a language token, and literal prefixes, suffixes, and context determine the final token type and value.
+\end{CornellSummaryBox}
+
+
+
+\section{6.5 - Expressions}
+\begin{CornellNotesTable}
+\CornellNoteRow{What must every operator analysis identify?}{Operand types and value categories, required conversions, result type and value category, side effects, sequencing, and exceptional conditions such as invalid pointers or unrepresentable arithmetic.}
+\CornellNoteRow{What is a generic selection?}{A controlling expression is matched by type against associations, selecting one result expression. Only the selected association contributes the result, subject to its constraints.}
+\CornellNoteRow{What does array subscripting mean?}{\texttt{a[b]} is defined through pointer addition and indirection. One operand supplies a pointer and the other an integer; the resulting element must lie within the permitted array bounds.}
+\CornellNoteRow{What must a function call prove?}{A callable function type, compatible arguments after required conversions, valid parameter correspondence, and satisfaction of any semantic preconditions. Argument evaluation order is generally not fixed by the call syntax.}
+\CornellNoteRow{How do member operators differ?}{\texttt{.} selects a member from an aggregate value or lvalue; \texttt{-\textgreater{}} first requires a pointer to an aggregate. The result inherits value-category and qualification consequences from the base and member.}
+\CornellNoteRow{What do postfix and prefix increment do?}{Both modify the operand by one under arithmetic or pointer rules. Postfix yields the prior value; prefix corresponds to a compound update result. The operand must be a modifiable lvalue and sequencing rules still apply.}
+\CornellNoteRow{What is a compound literal?}{A parenthesized type name followed by an initializer yields an object whose storage duration and identity depend on its scope and evaluation context.}
+\CornellNoteRow{What do address and indirection require?}{Address-of needs a permitted designator or lvalue and produces a pointer; unary \texttt{*} requires a pointer value and designates the pointed-to function or object. Invalid, null, or lifetime-ended pointers cannot be dereferenced safely.}
+\CornellNoteRow{Why are \texttt{sizeof} and \texttt{alignof} special?}{They inspect type size or alignment, usually without evaluating their operand expression. Variable-length type cases have additional evaluation rules. Results use an unsigned integer type suitable for sizes.}
+\CornellNoteRow{What does a cast guarantee?}{A cast requests a conversion allowed by the source and destination categories. It does not repair invalid provenance, lifetime, alignment, or representability assumptions.}
+\CornellNoteRow{What are the major arithmetic hazards?}{Division or remainder by zero, exceptional signed division, overflow where not defined, invalid shift counts, and pointer arithmetic outside the permitted array-plus-one range can produce undefined behavior or implementation-dependent results.}
+\CornellNoteRow{How are comparisons interpreted?}{Relational and equality operators apply required conversions. Pointer comparison is defined only for stated relationships; null equality is well-defined, but arbitrary relational ordering of unrelated objects is not portable.}
+\CornellNoteRow{What do logical operators guarantee?}{\texttt{\&\&} and \texttt{||} convert operands to truth values and sequence the right operand after the left only when it is evaluated. Their short-circuit behavior is a control-flow property.}
+\CornellNoteRow{What does the conditional operator do?}{It evaluates one of two result operands after the condition. Its result type follows detailed arithmetic, aggregate, void, or pointer combination rules.}
+\CornellNoteRow{What makes an assignment valid?}{The left operand is a modifiable lvalue, the right value is convertible under the assignment constraints, and any overlapping object update meets the specified access rule. Compound assignment evaluates its left operand once.}
+\CornellNoteRow{What does the comma operator sequence?}{It evaluates and discards the left operand, introduces sequencing, then evaluates the right operand and yields its result. A comma separating arguments or initializers is not automatically the comma operator.}
+\CornellNoteRow{What unsequenced pattern is dangerous?}{A side effect on a scalar object that is unsequenced relative to another side effect on that object or a value computation using it can produce undefined behavior.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Expression correctness is a proof over types, conversions, object validity, and evaluation order. Operator punctuation alone never supplies enough information.
+\end{CornellSummaryBox}
+
+
+
+\section{6.6 - Constant Expressions}
+\begin{CornellNotesTable}
+\CornellNoteRow{Why are constant expressions restricted?}{Translation-time contexts require values that can be determined within a controlled subset of expressions and operands.}
+\CornellNoteRow{Where are they required?}{Examples include case labels, enumerator values, bit-field widths, array bounds in specified contexts, static assertions, and all or part of static initialization.}
+\CornellNoteRow{Are all constant expressions integers?}{No. The clause defines several constant-expression categories. The required category depends on the context.}
+\CornellNoteRow{Can undefined behavior hide in a constant expression?}{No portable conclusion follows from an expression that violates constraints or would require a prohibited operation. A valid constant expression must satisfy its category restrictions.}
+\CornellNoteRow{What review question comes first?}{Identify the exact context, then select the required constant-expression category before evaluating the tokens.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Constant expression is a family of context-sensitive categories, not a synonym for any expression a compiler happens to fold.
+\end{CornellSummaryBox}
+
+
+
+\section{6.7 - Declarations}
+\begin{CornellNotesTable}
+\CornellNoteRow{What does a declaration establish?}{It specifies identifiers, types, storage-class and function properties, qualifiers, alignments, attributes, and possibly definitions or initial values.}
+\CornellNoteRow{How should a complex declaration be read?}{Start with declaration specifiers, locate the identifier in its declarator, then move outward through pointer, array, and function derivations while applying parentheses and qualifiers.}
+\CornellNoteRow{What do storage-class specifiers control?}{They participate in linkage, storage duration, definition status, type aliases, thread storage, constant-expression objects, and type inference according to the particular specifier and context.}
+\CornellNoteRow{What do structure and union specifiers define?}{They define aggregate types with named members, layout order, member name spaces, flexible-array restrictions, and compatibility rules. A union stores one member representation at a time under the access rules.}
+\CornellNoteRow{How do enumerations work?}{An enumeration introduces a distinct enumerated type and named integer constants. Representability and compatible-type selection follow the completed enumerator set and any explicit underlying-type form.}
+\CornellNoteRow{What does an atomic type specifier provide?}{It constructs an atomic-qualified object type subject to restrictions on the underlying type and use; operations must follow the atomic semantic and library rules.}
+\CornellNoteRow{What does \texttt{typeof} contribute?}{A \texttt{typeof} specifier derives a type from a type name or expression under its evaluation and qualification rules. It is type construction, not an arbitrary runtime conversion.}
+\CornellNoteRow{What do qualifiers mean?}{\texttt{const} restricts modification through that access path, \texttt{volatile} preserves required accesses, \texttt{restrict} supports an association-based aliasing promise, and atomic qualification invokes atomic access semantics.}
+\CornellNoteRow{Why is \texttt{restrict} a contract?}{During an execution block, accesses based on a restricted pointer must satisfy the formal association rules. Violating the promise can make behavior undefined even when addresses appear valid.}
+\CornellNoteRow{What do function and alignment specifiers do?}{Function specifiers adjust call/definition semantics such as inline treatment; alignment specifiers request valid supported alignments without weakening the natural requirement.}
+\CornellNoteRow{How do array and function declarators add constraints?}{Array qualifiers, bounds, variable length, parameter adjustment, prototype forms, variadic markers, and return/parameter type restrictions all affect the derived type.}
+\CornellNoteRow{What are typedefs and type inference doing?}{A typedef creates an alias name, not a new distinct type. Inference obtains a declared type from an initializer or type operand according to the permitted \texttt{auto} or related form.}
+\CornellNoteRow{What must initialization prove?}{The initializer form matches the destination scalar, aggregate, union, or array; designators are valid; braces and element ordering are correct; conversions are permitted; and static-duration requirements are met.}
+\CornellNoteRow{What does an empty initializer mean?}{Where permitted, it initializes the object as though members or elements receive their defined empty-initialization values rather than leaving arbitrary automatic contents.}
+\CornellNoteRow{What does a static assertion do?}{It checks an integer constant expression during translation and requires the asserted condition to compare unequal to zero.}
+\CornellNoteRow{How should attributes be handled?}{Attribute placement and appertainment determine the entity affected. Unknown attributes in reserved or implementation domains follow their rules; a standard attribute cannot be reinterpreted arbitrarily.}
+\CornellNoteRow{What are the key standard attributes?}{\texttt{nodiscard}, \texttt{maybe\_unused}, \texttt{deprecated}, \texttt{fallthrough}, and \texttt{noreturn} express diagnostic or control intent. Function-type attributes \texttt{reproducible} and \texttt{unsequenced} communicate specific side-effect and evaluation properties subject to their definitions.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Declarations compose type, identity, lifetime, linkage, initialization, and semantic promises. Read them structurally and treat qualifiers, inference, and attributes as rules with precise appertainment.
+\end{CornellSummaryBox}
+
+
+
+\section{6.8 - Statements and Blocks}
+\begin{CornellNotesTable}
+\CornellNoteRow{What does a compound statement provide?}{A block groups declarations and statements and establishes block scope. Entry, exit, and jump behavior affect automatic and variably modified objects.}
+\CornellNoteRow{How do labels work?}{Ordinary, \texttt{case}, and \texttt{default} labels attach to statements under function or switch constraints. A label does not by itself change execution; control reaches it normally or by a matching transfer.}
+\CornellNoteRow{What is a null statement?}{A lone semicolon performs no operation. It can serve as a loop body or labeled target but should be visually unambiguous.}
+\CornellNoteRow{How do \texttt{if} and \texttt{switch} select?}{\texttt{if} uses scalar truth conversion. \texttt{switch} promotes its controlling integer expression and transfers to matching case or default labels, with fallthrough unless control is transferred explicitly.}
+\CornellNoteRow{How do loop forms differ?}{\texttt{while} tests before each iteration, \texttt{do} tests after the body, and \texttt{for} combines initialization, controlling expression, and iteration expression with defined sequencing between them.}
+\CornellNoteRow{What does \texttt{continue} target?}{The loop-specific continuation point: the controlling test for \texttt{while} and \texttt{do}, and the iteration expression before the next test for \texttt{for}.}
+\CornellNoteRow{What do \texttt{break} and \texttt{goto} require?}{\texttt{break} exits the smallest enclosing loop or switch. \texttt{goto} targets a visible label in the same function and must not violate restrictions involving variably modified objects or protected scopes.}
+\CornellNoteRow{What must a return statement satisfy?}{Its expression, if present, must be compatible with the function return type after the return conversion. Returning ends the call and terminates automatic lifetimes in the function.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Statements build control flow on top of expression semantics. Scope entry, lifetime, fallthrough, and jump targets are as important as the apparent branch or loop condition.
+\end{CornellSummaryBox}
+
+
+
+\section{6.9 - External Definitions}
+\begin{CornellNotesTable}
+\CornellNoteRow{What appears at translation-unit level?}{Function definitions and external object declarations or definitions form the external definitions of a translation unit.}
+\CornellNoteRow{What makes a function definition valid?}{Its declarator, return type, parameters, body, storage class, and prior declarations must satisfy compatibility and definition rules. A function has one definition in the program where required.}
+\CornellNoteRow{What is a tentative definition?}{A file-scope object declaration without an initializer and with the qualifying form can act as a tentative definition; if no full definition appears in the translation unit, it behaves as a zero-initialized definition of the completed type.}
+\CornellNoteRow{What must cross-unit review prove?}{Compatible declarations, permitted linkage, one applicable definition, and consistent type information across separately translated units.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+External definitions convert local declarations into program-wide entities. Compatibility and linkage must be checked across translation-unit boundaries, not just within one file.
+\end{CornellSummaryBox}
+
+
+
+\section{6.10 - Preprocessing Directives}
+\begin{CornellNotesTable}
+\CornellNoteRow{When is a preprocessing directive recognized?}{At the start of a preprocessing line under the token and whitespace rules. Directives execute during preprocessing before language-level parsing.}
+\CornellNoteRow{How does conditional inclusion work?}{Integer constant-like controlling expressions and defined-macro tests choose which groups are retained. Skipped groups still must satisfy the limited lexical structure required to locate nested directives.}
+\CornellNoteRow{What does source inclusion do?}{It searches for a header or source file using the specified form and implementation rules, then processes the included material recursively through the early translation phases.}
+\CornellNoteRow{What does binary resource inclusion do?}{The \texttt{\#embed} directive incorporates resource data as preprocessing tokens, subject to resource lookup, parameters, limits, and conditional resource tests.}
+\CornellNoteRow{How are object-like macros replaced?}{The macro name is replaced by its replacement list when it is eligible for expansion, then the result is rescanned with disabled-macro rules preventing immediate recursive re-expansion.}
+\CornellNoteRow{How are function-like arguments handled?}{Arguments are collected with balanced parentheses, normally macro-expanded before substitution, then substituted according to ordinary, stringizing, or token-pasting context.}
+\CornellNoteRow{What does stringizing do?}{\texttt{\#} converts the spelling of a macro parameter's preprocessing-token sequence into a character string literal with required whitespace and escaping normalization.}
+\CornellNoteRow{What does token pasting do?}{\texttt{\#\#} combines adjacent preprocessing tokens. The result must form a valid preprocessing token; concatenation can change later recognition and carries specific undefined cases.}
+\CornellNoteRow{Why is rescanning essential?}{After substitution and pasting, the resulting sequence is rescanned for additional eligible macro names. Expansion order therefore cannot be modeled as simple textual replacement.}
+\CornellNoteRow{What do line control and diagnostic directives do?}{Line control changes presumed file and line information. Diagnostic directives request an error or warning; an active error directive prevents successful translation under the conformance rule.}
+\CornellNoteRow{What is a pragma?}{A directive or pragma operator carrying implementation or standardized instructions. Unknown pragmas follow the specified implementation behavior rather than ordinary macro semantics.}
+\CornellNoteRow{Which predefined macros require care?}{Mandatory, environmental, and conditional-feature macros describe translation date/time, implementation characteristics, and optional feature availability. Programs should test them rather than redefine reserved names.}
+\CornellNoteRow{What is the pragma operator for?}{\texttt{\_Pragma} supplies pragma content through a string-literal form that can participate in macro expansion, after which the implementation processes the resulting pragma.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Preprocessing operates on tokens, not language expressions. Correct reasoning requires argument collection, context-sensitive prescan, substitution, stringizing or pasting, rescanning, and only then language translation.
+\end{CornellSummaryBox}
+
+
+
+\section{6.11 - Future Language Directions}
+\begin{CornellNotesTable}
+\CornellNoteRow{What is the purpose of future directions?}{They reserve or discourage forms likely to change or be removed so implementations and programs can evolve without colliding with portable source.}
+\CornellNoteRow{Which areas receive reservations?}{Floating types, linkage and external-name space, character escapes, storage-class specifiers, pragmas, and predefined macro names are among the identified evolution areas.}
+\CornellNoteRow{Is a future direction a current feature?}{No. It is a portability warning and reservation. A program should avoid depending on the identified form when a durable alternative exists.}
+\CornellNoteRow{How should tooling use this section?}{Diagnostics and migration guidance can flag reserved evolution space even when current translation still accepts the construct.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Future directions protect compatibility by warning where today's accepted spelling or facility is not a stable long-term dependency.
+\end{CornellSummaryBox}
+
+
+
+\subsection{Illustrative Example - Conversion and Bounds}
+\begin{minted}{c}
+#include <stddef.h>
+
+int read_element(const int *values, size_t count, size_t index) {
+    if (index >= count) {
+        return 0;
+    }
+    return values[index];
+}
+\end{minted}
+The comparison is performed in \texttt{size\_t}, and the subscript is reached only after proving that \texttt{index} designates an element rather than the one-past pointer. The example is illustrative and not reproduced from the source.
+
+
+
+\subsection{Illustrative Example - Checked Declaration Intent}
+\begin{minted}{c}
+#include <stddef.h>
+
+static_assert(sizeof(unsigned char) == 1,
+              "byte-sized character unit required");
+
+[[nodiscard]] int parse_value(const char *text);
+\end{minted}
+The assertion checks a translation-time property expressed in the language model, while \texttt{nodiscard} requests a diagnostic when a result is discarded in a covered context. The attribute does not change the function's return type.
+
+
+\section{Programmer and Implementation Checklist}
+\begin{itemize}
+  \item[$\square$] Separate grammar acceptance, constraint satisfaction, and semantic behavior for every construct.
+  \item[$\square$] Record each identifier's scope, linkage, name space, and entity identity.
+  \item[$\square$] Record each object's storage duration, lifetime, type, representation, and alignment.
+  \item[$\square$] Apply integer promotions before the usual arithmetic conversions.
+  \item[$\square$] Check representability and signed/unsigned rank before predicting a numeric conversion.
+  \item[$\square$] Treat array and function conversions as context-dependent, not unconditional rewrites.
+  \item[$\square$] Validate pointer provenance, target lifetime, alignment, bounds, and qualification after conversion.
+  \item[$\square$] Determine token category and translation phase before interpreting a spelling.
+  \item[$\square$] For each expression, inventory conversions, side effects, and sequencing relations.
+  \item[$\square$] Reject pointer arithmetic outside the array object and its one-past position.
+  \item[$\square$] Do not use a cast as evidence that an invalid access became valid.
+  \item[$\square$] Identify the exact constant-expression category required by the context.
+  \item[$\square$] Parse declarations from the identifier outward after reading the specifiers.
+  \item[$\square$] Treat \texttt{restrict}, atomic qualification, and attributes as contracts with defined scope.
+  \item[$\square$] Validate aggregate designators, array bounds, and static-duration initializer restrictions.
+  \item[$\square$] Review control-flow transfers for scope, lifetime, and variably modified object restrictions.
+  \item[$\square$] Compare external declarations and definitions across every translation unit.
+  \item[$\square$] Simulate macro prescan, substitution, stringizing or pasting, and rescanning in order.
+  \item[$\square$] Guard conditional features with their feature macros and do not redefine reserved names.
+  \item[$\square$] Flag future-direction dependencies as portability debt.
+\end{itemize}
+
+\begin{CornellSummaryBox}{Clause Synthesis}
+Clause 6 defines the language as a pipeline from tokens to typed objects and evaluated behavior. Names acquire scope and linkage; objects acquire lifetime, representation, and alignment; conversions establish operand types; expressions combine values and side effects under sequencing rules; declarations construct entities; statements control execution; external definitions join translation units; and preprocessing transforms tokens before parsing. Most serious errors arise when one layer is used as proof for another, such as treating a successful cast as valid access or treating grammar acceptance as defined semantics.
+\end{CornellSummaryBox}
+
+
+\section{Subclause Coverage Index}
+The following navigation index confirms coverage of every second- and third-level subclause. Detailed function-level provisions are grouped with their governing facility family above.
+
+\begin{CornellNotesTable}
+\toprule
+Subclause & Subject \\
+\midrule
+\endfirsthead
+\toprule
+Subclause & Subject (continued) \\
+\midrule
+\endhead
+6.1 & Notation \\
+6.2 & Concepts \\
+6.2.1 & Scopes of identifiers, type names, and compound literals \\
+6.2.2 & Linkages of identifiers \\
+6.2.3 & Name spaces of identifiers \\
+6.2.4 & Storage durations of objects \\
+6.2.5 & Types \\
+6.2.6 & Representations of types \\
+6.2.7 & Compatible type and composite type \\
+6.2.8 & Alignment of objects \\
+6.2.9 & Encodings \\
+6.3 & Conversions \\
+6.3.1 & Introduction \\
+6.3.2 & Arithmetic operands \\
+6.3.3 & Other operands \\
+6.4 & Lexical elements \\
+6.4.1 & General \\
+6.4.2 & Keywords \\
+6.4.3 & Identifiers \\
+6.4.4 & Universal character names \\
+6.4.5 & Constants \\
+6.4.6 & String literals \\
+6.4.7 & Punctuators \\
+6.4.8 & Header names \\
+6.4.9 & Preprocessing numbers \\
+6.4.10 & Comments \\
+6.5 & Expressions \\
+6.5.1 & General \\
+6.5.2 & Primary expressions \\
+6.5.3 & Postfix operators \\
+6.5.4 & Unary operators \\
+6.5.5 & Cast operators \\
+6.5.6 & Multiplicative operators \\
+6.5.7 & Additive operators \\
+6.5.8 & Bitwise shift operators \\
+6.5.9 & Relational operators \\
+6.5.10 & Equality operators \\
+6.5.11 & Bitwise AND operator \\
+6.5.12 & Bitwise exclusive OR operator \\
+6.5.13 & Bitwise inclusive OR operator \\
+6.5.14 & Logical AND operator \\
+6.5.15 & Logical OR operator \\
+6.5.16 & Conditional operator \\
+6.5.17 & Assignment operators \\
+6.5.18 & Comma operator \\
+6.6 & Constant expressions \\
+6.7 & Declarations \\
+6.7.1 & General \\
+6.7.2 & Storage-class specifiers \\
+6.7.3 & Type specifiers \\
+6.7.4 & Type qualifiers \\
+6.7.5 & Function specifiers \\
+6.7.6 & Alignment specifier \\
+6.7.7 & Declarators \\
+6.7.8 & Type names \\
+6.7.9 & Type definitions \\
+6.7.10 & Type inference \\
+6.7.11 & Initialization \\
+6.7.12 & Static assertions \\
+6.7.13 & Attributes \\
+6.8 & Statements and blocks \\
+6.8.1 & General \\
+6.8.2 & Labeled statements \\
+6.8.3 & Compound statement \\
+6.8.4 & Expression and null statements \\
+6.8.5 & Selection statements \\
+6.8.6 & Iteration statements \\
+6.8.7 & Jump statements \\
+6.9 & External definitions \\
+6.9.1 & General \\
+6.9.2 & Function definitions \\
+6.9.3 & External object definitions \\
+6.10 & Preprocessing directives \\
+6.10.1 & General \\
+6.10.2 & Conditional inclusion \\
+6.10.3 & Source file inclusion \\
+6.10.4 & Binary resource inclusion \\
+6.10.5 & Macro replacement \\
+6.10.6 & Line control \\
+6.10.7 & Diagnostic directives \\
+6.10.8 & Pragma directive \\
+6.10.9 & Null directive \\
+6.10.10 & Predefined macro names \\
+6.10.11 & Pragma operator \\
+6.11 & Future language directions \\
+6.11.1 & Floating types \\
+6.11.2 & Linkages of identifiers \\
+6.11.3 & External names \\
+6.11.4 & Character escape sequences \\
+6.11.5 & Storage-class specifiers \\
+6.11.6 & Pragma directives \\
+6.11.7 & Predefined macro names \\
+\bottomrule
+\end{CornellNotesTable}
+
+
+\clearpage
+\section{Self-Test Questions}
+\begin{enumerate}
+  \item Why is syntactic validity not enough to establish a valid program construct?
+  \item How do scope and storage duration differ?
+  \item What does external linkage provide?
+  \item Why can two identical spellings denote different entities?
+  \item What is the difference between object representation and value?
+  \item What happens before the usual arithmetic conversions?
+  \item Does an array-to-pointer conversion copy the array?
+  \item What portable guarantee does a null pointer provide?
+  \item Why is a preprocessing number not necessarily a valid numeric constant?
+  \item What does \texttt{a[b]} require?
+  \item Does a function call specify left-to-right argument evaluation?
+  \item A scalar object is modified twice without sequencing. What rule is implicated?
+  \item Why is a pointer cast not proof of a valid dereference?
+  \item How does \texttt{\&\&} affect evaluation of its right operand?
+  \item When is an expression a constant expression?
+  \item Does a typedef introduce a distinct type?
+  \item What is the key obligation created by \texttt{restrict}?
+  \item What must be checked before using type inference?
+  \item Does \texttt{fallthrough} transfer control?
+  \item Where does \texttt{continue} transfer control in a \texttt{for} loop?
+  \item What can turn a tentative definition into a definition?
+  \item Why is macro replacement not simple textual substitution?
+  \item What does token pasting require of its result?
+  \item What is the purpose of conditional feature macros?
+  \item How should future language directions affect new code?
+\end{enumerate}
+
+\clearpage
+\section{Answer Key}
+\begin{enumerate}
+  \item A construct can match a grammar production yet violate a constraint or have undefined behavior under its semantic rules. Apply notation, constraints, and semantics in sequence (6.1).
+
+  \item Scope controls where an identifier is visible; storage duration controls the lifetime of an object. Neither determines the other by itself (6.2.1 and 6.2.4).
+
+  \item It permits declarations in separate translation units to denote the same entity when their declarations and types satisfy the linkage and compatibility rules (6.2.2 and 6.2.7).
+
+  \item They can occur in different identifier name spaces or scopes. Lookup depends on syntactic context and declaration location (6.2.1 and 6.2.3).
+
+  \item The representation is the stored bytes; the value is the meaning obtained by interpreting a permitted representation as a type. Some representations can include padding or encode no value (6.2.6).
+
+  \item Applicable integer promotions and other operand-specific conversions occur first; the usual arithmetic conversions then select a common type (6.3.2).
+
+  \item No. In applicable contexts it produces a pointer to the initial element; the array object remains the same object (6.3.3.1).
+
+  \item A null pointer compares unequal to every pointer to an object or function. Its representation need not be all-bits-zero (6.3.3.3).
+
+  \item It is a deliberately broad preprocessing-token class. Later translation must convert it to a valid token where required (6.4.9).
+
+  \item One operand must provide a pointer and the other an integer; pointer addition must designate an array element, after which indirection yields that element (6.5.3.2).
+
+  \item No. The call imposes required sequencing around the call itself but generally does not fix a left-to-right order among argument evaluations (6.5.3.3).
+
+  \item Unsequenced side effects on the same scalar object can produce undefined behavior under the general expression rules (6.5.1).
+
+  \item The cast establishes only a permitted conversion. Alignment, lifetime, bounds, effective access type, and pointer validity still govern dereference (6.5.5 with 6.2 and 6.3).
+
+  \item The right operand is evaluated only if the left converts to true, and the left evaluation is sequenced before it (6.5.14).
+
+  \item Only when it satisfies the restrictions of the constant-expression category required by its context, not merely because an optimizer can fold it (6.6).
+
+  \item No. It introduces an alias for a type. Type compatibility follows the aliased type (6.7.9).
+
+  \item Accesses based on the restricted pointer must satisfy the formal association rules for the relevant block execution; violating that promise can cause undefined behavior (6.7.4.2).
+
+  \item The declaration context must permit inference, an initializer or type operand must supply the type as required, and the resulting type must satisfy the remaining declaration rules (6.7.10).
+
+  \item No. It is an attribute used to express and diagnose intended fallthrough in a covered switch context; ordinary statement control flow still governs (6.7.13 and 6.8.5.3).
+
+  \item To the loop-continuation point that evaluates the iteration expression before the next controlling-expression test (6.8.6.4 and 6.8.7.3).
+
+  \item If no full definition for that file-scope object appears in the translation unit, the tentative definition is completed as specified, with zero initialization (6.9.3).
+
+  \item Arguments can be prescanned, stringized or pasted under context rules, and the replacement result is rescanned with expansion-suppression rules (6.10.5).
+
+  \item The concatenated spelling must form a valid preprocessing token, and later rescanning then determines further expansion (6.10.5.4-6.10.5.5).
+
+  \item They allow source to include optional facilities only when an implementation advertises support, preserving strict conformance on implementations without the feature (6.10.10.4).
+
+  \item Treat the identified forms as unstable or reserved evolution space and prefer durable alternatives, even if a current implementation accepts them (6.11).
+\end{enumerate}
+
+\section{Key-Term Recap}
+\begin{CornellNotesTable}
+\toprule
+Term & Working meaning \\
+\midrule
+\endfirsthead
+\toprule
+Term & Working meaning (continued) \\
+\midrule
+\endhead
+Scope & The region of program text in which an identifier denotes its declared entity. \\
+Linkage & The rule connecting declarations that denote the same entity. \\
+Name space & A syntactic category that allows the same spelling to identify different kinds of entities. \\
+Storage duration & The rule determining an object's lifetime. \\
+Compatible type & A type relationship that permits declarations or operations to describe the same entity consistently. \\
+Composite type & The type formed by combining compatible type information from declarations. \\
+Object representation & The sequence of bytes encoding an object. \\
+Alignment & The address-boundary requirement associated with an object type. \\
+Integer promotion & Conversion of certain narrower integer types before many operations. \\
+Usual arithmetic conversions & Rules selecting a common arithmetic type for eligible operands. \\
+Lvalue conversion & Conversion from an object designator to the stored value in most value contexts. \\
+Null pointer & A pointer value guaranteed not to compare equal to a pointer to an object or function. \\
+Preprocessing token & A token category recognized before full language-token conversion. \\
+Value category & A classification such as object designator or value result that affects operator rules. \\
+Modifiable lvalue & An lvalue permitted to be the target of modification under type and qualifier rules. \\
+Constant expression & An expression satisfying a restricted translation-time category required by its context. \\
+Declarator & The portion of a declaration that derives a type and identifies the declared entity. \\
+Type qualifier & A type property such as \texttt{const}, \texttt{volatile}, \texttt{restrict}, or atomic qualification. \\
+Tentative definition & A qualifying file-scope object declaration that can supply a definition if no full definition appears. \\
+Macro replacement & Token-based preprocessing that includes argument handling, substitution, and rescanning. \\
+Stringizing & Conversion of a macro argument token sequence into string-literal spelling. \\
+Token pasting & Combination of adjacent preprocessing tokens using \texttt{\#\#}. \\
+Conditional inclusion & Preprocessing selection of source groups based on controlling conditions. \\
+Binary resource inclusion & Preprocessing incorporation of resource data through \texttt{\#embed}. \\
+Future direction & Reserved or discouraged language space identified for possible evolution. \\
+\bottomrule
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{One-Sentence Takeaway}
+Language correctness is established only by tracing source from preprocessing tokens through declarations, types, conversions, expressions, side effects, control flow, and program-wide linkage.
+\end{CornellSummaryBox}
+\end{document}

@@ -922,9 +922,10 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
             math_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "mathematics", "numerical-methods")]
             sec_paths = [path for path in cornell_paths if path.parts[:4] == ("cornell-notes", "security", "certifications", "cissp")]
             iso_paths = [path for path in cornell_paths if path.parts[:4] == ("cornell-notes", "architecture", "standards", "iso-iec-ieee-42010-2022")]
+            c_paths = [path for path in cornell_paths if path.parts[:5] == ("cornell-notes", "programming", "languages", "c", "c-2024")]
             cpp_paths = [path for path in cornell_paths if path.parts[:5] == ("cornell-notes", "programming", "languages", "cpp", "cpp-2024")]
             computer_science_paths = string_paths + combinatorial_paths + network_paths + operating_system_paths
-            other_cornell = [path for path in cornell_paths if path not in computer_science_paths and path not in elec_paths and path not in math_paths and path not in sec_paths and path not in iso_paths and path not in cpp_paths]
+            other_cornell = [path for path in cornell_paths if path not in computer_science_paths and path not in elec_paths and path not in math_paths and path not in sec_paths and path not in iso_paths and path not in c_paths and path not in cpp_paths]
 
             def _emit_new_collection(heading: str, paths: list[Path]) -> None:
                 if not paths:
@@ -961,6 +962,7 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
                         _emit_links(handle, grouped[key], sort_by_chapter=True)
 
             _emit_new_collection("Architecture: ISO/IEC/IEEE 42010:2022", iso_paths)
+            _emit_new_collection("Programming: C 2024", c_paths)
             _emit_new_collection("Programming: C++ 2024", cpp_paths)
 
             if computer_science_paths:

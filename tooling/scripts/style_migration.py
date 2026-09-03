@@ -367,6 +367,7 @@ def validate_repo() -> int:
             or rel.startswith("src/cornell-notes/security/certifications/cissp/")
             or rel.startswith("src/cornell-notes/mathematics/numerical-methods/")
             or rel.startswith("src/cornell-notes/architecture/standards/iso-iec-ieee-42010-2022/")
+            or rel.startswith("src/cornell-notes/programming/languages/c/c-2024/")
             or rel.startswith("src/cornell-notes/programming/languages/cpp/cpp-2024/")
             or rel == "src/architecture/style-system/examples/cornell-notes-study-sheet.tex"
         )

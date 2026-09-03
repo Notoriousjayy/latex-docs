@@ -1,0 +1,772 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage{cornell-notes}
+
+\title{Clause 07: Library}
+\author{}
+\date{}
+
+\setDocTitle{Clause 07: Library}
+\setDocSubtitle{{C 2024}}
+\setDocOwner{{C 2024 Cornell Notes}}
+\setDocDate{{\today}}
+\setCornellCollection{{C 2024 Cornell Notes}}
+\setCornellUnitType{{Clause}}
+\setCornellUnitNumber{07}
+\setCornellUnitTitle{Library}
+\hypersetup{pdftitle={Clause 07: Library},pdfsubject={C 2024 study notes},pdfauthor={}}
+
+\begin{document}
+\maketitle
+
+
+
+\begin{CornellOverviewBox}{Clause Orientation}
+This clause defines the standard headers, types, macros, objects, and functions available to conforming programs. Library conformance depends on common call rules plus facility-specific preconditions, return values, side effects, error signaling, ownership, stream state, locale, floating environment, and concurrency semantics.
+\end{CornellOverviewBox}
+
+\section{Learning Objectives}
+\begin{itemize}
+  \item Apply the common library rules for declarations, macros, reserved identifiers, and valid arguments.
+  \item Use diagnostic, error, locale, and type-characteristic facilities in their stated domains.
+  \item Classify complex and real mathematical function families and their error behavior.
+  \item Preserve calling-environment, signal-handler, and variable-argument invariants.
+  \item Select atomic operations and memory orders that establish the needed synchronization.
+  \item Use bit utilities and checked integer arithmetic without hidden promotion or overflow assumptions.
+  \item Choose exact-, minimum-, fastest-, pointer-, and greatest-width integer types appropriately.
+  \item Manage stream orientation, buffering, formatted conversion, file position, and error state.
+  \item Apply allocation, reallocation, deallocation, and alignment rules without lifetime errors.
+  \item Select copying, moving, comparison, search, and explicit-erasure functions with correct bounds and overlap assumptions.
+  \item Coordinate mutexes, condition variables, thread lifecycle, and thread-specific storage.
+  \item Use time, multibyte, Unicode, wide-character, and locale facilities with explicit conversion state.
+  \item Treat future library directions as migration signals rather than present guarantees.
+\end{itemize}
+
+\section{Normative Structure Map}
+\begin{CornellNotesTable}
+\CornellNoteRow{Library categories}{The library is organized by headers, facilities, macros, and data types.}
+\CornellNoteRow{Conformance obligations}{Programs must not depend on undocumented behavior or invalid parameter values.}
+\CornellNoteRow{Implementation model}{The standard defines required interfaces while leaving internal mechanisms and optimization choices open.}
+\end{CornellNotesTable}
+
+\section{7.1 - Common Library Contract}
+\begin{CornellNotesTable}
+\CornellNoteRow{What does including a standard header provide?}{It makes specified declarations and macro definitions available. Some identifiers can also be declared by multiple headers as stated. Inclusion does not waive facility-specific constraints.}
+\CornellNoteRow{Why are reserved identifiers important?}{The implementation needs protected name space for library and implementation use. Application declarations or macro definitions that collide with reserved patterns can produce undefined behavior or constrain portability.}
+\CornellNoteRow{Can a library function name also be a macro?}{Yes, where specified. Parenthesizing the name can suppress function-like macro expansion to access the actual function, but only under the common rules; taking an address similarly requires the real function declaration.}
+\CornellNoteRow{What if an argument has an invalid value or type?}{Unless a facility states otherwise, passing a value outside the function domain, an invalid pointer, a mismatched post-promotion variadic type, or another unsupported argument condition has undefined behavior.}
+\CornellNoteRow{What does pointer validity require?}{A pointer argument must designate storage of the required size, lifetime, alignment, effective access type, and mutability for every access the function performs.}
+\CornellNoteRow{What is the library data-race baseline?}{Unless a function is specified to access shared state, it avoids accessing objects reachable by other threads except through its arguments and stated global facilities. Callers remain responsible for conflicting access to shared arguments and streams.}
+\CornellNoteRow{Can a program replace a reserved library function?}{Only where the source expressly permits an external definition or macro interaction. Defining a reserved external identifier or incompatible declaration generally violates the library contract.}
+\CornellNoteRow{How are errors reported?}{Each facility defines its channels: return values, \texttt{errno}, floating exceptions, stream indicators, status codes, or runtime-constraint handling. No single mechanism applies to every library function.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Every library call starts with the common contract: correct declaration, permitted identifier use, valid arguments, sufficient storage, and safe concurrent access. The facility then adds its own semantics.
+\end{CornellSummaryBox}
+
+
+
+\section{7.2 - Diagnostics via \texttt{assert.h}}
+\begin{CornellNotesTable}
+\CornellNoteRow{What does \texttt{assert} test?}{It evaluates a scalar expression when assertions are enabled. A zero result reports diagnostic context and invokes abnormal termination as specified.}
+\CornellNoteRow{How are assertions disabled?}{Defining \texttt{NDEBUG} before the relevant header inclusion changes \texttt{assert} to a non-evaluating form. Side effects inside the asserted expression therefore create configuration-dependent behavior and should be avoided.}
+\CornellNoteRow{Is \texttt{assert} a recoverable validation API?}{No. It is a program diagnostic mechanism. Inputs requiring ordinary error handling need explicit checks and defined recovery paths.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Assertions express internal invariants. They are unsuitable for required side effects or recoverable validation because their expression can disappear when diagnostics are disabled.
+\end{CornellSummaryBox}
+
+
+
+\section{7.3 - Complex Arithmetic via \texttt{complex.h}}
+\begin{CornellNotesTable}
+\CornellNoteRow{What conventions govern complex functions?}{The functions operate over complex floating domains with specified branch cuts, signs of zero, infinities, and NaNs where supported by the arithmetic model.}
+\CornellNoteRow{What does the limited-range pragma change?}{It allows implementation strategies based on restricted intermediate-range assumptions under its stated state and scope, trading some exceptional-case robustness for permitted evaluation behavior.}
+\CornellNoteRow{How are the function families organized?}{Trigonometric, hyperbolic, exponential/logarithmic, power/absolute-value, and manipulation families provide type-specific variants for supported complex floating types.}
+\CornellNoteRow{What do manipulation functions extract or construct?}{They expose phase, imaginary and real components, conjugation, projection, magnitude, and construction facilities without requiring application code to assume a representation layout.}
+\CornellNoteRow{What review rule applies to branch cuts?}{Test values on both sides of a cut and preserve signed-zero information where it selects the required side or result sign.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Complex functions are mathematical contracts with representation-sensitive edge behavior. Use the supplied component and construction operations rather than inspecting storage layouts.
+\end{CornellSummaryBox}
+
+
+
+\section{7.4-7.5 - Character Classification and Error Numbers}
+\begin{CornellNotesTable}
+\CornellNoteRow{What inputs may narrow character classifiers receive?}{Each classification or case-mapping call requires either \texttt{EOF} or a value representable as \texttt{unsigned char}. Passing a negative plain \texttt{char} value directly can violate the domain.}
+\CornellNoteRow{Which classifications are provided?}{Alphanumeric, alphabetic, blank, control, digit, graphical, lower, printable, punctuation, spacing, upper, and hexadecimal-digit predicates, with locale-sensitive behavior where defined.}
+\CornellNoteRow{What do case-mapping functions return?}{They map a valid input to the corresponding lower- or uppercase character when defined, otherwise returning the input value under their rules.}
+\CornellNoteRow{What is \texttt{errno}?}{A modifiable integer-valued error indicator exposed as a macro. Library functions set it only where specified; successful calls do not universally reset it.}
+\CornellNoteRow{How should \texttt{errno} be tested?}{Set it to zero when the target function permits that workflow, call the function, first interpret the primary return result, then inspect \texttt{errno} only for documented error conditions.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Character functions have a strict input domain, and \texttt{errno} is a secondary channel used only by facilities that promise to set it.
+\end{CornellSummaryBox}
+
+
+
+\section{7.6-7.7 - Floating Environment and Characteristics}
+\begin{CornellNotesTable}
+\CornellNoteRow{What is the floating-point environment?}{It comprises status flags and control modes such as rounding direction. Types and macros allow saving, restoring, testing, clearing, and raising the supported state.}
+\CornellNoteRow{Why do access pragmas matter?}{They tell translation whether dynamic floating state can affect evaluation. Optimization assumptions differ when environment access is enabled.}
+\CornellNoteRow{How are exceptions manipulated?}{The exception facilities clear, test, obtain, set, or raise supported flags. A program should use the named masks and types instead of assuming hardware registers.}
+\CornellNoteRow{How are rounding modes controlled?}{Query and set functions operate on supported binary or decimal modes; requests for unsupported modes fail according to their return contract.}
+\CornellNoteRow{What do environment save/restore calls provide?}{They capture or establish floating state, with variants for holding exceptions and later updating the restored environment with accumulated flags.}
+\CornellNoteRow{What does the floating-characteristics header expose?}{Radix, precision, range, evaluation method, rounding, subnormal and exceptional support, and optional decimal characteristics described by the environmental model.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Floating state is program-visible only under the defined access model. Query macros and environment functions; do not hard-code a hardware format or rounding register.
+\end{CornellSummaryBox}
+
+
+
+\section{7.8-7.11 - Integer Formatting, Alternative Tokens, Limits, and Locale}
+\begin{CornellNotesTable}
+\CornellNoteRow{Why does \texttt{inttypes.h} exist?}{It supplies format macros and greatest-width conversion utilities so formatted I/O and text conversion can match implementation-selected integer typedefs.}
+\CornellNoteRow{What do greatest-width utilities provide?}{Absolute value, quotient/remainder, and narrow or wide string conversion functions operating on the greatest-width integer types.}
+\CornellNoteRow{What are alternative spellings?}{The alternative-token header defines eleven macros mapping word-like spellings such as \texttt{and}, \texttt{not}, and \texttt{xor} to their operator tokens.}
+\CornellNoteRow{What does \texttt{limits.h} provide?}{Macros describing limits and widths of standard integer and character types, linked to the environmental numerical model.}
+\CornellNoteRow{What does \texttt{setlocale} change?}{It selects a supported locale for one category or all categories and returns a string describing the resulting setting or a null pointer on failure.}
+\CornellNoteRow{What does \texttt{localeconv} expose?}{A pointer to a structure describing numeric and monetary formatting conventions for the active locale; the returned data has library-controlled lifetime and modification rules.}
+\CornellNoteRow{What cross-cutting risk exists?}{Format strings, conversion functions, character predicates, collation, and numeric parsing can depend on locale and exact integer types; portability requires explicit macros and controlled locale state.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+These headers translate implementation choices into queryable contracts: format macros match typedefs, limits reveal ranges, and locale APIs expose culture-dependent formatting.
+\end{CornellSummaryBox}
+
+
+
+\section{7.12 - Mathematics via \texttt{math.h}}
+\begin{CornellNotesTable}
+\CornellNoteRow{How are math functions typed?}{Families provide variants for supported real floating types, with additional decimal families when the optional decimal model is present. Suffixes and type-generic dispatch select the intended type.}
+\CornellNoteRow{Which error classes matter?}{Domain, pole, and range conditions can be reported through \texttt{errno}, floating exceptions, or both as indicated by \texttt{math\_errhandling} and the facility-specific rule.}
+\CornellNoteRow{What does contraction control?}{The contraction pragma governs whether eligible floating expressions can be contracted, affecting rounding and exception behavior under the stated scope.}
+\CornellNoteRow{What do classification macros do?}{They classify finite, infinite, NaN, normal, subnormal, zero, canonical, signaling, and sign-bit properties while evaluating arguments according to macro rules.}
+\CornellNoteRow{How are angle functions grouped?}{Trigonometric families include radian forms and forms scaled by pi; inverse, two-argument, sine, cosine, and tangent operations have domain and exceptional-value rules.}
+\CornellNoteRow{What do exponential and logarithmic families add?}{Base-e, base-2, base-10, minus-one and plus-one variants, decomposition, scaling, and exponent extraction support accuracy near zero and representation-aware decomposition.}
+\CornellNoteRow{How do power and root families differ?}{General power, integer power, restricted real power, nth root, square/cube root, reciprocal square root, and hypotenuse functions have different domains and exceptional cases.}
+\CornellNoteRow{What do error and gamma families require?}{They define special mathematical functions with explicit pole, range, sign, and error-reporting behavior; callers must not generalize ordinary arithmetic rules to their singularities.}
+\CornellNoteRow{How do rounding families differ?}{\texttt{ceil}, \texttt{floor}, \texttt{trunc}, round-to-nearest variants, current-rounding-mode variants, integer-returning variants, and explicit-width conversions differ in tie handling, exceptions, and representable range.}
+\CornellNoteRow{What do remainder functions provide?}{\texttt{fmod}, IEEE-style remainder, and quotient-reporting remainder use different quotient selection rules and should not be substituted merely because their typical results look similar.}
+\CornellNoteRow{What do manipulation functions handle?}{Copying signs, constructing NaNs, stepping to adjacent values, converting toward another type, and canonicalization expose representational operations without application bit tricks.}
+\CornellNoteRow{Why are there many min/max variants?}{The families differ in NaN propagation, number preference, magnitude comparison, and signed-zero behavior. Select by exceptional-value semantics, not name resemblance.}
+\CornellNoteRow{What is fused multiply-add?}{It computes a multiply followed by addition with one final rounding under the applicable model, which can differ from separately rounded operators.}
+\CornellNoteRow{What do narrowing operations guarantee?}{They compute in wider source types and round once into a specified narrower result type under dedicated exception and rounding rules.}
+\CornellNoteRow{What are quantum and re-encoding facilities?}{Optional decimal functions inspect or align quantum exponents and encode or decode decimal values in defined interchange forms.}
+\CornellNoteRow{What do comparison macros protect?}{They perform ordered and unordered comparisons with specified NaN behavior, avoiding unintended invalid exceptions in covered cases.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Mathematical functions are differentiated by type, domain, error channel, rounding, and exceptional values. Choose a family by its exact contract rather than by its ordinary finite-number result.
+\end{CornellSummaryBox}
+
+
+
+\section{7.13-7.16 - Non-local Control, Signals, Alignment, and Varargs}
+\begin{CornellNotesTable}
+\CornellNoteRow{What does \texttt{setjmp} capture?}{It records enough calling environment in a \texttt{jmp\_buf} for a later valid \texttt{longjmp} to resume at the saved point, with the specified nonzero result behavior.}
+\CornellNoteRow{Which automatic objects become indeterminate?}{After \texttt{longjmp}, non-volatile automatic objects local to the function containing the matching \texttt{setjmp} that changed since the save can have indeterminate values.}
+\CornellNoteRow{When is \texttt{longjmp} invalid?}{The saved function invocation must still exist, the jump buffer must be valid, and restrictions involving variably modified objects and protected state must be satisfied.}
+\CornellNoteRow{What can an asynchronous signal handler safely do?}{Only the operations and object accesses expressly permitted by the signal rules. Ordinary library calls and unsafely shared non-atomic objects cannot be assumed safe.}
+\CornellNoteRow{What does \texttt{raise} do?}{It sends a signal to the executing program using the specified synchronous relationship for that call.}
+\CornellNoteRow{What content does \texttt{stdalign.h} provide?}{No declarations or macros in this language version; alignment facilities are supplied directly by the language and other headers.}
+\CornellNoteRow{What is the varargs lifecycle?}{Initialize a \texttt{va\_list} with \texttt{va\_start} or \texttt{va\_copy}, retrieve arguments with correctly matched promoted types through \texttt{va\_arg}, and pair each initialization with \texttt{va\_end} in the same function.}
+\CornellNoteRow{Why is forwarding \texttt{va\_list} subtle?}{Passing it to another function that consumes it can leave the caller's representation indeterminate as specified. Use \texttt{va\_copy} when independent traversal is required.}
+\CornellNoteRow{What happens on a type mismatch in \texttt{va\_arg}?}{If the requested type is not compatible with the actual promoted argument except for narrow stated exceptions, behavior is undefined.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+These facilities manipulate hidden execution state. Their validity depends on active call frames, restricted handlers, exact promotion types, and disciplined initialization/cleanup.
+\end{CornellSummaryBox}
+
+
+
+\section{7.17 - Atomics via \texttt{stdatomic.h}}
+\begin{CornellNotesTable}
+\CornellNoteRow{What does atomic initialization establish?}{It gives an atomic object a valid initial value before concurrent atomic operations; static initialization and the generic initializer follow their respective rules.}
+\CornellNoteRow{What does memory order control?}{It constrains ordering and synchronization beyond atomic indivisibility. Relaxed, acquire, release, acquire-release, and sequentially consistent operations provide different inter-thread guarantees.}
+\CornellNoteRow{What is a modification order?}{Each atomic object has a total order of its modifications consistent with the required happens-before relationships.}
+\CornellNoteRow{What are fences for?}{Thread and signal fences create ordering constraints without necessarily performing an ordinary load or store on the protected data object.}
+\CornellNoteRow{What does lock-free mean?}{The implementation exposes whether operations on a type or object avoid locks according to the lock-free contract. Lock-free status is not inferred from type size.}
+\CornellNoteRow{How do load, store, and exchange differ?}{Load observes a value, store publishes one, and exchange atomically replaces and returns the prior value; each has permitted memory-order arguments.}
+\CornellNoteRow{What does compare-exchange report?}{It conditionally replaces the object when it matches the expected value; on failure it updates the expected argument with the observed value. Success and failure orders have separate constraints.}
+\CornellNoteRow{What do fetch-and-modify operations guarantee?}{They perform an indivisible read-modify-write and return the value designated by the facility, with arithmetic or bitwise behavior tied to the atomic type.}
+\CornellNoteRow{Why is \texttt{atomic\_flag} special?}{It is a minimal guaranteed atomic flag type manipulated by test-and-set and clear operations, commonly used for simple lock protocols under correct memory ordering.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Atomicity prevents torn operations; memory order supplies visibility and synchronization. Correct concurrent code must establish both the atomic operation and the happens-before relationship its algorithm needs.
+\end{CornellSummaryBox}
+
+
+
+\section{7.18-7.22 - Bit, Checked-Integer, and Common-Type Utilities}
+\begin{CornellNotesTable}
+\CornellNoteRow{What does \texttt{stdbit.h} provide?}{Endian indicators and type-generic operations for leading or trailing zeros and ones, first set or clear positions, population counts, single-bit tests, bit width, and power-of-two floor or ceiling.}
+\CornellNoteRow{What operand discipline applies to bit utilities?}{Use the permitted unsigned integer types and interpret zero and boundary cases exactly as each macro defines; do not substitute signed-shift assumptions.}
+\CornellNoteRow{What remains in \texttt{stdbool.h}?}{An obsolescent compatibility macro indicating historical Boolean macro support; the core Boolean spellings are supplied by the language.}
+\CornellNoteRow{What do checked arithmetic macros compute?}{\texttt{ckd\_add}, \texttt{ckd\_sub}, and \texttt{ckd\_mul} calculate as if in an infinite-range signed type, convert to the result object type, and report whether the mathematical result was unrepresentable.}
+\CornellNoteRow{What is stored when checked arithmetic reports overflow?}{The destination receives the mathematical result wrapped to the width of the destination type, and the macro returns true. False means the stored value exactly represents the mathematical result.}
+\CornellNoteRow{Which destination and operand types are allowed?}{Suitable integer types excluding the specifically disallowed plain character, Boolean, bit-precise, and enumerated categories; the result must be a modifiable lvalue through the supplied pointer.}
+\CornellNoteRow{What does \texttt{stddef.h} centralize?}{\texttt{ptrdiff\_t}, \texttt{size\_t}, \texttt{max\_align\_t}, \texttt{wchar\_t}, \texttt{nullptr\_t}, \texttt{NULL}, \texttt{offsetof}, and \texttt{unreachable}, subject to their exact definitions.}
+\CornellNoteRow{Why is \texttt{unreachable()} dangerous?}{It promises that execution cannot reach the call. Reaching it has undefined behavior and can justify removal of defensive paths by the translator.}
+\CornellNoteRow{What distinguishes \texttt{nullptr\_t}?}{It is a complete scalar type with the single value \texttt{nullptr}, distinct from pointer and arithmetic types, and convertible to pointer and Boolean contexts under its rules.}
+\CornellNoteRow{What does \texttt{stdint.h} organize?}{Exact-width types when available, minimum-width and fastest types, pointer-capable and greatest-width types, width macros, limits, and constant-construction macros.}
+\CornellNoteRow{When should exact-width types be used?}{Only when the algorithm requires exactly that width and the implementation provides the typedef. Minimum-width or semantic types such as \texttt{size\_t} are better when exact representation is not required.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+These headers replace representation guesses with queryable operations and types. Checked arithmetic separates mathematical overflow detection from the destination's wrapped stored result.
+\end{CornellSummaryBox}
+
+
+
+\section{7.23 - Input and Output via \texttt{stdio.h}}
+\begin{CornellNotesTable}
+\CornellNoteRow{What is a stream?}{An ordered sequence of characters associated with an external file or device through a \texttt{FILE} object, with orientation, buffering, position, conversion state, and error indicators.}
+\CornellNoteRow{How do text and binary streams differ?}{Text streams can translate external representations and have restricted positioning semantics; binary streams preserve the defined byte sequence subject to implementation padding rules.}
+\CornellNoteRow{What is stream orientation?}{A stream can become byte-oriented or wide-oriented. Mixing incompatible byte and wide operations after orientation is established violates the stream contract.}
+\CornellNoteRow{What do buffering controls require?}{Buffering mode and any user-supplied buffer must be established at the permitted time and remain valid for the required lifetime.}
+\CornellNoteRow{What do file operation functions do?}{Removal, renaming, and temporary-file or temporary-name facilities operate on external files with implementation-defined name and environment constraints.}
+\CornellNoteRow{What does opening a file establish?}{\texttt{fopen} or \texttt{freopen} associates a stream with a file using a valid mode string. The mode determines permitted reading, writing, appending, update, text/binary, and exclusive behavior.}
+\CornellNoteRow{What is the update-stream sequencing rule?}{When a stream permits both reading and writing, a positioning or flushing operation is required between certain changes of direction, with a defined exception around end-of-file.}
+\CornellNoteRow{Why are format strings type contracts?}{Each conversion specification expects a particular promoted argument type and pointer destination type. A mismatch or missing argument can produce undefined behavior.}
+\CornellNoteRow{How should bounded formatted output be interpreted?}{\texttt{snprintf} limits stored characters while returning the count that would have been produced under its rules, allowing size calculation and truncation detection.}
+\CornellNoteRow{What makes input conversion hazardous?}{Field width, conversion destination type, available object size, matching failure, input failure, and assignment suppression must all be handled; unbounded string conversions can exceed destination storage.}
+\CornellNoteRow{How do character and block I/O differ?}{Character and line functions operate through stream character semantics; \texttt{fread} and \texttt{fwrite} transfer arrays of elements and report the number of complete elements transferred.}
+\CornellNoteRow{What do positioning functions preserve?}{They query or establish positions using offsets or \texttt{fpos\_t}, with restrictions determined by text versus binary mode and multibyte parse state.}
+\CornellNoteRow{How are end-of-file and error distinguished?}{\texttt{feof} reports the end indicator and \texttt{ferror} the error indicator. A character-reading return value alone can require these checks to distinguish conditions.}
+\CornellNoteRow{What does \texttt{fflush} mean?}{For output or update streams in the permitted state it transmits unwritten buffered data. It is not a portable input-discard operation unless a specific rule provides that effect.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+A stream is stateful. Correct I/O code tracks mode, orientation, direction changes, format types, buffer lifetime, element counts, position restrictions, and separate EOF/error indicators.
+\end{CornellSummaryBox}
+
+
+
+\section{7.24 - General Utilities via \texttt{stdlib.h}}
+\begin{CornellNotesTable}
+\CornellNoteRow{Which numeric conversions should robust code prefer?}{The \texttt{strto*} families expose end-pointer and range reporting, unlike convenience conversions that provide less error information. Base, locale, subject sequence, range, and destination type all matter.}
+\CornellNoteRow{What are pseudo-random facilities guaranteed to provide?}{A repeatable implementation-defined pseudo-random sequence controlled by \texttt{srand}, within stated range and period requirements. The portable contract supplies no stronger unpredictability guarantee.}
+\CornellNoteRow{What does successful allocation establish?}{An allocated object with requested size and alignment suitable for permitted types, a fresh lifetime, and indeterminate contents except where zero-initialization is promised.}
+\CornellNoteRow{How does \texttt{calloc} differ?}{It allocates space for an array and initializes all bits in the allocated region to zero; that representation must not be generalized to every semantic null or floating value without the type rules.}
+\CornellNoteRow{What are the multiplication hazards in allocation?}{Element count times element size can overflow before the allocation call. Checked arithmetic or a proven division guard should validate the total.}
+\CornellNoteRow{What does \texttt{realloc} require?}{The pointer must be eligible and the size valid. On success, the old object lifetime ends and the returned object contains preserved initial bytes as specified; on failure, the original object remains allocated.}
+\CornellNoteRow{How must deallocation match allocation?}{\texttt{free} requires a null pointer or a pointer returned by an eligible allocation that has not already been freed. Sized and aligned deallocation additionally require matching size or alignment information.}
+\CornellNoteRow{What do termination functions differ on?}{Normal exit invokes registered handlers and stream cleanup; quick exit invokes its own handlers; immediate termination variants omit parts of normal cleanup; abnormal termination follows its dedicated rule.}
+\CornellNoteRow{What lifetime applies to environment strings?}{Pointers returned by environment inquiry can refer to implementation-managed storage whose contents or validity can change after later environment operations.}
+\CornellNoteRow{What is the risk of command execution?}{\texttt{system} passes a string to the host command processor when supported. Its interpretation and effects belong to the host environment and require explicit trust and portability analysis.}
+\CornellNoteRow{What must comparators for search and sort provide?}{Results consistent with the required ordering relationship and compatible element access. The comparator must not violate object, aliasing, or side-effect constraints during library callbacks.}
+\CornellNoteRow{How do multibyte conversion functions track state?}{Single-character and string conversions use an encoding state that can be explicit or internal depending on the function; state-dependent encodings require correct initialization and sequencing.}
+\CornellNoteRow{What does \texttt{memalignment} query?}{It reports the alignment of a valid allocated region under its preconditions, allowing code to reason about how the storage can be used.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+General utilities combine several distinct resource contracts. Numeric parsing needs explicit error channels; allocation needs overflow checks and ownership discipline; callbacks need ordering consistency; environment and multibyte functions expose mutable external state.
+\end{CornellSummaryBox}
+
+
+
+\section{7.25-7.27 - Return Markers, String Handling, and Type-Generic Math}
+\begin{CornellNotesTable}
+\CornellNoteRow{What is the status of \texttt{stdnoreturn.h}?}{It supplies a macro spelling for the older return-specifier form, but both the header and macro are obsolescent. The current attribute form should guide new declarations.}
+\CornellNoteRow{What is the baseline string-function precondition?}{Pointer arguments designate arrays large enough for every accessed character. A zero length does not automatically make an otherwise invalid pointer acceptable unless the specific function says so.}
+\CornellNoteRow{When should \texttt{memcpy} versus \texttt{memmove} be used?}{\texttt{memcpy} requires non-overlapping source and destination regions; \texttt{memmove} defines copying through an overlap-safe temporary-value model.}
+\CornellNoteRow{What do string copy and concatenation require?}{The source has a terminating null character within its accessible array, and the destination has enough space for all produced characters including the terminator. Counted forms have their own padding and termination rules.}
+\CornellNoteRow{What do duplication functions return?}{A newly allocated copy on success and a null pointer on allocation failure; the caller owns the allocation and must release it.}
+\CornellNoteRow{How are byte comparisons interpreted?}{Characters are compared as \texttt{unsigned char} values. Collation and transformation functions instead depend on the active locale.}
+\CornellNoteRow{What state does tokenization modify?}{\texttt{strtok} writes terminators into the source array and uses internal state across calls, which constrains nesting, concurrency, and use with immutable storage.}
+\CornellNoteRow{Why is explicit erasure separate from ordinary \texttt{memset}?}{\texttt{memset\_explicit} has a contract intended to preserve the store as an observable clearing operation, while an ordinary unused store can be removed under the abstract-machine rules.}
+\CornellNoteRow{What does type-generic math select?}{A macro dispatches to a real or complex function based on the generic argument types and the usual arithmetic-conversion rules stated for the facility.}
+\CornellNoteRow{What mixed-domain case is invalid?}{Combining standard binary floating and decimal floating generic arguments in the prohibited pattern has undefined behavior; the selected function must exist for the determined type.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+String functions expose raw array preconditions and overlap rules; type-generic math exposes compile-time dispatch rules. In both cases, a convenient interface does not relax the underlying type and storage contracts.
+\end{CornellSummaryBox}
+
+
+
+\section{7.28 - Threads via \texttt{threads.h}}
+\begin{CornellNotesTable}
+\CornellNoteRow{What does \texttt{call\_once} guarantee?}{Exactly one effective call of the registered function for a particular once flag, with synchronization for participating threads under the stated rules.}
+\CornellNoteRow{How should a condition variable be used?}{Wait while holding the associated mutex and recheck the predicate in a loop after wakeup. Signal or broadcast changes wait state, not the truth of the application predicate.}
+\CornellNoteRow{What is the condition-wait atomic transition?}{The wait operation releases the mutex and blocks as one library-coordinated action, then reacquires the mutex before returning.}
+\CornellNoteRow{Which mutex properties matter?}{Initialization type determines plain, recursive, or timed capabilities. Ownership and lock/unlock pairing are required; destruction occurs only when no thread can still use the mutex.}
+\CornellNoteRow{How do thread join and detach differ?}{Joining waits and retrieves the result while releasing joinable resources; detaching arranges automatic release and removes the right to join.}
+\CornellNoteRow{What does thread equality require?}{Use the supplied comparison function rather than assuming the representation of \texttt{thrd\_t} supports ordinary equality.}
+\CornellNoteRow{What do sleep and yield guarantee?}{They request suspension or scheduling opportunity within stated timing and interruption behavior; neither alone establishes synchronization for shared objects.}
+\CornellNoteRow{How does thread-specific storage work?}{A key associates per-thread values, optionally with a destructor invoked under bounded iteration at thread exit. Key lifetime and concurrent deletion require coordination.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Thread-library calls manage scheduling and blocking, while atomics and mutex/condition protocols establish memory correctness. Always pair lifetime, ownership, predicate, and synchronization reasoning.
+\end{CornellSummaryBox}
+
+
+
+\section{7.29-7.32 - Time, Unicode, Multibyte, and Wide Characters}
+\begin{CornellNotesTable}
+\CornellNoteRow{Which time representations are supplied?}{Processor time, calendar time, broken-down calendar structures, and \texttt{timespec} values support measurement and conversion under implementation and locale rules.}
+\CornellNoteRow{What do \texttt{mktime} and \texttt{timegm} differ on?}{\texttt{mktime} interprets broken-down time in the local time context and normalizes it; \texttt{timegm} performs the corresponding UTC-oriented conversion under its contract.}
+\CornellNoteRow{What do \texttt{timespec\_get} and \texttt{timespec\_getres} provide?}{They query a supported time base and, respectively, a current value or its resolution, reporting whether the requested base is supported.}
+\CornellNoteRow{Why are \texttt{asctime} and \texttt{ctime} risky to compose?}{They use library-managed fixed-format storage and have restricted ranges and overwrite behavior; reentrant composition needs copied data or alternative formatting.}
+\CornellNoteRow{What does \texttt{strftime} provide?}{Locale-sensitive formatting into a caller-supplied array with an explicit maximum size and a return value indicating the produced length or failure to fit.}
+\CornellNoteRow{What does \texttt{uchar.h} convert?}{Restartable conversions between multibyte sequences and \texttt{char8\_t}, \texttt{char16\_t}, or \texttt{char32\_t} code units using an explicit \texttt{mbstate\_t} object when supplied.}
+\CornellNoteRow{Why can one character require multiple calls?}{A multibyte character or a character represented by multiple code units can require state across calls; return values identify incomplete, invalid, or special continuation cases.}
+\CornellNoteRow{What is wide-stream orientation?}{Wide I/O uses \texttt{wchar\_t} and a stream-associated conversion rule. Once oriented, mixing incompatible byte and wide operations is not permitted.}
+\CornellNoteRow{How do wide string utilities relate to byte strings?}{They offer analogous copy, move, concatenate, compare, search, tokenize, length, and fill operations over \texttt{wchar\_t} arrays, with the same need for valid bounds and additional locale/encoding considerations.}
+\CornellNoteRow{What do restartable conversions improve?}{Caller-owned conversion state makes state-dependent encodings resumable and avoids relying on one hidden internal state.}
+\CornellNoteRow{How are wide characters classified and mapped?}{Named predicates and case mappings operate on \texttt{wint\_t} values in their permitted domain, with extensible descriptors obtained by lookup functions and locale-sensitive results where defined.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Character APIs operate at different layers: bytes, multibyte sequences, code units, wide characters, and abstract characters are not interchangeable. Explicit state and locale control are essential.
+\end{CornellSummaryBox}
+
+
+
+\section{7.33 - Future Library Directions}
+\begin{CornellNotesTable}
+\CornellNoteRow{What does this section identify?}{Existing facilities, names, or forms reserved for removal, tightening, or evolution in later language versions.}
+\CornellNoteRow{Which library areas are affected?}{The reservations span complex, character, errors, floating, integer formatting, locale, mathematics, signals, atomics, Boolean compatibility, bit and checked arithmetic, I/O, utilities, strings, time, threads, and wide-character facilities.}
+\CornellNoteRow{How should new code respond?}{Prefer the non-obsolescent replacement, isolate unavoidable compatibility use, and record the dependency so a future migration can remove it.}
+\CornellNoteRow{Does future direction alter current semantics?}{No. Current clauses remain controlling; the future-direction notice is a stability and portability warning.}
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{Section Summary}
+Future library directions are maintenance signals. They do not rewrite current behavior, but they identify dependencies least suitable for new portable code.
+\end{CornellSummaryBox}
+
+
+
+\subsection{Illustrative Example - Checked Allocation Size}
+\begin{minted}{c}
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdckdint.h>
+#include <stdlib.h>
+
+int *allocate_values(size_t count) {
+    size_t bytes;
+    if (ckd_mul(&bytes, count, sizeof(int))) {
+        return NULL;
+    }
+    return malloc(bytes);
+}
+\end{minted}
+\texttt{ckd\_mul} reports whether the mathematical product cannot be represented by \texttt{size\_t}. Only a representable byte count reaches \texttt{malloc}. The returned allocation still requires an ownership plan and eventual \texttt{free}.
+
+
+
+\subsection{Illustrative Example - Overlap-Safe Move}
+\begin{minted}{c}
+#include <string.h>
+
+void shift_right(char *buffer, size_t used) {
+    memmove(buffer + 1, buffer, used);
+}
+\end{minted}
+The destination overlaps the source, so \texttt{memmove} supplies the required temporary-copy semantics. The caller must still prove that \texttt{buffer} designates at least \texttt{used + 1} writable bytes.
+
+
+
+\subsection{Illustrative Example - Predicate-Based Wait}
+\begin{minted}{c}
+#include <threads.h>
+
+void wait_until_ready(mtx_t *lock, cnd_t *changed, int *ready) {
+    mtx_lock(lock);
+    while (!*ready) {
+        cnd_wait(changed, lock);
+    }
+    mtx_unlock(lock);
+}
+\end{minted}
+The predicate is rechecked after every wakeup while the mutex is held. Production code must also handle initialization, return statuses, lifetime, and the thread that modifies \texttt{ready} under the same synchronization protocol.
+
+
+\section{Programmer and Implementation Checklist}
+\begin{itemize}
+  \item[$\square$] Include the header that supplies each declaration or macro before use.
+  \item[$\square$] Check reserved-identifier rules before declaring globals, macros, tags, or external functions.
+  \item[$\square$] Apply common pointer, array-size, alignment, lifetime, and mutability preconditions to every call.
+  \item[$\square$] Cast plain character values through \texttt{unsigned char} before narrow classification or case mapping.
+  \item[$\square$] Interpret \texttt{errno} only when the selected function documents it as an error channel.
+  \item[$\square$] Save and restore floating state when changing rounding or exception modes across a component boundary.
+  \item[$\square$] Use format macros matching implementation-defined integer typedefs.
+  \item[$\square$] Control locale changes and do not assume returned locale data has application-owned lifetime.
+  \item[$\square$] Select mathematical variants by type, domain, rounding, NaN, infinity, and error behavior.
+  \item[$\square$] Do not read changed non-volatile automatic locals after a non-local jump without proving their defined status.
+  \item[$\square$] Restrict asynchronous signal handlers to expressly permitted objects and operations.
+  \item[$\square$] Match each \texttt{va\_start} or \texttt{va\_copy} with \texttt{va\_end} and request the correctly promoted type from \texttt{va\_arg}.
+  \item[$\square$] Choose atomic memory orders that create the synchronization required by the algorithm.
+  \item[$\square$] Use checked arithmetic before allocation-size and indexing multiplications.
+  \item[$\square$] Treat \texttt{unreachable()} as an executable promise whose violation is undefined behavior.
+  \item[$\square$] Track stream mode, orientation, buffering, direction changes, position, EOF, and error state.
+  \item[$\square$] Match every formatted conversion with the exact promoted argument or destination pointer type.
+  \item[$\square$] Check element counts returned by direct I/O rather than assuming the full request completed.
+  \item[$\square$] Preserve the original allocation pointer until \texttt{realloc} succeeds.
+  \item[$\square$] Match sized or aligned deallocation metadata to the originating allocation.
+  \item[$\square$] Use \texttt{memmove}, not \texttt{memcpy}, when regions can overlap.
+  \item[$\square$] Prove string termination and destination capacity before copy or concatenation.
+  \item[$\square$] Use \texttt{memset\_explicit} when the specified non-elidable clearing contract is required.
+  \item[$\square$] Protect condition-variable predicates with their mutex and recheck them in a loop.
+  \item[$\square$] Coordinate join, detach, mutex, condition, key, and stream lifetimes across all threads.
+  \item[$\square$] Maintain explicit \texttt{mbstate\_t} objects for restartable state-dependent conversions.
+  \item[$\square$] Avoid new dependencies on facilities identified as obsolescent or reserved for future change.
+\end{itemize}
+
+\begin{CornellSummaryBox}{Clause Synthesis}
+Clause 7 is not a catalog of convenient names; it is a set of stateful contracts. Common rules establish valid declarations, identifiers, arguments, storage, and concurrency. Individual facilities then add mathematical domains, error channels, stream states, ownership transitions, format-type correspondence, memory ordering, locale, conversion state, and thread lifecycle. Reliable code makes these hidden states explicit and treats every pointer, size, format string, and callback as part of the call precondition.
+\end{CornellSummaryBox}
+
+
+\section{Subclause Coverage Index}
+The following navigation index confirms coverage of every second- and third-level subclause. Detailed function-level provisions are grouped with their governing facility family above.
+
+\begin{CornellNotesTable}
+\toprule
+Subclause & Subject \\
+\midrule
+\endfirsthead
+\toprule
+Subclause & Subject (continued) \\
+\midrule
+\endhead
+7.1 & Introduction \\
+7.1.1 & Definitions of terms \\
+7.1.2 & Standard headers \\
+7.1.3 & Reserved identifiers \\
+7.1.4 & Use of library functions \\
+7.2 & Diagnostics \textless{}assert.h\textgreater{} \\
+7.2.1 & General \\
+7.2.2 & Program diagnostics \\
+7.3 & Complex arithmetic \textless{}complex.h\textgreater{} \\
+7.3.1 & Introduction \\
+7.3.2 & Conventions \\
+7.3.3 & Branch cuts \\
+7.3.4 & The CX\_LIMITED\_RANGE pragma \\
+7.3.5 & Trigonometric functions \\
+7.3.6 & Hyperbolic functions \\
+7.3.7 & Exponential and logarithmic functions \\
+7.3.8 & Power and absolute-value functions \\
+7.3.9 & Manipulation functions \\
+7.4 & Character handling \textless{}ctype.h\textgreater{} \\
+7.4.1 & General \\
+7.4.2 & Character classification functions \\
+7.4.3 & Character case mapping functions \\
+7.5 & Errors \textless{}errno.h\textgreater{} \\
+7.6 & Floating-point environment \textless{}fenv.h\textgreater{} \\
+7.6.1 & General \\
+7.6.2 & The FENV\_ACCESS pragma \\
+7.6.3 & The FENV\_ROUND pragma \\
+7.6.4 & The FENV\_DEC\_ROUND pragma \\
+7.6.5 & Floating-point exceptions \\
+7.6.6 & Rounding and other control modes \\
+7.6.7 & Environment \\
+7.7 & Characteristics of floating types \textless{}float.h\textgreater{} \\
+7.8 & Format conversion of integer types \textless{}inttypes.h\textgreater{} \\
+7.8.1 & General \\
+7.8.2 & Macros for format specifiers \\
+7.8.3 & Functions for greatest-width integer types \\
+7.9 & Alternative spellings \textless{}iso646.h\textgreater{} \\
+7.10 & Characteristics of integer types \textless{}limits.h\textgreater{} \\
+7.11 & Localization \textless{}locale.h\textgreater{} \\
+7.11.1 & General \\
+7.11.2 & The setlocale function \\
+7.11.3 & Numeric formatting convention inquiry \\
+7.12 & Mathematics \textless{}math.h\textgreater{} \\
+7.12.1 & General \\
+7.12.2 & Treatment of error conditions \\
+7.12.3 & The FP\_CONTRACT pragma \\
+7.12.4 & Classification macros \\
+7.12.5 & Trigonometric functions \\
+7.12.6 & Hyperbolic functions \\
+7.12.7 & Exponential and logarithmic functions \\
+7.12.8 & Power and absolute-value functions \\
+7.12.9 & Error and gamma functions \\
+7.12.10 & Nearest integer functions \\
+7.12.11 & Remainder functions \\
+7.12.12 & Manipulation functions \\
+7.12.13 & Maximum, minimum, and positive difference functions \\
+7.12.14 & Fused multiply-add \\
+7.12.15 & Functions that round result to narrower type \\
+7.12.16 & Quantum and quantum exponent functions \\
+7.12.17 & Decimal re-encoding functions \\
+7.12.18 & Comparison macros \\
+7.13 & Non-local jumps \textless{}setjmp.h\textgreater{} \\
+7.13.1 & General \\
+7.13.2 & Save calling environment \\
+7.13.3 & Restore calling environment \\
+7.14 & Signal handling \textless{}signal.h\textgreater{} \\
+7.14.1 & General \\
+7.14.2 & Specify signal handling \\
+7.14.3 & Send signal \\
+7.15 & Alignment \textless{}stdalign.h\textgreater{} \\
+7.16 & Variable arguments \textless{}stdarg.h\textgreater{} \\
+7.16.1 & General \\
+7.16.2 & Variable argument list access macros \\
+7.17 & Atomics \textless{}stdatomic.h\textgreater{} \\
+7.17.1 & Introduction \\
+7.17.2 & Initialization \\
+7.17.3 & Order and consistency \\
+7.17.4 & Fences \\
+7.17.5 & Lock-free property \\
+7.17.6 & Atomic integer types \\
+7.17.7 & Operations on atomic types \\
+7.17.8 & Atomic flag type and operations \\
+7.18 & Bit and byte utilities \textless{}stdbit.h\textgreater{} \\
+7.18.1 & General \\
+7.18.2 & Endian \\
+7.18.3 & Count Leading Zeros \\
+7.18.4 & Count Leading Ones \\
+7.18.5 & Count Trailing Zeros \\
+7.18.6 & Count Trailing Ones \\
+7.18.7 & First Leading Zero \\
+7.18.8 & First Leading One \\
+7.18.9 & First Trailing Zero \\
+7.18.10 & First Trailing One \\
+7.18.11 & Count Zeros \\
+7.18.12 & Count Ones \\
+7.18.13 & Single-bit Check \\
+7.18.14 & Bit Width \\
+7.18.15 & Bit Floor \\
+7.18.16 & Bit Ceiling \\
+7.19 & Boolean type and values \textless{}stdbool.h\textgreater{} \\
+7.20 & Checked Integer Arithmetic \textless{}stdckdint.h\textgreater{} \\
+7.20.1 & General \\
+7.20.2 & Checked Integer Operation Type-generic Macros \\
+7.21 & Common definitions \textless{}stddef.h\textgreater{} \\
+7.21.1 & General \\
+7.21.2 & The unreachable macro \\
+7.21.3 & The nullptr\_t type \\
+7.22 & Integer types \textless{}stdint.h\textgreater{} \\
+7.22.1 & General \\
+7.22.2 & Integer types \\
+7.22.3 & Widths of specified-width integer types \\
+7.22.4 & Width of other integer types \\
+7.22.5 & Macros for integer constants \\
+7.22.6 & Maximal and minimal values of integer types \\
+7.23 & Input/output \textless{}stdio.h\textgreater{} \\
+7.23.1 & Introduction \\
+7.23.2 & Streams \\
+7.23.3 & Files \\
+7.23.4 & Operations on files \\
+7.23.5 & File access functions \\
+7.23.6 & Formatted input/output functions \\
+7.23.7 & Character input/output functions \\
+7.23.8 & Direct input/output functions \\
+7.23.9 & File positioning functions \\
+7.23.10 & Error-handling functions \\
+7.24 & General utilities \textless{}stdlib.h\textgreater{} \\
+7.24.1 & General \\
+7.24.2 & Numeric conversion functions \\
+7.24.3 & Pseudo-random sequence generation functions \\
+7.24.4 & Memory management functions \\
+7.24.5 & Communication with the environment \\
+7.24.6 & Searching and sorting utilities \\
+7.24.7 & Integer arithmetic functions \\
+7.24.8 & Multibyte/wide character conversion functions \\
+7.24.9 & Multibyte/wide string conversion functions \\
+7.24.10 & Alignment of memory \\
+7.25 & \_Noreturn \textless{}stdnoreturn.h\textgreater{} \\
+7.26 & String handling \textless{}string.h\textgreater{} \\
+7.26.1 & String function conventions \\
+7.26.2 & Copying functions \\
+7.26.3 & Concatenation functions \\
+7.26.4 & Comparison functions \\
+7.26.5 & Search functions \\
+7.26.6 & Miscellaneous functions \\
+7.27 & Type-generic math \textless{}tgmath.h\textgreater{} \\
+7.28 & Threads \textless{}threads.h\textgreater{} \\
+7.28.1 & Introduction \\
+7.28.2 & Initialization functions \\
+7.28.3 & Condition variable functions \\
+7.28.4 & Mutex functions \\
+7.28.5 & Thread functions \\
+7.28.6 & Thread-specific storage functions \\
+7.29 & Date and time \textless{}time.h\textgreater{} \\
+7.29.1 & Components of time \\
+7.29.2 & Time manipulation functions \\
+7.29.3 & Time conversion functions \\
+7.30 & Unicode utilities \textless{}uchar.h\textgreater{} \\
+7.30.1 & General \\
+7.30.2 & Restartable multibyte/wide character conversion functions \\
+7.31 & Extended multibyte and wide character utilities \textless{}wchar.h\textgreater{} \\
+7.31.1 & Introduction \\
+7.31.2 & Formatted wide character input/output functions \\
+7.31.3 & Wide character input/output functions \\
+7.31.4 & General wide string utilities \\
+7.31.5 & Wide character time conversion functions \\
+7.31.6 & Extended multibyte/wide character conversion utilities \\
+7.32 & Wide character classification and mapping utilities \textless{}wctype.h\textgreater{} \\
+7.32.1 & Introduction \\
+7.32.2 & Wide character classification utilities \\
+7.32.3 & Wide character case mapping utilities \\
+7.33 & Future library directions \\
+7.33.1 & General \\
+7.33.2 & Complex arithmetic \textless{}complex.h\textgreater{} \\
+7.33.3 & Character handling \textless{}ctype.h\textgreater{} \\
+7.33.4 & Errors \textless{}errno.h\textgreater{} \\
+7.33.5 & Floating-point environment \textless{}fenv.h\textgreater{} \\
+7.33.6 & Characteristics of floating types \textless{}float.h\textgreater{} \\
+7.33.7 & Format conversion of integer types \textless{}inttypes.h\textgreater{} \\
+7.33.8 & Localization \textless{}locale.h\textgreater{} \\
+7.33.9 & Mathematics \textless{}math.h\textgreater{} \\
+7.33.10 & Signal handling \textless{}signal.h\textgreater{} \\
+7.33.11 & Atomics \textless{}stdatomic.h\textgreater{} \\
+7.33.12 & Boolean type and values \textless{}stdbool.h\textgreater{} \\
+7.33.13 & Bit and byte utilities \textless{}stdbit.h\textgreater{} \\
+7.33.14 & Checked Arithmetic Functions \textless{}stdckdint.h\textgreater{} \\
+7.33.15 & Integer types \textless{}stdint.h\textgreater{} \\
+7.33.16 & Input/output \textless{}stdio.h\textgreater{} \\
+7.33.17 & General utilities \textless{}stdlib.h\textgreater{} \\
+7.33.18 & String handling \textless{}string.h\textgreater{} \\
+7.33.19 & Date and time \textless{}time.h\textgreater{} \\
+7.33.20 & Threads \textless{}threads.h\textgreater{} \\
+7.33.21 & Extended multibyte and wide character utilities \textless{}wchar.h\textgreater{} \\
+7.33.22 & Wide character classification and mapping utilities \textless{}wctype.h\textgreater{} \\
+\bottomrule
+\end{CornellNotesTable}
+
+
+\clearpage
+\section{Self-Test Questions}
+\begin{enumerate}
+  \item Why can parenthesizing a function name matter?
+  \item What is wrong with placing a required increment inside \texttt{assert}?
+  \item Why must narrow character-classification arguments be converted through \texttt{unsigned char}?
+  \item Does a successful library call necessarily clear \texttt{errno}?
+  \item What must be enabled before dynamic rounding state can constrain floating expression evaluation?
+  \item Why are integer format macros preferable to hard-coded length modifiers?
+  \item How does a domain error differ from a range error?
+  \item Why can \texttt{fma(x,y,z)} differ from \texttt{x*y+z}?
+  \item Which local objects can become indeterminate after \texttt{longjmp}?
+  \item What cleanup rule applies to copied variable-argument state?
+  \item Does atomic access alone guarantee publication to another thread?
+  \item What does checked multiplication return when the mathematical result does not fit the destination?
+  \item What happens if execution reaches \texttt{unreachable()}?
+  \item When is an exact-width integer typedef available?
+  \item Why is mixing byte and wide operations on an oriented stream invalid?
+  \item What must a format-string review match?
+  \item How can a caller distinguish end-of-file from an input error?
+  \item Why is \texttt{fflush(stdin)} not a general portable input-discard technique?
+  \item What is the safe assignment pattern for \texttt{realloc}?
+  \item Why must allocation-size multiplication be checked before \texttt{malloc}?
+  \item When must \texttt{memmove} replace \texttt{memcpy}?
+  \item What extra contract does \texttt{memset\_explicit} provide?
+  \item Why should a condition wait appear inside a loop?
+  \item What is the difference between join and detach?
+  \item Why is one \texttt{mbstate\_t} object useful per conversion stream?
+  \item What practical action follows from a future library direction?
+\end{enumerate}
+
+\clearpage
+\section{Answer Key}
+\begin{enumerate}
+  \item A standard function can also be defined as a function-like macro. Parenthesizing the name suppresses that macro invocation and accesses the actual function under 7.1.4.
+
+  \item When \texttt{NDEBUG} disables assertions, the expression is not evaluated, so the increment disappears. Assertions must not carry required side effects (7.2).
+
+  \item The valid domain is \texttt{EOF} or a value representable as \texttt{unsigned char}. A negative plain \texttt{char} can fall outside that domain (7.4).
+
+  \item No. Only the selected function's contract determines whether and when \texttt{errno} is set. Interpret it together with the primary result (7.5 and applicable function clauses).
+
+  \item The floating-environment access model and applicable pragma state must indicate that the environment is observed (7.6 with the environmental semantics).
+
+  \item The underlying type selected for an integer typedef is implementation-defined; the macros supply matching format fragments (7.8).
+
+  \item A domain error concerns an argument outside the mathematical domain; a range error concerns a result whose magnitude or precision cannot be represented as specified. Their reporting follows 7.12.2.
+
+  \item Fused multiply-add performs one final rounding after the combined operation, while separate operators can round the product before the addition (7.12.14).
+
+  \item Applicable non-volatile automatic objects local to the function containing the matching \texttt{setjmp} that changed after the save (7.13).
+
+  \item Each \texttt{va\_start} and \texttt{va\_copy} initialization must be matched by \texttt{va\_end} in the same function (7.16).
+
+  \item Atomicity prevents a torn operation, but the selected memory order must establish the required synchronization and happens-before relationship (7.17).
+
+  \item It returns true and stores the result wrapped to the destination width; false means the stored value exactly represents the mathematical result (7.20.2).
+
+  \item The behavior is undefined because the call is a promise that the control path cannot occur (7.21.2).
+
+  \item Only when the implementation provides an integer type with exactly the required width and representation properties. Minimum- and fastest-width types have different guarantees (7.22).
+
+  \item The first applicable operation establishes stream orientation, and later I/O must use facilities compatible with that orientation (7.23).
+
+  \item Each conversion specification must match the exact promoted value argument or required destination pointer type, including width, precision, and length modifiers (7.23.6).
+
+  \item Inspect the stream's end and error indicators with \texttt{feof} and \texttt{ferror} after the input result requires disambiguation (7.23.10).
+
+  \item The portable flushing contract applies only in the stream states specified by 7.23.5.2; it does not create a universal input purge operation.
+
+  \item Store the return in a temporary pointer and replace the owning pointer only on success, because failure leaves the original allocation valid (7.24.4.8).
+
+  \item If the integer multiplication wraps first, the allocator receives a smaller size than intended. \texttt{ckd\_mul} can prove representability before the call (7.20 and 7.24.4).
+
+  \item When source and destination regions overlap or overlap cannot be excluded; \texttt{memcpy} requires non-overlap (7.26.2).
+
+  \item Its clearing operation is specified so that it is not removed merely because the stored bytes are not subsequently read (7.26.6.2).
+
+  \item Wakeup does not itself establish that the application predicate is true. The predicate must be rechecked under the mutex (7.28.3).
+
+  \item Join waits for a joinable thread and retrieves completion; detach gives up joining and arranges resource release when the thread ends (7.28.5).
+
+  \item Restartable multibyte conversion carries encoding state between calls; separating state prevents unrelated sequences from corrupting one another (7.30-7.31).
+
+  \item Keep current semantics for existing code, but prefer a supported replacement for new code and track the dependency for migration (7.33).
+\end{enumerate}
+
+\section{Key-Term Recap}
+\begin{CornellNotesTable}
+\toprule
+Term & Working meaning \\
+\midrule
+\endfirsthead
+\toprule
+Term & Working meaning (continued) \\
+\midrule
+\endhead
+Standard header & A header that provides specified declarations, types, and macros. \\
+Reserved identifier & A spelling set aside for implementation or library use under defined patterns and contexts. \\
+Assertion & A diagnostic test of an internal invariant that can be disabled through \texttt{NDEBUG}. \\
+Character domain & For narrow classifiers, \texttt{EOF} or a value representable as \texttt{unsigned char}. \\
+Floating environment & Status flags and control modes affecting supported floating operations. \\
+Domain error & A mathematical function error caused by an argument outside the defined domain. \\
+Range error & A condition in which the mathematical result cannot be represented as specified. \\
+Fused multiply-add & A multiplication and addition with one final rounding. \\
+Jump buffer & An object holding calling-environment state for a valid non-local jump. \\
+Variable argument list & State used to traverse unnamed function arguments. \\
+Memory order & The ordering and synchronization strength attached to an atomic operation. \\
+Modification order & The per-atomic-object total order of modifications. \\
+Checked integer arithmetic & Arithmetic that reports representability and stores an exact or width-wrapped result. \\
+\texttt{size\_t} & The unsigned integer type of \texttt{sizeof} results. \\
+\texttt{ptrdiff\_t} & The signed integer type of valid pointer-subtraction results. \\
+\texttt{nullptr\_t} & A scalar type distinct from pointer and arithmetic types whose sole value is \texttt{nullptr}. \\
+Stream & A stateful sequence associated with a file or device through a \texttt{FILE} object. \\
+Stream orientation & The byte or wide-character mode established for a stream. \\
+Format contract & The required correspondence between conversion specifications and argument types. \\
+Allocated object & Storage whose lifetime begins through an allocation function and ends through a permitted deallocation or successful reallocation. \\
+Comparator & A callback that supplies the ordering relation required by search or sort. \\
+Overlap & A condition in which source and destination storage regions share bytes. \\
+Explicit erasure & A specified memory-clearing operation protected from removal as an unused store. \\
+Condition variable & A synchronization object used with a mutex to wait for predicate changes. \\
+Thread-specific storage & Per-thread values associated with a shared key. \\
+Conversion state & The state carried between calls for state-dependent multibyte conversions. \\
+Wide character & A value in \texttt{wchar\_t} used by wide-character and wide-string facilities. \\
+Future library direction & A notice identifying unstable, obsolescent, or reserved library space. \\
+\bottomrule
+\end{CornellNotesTable}
+
+\begin{CornellSummaryBox}{One-Sentence Takeaway}
+Use the library as a collection of explicit contracts: validate every type, pointer, size, format, state transition, ownership transfer, error channel, and synchronization edge.
+\end{CornellSummaryBox}
+\end{document}
