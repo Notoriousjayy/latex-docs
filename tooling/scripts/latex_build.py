@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import html
 import json
 import os
@@ -25,6 +26,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = ROOT / "src"
 LATEXMK = os.environ.get("LATEXMK", "latexmk")
 TIMING_HISTORY_PATH = ROOT / "tooling" / "manifests" / "build-timings.json"
+RASTER_SUFFIXES = {".png": "png", ".jpg": "jpg", ".jpeg": "jpeg"}
 
 FATAL_PATTERNS = [
     re.compile(r"LaTeX Error:\s+.+"),
@@ -1033,6 +1035,99 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
     return pdf_rel_paths
 
 
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def collect_raster_corpus(
+    source_dir: Path | None,
+    output_dir: Path,
+    manifest_path: Path | None = None,
+    *,
+    require_nonempty: bool = False,
+) -> dict[str, Any]:
+    source_root = _resolve_repo_path(source_dir or SRC_DIR)
+    output_root = _resolve_repo_path(output_dir)
+    if source_root is None or output_root is None:
+        raise ValueError("source and output directories are required")
+    if not source_root.exists():
+        raise FileNotFoundError(source_root)
+
+    source_root = source_root.resolve()
+    output_root = output_root.resolve()
+    repo_root = ROOT.resolve()
+    reset_output_tree(output_root)
+
+    counts: Counter[str] = Counter({"png": 0, "jpg": 0, "jpeg": 0})
+    files: list[dict[str, Any]] = []
+    seen_paths: set[str] = set()
+    seen_portable_paths: set[str] = set()
+
+    for source in sorted(source_root.rglob("*"), key=lambda path: path.as_posix()):
+        if source.is_symlink() and not source.exists():
+            raise ValueError(f"broken raster symlink: {source}")
+        if not source.is_file():
+            continue
+        suffix = source.suffix.lower()
+        if suffix not in RASTER_SUFFIXES:
+            continue
+
+        resolved_source = source.resolve()
+        try:
+            resolved_source.relative_to(source_root)
+        except ValueError as exc:
+            raise ValueError(f"unsafe raster path escapes source root: {source}") from exc
+
+        try:
+            rel_path = source.relative_to(repo_root)
+        except ValueError:
+            rel_path = Path(source_root.name) / source.relative_to(source_root)
+        if rel_path.is_absolute() or ".." in rel_path.parts:
+            raise ValueError(f"unsafe raster destination path: {rel_path}")
+
+        rel_posix = rel_path.as_posix()
+        portable_rel_posix = rel_posix.casefold()
+        if rel_posix in seen_paths or portable_rel_posix in seen_portable_paths:
+            raise ValueError(f"duplicate raster destination path: {rel_posix}")
+        seen_paths.add(rel_posix)
+        seen_portable_paths.add(portable_rel_posix)
+
+        target = output_root / rel_path
+        try:
+            target.resolve().relative_to(output_root)
+        except ValueError as exc:
+            raise ValueError(f"unsafe raster destination path: {rel_path}") from exc
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+
+        stat = target.stat()
+        kind = RASTER_SUFFIXES[suffix]
+        counts[kind] += 1
+        files.append({"path": rel_posix, "size": stat.st_size, "sha256": _sha256_file(target)})
+
+    if require_nonempty and not files:
+        raise ValueError(f"no raster files found under {source_root}")
+
+    manifest = {
+        "source_dir": source_root.relative_to(repo_root).as_posix() if source_root.is_relative_to(repo_root) else str(source_root),
+        "output_dir": output_root.relative_to(repo_root).as_posix() if output_root.is_relative_to(repo_root) else str(output_root),
+        "total": len(files),
+        "counts": {key: counts[key] for key in ("png", "jpg", "jpeg")},
+        "files": files,
+    }
+    if manifest_path is not None:
+        resolved_manifest_path = _resolve_repo_path(manifest_path)
+        if resolved_manifest_path is None:
+            raise ValueError("manifest path is required")
+        resolved_manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        resolved_manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return manifest
+
+
 def build_root(
     tex_path: Path,
     output_dir: Path | None = None,
@@ -1982,6 +2077,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     render_parser.add_argument("--formats", nargs="*", default=["png", "svg"])
     render_parser.add_argument("--force", action="store_true", help="Re-render diagrams even when outputs are current")
 
+    raster_parser = subparsers.add_parser("collect-raster", help="Collect verified raster assets for artifact upload")
+    raster_parser.add_argument("--source-dir", type=Path, default=SRC_DIR)
+    raster_parser.add_argument("--output-dir", type=Path, required=True)
+    raster_parser.add_argument("--manifest", type=Path, default=None)
+    raster_parser.add_argument("--require-nonempty", action="store_true")
+
     stage_parser = subparsers.add_parser("stage-pages")
     stage_parser.add_argument("--pdf-dir", type=Path, required=True)
     stage_parser.add_argument("--image-dir", type=Path, default=None)
@@ -2135,6 +2236,25 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "render-plantuml":
         return render_plantuml(source_dir=args.source_dir, formats=args.formats, force=args.force)
+
+    if args.command == "collect-raster":
+        try:
+            manifest = collect_raster_corpus(
+                source_dir=args.source_dir,
+                output_dir=args.output_dir,
+                manifest_path=args.manifest,
+                require_nonempty=args.require_nonempty,
+            )
+        except (OSError, ValueError) as exc:
+            print(f"::error::{exc}", file=sys.stderr)
+            return 1
+        counts = manifest["counts"]
+        print(
+            f"Raster corpus: {manifest['total']} files "
+            f"({counts['png']} png, {counts['jpg']} jpg, {counts['jpeg']} jpeg)",
+            file=sys.stderr,
+        )
+        return 0
 
     if args.command == "clean":
         return clean()

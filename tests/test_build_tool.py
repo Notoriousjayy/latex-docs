@@ -1038,6 +1038,80 @@ class BuildToolTests(unittest.TestCase):
             self.assertIn("Documents", index_html)
             self.assertIn("PlantUML Diagrams", index_html)
 
+    def test_collect_raster_corpus_preserves_source_relative_paths_and_formats(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src = root / "src"
+            left = src / "architecture" / "a" / "png" / "overview.png"
+            right = src / "security" / "b" / "png" / "overview.png"
+            jpg = src / "security" / "b" / "jpg" / "overview.jpg"
+            jpeg = src / "security" / "b" / "jpg" / "detail.JPEG"
+            for path, payload in ((left, b"PNG1"), (right, b"PNG2"), (jpg, b"JPG"), (jpeg, b"JPEG")):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(payload)
+
+            with patch("tooling.scripts.latex_build.ROOT", root), patch("tooling.scripts.latex_build.SRC_DIR", src):
+                manifest = latex_build.collect_raster_corpus(src, root / "artifact", root / "manifest.json", require_nonempty=True)
+
+            self.assertEqual(4, manifest["total"])
+            self.assertEqual({"png": 2, "jpg": 1, "jpeg": 1}, manifest["counts"])
+            for relative_path in (
+                "src/architecture/a/png/overview.png",
+                "src/security/b/png/overview.png",
+                "src/security/b/jpg/overview.jpg",
+                "src/security/b/jpg/detail.JPEG",
+            ):
+                self.assertTrue((root / "artifact" / relative_path).is_file())
+                self.assertIn(relative_path, {item["path"] for item in manifest["files"]})
+
+    def test_collect_raster_corpus_rejects_portable_destination_collisions(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src = root / "src"
+            first = src / "architecture" / "png" / "Overview.png"
+            second = src / "architecture" / "png" / "overview.PNG"
+            for path in (first, second):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"PNG")
+
+            with patch("tooling.scripts.latex_build.ROOT", root), patch("tooling.scripts.latex_build.SRC_DIR", src):
+                with self.assertRaisesRegex(ValueError, "duplicate raster destination path"):
+                    latex_build.collect_raster_corpus(src, root / "artifact")
+
+    def test_collect_raster_corpus_requires_nonempty_publish_corpus(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src = root / "src"
+            src.mkdir()
+
+            with patch("tooling.scripts.latex_build.ROOT", root), patch("tooling.scripts.latex_build.SRC_DIR", src):
+                with self.assertRaisesRegex(ValueError, "no raster files found"):
+                    latex_build.collect_raster_corpus(src, root / "artifact", require_nonempty=True)
+
+    def test_stage_pages_site_indexes_every_collected_raster_asset(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            src = root / "src"
+            pdf_dir = root / "public" / "pdfs"
+            pdf = pdf_dir / "architecture" / "guide.pdf"
+            png = src / "architecture" / "a" / "png" / "overview.png"
+            jpg = src / "security" / "b" / "jpg" / "overview.jpg"
+            jpeg = src / "security" / "b" / "jpg" / "detail.jpeg"
+            pdf.parent.mkdir(parents=True, exist_ok=True)
+            pdf.write_bytes(b"%PDF-1.4")
+            for path, payload in ((png, b"PNG"), (jpg, b"JPG"), (jpeg, b"JPEG")):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(payload)
+
+            with patch("tooling.scripts.latex_build.ROOT", root), patch("tooling.scripts.latex_build.SRC_DIR", src):
+                manifest = latex_build.collect_raster_corpus(src, root / "artifact-raster", root / "raster-manifest.json", require_nonempty=True)
+            latex_build.stage_pages_site(pdf_dir, root / "site", root / "artifact-raster")
+
+            index_html = (root / "site" / "index.html").read_text(encoding="utf-8")
+            for item in manifest["files"]:
+                self.assertTrue((root / "site" / "images" / item["path"]).is_file())
+                self.assertIn(f'href="images/{item["path"]}"', index_html)
+
     def test_render_plantuml_cli_supports_jpg_through_same_interface_used_in_ci(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -1171,6 +1245,99 @@ class BuildToolTests(unittest.TestCase):
         for step_name in ("Save published PDF corpus", "Save published corpus manifest"):
             step = self._step_by_name(aggregate, step_name)
             self.assertIn("build-status == 'success'", str(step["if"]))
+
+    def test_reusable_workflow_has_single_authoritative_raster_producer(self) -> None:
+        try:
+            import yaml  # type: ignore
+        except ImportError:
+            self.skipTest("PyYAML is not available")
+
+        repo_root = Path(__file__).resolve().parents[1]
+        workflow = yaml.safe_load((repo_root / ".github" / "workflows" / "_build-latex.yml").read_text(encoding="utf-8"))
+        jobs = workflow["jobs"]
+        workflow_outputs = workflow[True]["workflow_call"]["outputs"]
+
+        self.assertEqual("${{ jobs.raster.outputs.raster-artifact }}", workflow_outputs["raster-artifact"]["value"])
+        self.assertIn("raster", jobs)
+        self.assertEqual("plan", jobs["raster"]["needs"])
+        self.assertEqual("${{ steps.collect.outputs.raster-artifact }}", jobs["raster"]["outputs"]["raster-artifact"])
+
+        upload_steps = []
+        for job_name, job in jobs.items():
+            if not isinstance(job, dict):
+                continue
+            for step in job.get("steps", []):
+                if isinstance(step, dict) and step.get("uses", "").startswith("actions/upload-artifact"):
+                    if step.get("with", {}).get("name") in ("latex-raster", "${{ steps.collect.outputs.raster-artifact }}"):
+                        upload_steps.append((job_name, step.get("name")))
+
+        self.assertEqual([("raster", "Upload raster corpus")], upload_steps)
+        self.assertFalse(any(step.get("name") == "Upload rendered raster corpus" for step in jobs["build"].get("steps", [])))
+
+    def test_reusable_workflow_raster_job_runs_outside_matrix_and_feeds_shards(self) -> None:
+        try:
+            import yaml  # type: ignore
+        except ImportError:
+            self.skipTest("PyYAML is not available")
+
+        repo_root = Path(__file__).resolve().parents[1]
+        workflow = yaml.safe_load((repo_root / ".github" / "workflows" / "_build-latex.yml").read_text(encoding="utf-8"))
+        jobs = workflow["jobs"]
+
+        self.assertNotIn("strategy", jobs["raster"])
+        self.assertEqual(["plan", "raster"], jobs["build"]["needs"])
+        self.assertIn("shard-count", str(jobs["build"]["if"]))
+        self.assertIn("raster-artifact", str(jobs["build"]["if"]))
+
+        download = self._step_by_name(jobs["build"], "Download verified raster corpus")
+        self.assertEqual("actions/download-artifact@v7", download["uses"])
+        self.assertEqual("${{ needs.raster.outputs.raster-artifact }}", download["with"]["name"])
+        self.assertEqual(".", download["with"]["path"])
+
+    def test_reusable_workflow_renders_before_collecting_only_when_plantuml_affected(self) -> None:
+        try:
+            import yaml  # type: ignore
+        except ImportError:
+            self.skipTest("PyYAML is not available")
+
+        repo_root = Path(__file__).resolve().parents[1]
+        workflow = yaml.safe_load((repo_root / ".github" / "workflows" / "_build-latex.yml").read_text(encoding="utf-8"))
+        steps = workflow["jobs"]["raster"]["steps"]
+        render_index = next(index for index, step in enumerate(steps) if step.get("name") == "Render affected PlantUML diagrams")
+        collect_index = next(index for index, step in enumerate(steps) if step.get("name") == "Collect raster corpus")
+
+        self.assertLess(render_index, collect_index)
+        self.assertIn("plantuml-affected == 'true'", str(steps[render_index]["if"]))
+        self.assertNotIn("if", steps[collect_index])
+        self.assertIn("collect-raster", steps[collect_index]["run"])
+        self.assertIn("--require-nonempty", steps[collect_index]["run"])
+
+    def test_reusable_workflow_pdf_success_cannot_conceal_raster_failure(self) -> None:
+        try:
+            import yaml  # type: ignore
+        except ImportError:
+            self.skipTest("PyYAML is not available")
+
+        repo_root = Path(__file__).resolve().parents[1]
+        workflow = yaml.safe_load((repo_root / ".github" / "workflows" / "_build-latex.yml").read_text(encoding="utf-8"))
+        aggregate = workflow["jobs"]["aggregate"]
+
+        self.assertEqual(["plan", "raster", "build"], aggregate["needs"])
+        self.assertIn("needs.raster.result == 'success'", str(aggregate["if"]))
+
+    def test_pages_workflow_consumes_reusable_raster_artifact_output(self) -> None:
+        try:
+            import yaml  # type: ignore
+        except ImportError:
+            self.skipTest("PyYAML is not available")
+
+        repo_root = Path(__file__).resolve().parents[1]
+        workflow = yaml.safe_load((repo_root / ".github" / "workflows" / "latex-pages.yml").read_text(encoding="utf-8"))
+        stage = workflow["jobs"]["stage"]
+        download = self._step_by_name(stage, "Download verified raster corpus")
+
+        self.assertEqual("${{ needs.build.outputs.raster-artifact }}", download["with"]["name"])
+        self.assertIn("build-status == 'success'", str(stage["if"]))
 
     def test_shards_do_not_fail_fast_and_expose_concurrency_controls(self) -> None:
         try:

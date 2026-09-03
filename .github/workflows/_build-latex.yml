@@ -65,6 +65,9 @@ on:
       pdf-artifact:
         description: 'Name of the artifact holding the PDF corpus'
         value: ${{ jobs.aggregate.outputs.pdf-artifact }}
+      raster-artifact:
+        description: 'Name of the artifact holding the verified raster corpus'
+        value: ${{ jobs.raster.outputs.raster-artifact }}
 
 permissions:
   contents: read
@@ -178,10 +181,58 @@ jobs:
           retention-days: 7
           if-no-files-found: error
 
+  raster:
+    name: Raster corpus
+    needs: plan
+    if: ${{ needs.plan.result == 'success' }}
+    runs-on: ubuntu-latest
+    outputs:
+      raster-artifact: ${{ steps.collect.outputs.raster-artifact }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Render affected PlantUML diagrams
+        if: ${{ needs.plan.outputs.plantuml-affected == 'true' }}
+        uses: ./.github/actions/render-plantuml
+        with:
+          source-dir: 'src'
+          formats: 'png svg'
+          generate-jpg: 'true'
+          fail-on-error: 'true'
+
+      - name: Collect raster corpus
+        id: collect
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tooling/scripts/latex_build.py collect-raster \
+            --source-dir src \
+            --output-dir .raster-corpus \
+            --manifest .build-cache/raster-manifest.json \
+            --require-nonempty
+          echo "raster-artifact=latex-raster" >> "$GITHUB_OUTPUT"
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          manifest = json.loads(Path('.build-cache/raster-manifest.json').read_text(encoding='utf-8'))
+          counts = manifest['counts']
+          print(f"Raster corpus: {manifest['total']} files ({counts['png']} PNG, {counts['jpg']} JPG, {counts['jpeg']} JPEG)")
+          PY
+
+      - name: Upload raster corpus
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ steps.collect.outputs.raster-artifact }}
+          path: .raster-corpus
+          retention-days: 14
+          if-no-files-found: error
+          compression-level: 0
+
   build:
     name: ${{ matrix.shard.name }}
-    needs: plan
-    if: ${{ fromJSON(needs.plan.outputs.shard-count) > 0 }}
+    needs: [plan, raster]
+    if: ${{ fromJSON(needs.plan.outputs.shard-count) > 0 && needs.raster.outputs.raster-artifact != '' }}
     runs-on: ubuntu-latest
     # fromJSON('null') yields a true null so the container key is omitted
     # entirely when no pinned image is configured.
@@ -207,27 +258,11 @@ jobs:
           name: latex-build-plan
           path: .build-cache
 
-      - name: Render affected PlantUML diagrams
-        if: ${{ needs.plan.outputs.plantuml-affected == 'true' }}
-        uses: ./.github/actions/render-plantuml
+      - name: Download verified raster corpus
+        uses: actions/download-artifact@v7
         with:
-          source-dir: 'src'
-          formats: 'png svg'
-          generate-jpg: 'true'
-          fail-on-error: 'true'
-
-      - name: Upload rendered raster corpus
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v6
-        with:
-          name: latex-raster
-          path: |
-            src/**/*.png
-            src/**/*.jpg
-            src/**/*.jpeg
-          retention-days: 7
-          if-no-files-found: error
-          compression-level: 0
+          name: ${{ needs.raster.outputs.raster-artifact }}
+          path: .
 
       - name: Build shard
         id: build
@@ -261,8 +296,8 @@ jobs:
 
   aggregate:
     name: Aggregate
-    needs: [plan, build]
-    if: ${{ always() && needs.plan.result == 'success' }}
+    needs: [plan, raster, build]
+    if: ${{ always() && needs.plan.result == 'success' && needs.raster.result == 'success' }}
     runs-on: ubuntu-latest
     outputs:
       build-status: ${{ steps.verify.outputs.build-status }}
