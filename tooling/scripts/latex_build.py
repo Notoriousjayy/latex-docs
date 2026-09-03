@@ -16,6 +16,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, List, Sequence, Set
+from urllib.parse import quote
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import build_graph  # noqa: E402  (local module, resolved via the path insert above)
@@ -814,21 +815,104 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path) -> List[Path]:
     cornell_paths = sorted(path for path in pdf_rel_paths if path.parts and path.parts[0] == "cornell-notes")
     non_cornell_paths = sorted(path for path in pdf_rel_paths if not (path.parts and path.parts[0] == "cornell-notes"))
 
+    heading_counter = 0
+
+    def _heading(level: int, text: str, *, anchor: str | None = None) -> str:
+        nonlocal heading_counter
+        heading_counter += 1
+        heading_id = anchor or f"heading-{heading_counter}"
+        return f'<h{level} id="{html.escape(heading_id, quote=True)}">{html.escape(text)}</h{level}>'
+
     def _emit_links(handle: Any, paths: list[Path], sort_by_chapter: bool = False) -> None:
         ordered = sorted(paths, key=_collection_path_key if sort_by_chapter else lambda path: (path.as_posix(),))
-        handle.write("<ul>")
+        handle.write('<ul class="document-list">')
         for rel_path in ordered:
             rel_posix = rel_path.as_posix()
-            escaped = html.escape(rel_posix)
-            handle.write(f'<li><a href="pdfs/{escaped}">{escaped}</a></li>')
+            label = html.escape(rel_posix)
+            target = html.escape("pdfs/" + quote(rel_posix, safe="/:@-._~"), quote=True)
+            search_text = html.escape(rel_posix.casefold(), quote=True)
+            handle.write(
+                f'<li class="document-row" data-search="{search_text}">'
+                f'<a href="{target}" title="Open {label}"><span class="document-name">{label}</span>'
+                f'<span class="document-path">{label}</span></a></li>'
+            )
         handle.write("</ul>")
 
     index_path = site_dir / "index.html"
     with index_path.open("w", encoding="utf-8") as handle:
-        handle.write("<!doctype html><html><body><h1>LaTeX PDFs</h1>")
+        total_documents = len(pdf_rel_paths)
+        category_count = len({path.parts[0] for path in pdf_rel_paths if path.parts})
+        handle.write("""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LaTeX document library</title>
+<style>
+:root { color-scheme: light; --page: #f5f7f9; --panel: #ffffff; --text: #17212b; --muted: #5c6b78; --accent: #126782; --border: #d8e0e6; --hover: #eaf4f6; --focus: #d97706; --shadow: 0 8px 24px rgba(23, 33, 43, .07); }
+@media (prefers-color-scheme: dark) { :root { color-scheme: dark; --page: #11181d; --panel: #1b252c; --text: #edf3f5; --muted: #b4c3ca; --accent: #76d0e5; --border: #3a4a54; --hover: #263943; --focus: #f7bd63; --shadow: 0 8px 24px rgba(0, 0, 0, .24); } }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--page); color: var(--text); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.skip-link { position: absolute; left: 1rem; top: -4rem; padding: .6rem .8rem; background: var(--panel); color: var(--text); border: 2px solid var(--focus); z-index: 2; }
+.skip-link:focus { top: 1rem; }
+.shell { width: min(1120px, calc(100% - 2rem)); margin: 0 auto; }
+header { padding: 3.5rem 0 2.5rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+.eyebrow { margin: 0 0 .4rem; color: var(--accent); font-size: .78rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+h1 { max-width: 760px; margin: 0; font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.08; letter-spacing: 0; }
+.subtitle { max-width: 680px; margin: 1rem 0 0; color: var(--muted); font-size: 1.08rem; }
+main { padding: 2rem 0 4rem; }
+.summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.summary-card { padding: 1.1rem 1.25rem; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); }
+.summary-value { display: block; font-size: 1.8rem; font-weight: 750; line-height: 1.1; }
+.summary-label { display: block; margin-top: .3rem; color: var(--muted); }
+.tools { display: grid; gap: 1rem; margin-bottom: 2.5rem; }
+.search-label { font-weight: 700; }
+.search-input { width: 100%; margin-top: .4rem; padding: .8rem .9rem; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 6px; font: inherit; }
+.search-input:focus-visible, a:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.result-count { margin: 0; color: var(--muted); }
+.jump { display: flex; flex-wrap: wrap; gap: .55rem .8rem; align-items: baseline; }
+.jump-title { font-weight: 700; margin-right: .25rem; }
+a { color: var(--accent); }
+.jump a { padding: .35rem .65rem; border: 1px solid var(--border); border-radius: 999px; text-decoration: none; }
+.jump a:hover, .jump a:focus-visible { background: var(--hover); }
+.library h2 { margin: 2.5rem 0 1rem; padding-bottom: .55rem; border-bottom: 2px solid var(--border); font-size: 1.7rem; }
+.library h3 { margin: 2rem 0 .7rem; font-size: 1.3rem; }
+.library h4 { margin: 1.35rem 0 .5rem; font-size: 1.08rem; }
+.library h5, .library h6 { margin: 1rem 0 .35rem; color: var(--muted); font-size: 1rem; }
+.document-list { display: grid; gap: .55rem; margin: 0; padding: 0; list-style: none; }
+.document-row { min-width: 0; }
+.document-row a { display: grid; gap: .1rem; min-width: 0; padding: .75rem .9rem; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 6px; text-decoration: none; }
+.document-row a:hover { background: var(--hover); border-color: var(--accent); }
+.document-name, .document-path { overflow-wrap: anywhere; }
+.document-name { font-weight: 650; }
+.document-path { color: var(--muted); font-size: .87rem; }
+footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(--border); font-size: .9rem; }
+@media (max-width: 600px) { .shell { width: min(100% - 1.25rem, 1120px); } header { padding: 2.4rem 0 1.8rem; } .summary { grid-template-columns: 1fr; } main { padding-top: 1.25rem; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to documents</a>
+<header><div class="shell"><p class="eyebrow">Document library</p><h1>LaTeX PDFs</h1><p class="subtitle">Browse the published technical notes, guides, and reference documents.</p></div></header>
+<main id="main-content" class="shell">
+<section class="summary" aria-label="Library summary">
+<div class="summary-card"><span class="summary-value">""" + str(total_documents) + """</span><span class="summary-label">published documents</span></div>
+<div class="summary-card"><span class="summary-value">""" + str(category_count) + """</span><span class="summary-label">top-level categories</span></div>
+</section>
+<section class="tools" aria-label="Document tools">
+<div><label class="search-label" for="document-search">Search documents</label><input class="search-input" id="document-search" type="search" placeholder="Search by name, label, or path" autocomplete="off"></div>
+<p class="result-count" id="result-count" aria-live="polite">Showing """ + str(total_documents) + """ of """ + str(total_documents) + """ documents</p>
+<nav class="jump" aria-label="Jump to category"><span class="jump-title">Jump to</span>""")
 
         if cornell_paths:
-            handle.write("<h2>Cornell Notes</h2>")
+            handle.write('<a href="#category-cornell-notes">Cornell Notes</a>')
+        if non_cornell_paths:
+            handle.write('<a href="#category-other-pdfs">Other PDFs</a>')
+        handle.write("</nav></section><section class=\"library\" aria-label=\"Published documents\">")
+
+        if cornell_paths:
+            handle.write(_heading(2, "Cornell Notes", anchor="category-cornell-notes"))
 
             string_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "computer-science", "string-algorithms")]
             combinatorial_paths = [path for path in cornell_paths if path.parts[:3] == ("cornell-notes", "computer-science", "combinatorial-algorithms")]
@@ -845,7 +929,7 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path) -> List[Path]:
             def _emit_new_collection(heading: str, paths: list[Path]) -> None:
                 if not paths:
                     return
-                handle.write(f"<h3>{html.escape(heading)}</h3>")
+                handle.write(_heading(3, heading))
                 grouped: dict[str, list[Path]] = {}
                 for path in paths:
                     if len(path.parts) >= 6 and path.parts[4] == "cpp-2024":
@@ -870,19 +954,19 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path) -> List[Path]:
                     matching = [key for key in grouped if key == label or key.startswith(label + ":")]
                     if not matching:
                         continue
-                    handle.write(f"<h4>{label}</h4>")
+                    handle.write(_heading(4, label))
                     for key in sorted(matching, key=lambda value: (0, value) if value == label else (1, value)):
                         if key != label:
-                            handle.write(f"<h5>{html.escape(key.split(': ', 1)[1])}</h5>")
+                            handle.write(_heading(5, key.split(': ', 1)[1]))
                         _emit_links(handle, grouped[key], sort_by_chapter=True)
 
             _emit_new_collection("Architecture: ISO/IEC/IEEE 42010:2022", iso_paths)
             _emit_new_collection("Programming: C++ 2024", cpp_paths)
 
             if computer_science_paths:
-                handle.write("<h3>Computer Science</h3>")
+                handle.write(_heading(3, "Computer Science"))
                 if string_paths:
-                    handle.write("<h4>String Algorithms</h4>")
+                    handle.write(_heading(4, "String Algorithms"))
                     _emit_links(handle, string_paths, sort_by_chapter=True)
 
                 for label, collection_paths, topic_order in (
@@ -892,8 +976,8 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path) -> List[Path]:
                 ):
                     if not collection_paths:
                         continue
-                    handle.write(f"<h4>{label}</h4>")
-                    handle.write("<h5>Chapter index</h5>")
+                    handle.write(_heading(4, label))
+                    handle.write(_heading(5, "Chapter index"))
                     _emit_links(handle, collection_paths, sort_by_chapter=True)
                     grouped: dict[str, list[Path]] = {}
                     for path in collection_paths:
@@ -901,14 +985,14 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path) -> List[Path]:
                         grouped.setdefault(topic, []).append(path)
                     for topic in topic_order:
                         if topic in grouped:
-                            handle.write(f"<h5>{html.escape(topic)}</h5>")
+                            handle.write(_heading(5, topic))
                             _emit_links(handle, grouped.pop(topic), sort_by_chapter=True)
                     for topic in sorted(grouped):
-                        handle.write(f"<h5>{html.escape(topic)}</h5>")
+                        handle.write(_heading(5, topic))
                         _emit_links(handle, grouped[topic], sort_by_chapter=True)
 
             if elec_paths:
-                handle.write("<h3>Electronics</h3><h4>Electronic Circuits</h4>")
+                handle.write(_heading(3, "Electronics") + _heading(4, "Electronic Circuits"))
                 grouped: dict[str, list[Path]] = {}
                 for path in elec_paths:
                     topic = path.parts[3] if len(path.parts) > 4 else "(uncategorized)"
@@ -927,11 +1011,11 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path) -> List[Path]:
                 ordered_topics.extend(topic for topic in sorted(grouped) if topic not in ordered_topics)
 
                 for topic in ordered_topics:
-                    handle.write(f"<h5>{html.escape(topic)}</h5>")
+                    handle.write(_heading(5, topic))
                     _emit_links(handle, grouped[topic], sort_by_chapter=True)
 
             if math_paths:
-                handle.write("<h3>Mathematics</h3><h4>Numerical Methods</h4>")
+                handle.write(_heading(3, "Mathematics") + _heading(4, "Numerical Methods"))
                 grouped = {}
                 for path in math_paths:
                     topic = path.parts[3] if len(path.parts) > 4 else "(uncategorized)"
@@ -953,22 +1037,58 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path) -> List[Path]:
                 ordered_topics.extend(topic for topic in sorted(grouped) if topic not in ordered_topics)
 
                 for topic in ordered_topics:
-                    handle.write(f"<h5>{html.escape(topic)}</h5>")
+                    handle.write(_heading(5, topic))
                     _emit_links(handle, grouped[topic], sort_by_chapter=True)
 
             if sec_paths:
-                handle.write("<h3>Security</h3><h4>CISSP</h4>")
+                handle.write(_heading(3, "Security") + _heading(4, "CISSP"))
                 _emit_links(handle, sec_paths, sort_by_chapter=True)
 
             if other_cornell:
-                handle.write("<h3>Other Cornell Notes</h3>")
+                handle.write(_heading(3, "Other Cornell Notes"))
                 _emit_links(handle, other_cornell)
 
         if non_cornell_paths:
-            handle.write("<h2>Other PDFs</h2>")
+            handle.write(_heading(2, "Other PDFs", anchor="category-other-pdfs"))
             _emit_links(handle, non_cornell_paths)
 
-        handle.write("</body></html>")
+        handle.write("""</section>
+</main>
+<footer><div class="shell">""" + str(total_documents) + """ published documents</div></footer>
+<script>
+(function () {
+    const input = document.getElementById('document-search');
+    const count = document.getElementById('result-count');
+    const rows = Array.from(document.querySelectorAll('.document-row'));
+    function update() {
+        const query = input.value.trim().toLocaleLowerCase();
+        let visible = 0;
+        rows.forEach(function (row) {
+            const matches = !query || row.dataset.search.toLocaleLowerCase().includes(query);
+            row.hidden = !matches;
+            if (matches) visible += 1;
+        });
+        document.querySelectorAll('.document-list').forEach(function (list) {
+            list.hidden = !list.querySelector('.document-row:not([hidden])');
+        });
+        document.querySelectorAll('.library h2, .library h3, .library h4, .library h5, .library h6').forEach(function (heading) {
+            const level = Number(heading.tagName.slice(1));
+            let node = heading.nextElementSibling;
+            let hasVisibleRow = false;
+            while (node) {
+                if (/^H[2-6]$/.test(node.tagName) && Number(node.tagName.slice(1)) <= level) break;
+                if (node.matches('.document-list') && node.querySelector('.document-row:not([hidden])')) hasVisibleRow = true;
+                node = node.nextElementSibling;
+            }
+            heading.hidden = !hasVisibleRow;
+        });
+        count.textContent = 'Showing ' + visible + ' of ' + rows.length + ' documents';
+    }
+    input.addEventListener('input', update);
+    input.addEventListener('keydown', function (event) { if (event.key === 'Escape') { input.value = ''; update(); } });
+}());
+</script>
+</body></html>""")
 
     return pdf_rel_paths
 

@@ -1,5 +1,6 @@
 import subprocess
 import tempfile
+import re
 import unittest
 import shutil
 import fnmatch
@@ -959,6 +960,56 @@ class BuildToolTests(unittest.TestCase):
             self.assertIn("Annexes", index_text)
             self.assertIn('href="pdfs/cornell-notes/programming/languages/cpp/cpp-2024/clauses/01-scope/01-scope-cornell-notes.pdf"', index_text)
             self.assertIn('href="pdfs/cornell-notes/programming/languages/cpp/cpp-2024/annexes/annex-a-01/annex-a-01-cornell-notes.pdf"', index_text)
+
+    def test_stage_pages_site_renders_accessible_deterministic_library(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            pdf_dir = root / "pdfs"
+            expected = [
+                Path("cornell-notes/security/certifications/cissp/a & b.pdf"),
+                Path("cornell-notes/security/certifications/cissp/quote's <guide>.pdf"),
+                Path("other/very-long-directory-name/long document.pdf"),
+            ]
+            for relative_path in expected:
+                path = pdf_dir / relative_path
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"%PDF-1.4")
+            (pdf_dir / "empty-category").mkdir(parents=True)
+
+            first_site = root / "site-one"
+            second_site = root / "site-two"
+            first_paths = latex_build.stage_pages_site(pdf_dir, first_site)
+            latex_build.stage_pages_site(pdf_dir, second_site)
+            first_html = (first_site / "index.html").read_text(encoding="utf-8")
+            second_html = (second_site / "index.html").read_text(encoding="utf-8")
+
+            self.assertEqual(expected, first_paths)
+            self.assertEqual(expected, sorted(path.relative_to(first_site / "pdfs") for path in (first_site / "pdfs").rglob("*.pdf")))
+            self.assertEqual(first_html, second_html)
+            self.assertEqual(3, first_html.count('class="document-row"'))
+            self.assertIn('href="pdfs/cornell-notes/security/certifications/cissp/a%20%26%20b.pdf"', first_html)
+            self.assertIn('href="pdfs/cornell-notes/security/certifications/cissp/quote%27s%20%3Cguide%3E.pdf"', first_html)
+            self.assertIn("Security", first_html)
+            self.assertNotIn("empty-category", first_html)
+            self.assertIn('<!doctype html>', first_html)
+            self.assertIn('<html lang="en">', first_html)
+            self.assertIn('<meta name="viewport"', first_html)
+            self.assertIn("--page:", first_html)
+            self.assertIn("prefers-color-scheme: dark", first_html)
+            self.assertIn("@media (max-width: 600px)", first_html)
+            self.assertIn("<header>", first_html)
+            self.assertIn('<nav class="jump"', first_html)
+            self.assertIn('<main id="main-content"', first_html)
+            self.assertIn("<footer>", first_html)
+            self.assertIn('for="document-search"', first_html)
+            self.assertIn('aria-live="polite"', first_html)
+            self.assertIn('class="summary-card"', first_html)
+            self.assertIn('class="document-list"', first_html)
+            ids = re.findall(r'\bid="([^"]+)"', first_html)
+            self.assertEqual(len(ids), len(set(ids)))
+            self.assertIn("document-row", first_html)
+            self.assertIn("document-list", first_html)
+            self.assertIn("document-search", first_html)
 
     def test_discover_roots_includes_all_canonical_cornell_documents(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
