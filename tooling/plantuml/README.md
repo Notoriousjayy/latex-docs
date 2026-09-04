@@ -484,6 +484,23 @@ PlantUML's `!includesub` or "include once" tricks because the
 `!define`-based guard is portable across every PlantUML release of
 the last several years and produces no diagnostic output.
 
+### Upgrading PlantUML
+
+PlantUML is pinned in the render action and passed explicitly by both
+workflow callers. To upgrade it, bump the version, perform a full
+re-render, review the image diff, and commit the regenerated images.
+The Ubuntu runner's Graphviz and Java packages remain intentionally
+unpinned because the pinned PlantUML jar is the output-defining
+component and those packages are runtime dependencies supplied by the
+runner distribution.
+
+<DECISION: framework values win | config.puml values win>
+
+The selected decision is **framework values win**. Configuration files
+retain only settings the framework cannot express, such as `dpi`.
+Diagram-specific semantic colour overrides remain local and are a
+follow-up inventory rather than part of this migration.
+
 ---
 
 ## Hierarchy Validation Checklist

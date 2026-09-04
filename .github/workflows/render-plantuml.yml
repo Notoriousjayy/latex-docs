@@ -43,13 +43,30 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Lint PlantUML style framework
+        shell: bash
+        run: python3 tooling/scripts/plantuml_lint.py
+
       - name: Render PlantUML diagrams
         uses: ./.github/actions/render-plantuml
         with:
           source-dir: 'src'
           formats: 'png svg'
+          plantuml-version: '1.2026.7'
           generate-jpg: ${{ inputs.generate-jpg && 'true' || 'false' }}
           fail-on-error: 'true'
+
+      - name: Verify rendered PlantUML examples
+        shell: bash
+        run: |
+          set -euo pipefail
+          for source in tooling/plantuml/*-example.puml; do
+            plantuml -tsvg -failfast2 -o /tmp "$source"
+          done
+          if rg -n -i 'Syntax Error|Please use CSS style' /tmp/*-example.svg; then
+            echo 'PlantUML example output contains an error or warning'
+            exit 1
+          fi
 
       - name: Commit rendered images
         run: |

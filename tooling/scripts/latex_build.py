@@ -1882,12 +1882,20 @@ def _plantuml_config_for(path: Path, config_names: Sequence[str]) -> Path | None
     return None
 
 
-def _plantuml_is_current(source: Path, config: Path | None, outputs: Sequence[Path]) -> bool:
+def _plantuml_is_current(
+    source: Path,
+    config: Path | None,
+    outputs: Sequence[Path],
+    style_inputs: Sequence[Path] = (),
+) -> bool:
     """Whether every rendered output is newer than the diagram and its config."""
     try:
         newest_input = source.stat().st_mtime
         if config is not None:
             newest_input = max(newest_input, config.stat().st_mtime)
+        for style_input in style_inputs:
+            if style_input.is_file():
+                newest_input = max(newest_input, style_input.stat().st_mtime)
         return all(output.exists() and output.stat().st_mtime >= newest_input for output in outputs)
     except OSError:
         return False
@@ -1916,6 +1924,13 @@ def render_plantuml(
     formats = list(formats or ["png", "svg"])
 
     include_paths = [ROOT / "tooling" / "plantuml", ROOT / "tooling" / "styles" / "plantuml"]
+    style_inputs = [
+        path
+        for include_root in include_paths
+        if include_root.exists()
+        for path in include_root.rglob("*.iuml")
+        if path.is_file()
+    ]
     env = os.environ.copy()
     env["PLANTUML_INCLUDE_PATH"] = ":".join(str(path) for path in include_paths if path.exists())
 
@@ -1941,7 +1956,9 @@ def render_plantuml(
 
         for fmt in formats:
             output_path = path.parent / fmt / f"{path.stem}.{fmt}"
-            if not force and _plantuml_is_current(path, config_path, [output_path]):
+            if not force and _plantuml_is_current(
+                path, config_path, [output_path], style_inputs
+            ):
                 skipped += 1
                 continue
             output_path.parent.mkdir(parents=True, exist_ok=True)
