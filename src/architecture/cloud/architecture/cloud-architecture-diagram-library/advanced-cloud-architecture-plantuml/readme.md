@@ -32,14 +32,14 @@ This diagram set provides original PlantUML representations of the thirteen adva
 
 See `validation/compile-commands.md`. In short:
 
-    java -jar plantuml.jar -tpng diagrams/*.puml
-    java -jar plantuml.jar -tsvg diagrams/*.puml
+    # Run from the repository root.
+    make render-plantuml
 
 Each `.puml` file is self-contained and compiles independently. No `!include` directives are used.
 
 ## Validation
 
-The full set has been validated against `plantuml` (version 1.2020.02 on OpenJDK 21) producing both PNG and SVG output without errors or warnings.
+The full set is validated through the repository renderer, which downloads and checksums the pinned PlantUML version from `tooling/manifests/plantuml.json`.
 
 ## Ambiguity Notes
 

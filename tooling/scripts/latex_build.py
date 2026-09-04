@@ -11,6 +11,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
@@ -1942,6 +1943,8 @@ def _plantuml_output_names(source: Path, text: str) -> list[str]:
     names: list[str] = []
     for index, match in enumerate(_STARTUML_RE.finditer(text)):
         explicit = match.group(1)
+        if explicit and (explicit in {".", ".."} or "/" in explicit or "\\" in explicit):
+            explicit = ""
         names.append(explicit if explicit else (source.stem if index == 0 else f"{source.stem}_{index:03d}"))
     return names
 
@@ -2037,6 +2040,7 @@ def render_plantuml(
     expected_outputs: dict[Path, set[Path]] = {}
     diagram_count = 0
     skipped = 0
+    invalid_names: list[Path] = []
 
     for path in sorted(search_root.rglob("*.puml")):
         if not path.is_file() or path.name.lower() in lowered_config_names:
@@ -2049,6 +2053,13 @@ def render_plantuml(
             continue
 
         diagram_count += 1
+        if any(
+            match.group(1)
+            and (match.group(1) in {".", ".."} or "/" in match.group(1) or "\\" in match.group(1))
+            for match in _STARTUML_RE.finditer(text)
+        ):
+            invalid_names.append(path)
+            continue
         config_path = _plantuml_config_for(path, config_names)
 
         for fmt in formats:
@@ -2061,33 +2072,49 @@ def render_plantuml(
             key = (path.parent, str(config_path) if config_path else "", fmt)
             batches.setdefault(key, []).append(path.name)
 
-    failures = 0
+    failures = len(invalid_names)
+    for path in invalid_names:
+        print(f"PlantUML failed in {path}: @startuml name must not contain a path separator", file=sys.stderr)
     rendered = 0
     for (work_dir, config, fmt), names in sorted(batches.items(), key=lambda item: str(item[0])):
-        cmd = plantuml_render_command(prefix, fmt, work_dir / fmt, Path(config) if config else None, names)
-        result = subprocess.run(
-            cmd,
-            cwd=str(work_dir),
-            env=env,
-            check=False,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
-        )
-        if result.returncode != 0:
-            failures += 1
-            detail = (result.stderr or b"").decode("utf-8", errors="ignore").strip().splitlines()
-            print(
-                f"PlantUML failed in {work_dir} ({fmt}): {detail[-1] if detail else 'unknown error'}",
-                file=sys.stderr,
+        with tempfile.TemporaryDirectory(prefix="plantuml-") as temp_dir:
+            temp_output = Path(temp_dir)
+            cmd = plantuml_render_command(
+                prefix, fmt, temp_output, Path(config) if config else None, names
             )
-            continue
-        rendered += len(names)
-        if fmt == "svg":
-            for output in sorted(expected_outputs.get(work_dir / fmt, ())):
-                phrase = svg_error_text(output)
-                if phrase:
-                    failures += 1
-                    print(f"PlantUML drew an error into {output}: {phrase!r}", file=sys.stderr)
+            result = subprocess.run(
+                cmd,
+                cwd=str(work_dir),
+                env=env,
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+            )
+            detail = (result.stderr or b"").decode("utf-8", errors="ignore").strip().splitlines()
+            expected_names = [
+                output.name
+                for name in names
+                for output in plantuml_output_paths(work_dir / name, fmt)
+            ]
+            missing = [name for name in expected_names if not (temp_output / name).is_file()]
+            errors = [
+                name for name in expected_names
+                if fmt == "svg" and svg_error_text(temp_output / name)
+            ]
+            if result.returncode != 0 or missing or errors:
+                failures += 1
+                reason = detail[-1] if detail else "renderer failed"
+                if missing:
+                    reason = f"missing output(s): {', '.join(missing)}"
+                elif errors:
+                    reason = f"error text in {errors[0]}: {svg_error_text(temp_output / errors[0])}"
+                print(f"PlantUML failed in {work_dir} ({fmt}): {reason}", file=sys.stderr)
+                continue
+            for name in expected_names:
+                destination = work_dir / fmt / name
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                os.replace(temp_output / name, destination)
+            rendered += len(names)
 
     # Files in a png/svg/jpg directory that no source produces (e.g. left over from a
     # renamed @startuml) are reported, never deleted: deletion is a reviewed change.

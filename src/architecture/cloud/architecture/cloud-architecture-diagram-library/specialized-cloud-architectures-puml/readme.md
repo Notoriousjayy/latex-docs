@@ -45,11 +45,12 @@ Every file is a complete, self-contained PlantUML document delimited by
 `@startuml` and `@enduml`. To render:
 
 ```
-plantuml -tpng *.puml
-plantuml -tsvg *.puml
+# Run from the repository root.
+make render-plantuml
 ```
 
-PlantUML 1.2024.x or later is recommended.
+The repository renderer uses the checksummed PlantUML version in
+`tooling/manifests/plantuml.json`; do not use an unpinned distribution binary.
 
 ## Notes on ambiguity / explicit assumptions
 

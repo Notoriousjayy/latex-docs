@@ -32,13 +32,14 @@ cloud-architecture-diagram-library/
 Render all PlantUML diagrams recursively from the `latex-docs` repository root:
 
 ```bash
-python3 tools/integrate_cloud_architecture_diagram_library.py   --source-repo ../cloud-architecture-diagram-library   --target-repo .   --render --plantuml-cmd plantuml --update-generated
+python3 tools/integrate_cloud_architecture_diagram_library.py   --source-repo ../cloud-architecture-diagram-library   --target-repo .   --update-generated
+make render-plantuml
 ```
 
 Alternatively, render directly with PlantUML after the library has been imported:
 
 ```bash
-find src/architecture/cloud/architecture/cloud-architecture-diagram-library   -name '*.puml' -print0 | xargs -0 plantuml -tsvg
+make render-plantuml
 ```
 
 The preferred generated output locations are:

@@ -15,10 +15,6 @@ inputs:
     description: 'Generate JPG from PNG (requires ImageMagick)'
     required: false
     default: 'false'
-  fail-on-error:
-    description: 'Fail the action if any diagram fails to render'
-    required: false
-    default: 'true'
   config-names:
     description: 'Space-separated config file names to search for'
     required: false
@@ -88,7 +84,6 @@ runs:
         if [[ "${{ inputs.generate-jpg }}" == "true" ]]; then
           FORMATS+=("jpg")
         fi
-        FAIL_ON_ERROR="${{ inputs.fail-on-error }}"
         if [[ ! -d "$ROOT" ]]; then
           echo "diagram_count=0" >> "$GITHUB_OUTPUT"
           echo "rendered_count=0" >> "$GITHUB_OUTPUT"
@@ -99,20 +94,11 @@ runs:
           exit 0
         fi
         export PLANTUML_INCLUDE_PATH="${GITHUB_WORKSPACE}/tooling/plantuml:${GITHUB_WORKSPACE}/tooling/styles/plantuml"
-        set +e
         python3 tooling/scripts/latex_build.py render-plantuml --source-dir "$ROOT" --formats "${FORMATS[@]}"
-        render_status=$?
-        set -e
         diagram_count=$(find "$ROOT" -type f -name '*.puml' 2>/dev/null | wc -l | tr -d ' ')
         rendered_count=$(find "$ROOT" -type f \( -name '*.png' -o -name '*.svg' -o -name '*.jpg' -o -name '*.jpeg' \) 2>/dev/null | wc -l | tr -d ' ')
         failed_count=0
         skipped_count=0
-        if [[ "$render_status" -ne 0 ]]; then
-          failed_count=$((failed_count + 1))
-        fi
-        if [[ "$FAIL_ON_ERROR" != "true" ]]; then
-          echo "::warning::PlantUML rendering completed with non-zero exit status; continuing because fail-on-error=false"
-        fi
         python3 - "$ROOT" <<'PY'
         import json, sys
         from pathlib import Path
@@ -134,9 +120,6 @@ runs:
         echo "skipped_count=$skipped_count" >> "$GITHUB_OUTPUT"
         echo "files=${files_json}" >> "$GITHUB_OUTPUT"
         echo "has_changes=true" >> "$GITHUB_OUTPUT"
-        if [[ "$FAIL_ON_ERROR" == "true" && "$render_status" -ne 0 ]]; then
-          exit "$render_status"
-        fi
 
 
 

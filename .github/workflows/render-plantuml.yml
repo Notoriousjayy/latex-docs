@@ -21,11 +21,13 @@ on:
       - 'src/**/*.iuml'
       - 'tooling/plantuml/**'
       - 'tooling/styles/plantuml/**'
+      - 'tooling/manifests/plantuml.json'
       - '.github/actions/render-plantuml/**'
       - '.github/workflows/render-plantuml.yml'
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: render-plantuml-${{ github.ref }}
@@ -56,7 +58,6 @@ jobs:
           source-dir: 'src'
           formats: 'png svg'
           generate-jpg: ${{ inputs.generate-jpg && 'true' || 'false' }}
-          fail-on-error: 'true'
 
       - name: Verify framework examples with the pinned engine
         shell: bash
@@ -77,6 +78,8 @@ jobs:
             exit 0
           fi
           # The resulting push re-triggers latex-pages.yml, whose dependency
-          # analysis rebuilds exactly the documents consuming these diagrams.
+          # event is suppressed for GITHUB_TOKEN pushes, so dispatch the
+          # authoritative Pages build explicitly after the image commit.
           git commit -m 'chore(diagrams): render PlantUML images'
           git push origin HEAD:refs/heads/main
+          GH_TOKEN="${{ github.token }}" gh workflow run latex-pages.yml --ref main

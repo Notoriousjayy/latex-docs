@@ -10,6 +10,7 @@ import shlex
 from io import StringIO
 from pathlib import Path
 from contextlib import redirect_stderr
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import tooling.scripts.latex_build as latex_build
@@ -1120,17 +1121,23 @@ class BuildToolTests(unittest.TestCase):
             diagram = src / "diagram.puml"
             diagram.write_text("@startuml\nA -> B\n@enduml\n", encoding="utf-8")
 
-            with patch("tooling.scripts.latex_build.subprocess.run") as run_mock:
-                pin = latex_build.load_plantuml_pin()["version"]
-                run_mock.return_value.returncode = 0
-                # The renderer now probes `plantuml -version` before rendering.
-                run_mock.return_value.stdout = f"PlantUML version {pin} (test)"
-                run_mock.return_value.stderr = ""
+            def fake_run(command, **kwargs):
+                if "-version" in command:
+                    return SimpleNamespace(returncode=0, stdout="PlantUML version 1.2026.7", stderr="")
+                output_dir = Path(command[command.index("-o") + 1])
+                output_dir.mkdir(parents=True, exist_ok=True)
+                fmt = next(argument[2:] for argument in command if argument.startswith("-t"))
+                for name in command:
+                    if name.endswith(".puml"):
+                        (output_dir / f"{Path(name).stem}.{fmt}").write_bytes(b"image")
+                return SimpleNamespace(returncode=0, stdout="", stderr=b"")
+
+            with patch("tooling.scripts.latex_build.subprocess.run", side_effect=fake_run) as run_mock:
                 status = latex_build.render_plantuml(source_dir=src, formats=["png", "jpg"], force=True)
 
             self.assertEqual(0, status)
-            self.assertTrue(any(call.args[0][:3] == ["plantuml", "-failfast2", "-tpng"] for call in run_mock.call_args_list))
-            self.assertTrue(any(call.args[0][:3] == ["plantuml", "-failfast2", "-tjpg"] for call in run_mock.call_args_list))
+            self.assertTrue(any("-tpng" in call.args[0] for call in run_mock.call_args_list))
+            self.assertTrue(any("-tjpg" in call.args[0] for call in run_mock.call_args_list))
 
     def test_discover_roots_includes_all_canonical_cornell_documents(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
@@ -1452,7 +1459,7 @@ class BuildToolTests(unittest.TestCase):
         self.assertIsInstance(data, dict)
 
         expected_inputs = {
-            "source-dir", "formats", "generate-jpg", "fail-on-error", "config-names", "plantuml-version",
+            "source-dir", "formats", "generate-jpg", "config-names", "plantuml-version",
         }
         expected_outputs = {
             "diagram-count", "rendered-count", "failed-count", "skipped-count", "rendered-files", "has-changes",

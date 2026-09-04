@@ -94,14 +94,32 @@ class PlantUMLRenderTests(unittest.TestCase):
             (root / "src" / "d.puml").write_text("@startuml\nA -> B\n@enduml\n", encoding="ascii")
             self.assertEqual(1, self._run(root, {"exit_code": 1}))
 
+    def test_failed_png_render_preserves_the_existing_output(self) -> None:
+        """Prevent a failed PNG batch from replacing a previously valid committed image."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source_dir = root / "src"
+            source_dir.mkdir()
+            (source_dir / "d.puml").write_text("@startuml\nA -> B\n@enduml\n", encoding="ascii")
+            png_dir = source_dir / "png"
+            png_dir.mkdir()
+            (png_dir / "d.png").write_bytes(b"valid image")
+            self.assertEqual(1, self._run(root, {"exit_code": 1}, formats=("png",)))
+            self.assertEqual(b"valid image", (png_dir / "d.png").read_bytes())
+
     def test_error_text_drawn_into_an_svg_fails_the_render(self) -> None:
         """Prevent a banner or error image (exit 0) from being committed."""
         body = "<svg><text>Please\u00a0use\u00a0CSS\u00a0style\u00a0instead\u00a0of\u00a0skinparam\u00a0padding</text></svg>"
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "src").mkdir()
-            (root / "src" / "d.puml").write_text("@startuml\nA -> B\n@enduml\n", encoding="ascii")
+            source = root / "src" / "d.puml"
+            source.write_text("@startuml\nA -> B\n@enduml\n", encoding="ascii")
+            valid_output = root / "src" / "svg"
+            valid_output.mkdir()
+            (valid_output / "d.svg").write_text("valid committed image", encoding="ascii")
             self.assertEqual(1, self._run(root, {"svg_body": body}))
+            self.assertEqual("valid committed image", (valid_output / "d.svg").read_text(encoding="ascii"))
 
     def test_clean_render_succeeds_and_writes_beside_the_source(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -129,6 +147,22 @@ class PlantUMLOutputPathTests(unittest.TestCase):
         self.assertEqual([Path("src/x/png/15-metacloud.png")], latex_build.plantuml_output_paths(source, "png", "@startuml\n@enduml\n"))
         two = latex_build.plantuml_output_paths(source, "svg", "@startuml\n@enduml\n@startuml\n@enduml\n")
         self.assertEqual(["15-metacloud.svg", "15-metacloud_001.svg"], [p.name for p in two])
+        self.assertEqual(["15-metacloud.svg"], [p.name for p in latex_build.plantuml_output_paths(source, "svg", "@startuml ../outside\n@enduml\n")])
+
+    def test_manifest_changes_invalidate_outputs(self) -> None:
+        """Prevent a PlantUML version or checksum bump from leaving old images current."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "d.puml"
+            manifest = root / "plantuml.json"
+            output = root / "d.svg"
+            source.write_text("@startuml\n@enduml\n", encoding="ascii")
+            manifest.write_text("pin", encoding="ascii")
+            output.write_text("old", encoding="ascii")
+            future = max(source.stat().st_mtime, manifest.stat().st_mtime, output.stat().st_mtime) + 10
+            os.utime(output, (future, future))
+            os.utime(manifest, (future + 10, future + 10))
+            self.assertFalse(latex_build._plantuml_is_current(source, None, [output], [manifest]))
 
 
 class SvgErrorTextTests(unittest.TestCase):

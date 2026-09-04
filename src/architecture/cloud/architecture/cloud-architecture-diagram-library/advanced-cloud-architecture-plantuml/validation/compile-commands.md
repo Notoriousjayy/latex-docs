@@ -5,35 +5,31 @@ Each diagram in this set is self-contained and compiles independently. No `!incl
 ## Requirements
 
 - Java 8 or later (validated with OpenJDK 21).
-- `plantuml.jar` (or a `plantuml` package binary). The set has been validated against PlantUML 1.2020.02; later versions also work.
+- The repository-pinned PlantUML jar. Run `make render-plantuml` from the repository root; do not use the distribution `plantuml` package.
 
 ## Compile all diagrams to PNG
 
-    java -jar plantuml.jar -tpng diagrams/*.puml
+    make render-plantuml
 
 ## Compile all diagrams to SVG
 
-    java -jar plantuml.jar -tsvg diagrams/*.puml
+    make render-plantuml
 
 ## Compile a single diagram
 
-    java -jar plantuml.jar -tsvg diagrams/01_hypervisor_clustering.puml
+    JAR="$(python3 tooling/scripts/latex_build.py fetch-plantuml)"
+    java -Djava.awt.headless=true -jar "$JAR" -tsvg -failfast2 diagrams/01_hypervisor_clustering.puml
 
 ## Compile to a separate output directory
 
-    java -jar plantuml.jar -tsvg -o ./out diagrams/*.puml
-
-## Using a packaged binary (Debian / Ubuntu)
-
-    sudo apt-get install plantuml
-    plantuml -tsvg diagrams/*.puml
-    plantuml -tpng diagrams/*.puml
+    JAR="$(python3 tooling/scripts/latex_build.py fetch-plantuml)"
+    java -Djava.awt.headless=true -jar "$JAR" -tsvg -failfast2 -o ./out diagrams/*.puml
 
 ## Notes
 
 - Output files are written next to each input `.puml` unless `-o` is specified.
 - The diagrams use only built-in PlantUML constructs and a small set of `skinparam` directives. No external themes or stylesheets are referenced.
-- Each `.puml` file passes a clean compile (no errors and no warnings) on PlantUML 1.2020.02.
+- Each `.puml` file passes a clean compile with the manifest-pinned engine.
 
 
 

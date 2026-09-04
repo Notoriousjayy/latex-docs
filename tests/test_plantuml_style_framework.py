@@ -66,6 +66,18 @@ class PlantUMLStyleFrameworkTests(unittest.TestCase):
             expected_family = example.name.split("-example")[0]
             self.assertIn(expected_family, include, f"{example.name} must include its own diagram-type module")
 
+    def test_render_workflow_dispatches_pages_after_bot_push(self) -> None:
+        """Prevent GITHUB_TOKEN image commits from leaving Pages on the pre-render revision."""
+        workflow = (plantuml_lint.ROOT / ".github/workflows/render-plantuml.yml").read_text(encoding="utf-8")
+        self.assertIn("actions: write", workflow)
+        self.assertIn("gh workflow run latex-pages.yml --ref main", workflow)
+
+    def test_framework_examples_compile_with_the_selected_engine(self) -> None:
+        """Prevent include-chain or inherited-procedure regressions from reaching committed images."""
+        if latex_build.check_plantuml_engine() is not None:
+            self.skipTest("manifest-pinned PlantUML is not selected in this environment")
+        with tempfile.TemporaryDirectory() as directory:
+            self.assertEqual(0, latex_build.smoke_plantuml(Path(directory)))
 
 if __name__ == "__main__":
     unittest.main()
