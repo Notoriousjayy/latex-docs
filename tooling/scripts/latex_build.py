@@ -784,6 +784,59 @@ def _prepare_build_input(tex_path: Path) -> tuple[Path, bool]:
     return wrapper_path, True
 
 
+PAGES_ACRONYMS = {
+    "ai": "AI", "api": "API", "c": "C", "ci": "CI", "cd": "CD", "cissp": "CISSP",
+    "cpp": "C++", "cpu": "CPU", "css": "CSS", "dna": "DNA", "dp": "DP", "fft": "FFT",
+    "gpu": "GPU", "html": "HTML", "http": "HTTP", "iec": "IEC", "ieee": "IEEE",
+    "io": "I/O", "iso": "ISO", "lcp": "LCP", "ml": "ML", "os": "OS", "pdf": "PDF",
+    "sql": "SQL", "tls": "TLS", "ui": "UI", "uml": "UML", "unix": "UNIX",
+    "url": "URL", "xml": "XML",
+}
+# Lowercased only in interior positions, so "Next Permutation of N Letters" reads naturally.
+PAGES_MINOR_WORDS = {"a", "an", "and", "as", "at", "by", "for", "from", "in", "into", "of", "on", "or", "the", "to", "with"}
+
+
+def _humanize_segment(segment: str) -> str:
+    """Turn a kebab-case directory or file segment into a human-readable label."""
+    words = [word for word in re.split(r"[-_\s]+", segment) if word]
+    if not words:
+        return segment
+    rendered = []
+    for index, word in enumerate(words):
+        lowered = word.casefold()
+        if lowered in PAGES_ACRONYMS:
+            rendered.append(PAGES_ACRONYMS[lowered])
+        elif index and lowered in PAGES_MINOR_WORDS:
+            rendered.append(lowered)
+        else:
+            rendered.append(word[:1].upper() + word[1:])
+    return " ".join(rendered)
+
+
+def _document_label(stem: str) -> str:
+    """Human-readable document name; the canonical path stays visible as secondary text."""
+    name = re.sub(r"-(?:cornell-)?notes$", "", stem)
+    chapter = re.match(r"^ch(\d+)[-_](.+)$", name, re.I)
+    if chapter:
+        return f"Chapter {int(chapter.group(1))}: {_humanize_segment(chapter.group(2))}"
+    annex = re.match(r"^annex-([a-z])[-_](.+)$", name, re.I)
+    if annex:
+        return f"Annex {annex.group(1).upper()}: {_humanize_segment(annex.group(2))}"
+    numbered = re.match(r"^(\d+(?:[-_]\d+)*)[-_](.+)$", name)
+    if numbered:
+        return f"{numbered.group(1).replace('_', '.').replace('-', '.')} {_humanize_segment(numbered.group(2))}"
+    return _humanize_segment(name) or stem
+
+
+def _natural_key(text: str) -> tuple:
+    """Order chapter and clause prefixes numerically rather than lexically."""
+    return tuple(
+        (0, int(part), "") if part.isdigit() else (1, 0, part)
+        for part in re.split(r"(\d+)", text.casefold())
+        if part
+    )
+
+
 def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = None) -> List[Path]:
     pdf_dir = pdf_dir.resolve()
     site_dir = site_dir.resolve()
@@ -859,6 +912,36 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = Non
                 f'<span class="document-path">{label}</span></a></li>'
             )
         handle.write("</ul>")
+
+    def _emit_tree_links(handle: Any, paths: list[Path]) -> None:
+        """Human label plus the canonical relative path, so identical basenames stay distinguishable."""
+        handle.write('<ul class="document-list">')
+        for rel_path in sorted(paths, key=lambda path: _natural_key(path.name)):
+            rel_posix = rel_path.as_posix()
+            name = html.escape(_document_label(rel_path.stem))
+            path_label = html.escape(rel_posix)
+            target = html.escape("pdfs/" + quote(rel_posix, safe="/:@-._~"), quote=True)
+            search_text = html.escape(f"{_document_label(rel_path.stem)} {rel_posix}".casefold(), quote=True)
+            handle.write(
+                f'<li class="document-row" data-search="{search_text}">'
+                f'<a href="{target}" title="Open {path_label}"><span class="document-name">{name}</span>'
+                f'<span class="document-path">{path_label}</span></a></li>'
+            )
+        handle.write("</ul>")
+
+    def _emit_directory_tree(handle: Any, paths: list[Path], depth: int, level: int) -> None:
+        """Render the hierarchy from each PDF's own directory path; no collection allowlist."""
+        here = [path for path in paths if len(path.parts) == depth + 1]
+        if here:
+            _emit_tree_links(handle, here)
+        groups: dict[str, list[Path]] = {}
+        for path in paths:
+            if len(path.parts) > depth + 1:
+                groups.setdefault(path.parts[depth], []).append(path)
+        for segment in sorted(groups, key=_natural_key):
+            anchor = "section-" + re.sub(r"[^a-z0-9]+", "-", "/".join(groups[segment][0].parts[: depth + 1]).casefold()).strip("-")
+            handle.write(_heading(min(level, 6), _humanize_segment(segment), anchor=anchor))
+            _emit_directory_tree(handle, groups[segment], depth + 1, level + 1)
 
     def _emit_raster_cards(handle: Any) -> None:
         if not raster_rel_paths:
@@ -965,36 +1048,7 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
 
         if cornell_paths:
             handle.write(_heading(3, "Cornell Notes", anchor="category-cornell-notes"))
-
-            cissp_paths = [path for path in cornell_paths if path.parts[:4] == ("cornell-notes", "security", "certifications", "cissp")]
-            if cissp_paths:
-                handle.write(_heading(4, "Security"))
-                handle.write(_heading(5, "CISSP"))
-                _emit_links(handle, cissp_paths, sort_by_chapter=True)
-
-            cpp_paths = [
-                path for path in cornell_paths
-                if path.parts[:5] == ("cornell-notes", "programming", "languages", "cpp", "cpp-2024")
-            ]
-            if cpp_paths:
-                handle.write(_heading(4, "Programming: C++ 2024"))
-                intro_paths = [path for path in cpp_paths if len(path.parts) >= 7 and path.parts[5] == "introduction"]
-                if intro_paths:
-                    handle.write(_heading(5, "Introduction"))
-                    _emit_links(handle, intro_paths)
-                clause_paths = [path for path in cpp_paths if len(path.parts) >= 7 and path.parts[5] == "clauses"]
-                if clause_paths:
-                    handle.write(_heading(5, "Clauses"))
-                    _emit_links(handle, clause_paths)
-                annex_paths = [path for path in cpp_paths if len(path.parts) >= 7 and path.parts[5] == "annexes"]
-                if annex_paths:
-                    handle.write(_heading(5, "Annexes"))
-                    _emit_links(handle, annex_paths)
-
-            other_cornell = [path for path in cornell_paths if path not in cissp_paths and path not in cpp_paths]
-            if other_cornell:
-                handle.write(_heading(4, "Other Cornell Notes"))
-                _emit_links(handle, other_cornell)
+            _emit_directory_tree(handle, cornell_paths, depth=1, level=4)
 
         if non_cornell_paths:
             handle.write(_heading(3, "Other PDFs", anchor="category-other-pdfs"))

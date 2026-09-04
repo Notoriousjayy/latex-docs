@@ -1,3 +1,4 @@
+import re
 import unittest
 import tempfile
 from pathlib import Path
@@ -5,11 +6,14 @@ from unittest.mock import patch
 
 import tooling.scripts.style_migration as sm
 from tooling.scripts.style_migration import (
+    CORNELL_PACKAGE_PATTERN,
     classify_latex_style,
     classify_plantuml_style,
     filename_policy_violations,
     find_unbalanced_setminted_lines,
     find_malformed_mintinline_lines,
+    is_cornell_document,
+    latex_usepackages,
     strip_latex_comments,
     _validate_naming,
     validate_repo,
@@ -123,10 +127,13 @@ class StyleMigrationTests(unittest.TestCase):
             self.assertTrue(path.exists(), msg=f"Missing canonical C Cornell file: {path}")
 
     def test_cornell_notes_documents_use_cornell_package(self) -> None:
+        """`\\usepackage[technical-reference]{cornell-notes}` is the same semantic package."""
         repo_root = Path(__file__).resolve().parents[1]
         for tex_path in self._all_cornell_roots(repo_root):
-            text = tex_path.read_text(encoding="utf-8", errors="ignore")
-            self.assertIn("\\usepackage{cornell-notes}", text, str(tex_path))
+            text = strip_latex_comments(tex_path.read_text(encoding="utf-8", errors="ignore"))
+            self.assertRegex(text, CORNELL_PACKAGE_PATTERN, str(tex_path))
+            semantic = [name for name in latex_usepackages(text) if name in sm.SEMANTIC_STYLE_PACKAGES]
+            self.assertEqual(["cornell-notes"], semantic, str(tex_path))
 
     def test_cornell_notes_documents_use_standard_title_contract(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
@@ -136,6 +143,15 @@ class StyleMigrationTests(unittest.TestCase):
             self.assertRegex(text, r"\\author\s*\{[^{}]*\}", str(tex_path))
             self.assertRegex(text, r"\\date\s*\{[^{}]*\}", str(tex_path))
             self.assertEqual(1, text.count("\\maketitle"), str(tex_path))
+
+    def test_cornell_validator_covers_every_collection_without_an_allowlist(self) -> None:
+        """A new Cornell collection must be validated without editing another path list."""
+        self.assertTrue(is_cornell_document("src/cornell-notes/a-brand-new-collection/topic/ch01-x-notes.tex"))
+        self.assertTrue(is_cornell_document("src/architecture/style-system/examples/cornell-notes-study-sheet.tex"))
+        self.assertFalse(is_cornell_document("src/programming/languages/c/notes.tex"))
+        source = (Path(__file__).resolve().parents[1] / "tooling/scripts/style_migration.py").read_text(encoding="utf-8")
+        self.assertNotIn("src/cornell-notes/mathematics/numerical-methods/", source)
+        self.assertEqual(1, source.count('print(f"invalid-cornell-import: {rel}")'))
 
     def test_cornell_notes_documents_avoid_legacy_title_page_calls(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
@@ -290,3 +306,97 @@ class StyleMigrationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StringAlgorithmsCollectionTests(unittest.TestCase):
+    """The string-algorithms collection was the last tree still on self-contained legacy formatting."""
+
+    COLLECTION = Path(__file__).resolve().parents[1] / "src/cornell-notes/computer-science/string-algorithms"
+    SUBCOLLECTIONS = ("computational-genomics", "exact-matching", "sequence-alignment", "suffix-structures")
+    LEGACY_TOKENS = (
+        "\\usepackage{geometry}",
+        "\\usepackage{fancyhdr}",
+        "\\usepackage[most]{tcolorbox}",
+        "\\definecolor{Primary}",
+        "\\definecolor{Accent}",
+        "\\newcolumntype{C}",
+        "\\newcolumntype{N}",
+        "\\newcommand{\\cnrow}",
+        "\\pagestyle{fancy}",
+        "\\begin{longtable}",
+        "\\begin{tcolorbox}",
+    )
+
+    def _documents(self) -> list[Path]:
+        return sorted(self.COLLECTION.rglob("*.tex"))
+
+    def test_collection_has_nineteen_documents_across_four_subcollections(self) -> None:
+        documents = self._documents()
+        self.assertEqual(19, len(documents))
+        for subcollection in self.SUBCOLLECTIONS:
+            self.assertTrue((self.COLLECTION / subcollection).is_dir(), subcollection)
+
+    def test_every_document_uses_the_shared_cornell_style(self) -> None:
+        for path in self._documents():
+            text = strip_latex_comments(path.read_text(encoding="utf-8"))
+            self.assertRegex(text, CORNELL_PACKAGE_PATTERN, str(path))
+            semantic = [name for name in latex_usepackages(text) if name in sm.SEMANTIC_STYLE_PACKAGES]
+            self.assertEqual(["cornell-notes"], semantic, str(path))
+
+    def test_every_document_satisfies_the_standard_title_contract(self) -> None:
+        for path in self._documents():
+            text = strip_latex_comments(path.read_text(encoding="utf-8"))
+            self.assertEqual(1, len(re.findall(r"\\documentclass", text)), str(path))
+            self.assertEqual(1, text.count("\\begin{document}"), str(path))
+            self.assertEqual(1, text.count("\\end{document}"), str(path))
+            self.assertEqual(1, text.count("\\maketitle"), str(path))
+            self.assertLess(text.index("\\begin{document}"), text.index("\\maketitle"), str(path))
+            self.assertRegex(text, r"\\title\s*\{[^{}]+\}", str(path))
+            self.assertRegex(text, r"\\author\s*\{[^{}]*\}", str(path))
+            self.assertRegex(text, r"\\date\s*\{[^{}]*\}", str(path))
+
+    def test_no_legacy_layout_survives(self) -> None:
+        """The local Cornell layout had to be removed, not aliased behind a \\cnrow shim."""
+        for path in self._documents():
+            text = strip_latex_comments(path.read_text(encoding="utf-8"))
+            for token in self.LEGACY_TOKENS:
+                self.assertNotIn(token, text, f"{path}: {token}")
+            self.assertNotIn("\\usepackage{style}", text, str(path))
+            self.assertNotIn("\\usepackage{base}", text, str(path))
+            self.assertNotIn("\\makecornelltitle", text, str(path))
+            self.assertNotIn("\\begin{titlepage}", text, str(path))
+            for token in sm.LISTINGS_TOKENS:
+                self.assertNotIn(token, text, f"{path}: {token}")
+
+    def test_documents_use_the_shared_semantic_apis(self) -> None:
+        for path in self._documents():
+            text = strip_latex_comments(path.read_text(encoding="utf-8"))
+            self.assertIn("\\begin{CornellNotesTable}", text, str(path))
+            self.assertIn("\\CornellNoteRow{", text, str(path))
+            self.assertIn("\\begin{CornellOverviewBox}", text, str(path))
+            self.assertIn("\\begin{CornellSummaryBox}", text, str(path))
+            self.assertIn("\\begin{CornellExamBox}", text, str(path))
+
+    def test_filenames_follow_the_cornell_chapter_convention(self) -> None:
+        for path in self._documents():
+            self.assertRegex(path.name, r"^ch\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*-notes\.tex$", str(path))
+            self.assertEqual([], filename_policy_violations(path), str(path))
+
+    def test_titles_and_pdf_metadata_agree(self) -> None:
+        for path in self._documents():
+            text = strip_latex_comments(path.read_text(encoding="utf-8"))
+            title = re.search(r"\\title\{(.+?)\}\n", text)
+            pdftitle = re.search(r"pdftitle=\{(.+?)\},pdfsubject", text)
+            self.assertIsNotNone(title, str(path))
+            self.assertIsNotNone(pdftitle, str(path))
+            self.assertEqual(title.group(1), pdftitle.group(1), str(path))
+            self.assertRegex(title.group(1), r"^Chapter \d+: \S", str(path))
+
+    def test_collection_metadata_is_consistent(self) -> None:
+        for path in self._documents():
+            text = strip_latex_comments(path.read_text(encoding="utf-8"))
+            self.assertIn("\\setCornellCollection{String Algorithms}", text, str(path))
+            self.assertIn("\\setCornellUnitType{Chapter}", text, str(path))
+            number = re.search(r"\\setCornellUnitNumber\{(\d+)\}", text)
+            self.assertIsNotNone(number, str(path))
+            self.assertEqual(int(number.group(1)), int(path.name[2:4]), str(path))

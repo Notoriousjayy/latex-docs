@@ -1,8 +1,11 @@
 import re
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from urllib.parse import unquote
 
+import tooling.scripts.latex_build as latex_build
 from tooling.scripts.latex_build import discover_roots, stage_pages_site
 from tooling.scripts.style_migration import strip_latex_comments
 
@@ -363,3 +366,152 @@ class CornellNumericalMethodsCollectionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PagesHierarchyTests(unittest.TestCase):
+    """The index hierarchy must come from each PDF's own path, not a collection allowlist."""
+
+    CORNELL = Path("cornell-notes")
+
+    def _stage(self, rel_paths, extra_files=()):
+        temp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, temp, ignore_errors=True)
+        pdf_dir, site_dir = temp / "pdfs", temp / "site"
+        for rel in rel_paths:
+            target = pdf_dir / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(b"%PDF-1.4\n")
+        for rel, payload in extra_files:
+            target = pdf_dir / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(payload, encoding="utf-8")
+        pdf_dir.mkdir(parents=True, exist_ok=True)
+        staged = stage_pages_site(pdf_dir, site_dir)
+        return staged, (site_dir / "index.html").read_text(encoding="utf-8"), pdf_dir, site_dir
+
+    @staticmethod
+    def _repo_collection(*parts) -> list[Path]:
+        repo_root = Path(__file__).resolve().parents[1]
+        root = repo_root.joinpath("src", "cornell-notes", *parts)
+        return [
+            Path("cornell-notes").joinpath(*parts, source.relative_to(root)).with_suffix(".pdf")
+            for source in sorted(root.rglob("*.tex"))
+        ]
+
+    def test_computer_science_collections_render_named_hierarchy(self) -> None:
+        rels = (
+            self._repo_collection("computer-science", "combinatorial-algorithms")
+            + self._repo_collection("computer-science", "computer-networks")
+            + self._repo_collection("computer-science", "operating-systems")
+        )
+        self.assertEqual(52, len(rels))
+        _, index, _, _ = self._stage(rels)
+        for label in ("Cornell Notes", "Computer Science", "Combinatorial Algorithms", "Computer Networks", "Operating Systems"):
+            self.assertIn(f">{label}</h", index)
+        for topic in ("Permutations", "Graph Algorithms", "Polynomial Algorithms", "Transport Layer", "Deadlocks", "Operating System Design"):
+            self.assertIn(f">{topic}</h", index)
+
+    def test_numerical_methods_and_string_algorithms_render_named_hierarchy(self) -> None:
+        numerical = self._repo_collection("mathematics", "numerical-methods")
+        strings = self._repo_collection("computer-science", "string-algorithms")
+        self.assertEqual(22, len(numerical))
+        self.assertEqual(19, len(strings))
+        _, index, _, _ = self._stage(numerical + strings)
+        for label in ("Mathematics", "Numerical Methods", "Linear Algebra", "Root Finding and Optimization", "String Algorithms"):
+            self.assertIn(f">{label}</h", index)
+        for topic in ("Computational Genomics", "Exact Matching", "Sequence Alignment", "Suffix Structures"):
+            self.assertIn(f">{topic}</h", index)
+
+    def test_no_fallback_grouping_for_structured_paths(self) -> None:
+        _, index, _, _ = self._stage(self._repo_collection("computer-science", "string-algorithms"))
+        self.assertNotIn("Other Cornell Notes", index)
+
+    def test_documents_are_named_naturally_and_ordered_numerically(self) -> None:
+        rels = [
+            self.CORNELL / "computer-science/combinatorial-algorithms/permutations/ch07-next-permutation-of-n-letters-notes.pdf",
+            self.CORNELL / "computer-science/combinatorial-algorithms/permutations/ch08-random-permutation-of-n-letters-notes.pdf",
+            self.CORNELL / "computer-science/combinatorial-algorithms/permutations/ch16-cycle-structure-of-a-permutation-notes.pdf",
+        ]
+        _, index, _, _ = self._stage(rels)
+        self.assertIn("Chapter 7: Next Permutation of N Letters", index)
+        self.assertIn("Chapter 16: Cycle Structure of a Permutation", index)
+        positions = [index.find(f"ch{n:02d}-") for n in (7, 8, 16)]
+        self.assertEqual(sorted(positions), positions)
+        self.assertNotIn(-1, positions)
+
+    def test_relative_links_resolve_to_staged_pdfs(self) -> None:
+        rels = self._repo_collection("computer-science", "string-algorithms")
+        staged, index, _, site_dir = self._stage(rels)
+        hrefs = re.findall(r'href="(pdfs/[^"]+)"', index)
+        self.assertEqual(len(rels), len(hrefs))
+        self.assertEqual(len(hrefs), len(set(hrefs)), "each document needs a unique link")
+        for href in hrefs:
+            self.assertTrue((site_dir / unquote(href)).is_file(), href)
+        self.assertEqual(set(rels), set(staged))
+
+    def test_identical_basenames_in_separate_collections_stay_distinct(self) -> None:
+        rels = [
+            self.CORNELL / "computer-science/computer-networks/foundations/ch01-introduction-cornell-notes.pdf",
+            self.CORNELL / "computer-science/operating-systems/foundations/ch01-introduction-cornell-notes.pdf",
+        ]
+        _, index, _, _ = self._stage(rels)
+        hrefs = re.findall(r'href="(pdfs/[^"]+)"', index)
+        self.assertEqual(2, len(set(hrefs)))
+        for rel in rels:
+            self.assertIn(rel.as_posix(), index)
+
+    def test_heading_ids_are_unique_and_stable(self) -> None:
+        rels = self._repo_collection("computer-science", "string-algorithms")
+        _, first, _, _ = self._stage(rels)
+        _, second, _, _ = self._stage(rels)
+        ids = re.findall(r'<h[2-6] id="([^"]+)"', first)
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertEqual(re.findall(r'<h[2-6] id="([^"]+)"', second), ids)
+
+    def test_output_is_deterministic(self) -> None:
+        rels = self._repo_collection("mathematics", "numerical-methods")
+        _, first, _, _ = self._stage(rels)
+        _, second, _, _ = self._stage(rels)
+        self.assertEqual(first, second)
+
+    def test_html_is_escaped(self) -> None:
+        rels = [self.CORNELL / 'weird <dir> & "quotes"' / "ch01-a-&-b-notes.pdf"]
+        _, index, _, _ = self._stage(rels)
+        self.assertNotIn("<dir>", index)
+        self.assertIn("&lt;dir&gt;", index)
+        self.assertIn("&amp;", index)
+
+    def test_non_pdf_files_are_ignored(self) -> None:
+        rels = self._repo_collection("computer-science", "string-algorithms")
+        staged, index, _, _ = self._stage(rels, extra_files=((Path("notes.txt"), "ignored"),))
+        self.assertEqual(len(rels), len(staged))
+        self.assertNotIn("notes.txt", index)
+
+    def test_empty_corpus_renders_without_documents(self) -> None:
+        staged, index, _, _ = self._stage([])
+        self.assertEqual([], staged)
+        self.assertIn("No PDFs are currently staged for publication.", index)
+        self.assertNotIn("Other Cornell Notes", index)
+
+    def test_no_upload_copy_suffixes_are_published(self) -> None:
+        _, index, _, _ = self._stage(self._repo_collection("computer-science", "string-algorithms"))
+        self.assertNotRegex(index, r"\(\d+\)\.pdf")
+        self.assertNotIn("-copy.pdf", index)
+
+
+class PagesHumanizationTests(unittest.TestCase):
+    def test_acronyms_and_minor_words(self) -> None:
+        self.assertEqual("Computer Science", latex_build._humanize_segment("computer-science"))
+        self.assertEqual("Root Finding and Optimization", latex_build._humanize_segment("root-finding-and-optimization"))
+        self.assertEqual("C++ 2024", latex_build._humanize_segment("cpp-2024"))
+        self.assertEqual("CISSP", latex_build._humanize_segment("cissp"))
+        self.assertEqual("ISO IEC IEEE 42010 2022", latex_build._humanize_segment("iso-iec-ieee-42010-2022"))
+
+    def test_document_labels(self) -> None:
+        self.assertEqual("Chapter 7: Next Permutation of N Letters", latex_build._document_label("ch07-next-permutation-of-n-letters-notes"))
+        self.assertEqual("Chapter 1: Introduction", latex_build._document_label("ch01-introduction-cornell-notes"))
+        self.assertEqual("Annex A: Scope", latex_build._document_label("annex-a-scope-notes"))
+
+    def test_natural_key_orders_numbers_numerically(self) -> None:
+        names = ["ch10-x", "ch2-x", "ch1-x"]
+        self.assertEqual(["ch1-x", "ch2-x", "ch10-x"], sorted(names, key=latex_build._natural_key))

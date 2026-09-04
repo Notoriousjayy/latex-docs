@@ -29,14 +29,38 @@ runs:
     # remaining cost is dpkg unpacking. For a further reduction, build the
     # pinned image in .github/docker/texlive and pass `container-image` to the
     # reusable workflow, which sets skip-install=true here.
+    - name: Prepare apt archive cache directory
+      if: ${{ inputs.skip-install != 'true' && inputs.cache-apt == 'true' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        # The cache action runs as the unprivileged runner user, so it can only
+        # extract into a directory it owns; /var/cache/apt/archives is root-owned.
+        mkdir -p "${{ github.workspace }}/.apt-archive-cache"
+
     - name: Restore apt archive cache
       if: ${{ inputs.skip-install != 'true' && inputs.cache-apt == 'true' }}
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
-        path: /var/cache/apt/archives/*.deb
-        key: apt-texlive-v2-${{ runner.os }}-${{ hashFiles('.github/actions/setup-latex/action.yml') }}
+        path: ${{ github.workspace }}/.apt-archive-cache
+        key: apt-texlive-v3-${{ runner.os }}-${{ hashFiles('.github/actions/setup-latex/action.yml') }}
         restore-keys: |
-          apt-texlive-v2-${{ runner.os }}-
+          apt-texlive-v3-${{ runner.os }}-
+
+    - name: Seed apt from the archive cache
+      if: ${{ inputs.skip-install != 'true' && inputs.cache-apt == 'true' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        cache_dir="${{ github.workspace }}/.apt-archive-cache"
+        [[ -d "$cache_dir" ]] || exit 0
+        count=$(find "$cache_dir" -maxdepth 1 -name '*.deb' -type f | wc -l)
+        echo "Seeding apt with $count cached .deb archive(s)"
+        if [[ "$count" -gt 0 ]]; then
+          sudo install -d -m 0755 /var/cache/apt/archives
+          find "$cache_dir" -maxdepth 1 -name '*.deb' -type f \
+            -exec sudo install -m 0644 -o root -g root -t /var/cache/apt/archives {} +
+        fi
 
     - name: Install TeX Live and Python dependencies
       if: ${{ inputs.skip-install != 'true' }}
@@ -67,6 +91,21 @@ runs:
           ghostscript \
           ${{ inputs.extra-packages }}
         echo "::endgroup::"
+
+    - name: Harvest apt archives into the cache directory
+      if: ${{ inputs.skip-install != 'true' && inputs.cache-apt == 'true' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        cache_dir="${{ github.workspace }}/.apt-archive-cache"
+        mkdir -p "$cache_dir"
+        # Copy out, then take ownership: the post-job cache save reads as the
+        # runner user, and the next restore must be able to overwrite these.
+        find /var/cache/apt/archives -maxdepth 1 -name '*.deb' -type f \
+          -exec sudo cp -f -t "$cache_dir" {} + || true
+        sudo chown -R "$(id -u):$(id -g)" "$cache_dir"
+        chmod -R u+rw "$cache_dir"
+        echo "Cached $(find "$cache_dir" -maxdepth 1 -name '*.deb' -type f | wc -l) .deb archive(s)"
 
     - name: Verify toolchain
       id: verify

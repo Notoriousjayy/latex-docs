@@ -60,6 +60,9 @@ PLANTUML_START_PATTERN = re.compile(
 PLANTUML_DIRECT_STYLE_PATTERN = re.compile(r"!include(?:_once)?\s+.*tooling/styles/plantuml/.+\.iuml")
 FORBIDDEN_PLANTUML_WRAPPER_FILES = {"appsec-style.puml"}
 CORNELL_NOTES_PATH_PATTERN = re.compile(r"src/cornell-notes/.+\.tex$")
+# Cornell roots outside the collection tree; the tree itself needs no allowlist.
+CORNELL_ROOTS_OUTSIDE_TREE = ("src/architecture/style-system/examples/cornell-notes-study-sheet.tex",)
+CORNELL_PACKAGE_PATTERN = re.compile(r"\\usepackage(?:\[[^\]]*\])?\{[^}]*\bcornell-notes\b[^}]*\}")
 
 SEMANTIC_STYLE_PACKAGES = {
     "business-admin",
@@ -80,6 +83,11 @@ MINTED_SHARED_HELPER_PATTERNS = (
     re.compile(r"\\newminted\[(?:yamlcode|bashcode|textcode)\]\{(?:yaml|bash|text)\}\{"),
     re.compile(r"\\newminted\{(?:yaml|bash|text)\}\{"),
 )
+
+
+def is_cornell_document(rel: str) -> bool:
+    """Every standalone root under src/cornell-notes/, so new collections need no allowlist."""
+    return bool(CORNELL_NOTES_PATH_PATTERN.search(rel)) or rel in CORNELL_ROOTS_OUTSIDE_TREE
 
 
 def classify_latex_style(path: Path) -> str:
@@ -362,20 +370,8 @@ def validate_repo() -> int:
             failures += 1
             print(f"forbidden-direct-style-import: {rel}")
 
-        is_cornell_root = (
-            rel.startswith("src/cornell-notes/electronics/electronic-circuits/")
-            or rel.startswith("src/cornell-notes/security/certifications/cissp/")
-            or rel.startswith("src/cornell-notes/mathematics/numerical-methods/")
-            or rel.startswith("src/cornell-notes/architecture/standards/iso-iec-ieee-42010-2022/")
-            or rel.startswith("src/cornell-notes/programming/languages/c/c-2024/")
-            or rel.startswith("src/cornell-notes/programming/languages/cpp/cpp-2024/")
-            or rel == "src/architecture/style-system/examples/cornell-notes-study-sheet.tex"
-        )
-        uses_cornell_notes = bool(re.search(r"\\usepackage(?:\[[^\]]*\])?\{[^}]*\bcornell-notes\b[^}]*\}", active_text))
-
-        if is_cornell_root and not uses_cornell_notes:
-            failures += 1
-            print(f"invalid-cornell-import: {rel}")
+        is_cornell_root = is_cornell_document(rel)
+        uses_cornell_notes = bool(CORNELL_PACKAGE_PATTERN.search(active_text))
 
         if is_cornell_root:
             if not uses_cornell_notes:

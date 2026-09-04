@@ -7,6 +7,7 @@ import fnmatch
 import json
 import re
 import shlex
+import yaml
 from io import StringIO
 from pathlib import Path
 from contextlib import redirect_stderr
@@ -955,10 +956,8 @@ class BuildToolTests(unittest.TestCase):
             latex_build.stage_pages_site(pdf_dir, site_dir)
 
             index_text = (site_dir / "index.html").read_text(encoding="utf-8")
-            self.assertIn("Programming: C++ 2024", index_text)
-            self.assertIn("Introduction", index_text)
-            self.assertIn("Clauses", index_text)
-            self.assertIn("Annexes", index_text)
+            for heading in ("Programming", "Languages", "C++ 2024", "Introduction", "Clauses", "Annexes"):
+                self.assertIn(f">{heading}</h", index_text)
             self.assertIn('href="pdfs/cornell-notes/programming/languages/cpp/cpp-2024/clauses/01-scope/01-scope-cornell-notes.pdf"', index_text)
             self.assertIn('href="pdfs/cornell-notes/programming/languages/cpp/cpp-2024/annexes/annex-a-01/annex-a-01-cornell-notes.pdf"', index_text)
 
@@ -1727,3 +1726,88 @@ class BuildToolTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CacheActionContractTests(unittest.TestCase):
+    """Node 20 deprecation and the apt-archive tar restore failure are workflow contracts."""
+
+    REPO_ROOT = Path(__file__).resolve().parents[1]
+    CACHE_MAJOR = "v6"
+    PRIVILEGED_APT_PATH = "/var/cache/apt"
+
+    def _executable_manifests(self) -> list[Path]:
+        return sorted(self.REPO_ROOT.glob(".github/workflows/*.yml")) + sorted(
+            self.REPO_ROOT.glob(".github/actions/*/action.yml")
+        )
+
+    def _cache_references(self) -> list[tuple[Path, str]]:
+        refs = []
+        for path in self._executable_manifests():
+            for match in re.finditer(r"uses:\s*(actions/cache(?:/restore|/save)?@\S+)", path.read_text(encoding="utf-8")):
+                refs.append((path, match.group(1)))
+        return refs
+
+    def test_no_node20_cache_actions_remain(self) -> None:
+        stale = [(path.name, ref) for path, ref in self._cache_references() if ref.endswith("@v4")]
+        self.assertEqual([], stale, "actions/cache@v4 runs on the deprecated Node 20 runtime")
+
+    def test_cache_restore_and_save_share_one_major(self) -> None:
+        majors = {ref.rsplit("@", 1)[1] for _, ref in self._cache_references()}
+        self.assertEqual({self.CACHE_MAJOR}, majors, "restore and save must not mix cache majors")
+
+    def test_cache_paths_are_user_writable(self) -> None:
+        """The runner user cannot extract a cache into a root-owned system directory."""
+        for path in self._executable_manifests():
+            workflow = yaml.safe_load(path.read_text(encoding="utf-8"))
+            for step in self._iter_steps(workflow):
+                uses = str(step.get("uses", ""))
+                if not uses.startswith("actions/cache"):
+                    continue
+                cache_path = str(step.get("with", {}).get("path", ""))
+                self.assertNotIn(
+                    self.PRIVILEGED_APT_PATH,
+                    cache_path,
+                    f"{path.name}: {self.PRIVILEGED_APT_PATH} is root-owned; cache into the workspace instead",
+                )
+                self.assertFalse(
+                    cache_path.strip().startswith("/var/") or cache_path.strip().startswith("/etc/"),
+                    f"{path.name}: cache path {cache_path!r} is outside the runner-owned workspace",
+                )
+
+    @staticmethod
+    def _iter_steps(document):
+        if not isinstance(document, dict):
+            return
+        for job in (document.get("jobs") or {}).values():
+            for step in (job or {}).get("steps", []) or []:
+                if isinstance(step, dict):
+                    yield step
+        runs = document.get("runs") or {}
+        for step in runs.get("steps", []) or []:
+            if isinstance(step, dict):
+                yield step
+
+    def test_apt_cache_key_namespace_matches_the_new_layout(self) -> None:
+        """A directory-shaped cache must not be restored from the old glob-shaped key."""
+        action = (self.REPO_ROOT / ".github/actions/setup-latex/action.yml").read_text(encoding="utf-8")
+        self.assertIn("apt-texlive-v3-", action)
+        self.assertNotIn("apt-texlive-v2-", action)
+        self.assertNotIn("/var/cache/apt/archives/*.deb", action)
+
+    def test_apt_cache_seeds_and_harvests_without_suppressing_failures(self) -> None:
+        action = (self.REPO_ROOT / ".github/actions/setup-latex/action.yml").read_text(encoding="utf-8")
+        self.assertIn("Seed apt from the archive cache", action)
+        self.assertIn("Harvest apt archives into the cache directory", action)
+        self.assertNotIn("continue-on-error", action)
+        self.assertNotIn("2>/dev/null", action.replace('sudo ln -sf "$(which pygmentize)" /usr/bin/pygmentize 2>/dev/null', ""))
+        self.assertNotIn("chmod -R 777", action)
+
+    def test_node24_override_is_still_required(self) -> None:
+        """actions/deploy-pages@v4 (and upload-artifact@v4 inside upload-pages-artifact@v3) are still Node 20."""
+        pages = (self.REPO_ROOT / ".github/workflows/latex-pages.yml").read_text(encoding="utf-8")
+        self.assertIn("FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true", pages)
+        self.assertIn("actions/deploy-pages@v4", pages)
+
+    def test_all_executable_manifests_parse(self) -> None:
+        for path in self._executable_manifests():
+            self.assertIsInstance(yaml.safe_load(path.read_text(encoding="utf-8")), dict, str(path))
