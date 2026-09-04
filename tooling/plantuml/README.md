@@ -486,13 +486,18 @@ the last several years and produces no diagnostic output.
 
 ### Upgrading PlantUML
 
-PlantUML is pinned in the render action and passed explicitly by both
-workflow callers. To upgrade it, bump the version, perform a full
-re-render, review the image diff, and commit the regenerated images.
-The Ubuntu runner's Graphviz and Java packages remain intentionally
-unpinned because the pinned PlantUML jar is the output-defining
-component and those packages are runtime dependencies supplied by the
-runner distribution.
+The engine is pinned once, in `tooling/manifests/plantuml.json` (version,
+release URL template and jar sha256). `latex_build.py fetch-plantuml`
+downloads and verifies that jar (CI and `make render-plantuml` both use
+it), and `render-plantuml` refuses any other binary rather than falling
+back to a distribution package (the Debian/Ubuntu `plantuml` package is
+1.2020.02, which predates `!unquoted procedure` and renders every
+framework diagram as a syntax-error image). To upgrade: bump the
+manifest (version + sha256), run `make render-plantuml` (the manifest
+is a render input, so every diagram is regenerated), review the image
+diff, and commit. The runner's Graphviz and Java apt packages remain
+unpinned: the jar is the output-defining component and those are
+runtime dependencies supplied by the runner distribution.
 
 DECISION: framework values win. `tooling/plantuml/config.puml` and any
 `plantuml-config.puml` found next to diagrams may only set what the

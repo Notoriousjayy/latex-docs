@@ -102,7 +102,7 @@ build-changed:
 
 .PHONY: render-plantuml
 render-plantuml:
-	@$(BUILD) render-plantuml
+	@PLANTUML_JAR="$${PLANTUML_JAR:-$$($(BUILD) fetch-plantuml)}" $(BUILD) render-plantuml $(RENDER_ARGS)
 
 .PHONY: publish
 publish:

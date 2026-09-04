@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -62,8 +63,35 @@ def check() -> list[str]:
                 problems.append(f"{path.relative_to(ROOT)}:{number}: deprecated skinparam")
 
     action = (ROOT / ".github" / "actions" / "render-plantuml" / "action.yml").read_text(encoding="utf-8")
-    if re.search(r"default:\s*['\"]latest['\"]", action):
-        problems.append("render-plantuml action must not default PlantUML to latest")
+    if re.search(r"default:\s*['\"]latest['\"]", action) or "releases/latest" in action:
+        problems.append("render-plantuml action must not resolve PlantUML to latest")
+
+    manifest = ROOT / "tooling" / "manifests" / "plantuml.json"
+    try:
+        pin = json.loads(manifest.read_text(encoding="utf-8"))
+        version = str(pin.get("version", ""))
+        if not re.fullmatch(r"1\.\d{4}\.\d+", version):
+            problems.append(f"{manifest.relative_to(ROOT)}: version {version!r} is not a PlantUML release")
+        if not re.fullmatch(r"[0-9a-f]{64}", str(pin.get("sha256", ""))):
+            problems.append(f"{manifest.relative_to(ROOT)}: sha256 must be a 64-hex digest")
+    except (OSError, ValueError) as exc:
+        problems.append(f"{manifest.relative_to(ROOT)}: unreadable pin ({exc})")
+        version = ""
+    for workflow in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
+        for number, line in enumerate(workflow.read_text(encoding="utf-8").splitlines(), 1):
+            match = re.search(r"plantuml-version:\s*['\"]?v?([^'\"\s]+)", line)
+            if match and match.group(1) != version:
+                problems.append(f"{workflow.relative_to(ROOT)}:{number}: plantuml-version {match.group(1)} differs from the manifest pin {version}")
+
+    include_dirs = [ROOT / "tooling" / "plantuml", ROOT / "tooling" / "styles" / "plantuml"]
+    for example in sorted((ROOT / "tooling" / "plantuml").glob("*-example.puml")):
+        text = example.read_text(encoding="utf-8", errors="replace")
+        if not re.search(r"^@startuml", text, re.M):
+            problems.append(f"{example.relative_to(ROOT)}: missing @startuml")
+        for number, line in enumerate(text.splitlines(), 1):
+            match = re.match(r"^!include\s+(\S+)", line)
+            if match and not any((base / match.group(1)).is_file() for base in [example.parent, *include_dirs]):
+                problems.append(f"{example.relative_to(ROOT)}:{number}: include {match.group(1)} does not resolve on PLANTUML_INCLUDE_PATH")
     return problems
 
 

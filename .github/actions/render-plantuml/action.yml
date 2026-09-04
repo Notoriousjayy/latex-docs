@@ -24,9 +24,9 @@ inputs:
     required: false
     default: 'plantuml-config.puml config.puml'
   plantuml-version:
-    description: 'Pinned PlantUML version to install (e.g., 1.2026.7)'
+    description: 'Must match tooling/manifests/plantuml.json; the manifest is the single pin (leave empty)'
     required: false
-    default: '1.2026.7'
+    default: ''
 
 outputs:
   diagram-count:
@@ -61,28 +61,23 @@ runs:
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends \
           ca-certificates \
-          curl \
-          jq \
           graphviz \
           default-jre-headless
         if [[ "${{ inputs.generate-jpg }}" == "true" ]]; then
           sudo apt-get install -y --no-install-recommends imagemagick
         fi
-        PLANTUML_VERSION="${{ inputs.plantuml-version }}"
-        if [[ -z "$PLANTUML_VERSION" || "$PLANTUML_VERSION" == "latest" ]]; then
-          echo "::error::PlantUML version must be an explicit pinned release"
+        sudo rm -rf /var/lib/apt/lists/*
+        PINNED="$(python3 -c 'import json; print(json.load(open("tooling/manifests/plantuml.json"))["version"])')"
+        REQUESTED="${{ inputs.plantuml-version }}"
+        if [[ -n "$REQUESTED" && "${REQUESTED#v}" != "$PINNED" ]]; then
+          echo "::error::plantuml-version '$REQUESTED' does not match the pinned $PINNED in tooling/manifests/plantuml.json; bump the manifest instead"
           exit 1
         fi
-        [[ "$PLANTUML_VERSION" =~ ^v ]] || PLANTUML_VERSION="v${PLANTUML_VERSION}"
-        JAR_VERSION="${PLANTUML_VERSION#v}"
-        JAR_URL="https://github.com/plantuml/plantuml/releases/download/${PLANTUML_VERSION}/plantuml-${JAR_VERSION}.jar"
-        sudo mkdir -p /usr/local/lib/plantuml
-        sudo curl -fsSL -L "$JAR_URL" -o /usr/local/lib/plantuml/plantuml.jar
-        printf '%s\n' '#!/usr/bin/env bash' 'set -euo pipefail' 'exec java -Djava.awt.headless=true -jar /usr/local/lib/plantuml/plantuml.jar "$@"' | sudo tee /usr/local/bin/plantuml >/dev/null
-        sudo chmod +x /usr/local/bin/plantuml
-          sudo rm -rf /var/lib/apt/lists/*
+        # Same download + sha256 check that `make render-plantuml` uses locally.
+        PLANTUML_JAR="$(python3 tooling/scripts/latex_build.py fetch-plantuml --dest "$RUNNER_TEMP/plantuml-$PINNED.jar")"
+        echo "PLANTUML_JAR=$PLANTUML_JAR" >> "$GITHUB_ENV"
         echo "::endgroup::"
-          plantuml -version 2>&1 | head -5
+        java -Djava.awt.headless=true -jar "$PLANTUML_JAR" -version 2>&1 | head -3
     - name: Render PlantUML diagrams
       id: render
       shell: bash

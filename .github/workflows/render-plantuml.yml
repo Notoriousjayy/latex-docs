@@ -36,6 +36,9 @@ env:
 
 jobs:
   render:
+    # workflow_dispatch can be started from any ref; only main may be rendered
+    # and pushed back onto main.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -52,31 +55,23 @@ jobs:
         with:
           source-dir: 'src'
           formats: 'png svg'
-          plantuml-version: '1.2026.7'
           generate-jpg: ${{ inputs.generate-jpg && 'true' || 'false' }}
           fail-on-error: 'true'
 
-      - name: Verify rendered PlantUML examples
+      - name: Verify framework examples with the pinned engine
         shell: bash
-        run: |
-          set -euo pipefail
-          # A newer PlantUML that deprecates another skinparam draws a banner
-          # without failing, so the rendered text is inspected, not the exit code.
-          export PLANTUML_INCLUDE_PATH="${GITHUB_WORKSPACE}/tooling/plantuml:${GITHUB_WORKSPACE}/tooling/styles/plantuml"
-          out="$(mktemp -d)"
-          plantuml -tsvg -failfast2 -o "$out" tooling/plantuml/*-example.puml
-          perl -CS -pi -e 's/\x{A0}/ /g' "$out"/*.svg
-          if grep -n -i -E 'Syntax Error|Please use CSS style' "$out"/*.svg; then
-            echo '::error::PlantUML example output contains an error or warning'
-            exit 1
-          fi
+        # Uses PLANTUML_JAR exported by the action; fails on exit status, missing
+        # outputs, or error/deprecation text drawn into the SVG (NBSP-normalised).
+        run: python3 tooling/scripts/latex_build.py smoke-plantuml --output-dir "$RUNNER_TEMP/plantuml-smoke"
 
       - name: Commit rendered images
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A 'src/**/png/*.png' 'src/**/svg/*.svg' 'src/**/jpg/*.jpg'
+          # Stages only src/**/{png,svg,jpg}/*.{png,svg,jpg} (adds, edits, deletions)
+          # from concrete paths, so an absent optional format cannot abort the add.
+          python3 tooling/scripts/latex_build.py stage-plantuml-images
           if git diff --cached --quiet; then
             echo 'No diagram changes to commit'
             exit 0
@@ -84,4 +79,4 @@ jobs:
           # The resulting push re-triggers latex-pages.yml, whose dependency
           # analysis rebuilds exactly the documents consuming these diagrams.
           git commit -m 'chore(diagrams): render PlantUML images'
-          git push origin HEAD:main
+          git push origin HEAD:refs/heads/main

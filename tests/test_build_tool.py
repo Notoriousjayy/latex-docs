@@ -1121,12 +1121,16 @@ class BuildToolTests(unittest.TestCase):
             diagram.write_text("@startuml\nA -> B\n@enduml\n", encoding="utf-8")
 
             with patch("tooling.scripts.latex_build.subprocess.run") as run_mock:
+                pin = latex_build.load_plantuml_pin()["version"]
                 run_mock.return_value.returncode = 0
+                # The renderer now probes `plantuml -version` before rendering.
+                run_mock.return_value.stdout = f"PlantUML version {pin} (test)"
+                run_mock.return_value.stderr = ""
                 status = latex_build.render_plantuml(source_dir=src, formats=["png", "jpg"], force=True)
 
             self.assertEqual(0, status)
-            self.assertTrue(any(call.args[0][:2] == ["plantuml", "-tpng"] for call in run_mock.call_args_list))
-            self.assertTrue(any(call.args[0][:2] == ["plantuml", "-tjpg"] for call in run_mock.call_args_list))
+            self.assertTrue(any(call.args[0][:3] == ["plantuml", "-failfast2", "-tpng"] for call in run_mock.call_args_list))
+            self.assertTrue(any(call.args[0][:3] == ["plantuml", "-failfast2", "-tjpg"] for call in run_mock.call_args_list))
 
     def test_discover_roots_includes_all_canonical_cornell_documents(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
