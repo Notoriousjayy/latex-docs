@@ -17,7 +17,7 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, List, Sequence, Set
+from typing import Any, Iterable, List, Sequence, Set
 from urllib.parse import quote
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -1994,6 +1994,18 @@ def _plantuml_is_current(
         return False
 
 
+def unmanaged_diagram_images(source_dirs: Iterable[Path]) -> list[Path]:
+    """Image files sitting beside a .puml instead of in its png/svg/jpg directory."""
+    found: list[Path] = []
+    for directory in source_dirs:
+        if not directory.is_dir():
+            continue
+        for candidate in directory.iterdir():
+            if candidate.is_file() and candidate.suffix.lower().lstrip(".") in PLANTUML_FORMATS:
+                found.append(candidate)
+    return found
+
+
 def render_plantuml(
     source_dir: Path | None = None,
     formats: Sequence[str] | None = None,
@@ -2038,6 +2050,7 @@ def render_plantuml(
     # a directory, so one absolute -o per batch keeps outputs beside sources.
     batches: dict[tuple[Path, str, str], list[str]] = {}
     expected_outputs: dict[Path, set[Path]] = {}
+    source_dirs: set[Path] = set()
     diagram_count = 0
     skipped = 0
     invalid_names: list[Path] = []
@@ -2053,6 +2066,7 @@ def render_plantuml(
             continue
 
         diagram_count += 1
+        source_dirs.add(path.parent)
         if any(
             match.group(1)
             and (match.group(1) in {".", ".."} or "/" in match.group(1) or "\\" in match.group(1))
@@ -2128,9 +2142,21 @@ def render_plantuml(
     for orphan in orphans:
         print(f"PlantUML: stale output without a source: {orphan.relative_to(ROOT) if orphan.is_relative_to(ROOT) else orphan}", file=sys.stderr)
 
+    # Every render writes into <source>/png|svg|jpg, so an image sitting directly
+    # beside a .puml came from an earlier flat-output run: it is never refreshed,
+    # revalidated or overwritten here and will keep serving whatever it last held.
+    unmanaged = sorted(unmanaged_diagram_images(source_dirs))
+    for stale in unmanaged:
+        print(
+            f"PlantUML: image outside a managed output directory: "
+            f"{stale.relative_to(ROOT) if stale.is_relative_to(ROOT) else stale}",
+            file=sys.stderr,
+        )
+
     print(
         f"PlantUML: {diagram_count} diagrams, {rendered} rendered, {skipped} already current, "
-        f"{len(batches)} JVM invocations, {failures} failed batches, {len(orphans)} stale outputs",
+        f"{len(batches)} JVM invocations, {failures} failed batches, {len(orphans)} stale outputs, "
+        f"{len(unmanaged)} unmanaged images",
         file=sys.stderr,
     )
     return 1 if failures else 0

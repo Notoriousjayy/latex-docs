@@ -14,6 +14,83 @@ DEPRECATED = re.compile(r"^\s*skinparam\s+(padding|ParticipantPadding|handwritte
 DIRECTIVE_SPACING = re.compile(r"^\s*!(?:unquoted|final)(?:[^ ]| {2,})")
 GUARD_START = re.compile(r"^!ifndef ([A-Z0-9_]+_INCLUDED)$")
 GUARD_DEFINE = re.compile(r"^!define ([A-Z0-9_]+_INCLUDED)$")
+INCLUDE = re.compile(r"^\s*!include(?:sub|url)?\s+(\S+)", re.M)
+MANAGED_FORMATS = ("png", "svg", "jpg", "jpeg")
+# The one hierarchy every diagram inherits through; see tooling/plantuml/README.md.
+CANONICAL_PARENT = {
+    "uml-structural.iuml": "uml-base.iuml",
+    "uml-behavioral.iuml": "uml-base.iuml",
+    "uml-interaction.iuml": "uml-behavioral.iuml",
+}
+CATEGORY_PARENT = {
+    "structural": "uml-structural.iuml",
+    "behavioral": "uml-behavioral.iuml",
+    "interaction": "uml-interaction.iuml",
+}
+
+
+def _includes(path: Path) -> list[str]:
+    return INCLUDE.findall(path.read_text(encoding="utf-8", errors="replace"))
+
+
+def check_include_contract() -> list[str]:
+    """The include hierarchy is the framework: a broken link silently drops every style."""
+    problems: list[str] = []
+    base_dir = ROOT / "tooling" / "plantuml"
+    style_dir = ROOT / "tooling" / "styles" / "plantuml"
+
+    for name, parent in CANONICAL_PARENT.items():
+        module = base_dir / name
+        if not module.is_file():
+            problems.append(f"tooling/plantuml/{name}: canonical module is missing")
+            continue
+        if parent not in [Path(target).name for target in _includes(module)]:
+            problems.append(f"tooling/plantuml/{name}: must include {parent}")
+
+    if (base_dir / "uml-base.iuml").is_file() and _includes(base_dir / "uml-base.iuml"):
+        problems.append("tooling/plantuml/uml-base.iuml: the base module must not include another module")
+
+    # A module reachable only under a misspelling would resolve to nothing at render time.
+    for stray in sorted(ROOT.rglob("*.iml")):
+        if ".git" not in stray.parts:
+            problems.append(f"{stray.relative_to(ROOT)}: style modules must use the .iuml extension")
+    for duplicate in sorted(ROOT.rglob("uml-*.iuml")):
+        if ".git" in duplicate.parts:
+            continue
+        if duplicate.name in CANONICAL_PARENT or duplicate.name == "uml-base.iuml":
+            if duplicate.parent != base_dir:
+                problems.append(f"{duplicate.relative_to(ROOT)}: shadows the canonical module in tooling/plantuml")
+
+    for category, parent in CATEGORY_PARENT.items():
+        for module in sorted((style_dir / category).glob("*.iuml")) if (style_dir / category).is_dir() else []:
+            if parent not in [Path(target).name for target in _includes(module)]:
+                problems.append(f"{module.relative_to(ROOT)}: must include {parent}")
+
+    for source in sorted(ROOT.joinpath("src").rglob("*.puml")):
+        text = source.read_text(encoding="utf-8", errors="replace")
+        if not re.search(r"^@startuml", text, re.M):
+            continue
+        targets = INCLUDE.findall(text)
+        if not targets:
+            problems.append(f"{source.relative_to(ROOT)}: renderable diagram has no active !include")
+            continue
+        for target in targets:
+            if not any((base / target).is_file() for base in (source.parent, base_dir, style_dir)):
+                problems.append(f"{source.relative_to(ROOT)}: include {target} does not resolve")
+    return problems
+
+
+def check_managed_outputs() -> list[str]:
+    """Renders only ever land in <source>/png|svg|jpg; anything else is never refreshed."""
+    problems: list[str] = []
+    for directory in sorted({source.parent for source in ROOT.joinpath("src").rglob("*.puml")}):
+        for candidate in sorted(directory.iterdir()):
+            if candidate.is_file() and candidate.suffix.lower().lstrip(".") in MANAGED_FORMATS:
+                problems.append(
+                    f"{candidate.relative_to(ROOT)}: generated image must live in "
+                    f"{directory.name}/{candidate.suffix.lstrip('.').lower()}/"
+                )
+    return problems
 
 
 def _module_files() -> list[Path]:
@@ -92,6 +169,9 @@ def check() -> list[str]:
             match = re.match(r"^!include\s+(\S+)", line)
             if match and not any((base / match.group(1)).is_file() for base in [example.parent, *include_dirs]):
                 problems.append(f"{example.relative_to(ROOT)}:{number}: include {match.group(1)} does not resolve on PLANTUML_INCLUDE_PATH")
+
+    problems.extend(check_include_contract())
+    problems.extend(check_managed_outputs())
     return problems
 
 

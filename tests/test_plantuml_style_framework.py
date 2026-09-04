@@ -1,9 +1,13 @@
 """Regression tests for the PlantUML style framework contract."""
 
 import os
+import re
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+
+import yaml
 
 import tooling.scripts.latex_build as latex_build
 from tooling.scripts import plantuml_lint
@@ -78,6 +82,160 @@ class PlantUMLStyleFrameworkTests(unittest.TestCase):
             self.skipTest("manifest-pinned PlantUML is not selected in this environment")
         with tempfile.TemporaryDirectory() as directory:
             self.assertEqual(0, latex_build.smoke_plantuml(Path(directory)))
+
+
+class PlantUMLIncludeContractTests(unittest.TestCase):
+    """The include hierarchy is the framework; these tests must never pass by removing an include."""
+
+    ROOT = plantuml_lint.ROOT
+    BASE_DIR = plantuml_lint.ROOT / "tooling" / "plantuml"
+    STYLE_DIR = plantuml_lint.ROOT / "tooling" / "styles" / "plantuml"
+
+    def test_canonical_hierarchy_is_intact(self) -> None:
+        """uml-base <- {structural, behavioral} <- interaction must stay exactly as declared."""
+        for module, parent in (
+            ("uml-structural.iuml", "uml-base.iuml"),
+            ("uml-behavioral.iuml", "uml-base.iuml"),
+            ("uml-interaction.iuml", "uml-behavioral.iuml"),
+        ):
+            path = self.BASE_DIR / module
+            self.assertTrue(path.is_file(), f"{module} is missing")
+            names = [Path(target).name for target in plantuml_lint._includes(path)]
+            self.assertIn(parent, names, f"{module} must include {parent}")
+        self.assertEqual([], plantuml_lint._includes(self.BASE_DIR / "uml-base.iuml"))
+
+    def test_interaction_inherits_base_transitively_through_behavioral(self) -> None:
+        """Interaction styles must reach uml-base only via uml-behavioral, never by a direct shortcut."""
+        interaction = self.BASE_DIR / "uml-interaction.iuml"
+        names = [Path(target).name for target in plantuml_lint._includes(interaction)]
+        self.assertIn("uml-behavioral.iuml", names)
+        self.assertNotIn("uml-base.iuml", names)
+        behavioral = [Path(t).name for t in plantuml_lint._includes(self.BASE_DIR / "uml-behavioral.iuml")]
+        self.assertIn("uml-base.iuml", behavioral)
+
+    def test_every_leaf_style_includes_its_category_parent(self) -> None:
+        """A leaf pointing at the wrong category silently drops that family's styling."""
+        for category, parent in plantuml_lint.CATEGORY_PARENT.items():
+            modules = sorted((self.STYLE_DIR / category).glob("*.iuml"))
+            self.assertTrue(modules, f"no leaf modules found for {category}")
+            for module in modules:
+                names = [Path(target).name for target in plantuml_lint._includes(module)]
+                self.assertIn(parent, names, f"{module.relative_to(self.ROOT)} must include {parent}")
+
+    def test_every_renderable_diagram_retains_an_active_include(self) -> None:
+        """A diagram that lost its !include renders unstyled instead of failing loudly."""
+        for source in sorted(self.ROOT.joinpath("src").rglob("*.puml")):
+            text = source.read_text(encoding="utf-8", errors="replace")
+            if not re.search(r"^@startuml", text, re.M):
+                continue
+            targets = plantuml_lint.INCLUDE.findall(text)
+            self.assertTrue(targets, f"{source.relative_to(self.ROOT)} has no active !include")
+            for target in targets:
+                self.assertTrue(
+                    any((base / target).is_file() for base in (source.parent, self.BASE_DIR, self.STYLE_DIR)),
+                    f"{source.relative_to(self.ROOT)}: include {target} does not resolve",
+                )
+
+    def test_misspelled_and_shadowing_modules_are_rejected(self) -> None:
+        """`.iml`, `interation` and a second copy of a canonical module all resolve to nothing at render time."""
+        self.assertEqual([], [p for p in self.ROOT.rglob("*.iml") if ".git" not in p.parts])
+        canonical = {"uml-base.iuml", *plantuml_lint.CANONICAL_PARENT}
+        for duplicate in self.ROOT.rglob("uml-*.iuml"):
+            if ".git" in duplicate.parts or duplicate.name not in canonical:
+                continue
+            self.assertEqual(self.BASE_DIR, duplicate.parent, f"{duplicate} shadows a canonical module")
+        self.assertEqual([], [p for p in self.ROOT.rglob("*interation*") if ".git" not in p.parts])
+
+    def test_lint_rejects_a_removed_include(self) -> None:
+        """Guard the guard: the contract check must fail when a category link is deleted."""
+        module = self.BASE_DIR / "uml-interaction.iuml"
+        original = module.read_text(encoding="utf-8")
+        stripped = "\n".join(
+            line for line in original.splitlines() if not re.match(r"^\s*!include\s", line)
+        )
+        try:
+            module.write_text(stripped + "\n", encoding="utf-8")
+            problems = plantuml_lint.check_include_contract()
+        finally:
+            module.write_text(original, encoding="utf-8")
+        self.assertTrue(
+            any("uml-interaction.iuml" in problem and "uml-behavioral.iuml" in problem for problem in problems),
+            "removing an include must be reported, never tolerated",
+        )
+
+
+class PlantUMLManagedOutputTests(unittest.TestCase):
+    """Renders only ever land in <source>/png|svg|jpg; images elsewhere are never refreshed."""
+
+    def test_no_generated_image_sits_beside_a_source(self) -> None:
+        """255 syntax-error PNGs from PlantUML 1.2020.02 survived every fix by living outside png/."""
+        self.assertEqual([], plantuml_lint.check_managed_outputs())
+
+    def test_unmanaged_images_are_detected(self) -> None:
+        """The renderer must report a flat image instead of silently leaving it in place."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "diagram.puml").write_text("@startuml\n@enduml\n", encoding="ascii")
+            (root / "png").mkdir()
+            (root / "png" / "diagram.png").write_bytes(b"managed")
+            stale = root / "diagram.png"
+            stale.write_bytes(b"stale")
+            found = latex_build.unmanaged_diagram_images([root])
+            self.assertEqual([stale], found)
+
+    def test_render_workflow_triggers_on_every_rendering_input(self) -> None:
+        """A renderer or manifest change that never re-renders leaves stale images published."""
+        workflow = yaml.safe_load(
+            (plantuml_lint.ROOT / ".github/workflows/render-plantuml.yml").read_text(encoding="utf-8")
+        )
+        paths = workflow[True]["push"]["paths"]
+        for required in (
+            "src/**/*.puml",
+            "tooling/plantuml/**",
+            "tooling/styles/plantuml/**",
+            "tooling/manifests/plantuml.json",
+            "tooling/scripts/latex_build.py",
+            ".github/workflows/render-plantuml.yml",
+        ):
+            self.assertIn(required, paths)
+
+
+class PlantUMLIncludeChainRenderTests(unittest.TestCase):
+    """Every UML family must compile through its real include chain, macros included."""
+
+    PROBES = {
+        "base": ("uml-base.iuml", "class A\nUML_NOTE_INFO(n1, A, base)\n"),
+        "structural": ("structural/deployment-diagram-style.iuml", "node S\nUML_NOTE_INFO(n1, S, structural)\n"),
+        "behavioral": ("behavioral/activity-diagram-style.iuml", "start\n:work;\nstop\n"),
+        "interaction": ("interaction/sequence-diagram-style.iuml", "participant C\nparticipant S\nC -> S : go\nUML_NOTE_INFO(n1, S, interaction)\n"),
+    }
+
+    def test_each_inheritance_level_compiles_through_its_includes(self) -> None:
+        if latex_build.check_plantuml_engine() is not None:
+            self.skipTest("manifest-pinned PlantUML is not selected in this environment")
+        env = os.environ.copy()
+        env["PLANTUML_INCLUDE_PATH"] = ":".join(
+            str(path) for path in latex_build.PLANTUML_INCLUDE_DIRS if path.exists()
+        )
+        prefix = latex_build.plantuml_command_prefix(env)
+        with tempfile.TemporaryDirectory() as directory:
+            work = Path(directory)
+            for name, (include, body) in self.PROBES.items():
+                (work / f"probe-{name}.puml").write_text(
+                    f"@startuml probe-{name}\n!include {include}\n{body}@enduml\n", encoding="ascii"
+                )
+            out = work / "out"
+            out.mkdir()
+            result = subprocess.run(
+                [*prefix, "-failfast2", "-tsvg", "-o", str(out), *(f"probe-{n}.puml" for n in self.PROBES)],
+                cwd=str(work), env=env, capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(0, result.returncode, result.stderr)
+            for name in self.PROBES:
+                svg = out / f"probe-{name}.svg"
+                self.assertTrue(svg.is_file(), f"{name} probe produced no SVG")
+                self.assertIsNone(latex_build.svg_error_text(svg), f"{name} probe rendered an error image")
+
 
 if __name__ == "__main__":
     unittest.main()
