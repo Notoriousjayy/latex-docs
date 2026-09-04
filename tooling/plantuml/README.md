@@ -494,12 +494,14 @@ unpinned because the pinned PlantUML jar is the output-defining
 component and those packages are runtime dependencies supplied by the
 runner distribution.
 
-<DECISION: framework values win | config.puml values win>
-
-The selected decision is **framework values win**. Configuration files
-retain only settings the framework cannot express, such as `dpi`.
-Diagram-specific semantic colour overrides remain local and are a
-follow-up inventory rather than part of this migration.
+DECISION: framework values win. `tooling/plantuml/config.puml` and any
+`plantuml-config.puml` found next to diagrams may only set what the
+framework cannot express (currently `dpi`); anything `uml-base.iuml`
+owns (background, shadowing, roundCorner, padding, default/title/caption
+fonts, Arrow*, Note*, Legend*, Stereotype*) must not appear in a config
+file or in a diagram. Diagram-specific semantic colours (for example
+`skinparam cloud { ... }`) stay local and are tracked as a follow-up
+inventory, not re-themed.
 
 ---
 

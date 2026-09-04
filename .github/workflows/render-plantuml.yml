@@ -60,11 +60,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for source in tooling/plantuml/*-example.puml; do
-            plantuml -tsvg -failfast2 -o /tmp "$source"
-          done
-          if rg -n -i 'Syntax Error|Please use CSS style' /tmp/*-example.svg; then
-            echo 'PlantUML example output contains an error or warning'
+          # A newer PlantUML that deprecates another skinparam draws a banner
+          # without failing, so the rendered text is inspected, not the exit code.
+          export PLANTUML_INCLUDE_PATH="${GITHUB_WORKSPACE}/tooling/plantuml:${GITHUB_WORKSPACE}/tooling/styles/plantuml"
+          out="$(mktemp -d)"
+          plantuml -tsvg -failfast2 -o "$out" tooling/plantuml/*-example.puml
+          perl -CS -pi -e 's/\x{A0}/ /g' "$out"/*.svg
+          if grep -n -i -E 'Syntax Error|Please use CSS style' "$out"/*.svg; then
+            echo '::error::PlantUML example output contains an error or warning'
             exit 1
           fi
 
@@ -73,7 +76,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A 'src/**/png/*.png' 'src/**/svg/*.svg' 'src/**/jpg/*.jpg' 2>/dev/null || true
+          git add -A 'src/**/png/*.png' 'src/**/svg/*.svg' 'src/**/jpg/*.jpg'
           if git diff --cached --quiet; then
             echo 'No diagram changes to commit'
             exit 0

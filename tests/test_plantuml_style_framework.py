@@ -37,6 +37,7 @@ class PlantUMLStyleFrameworkTests(unittest.TestCase):
         """Prevent upstream PlantUML releases from silently changing output."""
         action = (plantuml_lint.ROOT / ".github/actions/render-plantuml/action.yml").read_text(encoding="utf-8")
         self.assertNotIn("default: 'latest'", action)
+        self.assertNotIn("releases/latest", action)
 
 
 if __name__ == "__main__":

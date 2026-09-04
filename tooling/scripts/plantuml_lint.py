@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 MODULE_ROOTS = (ROOT / "tooling" / "plantuml", ROOT / "tooling" / "styles" / "plantuml")
 DEPRECATED = re.compile(r"^\s*skinparam\s+(padding|ParticipantPadding|handwritten)\b", re.I)
-DIRECTIVE_SPACING = re.compile(r"^\s*!(?:unquoted|final)\s{2,}")
+DIRECTIVE_SPACING = re.compile(r"^\s*!(?:unquoted|final)(?:[^ ]| {2,})")
 GUARD_START = re.compile(r"^!ifndef ([A-Z0-9_]+_INCLUDED)$")
 GUARD_DEFINE = re.compile(r"^!define ([A-Z0-9_]+_INCLUDED)$")
 
