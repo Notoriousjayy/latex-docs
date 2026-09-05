@@ -43,7 +43,8 @@ Addresses critical infrastructure cybersecurity, smart cities, autonomous vehicl
 
 ### Single Document Build
 ```bash
-latexmk -xelatex -interaction=nonstopmode src/cornell-notes/security/cybersecurity-reference/foundations-and-core-defense/ch01-*.tex
+latexmk -pdf -shell-escape -interaction=nonstopmode -halt-on-error -file-line-error \
+   src/cornell-notes/security/cybersecurity-reference/foundations-and-core-defense/ch01-*.tex
 ```
 
 ### Batch Compilation
@@ -54,10 +55,10 @@ make list-roots # Show filtered root discovery
 ```
 
 ### Build Infrastructure
-- **Engine**: xelatex with latexmk
+- **Engine**: PDFLaTeX with latexmk
 - **LaTeX Package**: `cornell-notes` (shared, source-anonymous)
-- **Output**: `public/pdfs/security/cybersecurity-reference/<topical-group>/<filename>.pdf`
-- **Logs**: `public/logs/security/cybersecurity-reference/<topical-group>/<filename>.{log.txt,stdout.txt,stderr.txt}`
+- **Output**: `public/pdfs/cornell-notes/security/cybersecurity-reference/<topical-group>/<filename>.pdf`
+- **Logs**: `public/logs/cornell-notes/security/cybersecurity-reference/<topical-group>/<filename>.{log.txt,stdout.txt,stderr.txt}`
 
 ## Canonical Filenames
 
@@ -69,7 +70,7 @@ Each document follows the canonical naming convention:
   - All lowercase, no version/upload suffixes
 
 ### Filename Examples
-- `ch01-information-security-i-cornell-notes.tex` (Information Security in the Modern Enterprise)
+- `ch01-information-security-modern-cornell-notes.tex` (Information Security in the Modern Enterprise)
 - `ch16-local-area-network-security-cornell-notes.tex` (Local Area Network Security, included)
 - `ch104-future-trends-in-mar-cornell-notes.tex` (Future Trends in Maritime Cybersecurity)
 
@@ -80,7 +81,7 @@ Each transformed document:
 2. **Metadata Contract**: Standard `\setCornellCollection`, `\setCornellUnitType`, `\setCornellUnitNumber`, etc.
 3. **Content Sections**:
    - Learning Objectives (itemized)
-   - Cornell Cue-and-Notes (longtables with `\CornellNoteRow` entries)
+   - Cornell Cue-and-Notes (`CornellNotesTable` with `\CornellNoteRow` entries)
    - Topic Summaries in canonical box environments
    - Threat-and-Control Tables (industry-standard format)
    - Self-Test Questions and Answers
@@ -110,7 +111,7 @@ The migration transformed each source document from a legacy standalone preamble
    - `takeawaybox` → `CornellExamBox{One-Sentence Takeaway}`
 
 4. **Table Structures**
-   - `\CornellRow` → `\CornellNoteRow` (preserving table structure and content)
+   - Raw cue `longtable` blocks → `CornellNotesTable` (preserving every row and note)
    - Removed local macro definitions to rely on package-level implementation
 
 5. **Metadata Contract**
@@ -160,6 +161,10 @@ Comprehensive tests in `tests/test_cybersecurity_reference_collection.py` valida
 Run tests:
 ```bash
 python3 -m unittest tests/test_cybersecurity_reference_collection.py -v
+python3 -m unittest tests/test_style_migration.py -v
+python3 tooling/scripts/style_migration.py --validate
+git diff --check
+make list-roots
 ```
 
 ## Known Chapters

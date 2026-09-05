@@ -1,481 +1,139 @@
-#!/usr/bin/env python3
-"""
-Comprehensive test suite for the Cybersecurity Reference Notes collection.
+"""Regression contract for the cybersecurity Cornell-notes collection."""
 
-Validates:
-- Manifest completeness and structure
-- File existence and organization
-- Filename compliance (kebab-case, max 50 chars, no suffixes)
-- LaTeX structure and transformations
-- Content preservation (sections and structure)
-- Style compliance (cornell-notes only, no listings)
-"""
-
-import unittest
 import json
 import re
+import unittest
 from pathlib import Path
-from typing import List, Dict, Tuple, Set
+
+from tooling.scripts.latex_build import discover_roots
+from tooling.scripts.style_migration import filename_policy_violations
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+COLLECTION = REPO_ROOT / "src/cornell-notes/security/cybersecurity-reference"
+MANIFEST_PATH = REPO_ROOT / "tooling/manifests/cybersecurity-reference-intake.json"
+GROUP_RANGES = {
+    "foundations-and-core-defense": range(1, 11),
+    "platform-network-and-iot": range(11, 24),
+    "governance-risk-and-resilience": range(24, 41),
+    "forensics-and-incident-response": range(41, 47),
+    "cryptography-identity-and-privacy": range(47, 59),
+    "network-cloud-and-virtualization": range(59, 71),
+    "physical-operational-and-assurance": range(71, 84),
+    "critical-infrastructure-and-emerging-threats": range(84, 105),
+}
+REQUIRED_SECTIONS = (
+    "Learning Objectives",
+    "Cornell Cue-and-Notes",
+    "Threat-and-Control Map",
+    "Practical Security Checklist",
+    "Self-Test Questions",
+    "Answer Key",
+    "Key-Term Recap",
+)
+CALLOUT_LABELS = (
+    "Chapter Orientation",
+    "Topic Summary",
+    "Defensive Guidance",
+    "Historical Context",
+    "Chapter Synthesis",
+    "One-Sentence Takeaway",
+)
+
+
+def chapter_number(path: Path) -> int:
+    return int(re.match(r"ch(\d+)-", path.name).group(1))
 
 
 class CybersecurityReferenceCollectionTest(unittest.TestCase):
-    """Test suite for cybersecurity-reference collection migration."""
-    
-    REPO_ROOT = Path("/home/jordan/latex-docs")
-    COLLECTION_ROOT = REPO_ROOT / "src" / "cornell-notes" / "security" / "cybersecurity-reference"
-    MANIFEST_PATH = REPO_ROOT / "tooling" / "manifests" / "cybersecurity-reference-intake.json"
-    
-    TOPICAL_GROUPS = {
-        "foundations-and-core-defense": (1, 10),
-        "platform-network-and-iot": (11, 23),
-        "governance-risk-and-resilience": (24, 40),
-        "forensics-and-incident-response": (41, 46),
-        "cryptography-identity-and-privacy": (47, 58),
-        "network-cloud-and-virtualization": (59, 70),
-        "physical-operational-and-assurance": (71, 83),
-        "critical-infrastructure-and-emerging-threats": (84, 104),
-    }
-    
     @classmethod
     def setUpClass(cls):
-        """Load manifest and verify collection structure exists."""
-        assert cls.COLLECTION_ROOT.exists(), f"Collection root not found: {cls.COLLECTION_ROOT}"
-        assert cls.MANIFEST_PATH.exists(), f"Manifest not found: {cls.MANIFEST_PATH}"
-        
-        with open(cls.MANIFEST_PATH) as f:
-            cls.manifest = json.load(f)
-        
-        cls.metadata = cls.manifest["metadata"]
-        cls.chapters = cls.manifest["chapters"]
-    
-    # ========== Manifest Tests ==========
-    
-    def test_manifest_structure(self):
-        """Manifest has required top-level keys."""
-        self.assertIn("metadata", self.manifest)
-        self.assertIn("chapters", self.manifest)
-        self.assertIsInstance(self.chapters, list)
-    
-    def test_manifest_metadata_completeness(self):
-        """Manifest metadata contains all required fields."""
-        required_fields = {
-            "collection_name": str,
-            "chapter_count": int,
-            "chapter_range": str,
-            "intake_date": str,
-            "missing_chapters": list,
-        }
-        for field, field_type in required_fields.items():
-            self.assertIn(field, self.metadata, f"Missing metadata field: {field}")
-            self.assertIsInstance(self.metadata[field], field_type, 
-                                f"Field {field} has wrong type")
-    
-    def test_manifest_chapter_count(self):
-        """Manifest contains exactly 104 chapters."""
-        self.assertEqual(self.metadata["chapter_count"], 104,
-                        "Should have exactly 104 chapters")
-        self.assertEqual(len(self.chapters), 104,
-                        "Chapters array should have 104 entries")
-    
-    def test_manifest_no_missing_chapters(self):
-        """No chapters are reported as missing."""
-        missing = self.metadata["missing_chapters"]
-        self.assertEqual(len(missing), 0, 
-                        f"Should have no missing chapters, found: {missing}")
-    
-    def test_manifest_chapter_range(self):
-        """Chapter range is 001-104."""
-        self.assertEqual(self.metadata["chapter_range"], "001-104")
-    
-    def test_manifest_chapters_are_sorted(self):
-        """Chapters are sorted by chapter_number."""
-        chapter_numbers = [ch["chapter_number"] for ch in self.chapters]
-        self.assertEqual(chapter_numbers, sorted(chapter_numbers),
-                        "Chapters should be sorted by chapter_number")
-    
-    def test_manifest_chapter_entry_structure(self):
-        """Each chapter entry has required fields."""
-        required_fields = {
-            "original_filename": str,
-            "canonical_filename": str,
-            "topical_group": str,
-            "chapter_number": int,
-            "title": str,
-        }
-        for chapter in self.chapters:
-            for field, field_type in required_fields.items():
-                self.assertIn(field, chapter, 
-                            f"Chapter {chapter.get('chapter_number')} missing {field}")
-                self.assertIsInstance(chapter[field], field_type,
-                                    f"Field {field} has wrong type in chapter {chapter.get('chapter_number')}")
-    
-    # ========== File Existence Tests ==========
-    
-    def test_all_canonical_files_exist(self):
-        """All 104 canonical files exist in destination."""
-        missing_files = []
-        for chapter in self.chapters:
-            topical_group = chapter["topical_group"]
-            canonical_name = chapter["canonical_filename"]
-            file_path = self.COLLECTION_ROOT / topical_group / canonical_name
-            
-            if not file_path.exists():
-                missing_files.append(str(file_path))
-        
-        self.assertEqual(len(missing_files), 0,
-                        f"Missing files:\n" + "\n".join(missing_files))
-    
-    def test_exactly_104_files_in_collection(self):
-        """Exactly 104 .tex files exist in collection."""
-        all_files = list(self.COLLECTION_ROOT.glob("**/*.tex"))
-        self.assertEqual(len(all_files), 104,
-                        f"Found {len(all_files)} files, expected 104")
-    
-    def test_files_in_correct_topical_groups(self):
-        """Each file is in its correct topical group directory."""
-        for chapter in self.chapters:
-            chapter_num = chapter["chapter_number"]
-            topical_group = chapter["topical_group"]
-            canonical_name = chapter["canonical_filename"]
-            file_path = self.COLLECTION_ROOT / topical_group / canonical_name
-            
-            self.assertTrue(file_path.exists(),
-                          f"Ch{chapter_num:03d} not found at {file_path}")
-            
-            # Verify topical group mapping is correct
-            expected_group = self._get_expected_topical_group(chapter_num)
-            self.assertEqual(topical_group, expected_group,
-                           f"Ch{chapter_num:03d} in wrong group: {topical_group} vs {expected_group}")
-    
-    def _get_expected_topical_group(self, chapter_num: int) -> str:
-        """Determine expected topical group for chapter."""
-        for group, (start, end) in self.TOPICAL_GROUPS.items():
-            if start <= chapter_num <= end:
-                return group
-        raise ValueError(f"Chapter {chapter_num} out of range")
-    
-    # ========== Filename Compliance Tests ==========
-    
-    def test_canonical_filenames_are_lowercase(self):
-        """All canonical filenames are lowercase."""
-        for chapter in self.chapters:
-            canonical = chapter["canonical_filename"]
-            self.assertEqual(canonical, canonical.lower(),
-                           f"Filename not lowercase: {canonical}")
-    
-    def test_canonical_filenames_are_kebab_case(self):
-        """Canonical filenames use kebab-case (hyphens, alphanumeric)."""
-        kebab_pattern = re.compile(r'^ch\d{2,3}-[a-z0-9-]+-cornell-notes\.tex$')
-        for chapter in self.chapters:
-            canonical = chapter["canonical_filename"]
-            self.assertIsNotNone(kebab_pattern.match(canonical),
-                               f"Filename not kebab-case: {canonical}")
-    
-    def test_canonical_filenames_max_50_chars(self):
-        """All canonical filenames are <= 50 characters."""
-        violations = []
-        for chapter in self.chapters:
-            canonical = chapter["canonical_filename"]
-            if len(canonical) > 50:
-                violations.append(f"{canonical} ({len(canonical)} chars)")
-        
-        self.assertEqual(len(violations), 0,
-                        f"Filenames exceed 50 chars:\n" + "\n".join(violations))
-    
-    def test_canonical_filenames_no_upload_suffixes(self):
-        """Filenames don't contain upload version suffixes."""
-        upload_patterns = [
-            r'-v\d+',
-            r'-upload\d*',
-            r'-backup',
-            r'-old',
-            r'-legacy',
-        ]
-        for chapter in self.chapters:
-            canonical = chapter["canonical_filename"]
-            for pattern in upload_patterns:
-                self.assertIsNone(re.search(pattern, canonical),
-                                f"Filename has upload suffix: {canonical}")
-    
-    def test_canonical_filenames_match_chapter_number(self):
-        """Canonical filename's chapter number matches entry."""
-        for chapter in self.chapters:
-            canonical = chapter["canonical_filename"]
-            chapter_num = chapter["chapter_number"]
-            
-            # Extract chapter number from filename (ch01, ch02, etc.)
-            match = re.match(r'ch(\d+)-', canonical)
-            self.assertIsNotNone(match, f"Cannot extract chapter from {canonical}")
-            
-            filename_ch = int(match.group(1))
-            self.assertEqual(filename_ch, chapter_num,
-                           f"Filename chapter {filename_ch} doesn't match entry {chapter_num}")
-    
-    def test_no_root_level_cornell_notes_files_remain(self):
-        """No [0-9][0-9][0-9]-*-cornell-notes.tex files at root."""
-        root_files = list(self.REPO_ROOT.glob("[0-9][0-9][0-9]-*-cornell-notes.tex"))
-        self.assertEqual(len(root_files), 0,
-                        f"Root-level files still present: {[f.name for f in root_files]}")
-    
-    # ========== LaTeX Structure Tests ==========
-    
-    def test_every_file_loads_cornell_notes(self):
-        """Every file has \\usepackage{cornell-notes}."""
-        violations = []
-        for chapter in self.chapters:
-            topical_group = chapter["topical_group"]
-            canonical_name = chapter["canonical_filename"]
-            file_path = self.COLLECTION_ROOT / topical_group / canonical_name
-            
-            content = file_path.read_text(encoding='utf-8')
-            if r'\usepackage{cornell-notes}' not in content:
-                violations.append(f"Ch{chapter['chapter_number']:03d}: missing \\usepackage{{cornell-notes}}")
-        
-        self.assertEqual(len(violations), 0,
-                        "\n".join(violations))
-    
-    def test_no_listings_package_present(self):
-        """No file uses \\usepackage{listings} (forbidden, use minted)."""
-        violations = []
-        for chapter in self.chapters:
-            topical_group = chapter["topical_group"]
-            canonical_name = chapter["canonical_filename"]
-            file_path = self.COLLECTION_ROOT / topical_group / canonical_name
-            
-            content = file_path.read_text(encoding='utf-8')
-            if r'\usepackage{listings}' in content:
-                violations.append(f"Ch{chapter['chapter_number']:03d}: still has \\usepackage{{listings}}")
-        
-        self.assertEqual(len(violations), 0,
-                        "\n".join(violations))
-    
-    def test_required_metadata_setters_present(self):
-        """Every file has required \\set* metadata commands."""
-        required_setters = [
-            r'\setDocTitle',
-            r'\setDocSubtitle',
-            r'\setCornellCollection',
-            r'\setCornellUnitType',
-            r'\setCornellUnitNumber',
-            r'\setCornellUnitTitle',
-            r'\setCornellCompanionLabel',
-        ]
-        
-        violations = []
-        for chapter in self.chapters:
-            topical_group = chapter["topical_group"]
-            canonical_name = chapter["canonical_filename"]
-            file_path = self.COLLECTION_ROOT / topical_group / canonical_name
-            
-            content = file_path.read_text(encoding='utf-8')
-            for setter in required_setters:
-                if setter not in content:
-                    violations.append(f"Ch{chapter['chapter_number']:03d}: missing {setter}")
-        
-        self.assertEqual(len(violations), 0,
-                        "\n".join(violations[:10]))  # Show first 10
-    
-    def test_exactly_one_maketitle_per_file(self):
-        """Every file has exactly one \\maketitle."""
-        violations = []
-        for chapter in self.chapters:
-            topical_group = chapter["topical_group"]
-            canonical_name = chapter["canonical_filename"]
-            file_path = self.COLLECTION_ROOT / topical_group / canonical_name
-            
-            content = file_path.read_text(encoding='utf-8')
-            count = content.count(r'\maketitle')
-            if count != 1:
-                violations.append(f"Ch{chapter['chapter_number']:03d}: {count} \\maketitle instances")
-        
-        self.assertEqual(len(violations), 0,
-                        "\n".join(violations))
-    
-    # ========== Content Preservation Tests ==========
-    
-    def test_learning_objectives_present(self):
-        """Every file contains a Learning Objectives section."""
-        violations = []
-        for chapter in self.chapters:
-            topical_group = chapter["topical_group"]
-            canonical_name = chapter["canonical_filename"]
-            file_path = self.COLLECTION_ROOT / topical_group / canonical_name
-            
-            content = file_path.read_text(encoding='utf-8')
-            if r'Learning Objectives' not in content and r'learning objectives' not in content.lower():
-                violations.append(f"Ch{chapter['chapter_number']:03d}: missing Learning Objectives")
-        
-        self.assertEqual(len(violations), 0,
-                        f"Missing Learning Objectives ({len(violations)}/104)")
-    
-    def test_cornell_table_structures_present(self):
-        """Every file contains Cornell note-taking tables."""
-        violations = []
-        for chapter in self.chapters:
-            topical_group = chapter["topical_group"]
-            canonical_name = chapter["canonical_filename"]
-            file_path = self.COLLECTION_ROOT / topical_group / canonical_name
-            
-            content = file_path.read_text(encoding='utf-8')
-            # Look for longtable with CornellNoteRow (converted from CornellRow)
-            if r'longtable' not in content and r'\CornellNoteRow' not in content:
-                violations.append(f"Ch{chapter['chapter_number']:03d}: no Cornell table structures")
-        
-        # Allow some tolerance - not all files may have tables
-        self.assertLess(len(violations), 104 // 4,  # At most 25% should be missing tables
-                       f"Too many files missing table structures ({len(violations)}/104)")
-    
-    def test_summary_sections_present(self):
-        """Files contain summary/synthesis box environments."""
-        violations = []
-        for chapter in self.chapters:
-            topical_group = chapter["topical_group"]
-            canonical_name = chapter["canonical_filename"]
-            file_path = self.COLLECTION_ROOT / topical_group / canonical_name
-            
-            content = file_path.read_text(encoding='utf-8')
-            # Look for converted box environments
-            has_box = (r'\begin{CornellSummaryBox}' in content or
-                      r'\begin{CornellOverviewBox}' in content or
-                      r'\begin{CornellWarningBox}' in content or
-                      r'\begin{CornellExamBox}' in content)
-            
-            if not has_box:
-                violations.append(f"Ch{chapter['chapter_number']:03d}: no summary/box sections")
-        
-        # Most files should have boxes
-        self.assertLess(len(violations), 104 // 4,
-                       f"Too many files missing box environments ({len(violations)}/104)")
-    
-    def test_no_old_box_environments_remain(self):
-        """Old box environment names have been removed."""
-        old_envs = [
-            r'\begin{orientationbox}',
-            r'\begin{topicsummary}',
-            r'\begin{defensebox}',
-            r'\begin{historybox}',
-            r'\begin{synthesisbox}',
-            r'\begin{takeawaybox}',
-        ]
-        
-        violations = []
-        for chapter in self.chapters:
-            topical_group = chapter["topical_group"]
-            canonical_name = chapter["canonical_filename"]
-            file_path = self.COLLECTION_ROOT / topical_group / canonical_name
-            
-            content = file_path.read_text(encoding='utf-8')
-            for old_env in old_envs:
-                if old_env in content:
-                    violations.append(f"Ch{chapter['chapter_number']:03d}: still has {old_env}")
-        
-        self.assertEqual(len(violations), 0,
-                        f"Old box environments not removed:\n" + "\n".join(violations[:10]))
-    
-    def test_no_old_color_definitions_remain(self):
-        """Old color definitions have been removed."""
-        old_colors = [
-            'definecolor{Navy}',
-            'definecolor{Teal}',
-            'definecolor{CueGray}',
-            'definecolor{SoftBlue}',
-            'definecolor{SoftGreen}',
-            'definecolor{SoftAmber}',
-            'definecolor{RuleGray}',
-            'definecolor{TextGray}',
-        ]
-        
-        violations = []
-        for chapter in self.chapters:
-            topical_group = chapter["topical_group"]
-            canonical_name = chapter["canonical_filename"]
-            file_path = self.COLLECTION_ROOT / topical_group / canonical_name
-            
-            content = file_path.read_text(encoding='utf-8')
-            for color in old_colors:
-                if color in content:
-                    violations.append(f"Ch{chapter['chapter_number']:03d}: still defines {color}")
-        
-        self.assertEqual(len(violations), 0,
-                        f"Old color definitions not removed:\n" + "\n".join(violations[:10]))
-    
-    # ========== Collection Mapping Tests ==========
-    
-    def test_all_104_chapters_mapped_in_manifest(self):
-        """Manifest contains mapping for all chapters 1-104."""
-        chapter_numbers = sorted({ch["chapter_number"] for ch in self.chapters})
-        expected = list(range(1, 105))
-        self.assertEqual(chapter_numbers, expected,
-                        f"Missing chapters in manifest: {set(expected) - set(chapter_numbers)}")
-    
-    def test_chapter_16_present_in_platform_group(self):
-        """Chapter 16 (LAN Security) is present and in platform-network-and-iot."""
-        ch16 = next((ch for ch in self.chapters if ch["chapter_number"] == 16), None)
-        self.assertIsNotNone(ch16, "Chapter 16 missing from manifest")
-        self.assertEqual(ch16["topical_group"], "platform-network-and-iot",
-                        "Chapter 16 in wrong topical group")
-        
-        # Verify file exists
-        file_path = self.COLLECTION_ROOT / ch16["topical_group"] / ch16["canonical_filename"]
-        self.assertTrue(file_path.exists(),
-                       f"Chapter 16 file not found: {file_path}")
-    
-    def test_each_topical_group_has_expected_chapters(self):
-        """Each topical group contains its expected chapter range."""
-        for group_name, (start, end) in self.TOPICAL_GROUPS.items():
-            group_chapters = [ch["chapter_number"] for ch in self.chapters 
-                             if ch["topical_group"] == group_name]
-            group_chapters_sorted = sorted(group_chapters)
-            expected_range = list(range(start, end + 1))
-            
-            self.assertEqual(group_chapters_sorted, expected_range,
-                           f"Group {group_name} has wrong chapters: {group_chapters_sorted} vs {expected_range}")
+        cls.manifest = json.loads(MANIFEST_PATH.read_text())
+        cls.entries = cls.manifest["chapters"]
+        cls.tex_files = sorted(COLLECTION.rglob("*.tex"))
 
+    def test_manifest_and_filesystem_agree_exactly(self):
+        manifest_paths = {(e["topical_group"], e["canonical_filename"]) for e in self.entries}
+        filesystem_paths = {(p.parent.name, p.name) for p in self.tex_files}
+        self.assertEqual(manifest_paths, filesystem_paths)
+        self.assertEqual({chapter_number(p) for p in self.tex_files}, set(range(1, 105)))
+        self.assertEqual(len(self.tex_files), 104)
 
-class CybersecurityReferenceStyleValidationTest(unittest.TestCase):
-    """Style validation tests for transformed documents."""
-    
-    REPO_ROOT = Path("/home/jordan/latex-docs")
-    COLLECTION_ROOT = REPO_ROOT / "src" / "cornell-notes" / "security" / "cybersecurity-reference"
-    MANIFEST_PATH = REPO_ROOT / "tooling" / "manifests" / "cybersecurity-reference-intake.json"
-    
-    @classmethod
-    def setUpClass(cls):
-        """Load manifest."""
-        with open(cls.MANIFEST_PATH) as f:
-            manifest = json.load(f)
-        cls.chapters = manifest["chapters"]
-    
-    def test_documentclass_is_article(self):
-        """Every file uses \\documentclass{article}."""
-        violations = []
-        for chapter in self.chapters:
-            topical_group = chapter["topical_group"]
-            canonical_name = chapter["canonical_filename"]
-            file_path = self.COLLECTION_ROOT / topical_group / canonical_name
-            
-            content = file_path.read_text(encoding='utf-8')
-            if r'\documentclass' not in content or 'article' not in content.split(r'\documentclass')[1].split('\n')[0]:
-                violations.append(f"Ch{chapter['chapter_number']:03d}: wrong documentclass")
-        
-        self.assertEqual(len(violations), 0,
-                        "\n".join(violations))
-    
-    def test_no_fancy_header_styling(self):
-        """No \\thispagestyle{fancy} or fancy header setup remains."""
-        violations = []
-        for chapter in self.chapters:
-            topical_group = chapter["topical_group"]
-            canonical_name = chapter["canonical_filename"]
-            file_path = self.COLLECTION_ROOT / topical_group / canonical_name
-            
-            content = file_path.read_text(encoding='utf-8')
-            if r'\thispagestyle{fancy}' in content:
-                violations.append(f"Ch{chapter['chapter_number']:03d}: still has \\thispagestyle{{fancy}}")
-        
-        self.assertEqual(len(violations), 0,
-                        "\n".join(violations))
+    def test_manifest_entries_resolve_once_and_no_orphans_exist(self):
+        for entry in self.entries:
+            expected = COLLECTION / entry["topical_group"] / entry["canonical_filename"]
+            self.assertEqual(list(expected.parent.glob(expected.name)), [expected])
+
+    def test_all_topical_groups_have_exact_ranges(self):
+        self.assertEqual(set(GROUP_RANGES), {p.name for p in COLLECTION.iterdir() if p.is_dir()})
+        for group, expected in GROUP_RANGES.items():
+            actual = {chapter_number(p) for p in (COLLECTION / group).glob("*.tex")}
+            self.assertEqual(actual, set(expected), group)
+
+    def test_filenames_follow_real_repository_policy(self):
+        for path in self.tex_files:
+            self.assertEqual(filename_policy_violations(path), [], path)
+            self.assertRegex(path.name, r"^ch\d{2,3}-[a-z0-9]+(?:-[a-z0-9]+)*-cornell-notes\.tex$")
+            self.assertNotIn("--", path.name)
+            self.assertNotRegex(path.name, r"-(?:i|orga|authent|and)-cornell-notes")
+
+    def test_every_root_is_discovered_and_staged_paths_are_unique(self):
+        roots = {p.relative_to(REPO_ROOT / "src") for p in discover_roots(REPO_ROOT / "src")}
+        expected = {p.relative_to(REPO_ROOT / "src") for p in self.tex_files}
+        self.assertTrue(expected <= roots)
+        staged = {
+            (Path("cornell-notes") / p.relative_to(REPO_ROOT / "src/cornell-notes")).with_suffix(".pdf")
+            for p in self.tex_files
+        }
+        self.assertEqual(len(staged), 104)
+        self.assertTrue(all(p.parts[:3] == ("cornell-notes", "security", "cybersecurity-reference") for p in staged))
+
+    def test_every_document_is_a_standalone_public_cornell_root(self):
+        for path in self.tex_files:
+            text = path.read_text()
+            self.assertRegex(text, r"(?m)^\\documentclass\[11pt,letterpaper\]\{article\}")
+            self.assertEqual(len(re.findall(r"\\usepackage(?:\[[^]]*\])?\{cornell-notes\}", text)), 1, path)
+            self.assertNotRegex(text, r"\\usepackage(?:\[[^]]*\])?\{(?:style|base)\}")
+            self.assertNotRegex(text, r"\\usepackage\{(?:listings|minted)\}|\\lst[a-zA-Z]*")
+            self.assertRegex(text, r"(?m)^\\title\{\\CornellDocumentTitle\}$")
+            self.assertRegex(text, r"(?m)^\\author\{\}$")
+            self.assertRegex(text, r"(?m)^\\date\{\}$")
+            self.assertEqual(len(re.findall(r"\\maketitle", text)), 1)
+            document_end = text.index(r"\begin{document}") + len(r"\begin{document}")
+            self.assertEqual(text[document_end:].lstrip().find(r"\maketitle"), 0)
+            self.assertNotRegex(text, r"makecornelltitle|CornellMakeTitle|titlepage")
+
+    def test_every_document_uses_public_semantic_structures(self):
+        for path in self.tex_files:
+            text = path.read_text()
+            self.assertNotIn(r"\CornellHeader", text)
+            self.assertNotRegex(text, r"orientationbox|topicsummary|defensebox|historybox|synthesisbox|takeawaybox")
+            self.assertNotRegex(text, r"\\definecolor|\\colorlet|\\newcommand\{\\(?:Navy|Teal|CueGray)")
+            self.assertGreaterEqual(text.count(r"\begin{CornellNotesTable}"), 1)
+            self.assertEqual(text.count(r"\begin{CornellNotesTable}"), text.count(r"\end{CornellNotesTable}"))
+            self.assertEqual(text.count(r"\begin{CornellChecklist}"), 1)
+            self.assertEqual(text.count(r"\begin{CornellRecallList}"), 1)
+            self.assertGreater(text.count(r"\CornellNoteRow{"), 0)
+            for label in CALLOUT_LABELS:
+                self.assertIn(label, text, path)
+
+    def test_required_sections_are_ordered_and_question_keys_match(self):
+        for path in self.tex_files:
+            text = path.read_text()
+            positions = [text.index(r"\section*{" + section + "}") for section in REQUIRED_SECTIONS]
+            self.assertEqual(positions, sorted(positions), path)
+            questions = text.split(r"\section*{Self-Test Questions}", 1)[1].split(r"\section*{Answer Key}", 1)[0]
+            answers = text.split(r"\section*{Answer Key}", 1)[1].split(r"\section*{Key-Term Recap}", 1)[0]
+            self.assertGreaterEqual(questions.count(r"\item"), 1, path)
+            self.assertEqual(questions.count(r"\item"), answers.count(r"\item"), path)
+
+    def test_manifest_metadata_and_chapter_16(self):
+        self.assertEqual(self.manifest["metadata"]["chapter_count"], 104)
+        self.assertEqual(self.manifest["metadata"]["missing_chapters"], [])
+        chapter16 = next(e for e in self.entries if e["chapter_number"] == 16)
+        self.assertEqual(chapter16["canonical_filename"], "ch16-local-area-network-security-cornell-notes.tex")
+        self.assertEqual(chapter16["topical_group"], "platform-network-and-iot")
 
 
 if __name__ == "__main__":
-    unittest.main(verbosity=2)
+    unittest.main()
