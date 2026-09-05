@@ -17,6 +17,10 @@ GRAPHICS_MACRO_PATTERN = re.compile(
     r"\\(?:includegraphics|safeincludegraphics)(?:\[[^\]]*\])?\{([^{}]+)\}",
     re.IGNORECASE,
 )
+# Style-reference documents wrap PNG inclusion in \diagram{name} -> png/name.png beside the document.
+DIAGRAM_SHORTHAND_PATTERN = re.compile(r"\\diagram(?:\[[^\]]*\])?\{([^{}]+)\}")
+DIAGRAM_SHORTHAND_DEFINITION = re.compile(r"\\(?:re)?newcommand\{\\diagram\}")
+MANAGED_OUTPUT_DIRS = ("png", "svg", "jpg")
 
 # Fallback legacy patterns for known migration families when no runtime map is available.
 FALLBACK_LEGACY_STEMS = {
@@ -288,6 +292,33 @@ def find_unsynchronized_renamed_assets(rename_pairs: Sequence[Tuple[str, str]]) 
     return issues
 
 
+def find_unresolved_managed_diagram_references(tex_files: Sequence[Path]) -> List[str]:
+    """Every static reference into a managed png/svg/jpg output directory must name a file that exists.
+
+    Safe image macros (\\safeincludegraphics, \\diagram) print a red box instead of failing the
+    build, so a renamed diagram output would otherwise publish silently as "Missing image".
+    """
+    issues: List[str] = []
+    for tex_file in tex_files:
+        text = tex_file.read_text(encoding="utf-8", errors="ignore")
+        rel = tex_file.relative_to(ROOT).as_posix()
+        refs: List[str] = []
+        for raw in GRAPHICS_MACRO_PATTERN.findall(text):
+            ref = raw.strip()
+            if _contains_latex_macro(ref) or "#" in ref or ref.startswith(("http://", "https://")):
+                continue
+            parts = Path(ref).parts
+            if len(parts) >= 2 and parts[-2] in MANAGED_OUTPUT_DIRS:
+                refs.append(ref)
+        if DIAGRAM_SHORTHAND_DEFINITION.search(text):
+            refs.extend(f"png/{name.strip()}.png" for name in DIAGRAM_SHORTHAND_PATTERN.findall(text) if "#" not in name)
+        for ref in refs:
+            candidates = _resolve_graphic_candidates(tex_file, ref)
+            if not any(candidate.is_file() for candidate in candidates):
+                issues.append(f"missing-managed-diagram-output: {rel}: {ref}")
+    return issues
+
+
 def validate_repo() -> int:
     tex_files = sorted(path for path in SRC_DIR.rglob("*.tex") if path.is_file())
     legacy_map = collect_legacy_mappings()
@@ -297,6 +328,7 @@ def validate_repo() -> int:
     issues.extend(find_legacy_tex_references(tex_files, legacy_map))
     issues.extend(find_missing_or_case_mismatched_graphics(tex_files, rename_pairs))
     issues.extend(find_unsynchronized_renamed_assets(rename_pairs))
+    issues.extend(find_unresolved_managed_diagram_references(tex_files))
 
     if issues:
         for issue in issues:

@@ -1,67 +1,68 @@
 @startuml
-' Authentik self-hosting architecture diagram
-' Source basis: official Authentik Docker Compose, reverse proxy, configuration,
-' first steps, backup/restore, monitoring, and upgrade documentation.
+' ------------------------------------------------------------------
+' Diagram   : Authentik Self-Hosted Docker Compose - Deployment View
+' Type      : C4 Deployment diagram (C4-PlantUML, house c4 style)
+' Model kind: C4 deployment view (see src/architecture/readme.md, AD index)
+' Subject   : Where the authentik container instances run in the official
+'             Docker Compose topology. The entity of interest is the
+'             authentik installation; relying applications, outposts and
+'             the reverse proxy are its environment.
+' Evidence  : authentik-self-hosting-architecture-guide.tex and
+'             authentik-docker-compose-deployment-guide.tex (official
+'             Docker Compose, reverse proxy with WebSocket upgrade and
+'             X-Forwarded-* headers, server on 9000/9443, worker running
+'             background tasks and watching blueprints/certificates,
+'             PostgreSQL, /data /certs /custom-templates /blueprints
+'             volumes, health endpoints, metrics on 9300, outposts that
+'             must match the core version).
+' Status    : Reference deployment derived from vendor documentation.
+' Notes     : Health and metrics endpoints are recorded on the
+'             relationships and in a note rather than as elements, because
+'             they are interfaces of the containers, not separate
+'             deployables.
+' History   : Migrated 2026-09 from a UML deployment-styled sketch with a
+'             local folder skinparam; the Docker Compose host, volumes and
+'             containers map directly onto C4 deployment nodes and
+'             containers.
+' ------------------------------------------------------------------
+!include ../../../../../tooling/styles/plantuml/c4/deployment-diagram-style.iuml
 
-!include ../../../../../tooling/styles/plantuml/structural/deployment-diagram-style.iuml
+C4_TITLE(Authentik Self-Hosted Docker Compose, official topology)
 
-skinparam folder {
-  BorderColor #333333
-  FontColor #111111
+Person(users, "Users / Admins", "Authenticate and administer through the browser")
+
+Deployment_Node(proxyNode, "HTTPS Reverse Proxy", "operator-provided") {
+  Container_Ext(proxy, "Reverse Proxy", "TLS termination", "HTTP to HTTPS redirect, WebSocket upgrade, required forwarding headers")
 }
-skinparam wrapWidth 220
-skinparam maxMessageSize 120
 
-title Authentik Self-Hosted Docker Compose Architecture
-
-actor "Users / Admins" as users
-rectangle "HTTPS Reverse Proxy\n- TLS termination\n- HTTP to HTTPS redirect\n- WebSocket upgrade support\n- Required forwarding headers" as proxy
-
-node "Docker Compose Host" as host {
-  rectangle "authentik Server\n- Web UI\n- API\n- Identity flows\n- HTTP 9000 / HTTPS 9443 default" as server
-  rectangle "authentik Worker\n- Background tasks\n- Blueprint watcher\n- Certificate watcher\n- Optional outpost automation" as worker
-  database "PostgreSQL\nPersistent users, policies,\nproviders, flows, and config" as db
-  folder "Static Volumes\n/data\n/certs\n/custom-templates\n/blueprints" as storage
+Deployment_Node(host, "Docker Compose Host", "Docker Engine + Compose") {
+  Container(server, "authentik Server", "authentik container", "Web UI, API, identity flows; HTTP 9000 / HTTPS 9443 by default")
+  Container(worker, "authentik Worker", "authentik container", "Background tasks; blueprint and certificate watchers; optional outpost automation")
+  ContainerDb(db, "PostgreSQL", "PostgreSQL container", "Users, policies, providers, flows and configuration")
+  Deployment_Node(volumes, "Static Volumes", "bind mounts / volumes") {
+    ContainerDb(storage, "/data, /certs, /custom-templates, /blueprints", "filesystem", "Media, certificates, templates and blueprint files")
+  }
 }
 
-rectangle "Applications" as apps {
-  rectangle "Application + Provider Pair\nOIDC / OAuth2, SAML, LDAP,\nProxy Provider, or other supported provider" as app_provider
+Deployment_Node(outpostNode, "Outpost Hosts", "same or remote hosts") {
+  Container(outposts, "Outposts", "authentik proxy / LDAP outposts", "Extension points; version must match the core instance")
 }
 
-rectangle "Outposts\nProxy / LDAP extension points\nVersion must match core instance" as outposts
-rectangle "Monitoring" as monitoring {
-  rectangle "Server health\n/-/health/live/\n/-/health/ready/" as health
-  rectangle "Worker health\nak healthcheck" as workerhealth
-  rectangle "Outpost health\n/outpost.goauthentik.io/ping" as outposthealth
-  rectangle "Metrics\nPort 9300" as metrics
-}
+System_Ext(apps, "Relying Applications", "Application + provider pairs: OIDC / OAuth2, SAML, LDAP, proxy provider")
+System_Ext(monitoring, "Monitoring", "Scrapes health endpoints and Prometheus metrics")
 
-users --> proxy : HTTPS requests
-proxy --> server : Forwarded HTTPS context\nHost + X-Forwarded-*\nWebSocket upgrades
-server --> db : persistent data
-worker --> db : background task state
-server --> storage : local file storage
-worker --> storage : blueprints and certificates
-server --> app_provider : IdP protocol endpoints
-outposts --> server : outpost communication
-outposts --> app_provider : protect / expose apps
-monitoring ..> server : health and readiness
-monitoring ..> worker : worker checks
-monitoring ..> outposts : outpost checks
-monitoring ..> metrics : Prometheus scrape
+Rel(users, proxy, "HTTPS requests", "HTTPS")
+Rel(proxy, server, "Forwarded HTTPS context", "Host + X-Forwarded-*; WebSocket upgrades")
+Rel(server, db, "Persistent data", "PostgreSQL protocol")
+Rel(worker, db, "Background task state", "PostgreSQL protocol")
+Rel(server, storage, "Local file storage")
+Rel(worker, storage, "Blueprints and certificates")
+Rel(apps, server, "IdP protocol endpoints", "OIDC / OAuth2, SAML, LDAP")
+Rel(outposts, server, "Registers and receives configuration", "outpost API")
+Rel(apps, outposts, "Proxy / LDAP access", "HTTP(S) / LDAP")
+Rel(monitoring, server, "Health and metrics", "/-/health/live/, /-/health/ready/, port 9300")
+Rel(monitoring, worker, "Worker health", "ak healthcheck")
+Rel(monitoring, outposts, "Outpost health", "/outpost.goauthentik.io/ping")
 
-note right of proxy
-Accept proxy headers only from trusted proxy CIDRs.
-Use modern TLS and disable protocols older than TLS 1.3 where feasible.
-end note
-
-note bottom of db
-Back up PostgreSQL before upgrades and on a recurring schedule.
-end note
-
-note bottom of worker
-The default Compose file mounts the Docker socket for automatic outpost management.
-Use a socket proxy or manual outpost deployment when reducing socket exposure.
-end note
-
+SHOW_LEGEND()
 @enduml

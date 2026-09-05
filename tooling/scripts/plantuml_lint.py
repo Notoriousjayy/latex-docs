@@ -7,6 +7,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[2]
 MODULE_ROOTS = (ROOT / "tooling" / "plantuml", ROOT / "tooling" / "styles" / "plantuml")
@@ -16,8 +17,22 @@ GUARD_START = re.compile(r"^!ifndef ([A-Z0-9_]+_INCLUDED)$")
 GUARD_DEFINE = re.compile(r"^!define ([A-Z0-9_]+_INCLUDED)$")
 INCLUDE = re.compile(r"^\s*!include(?:sub|url)?\s+(\S+)", re.M)
 MANAGED_FORMATS = ("png", "svg", "jpg", "jpeg")
+# Standard-library includes resolve inside the pinned jar; only C4-PlantUML is used and only from c4-base.
+STDLIB_ALLOWED = {
+    "<C4/C4>",
+    "<C4/C4_Context>",
+    "<C4/C4_Container>",
+    "<C4/C4_Component>",
+    "<C4/C4_Dynamic>",
+    "<C4/C4_Deployment>",
+}
+STDLIB_OWNER = "c4-base.iuml"
 # The one hierarchy every diagram inherits through; see tooling/plantuml/README.md.
+# house-tokens is the neutral root: it includes nothing and both notation bases include it.
+NEUTRAL_ROOT = "house-tokens.iuml"
 CANONICAL_PARENT = {
+    "uml-base.iuml": NEUTRAL_ROOT,
+    "c4-base.iuml": NEUTRAL_ROOT,
     "uml-structural.iuml": "uml-base.iuml",
     "uml-behavioral.iuml": "uml-base.iuml",
     "uml-interaction.iuml": "uml-behavioral.iuml",
@@ -26,11 +41,36 @@ CATEGORY_PARENT = {
     "structural": "uml-structural.iuml",
     "behavioral": "uml-behavioral.iuml",
     "interaction": "uml-interaction.iuml",
+    "c4": "c4-base.iuml",
 }
+# Source diagrams reach the shared style only through a leaf module.
+LEAF_INCLUDE = re.compile(r"tooling/styles/plantuml/(structural|behavioral|interaction|c4)/[a-z0-9-]+-diagram-style\.iuml$")
+HEX_LITERAL = re.compile(r"#[0-9A-Fa-f]{6}\b")
+THEME_DIRECTIVE = re.compile(r"^\s*!theme\b", re.I)
+# Colour and typography are owned by the shared modules; layout hints (nodesep, ranksep, linetype,
+# componentStyle, wrapWidth ...) remain legitimate local decisions.
+HOUSE_OWNED_SKINPARAM = re.compile(
+    r"^\s*skinparam\s+(?!\w*<<)[A-Za-z]*(Color|FontSize|FontStyle|FontName|BackgroundColor|BorderColor|RoundCorner|Shadowing)\b",
+    re.I,
+)
+SKINPARAM_BLOCK_OPEN = re.compile(r"^\s*skinparam\s+([A-Za-z]+)(<<[^>]+>>)?\s*\{\s*$")
+BLOCK_HOUSE_OWNED = re.compile(r"^\s*[A-Za-z]*(Color|FontSize|FontStyle|FontName|RoundCorner|Shadowing)\b", re.I)
+# A hidden role stereotype carries no label of its own, so the legend is the only place its meaning can live.
+# Token use on arrows and notes sits next to the text that explains it and is not subject to this rule.
+ROLE_NEEDING_LEGEND = re.compile(r"<<(primary|dynamic|ok|caution|invalid|alt|neutral|external)>>")
+LEGEND_PRESENT = re.compile(r"^\s*legend\b|UML_LEGEND_BEGIN|SHOW_LEGEND|SHOW_FLOATING_LEGEND", re.M)
 
 
 def _includes(path: Path) -> list[str]:
     return INCLUDE.findall(path.read_text(encoding="utf-8", errors="replace"))
+
+
+def _resolves(target: str, bases: Sequence[Path]) -> bool:
+    if target.startswith("<"):
+        return target in STDLIB_ALLOWED
+    if "://" in target:
+        return False
+    return any((base / target).is_file() for base in bases)
 
 
 def check_include_contract() -> list[str]:
@@ -47,22 +87,39 @@ def check_include_contract() -> list[str]:
         if parent not in [Path(target).name for target in _includes(module)]:
             problems.append(f"tooling/plantuml/{name}: must include {parent}")
 
-    if (base_dir / "uml-base.iuml").is_file() and _includes(base_dir / "uml-base.iuml"):
-        problems.append("tooling/plantuml/uml-base.iuml: the base module must not include another module")
+    neutral = base_dir / NEUTRAL_ROOT
+    if not neutral.is_file():
+        problems.append(f"tooling/plantuml/{NEUTRAL_ROOT}: neutral root module is missing")
+    elif _includes(neutral):
+        problems.append(f"tooling/plantuml/{NEUTRAL_ROOT}: the neutral root must not include another module")
+
+    # Stdlib and URL includes: the C4 library comes from the pinned jar, from one module, never from the network.
+    for module in sorted(path for root in MODULE_ROOTS for path in root.rglob("*.iuml")):
+        for target in _includes(module):
+            if "://" in target:
+                problems.append(f"{module.relative_to(ROOT)}: include {target} is an unpinned network include")
+            elif target.startswith("<"):
+                if target not in STDLIB_ALLOWED:
+                    problems.append(f"{module.relative_to(ROOT)}: stdlib include {target} is not in the verified allowlist")
+                elif module.name != STDLIB_OWNER:
+                    problems.append(f"{module.relative_to(ROOT)}: only {STDLIB_OWNER} may include the C4 standard library")
 
     # A module reachable only under a misspelling would resolve to nothing at render time.
     for stray in sorted(ROOT.rglob("*.iml")):
         if ".git" not in stray.parts:
             problems.append(f"{stray.relative_to(ROOT)}: style modules must use the .iuml extension")
-    for duplicate in sorted(ROOT.rglob("uml-*.iuml")):
+    canonical_names = {NEUTRAL_ROOT, *CANONICAL_PARENT}
+    for duplicate in sorted(list(ROOT.rglob("uml-*.iuml")) + list(ROOT.rglob("c4-*.iuml")) + list(ROOT.rglob("house-*.iuml"))):
         if ".git" in duplicate.parts:
             continue
-        if duplicate.name in CANONICAL_PARENT or duplicate.name == "uml-base.iuml":
-            if duplicate.parent != base_dir:
-                problems.append(f"{duplicate.relative_to(ROOT)}: shadows the canonical module in tooling/plantuml")
+        if duplicate.name in canonical_names and duplicate.parent != base_dir:
+            problems.append(f"{duplicate.relative_to(ROOT)}: shadows the canonical module in tooling/plantuml")
 
     for category, parent in CATEGORY_PARENT.items():
-        for module in sorted((style_dir / category).glob("*.iuml")) if (style_dir / category).is_dir() else []:
+        modules = sorted((style_dir / category).glob("*.iuml")) if (style_dir / category).is_dir() else []
+        if not modules:
+            problems.append(f"tooling/styles/plantuml/{category}: category has no leaf modules")
+        for module in modules:
             if parent not in [Path(target).name for target in _includes(module)]:
                 problems.append(f"{module.relative_to(ROOT)}: must include {parent}")
 
@@ -74,9 +131,58 @@ def check_include_contract() -> list[str]:
         if not targets:
             problems.append(f"{source.relative_to(ROOT)}: renderable diagram has no active !include")
             continue
+        leaf_targets = [target for target in targets if LEAF_INCLUDE.search((source.parent / target).as_posix())]
+        if not leaf_targets:
+            problems.append(f"{source.relative_to(ROOT)}: must include exactly one leaf style from tooling/styles/plantuml/<category>/")
+        elif len(leaf_targets) > 1:
+            problems.append(f"{source.relative_to(ROOT)}: includes more than one leaf style ({', '.join(Path(t).name for t in leaf_targets)})")
         for target in targets:
-            if not any((base / target).is_file() for base in (source.parent, base_dir, style_dir)):
+            if target.startswith("<") or "://" in target:
+                problems.append(f"{source.relative_to(ROOT)}: include {target} must go through the shared modules, not a stdlib/URL include")
+            elif not _resolves(target, (source.parent, base_dir, style_dir)):
                 problems.append(f"{source.relative_to(ROOT)}: include {target} does not resolve")
+    return problems
+
+
+def check_source_style_discipline() -> list[str]:
+    """Colour and typography live in the shared modules; a source diagram may only use role tokens.
+
+    Layout hints (nodesep, ranksep, linetype, direction, componentStyle ...) stay local.
+    Diagrams whose meaning relies on the ok/caution/invalid roles must carry a legend.
+    """
+    problems: list[str] = []
+    for source in sorted(ROOT.joinpath("src").rglob("*.puml")):
+        text = source.read_text(encoding="utf-8", errors="replace")
+        relative = source.relative_to(ROOT)
+        if not re.search(r"^@startuml", text, re.M):
+            # Include-only fragments beside diagrams are domain helpers; configs are rendering-only.
+            if HEX_LITERAL.search(text):
+                problems.append(f"{relative}: hex colour literal in a fragment; use house tokens")
+            continue
+        in_block = False
+        for number, line in enumerate(text.splitlines(), 1):
+            stripped = line.strip()
+            if stripped.startswith("'"):
+                continue
+            if HEX_LITERAL.search(line):
+                problems.append(f"{relative}:{number}: hex colour literal; use a $fill_/$deep_/$line_ token or a role stereotype")
+            if THEME_DIRECTIVE.match(line):
+                problems.append(f"{relative}:{number}: !theme is not allowed; the shared modules are the theme")
+            if stripped.startswith("<style>"):
+                problems.append(f"{relative}:{number}: local <style> block; move the rule into the shared modules or use a role stereotype")
+            if HOUSE_OWNED_SKINPARAM.match(line):
+                problems.append(f"{relative}:{number}: colour/typography skinparam is owned by the shared modules")
+            opened = SKINPARAM_BLOCK_OPEN.match(line)
+            if opened:
+                in_block = opened.group(2) is None
+                continue
+            if in_block:
+                if stripped == "}":
+                    in_block = False
+                elif BLOCK_HOUSE_OWNED.match(line):
+                    problems.append(f"{relative}:{number}: colour/typography inside a local skinparam block is owned by the shared modules")
+        if ROLE_NEEDING_LEGEND.search(text) and not LEGEND_PRESENT.search(text):
+            problems.append(f"{relative}: applies a hidden role stereotype but has no legend (UML_LEGEND_BEGIN/SHOW_LEGEND)")
     return problems
 
 
@@ -167,11 +273,14 @@ def check() -> list[str]:
             problems.append(f"{example.relative_to(ROOT)}: missing @startuml")
         for number, line in enumerate(text.splitlines(), 1):
             match = re.match(r"^!include\s+(\S+)", line)
-            if match and not any((base / match.group(1)).is_file() for base in [example.parent, *include_dirs]):
+            if match and not _resolves(match.group(1), [example.parent, *include_dirs]):
                 problems.append(f"{example.relative_to(ROOT)}:{number}: include {match.group(1)} does not resolve on PLANTUML_INCLUDE_PATH")
+            if HEX_LITERAL.search(line) and not line.strip().startswith("'"):
+                problems.append(f"{example.relative_to(ROOT)}:{number}: examples must use house tokens, not hex literals")
 
     problems.extend(check_include_contract())
     problems.extend(check_managed_outputs())
+    problems.extend(check_source_style_discipline())
     return problems
 
 

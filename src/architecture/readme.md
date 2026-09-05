@@ -27,6 +27,7 @@ adoption material.
 | `togaf/` | TOGAF ADM user stories and overviews. |
 | `views-and-beyond/` | The largest subtree — Views and Beyond methodology, style catalogs, framework mappings. See child readme. |
 | `diagrams/` | Cross-cutting architecture diagrams not owned by any single document. |
+| `architecture-description-index.md` | ISO/IEC/IEEE 42010:2022-aligned AD index for the diagram corpus: stakeholders, viewpoints, model kinds, traceability, correspondence methods, decisions and the requirement-to-evidence register. |
 
 ## Conventions
 

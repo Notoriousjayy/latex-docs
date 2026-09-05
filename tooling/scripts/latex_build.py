@@ -1939,8 +1939,16 @@ def _plantuml_config_for(path: Path, config_names: Sequence[str]) -> Path | None
 
 PLANTUML_MANIFEST = ROOT / "tooling" / "manifests" / "plantuml.json"
 PLANTUML_FORMATS = ("png", "svg", "jpg")
+# PlantUML itself emits these; jpg is a derivative the renderer produces from png.
+PLANTUML_ENGINE_FORMATS = ("png", "svg")
 PLANTUML_INCLUDE_DIRS = (ROOT / "tooling" / "plantuml", ROOT / "tooling" / "styles" / "plantuml")
 PLANTUML_EXAMPLES_DIR = ROOT / "tooling" / "plantuml"
+PLANTUML_GLOBAL_CONFIG = ROOT / "tooling" / "plantuml" / "config.puml"
+PLANTUML_CONFIG_NAMES = ("plantuml-config.puml", "config.puml")
+PLANTUML_RESULT_DEFAULT = ROOT / "public" / "logs" / "plantuml-render.json"
+# The JPEG derivative has no alpha channel; transparent renders are flattened onto the house paper tone.
+PLANTUML_JPG_BACKGROUND = "#F7F7F2"
+PLANTUML_JPG_QUALITY = "90"
 # PlantUML draws these into the image instead of failing; the SVG text uses U+00A0 for spaces.
 PLANTUML_ERROR_TEXT = re.compile(
     r"Syntax Error|Please use CSS style|cannot include|Cannot include|"
@@ -1948,7 +1956,9 @@ PLANTUML_ERROR_TEXT = re.compile(
     re.IGNORECASE,
 )
 _PLANTUML_VERSION_RE = re.compile(r"PlantUML version (\S+)")
+_PLANTUML_C4_VERSION_RE = re.compile(r"^c4\s*\n\s*Version\s+(\S+)", re.MULTILINE | re.IGNORECASE)
 _STARTUML_RE = re.compile(r"^@startuml[ \t]*([^\s]*)[ \t]*$", re.MULTILINE)
+_PLANTUML_INCLUDE_RE = re.compile(r"^\s*!include(?:sub)?\s+(\S+)", re.MULTILINE)
 
 
 def load_plantuml_pin(manifest: Path | None = None) -> dict[str, str]:
@@ -1979,17 +1989,42 @@ def plantuml_installed_version(prefix: Sequence[str], env: dict[str, str] | None
     return match.group(1) if match else None
 
 
+def plantuml_c4_version(prefix: Sequence[str], env: dict[str, str] | None = None) -> str | None:
+    """Version of the C4-PlantUML library bundled in the selected engine's standard library."""
+    try:
+        result = subprocess.run(
+            [*prefix, "-stdlib"], env=env, check=False, capture_output=True, text=True, timeout=120
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    match = _PLANTUML_C4_VERSION_RE.search(result.stdout + result.stderr)
+    return match.group(1) if match else None
+
+
 def check_plantuml_engine(env: dict[str, str] | None = None, *, pin: dict[str, str] | None = None) -> str | None:
-    """Return an error message unless the selected PlantUML binary is the pinned version."""
+    """Return an error message unless the selected PlantUML binary is the pinned version.
+
+    When the manifest also pins `c4_plantuml`, the engine's bundled C4 library
+    must report that version: C4 views are rendered from the stdlib, so a jar
+    with a different C4 revision would silently change every C4 image.
+    """
     pin = pin or load_plantuml_pin()
     prefix = plantuml_command_prefix(env)
     found = plantuml_installed_version(prefix, env)
-    if found == pin["version"]:
-        return None
     hint = "set PLANTUML_JAR to the jar produced by `latex_build.py fetch-plantuml`"
     if found is None:
         return f"PlantUML {pin['version']} is required but `{' '.join(prefix)}` did not run; {hint}"
-    return f"PlantUML {pin['version']} is required but `{' '.join(prefix)}` is {found}; {hint}"
+    if found != pin["version"]:
+        return f"PlantUML {pin['version']} is required but `{' '.join(prefix)}` is {found}; {hint}"
+    expected_c4 = pin.get("c4_plantuml")
+    if expected_c4:
+        found_c4 = plantuml_c4_version(prefix, env)
+        if found_c4 != expected_c4:
+            return (
+                f"PlantUML {found} bundles C4-PlantUML {found_c4 or 'unknown'} but the manifest pins "
+                f"{expected_c4}; update tooling/manifests/plantuml.json deliberately"
+            )
+    return None
 
 
 def _plantuml_output_names(source: Path, text: str) -> list[str]:
@@ -2019,6 +2054,50 @@ def plantuml_render_command(prefix: Sequence[str], fmt: str, output_dir: Path, c
     return cmd
 
 
+def plantuml_config_for(path: Path, config_names: Sequence[str] = PLANTUML_CONFIG_NAMES) -> Path | None:
+    """Nearest directory config above the diagram, else the repository-wide rendering config.
+
+    Local configs are for rendering concerns only (resolution, scale); visual
+    rules belong in the shared style modules, which lint enforces.
+    """
+    nearest = _plantuml_config_for(path, config_names)
+    if nearest is not None:
+        return nearest
+    return PLANTUML_GLOBAL_CONFIG if PLANTUML_GLOBAL_CONFIG.is_file() else None
+
+
+def plantuml_includes(source: Path, text: str | None = None, include_dirs: Sequence[Path] = PLANTUML_INCLUDE_DIRS) -> set[Path]:
+    """Every file reachable through `!include` from the diagram, resolved like the renderer resolves them.
+
+    `<stdlib>` includes resolve inside the jar and are covered by the manifest pin.
+    Unresolvable targets are skipped here; lint reports them separately.
+    """
+    resolved: set[Path] = set()
+    pending = [(source, text)]
+    seen = {source.resolve()}
+    while pending:
+        current, body = pending.pop()
+        if body is None:
+            try:
+                body = current.read_text(encoding="utf-8", errors="ignore")
+            except OSError:
+                continue
+        for target in _PLANTUML_INCLUDE_RE.findall(body):
+            if target.startswith("<") or "://" in target:
+                continue
+            candidates = [current.parent / target, *(base / target for base in include_dirs)]
+            hit = next((candidate for candidate in candidates if candidate.is_file()), None)
+            if hit is None:
+                continue
+            key = hit.resolve()
+            if key in seen:
+                continue
+            seen.add(key)
+            resolved.add(hit)
+            pending.append((hit, None))
+    return resolved
+
+
 def svg_error_text(path: Path) -> str | None:
     """First PlantUML error/deprecation phrase drawn into an SVG, after normalising U+00A0."""
     try:
@@ -2035,7 +2114,7 @@ def _plantuml_is_current(
     outputs: Sequence[Path],
     style_inputs: Sequence[Path] = (),
 ) -> bool:
-    """Whether every rendered output is newer than the diagram and its config."""
+    """Whether every rendered output is newer than the diagram, its config and every style/include input."""
     try:
         newest_input = source.stat().st_mtime
         if config is not None:
@@ -2060,23 +2139,149 @@ def unmanaged_diagram_images(source_dirs: Iterable[Path]) -> list[Path]:
     return found
 
 
+def image_magick_convert() -> str | None:
+    """The ImageMagick converter used for JPEG derivatives, or None when unavailable."""
+    for name in ("magick", "convert"):
+        found = shutil.which(name)
+        if found:
+            return found
+    return None
+
+
+def png_to_jpg_command(converter: str, png: Path, jpg: Path) -> list[str]:
+    """Flatten transparency onto the house paper tone and strip volatile metadata for reproducible bytes."""
+    cmd = [converter]
+    if Path(converter).name == "magick":
+        cmd.append("convert")
+    cmd += [
+        str(png),
+        "-background", PLANTUML_JPG_BACKGROUND,
+        "-flatten",
+        "-alpha", "off",
+        "-strip",
+        "-quality", PLANTUML_JPG_QUALITY,
+        str(jpg),
+    ]
+    return cmd
+
+
+def _png_is_valid(path: Path) -> bool:
+    try:
+        with path.open("rb") as handle:
+            return handle.read(8) == b"\x89PNG\r\n\x1a\n"
+    except OSError:
+        return False
+
+
+def _jpg_is_valid(path: Path) -> bool:
+    try:
+        with path.open("rb") as handle:
+            return handle.read(3) == b"\xff\xd8\xff"
+    except OSError:
+        return False
+
+
+def _svg_is_valid(path: Path) -> bool:
+    try:
+        head = path.read_text(encoding="utf-8", errors="ignore")[:512]
+    except OSError:
+        return False
+    return "<svg" in head
+
+
+_OUTPUT_VALIDATORS = {"png": _png_is_valid, "svg": _svg_is_valid, "jpg": _jpg_is_valid}
+
+
+def _same_bytes(a: Path, b: Path) -> bool:
+    try:
+        if a.stat().st_size != b.stat().st_size:
+            return False
+        return a.read_bytes() == b.read_bytes()
+    except OSError:
+        return False
+
+
+@dataclass
+class PlantUMLRenderResult:
+    """Authoritative account of one render run; written as JSON for CI to report from."""
+
+    engine_version: str = ""
+    c4_version: str = ""
+    formats: list[str] = field(default_factory=list)
+    forced: bool = False
+    roots: list[str] = field(default_factory=list)
+    discovered_files: int = 0
+    config_files: int = 0
+    include_only_files: int = 0
+    diagram_sources: int = 0
+    diagram_blocks: int = 0
+    rendered_diagrams: int = 0
+    reused_diagrams: int = 0
+    failed_diagrams: int = 0
+    invalid_named_diagrams: int = 0
+    jvm_invocations: int = 0
+    outputs_by_format: dict[str, int] = field(default_factory=dict)
+    changed_files: list[str] = field(default_factory=list)
+    failures: list[dict[str, str]] = field(default_factory=list)
+    stale_outputs: list[str] = field(default_factory=list)
+    unmanaged_images: list[str] = field(default_factory=list)
+    diagrams: list[dict[str, Any]] = field(default_factory=list)
+
+    @property
+    def has_changes(self) -> bool:
+        return bool(self.changed_files)
+
+    def write(self, path: Path) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        data = asdict(self)
+        data["has_changes"] = self.has_changes
+        path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _rel(path: Path) -> str:
+    return path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else path.as_posix()
+
+
 def render_plantuml(
     source_dir: Path | None = None,
     formats: Sequence[str] | None = None,
     *,
     force: bool = False,
+    extra_roots: Sequence[Path] = (),
+    result_path: Path | None = None,
+    require_diagrams: bool = False,
 ) -> int:
     """Render PlantUML diagrams incrementally, batching JVM invocations.
 
-    Two costs dominated the previous implementation: it spawned one JVM per
-    (diagram x format) pair, and it re-rendered the whole corpus even when
-    nothing had changed. Diagrams whose committed output is already newer than
-    their source, config and the shared style modules are skipped, and the rest
-    are rendered in batches that share a single JVM start.
+    Discovery, include resolution, output naming, freshness, validation and
+    reporting live here and nowhere else: the Makefile, the composite action
+    and the workflows only call this. Outputs are rendered into a temporary
+    directory, validated (process status, presence, format magic, error text
+    drawn into SVGs) and only then promoted over the committed files, so a
+    failed render leaves the previous valid image in place and is reported as
+    failed rather than as current. JPEG is produced from the PNG through
+    ImageMagick because the engine has no JPEG writer; an existing jpg/ output
+    is refreshed even when jpg was not requested so an optional derivative
+    cannot keep an older theme.
     """
-    search_root = (source_dir or SRC_DIR).resolve()
-    if not search_root.exists():
-        return 0
+    result = PlantUMLRenderResult(forced=force)
+    search_roots = [Path(source_dir or SRC_DIR).resolve(), *(Path(root).resolve() for root in extra_roots)]
+    search_roots = [root for root in search_roots if root.exists()]
+    result.roots = [_rel(root) for root in search_roots]
+    result_path = result_path or PLANTUML_RESULT_DEFAULT
+
+    def finish(status: int) -> int:
+        try:
+            result.write(result_path)
+        except OSError as exc:  # reporting must never mask the render status
+            print(f"PlantUML: could not write {result_path}: {exc}", file=sys.stderr)
+        return status
+
+    if not search_roots:
+        if require_diagrams:
+            print("PlantUML failed: no diagram root exists", file=sys.stderr)
+            return finish(1)
+        return finish(0)
 
     env = os.environ.copy()
     engine_error = check_plantuml_engine(env)
@@ -2084,73 +2289,129 @@ def render_plantuml(
         print(f"Configuration error: {engine_error}", file=sys.stderr)
         return 2
     prefix = plantuml_command_prefix(env)
+    result.engine_version = plantuml_installed_version(prefix, env) or ""
+    result.c4_version = plantuml_c4_version(prefix, env) or ""
 
-    config_names = ["plantuml-config.puml", "config.puml"]
-    lowered_config_names = {name.lower() for name in config_names}
-    formats = list(formats or ["png", "svg"])
+    lowered_config_names = {name.lower() for name in PLANTUML_CONFIG_NAMES}
+    formats = list(dict.fromkeys(formats or ["png", "svg"]))
     unknown = [fmt for fmt in formats if fmt not in PLANTUML_FORMATS]
     if unknown:
         print(f"Configuration error: unsupported PlantUML format(s) {unknown}", file=sys.stderr)
         return 2
+    result.formats = formats
+    converter = image_magick_convert()
 
     include_paths = [path for path in PLANTUML_INCLUDE_DIRS if path.exists()]
-    style_inputs = [path for root in include_paths for path in root.rglob("*.iuml") if path.is_file()]
-    # The pin is an input too: a version bump must re-render everything.
+    # Shared inputs: every style module, the engine pin and this renderer (its recipe is an input too).
+    shared_inputs = [path for root in include_paths for path in root.rglob("*.iuml") if path.is_file()]
+    shared_inputs += [path for root in include_paths for path in root.rglob("*.puml") if path.is_file() and path.name.lower() in lowered_config_names]
     if PLANTUML_MANIFEST.exists():
-        style_inputs.append(PLANTUML_MANIFEST)
+        shared_inputs.append(PLANTUML_MANIFEST)
+    shared_inputs.append(Path(__file__).resolve())
     env["PLANTUML_INCLUDE_PATH"] = ":".join(str(path) for path in include_paths)
 
-    # Batch key: (source directory, config, format); every batched file shares
+    # Batch key: (source directory, config, engine format); every batched file shares
     # a directory, so one absolute -o per batch keeps outputs beside sources.
     batches: dict[tuple[Path, str, str], list[str]] = {}
     expected_outputs: dict[Path, set[Path]] = {}
     source_dirs: set[Path] = set()
-    diagram_count = 0
-    skipped = 0
     invalid_names: list[Path] = []
+    diagram_records: dict[Path, dict[str, Any]] = {}
+    # Which final formats each (source, engine format) render must feed.
+    wanted: dict[tuple[Path, str], set[str]] = {}
 
-    for path in sorted(search_root.rglob("*.puml")):
-        if not path.is_file() or path.name.lower() in lowered_config_names:
-            continue
-        try:
-            text = path.read_text(encoding="utf-8", errors="ignore")
-        except OSError:
-            continue
-        if not _STARTUML_RE.search(text):
-            continue
-
-        diagram_count += 1
-        source_dirs.add(path.parent)
-        if any(
-            match.group(1)
-            and (match.group(1) in {".", ".."} or "/" in match.group(1) or "\\" in match.group(1))
-            for match in _STARTUML_RE.finditer(text)
-        ):
-            invalid_names.append(path)
-            continue
-        config_path = _plantuml_config_for(path, config_names)
-
-        for fmt in formats:
-            outputs = plantuml_output_paths(path, fmt, text)
-            expected_outputs.setdefault(path.parent / fmt, set()).update(outputs)
-            if not force and _plantuml_is_current(path, config_path, outputs, style_inputs):
-                skipped += 1
+    seen_files: set[Path] = set()
+    for root in search_roots:
+        for path in sorted(root.rglob("*.puml")):
+            if not path.is_file() or path in seen_files:
                 continue
-            (path.parent / fmt).mkdir(parents=True, exist_ok=True)
-            key = (path.parent, str(config_path) if config_path else "", fmt)
-            batches.setdefault(key, []).append(path.name)
+            seen_files.add(path)
+            result.discovered_files += 1
+            if path.name.lower() in lowered_config_names:
+                result.config_files += 1
+                continue
+            try:
+                text = path.read_text(encoding="utf-8", errors="ignore")
+            except OSError:
+                continue
+            if not _STARTUML_RE.search(text):
+                result.include_only_files += 1
+                continue
 
-    failures = len(invalid_names)
+            names = _plantuml_output_names(path, text)
+            result.diagram_sources += 1
+            result.diagram_blocks += len(names)
+            source_dirs.add(path.parent)
+            record: dict[str, Any] = {
+                "source": _rel(path),
+                "blocks": names,
+                "formats": {},
+                "status": "current",
+            }
+            diagram_records[path] = record
+            if any(
+                match.group(1)
+                and (match.group(1) in {".", ".."} or "/" in match.group(1) or "\\" in match.group(1))
+                for match in _STARTUML_RE.finditer(text)
+            ):
+                invalid_names.append(path)
+                record["status"] = "failed"
+                record["reason"] = "@startuml name must not contain a path separator"
+                continue
+            config_path = plantuml_config_for(path)
+            record["config"] = _rel(config_path) if config_path else ""
+            local_includes = plantuml_includes(path, text, include_paths)
+            record["includes"] = sorted(_rel(inc) for inc in local_includes)
+            inputs = [*shared_inputs, *local_includes]
+
+            # An existing jpg/ derivative is part of the contract even when not requested.
+            effective_formats = list(formats)
+            if "jpg" not in effective_formats and any(output.exists() for output in plantuml_output_paths(path, "jpg", text)):
+                effective_formats.append("jpg")
+
+            engine_formats_needed: set[str] = set()
+            for fmt in effective_formats:
+                outputs = plantuml_output_paths(path, fmt, text)
+                expected_outputs.setdefault(path.parent / fmt, set()).update(outputs)
+                current = not force and _plantuml_is_current(path, config_path, outputs, inputs)
+                record["formats"][fmt] = "current" if current else "pending"
+                if current:
+                    continue
+                engine_fmt = "png" if fmt == "jpg" else fmt
+                engine_formats_needed.add(engine_fmt)
+                wanted.setdefault((path, engine_fmt), set()).add(fmt)
+            if engine_formats_needed:
+                record["status"] = "pending"
+                for engine_fmt in sorted(engine_formats_needed):
+                    key = (path.parent, str(config_path) if config_path else "", engine_fmt)
+                    batches.setdefault(key, []).append(path.name)
+            else:
+                result.reused_diagrams += 1
+
+    if require_diagrams and result.diagram_sources == 0:
+        print(
+            f"PlantUML failed: {result.discovered_files} .puml files found under {', '.join(result.roots)} "
+            "but none contains a renderable @startuml block",
+            file=sys.stderr,
+        )
+        return finish(1)
+
+    if any("jpg" in targets for targets in wanted.values()) and converter is None:
+        print("Configuration error: jpg output requires ImageMagick (`magick` or `convert`) on PATH", file=sys.stderr)
+        return 2
+
+    result.invalid_named_diagrams = len(invalid_names)
     for path in invalid_names:
+        result.failures.append({"source": _rel(path), "format": "*", "reason": "@startuml name must not contain a path separator"})
         print(f"PlantUML failed in {path}: @startuml name must not contain a path separator", file=sys.stderr)
-    rendered = 0
-    for (work_dir, config, fmt), names in sorted(batches.items(), key=lambda item: str(item[0])):
+
+    failed_sources: set[Path] = set(invalid_names)
+    for (work_dir, config, engine_fmt), names in sorted(batches.items(), key=lambda item: str(item[0])):
+        result.jvm_invocations += 1
         with tempfile.TemporaryDirectory(prefix="plantuml-") as temp_dir:
             temp_output = Path(temp_dir)
-            cmd = plantuml_render_command(
-                prefix, fmt, temp_output, Path(config) if config else None, names
-            )
-            result = subprocess.run(
+            cmd = plantuml_render_command(prefix, engine_fmt, temp_output, Path(config) if config else None, names)
+            proc = subprocess.run(
                 cmd,
                 cwd=str(work_dir),
                 env=env,
@@ -2158,31 +2419,88 @@ def render_plantuml(
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.PIPE,
             )
-            detail = (result.stderr or b"").decode("utf-8", errors="ignore").strip().splitlines()
-            expected_names = [
-                output.name
-                for name in names
-                for output in plantuml_output_paths(work_dir / name, fmt)
-            ]
-            missing = [name for name in expected_names if not (temp_output / name).is_file()]
-            errors = [
-                name for name in expected_names
-                if fmt == "svg" and svg_error_text(temp_output / name)
-            ]
-            if result.returncode != 0 or missing or errors:
-                failures += 1
-                reason = detail[-1] if detail else "renderer failed"
+            detail = (proc.stderr or b"").decode("utf-8", errors="ignore").strip().splitlines()
+            batch_reason = detail[-1] if detail else "renderer failed"
+
+            for name in names:
+                source = work_dir / name
+                record = diagram_records[source]
+                targets = wanted.get((source, engine_fmt), {engine_fmt})
+                engine_outputs = plantuml_output_paths(source, engine_fmt)
+                produced = [temp_output / output.name for output in engine_outputs]
+                problems: list[str] = []
+                if proc.returncode != 0:
+                    problems.append(f"plantuml exited {proc.returncode}: {batch_reason}")
+                missing = [candidate.name for candidate in produced if not candidate.is_file()]
                 if missing:
-                    reason = f"missing output(s): {', '.join(missing)}"
-                elif errors:
-                    reason = f"error text in {errors[0]}: {svg_error_text(temp_output / errors[0])}"
-                print(f"PlantUML failed in {work_dir} ({fmt}): {reason}", file=sys.stderr)
-                continue
-            for name in expected_names:
-                destination = work_dir / fmt / name
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                os.replace(temp_output / name, destination)
-            rendered += len(names)
+                    problems.append(f"missing output(s): {', '.join(missing)}")
+                for candidate in produced:
+                    if candidate.is_file() and not _OUTPUT_VALIDATORS[engine_fmt](candidate):
+                        problems.append(f"{candidate.name} is not a valid {engine_fmt}")
+                    if engine_fmt == "svg" and candidate.is_file():
+                        phrase = svg_error_text(candidate)
+                        if phrase:
+                            problems.append(f"error text in {candidate.name}: {phrase}")
+
+                derived: dict[str, list[tuple[Path, Path]]] = {}
+                if not problems:
+                    for fmt in sorted(targets):
+                        pairs: list[tuple[Path, Path]] = []
+                        for engine_output, temp_file in zip(engine_outputs, produced):
+                            if fmt == engine_fmt:
+                                pairs.append((temp_file, engine_output))
+                                continue
+                            jpg_temp = temp_output / (engine_output.stem + ".jpg")
+                            conv = subprocess.run(
+                                png_to_jpg_command(converter or "convert", temp_file, jpg_temp),
+                                check=False,
+                                capture_output=True,
+                                text=True,
+                            )
+                            if conv.returncode != 0 or not _jpg_is_valid(jpg_temp):
+                                problems.append(f"jpg conversion failed for {engine_output.name}: {conv.stderr.strip()[-200:]}")
+                                break
+                            pairs.append((jpg_temp, source.parent / "jpg" / jpg_temp.name))
+                        derived[fmt] = pairs
+
+                if problems:
+                    failed_sources.add(source)
+                    record["status"] = "failed"
+                    for fmt in targets:
+                        record["formats"][fmt] = "failed"
+                    reason = "; ".join(problems)
+                    record["reason"] = reason
+                    result.failures.append({"source": _rel(source), "format": engine_fmt, "reason": reason})
+                    print(f"PlantUML failed in {_rel(source)} ({engine_fmt}): {reason}", file=sys.stderr)
+                    continue
+
+                for fmt, pairs in derived.items():
+                    for temp_file, destination in pairs:
+                        destination.parent.mkdir(parents=True, exist_ok=True)
+                        changed = not (destination.exists() and _same_bytes(temp_file, destination))
+                        os.replace(temp_file, destination)
+                        if changed:
+                            result.changed_files.append(_rel(destination))
+                        else:
+                            # Keep freshness monotonic even when the bytes did not move.
+                            os.utime(destination, None)
+                        result.outputs_by_format[fmt] = result.outputs_by_format.get(fmt, 0) + 1
+                    record["formats"][fmt] = "rendered"
+
+    for source, record in diagram_records.items():
+        if record["status"] == "pending":
+            if source in failed_sources:
+                record["status"] = "failed"
+            elif all(state in {"rendered", "current"} for state in record["formats"].values()):
+                record["status"] = "rendered"
+                result.rendered_diagrams += 1
+    result.failed_diagrams = len(failed_sources)
+    for record in diagram_records.values():
+        if record["status"] == "failed":
+            for fmt, state in record["formats"].items():
+                if state == "pending":
+                    record["formats"][fmt] = "failed"
+    result.diagrams = [diagram_records[path] for path in sorted(diagram_records)]
 
     # Files in a png/svg/jpg directory that no source produces (e.g. left over from a
     # renamed @startuml) are reported, never deleted: deletion is a reviewed change.
@@ -2193,27 +2511,83 @@ def render_plantuml(
         for candidate in output_dir.glob(f"*.{output_dir.name}")
         if candidate not in produced
     )
-    for orphan in orphans:
-        print(f"PlantUML: stale output without a source: {orphan.relative_to(ROOT) if orphan.is_relative_to(ROOT) else orphan}", file=sys.stderr)
+    result.stale_outputs = [_rel(orphan) for orphan in orphans]
+    for orphan in result.stale_outputs:
+        print(f"PlantUML: stale output without a source: {orphan}", file=sys.stderr)
 
     # Every render writes into <source>/png|svg|jpg, so an image sitting directly
     # beside a .puml came from an earlier flat-output run: it is never refreshed,
     # revalidated or overwritten here and will keep serving whatever it last held.
-    unmanaged = sorted(unmanaged_diagram_images(source_dirs))
-    for stale in unmanaged:
-        print(
-            f"PlantUML: image outside a managed output directory: "
-            f"{stale.relative_to(ROOT) if stale.is_relative_to(ROOT) else stale}",
-            file=sys.stderr,
-        )
+    result.unmanaged_images = [_rel(stale) for stale in sorted(unmanaged_diagram_images(source_dirs))]
+    for stale in result.unmanaged_images:
+        print(f"PlantUML: image outside a managed output directory: {stale}", file=sys.stderr)
 
+    result.changed_files.sort()
     print(
-        f"PlantUML: {diagram_count} diagrams, {rendered} rendered, {skipped} already current, "
-        f"{len(batches)} JVM invocations, {failures} failed batches, {len(orphans)} stale outputs, "
-        f"{len(unmanaged)} unmanaged images",
+        f"PlantUML: {result.discovered_files} files ({result.config_files} config, {result.include_only_files} include-only), "
+        f"{result.diagram_sources} diagram sources / {result.diagram_blocks} blocks, "
+        f"{result.rendered_diagrams} rendered, {result.reused_diagrams} reused, {result.failed_diagrams} failed, "
+        f"{result.jvm_invocations} JVM invocations, outputs {result.outputs_by_format}, "
+        f"{len(result.changed_files)} changed files, {len(result.stale_outputs)} stale outputs, "
+        f"{len(result.unmanaged_images)} unmanaged images",
         file=sys.stderr,
     )
-    return 1 if failures else 0
+    return finish(1 if failed_sources else 0)
+
+
+def plantuml_render_outputs(result_path: Path, *, markdown: bool = False) -> str:
+    """Render the JSON render result as GitHub Actions step outputs or a job-summary table.
+
+    Every number comes from the renderer's own accounting; nothing is counted by
+    globbing the tree, so an unchanged corpus reports has_changes=false and a
+    failed diagram is a failure rather than a file that happens to exist.
+    """
+    data = json.loads(_resolve_repo_path(result_path).read_text(encoding="utf-8"))
+    outputs_total = sum(data.get("outputs_by_format", {}).values())
+    if not markdown:
+        return "\n".join(
+            [
+                f"discovered_files={data['discovered_files']}",
+                f"config_files={data['config_files']}",
+                f"include_only_files={data['include_only_files']}",
+                f"diagram_count={data['diagram_sources']}",
+                f"diagram_blocks={data['diagram_blocks']}",
+                f"rendered_count={data['rendered_diagrams']}",
+                f"reused_count={data['reused_diagrams']}",
+                f"failed_count={data['failed_diagrams']}",
+                f"skipped_count={data['include_only_files']}",
+                f"output_files={outputs_total}",
+                "outputs_by_format=" + json.dumps(data.get("outputs_by_format", {}), separators=(",", ":")),
+                "files=" + json.dumps(data.get("changed_files", []), separators=(",", ":")),
+                f"changed_count={len(data.get('changed_files', []))}",
+                f"stale_count={len(data.get('stale_outputs', []))}",
+                f"unmanaged_count={len(data.get('unmanaged_images', []))}",
+                f"has_changes={'true' if data.get('has_changes') else 'false'}",
+                f"engine_version={data.get('engine_version', '')}",
+                f"c4_version={data.get('c4_version', '')}",
+            ]
+        )
+    rows = [
+        ("Engine", f"PlantUML {data.get('engine_version', '?')} / C4-PlantUML {data.get('c4_version', '?')}"),
+        ("Roots", ", ".join(data.get("roots", [])) or "-"),
+        ("Formats", " ".join(data.get("formats", [])) + (" (forced)" if data.get("forced") else "")),
+        ("Discovered .puml files", data["discovered_files"]),
+        ("Config / include-only files", f"{data['config_files']} / {data['include_only_files']}"),
+        ("Diagram sources / blocks", f"{data['diagram_sources']} / {data['diagram_blocks']}"),
+        ("Rendered / reused / failed", f"{data['rendered_diagrams']} / {data['reused_diagrams']} / {data['failed_diagrams']}"),
+        ("Output files by format", json.dumps(data.get("outputs_by_format", {}))),
+        ("Changed files", len(data.get("changed_files", []))),
+        ("Stale outputs / unmanaged images", f"{len(data.get('stale_outputs', []))} / {len(data.get('unmanaged_images', []))}"),
+        ("JVM invocations", data["jvm_invocations"]),
+    ]
+    lines = ["### PlantUML render result", "", "| Metric | Value |", "| --- | --- |"]
+    lines.extend(f"| {label} | {value} |" for label, value in rows)
+    if data.get("failures"):
+        lines += ["", "#### Failures", "", "| Source | Format | Reason |", "| --- | --- | --- |"]
+        lines += [f"| {f['source']} | {f['format']} | {str(f['reason'])[:160]} |" for f in data["failures"][:50]]
+    if data.get("stale_outputs"):
+        lines += ["", "#### Stale outputs (no source produces them)", ""] + [f"- {p}" for p in data["stale_outputs"][:50]]
+    return "\n".join(lines)
 
 
 def fetch_plantuml(dest: Path | None = None, *, pin: dict[str, str] | None = None) -> Path:
@@ -2411,10 +2785,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     aggregate_parser.add_argument("--shard-result", default="success")
     aggregate_parser.add_argument("--require-complete-corpus", default="false")
 
-    render_parser = subparsers.add_parser("render-plantuml")
+    render_parser = subparsers.add_parser("render-plantuml", help="Render every diagram under --source-dir with the pinned engine")
     render_parser.add_argument("--source-dir", type=Path, default=None)
-    render_parser.add_argument("--formats", nargs="*", default=["png", "svg"])
+    render_parser.add_argument("--extra-root", type=Path, action="append", default=[], help="Additional first-party diagram root (repeatable)")
+    render_parser.add_argument("--formats", nargs="*", default=["png", "svg"], help="png svg jpg; jpg is derived from png with ImageMagick")
     render_parser.add_argument("--force", action="store_true", help="Re-render diagrams even when outputs are current")
+    render_parser.add_argument("--result", type=Path, default=None, help=f"Where to write the JSON render result (default {PLANTUML_RESULT_DEFAULT.relative_to(ROOT)})")
+    render_parser.add_argument("--require-diagrams", action="store_true", help="Fail when the roots contain no renderable diagram")
+
+    render_outputs_parser = subparsers.add_parser("plantuml-render-outputs", help="Render the JSON render result as GitHub Actions outputs or a summary table")
+    render_outputs_parser.add_argument("--result", type=Path, default=PLANTUML_RESULT_DEFAULT)
+    render_outputs_parser.add_argument("--emit", choices=("outputs", "summary"), default="outputs")
 
     fetch_parser = subparsers.add_parser("fetch-plantuml", help="Download and checksum the pinned PlantUML jar; prints its path")
     fetch_parser.add_argument("--dest", type=Path, default=None)
@@ -2584,7 +2965,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     if args.command == "render-plantuml":
-        return render_plantuml(source_dir=args.source_dir, formats=args.formats, force=args.force)
+        return render_plantuml(
+            source_dir=args.source_dir,
+            formats=args.formats,
+            force=args.force,
+            extra_roots=args.extra_root,
+            result_path=args.result,
+            require_diagrams=args.require_diagrams,
+        )
+
+    if args.command == "plantuml-render-outputs":
+        print(plantuml_render_outputs(args.result, markdown=args.emit == "summary"))
+        return 0
 
     if args.command == "fetch-plantuml":
         try:

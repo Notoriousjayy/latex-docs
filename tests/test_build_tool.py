@@ -1113,30 +1113,43 @@ class BuildToolTests(unittest.TestCase):
                 self.assertIn(f'href="images/{item["path"]}"', index_html)
 
     def test_render_plantuml_cli_supports_jpg_through_same_interface_used_in_ci(self) -> None:
+        """PlantUML has no JPEG writer (-tjpg silently yields PNG); jpg must be derived from the PNG render."""
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             src = root / "src"
             src.mkdir()
             diagram = src / "diagram.puml"
             diagram.write_text("@startuml\nA -> B\n@enduml\n", encoding="utf-8")
+            png_magic = b"\x89PNG\r\n\x1a\n" + b"image"
 
             def fake_run(command, **kwargs):
                 if "-version" in command:
                     return SimpleNamespace(returncode=0, stdout="PlantUML version 1.2026.7", stderr="")
+                if "-stdlib" in command:
+                    return SimpleNamespace(returncode=0, stdout="c4\nVersion 2.13.0\n", stderr="")
+                if command[0] == "fake-convert":
+                    Path(command[-1]).write_bytes(b"\xff\xd8\xff" + b"jpeg")
+                    return SimpleNamespace(returncode=0, stdout="", stderr="")
                 output_dir = Path(command[command.index("-o") + 1])
                 output_dir.mkdir(parents=True, exist_ok=True)
                 fmt = next(argument[2:] for argument in command if argument.startswith("-t"))
                 for name in command:
                     if name.endswith(".puml"):
-                        (output_dir / f"{Path(name).stem}.{fmt}").write_bytes(b"image")
+                        (output_dir / f"{Path(name).stem}.{fmt}").write_bytes(png_magic)
                 return SimpleNamespace(returncode=0, stdout="", stderr=b"")
 
-            with patch("tooling.scripts.latex_build.subprocess.run", side_effect=fake_run) as run_mock:
-                status = latex_build.render_plantuml(source_dir=src, formats=["png", "jpg"], force=True)
+            with patch("tooling.scripts.latex_build.subprocess.run", side_effect=fake_run) as run_mock, \
+                    patch("tooling.scripts.latex_build.image_magick_convert", return_value="fake-convert"):
+                status = latex_build.render_plantuml(
+                    source_dir=src, formats=["png", "jpg"], force=True, result_path=root / "result.json"
+                )
 
             self.assertEqual(0, status)
             self.assertTrue(any("-tpng" in call.args[0] for call in run_mock.call_args_list))
-            self.assertTrue(any("-tjpg" in call.args[0] for call in run_mock.call_args_list))
+            self.assertFalse(any("-tjpg" in call.args[0] for call in run_mock.call_args_list))
+            self.assertEqual(1, sum(1 for call in run_mock.call_args_list if call.args[0][0] == "fake-convert"))
+            self.assertTrue((src / "jpg" / "diagram.jpg").is_file())
+            self.assertTrue((src / "png" / "diagram.png").is_file())
 
     def test_discover_roots_includes_all_canonical_cornell_documents(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
@@ -1458,13 +1471,22 @@ class BuildToolTests(unittest.TestCase):
         self.assertIsInstance(data, dict)
 
         expected_inputs = {
-            "source-dir", "formats", "generate-jpg", "config-names", "plantuml-version",
+            "source-dir", "formats", "generate-jpg", "extra-roots", "force", "result-path", "plantuml-version",
         }
         expected_outputs = {
-            "diagram-count", "rendered-count", "failed-count", "skipped-count", "rendered-files", "has-changes",
+            "discovered-files", "diagram-count", "diagram-blocks", "rendered-count", "reused-count",
+            "failed-count", "skipped-count", "output-files", "outputs-by-format", "rendered-files",
+            "has-changes", "result-path",
         }
         self.assertEqual(expected_inputs, set(data.get("inputs", {}).keys()))
         self.assertEqual(expected_outputs, set(data.get("outputs", {}).keys()))
+        # Every reported number must come from the renderer's JSON result, never from globbing the tree.
+        render_step = next(step for step in data["runs"]["steps"] if step.get("id") == "render")
+        self.assertIn("plantuml-render-outputs", render_step["run"])
+        self.assertIn("--require-diagrams", render_step["run"])
+        self.assertNotIn("find ", render_step["run"])
+        self.assertNotIn("has_changes=true", render_step["run"])
+        self.assertNotIn("failed_count=0", render_step["run"])
 
         for workflow_name in ("_build-latex.yml", "render-plantuml.yml"):
             workflow = yaml.safe_load((repo_root / ".github" / "workflows" / workflow_name).read_text(encoding="utf-8"))

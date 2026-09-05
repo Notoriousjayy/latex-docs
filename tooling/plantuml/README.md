@@ -1,197 +1,211 @@
-# UML PlantUML Style Framework
+# PlantUML Style Framework (UML + C4)
 
-A reusable PlantUML style-module system covering all 14 official UML
-diagram types, organised around a real generalization hierarchy rather
-than a flat collection of include files.
+One presentation system for every first-party diagram in this repository.
+Four layers share the work, and the framework keeps them distinct:
+
+| Layer | Role here |
+| --- | --- |
+| ISO/IEC/IEEE 42010:2022 | structures the architecture description: viewpoints, model kinds, legends, correspondences, decisions. It prescribes neither a palette nor a method. See [`src/architecture/architecture-description-index.md`](../../src/architecture/architecture-description-index.md). |
+| C4 | supplies software-architecture abstractions and views (context, container, component, dynamic, deployment). Notation-independent; not every topic needs all levels. |
+| UML 2.5.1 | governs the meaning and notation of UML elements and relationships wherever a diagram claims to be UML. |
+| PlantUML + C4-PlantUML | implementation syntax, preprocessing, styling and rendering. A diagram that compiles is neither semantically correct UML nor ISO-conformant by that fact alone. |
+| House style (this framework) | typography, colour *roles*, spacing, labels, legends, output behaviour. Project conventions, applied identically to UML and C4 views. |
 
 ---
 
 ## 1. Design overview
 
-The framework expresses the UML diagram taxonomy directly as a
-specialization tree of PlantUML include modules. Every visual or
-semantic concern is placed at the **single highest level** at which
-it is genuinely shared by all descendants:
+Every visual or semantic concern lives at the **single highest module** at
+which it is genuinely shared:
 
-* `uml-base` owns concerns shared by **every** UML diagram type
-  (palette, typography, notes, stereotype + tag conventions, generic
-  layout helpers).
-* `uml-structural` adds conventions specific to **static-architecture**
-  diagrams (class, object, component, deployment, package, composite
-  structure, profile).
-* `uml-behavioral` adds conventions specific to **dynamic-behavior**
-  diagrams (use case, activity, state machine — and, by inheritance,
-  the four interaction diagrams as well).
-* `uml-interaction` further specialises `uml-behavioral` for the
-  **message-exchange** subset (sequence, communication, timing,
-  interaction-overview).
-* Each of the 14 diagram-specific modules extends its correct
-  category parent and introduces only what is unique to that diagram
-  type.
+* `house-tokens` (neutral root) owns the palette, the semantic role tokens
+  (`$fill_*`, `$deep_*`, `$line_*`), the typography constants and the
+  role stereotype classes (`<<ok>>`, `<<invalid>>`, `<<external>>`, ...).
+  It includes nothing and knows nothing about UML or C4.
+* `uml-base` applies the tokens to concerns shared by **every** UML diagram
+  type (background, wrapping, note/legend/title styling, note macros,
+  `UML_LEGEND_*`, the optional-label helper).
+* `uml-structural`, `uml-behavioral`, `uml-interaction` specialise
+  `uml-base` for the three UML categories exactly as before
+  (`uml-interaction` still derives from `uml-behavioral`).
+* The 14 UML leaf modules under `tooling/styles/plantuml/{structural,behavioral,interaction}/`
+  add only what is unique to one diagram type.
+* `c4-base` applies the same tokens to C4-PlantUML's documented
+  customisation variables **before** including the library from the pinned
+  jar's standard library, then applies post-include typography and
+  registers the house role tags with the C4 legend.
+* The 5 C4 leaf modules under `tooling/styles/plantuml/c4/` set
+  `$C4_LEVEL` and include `c4-base`.
 
-This deliberately mirrors the UML 2.x metamodel: interaction diagrams
-are formally a subset of behavioral diagrams, and that relationship is
-encoded in the include graph rather than in comments.
+The include graph is a repository implementation informed by UML's
+informative Annex A taxonomy; it is not evidence that the preprocessor
+implements UML generalization.
 
-The framework is shaped so a typical user diagram contains exactly
-**one** `!include` line and uses framework-provided macros (e.g.
-`STRUCT_GENERALIZATION`, `INTER_SYNC`, `BEHAV_GUARDED`) instead of raw
-PlantUML arrow syntax. That keeps semantic intent recoverable and
-makes a global restyle a one-file edit.
+A user diagram contains exactly **one** leaf `!include` (plus optional
+domain helpers such as `pipe-and-filter-roles.iuml`) and never a hex
+colour, `!theme`, `<style>` block or colour/typography `skinparam`
+(`tooling/scripts/plantuml_lint.py` enforces this). Layout hints
+(`nodesep`, `ranksep`, `linetype`, direction, `componentStyle`) remain
+legitimate local decisions.
 
 ---
 
 ## 2. Hierarchy diagram
 
 ```
-                          +----------------+
-                          |    uml-base    |   palette, typography,
-                          +----------------+   notes, stereotypes,
-                            |          |       tags, layout helpers
-              +-------------+          +-------------+
-              v                                      v
-     +-----------------+                    +------------------+
-     | uml-structural  |                    |  uml-behavioral  |
-     +-----------------+                    +------------------+
-       |   |   |   |   |   |   |              |    |    |   |
-       v   v   v   v   v   v   v              v    v    v   |
-     class obj cmp dpl pkg csd prof          uc act stm     |
-                                                            v
-                                              +-----------------+
-                                              | uml-interaction |
-                                              +-----------------+
-                                                |   |   |   |
-                                                v   v   v   v
-                                              seq com tim iov
+                        +----------------+
+                        |  house-tokens  |   palette, role tokens,
+                        +----------------+   typography, role classes
+                          |            |
+             +------------+            +------------------+
+             v                                            v
+     +----------------+                            +-------------+
+     |    uml-base    |                            |   c4-base   |  <C4/C4_*> from the
+     +----------------+                            +-------------+  pinned jar's stdlib
+       |          |                                  |  |  |  |  |
+       v          v                                  v  v  v  v  v
+ +--------------+  +---------------+             ctx cnt cmp dyn dpl
+ |uml-structural|  | uml-behavioral|
+ +--------------+  +---------------+
+  | | | | | | |      |   |   |   |
+  v v v v v v v      v   v   v   v
+ class obj cmp dpl  uc  act stm  +-----------------+
+ pkg csd prof                    | uml-interaction |
+                                 +-----------------+
+                                   |   |   |   |
+                                   v   v   v   v
+                                 seq com tim iov
 ```
 
-Legend:
-`class` Class · `obj` Object · `cmp` Component · `dpl` Deployment ·
-`pkg` Package · `csd` Composite Structure · `prof` Profile ·
-`uc` Use Case · `act` Activity · `stm` State Machine ·
-`seq` Sequence · `com` Communication · `tim` Timing · `iov` Interaction Overview.
+Legend: `class` Class · `obj` Object · `cmp` Component · `dpl` Deployment ·
+`pkg` Package · `csd` Composite Structure · `prof` Profile · `uc` Use Case ·
+`act` Activity · `stm` State Machine · `seq` Sequence · `com` Communication ·
+`tim` Timing · `iov` Interaction Overview · `ctx` C4 Context/Landscape ·
+`cnt` C4 Container · `cmp` C4 Component · `dyn` C4 Dynamic · `dpl` C4 Deployment.
 
-A PlantUML rendering of the same hierarchy is available below if you
-drop it into any `.puml` file:
+### Choosing a family
+
+| Modelling question | Use |
+| --- | --- |
+| How does one software system relate to people and neighbouring systems? | `c4/context-diagram-style.iuml` (keep internals out of the system box) |
+| Which applications and data stores make up that system? | `c4/container-diagram-style.iuml` |
+| What major functionality sits inside one container? | `c4/component-diagram-style.iuml` (keep the `Container_Boundary`) |
+| How does one scenario traverse architecture elements? | `c4/dynamic-diagram-style.iuml` (numbered `Rel(..., $index=Index())`) or a UML sequence diagram with a stated abstraction |
+| Where do runtime instances execute in one environment? | `c4/deployment-diagram-style.iuml`; `structural/deployment-diagram-style.iuml` when artifact/node semantics are the point |
+| Type relationships, workflow, lifecycle, interactions, user goals | the matching UML leaf |
+| An existing module / C&C / allocation *reference pattern* | keep its declared model kind; apply the shared presentation |
+
+A C4 **container** is an application or data store (not a Docker container,
+host, directory or UML package); a C4 **component** is a grouping of
+functionality inside one container and is not a UML Component. Record any
+UML mapping in the diagram header instead of mixing notations in one view.
+
+### Role tokens and legends
+
+| Role | Meaning | Tokens | Stereotype |
+| --- | --- | --- | --- |
+| primary | element of interest / system in scope / layer A | `$fill_primary` `$deep_primary` `$line_primary` | `<<primary>>` |
+| dynamic | behaviour, runtime, data in motion / layer B | `$fill_dynamic` ... | `<<dynamic>>` |
+| ok | valid, allowed, healthy, success path | `$fill_ok` ... | `<<ok>>` |
+| caution | relaxed rule, degraded, pending | `$fill_caution` ... | `<<caution>>` |
+| invalid | violation, error, intentionally wrong example | `$fill_invalid` ... | `<<invalid>>` |
+| alt | alternative, cross-cutting, aspect | `$fill_alt` ... | `<<alt>>` |
+| neutral / external | out of scope, inactive, environment | `$fill_neutral` ... | `<<neutral>>`, `<<external>>` |
+
+Colour is reinforcement only: pair every role with a label, shape or line
+style so meaning survives grayscale. Elements use `<<role>>` (hidden in the
+picture); arrows use `-[$line_role]->`; notes use `note ... $fill_role`.
+Any diagram that applies a hidden role stereotype must carry a legend:
 
 ```plantuml
-@startuml
-left to right direction
-skinparam classFontStyle plain
-hide empty members
-
-class "uml-base"        as B
-class "uml-structural"  as S
-class "uml-behavioral"  as Bh
-class "uml-interaction" as I
-
-S  --|> B
-Bh --|> B
-I  --|> Bh
-
-class "class-diagram-style"     as Cd
-class "object-diagram-style"    as Od
-class "component-diagram-style" as Cmp
-class "deployment-diagram-style"as Dpl
-class "package-diagram-style"   as Pkg
-class "composite-structure-diagram-style" as Csd
-class "profile-diagram-style"   as Prof
-Cd  --|> S
-Od  --|> S
-Cmp --|> S
-Dpl --|> S
-Pkg --|> S
-Csd --|> S
-Prof--|> S
-
-class "usecase-diagram-style"      as Uc
-class "activity-diagram-style"     as Act
-class "statemachine-diagram-style" as Stm
-Uc  --|> Bh
-Act --|> Bh
-Stm --|> Bh
-
-class "sequence-diagram-style"            as Seq
-class "communication-diagram-style"       as Com
-class "timing-diagram-style"              as Tim
-class "interaction-overview-diagram-style"as Iov
-Seq --|> I
-Com --|> I
-Tim --|> I
-Iov --|> I
-@enduml
+UML_LEGEND_BEGIN()
+UML_LEGEND_ROLE(ok, allowed dependency)
+UML_LEGEND_ROLE(invalid, architectural violation)
+UML_LEGEND_END()
 ```
+
+C4 views use `$tags="ok|caution|invalid|alt|proposed"` on elements and
+relations and end with `SHOW_LEGEND()`; `C4_TITLE(scope)` puts the diagram
+type and scope in the title as the C4 checklist asks.
+
+### Notation notes for the corrected helpers
+
+| Helper | Emits | Specification | Limitation |
+| --- | --- | --- | --- |
+| `CSD_PORT(p)` (inside the owner block) | `port p` | UML 11.3.4 Port: small square on the boundary | — (`CSD_INTERFACE` gives the lollipop when an interface is meant) |
+| `PROF_EXTENSION(S, M[, required])` | `S --|> M : <<extension>>` | UML 12.3.4 / Fig. 12.18: solid line, filled triangle | PlantUML cannot fill the triangle; the label distinguishes it from generalization |
+| `COMP_PROVIDES` / `COMP_REQUIRES` | `C -() I` / `C -( I` | UML 11.6 lollipop / socket | — |
+| `COMP_ASSEMBLY(P, I, C)` | `C -(0- P : I` | UML 11.6.2 assembly connector (consumer socket into provider ball) | — |
+| `INTER_LOST` / `INTER_FOUND` | `A ->o]` / `[o-> B` | UML 17.4.3 lost/found (filled circle) | `INTER_OUTGOING`/`INTER_INCOMING` are frame gates (17.4.4), a different construct |
+| `IOV_REF_STEP(name)` | action node tagged `ref` with the `.iov_ref` style | UML 17.6.4 InteractionUse | PlantUML has no interaction-overview frame; document the approximation in the caption |
+| `UML_DIVIDER` | `== text ==` | sequence divider | sequence/communication diagrams only |
+| `SEQ_AUTONUMBER()` | `autonumber` | — | numbering is opt-in; most corpus diagrams number by hand |
 
 ---
 
-## 3. Recommended folder structure
+## 3. Folder structure (live)
 
 ```
-uml-plantuml-styles/
-├── readme.md                                # this design document
-├── styles/
-│   ├── uml-base.iuml                        # root parent module
-│   ├── uml-structural.iuml                  # category module
-│   ├── uml-behavioral.iuml                  # category module
-│   ├── uml-interaction.iuml                 # sub-category module
-│   ├── structural/
-│   │   ├── class-diagram-style.iuml
-│   │   ├── object-diagram-style.iuml
-│   │   ├── component-diagram-style.iuml
-│   │   ├── deployment-diagram-style.iuml
-│   │   ├── package-diagram-style.iuml
-│   │   ├── composite-structure-diagram-style.iuml
-│   │   └── profile-diagram-style.iuml
-│   ├── behavioral/
-│   │   ├── usecase-diagram-style.iuml
-│   │   ├── activity-diagram-style.iuml
-│   │   └── statemachine-diagram-style.iuml
-│   └── interaction/
-│       ├── sequence-diagram-style.iuml
-│       ├── communication-diagram-style.iuml
-│       ├── timing-diagram-style.iuml
-│       └── interaction-overview-diagram-style.iuml
-└── examples/
-    ├── class-example.puml
-    ├── usecase-example.puml
-    ├── activity-example.puml
-    └── sequence-example.puml
+tooling/
+├── manifests/plantuml.json                  # engine pin (version, sha256) + bundled C4-PlantUML version
+├── plantuml/
+│   ├── README.md                            # this document
+│   ├── config.puml                          # rendering-only (-config): dpi
+│   ├── house-tokens.iuml                    # neutral root: palette, role tokens, typography, role classes
+│   ├── uml-base.iuml                        # UML root (includes house-tokens only)
+│   ├── uml-structural.iuml / uml-behavioral.iuml / uml-interaction.iuml
+│   ├── c4-base.iuml                         # C4 root (includes house-tokens, then <C4/C4_*> from the jar's stdlib)
+│   ├── *-example.puml                       # one renderable example per family; rendered into png/ svg/ jpg/
+│   └── png/ svg/ jpg/                       # managed outputs of the examples
+└── styles/plantuml/
+    ├── structural/   class, object, component, deployment, package, composite-structure, profile
+    ├── behavioral/   usecase, activity, statemachine
+    ├── interaction/  sequence, communication, timing, interaction-overview
+    └── c4/           context, container, component, dynamic, deployment
 ```
 
 Conventions:
 
-* `.iuml` is reserved for include-only modules (PlantUML convention;
-  rendering tools and IDEs treat them differently from `.puml`).
-* `.puml` is reserved for renderable diagrams.
-* Category subdirectories (`structural/`, `behavioral/`,
-  `interaction/`) physically reflect the logical hierarchy. Adding a
-  new diagram type means adding a file to exactly one such directory.
-* The root parent and category modules sit at `styles/` (one level up)
-  so a diagram-specific module always uses the path
-  `!include ../uml-<category>.iuml`. This is deliberate: the relative
-  depth makes the include direction (child → parent) visually obvious
-  in the source.
+* `.iuml` is reserved for include-only modules; `.puml` for renderable
+  diagrams and the two rendering-only configs (`plantuml-config.puml`,
+  `config.puml`).
+* Every module carries an `!ifndef X_INCLUDED` guard, is ASCII with LF line
+  endings, and has exactly one canonical location (lint rejects shadows and
+  `.iml` misspellings).
+* Leaf modules include their category parent with a relative path
+  (`../../../plantuml/uml-<category>.iuml`); source diagrams include a leaf
+  with a relative path from their own directory. `PLANTUML_INCLUDE_PATH` is
+  set by the renderer to both `tooling/plantuml` and `tooling/styles/plantuml`
+  so the framework examples can include `<category>/<leaf>.iuml` directly.
+* Domain helper includes (e.g. `pipe-and-filter-roles.iuml` beside the
+  diagrams that use it) may sit next to sources; they consume tokens and never
+  define colours.
+* Rendered outputs live only in `<source dir>/png|svg|jpg/` and are named
+  after `@startuml <name>` (else the file stem). An image beside a `.puml`
+  is an error.
 
 ---
 
 ## 4. Parent module code
 
-The full source of `styles/uml-base.iuml` is in this repository. Key
-design points:
+`house-tokens.iuml` and `uml-base.iuml` (and `c4-base.iuml`) are the
+annotated sources. Key design points:
 
-* Theme tokens use `!$` variables (e.g. `!$theme_primary`) so colours
-  appear by **role** in user diagrams, never as raw hex. A palette
-  swap is a one-file edit.
-* All global `skinparam` defaults (typography, padding, corner radius,
-  shadow, note + legend appearance, default arrow + stereotype font)
-  live here — and only here.
+* Palette and role tokens are `!$` variables defined **once**, in
+  `house-tokens.iuml`; `uml-base` and `c4-base` consume them. A palette swap
+  is a one-file edit and the contract test `test_palette_has_exactly_one_owner`
+  guards it.
+* All global UML `skinparam` defaults (typography sizes from the house
+  hierarchy, corner radius, shadow, note + legend appearance, default arrow +
+  stereotype font) live in `uml-base` — and only there.
 * Cross-cutting macros (`UML_NOTE_INFO`, `UML_NOTE_WARN`, `UML_STEREO`,
-  `UML_TAG`, `UML_DIVIDER`, `UML_CAPTION`) are defined here so every
-  descendant inherits them automatically.
-* The file uses an `!ifndef UML_BASE_INCLUDED` guard so multiple
-  diagram modules pulling it via different chains are safe.
-
-See `styles/uml-base.iuml` for the full annotated source.
+  `UML_TAG`, `UML_DIVIDER`, `UML_CAPTION`, `UML_LEGEND_BEGIN/ROLE/END`,
+  `$uml_label`) are defined in `uml-base` so every descendant inherits them.
+* `c4-base` sets C4-PlantUML's `$*_BG_COLOR`/`$*_FONT_COLOR` variables from
+  the tokens *before* `!include <C4/C4_<level>>` (the library reads them with
+  `?=`), then applies post-include typography and registers house role tags
+  (`AddElementTag`/`AddRelTag`) so `SHOW_LEGEND()` explains them.
+* Every module has an `!ifndef X_INCLUDED` guard.
 
 ---
 
@@ -280,10 +294,11 @@ category parent or even in `uml-base`. See section 9.
 
 ## 7. Example diagrams
 
-Four runnable examples are provided in `examples/`. Each illustrates
-the framework idiomatically: a single `!include` line, framework
-macros instead of raw arrows, and consistent palette + typography
-inherited from `uml-base`.
+Six runnable examples live beside this README and render into `png/`,
+`svg/` and `jpg/` next to them (they are part of the managed corpus and
+the CI smoke test). Each illustrates the framework idiomatically: a single
+`!include` line, framework macros instead of raw arrows, and palette +
+typography inherited from the shared modules.
 
 * **`class-example.puml`** — Payment domain model demonstrating
   `STRUCT_REALIZATION`, `STRUCT_GENERALIZATION`, `STRUCT_COMPOSITION`,
@@ -295,59 +310,96 @@ inherited from `uml-base`.
   swimlanes and a guarded branch using `ACT_LANE`, `ACT_DO`, `ACT_IF`,
   `ACT_ELSE`, `ACT_ENDIF`.
 * **`sequence-example.puml`** — Checkout payment sequence using all
-  six `SEQ_*` participant kinds, `INTER_SYNC`, `INTER_RETURN`,
-  `INTER_ACTIVATE/DEACTIVATE`, and an `alt`/`else` combined fragment.
+  six `SEQ_*` participant kinds, `SEQ_AUTONUMBER`, `INTER_SYNC`,
+  `INTER_RETURN`, `INTER_ACTIVATE/DEACTIVATE`, and an `alt`/`else` fragment.
+* **`c4-context-example.puml`** — System context with an external person,
+  a `proposed` neighbour and `SHOW_LEGEND()`.
+* **`c4-container-example.puml`** — Container view with a `System_Boundary`,
+  database/queue containers and an `invalid`-tagged legacy path.
 
-Render any of them with:
+Render them with the pinned engine:
 
 ```bash
-plantuml examples/sequence-example.puml
+PLANTUML_JAR="$(python3 tooling/scripts/latex_build.py fetch-plantuml)" \
+  python3 tooling/scripts/latex_build.py smoke-plantuml --output-dir /tmp/smoke
 ```
 
 ---
 
 ## 8. Usage instructions
 
-The intended user workflow is:
+1. **Pick the family** with the decision table in §2 and include exactly one
+   leaf module by relative path.
+2. **Start with the header comment** (`Diagram / Type / Model kind / Owns /
+   Subject / Status`) so the inventory and reviewers can classify the view.
+3. **Use framework macros** for relationships, messages, fragments, notes and
+   legends; use role stereotypes/tokens instead of colours; add a legend
+   whenever a role stereotype is used.
+4. **Render through the canonical pipeline** (never the apt `plantuml`,
+   which is 1.2020.02):
 
-1. **Identify the diagram type** you are authoring.
-2. **Include exactly one** diagram-specific module from `styles/<category>/`.
-   That single line is sufficient: every parent module is pulled
-   transitively, with include guards preventing double-inclusion.
-3. **Use framework macros** in preference to raw PlantUML syntax for
-   anything covered: relationship arrows, message kinds, combined
-   fragments, notes, stereotypes, layout direction.
-4. **Use the file header comment** template documented in
-   `uml-base.iuml` so reviewers can find the diagram's purpose,
-   owner, and approval status without reading the body.
+```bash
+make render-plantuml                                   # incremental, src/ only
+make render-plantuml RENDER_ARGS="--force --extra-root tooling/plantuml --formats png svg jpg"
+python3 tooling/scripts/latex_build.py render-plantuml --help
+python3 tooling/scripts/plantuml_lint.py               # style + include contract
+python3 tooling/scripts/plantuml_inventory.py --check  # inventory, collisions, missing outputs
+python3 tooling/scripts/diagram_reference_validator.py --validate
+python3 -m unittest tests.test_plantuml_style_framework tests.test_plantuml_pipeline tests.test_diagram_reference_validator
+```
 
-A minimal sequence-diagram skeleton:
+Freshness depends on the source, its nearest config, every transitive local
+include, every shared module, the manifest and the renderer itself, so a
+shared-style edit re-renders the whole corpus. Outputs are rendered into a
+temporary directory, validated (exit status, presence, format magic, error
+text drawn into SVGs) and only then promoted; a failed diagram keeps its
+previous image and is reported as failed in
+`public/logs/plantuml-render.json`. JPEG is derived from the PNG with
+ImageMagick (flattened onto paper), because the engine has no JPEG writer.
+
+A minimal sequence diagram:
 
 ```plantuml
 @startuml
-!include path/to/styles/interaction/sequence-diagram-style.iuml
+!include ../../tooling/styles/plantuml/interaction/sequence-diagram-style.iuml
+SEQ_AUTONUMBER()
 
 title My Interaction
 
-SEQ_ACTOR(U, "User")
-SEQ_BOUNDARY(API, "Public API")
-SEQ_CONTROL(SVC, "DomainService")
+SEQ_ACTOR(U, User)
+SEQ_BOUNDARY(API, Public API)
+SEQ_CONTROL(SVC, DomainService)
 
-INTER_SYNC(U, API, "POST /widgets")
-INTER_SYNC(API, SVC, "createWidget(req)")
-INTER_RETURN(SVC, API, "Widget")
-INTER_RETURN(API, U, "201 Created")
+INTER_SYNC(U, API, POST /widgets)
+INTER_SYNC(API, SVC, createWidget(req))
+INTER_RETURN(SVC, API, Widget)
+INTER_RETURN(API, U, 201 Created)
 @enduml
 ```
 
-Within a LaTeX monorepo that runs PlantUML via a CI step, the
-recommended convention is to set `PLANTUML_INCLUDE_PATH` (or pass
-`-I`) to the absolute `styles/` directory. Diagrams then include only
-the leaf module name:
+A minimal C4 container view:
 
 ```plantuml
-!include interaction/sequence-diagram-style.iuml
+@startuml
+!include ../../tooling/styles/plantuml/c4/container-diagram-style.iuml
+C4_TITLE(Ordering System)
+Person(customer, "Customer")
+System_Boundary(sys, "Ordering System") {
+  Container(api, "Order API", "technology not specified", "Order rules")
+  ContainerDb(db, "Order Database", "PostgreSQL", "System of record")
+}
+Rel(customer, api, "Places orders", "HTTPS")
+Rel(api, db, "Reads / writes", "SQL")
+SHOW_LEGEND()
+@enduml
 ```
+
+### Upgrading the engine or the C4 library
+
+Bump `version`/`sha256` (and `c4_plantuml` to the version reported by
+`java -jar plantuml.jar -stdlib`) in `tooling/manifests/plantuml.json`, run
+the real-engine tests, then a forced render. The engine check refuses to
+render if the bundled C4 version differs from the pin.
 
 ---
 
@@ -501,12 +553,13 @@ runtime dependencies supplied by the runner distribution.
 
 DECISION: framework values win. `tooling/plantuml/config.puml` and any
 `plantuml-config.puml` found next to diagrams may only set what the
-framework cannot express (currently `dpi`); anything `uml-base.iuml`
-owns (background, shadowing, roundCorner, padding, default/title/caption
-fonts, Arrow*, Note*, Legend*, Stereotype*) must not appear in a config
-file or in a diagram. Diagram-specific semantic colours (for example
-`skinparam cloud { ... }`) stay local and are tracked as a follow-up
-inventory, not re-themed.
+framework cannot express (currently `dpi`); anything the shared modules own
+(background, shadowing, roundCorner, fonts, Arrow*, Note*, Legend*,
+Stereotype*, element colours) must not appear in a config file or in a
+diagram. The 2026-09 migration retired every local palette
+(`tooling/scripts/migrate_plantuml_styles.py`, idempotent); directory-level
+semantic roles such as the pipe-and-filter filter kinds live in a domain
+helper include that consumes tokens.
 
 ---
 
@@ -553,10 +606,10 @@ Run through this before merging changes that touch any module.
   and ends with `!endif`. The four examples render without "already
   defined" warnings when included via multiple chains.
 
-- [ ] **No raw hex colours in user diagrams.** Search the `examples/`
-  directory for `#` followed by six hex digits — the only matches
-  should be inside `styles/uml-base.iuml`, where the tokens are
-  defined.
+- [ ] **No raw hex colours in user diagrams.** `python3
+  tooling/scripts/plantuml_lint.py` must be clean: the only six-digit hex
+  literals in the tree live in `house-tokens.iuml` (and, for C4-PlantUML's
+  own defaults, `c4-base.iuml`).
 
 - [ ] **No raw arrow syntax in user diagrams where a macro exists.**
   In the example diagrams, structural relationships are drawn with

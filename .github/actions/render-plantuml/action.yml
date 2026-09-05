@@ -15,34 +15,60 @@ inputs:
     description: 'Generate JPG from PNG (requires ImageMagick)'
     required: false
     default: 'false'
-  config-names:
-    description: 'Space-separated config file names to search for'
+  extra-roots:
+    description: 'Space-separated additional first-party diagram roots (e.g. tooling/plantuml for the framework examples)'
     required: false
-    default: 'plantuml-config.puml config.puml'
+    default: 'tooling/plantuml'
+  force:
+    description: 'Re-render every diagram regardless of freshness'
+    required: false
+    default: 'false'
+  result-path:
+    description: 'Where the renderer writes its JSON result'
+    required: false
+    default: 'public/logs/plantuml-render.json'
   plantuml-version:
     description: 'Must match tooling/manifests/plantuml.json; the manifest is the single pin (leave empty)'
     required: false
     default: ''
 
 outputs:
+  discovered-files:
+    description: 'Number of .puml files discovered (diagrams + configs + include-only fragments)'
+    value: ${{ steps.render.outputs.discovered_files }}
   diagram-count:
-    description: 'Number of PlantUML source files found'
+    description: 'Number of renderable diagram sources'
     value: ${{ steps.render.outputs.diagram_count }}
+  diagram-blocks:
+    description: 'Number of @startuml blocks across those sources'
+    value: ${{ steps.render.outputs.diagram_blocks }}
   rendered-count:
-    description: 'Number of output files successfully rendered'
+    description: 'Diagrams rendered in this run (all requested formats validated and promoted)'
     value: ${{ steps.render.outputs.rendered_count }}
+  reused-count:
+    description: 'Diagrams whose outputs were already current'
+    value: ${{ steps.render.outputs.reused_count }}
   failed-count:
-    description: 'Number of render failures'
+    description: 'Diagrams that failed (previous images preserved, reported as failed)'
     value: ${{ steps.render.outputs.failed_count }}
   skipped-count:
-    description: 'Number of include-only PUML fragments skipped'
+    description: 'Include-only .puml fragments skipped'
     value: ${{ steps.render.outputs.skipped_count }}
+  output-files:
+    description: 'Per-format output files written this run'
+    value: ${{ steps.render.outputs.output_files }}
+  outputs-by-format:
+    description: 'JSON object of output counts per format'
+    value: ${{ steps.render.outputs.outputs_by_format }}
   rendered-files:
-    description: 'JSON array of rendered file paths'
+    description: 'JSON array of repo-relative image paths whose bytes changed'
     value: ${{ steps.render.outputs.files }}
   has-changes:
-    description: 'Whether any new files were generated'
+    description: 'Whether any image bytes actually changed'
     value: ${{ steps.render.outputs.has_changes }}
+  result-path:
+    description: 'Path of the authoritative JSON render result'
+    value: ${{ steps.render.outputs.result_path }}
 
 runs:
   using: 'composite'
@@ -58,6 +84,7 @@ runs:
         sudo apt-get install -y --no-install-recommends \
           ca-certificates \
           graphviz \
+          fonts-dejavu-core \
           default-jre-headless
         if [[ "${{ inputs.generate-jpg }}" == "true" ]]; then
           sudo apt-get install -y --no-install-recommends imagemagick
@@ -84,42 +111,29 @@ runs:
         if [[ "${{ inputs.generate-jpg }}" == "true" ]]; then
           FORMATS+=("jpg")
         fi
-        if [[ ! -d "$ROOT" ]]; then
-          echo "diagram_count=0" >> "$GITHUB_OUTPUT"
-          echo "rendered_count=0" >> "$GITHUB_OUTPUT"
-          echo "failed_count=0" >> "$GITHUB_OUTPUT"
-          echo "skipped_count=0" >> "$GITHUB_OUTPUT"
-          echo 'files=[]' >> "$GITHUB_OUTPUT"
-          echo 'has_changes=false' >> "$GITHUB_OUTPUT"
-          exit 0
+        EXTRA=()
+        for root in ${{ inputs.extra-roots }}; do EXTRA+=(--extra-root "$root"); done
+        FORCE=()
+        if [[ "${{ inputs.force }}" == "true" ]]; then FORCE+=(--force); fi
+        RESULT="${{ inputs.result-path }}"
+        mkdir -p "$(dirname "$RESULT")"
+        # The renderer is the single source of discovery, freshness, validation and
+        # accounting; the action only relays its JSON result. It exits 1 on any failed
+        # diagram (previous valid images are preserved and reported as failed) and 2 on
+        # a configuration error such as an unpinned engine. An expected root that holds
+        # no renderable diagram is a failure, never a silent "0 rendered" success.
+        set +e
+        python3 tooling/scripts/latex_build.py render-plantuml \
+          --source-dir "$ROOT" "${EXTRA[@]}" --formats "${FORMATS[@]}" "${FORCE[@]}" \
+          --result "$RESULT" --require-diagrams
+        status=$?
+        set -e
+        if [[ -f "$RESULT" ]]; then
+          python3 tooling/scripts/latex_build.py plantuml-render-outputs --result "$RESULT" >> "$GITHUB_OUTPUT"
+          python3 tooling/scripts/latex_build.py plantuml-render-outputs --result "$RESULT" --emit summary >> "$GITHUB_STEP_SUMMARY"
+        else
+          echo "::error::renderer produced no result file at $RESULT"
+          exit 1
         fi
-        export PLANTUML_INCLUDE_PATH="${GITHUB_WORKSPACE}/tooling/plantuml:${GITHUB_WORKSPACE}/tooling/styles/plantuml"
-        python3 tooling/scripts/latex_build.py render-plantuml --source-dir "$ROOT" --formats "${FORMATS[@]}"
-        diagram_count=$(find "$ROOT" -type f -name '*.puml' 2>/dev/null | wc -l | tr -d ' ')
-        rendered_count=$(find "$ROOT" -type f \( -name '*.png' -o -name '*.svg' -o -name '*.jpg' -o -name '*.jpeg' \) 2>/dev/null | wc -l | tr -d ' ')
-        failed_count=0
-        skipped_count=0
-        python3 - "$ROOT" <<'PY'
-        import json, sys
-        from pathlib import Path
-        root = Path(sys.argv[1]).resolve()
-        files = sorted(str(path.relative_to(root).as_posix()) for path in root.rglob('*') if path.is_file() and path.suffix.lower() in {'.png', '.svg', '.jpg', '.jpeg'})
-        print(f"files={json.dumps(files)}")
-        PY
-        files_json=$(python3 - "$ROOT" <<'PY'
-        import json, sys
-        from pathlib import Path
-        root = Path(sys.argv[1]).resolve()
-        files = sorted(str(path.relative_to(root).as_posix()) for path in root.rglob('*') if path.is_file() and path.suffix.lower() in {'.png', '.svg', '.jpg', '.jpeg'})
-        print(json.dumps(files))
-        PY
-        )
-        echo "diagram_count=$diagram_count" >> "$GITHUB_OUTPUT"
-        echo "rendered_count=$rendered_count" >> "$GITHUB_OUTPUT"
-        echo "failed_count=$failed_count" >> "$GITHUB_OUTPUT"
-        echo "skipped_count=$skipped_count" >> "$GITHUB_OUTPUT"
-        echo "files=${files_json}" >> "$GITHUB_OUTPUT"
-        echo "has_changes=true" >> "$GITHUB_OUTPUT"
-
-
-
+        echo "result_path=$RESULT" >> "$GITHUB_OUTPUT"
+        exit "$status"

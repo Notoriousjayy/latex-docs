@@ -23,6 +23,7 @@ on:
       - 'tooling/styles/plantuml/**'
       - 'tooling/manifests/plantuml.json'
       - 'tooling/scripts/latex_build.py'
+      - 'tooling/scripts/plantuml_lint.py'
       - '.github/actions/render-plantuml/**'
       - '.github/workflows/render-plantuml.yml'
 
@@ -54,11 +55,18 @@ jobs:
         run: python3 tooling/scripts/plantuml_lint.py
 
       - name: Render PlantUML diagrams
+        id: render
         uses: ./.github/actions/render-plantuml
         with:
           source-dir: 'src'
+          extra-roots: 'tooling/plantuml'
           formats: 'png svg'
           generate-jpg: ${{ inputs.generate-jpg && 'true' || 'false' }}
+          # A fresh checkout gives every file the same mtime, so incremental
+          # freshness cannot see a shared-style change here; this workflow only
+          # runs when a rendering input changed, so it always rebuilds the corpus
+          # and relies on byte comparison to decide whether anything is committed.
+          force: 'true'
 
       - name: Verify framework examples with the pinned engine
         shell: bash
@@ -66,21 +74,34 @@ jobs:
         # outputs, or error/deprecation text drawn into the SVG (NBSP-normalised).
         run: python3 tooling/scripts/latex_build.py smoke-plantuml --output-dir "$RUNNER_TEMP/plantuml-smoke"
 
+      - name: Upload render result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plantuml-render-result
+          path: public/logs/plantuml-render.json
+          if-no-files-found: warn
+
       - name: Commit rendered images
+        if: steps.render.outputs.has-changes == 'true'
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          # Stages only src/**/{png,svg,jpg}/*.{png,svg,jpg} (adds, edits, deletions)
+          # Stages only <root>/**/{png,svg,jpg}/*.{png,svg,jpg} (adds, edits, deletions)
           # from concrete paths, so an absent optional format cannot abort the add.
-          python3 tooling/scripts/latex_build.py stage-plantuml-images
+          python3 tooling/scripts/latex_build.py stage-plantuml-images --source-dir src
+          python3 tooling/scripts/latex_build.py stage-plantuml-images --source-dir tooling/plantuml
           if git diff --cached --quiet; then
-            echo 'No diagram changes to commit'
+            echo 'Renderer reported changed bytes but git sees no diff; nothing to commit'
             exit 0
           fi
+          # Another push may have landed while rendering: rebase the image commit onto
+          # the current tip instead of force-pushing or discarding it.
+          git commit -m 'chore(diagrams): render PlantUML images'
+          git pull --rebase origin main
           # The resulting push re-triggers latex-pages.yml, whose dependency
           # event is suppressed for GITHUB_TOKEN pushes, so dispatch the
           # authoritative Pages build explicitly after the image commit.
-          git commit -m 'chore(diagrams): render PlantUML images'
           git push origin HEAD:refs/heads/main
           GH_TOKEN="${{ github.token }}" gh workflow run latex-pages.yml --ref main

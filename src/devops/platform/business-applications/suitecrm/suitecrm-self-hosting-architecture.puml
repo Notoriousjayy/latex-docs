@@ -1,84 +1,81 @@
 @startuml
-' SuiteCRM Self-Hosting Architecture Diagram
-' Default target: SuiteCRM 8.10.x, Apache 2.4, PHP 8.2-8.4, MariaDB/MySQL.
-' Nginx/LEMP is an operator pattern and must be validated separately.
+' ------------------------------------------------------------------
+' Diagram   : SuiteCRM Self-Hosting - Deployment View
+' Type      : C4 Deployment diagram (C4-PlantUML, house c4 style)
+' Model kind: C4 deployment view (see src/architecture/readme.md, AD index)
+' Subject   : Where the SuiteCRM container instances run in a single
+'             self-hosted LAMP deployment. The entity of interest is the
+'             SuiteCRM installation; users, DNS and the corporate network
+'             are its environment.
+' Evidence  : suitecrm-self-hosting-architecture-guide.md,
+'             suitecrm-lamp-lemp-deployment-guide.md,
+'             suitecrm-backup-restore-and-maintenance-guide.md
+'             (SuiteCRM 8.10.x, Apache 2.4 with DocumentRoot
+'             /var/www/suitecrm/public, PHP 8.2-8.4, MariaDB/MySQL,
+'             ./bin/console schedulers:run as a non-root user, backup
+'             scope = database + files + config).
+' Status    : Reference deployment (default target). The Nginx/LEMP
+'             variant is an operator pattern that must be validated
+'             separately and is not drawn here.
+' Notes     : Operational processes (monitoring, patching, restore test)
+'             are practices, not deployment elements; they are recorded as
+'             notes so the picture keeps C4 deployment semantics.
+' History   : Migrated 2026-09 from a UML deployment-styled sketch; a
+'             verbatim duplicate one directory up was retired.
+' ------------------------------------------------------------------
+!include ../../../../../tooling/styles/plantuml/c4/deployment-diagram-style.iuml
 
-!include ../../../../../tooling/styles/plantuml/structural/deployment-diagram-style.iuml
+C4_TITLE(SuiteCRM Self-Hosting, default LAMP target - SuiteCRM 8.10.x)
 
-title SuiteCRM Self-Hosting Architecture
+Person(users, "CRM Users", "Sales, service and marketing staff")
+Person(admins, "CRM Administrators", "Configure, upgrade and operate the instance")
 
-actor "CRM Users" as Users
-actor "CRM Administrators" as Admins
-
-cloud "Internet / Corporate Network" as Net
-
-node "Public Edge" as Edge {
-  rectangle "DNS\ncrm.example.com" as DNS
-  rectangle "TLS / HTTPS\nCertificate + Redirect" as TLS
+Deployment_Node(edge, "Public Edge", "Internet / corporate network") {
+  Deployment_Node(dns, "DNS", "crm.example.com") {
+    Container_Ext(tls, "TLS Termination and HTTPS Redirect", "certificate + redirect", "Terminates HTTPS in front of the vhost")
+  }
 }
 
-node "SuiteCRM Application Host" as AppHost {
-  rectangle "Apache 2.4 vHost\nDocumentRoot: /var/www/suitecrm/public" as Apache
-  rectangle "PHP Runtime\nPHP 8.2-8.4\nRequired Extensions" as PHP
-  component "SuiteCRM Application" as SuiteCRM
-  folder "public/" as Public
-  folder "custom/" as Custom
-  folder "uploads / cache / logs" as Files
-  component "API Layer\nApi/ and Api/V8/" as API
-  component "Scheduler Command\n./bin/console schedulers:run" as Scheduler
+Deployment_Node(appHost, "SuiteCRM Application Host", "Linux server") {
+  Deployment_Node(apache, "Apache 2.4 vHost", "DocumentRoot /var/www/suitecrm/public") {
+    Deployment_Node(php, "PHP Runtime", "PHP 8.2-8.4 with required extensions") {
+      Container(suitecrm, "SuiteCRM Application", "PHP / Symfony", "Web UI and API layer (Api/, Api/V8/); serves only the public/ web root")
+      Container(scheduler, "Scheduler Command", "./bin/console schedulers:run via cron", "Recurring jobs; runs as an allowed non-root user")
+    }
+  }
+  Deployment_Node(files, "Application File Storage", "local filesystem") {
+    ContainerDb(appfiles, "public/, custom/, uploads / cache / logs", "filesystem", "Customisations and runtime files")
+  }
 }
 
-database "MariaDB / MySQL" as DB
-node "Backup Target" as Backup {
-  database "DB Dumps / Snapshots" as DBDump
-  folder "File Archives" as FileArchive
+Deployment_Node(dbHost, "Database Host", "same or separate host") {
+  ContainerDb(db, "MariaDB / MySQL", "MariaDB or MySQL", "CRM data and metadata; workflow, e-mail, report and index state")
 }
 
-node "Operations" as Ops {
-  rectangle "Monitoring\nUptime, disk, DB, logs" as Monitoring
-  rectangle "Patch / Upgrade Process" as Patching
-  rectangle "Restore Test Environment" as Restore
+Deployment_Node(backup, "Backup Target", "off-host storage") {
+  ContainerDb(dbDump, "Database Dumps / Snapshots", "mysqldump or snapshots", "Database part of the backup scope")
+  ContainerDb(fileArchive, "File Archives", "archive of application files", "Files and config part of the backup scope")
 }
 
-Users --> Net
-Admins --> Net
-Net --> DNS
-DNS --> TLS
-TLS --> Apache : HTTPS
-Apache --> Public : serves public web root
-Apache --> PHP : PHP execution
-PHP --> SuiteCRM
-SuiteCRM --> API
-SuiteCRM --> Files : uploads, cache, logs
-SuiteCRM --> Custom : extensions/customizations
-SuiteCRM --> DB : CRM data and metadata
-Scheduler --> SuiteCRM : recurring jobs
-Scheduler --> DB : workflow/email/report/index state
-DB --> DBDump : backup
-Files --> FileArchive : backup
-DBDump --> Restore : restore test
-FileArchive --> Restore : restore test
-Monitoring --> Apache
-Monitoring --> PHP
-Monitoring --> DB
-Monitoring --> Scheduler
-Patching --> AppHost
-Patching --> DB
+Rel(users, tls, "Uses the CRM", "HTTPS")
+Rel(admins, tls, "Administers the CRM", "HTTPS")
+Rel(tls, suitecrm, "Forwards requests", "HTTPS to Apache vhost")
+Rel(suitecrm, appfiles, "Reads / writes uploads, cache, logs, customisations")
+Rel(suitecrm, db, "Reads / writes CRM data", "MySQL protocol")
+Rel(scheduler, suitecrm, "Runs recurring jobs")
+Rel(scheduler, db, "Updates workflow / e-mail / report / index state", "MySQL protocol")
+Rel(db, dbDump, "Backed up to", "scheduled dump or snapshot")
+Rel(appfiles, fileArchive, "Backed up to", "scheduled archive")
 
-note right of Apache
-Official SuiteCRM webserver setup recommends
-pointing the vhost to the public directory.
-Do not expose the full SuiteCRM root.
+note right of apache
+  Point the vhost at the public directory.
+  Do not expose the full SuiteCRM root.
 end note
 
-note bottom of Scheduler
-Run scheduler as an allowed non-root user.
-Do not run as root.
-end note
+Lay_D(appHost, dbHost)
+Lay_D(dbHost, backup)
 
-note bottom of Backup
-Production backup scope = database + files + config.
-Restore testing is the acceptance criterion.
-end note
+caption Production backup scope = database + files + config; a tested restore into a separate environment is the acceptance criterion. Monitoring and patch/upgrade runbooks are operational practices documented in the guides, not deployment elements.
 
+SHOW_LEGEND()
 @enduml

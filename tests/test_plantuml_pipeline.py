@@ -14,18 +14,36 @@ import tooling.scripts.latex_build as latex_build
 PIN = latex_build.load_plantuml_pin()
 
 
-def _fake_engine(directory: Path, version: str, *, exit_code: int = 0, svg_body: str = "<svg></svg>") -> Path:
-    """A `plantuml` on PATH that answers -version and writes one SVG per input into -o."""
+def _fake_engine(directory: Path, version: str, *, exit_code: int = 0, svg_body: str = "<svg></svg>", c4_version: str | None = None) -> Path:
+    """A `plantuml` on PATH that answers -version/-stdlib and writes one output per @startuml block into -o.
+
+    Output naming mirrors the engine: `@startuml name` -> name.<fmt>, otherwise stem, stem_001, ...
+    """
+    c4_version = PIN.get("c4_plantuml", "") if c4_version is None else c4_version
     script = directory / "plantuml"
     script.write_text(
         textwrap.dedent(
             f"""\
             #!/bin/sh
             if [ "$1" = "-version" ]; then echo "PlantUML version {version} (fake)"; exit 0; fi
-            out=""; prev=""
-            for arg in "$@"; do [ "$prev" = "-o" ] && out="$arg"; prev="$arg"; done
+            if [ "$1" = "-stdlib" ]; then printf 'aws\\nVersion 1.0\\nc4\\nVersion {c4_version}\\nDelivered by fake\\n'; exit 0; fi
+            out=""; prev=""; fmt="svg"
             for arg in "$@"; do
-              case "$arg" in *.puml) mkdir -p "$out"; printf '%s' '{svg_body}' > "$out/$(basename "$arg" .puml).svg";; esac
+              [ "$prev" = "-o" ] && out="$arg"; prev="$arg"
+              case "$arg" in -tpng) fmt=png;; -tsvg) fmt=svg;; esac
+            done
+            for arg in "$@"; do
+              case "$arg" in *.puml)
+                mkdir -p "$out"; stem=$(basename "$arg" .puml); i=0
+                grep -E '^@startuml' "$arg" | while IFS= read -r line; do
+                  name=$(printf '%s' "$line" | awk '{{print $2}}')
+                  if [ -z "$name" ]; then
+                    if [ "$i" -eq 0 ]; then name="$stem"; else name=$(printf '%s_%03d' "$stem" "$i"); fi
+                  fi
+                  if [ "$fmt" = "png" ]; then printf '\\211PNG\\r\\n\\032\\n%s' 'img' > "$out/$name.png"; else printf '%s' '{svg_body}' > "$out/$name.svg"; fi
+                  i=$((i+1))
+                done;;
+              esac
             done
             exit {exit_code}
             """

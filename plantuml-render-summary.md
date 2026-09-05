@@ -1,5 +1,10 @@
 # PlantUML Render Summary
 
+> Superseded (2026-09-05) by the style-system migration: see
+> [PLANTUML_STYLE_MIGRATION_2026_09_05.md](PLANTUML_STYLE_MIGRATION_2026_09_05.md)
+> and the per-run result `public/logs/plantuml-render.json` uploaded by the
+> `render-plantuml` workflow. Kept for history only.
+
 - **Run:** 21271774696
 - **Commit:** `b0fb551f3aab34b6779c8dd3a0d3b3e753a1e74f`
 - **Timestamp:** 2026-01-23T01:57:31Z
