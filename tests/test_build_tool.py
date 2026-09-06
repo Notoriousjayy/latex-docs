@@ -1482,6 +1482,10 @@ class BuildToolTests(unittest.TestCase):
         self.assertEqual(expected_outputs, set(data.get("outputs", {}).keys()))
         # Every reported number must come from the renderer's JSON result, never from globbing the tree.
         render_step = next(step for step in data["runs"]["steps"] if step.get("id") == "render")
+        install_step = next(step for step in data["runs"]["steps"] if step.get("name") == "Install PlantUML and dependencies")
+        install_script = install_step["run"]
+        self.assertIn("imagemagick", install_script)
+        self.assertNotIn('if [[ "${{ inputs.generate-jpg }}" == "true" ]]', install_script)
         self.assertIn("plantuml-render-outputs", render_step["run"])
         self.assertIn("--require-diagrams", render_step["run"])
         self.assertNotIn("find ", render_step["run"])
