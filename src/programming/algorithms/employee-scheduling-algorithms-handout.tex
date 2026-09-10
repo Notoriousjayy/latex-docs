@@ -1,0 +1,410 @@
+
+\documentclass[11pt]{article}
+
+% ---------------------------------------------------------------------------
+% Packages
+% ---------------------------------------------------------------------------
+\usepackage[margin=0.85in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{ragged2e}
+
+% ---------------------------------------------------------------------------
+% Color palette
+% ---------------------------------------------------------------------------
+\definecolor{Navy}{HTML}{17324D}
+\definecolor{Blue}{HTML}{2C5F8A}
+\definecolor{LightBlue}{HTML}{EDF4FA}
+\definecolor{LightGray}{HTML}{F5F6F7}
+\definecolor{DarkGray}{HTML}{4B5563}
+\definecolor{Green}{HTML}{2F6B4F}
+\definecolor{Amber}{HTML}{A56A00}
+
+% ---------------------------------------------------------------------------
+% Global styling
+% ---------------------------------------------------------------------------
+\hypersetup{
+  colorlinks=true,
+  linkcolor=Blue,
+  urlcolor=Blue,
+  citecolor=Blue,
+  pdftitle={Employee Scheduling Algorithms: Matching, Constraints, and Optimization}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textcolor{DarkGray}{Employee Scheduling Algorithms}}
+\rhead{\textcolor{DarkGray}{Technical Handout}}
+\cfoot{\textcolor{DarkGray}{\thepage}}
+\setlength{\headheight}{14pt}
+
+\titleformat{\section}
+  {\large\bfseries\color{Navy}}
+  {}{0pt}{}
+\titleformat{\subsection}
+  {\normalsize\bfseries\color{Blue}}
+  {}{0pt}{}
+
+\setlist[itemize]{leftmargin=1.35em, itemsep=0.25em, topsep=0.35em}
+\setlist[enumerate]{leftmargin=1.5em, itemsep=0.25em, topsep=0.35em}
+\renewcommand{\arraystretch}{1.22}
+
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+
+\newtcolorbox{keybox}{
+  colback=LightBlue,
+  colframe=Blue,
+  boxrule=0.8pt,
+  arc=2mm,
+  left=4mm,right=4mm,top=2.5mm,bottom=2.5mm
+}
+
+\newtcolorbox{cautionbox}{
+  colback=LightGray,
+  colframe=DarkGray,
+  boxrule=0.7pt,
+  arc=2mm,
+  left=4mm,right=4mm,top=2.5mm,bottom=2.5mm
+}
+
+\newtcolorbox{recommendbox}{
+  colback=white,
+  colframe=Green,
+  boxrule=1pt,
+  arc=2mm,
+  left=4mm,right=4mm,top=2.5mm,bottom=2.5mm
+}
+
+% ---------------------------------------------------------------------------
+% Document
+% ---------------------------------------------------------------------------
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{Navy} Employee Scheduling Algorithms}\\[0.35em]
+  {\large Matching, Constraints, and Optimization}\\[0.6em]
+  {\small A practical guide to choosing the right algorithmic foundation for workforce rostering}
+\end{center}
+
+\vspace{0.4em}
+
+\begin{keybox}
+\textbf{Core conclusion.}
+Employee scheduling is best modeled primarily as a \emph{constraint-optimization} problem.
+Stable matching remains useful for preference-allocation subproblems, but it is rarely sufficient as the central engine for a production workforce scheduler.
+\end{keybox}
+
+\section{1. Why Matching Theory Still Matters}
+
+Knowledge of matching and scheduling algorithms is directly useful when designing an employee scheduler.
+The classical Stable Marriage Problem and the Gale--Shapley algorithm are especially valuable for understanding how preferences can be reconciled between two sets of participants.
+
+A scheduling system may be viewed as involving:
+
+\begin{itemize}
+  \item \textbf{Employees}, who may rank shifts, days, locations, or time windows.
+  \item \textbf{Management or shifts}, which may impose preferences or requirements involving skills, seniority, labor cost, coverage, or fairness.
+\end{itemize}
+
+Stable matching introduces the useful concept of a \emph{blocking pair}: two participants who would mutually prefer each other over their assigned outcomes. Avoiding blocking pairs can be valuable when preference stability itself is a design objective.
+
+\begin{cautionbox}
+\textbf{Important limitation.}
+A stable outcome is not automatically a fair, equitable, employee-optimal, cost-optimal, or satisfaction-maximizing outcome.
+Stability is a specific mathematical property, not a synonym for overall scheduling quality.
+\end{cautionbox}
+
+\section{2. Why Gale--Shapley Is Usually Not the Scheduling Engine}
+
+Classical stable marriage assumes one-to-one matching. Workforce scheduling is considerably more coupled:
+
+\[
+\text{Employees}
+\times
+\text{Shifts}
+\times
+\text{Days}
+\times
+\text{Skills}
+\times
+\text{Hours}
+\times
+\text{Rules}
+\times
+\text{Preferences}.
+\]
+
+A single assignment can affect many other decisions. Assigning one employee to a Tuesday night shift may also influence:
+
+\begin{itemize}
+  \item Wednesday-morning eligibility,
+  \item weekly-hour limits,
+  \item overtime,
+  \item minimum-rest requirements,
+  \item weekend rotation,
+  \item skill coverage,
+  \item staffing cost, and
+  \item the feasibility of every remaining assignment.
+\end{itemize}
+
+Many-to-one variants such as the Hospitals/Residents problem broaden stable matching beyond one-to-one assignment, but they still do not natively express the full set of temporal, legal, and combinatorial constraints found in workforce rostering.
+
+\section{3. A Better Mathematical Model}
+
+A practical starting point is to define a binary decision variable:
+
+\[
+x_{e,s} =
+\begin{cases}
+1, & \text{if employee } e \text{ is assigned to shift } s,\\
+0, & \text{otherwise.}
+\end{cases}
+\]
+
+The scheduling problem then becomes a search for values of \(x_{e,s}\) that satisfy all mandatory rules while optimizing one or more business objectives.
+
+\subsection{Hard constraints}
+
+Hard constraints define feasibility. Typical examples include:
+
+\begin{itemize}
+  \item required staffing coverage,
+  \item employee availability,
+  \item required skills or certifications,
+  \item no overlapping assignments,
+  \item maximum weekly hours,
+  \item minimum rest periods,
+  \item contractual work rules,
+  \item labor-law requirements, and
+  \item mandatory role or shift composition.
+\end{itemize}
+
+A solver can guarantee that these constraints are satisfied \emph{only if it returns a feasible solution and the rules have been modeled correctly}. An over-constrained model may be infeasible.
+
+\subsection{Soft constraints and objectives}
+
+Soft constraints represent preferences or optimization goals. Examples include:
+
+\begin{itemize}
+  \item preferred shifts,
+  \item requested days off,
+  \item balanced weekend assignments,
+  \item equitable distribution of undesirable shifts,
+  \item seniority preferences,
+  \item overtime minimization,
+  \item labor-cost minimization,
+  \item continuity of assignments, and
+  \item minimizing changes to an already-published schedule.
+\end{itemize}
+
+A common formulation is a weighted objective:
+
+\[
+\min
+\left(
+w_1 C_{\text{overtime}}
++
+w_2 C_{\text{preference}}
++
+w_3 C_{\text{fairness}}
++
+w_4 C_{\text{schedule-change}}
+\right),
+\]
+
+where each \(w_i\) expresses the relative importance of an objective.
+
+\begin{keybox}
+\[
+\boxed{
+\text{Employee Scheduling}
+=
+\text{Feasibility Constraints}
++
+\text{Optimization Objectives}
++
+\text{Preference Modeling}
+}
+\]
+\end{keybox}
+
+\section{4. Comparing Algorithmic Approaches}
+
+\small
+\begin{tabularx}{\textwidth}{>{\bfseries}p{0.22\textwidth} Y Y}
+\toprule
+Approach & Best role & Important caveat \\
+\midrule
+Stable Matching / Gale--Shapley
+& Preference-based allocation where stability itself matters.
+& Does not naturally model complex temporal, legal, or weekly coupling. \\
+
+Hungarian / Assignment Algorithm
+& Simple one-worker-to-one-task cost minimization.
+& Becomes inadequate once assignments interact across time or capacity. \\
+
+Min-Cost Flow
+& Structured assignment and capacity problems.
+& Excellent for network-like models, but less expressive for complex logical constraints. \\
+
+MILP / ILP
+& Linear constraints with mathematically defined optimization objectives.
+& Global optimality is guaranteed only when the model is solved to optimality; production runs may stop earlier with an optimality gap. \\
+
+Constraint Programming / CP-SAT
+& Complex logical, temporal, Boolean, and combinatorial scheduling.
+& Requires careful modeling, especially around objective weighting and scalability. \\
+
+Local Search / Metaheuristics
+& Very large problems where a high-quality solution is more important than proof of optimality.
+& Solution quality can depend on tuning and search strategy. \\
+
+Hybrid Optimization
+& Enterprise-scale rostering combining exact solving, heuristics, repair, and replanning.
+& More engineering complexity, but often the most practical architecture at scale. \\
+\bottomrule
+\end{tabularx}
+\normalsize
+
+\section{5. Where Stable Matching Fits Best}
+
+Stable matching should remain part of the scheduling toolkit, particularly for relatively self-contained allocation problems such as:
+
+\begin{itemize}
+  \item assigning employees to vacation periods,
+  \item allocating employees to teams or departments,
+  \item assigning rotations or residency-style placements,
+  \item allocating preferred work locations,
+  \item assigning scarce training opportunities,
+  \item mentor--mentee matching.
+\end{itemize}
+
+These problems resemble:
+
+\[
+\text{Employees} \leftrightarrow \text{Opportunities}
+\]
+
+rather than the highly coupled structure of a weekly or monthly roster.
+
+\section{6. Recommended Solver Architecture}
+
+\begin{recommendbox}
+\textbf{Default recommendation.}
+
+For a new scheduler, model the problem as a constraint-optimization system.
+
+\begin{itemize}
+  \item \textbf{Python, C++, Java, or C\#:} Google OR-Tools CP-SAT is a strong default choice.
+  \item \textbf{Java/Kotlin-centric systems:} Timefold Solver is a strong alternative, especially when modeling explicit hard, medium, and soft constraints.
+\end{itemize}
+
+Treat availability, coverage, certifications, overlap, hour caps, rest periods, and legal requirements as \textbf{hard constraints}. Treat preferences, fairness, labor cost, overtime, continuity, and convenience as \textbf{soft constraints or weighted objectives}.
+\end{recommendbox}
+
+\subsection{Suggested high-level architecture}
+
+\begin{enumerate}
+  \item \textbf{Domain model} --- employees, shifts, skills, availability, contracts, preferences, and locations.
+  \item \textbf{Constraint layer} --- hard and soft scheduling rules.
+  \item \textbf{Optimization engine} --- CP-SAT, MILP, Timefold, or a hybrid search.
+  \item \textbf{Scoring/objective layer} --- fairness, cost, preference satisfaction, overtime, continuity.
+  \item \textbf{Validation layer} --- independent post-solve checks for legal and business constraints.
+  \item \textbf{Explainability layer} --- human-readable reasons for assignments, violations, or compromises.
+  \item \textbf{Repair/replanning layer} --- partial re-optimization after call-outs, leave, demand changes, or shift swaps.
+\end{enumerate}
+
+\section{7. Production Engineering Considerations}
+
+A production scheduler should be designed around more than raw optimization quality.
+
+\subsection{Feasibility first}
+Use hard constraints to ensure that impossible or non-compliant assignments never reach the published roster.
+
+\subsection{Optimization second}
+Once feasibility is established, optimize cost, preference satisfaction, fairness, overtime, and schedule stability.
+
+\subsection{Graceful infeasibility}
+When no feasible schedule exists, the system should identify which requirements are preventing feasibility rather than simply returning ``no solution.''
+
+\subsection{Incremental replanning}
+Real schedules change. A strong system should support partial repair so that a single absence does not unnecessarily rewrite the entire roster.
+
+\subsection{Explainable decisions}
+Managers and employees should be able to understand why a shift was assigned, why a preference could not be honored, or which constraint prevented a requested change.
+
+\section{8. Decision Rule}
+
+Use the following rule of thumb:
+
+\begin{center}
+\begin{tabularx}{0.94\textwidth}{>{\bfseries}p{0.34\textwidth} Y}
+\toprule
+Problem shape & Preferred technique \\
+\midrule
+Simple one-to-one assignment & Assignment algorithm / Hungarian method \\
+Preference stability is the main concern & Stable matching \\
+Capacity-constrained structured allocation & Min-cost flow \\
+Complex linear business optimization & MILP / ILP \\
+Complex scheduling with temporal and logical rules & CP-SAT / constraint programming \\
+Massive search space with acceptable near-optimality & Local search / metaheuristics \\
+Large production workforce platform & Hybrid optimization architecture \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{9. Practical Takeaway}
+
+The strongest conceptual shift is this:
+
+\begin{quote}
+Do not ask, ``Which matching algorithm should assign employees to shifts?''
+
+Ask, ``What decision variables, hard constraints, soft constraints, and optimization objectives define a valid and desirable schedule?''
+\end{quote}
+
+Once the problem is expressed that way, the correct solver family becomes much easier to select.
+
+\section{References and Further Reading}
+
+\begin{itemize}
+  \item Google OR-Tools, \emph{Employee Scheduling}:
+  \href{https://developers.google.com/optimization/scheduling/employee_scheduling}
+  {developers.google.com/optimization/scheduling/employee\_scheduling}
+
+  \item Google OR-Tools, \emph{Assignment Problems}:
+  \href{https://developers.google.com/optimization/assignment}
+  {developers.google.com/optimization/assignment}
+
+  \item Google OR-Tools, \emph{CP-SAT Solver}:
+  \href{https://developers.google.com/optimization/cp/cp_solver}
+  {developers.google.com/optimization/cp/cp\_solver}
+
+  \item Timefold Solver Documentation:
+  \href{https://docs.timefold.ai/timefold-solver/latest/introduction}
+  {docs.timefold.ai/timefold-solver/latest/introduction}
+
+  \item D. Gale and L. S. Shapley, ``College Admissions and the Stability of Marriage,''
+  \emph{The American Mathematical Monthly}, vol. 69, no. 1, 1962.
+\end{itemize}
+
+\vfill
+\begin{center}
+\small\textcolor{DarkGray}{
+Technical handout --- workforce scheduling, optimization, and matching algorithms
+}
+\end{center}
+
+\end{document}

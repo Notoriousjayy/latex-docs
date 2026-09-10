@@ -1,0 +1,893 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[margin=0.78in]{geometry}
+\usepackage{parskip}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{ragged2e}
+
+\definecolor{Navy}{HTML}{17365D}
+\definecolor{Blue}{HTML}{2F5597}
+\definecolor{Sky}{HTML}{D9EAF7}
+\definecolor{Ice}{HTML}{F4F8FC}
+\definecolor{Ink}{HTML}{1F2937}
+\definecolor{Muted}{HTML}{5B6573}
+\definecolor{Rule}{HTML}{CBD5E1}
+\definecolor{Green}{HTML}{2F6B4F}
+\definecolor{Gold}{HTML}{9A6700}
+\definecolor{CodeBg}{HTML}{F7F9FC}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=Navy,
+  urlcolor=Blue,
+  citecolor=Green,
+  pdftitle={C4 Model and C4-PlantUML: Architecture Modeling and Implementation Guide},
+  pdfauthor={Technical Reference}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textcolor{Muted}{C4 Model and C4-PlantUML}}
+\rhead{\textcolor{Muted}{Technical Guide}}
+\cfoot{\textcolor{Muted}{\thepage\ of \pageref{LastPage}}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{Rule}\leaders\hrule height \headrulewidth\hfill}}
+
+\titleformat{\section}{\Large\bfseries\color{Navy}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{Blue}}{\thesubsection}{0.7em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{Ink}}{\thesubsubsection}{0.7em}{}
+
+\setlist[itemize]{leftmargin=1.5em,itemsep=0.25em,topsep=0.35em}
+\setlist[enumerate]{leftmargin=1.7em,itemsep=0.25em,topsep=0.35em}
+\renewcommand{\arraystretch}{1.2}
+
+\lstdefinelanguage{PlantUML}{
+  morekeywords={startuml,enduml,include,title,Person,Person_Ext,System,System_Ext,System_Boundary,Container,ContainerDb,ContainerQueue,Container_Boundary,Component,ComponentDb,ComponentQueue,Rel,Rel_U,Rel_D,Rel_L,Rel_R,Deployment_Node,Node,SHOW_LEGEND,LAYOUT_LEFT_RIGHT,LAYOUT_TOP_DOWN,LAYOUT_WITH_LEGEND,LAYOUT_LANDSCAPE,AddElementTag,AddRelTag,AddNodeTag,UpdateElementStyle,UpdateRelStyle,Index,SetIndex,LastIndex,increment,setIndex,skinparam,package,interface,class,enum,note},
+  sensitive=true,
+  morecomment=[l]{'},
+  morestring=[b]"
+}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\bfseries\color{Blue},
+  commentstyle=\itshape\color{Muted},
+  stringstyle=\color{Green},
+  backgroundcolor=\color{CodeBg},
+  frame=single,
+  rulecolor=\color{Rule},
+  framerule=0.5pt,
+  breaklines=true,
+  breakatwhitespace=false,
+  showstringspaces=false,
+  columns=fullflexible,
+  keepspaces=true,
+  tabsize=2,
+  xleftmargin=0.5em,
+  xrightmargin=0.5em,
+  aboveskip=0.8em,
+  belowskip=0.8em
+}
+
+\newtcolorbox{keybox}[1][]{
+  colback=Ice,
+  colframe=Blue,
+  boxrule=0.7pt,
+  arc=2mm,
+  left=2mm,right=2mm,top=1.5mm,bottom=1.5mm,
+  fonttitle=\bfseries,
+  title=#1
+}
+
+\newtcolorbox{warningbox}[1][]{
+  colback=yellow!5,
+  colframe=Gold,
+  boxrule=0.7pt,
+  arc=2mm,
+  left=2mm,right=2mm,top=1.5mm,bottom=1.5mm,
+  fonttitle=\bfseries,
+  title=#1
+}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\Cfour}{C4}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{1.2in}
+{\Huge\bfseries\color{Navy} C4 Model and C4-PlantUML\par}
+\vspace{0.25in}
+{\LARGE\color{Blue} Architecture Modeling and Implementation Guide\par}
+\vspace{0.45in}
+{\large A practical reference for hierarchical software architecture diagrams, notation discipline, and diagram-as-code delivery with PlantUML\par}
+\vfill
+\begin{tcolorbox}[colback=Ice,colframe=Rule,boxrule=0.6pt,width=0.88\textwidth,arc=2mm]
+\small
+\textbf{Scope.} This guide covers the C4 abstraction hierarchy, the four core static diagram levels, the three supporting diagram types, notation practices, and an implementation pattern for C4-PlantUML across local development and CI pipelines.
+\end{tcolorbox}
+\vfill
+{\large September 2026\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Executive Summary}
+
+The C4 model is a lightweight, developer-oriented approach to visualising software architecture. Created by Simon Brown, it is built around a small hierarchy of abstractions---software systems, containers, components, and code---and a corresponding set of diagrams that let an audience move from a broad system view to progressively finer implementation detail. The model is intentionally notation-independent and tooling-independent.\cite{c4home,c4intro}
+
+The most useful mental model is a map with multiple zoom levels. A system context diagram establishes the environment around the system; a container diagram reveals the applications and data stores inside it; a component diagram explains how a single container is internally partitioned; and a code diagram shows selected implementation structures for a single component. C4 does \emph{not} require every level. The official guidance states that system context and container diagrams are sufficient for most software development teams.\cite{c4diagrams}
+
+C4 also defines three supporting diagram types: a system landscape diagram for a broader organisational portfolio, a dynamic diagram for runtime collaboration in a particular scenario, and a deployment diagram for mapping software-system or container instances onto infrastructure in a specific environment.\cite{c4diagrams,c4landscape,c4dynamic,c4deployment}
+
+C4-PlantUML provides a diagram-as-code implementation of these ideas using PlantUML macros, stereotypes, relationship helpers, layout helpers, and themes. PlantUML distributions include a released C4 library in the standard library, allowing local usage such as \code{!include <C4/C4\_Container>} without a network dependency.\cite{c4plantuml,plantumlstdlib}
+
+\begin{keybox}[Core engineering guidance]
+Use C4 to communicate architecture semantics, not to maximise diagram density. Start with Context and Container. Add Component, Dynamic, Deployment, or Code views only when they answer a concrete architectural question. In automated documentation, pin the PlantUML toolchain, keep diagram sources in version control, validate syntax in CI, generate SVG for documentation, and avoid unpinned remote includes.
+\end{keybox}
+
+\section{The C4 Model}
+
+\subsection{Purpose and abstraction hierarchy}
+
+C4 is an ``abstraction-first'' method. It starts by defining a small vocabulary for the things that appear in software architecture diagrams, then uses progressively scoped views to show those things at useful levels of detail.\cite{c4abstractions}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.18\textwidth} >{\raggedright\arraybackslash}p{0.31\textwidth} >{\raggedright\arraybackslash}p{0.43\textwidth}}
+\toprule
+\textbf{Abstraction} & \textbf{Meaning} & \textbf{Practical interpretation} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Abstraction} & \textbf{Meaning} & \textbf{Practical interpretation} \\
+\midrule
+\endhead
+Person & A human actor, role, persona, or similar user of a software system. & Model responsibilities and interactions, not organisational detail that is irrelevant to the architecture. \\
+Software system & A high-level system that delivers value to users or other systems. & Often aligns with a product/application boundary or a system owned by a team, but the exact organisational boundary is contextual.\cite{c4system} \\
+Container & An application or data store that must be running or available for the overall software system to work. & Examples include a server-side application, SPA, mobile app, serverless function, database/schema, object store, file system, or batch process.\cite{c4containerabs} \\
+Component & A grouping of related functionality encapsulated behind a well-defined interface. & Components live inside a container and are not separately deployed in the C4 sense.\cite{c4componentabs} \\
+Code element & Implementation-level structure within a component. & Classes, interfaces, objects, functions, database tables, or other language/platform-level elements.\cite{c4code} \\
+\bottomrule
+\end{longtable}
+
+\begin{warningbox}[C4 container does not mean Docker container]
+In C4, a \emph{container} is an architectural runtime/application-or-data-store abstraction. It may happen to map one-to-one to a Docker or Kubernetes container, but that is not the definition. Treating every infrastructure container as a C4 container usually produces the wrong architectural boundary.\cite{c4containerabs}
+\end{warningbox}
+
+\subsection{Level 1: System Context}
+
+A system context diagram is the recommended starting point. Its scope is a single software system and the people and external software systems directly connected to it. The emphasis is the big picture: who uses the system, what it depends on, and how it fits into the surrounding environment. Low-level technology and protocol detail should generally be omitted at this level. The intended audience includes both technical and non-technical stakeholders.\cite{c4context}
+
+\textbf{Use it to answer:}
+\begin{itemize}
+  \item What system are we talking about?
+  \item Who uses it?
+  \item Which external software systems does it depend on or serve?
+  \item Where is the architectural scope boundary?
+\end{itemize}
+
+\subsection{Level 2: Container}
+
+A container diagram zooms into one software system and shows the applications and data stores inside that system. It communicates the high-level shape of the architecture, distribution of responsibilities, major technology choices, and the communication paths among containers and relevant external actors/systems.\cite{c4containerdiagram}
+
+A container should not be inferred solely from packaging. A JAR, DLL, module, namespace, or source folder is usually a code-organisation concern rather than a C4 container. Conversely, client-side applications, independently running server processes, serverless functions, database schemas, and object stores can be containers because they represent distinct runtime or data-store boundaries.\cite{c4containerabs}
+
+\textbf{Use it to answer:}
+\begin{itemize}
+  \item What are the principal applications and data stores inside the system?
+  \item Where do responsibilities live?
+  \item What major technologies are used?
+  \item Which protocols or mechanisms connect the runtime units?
+\end{itemize}
+
+\subsection{Level 3: Component}
+
+A component diagram zooms into a single container. In C4, a component is a cohesive grouping of related functionality behind a well-defined interface. Components are internal to the container and, by definition, execute within the same process space as the other components in that container.\cite{c4componentabs}
+
+The official guidance treats component diagrams as optional rather than mandatory. They are most valuable when a container has meaningful internal architectural structure that cannot be explained adequately through code alone. For long-lived documentation, automated generation is worth considering because component views can drift rapidly as code evolves.\cite{c4componentdiagram}
+
+\textbf{Use it to answer:}
+\begin{itemize}
+  \item How is this container internally decomposed?
+  \item Which components own which responsibilities?
+  \item Which interfaces and dependencies are architecturally important?
+\end{itemize}
+
+\subsection{Level 4: Code}
+
+A code diagram zooms into one component and shows selected implementation details such as classes, interfaces, functions, objects, tables, or other code-level structures. It is intentionally optional and is not recommended as long-lived hand-maintained documentation except for especially important or complex components. IDEs and modelling tools can often generate this information on demand.\cite{c4code}
+
+The goal is not to reproduce the entire codebase. A useful code-level view tells a specific implementation story and includes only the relationships needed to explain that story.
+
+\subsection{Supporting diagrams}
+
+\subsubsection{System Landscape}
+
+A system landscape diagram expands the scope from one system to an enterprise, organisation, department, or portfolio. It is effectively a context-style map without a single system being the exclusive focus. It is especially useful in larger organisations as a bridge between software architecture and enterprise architecture.\cite{c4landscape}
+
+\subsubsection{Dynamic}
+
+A dynamic diagram shows how selected elements from the static model collaborate at runtime to implement a feature, user story, or use case. It can contain systems, containers, or components and uses ordered interactions to communicate sequence. The official C4 guidance recommends using dynamic diagrams sparingly, primarily for interactions that are sufficiently important or complex to justify a dedicated view.\cite{c4dynamic}
+
+\subsubsection{Deployment}
+
+A deployment diagram maps software-system and/or container instances to infrastructure within a specific deployment environment such as development, staging, or production. Deployment nodes can represent physical hosts, virtual machines, cloud services, containerised infrastructure, execution environments, or other runtime infrastructure. Nodes may be nested.\cite{c4deployment}
+
+Deployment concerns such as clustering, replication, load balancing, failover, and environment-specific topology belong here rather than on the logical container diagram. A separate deployment view per materially different environment is usually clearer than one overloaded diagram.\cite{c4containerdiagram,c4deployment}
+
+\subsection{Which diagrams should you maintain?}
+
+\begin{tabularx}{\textwidth}{>{\bfseries\raggedright\arraybackslash}p{0.22\textwidth} >{\raggedright\arraybackslash}p{0.20\textwidth} X}
+\toprule
+Diagram & Official recommendation & Practical use \\
+\midrule
+System Context & Recommended & Baseline view for essentially every software system. \\
+Container & Recommended & Baseline technical architecture view for essentially every software system. \\
+Component & Optional & Add when internal container structure has durable architectural value. \\
+Code & Optional & Prefer generated/on-demand views for important or complex components. \\
+System Landscape & Recommended for larger organisations & Portfolio/enterprise map of systems and relationships. \\
+Dynamic & Use sparingly & Explain complex runtime scenarios, recurring interaction patterns, or critical flows. \\
+Deployment & Recommended & Explain environment-specific runtime/infrastructure topology. \\
+\bottomrule
+\end{tabularx}
+
+\section{Notation and Diagram Quality}
+
+C4 deliberately does not prescribe a mandatory shape set or colour palette. What matters is that the notation is explicit, consistent, and understandable to the intended audience. A legend/key should explain the notation used.\cite{c4notation}
+
+\subsection{Element rules}
+
+For a strong C4 diagram:\cite{c4notation}
+\begin{itemize}
+  \item Every element should have a clear name.
+  \item Every element should make its type apparent: Person, Software System, Container, Component, and so on.
+  \item Every element should include a short responsibility-oriented description.
+  \item Containers and components should identify their major technology where that information is relevant.
+  \item Names should be domain-specific; avoid generic boxes such as ``Business Logic'', ``Manager'', or ``Service'' without qualification.
+\end{itemize}
+
+\subsection{Relationship rules}
+
+Relationships are part of the architecture, not decorative arrows.\cite{c4notation}
+\begin{itemize}
+  \item Model a relationship as directional when direction matters.
+  \item Label every relationship with an action or intent that matches its direction.
+  \item Prefer specific labels such as ``Submits purchase order'', ``Publishes OrderPlaced event'', or ``Reads customer profile'' over ``Uses''.
+  \item Between containers, identify the significant protocol or mechanism, for example HTTPS/JSON, gRPC, AMQP, Kafka, JDBC, or S3 API.
+  \item Avoid drawing transitive relationships merely because two elements are indirectly connected.
+\end{itemize}
+
+\subsection{Architecture semantics over visual decoration}
+
+Colour, icons, line styles, and cloud-provider sprites can improve readability, but they should not carry undocumented meaning. If a colour or icon encodes architectural information, include it in the legend. C4's notation independence means teams may use PlantUML, UML, ArchiMate, hand-drawn boxes, or other tooling as long as the semantics remain clear.\cite{c4home,c4notation}
+
+\section{C4-PlantUML}
+
+\subsection{What it provides}
+
+C4-PlantUML is an open-source library that layers C4-specific macros, stereotypes, styles, relationship helpers, and layout helpers on top of PlantUML. It supports System Context/System Landscape, Container, Component, Dynamic, and Deployment diagrams, plus a C4-styled sequence diagram extension.\cite{c4plantuml}
+
+PlantUML itself ships a released version of C4-PlantUML in its standard library. This makes the following form a practical default:\cite{plantumlstdlib,c4plantuml}
+
+\begin{lstlisting}[language=PlantUML]
+!include <C4/C4_Container>
+\end{lstlisting}
+
+This form has two advantages: it does not require network access while rendering, and pinning the PlantUML distribution also pins the bundled C4 standard-library snapshot.
+
+\begin{warningbox}[Do not describe C4-PlantUML as native C4 syntax]
+PlantUML does not define the C4 model as a core UML diagram type. C4 support is provided through the C4-PlantUML library, which is also distributed through PlantUML's standard-library mechanism. The distinction matters for versioning, syntax, and reproducibility.\cite{plantumlstdlib,c4plantuml}
+\end{warningbox}
+
+\subsection{Include strategies}
+
+\begin{tabularx}{\textwidth}{>{\bfseries\raggedright\arraybackslash}p{0.22\textwidth} X X}
+\toprule
+Strategy & Example / behaviour & Recommendation \\
+\midrule
+Bundled standard library & \code{!include <C4/C4\_Container>} & Preferred for simple, offline, reproducible builds when the PlantUML version is pinned. \\
+Vendored C4-PlantUML files & Store C4-PlantUML sources in the repository and use local includes. & Best when you need exact library control independent of the PlantUML bundle. \\
+Remote include & Include a raw repository URL. & Acceptable for experiments; for CI, pin an immutable release/tag/commit. Avoid a floating \code{master}/\code{main} URL. \\
+\bottomrule
+\end{tabularx}
+
+The C4-PlantUML documentation explicitly supports both local files and remote includes, and notes that the bundled PlantUML standard library contains the last released C4 files.\cite{c4plantuml}
+
+\subsection{Recommended repository layout}
+
+A maintainable architecture-as-code repository should keep source diagrams separate from generated assets:
+
+\begin{lstlisting}
+docs/
+  architecture/
+    context/
+      system-context.puml
+    containers/
+      system-containers.puml
+    components/
+      api-components.puml
+    dynamic/
+      checkout-flow.puml
+    deployment/
+      production.puml
+    code/
+      order-component.puml
+    generated/
+      svg/
+tools/
+  plantuml.jar
+scripts/
+  build-diagrams.sh
+\end{lstlisting}
+
+Keep generated SVG/PNG output either in a dedicated generated directory or in CI artifacts. If generated diagrams are committed, make regeneration deterministic and require CI to fail when generated assets are stale.
+
+\subsection{Toolchain}
+
+A local rendering workflow requires PlantUML and a supported Java runtime when using the JAR distribution. Graphviz is the default PlantUML layout engine for many non-sequence diagrams; PlantUML also provides alternative layout engines, but Graphviz remains the conventional default. PlantUML exposes \code{-testdot} for Graphviz diagnostics.\cite{plantumlhome,plantumlinstall}
+
+Typical checks:
+
+\begin{lstlisting}[language=bash]
+java -jar tools/plantuml.jar -version
+java -jar tools/plantuml.jar -testdot
+java -jar tools/plantuml.jar -stdlib
+\end{lstlisting}
+
+PlantUML supports syntax-only validation with \code{-checkonly} and fail-fast modes including \code{-failfast2}; these are useful in CI before generating images.\cite{plantumlcli}
+
+\section{Implementation Guide: Core C4 Diagrams}
+
+\subsection{System Context diagram}
+
+Use \code{C4\_Context} when the diagram's scope is a single system and its direct people/system relationships.
+
+\begin{lstlisting}[language=PlantUML]
+@startuml
+!include <C4/C4_Context>
+
+title Order Management Platform - System Context
+
+Person(buyer, "Buyer", "Places and tracks orders")
+System(orderPlatform, "Order Management Platform",
+  "Accepts orders, coordinates fulfilment, and exposes status")
+System_Ext(identity, "Identity Provider",
+  "Authenticates users and issues identity tokens")
+System_Ext(payment, "Payment Provider",
+  "Authorises and captures payments")
+
+Rel(buyer, orderPlatform, "Places orders and views status", "HTTPS")
+Rel(orderPlatform, identity, "Validates identity tokens", "OIDC/OAuth 2.0")
+Rel(orderPlatform, payment, "Authorises and captures payment", "HTTPS/JSON")
+
+SHOW_LEGEND()
+@enduml
+\end{lstlisting}
+
+\textbf{Review criteria:} one system is clearly in scope; external systems are not decomposed; relationships are meaningful; technology detail is limited to what helps explain the integration boundary.
+
+\subsection{Container diagram}
+
+Use \code{C4\_Container} to show the applications and data stores inside the software system.
+
+\begin{lstlisting}[language=PlantUML]
+@startuml
+!include <C4/C4_Container>
+
+LAYOUT_LEFT_RIGHT()
+title Order Management Platform - Containers
+
+Person(buyer, "Buyer", "Places and tracks orders")
+System_Ext(identity, "Identity Provider", "Enterprise identity service")
+System_Ext(payment, "Payment Provider", "External payment processor")
+
+System_Boundary(orderPlatform, "Order Management Platform") {
+  Container(web, "Web Application", "TypeScript / React",
+    "Browser-based ordering experience")
+  Container(api, "Order API", "Java / Spring Boot",
+    "Validates commands and coordinates order workflows")
+  Container(worker, "Fulfilment Worker", "Java",
+    "Processes asynchronous fulfilment work")
+  ContainerQueue(events, "Order Events", "Kafka",
+    "Carries order lifecycle events")
+  ContainerDb(db, "Order Database", "PostgreSQL",
+    "Stores orders, payments, and fulfilment state")
+}
+
+Rel(buyer, web, "Places orders and views status", "HTTPS")
+Rel(web, api, "Calls order operations", "HTTPS/JSON")
+Rel(api, identity, "Validates identity tokens", "OIDC")
+Rel(api, payment, "Authorises/captures payment", "HTTPS/JSON")
+Rel(api, db, "Reads and writes order state", "JDBC")
+Rel(api, events, "Publishes order events", "Kafka protocol")
+Rel(worker, events, "Consumes fulfilment events", "Kafka protocol")
+Rel(worker, db, "Updates fulfilment state", "JDBC")
+
+SHOW_LEGEND()
+@enduml
+\end{lstlisting}
+
+\begin{keybox}[Container modelling test]
+Ask whether each element is an application or data store that forms a meaningful runtime boundary. If the only reason an element exists is because it is a package, library, source folder, or framework layer, it is probably not a C4 container.
+\end{keybox}
+
+\subsection{Component diagram}
+
+Use \code{C4\_Component} for one container whose internal architecture warrants a durable view.
+
+\begin{lstlisting}[language=PlantUML]
+@startuml
+!include <C4/C4_Component>
+
+LAYOUT_LEFT_RIGHT()
+title Order API - Components
+
+Container_Boundary(orderApi, "Order API") {
+  Component(controller, "Order Controller", "Spring MVC",
+    "Accepts HTTP requests and maps them to application commands")
+  Component(service, "Order Application Service", "Java",
+    "Coordinates validation, pricing, payment, and persistence")
+  Component(policy, "Order Policy", "Java",
+    "Enforces ordering and fulfilment business rules")
+  Component(repository, "Order Repository", "Spring Data JDBC",
+    "Persists and retrieves aggregate state")
+  Component(eventPublisher, "Event Publisher", "Kafka client",
+    "Publishes order lifecycle events")
+}
+
+ContainerDb(db, "Order Database", "PostgreSQL", "Stores order state")
+ContainerQueue(events, "Order Events", "Kafka", "Carries lifecycle events")
+System_Ext(payment, "Payment Provider", "External payment processor")
+
+Rel(controller, service, "Invokes application commands")
+Rel(service, policy, "Evaluates business rules")
+Rel(service, payment, "Authorises/captures payment", "HTTPS/JSON")
+Rel(service, repository, "Loads and saves orders")
+Rel(repository, db, "Reads/writes data", "JDBC")
+Rel(service, eventPublisher, "Publishes committed domain events")
+Rel(eventPublisher, events, "Produces messages", "Kafka protocol")
+
+SHOW_LEGEND()
+@enduml
+\end{lstlisting}
+
+Avoid turning every class into a component. A component should represent a cohesive architectural unit behind a meaningful interface, not simply a namespace or source package.\cite{c4componentabs}
+
+\section{Implementation Guide: Supporting Diagrams}
+
+\subsection{Dynamic diagram}
+
+C4-PlantUML provides \code{C4\_Dynamic}. Current relationship macros accept an optional interaction index; \code{Index()} can generate ordered numbers.\cite{c4plantuml}
+
+\begin{lstlisting}[language=PlantUML]
+@startuml
+!include <C4/C4_Dynamic>
+
+title Place Order - Dynamic View
+
+Person(buyer, "Buyer")
+Container(web, "Web Application", "React", "Ordering UI")
+Container(api, "Order API", "Spring Boot", "Order orchestration")
+ContainerDb(db, "Order Database", "PostgreSQL", "Order state")
+System_Ext(payment, "Payment Provider", "Payment processing")
+ContainerQueue(events, "Order Events", "Kafka", "Lifecycle events")
+
+Rel(buyer, web, "Submits order", "HTTPS", $index=Index())
+Rel(web, api, "POST /orders", "HTTPS/JSON", $index=Index())
+Rel(api, payment, "Authorises payment", "HTTPS/JSON", $index=Index())
+Rel(api, db, "Stores committed order", "JDBC", $index=Index())
+Rel(api, events, "Publishes OrderPlaced", "Kafka", $index=Index())
+Rel(api, web, "Returns order identifier", "HTTPS/JSON", $index=Index())
+
+SHOW_LEGEND()
+@enduml
+\end{lstlisting}
+
+Use a dynamic view for a meaningful architectural scenario, not for every request path. If a sequence requires detailed lifelines, concurrency, activation bars, or message semantics, a UML sequence diagram may be a better fit; C4's dynamic view is primarily about explaining runtime collaboration among architectural elements.\cite{c4dynamic}
+
+\subsection{Deployment diagram}
+
+Use \code{C4\_Deployment} for one deployment environment. C4-PlantUML's \code{Deployment\_Node} macro supports nested infrastructure nodes, while the normal container macros can be placed within those nodes.\cite{c4plantuml}
+
+\begin{lstlisting}[language=PlantUML]
+@startuml
+!include <C4/C4_Deployment>
+
+title Order Management Platform - Production Deployment
+
+Deployment_Node(cloud, "Cloud Account", "AWS") {
+  Deployment_Node(region, "us-east-1", "AWS Region") {
+    Deployment_Node(ecs, "Application Cluster", "ECS/Fargate") {
+      Container(api, "Order API", "Java / Spring Boot",
+        "Processes synchronous order operations")
+      Container(worker, "Fulfilment Worker", "Java",
+        "Processes asynchronous fulfilment work")
+    }
+
+    Deployment_Node(data, "Managed Data Services", "AWS") {
+      ContainerDb(db, "Order Database", "PostgreSQL/RDS",
+        "Stores transactional order state")
+      ContainerQueue(events, "Order Events", "Kafka/MSK",
+        "Carries order lifecycle events")
+    }
+  }
+}
+
+Rel(api, db, "Reads/writes order state", "TLS/JDBC")
+Rel(api, events, "Publishes events", "TLS/Kafka")
+Rel(worker, events, "Consumes events", "TLS/Kafka")
+Rel(worker, db, "Updates fulfilment state", "TLS/JDBC")
+
+SHOW_LEGEND()
+@enduml
+\end{lstlisting}
+
+For high-availability or multi-region systems, model the infrastructure that materially changes the architecture: replicas, zones, ingress/load balancing, queues, caches, databases, network boundaries, and failover relationships. Do not copy every cloud resource into a C4 deployment view merely because it exists.
+
+\subsection{System Landscape diagram}
+
+System Landscape uses the same system/person abstractions as a context view but changes the scope to a portfolio or organisational area. C4-PlantUML's context library is sufficient for this style of diagram.
+
+\begin{lstlisting}[language=PlantUML]
+@startuml
+!include <C4/C4_Context>
+
+title Commerce Domain - System Landscape
+
+Person(customer, "Customer")
+System(ordering, "Order Management", "Captures and tracks orders")
+System(catalog, "Product Catalog", "Manages product information")
+System(inventory, "Inventory", "Tracks stock availability")
+System(billing, "Billing", "Produces invoices and financial postings")
+System_Ext(identity, "Identity Platform", "Enterprise authentication")
+
+Rel(customer, ordering, "Places and tracks orders")
+Rel(ordering, catalog, "Reads product data", "HTTPS/JSON")
+Rel(ordering, inventory, "Reserves stock", "HTTPS/JSON")
+Rel(ordering, billing, "Creates billing instruction", "Events")
+Rel(ordering, identity, "Authenticates users", "OIDC")
+
+SHOW_LEGEND()
+@enduml
+\end{lstlisting}
+
+\section{Code-Level Views with PlantUML}
+
+C4-PlantUML does not define a dedicated \code{C4\_Code} macro file as one of its major C4 diagram types. That aligns with the C4 model itself: the code level can be represented with UML class diagrams, ER diagrams, or another implementation-level notation, ideally generated on demand where practical.\cite{c4code,c4plantuml}
+
+A focused PlantUML class diagram can provide the Level 4 view:
+
+\begin{lstlisting}[language=PlantUML]
+@startuml
+skinparam classAttributeIconSize 0
+
+title Order Application Service - Code View
+
+package "Order Application Service component" {
+  interface OrderService {
+    +placeOrder(command): OrderId
+  }
+
+  class DefaultOrderService {
+    -repository: OrderRepository
+    -paymentClient: PaymentClient
+    +placeOrder(command): OrderId
+  }
+
+  interface OrderRepository {
+    +save(order)
+    +findById(id)
+  }
+
+  interface PaymentClient {
+    +authorise(request): Authorisation
+  }
+}
+
+OrderService <|.. DefaultOrderService
+DefaultOrderService --> OrderRepository : persists through
+DefaultOrderService --> PaymentClient : authorises payment through
+@enduml
+\end{lstlisting}
+
+Keep code diagrams narrow: one component, one design problem, and only the code elements needed to explain it.
+
+\section{Layout, Styling, and Conventions}
+
+\subsection{Prefer semantic layout hints over manual line forcing}
+
+C4-PlantUML offers global layout helpers such as \code{LAYOUT\_LEFT\_RIGHT()} and \code{LAYOUT\_TOP\_DOWN()}, plus directional relationship/layout helpers. These should be used sparingly. Excessive layout instructions make diagrams brittle and can obscure the underlying architecture.\cite{c4plantuml}
+
+A practical approach is:
+\begin{enumerate}
+  \item Choose one global direction.
+  \item Let PlantUML place most elements automatically.
+  \item Add directional hints only where the semantic reading order is unclear.
+  \item Re-test layout after PlantUML/C4-PlantUML upgrades because layout engines can change.
+\end{enumerate}
+
+\subsection{Always provide a legend when notation carries meaning}
+
+The official C4 notation guidance recommends a key/legend. C4-PlantUML provides \code{SHOW\_LEGEND()} and \code{LAYOUT\_WITH\_LEGEND()} helpers.\cite{c4notation,c4plantuml}
+
+\subsection{Use tags and themes as secondary information}
+
+C4-PlantUML supports element, relationship, and deployment-node tags as well as themes. Use them for a small number of cross-cutting concerns such as trust zones, ownership, lifecycle state, or external/internal distinction. Avoid creating a legend with a dozen colours that becomes harder to understand than the architecture itself.
+
+\section{Build and CI Pipeline}
+
+\subsection{Versioning strategy}
+
+For reproducibility:
+\begin{itemize}
+  \item Pin the PlantUML JAR or container image version used by CI.
+  \item Prefer the bundled C4 standard library or vendor a specific C4-PlantUML release.
+  \item Do not render production documentation from an unpinned remote \code{master}/\code{main} include.
+  \item Record the effective versions during the build. PlantUML exposes \code{-version}; C4-PlantUML exposes \code{C4Version()} and \code{C4VersionDetails()}.\cite{c4plantuml,plantumlversion}
+\end{itemize}
+
+\subsection{Validation and rendering script}
+
+The following script validates all diagrams before generating SVG output. SVG is usually preferable for technical documentation because it scales without raster artefacts.
+
+\begin{lstlisting}[language=bash]
+#!/usr/bin/env bash
+set -euo pipefail
+
+PLANTUML_JAR="${PLANTUML_JAR:-tools/plantuml.jar}"
+SOURCE_DIR="${SOURCE_DIR:-docs/architecture}"
+
+mapfile -d '' diagrams < <(find "$SOURCE_DIR" -type f -name '*.puml' -print0)
+
+if (( ${#diagrams[@]} == 0 )); then
+  echo "No PlantUML diagrams found under $SOURCE_DIR"
+  exit 0
+fi
+
+java -jar "$PLANTUML_JAR" -version
+java -jar "$PLANTUML_JAR" -checkonly -failfast2 "${diagrams[@]}"
+java -jar "$PLANTUML_JAR" -tsvg -failfast2 "${diagrams[@]}"
+\end{lstlisting}
+
+PlantUML documents \code{-checkonly}, \code{-failfast}, and \code{-failfast2} specifically for syntax checking and faster build failure.\cite{plantumlcli}
+
+\subsection{CI quality gates}
+
+A mature pipeline should enforce at least these gates:
+\begin{enumerate}
+  \item \textbf{Syntax gate:} every \code{.puml} file parses successfully.
+  \item \textbf{Deterministic toolchain gate:} PlantUML/C4-PlantUML versions are pinned or otherwise controlled.
+  \item \textbf{Rendering gate:} all diagrams generate successfully in the target format.
+  \item \textbf{Publication gate:} generated assets are copied to the documentation/site artifact only after successful validation.
+  \item \textbf{Drift gate, if generated files are committed:} regenerate and fail when the working tree changes.
+\end{enumerate}
+
+Example drift check:
+
+\begin{lstlisting}[language=bash]
+./scripts/build-diagrams.sh
+
+git diff --exit-code -- docs/architecture \
+  || { echo "Generated architecture diagrams are stale"; exit 1; }
+\end{lstlisting}
+
+\section{Operational Practices for Architecture-as-Code}
+
+\subsection{One architectural question per diagram}
+
+A diagram should have a clear purpose. If a container diagram is also trying to show runtime sequence, network topology, team ownership, threat boundaries, and class structure, split it. C4's multiple views exist precisely so different concerns do not have to be collapsed into one drawing.
+
+\subsection{Keep model names stable}
+
+Use aliases as stable internal identifiers and labels as human-readable names. Stable aliases make relationships and refactoring easier in larger PlantUML models.
+
+\subsection{Treat diagrams like code}
+
+Architecture sources should be reviewed with the same discipline as application code:
+\begin{itemize}
+  \item meaningful file names and directory structure;
+  \item pull-request review;
+  \item syntax validation;
+  \item deterministic generation;
+  \item ownership of architectural boundaries;
+  \item changes committed with the code or platform change they describe.
+\end{itemize}
+
+\subsection{Use deployment views for environment differences}
+
+Do not add Kubernetes pods, replicas, cloud zones, load balancers, or failover details to the logical container view solely because production has them. Keep the container view logically stable and express environment-specific topology in deployment diagrams.\cite{c4containerdiagram,c4deployment}
+
+\subsection{Protect sensitive architecture information}
+
+PlantUML can be rendered locally or via a server. For architecture diagrams that contain sensitive internal names, trust relationships, infrastructure details, or security boundaries, prefer local/on-premises rendering rather than sending source to a public rendering service. PlantUML's own FAQ cautions that traffic to a remote server traverses the network and recommends a local server for sensitive information.\cite{plantumlfaq}
+
+\section{Common Modelling Errors}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.28\textwidth} >{\raggedright\arraybackslash}p{0.64\textwidth}}
+\toprule
+\textbf{Error} & \textbf{Correction} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Error} & \textbf{Correction} \\
+\midrule
+\endhead
+Treating Docker containers as automatically equivalent to C4 containers & Identify applications and data stores first. Then map them to infrastructure in the deployment view. \\
+Calling every package/module a component & A C4 component is a cohesive group of related functionality behind a well-defined interface, not merely a code-organisation construct.\cite{c4componentabs} \\
+Putting detailed cloud topology on the container diagram & Move environment-specific nodes, replicas, clusters, and infrastructure services to a deployment diagram.\cite{c4deployment} \\
+Using ``Uses'' on every relationship & Replace with directional, responsibility-oriented labels and include protocol/technology for container-to-container communication.\cite{c4notation} \\
+Drawing all four C4 levels by default & Maintain only diagrams that add value; Context and Container are enough for many teams.\cite{c4diagrams} \\
+Hand-maintaining huge code diagrams & Generate them on demand or constrain them to important/complex components.\cite{c4code} \\
+Using an unpinned remote C4 include in CI & Pin a PlantUML distribution, vendor the C4 library, or pin an immutable upstream release/commit. \\
+Using dynamic diagrams for every request & Reserve them for scenarios whose runtime collaboration is architecturally significant or non-obvious.\cite{c4dynamic} \\
+\bottomrule
+\end{longtable}
+
+\section{Adoption Workflow}
+
+A practical rollout sequence for an existing system is:
+
+\begin{enumerate}
+  \item \textbf{Define the system boundary.} Agree on what the software system owns and what is external.
+  \item \textbf{Create the System Context view.} Include direct people and software-system relationships.
+  \item \textbf{Create the Container view.} Identify runtime applications and data stores, technologies, responsibilities, and protocols.
+  \item \textbf{Review semantics with the delivery team.} Resolve ambiguous boundaries before styling.
+  \item \textbf{Add deployment views.} Create one per materially different environment.
+  \item \textbf{Add component views selectively.} Only for containers where the additional internal abstraction aids design, review, onboarding, or risk analysis.
+  \item \textbf{Add dynamic views for critical flows.} Focus on high-value scenarios such as authentication, transaction commit, event publication, failover, or privileged operations.
+  \item \textbf{Generate code views on demand.} Keep persistent Level 4 diagrams only when they explain an important implementation design.
+  \item \textbf{Automate rendering.} Store \code{.puml} sources in version control and enforce syntax/rendering in CI.
+  \item \textbf{Review diagrams when architecture changes.} Treat stale diagrams as documentation defects.
+\end{enumerate}
+
+\section{Architecture Review Checklist}
+
+Before publishing a C4 diagram, confirm:
+
+\begin{itemize}
+  \item The diagram title states both subject and viewpoint.
+  \item The scope matches the diagram type.
+  \item Every element has an unambiguous name and type.
+  \item Responsibilities are described concisely.
+  \item Containers/components identify significant technology choices.
+  \item Relationships are directional and specifically labelled.
+  \item Container-to-container relationships identify protocol/mechanism where relevant.
+  \item External systems are clearly distinguishable from in-scope elements.
+  \item A legend/key exists when notation is not fully self-explanatory.
+  \item The diagram omits irrelevant implementation noise.
+  \item Deployment topology is separated from logical container structure.
+  \item The diagram can be regenerated from source in a clean environment.
+\end{itemize}
+
+\section{Quick Reference: C4-PlantUML Includes and Macros}
+
+\begin{tabularx}{\textwidth}{>{\bfseries\raggedright\arraybackslash}p{0.22\textwidth} >{\ttfamily\raggedright\arraybackslash}p{0.30\textwidth} X}
+\toprule
+View & Standard-library include & Common macros \\
+\midrule
+Context / Landscape & !include <C4/C4\_Context> & Person, Person\_Ext, System, System\_Ext, System\_Boundary, Rel \\
+Container & !include <C4/C4\_Container> & Container, ContainerDb, ContainerQueue, System\_Boundary, Rel \\
+Component & !include <C4/C4\_Component> & Component, ComponentDb, ComponentQueue, Container\_Boundary, Rel \\
+Dynamic & !include <C4/C4\_Dynamic> & Existing element macros, Rel with index, Index, SetIndex \\
+Deployment & !include <C4/C4\_Deployment> & Deployment\_Node, Node, Container, ContainerDb, ContainerQueue, Rel \\
+Code & No dedicated C4 code include & Standard PlantUML class, interface, ER, object, or other implementation-level notation \\
+\bottomrule
+\end{tabularx}
+
+\section{Conclusion}
+
+C4 works because it imposes discipline on \emph{abstraction and scope} without imposing a rigid visual notation. The architecture is communicated as a sequence of purposeful views: system context for the environment, containers for runtime structure, components for selected internal decomposition, and code for focused implementation details, with landscape, dynamic, and deployment views covering portfolio, runtime, and infrastructure concerns.
+
+C4-PlantUML is a practical implementation when architecture should live beside source code. Its value is greatest when the model remains semantically faithful to C4 and the tooling is treated as a reproducible documentation pipeline: version-controlled sources, pinned dependencies, syntax checks, deterministic rendering, explicit legends, and reviewable architecture changes.
+
+\newpage
+\begin{thebibliography}{99}
+
+\bibitem{c4home}
+Simon Brown, \emph{The C4 model for visualising software architecture}.\\
+\url{https://c4model.com/}
+
+\bibitem{c4intro}
+Simon Brown, \emph{C4 Model --- Introduction}.\\
+\url{https://c4model.com/introduction}
+
+\bibitem{c4abstractions}
+Simon Brown, \emph{C4 Model --- Abstractions}.\\
+\url{https://c4model.com/abstractions}
+
+\bibitem{c4system}
+Simon Brown, \emph{C4 Model --- Software system}.\\
+\url{https://c4model.com/abstractions/software-system}
+
+\bibitem{c4containerabs}
+Simon Brown, \emph{C4 Model --- Container}.\\
+\url{https://c4model.com/abstractions/container}
+
+\bibitem{c4componentabs}
+Simon Brown, \emph{C4 Model --- Component}.\\
+\url{https://c4model.com/abstractions/component}
+
+\bibitem{c4diagrams}
+Simon Brown, \emph{C4 Model --- Diagrams}.\\
+\url{https://c4model.com/diagrams}
+
+\bibitem{c4context}
+Simon Brown, \emph{C4 Model --- System context diagram}.\\
+\url{https://c4model.com/diagrams/system-context}
+
+\bibitem{c4containerdiagram}
+Simon Brown, \emph{C4 Model --- Container diagram}.\\
+\url{https://c4model.com/diagrams/container}
+
+\bibitem{c4componentdiagram}
+Simon Brown, \emph{C4 Model --- Component diagram}.\\
+\url{https://c4model.com/diagrams/component}
+
+\bibitem{c4code}
+Simon Brown, \emph{C4 Model --- Code diagram}.\\
+\url{https://c4model.com/diagrams/code}
+
+\bibitem{c4landscape}
+Simon Brown, \emph{C4 Model --- System landscape diagram}.\\
+\url{https://c4model.com/diagrams/system-landscape}
+
+\bibitem{c4dynamic}
+Simon Brown, \emph{C4 Model --- Dynamic diagram}.\\
+\url{https://c4model.com/diagrams/dynamic}
+
+\bibitem{c4deployment}
+Simon Brown, \emph{C4 Model --- Deployment diagram}.\\
+\url{https://c4model.com/diagrams/deployment}
+
+\bibitem{c4notation}
+Simon Brown, \emph{C4 Model --- Notation}.\\
+\url{https://c4model.com/diagrams/notation}
+
+\bibitem{c4plantuml}
+C4-PlantUML project, \emph{C4-PlantUML documentation}.\\
+\url{https://plantuml-stdlib.github.io/C4-PlantUML/}
+
+\bibitem{plantumlstdlib}
+PlantUML, \emph{PlantUML Standard Library --- C4 Library}.\\
+\url{https://plantuml.com/stdlib}
+
+\bibitem{plantumlhome}
+PlantUML, \emph{PlantUML}.\\
+\url{https://plantuml.com/}
+
+\bibitem{plantumlinstall}
+PlantUML, \emph{Frequently Asked Questions about installation}.\\
+\url{https://plantuml.com/faq-install}
+
+\bibitem{plantumlcli}
+PlantUML, \emph{Command-line usage}.\\
+\url{https://plantuml.com/command-line}
+
+\bibitem{plantumlversion}
+PlantUML, \emph{Versioning scheme}.\\
+\url{https://plantuml.com/versioning-scheme}
+
+\bibitem{plantumlfaq}
+PlantUML, \emph{Frequently Asked Questions}.\\
+\url{https://plantuml.com/faq}
+
+\end{thebibliography}
+
+\end{document}
