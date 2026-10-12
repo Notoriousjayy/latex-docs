@@ -1217,10 +1217,17 @@ def build_root(
     if rc_file.exists():
         base_cmd.extend(["-r", str(rc_file)])
     engine = _detect_engine(tex_path)
+    # Engine selection must use latexmk's documented engine switches. Passing
+    # "%O"/"%S" as separate argv entries (instead of inside a single
+    # -pdflatex="<engine> %O %S" template) makes latexmk treat them as literal
+    # input filenames and abort with "Stopping because of bad filename(s)".
+    # -lualatex/-xelatex switch the engine while inheriting every option
+    # already present in base_cmd (-interaction, -halt-on-error,
+    # -file-line-error, -shell-escape, -synctex).
     if engine == "lualatex":
-        base_cmd.extend(["-pdflatex=lualatex", "-interaction=nonstopmode", "-halt-on-error", "-file-line-error", "-shell-escape", "%O", "%S"])
+        base_cmd.append("-lualatex")
     elif engine == "xelatex":
-        base_cmd.extend(["-pdflatex=xelatex", "-interaction=nonstopmode", "-halt-on-error", "-file-line-error", "-shell-escape", "%O", "%S"])
+        base_cmd.append("-xelatex")
 
     build_dir = work_dir
     if output_dir is not None:

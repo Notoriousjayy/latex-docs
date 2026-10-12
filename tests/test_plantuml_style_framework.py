@@ -25,6 +25,75 @@ class PlantUMLStyleFrameworkTests(unittest.TestCase):
         """Prevent PlantUML from drawing deprecation warnings into committed images."""
         self.assertFalse(any("deprecated skinparam" in problem for problem in plantuml_lint.check()))
 
+    def test_skinparam_ban_holds_for_first_party_sources(self) -> None:
+        """The skinparam system is retired: every first-party file must use <style>."""
+        self.assertEqual([], plantuml_lint.check_skinparam_ban())
+
+    def test_skinparam_ban_rejects_a_reintroduced_directive(self) -> None:
+        """CI must fail when any skinparam form sneaks back into a first-party file."""
+        cases = {
+            "single-line": "@startuml\nskinparam monochrome true\n@enduml\n",
+            "block-form": "@startuml\nskinparam class {\n  BackgroundColor red\n}\n@enduml\n",
+            "stereotype-scoped": "@startuml\nskinparam class<<x>> {\n  BorderColor blue\n}\n@enduml\n",
+            "config-file": "skinparam dpi 150\n",
+        }
+        for label, body in cases.items():
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                (root / "src").mkdir()
+                name = "plantuml-config.puml" if label == "config-file" else "diagram.puml"
+                (root / "src" / name).write_text(body, encoding="ascii")
+                with patch.object(plantuml_lint, "ROOT", root), patch.object(plantuml_lint, "MODULE_ROOTS", ()):
+                    problems = plantuml_lint.check_skinparam_ban()
+                self.assertTrue(problems, f"{label}: lint must reject the directive")
+                self.assertIn("skinparam is banned", problems[0])
+
+    def test_skinparam_ban_covers_shared_modules_and_fragments(self) -> None:
+        """Included configurations and .iuml fragments are inside the ban's scope."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            module_root = root / "tooling" / "plantuml"
+            module_root.mkdir(parents=True)
+            (root / "src").mkdir()
+            (module_root / "uml-base.iuml").write_text("skinparam shadowing false\n", encoding="ascii")
+            (root / "src" / "helper.iuml").write_text("skinparam linetype ortho\n", encoding="ascii")
+            with patch.object(plantuml_lint, "ROOT", root), patch.object(plantuml_lint, "MODULE_ROOTS", (module_root,)):
+                problems = plantuml_lint.check_skinparam_ban()
+            self.assertEqual(2, len(problems), problems)
+
+    def test_migration_cannot_regenerate_legacy_styling(self) -> None:
+        """migrate_plantuml_styles strips every skinparam form, so a re-run keeps sources compliant."""
+        from tooling.scripts import migrate_plantuml_styles
+        source = (
+            "@startuml\n"
+            "skinparam monochrome true\n"
+            "skinparam nodesep 40\n"
+            "skinparam class {\n  BackgroundColor red\n}\n"
+            "skinparam state<<x>> {\n  BorderColor blue\n}\n"
+            "class A\n"
+            "@enduml\n"
+        )
+        migrated, _stats = migrate_plantuml_styles.migrate_text(source)
+        self.assertNotIn("skinparam", migrated)
+        self.assertIn("class A", migrated)
+
+    def test_monochrome_macro_owns_the_legend_presentation(self) -> None:
+        """The UML 2.5.1 legend renders black-on-white through the shared macro, not skinparam."""
+        base = (plantuml_lint.ROOT / "tooling/plantuml/uml-base.iuml").read_text(encoding="utf-8")
+        self.assertIn("!unquoted procedure UML_MONOCHROME()", base)
+        legend_dir = plantuml_lint.ROOT / "src/architecture/uml/uml-2-5-1-legend"
+        for source in sorted(legend_dir.glob("*.puml")):
+            text = source.read_text(encoding="utf-8")
+            self.assertIn("UML_MONOCHROME()", text, source.name)
+            active = [line for line in text.splitlines() if not line.lstrip().startswith("'")]
+            self.assertFalse(any("skinparam" in line for line in active), source.name)
+
+    def test_activities_legend_uses_bracketed_group_syntax(self) -> None:
+        """`end group` made PlantUML stamp a warning banner into the rendered SVG."""
+        text = (plantuml_lint.ROOT / "src/architecture/uml/uml-2-5-1-legend/06-activities.puml").read_text(encoding="utf-8")
+        self.assertNotIn("end group", text)
+        self.assertIn("group InterruptibleActivityRegion {", text)
+
     def test_renderer_invalidates_outputs_when_shared_style_changes(self) -> None:
         """Prevent shared style edits from leaving newer-looking stale images."""
         with tempfile.TemporaryDirectory() as directory:

@@ -19,13 +19,11 @@
 '      authoritative palette.
 '
 '  WHAT THIS MODULE OWNS
-'      - global skinparams (background, shadow, rounding, wrapping)
-'      - application of the house typography hierarchy to UML text roles
-'      - default line and arrow conventions
-'      - title / caption / legend styling
+'      - the global <style> defaults (background, shadow, rounding,
+'        wrapping, typography roles, arrows, notes, legends, stereotypes)
 '      - note styling and reusable note macros
 '      - stereotype + tagged-value conventions
-'      - generic helper macros (captions, dividers)
+'      - generic helper macros (captions, dividers, monochrome mode)
 '      - shared documentation comment template
 '
 '  WHAT THIS MODULE EXPLICITLY DOES NOT OWN
@@ -43,7 +41,7 @@
 '
 '  IMPLEMENTATION NOTE
 '      The include chain models UML 2.5.1 Annex A's informative diagram
-'      taxonomy as a convenience for sharing skinparams. It is a
+'      taxonomy as a convenience for sharing <style> definitions. It is a
 '      preprocessor include graph, not UML generalization: nothing here
 '      establishes semantic correctness of a diagram.
 ' ======================================================================
@@ -55,65 +53,81 @@
 !include house-tokens.iuml
 
 ' ----------------------------------------------------------------------
-' 1. GLOBAL SKINPARAMS  --  applied to every UML diagram
+' 1. GLOBAL STYLE  --  applied to every UML diagram
 ' ----------------------------------------------------------------------
+' One CSS-like <style> block owns every repository-wide presentation
+' default; skinparam is banned from first-party sources (enforced by
+' tooling/scripts/plantuml_lint.py). Each mapping below was verified
+' pixel-equivalent (or better) against the legacy skinparam on the
+' pinned PlantUML 1.2026.7 jar; the only intentional differences are
+' documented inline.
+'
 ' Transparent background keeps PNG/SVG composable on the LaTeX page; the
 ' JPEG derivative is flattened onto $theme_surface by the renderer.
-skinparam backgroundColor      transparent
-skinparam shadowing            false
-skinparam roundCorner          6
-' skinparam padding is deprecated (banner drawn since 1.2026.7) and CSS Padding only reaches activity boxes;
-' 14 = PlantUML's default 10 + the 4 the legacy skinparam added. Other element types keep PlantUML defaults.
+'
+' CSS Padding only reaches activity boxes (the deprecated skinparam
+' padding drew a banner since 1.2026.7); 14 = PlantUML's default 10 + the
+' 4 the legacy skinparam added. Other element types keep PlantUML defaults.
 <style>
+document {
+  BackgroundColor transparent
+}
+root {
+  Shadowing 0
+  RoundCorner 6
+  HorizontalAlignment center
+  MaximumWidth 220
+  FontName $font_family
+  FontSize $font_size_body
+  FontColor $theme_text
+}
+title {
+  FontName $font_family
+  FontSize $font_size_title
+  FontColor $theme_primary
+  FontStyle bold
+}
+caption {
+  FontName $font_family
+  FontSize $font_size_caption
+  FontColor $theme_muted
+  FontStyle italic
+}
+' Arrow / line defaults (descendants override only the heads/styles
+' that are semantically different in their category).
+arrow {
+  LineColor $theme_text
+  LineThickness 1
+  FontColor $theme_text
+  FontSize $font_size_small
+}
+' Notes (plain note style; categories override accent variants)
+note {
+  BackgroundColor $theme_surface
+  LineColor $theme_border
+  FontColor $theme_text
+  FontSize $font_size_small
+}
+' Legend (house convention: every published view carries a compact legend
+' when it uses role colours or non-obvious notation; see UML_LEGEND_ROLES)
+legend {
+  BackgroundColor $theme_surface
+  LineColor $theme_border
+  FontColor $theme_text
+  FontSize $font_size_legend
+}
+' Stereotype text (consistent across every diagram type)
+stereotype {
+  FontSize $font_size_stereo
+  FontStyle italic
+  FontColor $theme_muted
+}
 activityDiagram {
   activity {
     Padding 14
   }
 }
 </style>
-skinparam defaultTextAlignment center
-skinparam wrapWidth            220
-skinparam maxMessageSize       180
-
-' Typography (sizes come from the house hierarchy)
-skinparam defaultFontName      $font_family
-skinparam defaultFontSize      $font_size_body
-skinparam defaultFontColor     $theme_text
-
-skinparam titleFontName        $font_family
-skinparam titleFontSize        $font_size_title
-skinparam titleFontColor       $theme_primary
-skinparam titleFontStyle       bold
-
-skinparam captionFontName      $font_family
-skinparam captionFontSize      $font_size_caption
-skinparam captionFontColor     $theme_muted
-skinparam captionFontStyle     italic
-
-' Arrow / line defaults (descendants override only the heads/styles
-' that are semantically different in their category).
-skinparam ArrowColor           $theme_text
-skinparam ArrowFontColor       $theme_text
-skinparam ArrowFontSize        $font_size_small
-skinparam ArrowThickness       1
-
-' Notes (plain note style; categories override accent variants)
-skinparam NoteBackgroundColor  $theme_surface
-skinparam NoteBorderColor      $theme_border
-skinparam NoteFontColor        $theme_text
-skinparam NoteFontSize         $font_size_small
-
-' Legend (house convention: every published view carries a compact legend
-' when it uses role colours or non-obvious notation; see UML_LEGEND_ROLES)
-skinparam LegendBackgroundColor $theme_surface
-skinparam LegendBorderColor     $theme_border
-skinparam LegendFontColor       $theme_text
-skinparam LegendFontSize        $font_size_legend
-
-' Stereotype text (consistent across every diagram type)
-skinparam StereotypeFontSize       $font_size_stereo
-skinparam StereotypeFontStyle      italic
-skinparam StereotypeFontColor      $theme_muted
 
 ' ----------------------------------------------------------------------
 ' 2. SHARED HELPER MACROS
@@ -207,6 +221,153 @@ legend $position
 
 !unquoted procedure UML_LEGEND_END()
 end legend
+!endprocedure
+
+' --- Monochrome presentation (notation-reference diagrams) ---
+' The legacy `skinparam monochrome true` is banned with every other
+' skinparam. This macro is the supported black-on-white presentation for
+' diagrams whose subject is the notation itself (e.g. the UML 2.5.1
+' legend). It overrides every selector the shared modules colour, so it
+' must be called once, immediately after the leaf style !include.
+' Difference vs the legacy directive: PlantUML's monochrome also forced
+' grey ramps on a handful of built-in icons; this override keeps those
+' icons' default rendering while making all framework-owned fills white,
+' strokes black and text black.
+!unquoted procedure UML_MONOCHROME()
+<style>
+document {
+  BackgroundColor white
+}
+root {
+  BackgroundColor white
+  LineColor black
+  FontColor black
+}
+title {
+  FontColor black
+  LineColor transparent
+  BackgroundColor transparent
+}
+caption {
+  FontColor black
+  LineColor transparent
+  BackgroundColor transparent
+}
+arrow {
+  LineColor black
+  FontColor black
+}
+note {
+  BackgroundColor white
+  LineColor black
+  FontColor black
+}
+legend {
+  BackgroundColor white
+  LineColor black
+  FontColor black
+}
+stereotype {
+  FontColor black
+}
+class, object, component, interface, node, package, rectangle, database, queue, storage, cloud, folder, frame, card, hexagon, artifact, agent, collections, file, actor, usecase, person {
+  BackgroundColor white
+  LineColor black
+  FontColor black
+}
+activityDiagram {
+  activity {
+    BackgroundColor white
+    LineColor black
+    FontColor black
+  }
+  diamond {
+    BackgroundColor white
+    LineColor black
+    FontColor black
+  }
+  start {
+    BackgroundColor black
+  }
+  stop {
+    BackgroundColor black
+  }
+  end {
+    BackgroundColor black
+  }
+  activityBar {
+    BackgroundColor black
+  }
+  arrow {
+    LineColor black
+    FontColor black
+  }
+  swimlane {
+    LineColor black
+    FontColor black
+  }
+}
+stateDiagram {
+  state {
+    BackgroundColor white
+    LineColor black
+    FontColor black
+  }
+  circle {
+    BackgroundColor black
+  }
+  arrow {
+    LineColor black
+    FontColor black
+  }
+}
+sequenceDiagram {
+  participant {
+    BackgroundColor white
+    LineColor black
+    FontColor black
+  }
+  actor {
+    BackgroundColor white
+    LineColor black
+  }
+  lifeLine {
+    BackgroundColor white
+    LineColor black
+  }
+  box {
+    BackgroundColor white
+    LineColor black
+  }
+  group {
+    LineColor black
+  }
+  groupHeader {
+    BackgroundColor white
+    LineColor black
+    FontColor black
+  }
+  separator {
+    BackgroundColor white
+    LineColor black
+    FontColor black
+  }
+  reference {
+    BackgroundColor white
+    LineColor black
+    FontColor black
+  }
+  referenceHeader {
+    BackgroundColor white
+    LineColor black
+    FontColor black
+  }
+  arrow {
+    LineColor black
+    FontColor black
+  }
+}
+</style>
 !endprocedure
 
 ' ----------------------------------------------------------------------

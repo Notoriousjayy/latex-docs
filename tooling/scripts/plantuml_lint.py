@@ -11,7 +11,11 @@ from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[2]
 MODULE_ROOTS = (ROOT / "tooling" / "plantuml", ROOT / "tooling" / "styles" / "plantuml")
-DEPRECATED = re.compile(r"^\s*skinparam\s+(padding|ParticipantPadding|handwritten)\b", re.I)
+# The skinparam system is retired repository-wide: every first-party source,
+# module, fragment and injected configuration must use CSS-like <style>
+# definitions (or a documented non-skinparam alternative). Block forms are
+# caught by their `skinparam X {` opener.
+SKINPARAM_ANY = re.compile(r"^\s*skinparam\b", re.I)
 DIRECTIVE_SPACING = re.compile(r"^\s*!(?:unquoted|final)(?:[^ ]| {2,})")
 GUARD_START = re.compile(r"^!ifndef ([A-Z0-9_]+_INCLUDED)$")
 GUARD_DEFINE = re.compile(r"^!define ([A-Z0-9_]+_INCLUDED)$")
@@ -47,14 +51,8 @@ CATEGORY_PARENT = {
 LEAF_INCLUDE = re.compile(r"tooling/styles/plantuml/(structural|behavioral|interaction|c4)/[a-z0-9-]+-diagram-style\.iuml$")
 HEX_LITERAL = re.compile(r"#[0-9A-Fa-f]{6}\b")
 THEME_DIRECTIVE = re.compile(r"^\s*!theme\b", re.I)
-# Colour and typography are owned by the shared modules; layout hints (nodesep, ranksep, linetype,
-# componentStyle, wrapWidth ...) remain legitimate local decisions.
-HOUSE_OWNED_SKINPARAM = re.compile(
-    r"^\s*skinparam\s+(?!\w*<<)[A-Za-z]*(Color|FontSize|FontStyle|FontName|BackgroundColor|BorderColor|RoundCorner|Shadowing)\b",
-    re.I,
-)
-SKINPARAM_BLOCK_OPEN = re.compile(r"^\s*skinparam\s+([A-Za-z]+)(<<[^>]+>>)?\s*\{\s*$")
-BLOCK_HOUSE_OWNED = re.compile(r"^\s*[A-Za-z]*(Color|FontSize|FontStyle|FontName|RoundCorner|Shadowing)\b", re.I)
+# Colour and typography are owned by the shared modules; the blanket skinparam
+# ban (SKINPARAM_ANY) is enforced for every first-party file in check().
 # A hidden role stereotype carries no label of its own, so the legend is the only place its meaning can live.
 # Token use on arrows and notes sits next to the text that explains it and is not subject to this rule.
 ROLE_NEEDING_LEGEND = re.compile(r"<<(primary|dynamic|ok|caution|invalid|alt|neutral|external)>>")
@@ -147,7 +145,6 @@ def check_include_contract() -> list[str]:
 def check_source_style_discipline() -> list[str]:
     """Colour and typography live in the shared modules; a source diagram may only use role tokens.
 
-    Layout hints (nodesep, ranksep, linetype, direction, componentStyle ...) stay local.
     Diagrams whose meaning relies on the ok/caution/invalid roles must carry a legend.
     """
     problems: list[str] = []
@@ -159,7 +156,6 @@ def check_source_style_discipline() -> list[str]:
             if HEX_LITERAL.search(text):
                 problems.append(f"{relative}: hex colour literal in a fragment; use house tokens")
             continue
-        in_block = False
         for number, line in enumerate(text.splitlines(), 1):
             stripped = line.strip()
             if stripped.startswith("'"):
@@ -170,17 +166,6 @@ def check_source_style_discipline() -> list[str]:
                 problems.append(f"{relative}:{number}: !theme is not allowed; the shared modules are the theme")
             if stripped.startswith("<style>"):
                 problems.append(f"{relative}:{number}: local <style> block; move the rule into the shared modules or use a role stereotype")
-            if HOUSE_OWNED_SKINPARAM.match(line):
-                problems.append(f"{relative}:{number}: colour/typography skinparam is owned by the shared modules")
-            opened = SKINPARAM_BLOCK_OPEN.match(line)
-            if opened:
-                in_block = opened.group(2) is None
-                continue
-            if in_block:
-                if stripped == "}":
-                    in_block = False
-                elif BLOCK_HOUSE_OWNED.match(line):
-                    problems.append(f"{relative}:{number}: colour/typography inside a local skinparam block is owned by the shared modules")
         if ROLE_NEEDING_LEGEND.search(text) and not LEGEND_PRESENT.search(text):
             problems.append(f"{relative}: applies a hidden role stereotype but has no legend (UML_LEGEND_BEGIN/SHOW_LEGEND)")
     return problems
@@ -196,6 +181,28 @@ def check_managed_outputs() -> list[str]:
                     f"{candidate.relative_to(ROOT)}: generated image must live in "
                     f"{directory.name}/{candidate.suffix.lstrip('.').lower()}/"
                 )
+    return problems
+
+
+def check_skinparam_ban() -> list[str]:
+    """No first-party PlantUML file may contain an active skinparam directive.
+
+    Covers shared modules, leaf styles, renderable sources, include-only
+    fragments and injected -config files; block forms are caught by their
+    `skinparam X {` opener. Third-party code (the pinned C4 stdlib inside
+    the jar) is not part of the repository tree and is exempt by design.
+    """
+    problems: list[str] = []
+    first_party = (
+        sorted(path for root in MODULE_ROOTS for path in root.rglob("*.iuml"))
+        + sorted(ROOT.joinpath("tooling").rglob("*.puml"))
+        + sorted(ROOT.joinpath("src").rglob("*.puml"))
+        + sorted(ROOT.joinpath("src").rglob("*.iuml"))
+    )
+    for path in first_party:
+        for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+            if SKINPARAM_ANY.match(line):
+                problems.append(f"{path.relative_to(ROOT)}:{number}: skinparam is banned; use the CSS-like <style> system")
     return problems
 
 
@@ -219,8 +226,6 @@ def check() -> list[str]:
         for number, line in enumerate(lines, 1):
             if line.startswith("!") and ("\t" in line or DIRECTIVE_SPACING.search(line)):
                 problems.append(f"{relative}:{number}: directive has non-canonical spacing")
-            if DEPRECATED.match(line):
-                problems.append(f"{relative}:{number}: deprecated skinparam")
 
         guard_lines = [
             (number, line)
@@ -240,10 +245,8 @@ def check() -> list[str]:
         if not content_lines or content_lines[-1] != "!endif":
             problems.append(f"{relative}: include guard must end with !endif")
 
-    for path in sorted(ROOT.joinpath("src").rglob("*.puml")) + sorted(ROOT.joinpath("tooling").rglob("*.puml")):
-        for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
-            if DEPRECATED.match(line):
-                problems.append(f"{path.relative_to(ROOT)}:{number}: deprecated skinparam")
+    # Blanket skinparam ban for every first-party PlantUML file.
+    problems.extend(check_skinparam_ban())
 
     action = (ROOT / ".github" / "actions" / "render-plantuml" / "action.yml").read_text(encoding="utf-8")
     if re.search(r"default:\s*['\"]latest['\"]", action) or "releases/latest" in action:

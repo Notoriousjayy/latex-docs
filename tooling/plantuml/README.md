@@ -43,10 +43,17 @@ implements UML generalization.
 
 A user diagram contains exactly **one** leaf `!include` (plus optional
 domain helpers such as `pipe-and-filter-roles.iuml`) and never a hex
-colour, `!theme`, `<style>` block or colour/typography `skinparam`
-(`tooling/scripts/plantuml_lint.py` enforces this). Layout hints
-(`nodesep`, `ranksep`, `linetype`, direction, `componentStyle`) remain
-legitimate local decisions.
+colour, `!theme`, local `<style>` block or any `skinparam` directive -
+the skinparam system is retired repository-wide and
+`tooling/scripts/plantuml_lint.py` rejects every occurrence, including
+block forms and injected configurations. Presentation needs that the
+framework does not cover by default are expressed through opt-in macros
+(`UML_MONOCHROME`, `INTER_ARROW_WEIGHT`, `INTER_MESSAGE_ALIGN`, ...);
+direction commands (`left to right direction`) remain legitimate local
+decisions. The legacy layout skinparams (`nodesep`, `ranksep`,
+`linetype`, `componentStyle`, `ConditionEndStyle`,
+`classAttributeIconSize`, `style strictuml`) have no CSS equivalent on
+PlantUML 1.2026.7 and were retired with documented visual differences.
 
 ---
 
@@ -150,7 +157,7 @@ tooling/
 ├── manifests/plantuml.json                  # engine pin (version, sha256) + bundled C4-PlantUML version
 ├── plantuml/
 │   ├── README.md                            # this document
-│   ├── config.puml                          # rendering-only (-config): dpi
+│   ├── config.puml                          # rendering-only (-config): scale (150/96 raster density)
 │   ├── house-tokens.iuml                    # neutral root: palette, role tokens, typography, role classes
 │   ├── uml-base.iuml                        # UML root (includes house-tokens only)
 │   ├── uml-structural.iuml / uml-behavioral.iuml / uml-interaction.iuml
@@ -195,7 +202,7 @@ annotated sources. Key design points:
   `house-tokens.iuml`; `uml-base` and `c4-base` consume them. A palette swap
   is a one-file edit and the contract test `test_palette_has_exactly_one_owner`
   guards it.
-* All global UML `skinparam` defaults (typography sizes from the house
+* All global UML `<style>` defaults (typography sizes from the house
   hierarchy, corner radius, shadow, note + legend appearance, default arrow +
   stereotype font) live in `uml-base` — and only there.
 * Cross-cutting macros (`UML_NOTE_INFO`, `UML_NOTE_WARN`, `UML_STEREO`,
@@ -247,7 +254,7 @@ Adds:
 `!include uml-behavioral.iuml` — this is the inheritance edge that
 encodes the UML metamodel relationship. Adds:
 
-* participant / lifeline / activation skinparams;
+* participant / lifeline / activation `<style>` rules;
 * message-arrow macros — `INTER_SYNC`, `INTER_ASYNC`, `INTER_RETURN`,
   `INTER_LOST`, `INTER_FOUND`, `INTER_SELF`,
   `INTER_ACTIVATE`, `INTER_DEACTIVATE`;
@@ -419,7 +426,7 @@ of an existing diagram type (e.g. an "ER-style" class diagram).
 2. First non-comment line is `!include ../<category-parent>.iuml`.
 3. Wrap the body in an `!ifndef <NAME>_INCLUDED` / `!define` /
    `!endif` guard.
-4. Add only what is **specific** to this leaf — skinparams whose
+4. Add only what is **specific** to this leaf — `<style>` rules whose
    values differ from the category default, new macros, layout hints.
    Anything that would also be useful to a sibling diagram type
    belongs in the category parent instead.
@@ -443,8 +450,8 @@ rare; the UML 2.x taxonomy is stable.
 
 ### Pattern C — promoting a concern to a higher level
 
-Use this when you discover a macro or skinparam duplicated in two or
-more sibling modules.
+Use this when you discover a macro or `<style>` rule duplicated in two
+or more sibling modules.
 
 1. Move the definition to the **lowest common ancestor** of every
    module that needs it.
@@ -553,7 +560,9 @@ runtime dependencies supplied by the runner distribution.
 
 DECISION: framework values win. `tooling/plantuml/config.puml` and any
 `plantuml-config.puml` found next to diagrams may only set what the
-framework cannot express (currently `dpi`); anything the shared modules own
+framework cannot express (currently the raster `scale`, which replaced
+`skinparam dpi 150` with the pixel-identical `scale 1.5625`); anything
+the shared modules own
 (background, shadowing, roundCorner, fonts, Arrow*, Note*, Legend*,
 Stereotype*, element colours) must not appear in a config file or in a
 diagram. The 2026-09 migration retired every local palette
@@ -568,10 +577,10 @@ helper include that consumes tokens.
 Run through this before merging changes that touch any module.
 
 - [ ] **Shared primitives are defined exactly once.** No theme token,
-  global skinparam, note style, caption helper, stereotype function,
+  global `<style>` rule, note style, caption helper, stereotype function,
   or tagged-value function appears in more than one file. (Search for
-  `!$theme_` and `skinparam defaultFontName` — both must hit only
-  `uml-base.iuml`.)
+  `!$theme_` — it must hit only `house-tokens.iuml` definitions and their
+  consumers; the global element defaults live only in `uml-base.iuml`.)
 
 - [ ] **Specialization happens at the right layer.** Every macro
   whose name starts with `UML_` lives in `uml-base`; every `STRUCT_`

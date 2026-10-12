@@ -10,10 +10,11 @@ each visual decision. It is idempotent: a migrated file is left untouched.
 What it does per renderable diagram under src/:
 
 * drops `!theme` directives and duplicate `!include` lines;
-* removes single-line skinparams that set colour, typography or corner
-  rounding (layout hints such as nodesep/ranksep/linetype/direction stay);
-* removes colour/typography lines inside `skinparam X { ... }` blocks and
-  deletes the block when nothing else is left;
+* removes EVERY `skinparam` directive - single-line, block form and
+  stereotype-scoped - because the repository policy bans skinparam from
+  first-party sources outright (layout needs are either expressed with
+  the CSS-like <style> system through the shared modules or documented
+  as retired; see tooling/plantuml/README.md);
 * replaces every six-digit hex literal with the nearest house role token,
   choosing $line_* for arrow/text contexts and $fill_*/$deep_* for element
   fills, and resolving per-diagram collisions so two colours that were
@@ -47,13 +48,10 @@ HEX = re.compile(r"#([0-9A-Fa-f]{6})\b")
 THEME = re.compile(r"^\s*!theme\b", re.I)
 INCLUDE = re.compile(r"^\s*!include(?:sub)?\s+\S+\s*$")
 STARTUML = re.compile(r"^@startuml", re.M)
-# Single-line skinparams owned by the shared modules (colour, typography, rounding, shadow, background).
-OWNED_SINGLE = re.compile(
-    r"^\s*skinparam\s+(?!\w*<<)[A-Za-z]*(Color|FontSize|FontStyle|FontName|RoundCorner|Shadowing|backgroundColor|BackgroundColor)\b",
-    re.I,
-)
+# Every skinparam is banned from first-party sources: single-line directives ...
+SKINPARAM_SINGLE = re.compile(r"^\s*skinparam\s+\S", re.I)
+# ... and block form (with or without a stereotype scope).
 BLOCK_OPEN = re.compile(r"^\s*skinparam\s+([A-Za-z]+)(<<[^>]+>>)?\s*\{\s*$")
-BLOCK_OWNED_LINE = re.compile(r"^\s*[A-Za-z]*(Color|FontSize|FontStyle|FontName|RoundCorner|Shadowing)\b", re.I)
 ARROW_COLOR = re.compile(r"(-\[)(#[0-9A-Fa-f]{6})")
 INLINE_COLOR = re.compile(r"(<color:)(#[0-9A-Fa-f]{6})(>)")
 LEGEND_SWATCH = re.compile(r"(\|\s*<)(#[0-9A-Fa-f]{6})(>)")
@@ -200,31 +198,13 @@ def migrate_text(text: str) -> tuple[str, dict]:
     lines = text.splitlines()
     out: list[str] = []
     seen_includes: set[str] = set()
-    in_block: str | None = None
-    block_buffer: list[str] = []
-    block_kept_any = False
-
-    def flush_block() -> None:
-        nonlocal in_block, block_buffer, block_kept_any
-        if block_kept_any:
-            out.extend(block_buffer)
-        else:
-            stats["removed_lines"] += len(block_buffer)
-        in_block, block_buffer, block_kept_any = None, [], False
+    in_block = False
 
     for line in lines:
-        if in_block is not None:
-            stripped = line.strip()
-            if stripped == "}":
-                block_buffer.append(line)
-                flush_block()
-                continue
-            if BLOCK_OWNED_LINE.match(line) or not stripped:
-                if stripped:
-                    stats["removed_lines"] += 1
-                continue
-            block_buffer.append(line)
-            block_kept_any = True
+        if in_block:
+            stats["removed_lines"] += 1
+            if line.strip() == "}":
+                in_block = False
             continue
         if THEME.match(line):
             stats["removed_lines"] += 1
@@ -237,18 +217,14 @@ def migrate_text(text: str) -> tuple[str, dict]:
             seen_includes.add(key)
             out.append(line)
             continue
-        if OWNED_SINGLE.match(line):
+        if BLOCK_OPEN.match(line):
+            stats["removed_lines"] += 1
+            in_block = True
+            continue
+        if SKINPARAM_SINGLE.match(line):
             stats["removed_lines"] += 1
             continue
-        opened = BLOCK_OPEN.match(line)
-        if opened and opened.group(2) is None:
-            in_block = opened.group(1)
-            block_buffer = [line]
-            block_kept_any = False
-            continue
         out.append(line)
-    if in_block is not None:
-        out.extend(block_buffer)
 
     body = "\n".join(out)
     mapping, notes = build_color_map(body)
