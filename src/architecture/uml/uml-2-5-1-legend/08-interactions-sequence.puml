@@ -1,0 +1,109 @@
+@startuml
+' Source block: uml251_08_interactions_sequence (uml-2.5.1-legend.puml intake)
+!include ../../../../tooling/styles/plantuml/interaction/sequence-diagram-style.iuml
+' ============================================================================
+' Section 08 — Interactions / Sequence Diagrams
+'
+' UML traceability:
+'   UML 2.5.1 §17.2 Interactions
+'   UML 2.5.1 §17.4 Lifelines
+'   UML 2.5.1 §17.5 Messages
+'   UML 2.5.1 §17.6 CombinedFragments
+'   UML 2.5.1 §17.8 Sequence Diagrams
+'
+' PlantUML support: Native/Partial.
+' Strict UML arrow style is requested to better align call arrowheads.
+' ============================================================================
+
+title UML 2.5.1 Notation Reference — Interactions and Sequence Diagrams
+skinparam monochrome true
+skinparam style strictuml
+hide footbox
+
+actor User
+participant "Client" as Client
+participant "Service" as Service
+queue "Queue" as Queue
+
+autonumber
+
+[-> Client : found / incoming message\n(PlantUML boundary form)
+
+Client -> Service : synchronousCall()
+activate Service
+
+Service -> Service : selfMessage()
+
+Service ->> Queue : asynchronousSignal
+
+alt accepted
+  Service --> Client : reply / return
+else rejected
+  Service --> Client : error
+end
+
+opt auditing enabled
+  Service -> Service : audit()
+end
+
+loop for each item
+  Service -> Service : process(item)
+end
+
+par branch A
+  Service -> Queue : publishA()
+else branch B
+  Service -> Queue : publishB()
+end
+
+critical update atomically
+  Service -> Service : updateState()
+end
+
+break fatal condition
+  Service --> Client : failure
+end
+
+ref over Client, Service : Reused Interaction / InteractionUse mapping
+
+create Worker
+Service -> Worker : create()
+activate Worker
+Worker -> Worker : selfCall()
+Worker --> Service : done
+destroy Worker
+
+deactivate Service
+
+Client ->x Service : lost message\n(PlantUML x marker)
+Client ->] : outgoing message\n(outside shown scope)
+
+note over Client,Service
+  <b>UML message notation</b>
+  • synchronous call: filled arrowhead
+  • asynchronous message: open arrowhead
+  • reply: dashed line
+  • create: targets the created lifeline at its creation
+  • delete: ends at a DestructionOccurrenceSpecification
+  • found/lost UML messages use a black endpoint circle
+
+  PlantUML's boundary arrows and final "x" syntax are
+  renderer conventions; they are useful mappings but
+  are not identical to every UML found/lost endpoint glyph.
+end note
+
+legend
+  |= UML interaction concept |= PlantUML mapping |
+  | Lifeline / Actor lifeline | participant / actor — Native |
+  | ExecutionSpecification | activate/deactivate — Native |
+  | Synchronous call | -> with strictuml — Native |
+  | Asynchronous message | ->> — Native |
+  | Reply | --> / return — Native |
+  | Create | create + first received message — Native |
+  | Destruction | destroy / !! — Native |
+  | Self message | participant -> itself — Native |
+  | Found / lost message | boundary arrow / x marker — Partial |
+  | CombinedFragment alt/opt/loop/par/break/critical | matching grouping keywords — Native |
+  | InteractionUse | ref over — Partial/native visual mapping |
+endlegend
+@enduml

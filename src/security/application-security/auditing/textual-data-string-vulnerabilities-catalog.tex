@@ -1,0 +1,1520 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=0.78in]{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[most]{tcolorbox}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{pifont}
+\usepackage{ragged2e}
+
+\definecolor{AppSecBlue}{HTML}{163A5F}
+\definecolor{AppSecDark}{HTML}{18212A}
+\definecolor{AppSecGray}{HTML}{F3F5F7}
+\definecolor{AppSecWarn}{HTML}{7A3E00}
+\definecolor{AppSecGreen}{HTML}{245A3A}
+\definecolor{CodeBg}{HTML}{F7F8FA}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=AppSecBlue,
+  urlcolor=AppSecBlue,
+  citecolor=AppSecBlue,
+  pdftitle={Catalog of Textual Data and String-Processing Vulnerabilities},
+  pdfsubject={Application Security Engineering Reference},
+  pdfauthor={}
+}
+
+\setlist[itemize]{leftmargin=1.35em,itemsep=0.25em,topsep=0.35em}
+\setlist[enumerate]{leftmargin=1.65em,itemsep=0.25em,topsep=0.35em}
+\renewcommand{\arraystretch}{1.18}
+
+\titleformat{\section}
+  {\Large\bfseries\color{AppSecBlue}}
+  {\thesection}{0.65em}{}
+\titleformat{\subsection}
+  {\large\bfseries\color{AppSecDark}}
+  {\thesubsection}{0.55em}{}
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{AppSecDark}}
+  {\thesubsubsection}{0.5em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Textual Data \& String-Processing Vulnerabilities}
+\fancyhead[R]{\small AppSec Engineering Reference}
+\fancyfoot[C]{\thepage}
+\setlength{\headheight}{14pt}
+
+\lstdefinestyle{appsec}{
+  backgroundcolor=\color{CodeBg},
+  basicstyle=\ttfamily\small,
+  frame=single,
+  rulecolor=\color{black!18},
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  tabsize=2,
+  xleftmargin=0.35em,
+  xrightmargin=0.35em,
+  aboveskip=0.7em,
+  belowskip=0.7em
+}
+\lstset{style=appsec}
+
+\newtcolorbox{securityprinciple}{
+  breakable,
+  colback=AppSecBlue!5,
+  colframe=AppSecBlue!65,
+  title=\textbf{Security Principle},
+  fonttitle=\bfseries
+}
+\newtcolorbox{auditheuristic}{
+  breakable,
+  colback=AppSecGreen!5,
+  colframe=AppSecGreen!65,
+  title=\textbf{Audit Heuristic},
+  fonttitle=\bfseries
+}
+\newtcolorbox{dangerousassumption}{
+  breakable,
+  colback=AppSecWarn!5,
+  colframe=AppSecWarn!70,
+  title=\textbf{Dangerous Assumption},
+  fonttitle=\bfseries
+}
+\newtcolorbox{vulnpattern}{
+  breakable,
+  colback=AppSecGray,
+  colframe=AppSecDark!55,
+  title=\textbf{Vulnerability Pattern},
+  fonttitle=\bfseries
+}
+\newtcolorbox{defensivepattern}{
+  breakable,
+  colback=AppSecGreen!4,
+  colframe=AppSecGreen!70,
+  title=\textbf{Defensive Pattern},
+  fonttitle=\bfseries
+}
+\newtcolorbox{implementationnote}{
+  breakable,
+  colback=black!2,
+  colframe=black!35,
+  title=\textbf{Implementation Note},
+  fonttitle=\bfseries
+}
+\newtcolorbox{catalogbox}[1]{
+  breakable,
+  enhanced,
+  colback=white,
+  colframe=AppSecBlue!58,
+  colbacktitle=AppSecBlue!8,
+  coltitle=AppSecDark,
+  title=\textbf{#1},
+  fonttitle=\bfseries,
+  boxed title style={boxrule=0pt},
+  left=1.2mm,right=1.2mm,top=1mm,bottom=1mm
+}
+
+\newcommand{\field}[1]{\par\smallskip\noindent\textbf{#1.}\ }
+\newcommand{\checkbox}{\(\square\)}
+\newcommand{\cwe}[1]{\texttt{#1}}
+\newcommand{\term}[1]{\textbf{#1}}
+
+\title{\textbf{Catalog of Textual Data and String-Processing Vulnerabilities}\\[0.4em]
+\large Application Security Engineering Field Guide}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\begin{minipage}{0.92\textwidth}
+\small
+\textbf{Purpose.} This field guide catalogs security failures that arise when software stores, copies, transforms, parses, validates, encodes, decodes, or interprets textual data. It is organized for practical secure-code review: each vulnerability family is described in terms of its failure mechanism, trust boundary, attack surface, review indicators, detection strategy, and preferred remediation.
+\end{minipage}
+\end{center}
+
+\tableofcontents
+\newpage
+
+\section{Purpose and Scope}
+
+Text is often treated as a low-risk data representation because it is human-readable and easy to compose. In security-sensitive software, that assumption is unsafe. A single string can simultaneously carry application data, structural delimiters, termination markers, escape sequences, path syntax, query syntax, command syntax, formatting directives, protocol syntax, and encoding metadata. A vulnerability appears when two components disagree about which of those meanings applies to the same bytes or characters.
+
+This catalog addresses four recurring failure domains:
+
+\begin{itemize}
+  \item \textbf{Memory safety}: incorrect length, capacity, termination, indexing, or expansion logic causes out-of-bounds access.
+  \item \textbf{Data/control confusion}: attacker-controlled text is reinterpreted as parser or interpreter syntax.
+  \item \textbf{Representation mismatch}: validation occurs on a representation different from the one later consumed.
+  \item \textbf{Cross-component disagreement}: validators, decoders, operating-system APIs, databases, shells, and other consumers assign different semantics to the same input.
+\end{itemize}
+
+Although C and C++ expose especially sharp edges because traditional C strings do not carry their own buffer capacity, the broader problems are language-independent. Counted strings, managed runtimes, and memory-safe languages still cross operating-system, database, file-system, serialization, and interpreter boundaries where textual data acquires control meaning.
+
+\begin{securityprinciple}
+\textbf{Text is not necessarily ``just data.''} Treat every transition from one textual representation or grammar to another as a security boundary.
+\end{securityprinciple}
+
+\section{Why Textual Data Becomes a Security Boundary}
+
+\subsection{Data and Metadata}
+
+\term{Data} is the application value the program intends to process: a username, filename component, search term, configuration value, or message field.
+
+\term{Metadata} or \term{control data} changes how a consumer interprets surrounding data. Examples include a NUL terminator, a colon separating fields, a slash separating path components, a quote terminating a string literal, a percent sign introducing an encoded byte, or a format specifier instructing a formatting routine to consume a variadic argument.
+
+The security question is not simply whether an attacker controls bytes. It is whether attacker-controlled bytes can cross from the \emph{data domain} into the \emph{control domain} of a downstream consumer.
+\clearpage
+
+\subsection{In-Band and Out-of-Band Control Information}
+
+\term{In-band metadata} is embedded inside the same character stream as the data. Common examples include:
+\begin{itemize}
+  \item NUL terminators in C strings;
+  \item commas, colons, newlines, quotes, or whitespace used as delimiters;
+  \item slashes and dot segments in file paths;
+  \item percent-encoded or entity-encoded characters;
+  \item format directives such as \texttt{\%s};
+  \item shell control characters and redirection operators;
+  \item SQL quoting and expression syntax.
+\end{itemize}
+
+\term{Out-of-band metadata} is represented separately, such as a string length field, typed function argument, prepared-statement parameter, structured process argument array, or object property.
+
+Out-of-band representation is not automatically secure, but it reduces ambiguity by separating values from instructions.
+
+\begin{securityprinciple}
+Keep untrusted data separate from interpreter syntax whenever possible. Structural separation is stronger than trying to sanitize a combined command, query, path, or formatted string after construction.
+\end{securityprinciple}
+
+\subsection{Trust and Interpretation Boundaries}
+
+A text-processing pipeline often contains several interpreters:
+
+\begin{center}
+\begin{tabular}{c}
+Untrusted bytes \\
+\(\downarrow\) \\
+Transport or protocol decoder \\
+\(\downarrow\) \\
+Application validator \\
+\(\downarrow\) \\
+Normalizer / canonicalizer \\
+\(\downarrow\) \\
+String builder \\
+\(\downarrow\) \\
+Filesystem / shell / database / formatter / parser
+\end{tabular}
+\end{center}
+
+Every transition can change meaning. A sequence harmless to the validator can become dangerous after decoding, normalization, truncation, best-fit conversion, or another parser pass.
+\clearpage
+
+\subsection{The Validation--Transformation--Consumption Problem}
+
+A core review pattern is:
+
+\begin{center}
+\begin{tabular}{c}
+Representation A is validated \\
+\(\downarrow\) \\
+Data is decoded, normalized, truncated, escaped, or converted \\
+\(\downarrow\) \\
+Representation B is consumed
+\end{tabular}
+\end{center}
+
+If A and B are not semantically identical for the security decision being enforced, validation can be bypassed.
+
+\begin{securityprinciple}
+\textbf{Validate the representation that will actually be consumed.} Security checks must apply to the canonical, final representation used by the security-sensitive operation.
+\end{securityprinciple}
+
+\section{String-Processing Security Model}
+
+A practical assessment can model string processing as five linked properties:
+
+\begin{enumerate}
+  \item \textbf{Origin}: where the text came from and which bytes are attacker-controlled.
+  \item \textbf{Representation}: encoding, normalization state, length convention, termination convention, and parser grammar.
+  \item \textbf{Transformation}: copies, concatenations, decoding, escaping, case conversion, character-set conversion, truncation, or expansion.
+  \item \textbf{Decision}: validation, authorization, allowlisting, extension checks, path restrictions, or other security logic.
+  \item \textbf{Sink}: memory write, file access, query execution, command execution, log/format operation, or protocol parser.
+\end{enumerate}
+
+For each operation, reviewers should maintain two invariants:
+
+\begin{itemize}
+  \item \textbf{Spatial invariant}: the consumer never reads or writes beyond the actual object bounds.
+  \item \textbf{Semantic invariant}: attacker-controlled data cannot acquire unintended control meaning after validation.
+\end{itemize}
+\clearpage
+
+\section{String Memory-Safety Vulnerabilities}
+
+Traditional C strings are arrays of bytes terminated by a NUL character. The array itself does not carry its capacity, and common APIs often infer length by scanning for the terminator. This design makes length, capacity, and termination separate facts that the developer must keep consistent.
+
+\subsection{Unbounded Copies and Concatenations}
+
+\begin{catalogbox}{Unbounded String Copy or Concatenation}
+\field{Definition}A copy, formatting, scanning, or concatenation operation writes data without enforcing the destination object's true capacity.
+
+\field{Root Cause}The program relies on source length, an assumed maximum, or a terminator rather than the destination buffer's actual writable capacity.
+
+\field{Security Boundary Violated}Buffer boundary.
+
+\field{Preconditions}Attacker-controlled or unexpectedly long input reaches an unbounded operation such as a \texttt{strcpy}-like copy, \texttt{strcat}-like concatenation, unbounded \texttt{sprintf}-style formatting, or unconstrained \texttt{\%s} conversion in a scanning routine.
+
+\field{Vulnerable Data Flow}
+\[
+\text{untrusted input} \rightarrow \text{unbounded operation} \rightarrow
+\text{fixed buffer} \rightarrow \text{out-of-bounds write}
+\]
+
+\field{Failure Mechanism}The write continues until the source terminates even when the destination does not have enough storage. Concatenation is especially error-prone because the required capacity is the existing destination length plus the appended length plus the terminator.
+
+\field{Security Impact}Memory corruption, crash, arbitrary code execution, control-data corruption, or adjacent-object modification.
+
+\field{Code-Review Indicators}Search for unbounded formatting, copy, concatenation, and scan families; then trace whether source length is strictly proven to fit the destination on every path.
+
+\field{Dangerous Assumptions}``The input is normally short,'' ``the protocol limits the field,'' or ``this helper is only called with trusted strings.''
+
+\field{Detection Strategy}Manual call-site review, SAST rules for unsafe string functions, boundary-value tests, and fuzzing with oversized fields.
+
+\field{Defensive Pattern}Use length-aware abstractions whose capacity is derived from the destination object, not from attacker-controlled or stale length values.
+
+\field{Remediation}Replace the unbounded operation or establish a formally correct precondition that proves required size, including the terminator and any future concatenation.
+
+\field{Related Vulnerabilities}\cwe{CWE-120}, \cwe{CWE-121}, \cwe{CWE-122}.
+\end{catalogbox}
+\clearpage
+
+\subsection{Bounded APIs Used Unsafely}
+
+A bounded API only adds a length parameter; it does not guarantee that the length parameter is correct. Common failure modes include passing the source length instead of destination capacity, passing bytes where the API expects characters, failing to reserve space for a terminator, or ignoring truncation semantics.
+
+\begin{catalogbox}{Incorrect Bound or Size Argument}
+\field{Definition}A nominally bounded string operation receives a size value that does not describe the true writable capacity of the destination in the unit expected by the API.
+
+\field{Root Cause}Carelessness, arithmetic error, integer conversion, incorrect unit, stale capacity, or misunderstanding of platform-specific return and termination behavior.
+
+\field{Security Boundary Violated}Buffer boundary and API contract boundary.
+
+\field{Preconditions}The caller can influence input length or a transformation can produce output larger than the size assumption.
+
+\field{Vulnerable Data Flow}
+\[
+\text{input} \rightarrow \text{size calculation} \rightarrow
+\text{bounded API with wrong bound} \rightarrow \text{overflow or unterminated output}
+\]
+
+\field{Failure Mechanism}The API obeys the supplied bound, but the bound itself is wrong. The most dangerous variants confuse bytes with wide characters or code units.
+
+\field{Security Impact}Out-of-bounds write/read, unterminated output, use of stale or uninitialized data, or truncation-driven authorization bypass.
+
+\field{Code-Review Indicators}Arguments such as \texttt{sizeof(buf)} passed to APIs documented in characters; hand-written multipliers; casts between signed/unsigned size types; ignored return values.
+
+\field{Dangerous Assumptions}``Bounded means safe.''
+
+\field{Detection Strategy}API-contract review, unit-aware static analysis, compile-time object-size checks where available, and tests at exactly \(N-1\), \(N\), and \(N+1\) units.
+
+\field{Defensive Pattern}Represent capacities in a single explicit unit and pass the destination object's capacity directly whenever possible.
+
+\field{Remediation}Correct the unit, reserve termination space, handle truncation explicitly, and check the documented return convention on every supported platform.
+
+\field{Related Vulnerabilities}\cwe{CWE-120}, \cwe{CWE-170}.
+\end{catalogbox}
+\clearpage
+
+\subsection{Character Expansion}
+
+Transformations can increase length: escaping a quote may add a backslash; rendering a byte as two hexadecimal digits doubles size; percent encoding can expand one byte into three characters; character-set conversion can expand or contract representation.
+
+\begin{catalogbox}{Character-Expansion Overflow}
+\field{Definition}The destination is sized from pre-transformation length even though the transformation can emit more output units than it consumes.
+
+\field{Root Cause}Capacity is calculated from input length without applying the transformation's worst-case expansion factor.
+
+\field{Security Boundary Violated}Buffer boundary.
+
+\field{Preconditions}Attacker-controlled input can force the maximum-expansion branch.
+
+\field{Vulnerable Data Flow}
+\[
+\text{input length }n \rightarrow \text{transform emits }k n
+\rightarrow \text{buffer sized near }n \rightarrow \text{overflow}
+\]
+
+\field{Failure Mechanism}An apparently safe input-length check is invalidated because output length is a function of content, not merely input length.
+
+\field{Security Impact}Memory corruption or truncation.
+
+\field{Code-Review Indicators}Escape loops, hex encoders, log sanitizers, URI encoders, Unicode conversions, or formatters writing variable numbers of bytes per input element.
+
+\field{Dangerous Assumptions}``If the input fits, the output fits.''
+
+\field{Detection Strategy}Worst-case expansion analysis and fuzzing with characters that take the longest encoding path.
+
+\field{Defensive Pattern}Compute required output size before writing or use dynamically growing abstractions with checked arithmetic.
+
+\field{Remediation}Define and enforce a maximum expansion factor, detect arithmetic overflow, and ensure the allocation includes termination.
+\end{catalogbox}
+\clearpage
+
+\subsection{Incorrect Pointer Advancement and Boundary Search}
+
+\begin{catalogbox}{Pointer or Index Advancement Beyond String End}
+\field{Definition}A parser increments a pointer or index beyond the logical or physical end of a string because it assumes a delimiter or complete multibyte sequence exists.
+
+\field{Root Cause}Missing terminator check, unconditional post-increment, incomplete lookahead validation, or malformed-data assumptions.
+
+\field{Security Boundary Violated}String boundary and buffer boundary.
+
+\field{Preconditions}Input can omit a required delimiter, terminate inside a multicharacter token, or provide an incomplete encoded sequence.
+
+\field{Failure Mechanism}The loop exits for one reason but later code assumes another, or lookahead reads characters after the terminator.
+
+\field{Security Impact}Out-of-bounds read/write, uninitialized-data use, memory disclosure, crash, or secondary corruption.
+
+\field{Code-Review Indicators}Loops of the form ``advance until delimiter,'' accesses to \texttt{p[1]} or \texttt{p[2]} without length checks, and pointer increments immediately after a conditional search.
+
+\field{Dangerous Assumptions}``The delimiter is always present.''
+
+\field{Detection Strategy}Malformed-input fuzzing: missing delimiter, delimiter at first/last byte, truncated escape sequence, or lead byte followed by terminator.
+
+\field{Defensive Pattern}Parse with an explicit end pointer or remaining-length counter and distinguish every parser termination reason.
+
+\field{Remediation}Check remaining length before lookahead and avoid advancing past a terminator unless the delimiter was positively identified.
+
+\field{Related Vulnerabilities}\cwe{CWE-125}, \cwe{CWE-126}.
+\end{catalogbox}
+\clearpage
+
+\section{Termination and NUL-Handling Vulnerabilities}
+
+A NUL byte can be both ordinary data to one component and a string terminator to another. This disagreement creates two broad risks: memory safety when termination is missing, and semantic truncation when termination appears earlier than expected.
+
+\subsection{Missing NUL Termination}
+
+\begin{catalogbox}{Improper or Missing NUL Termination}
+\field{Definition}A buffer intended to contain a C-style string does not contain a terminator within its object bounds.
+
+\field{Root Cause}Bounded-copy semantics, exact-fill reads, error paths, or conversion failures that leave output unterminated.
+
+\field{Security Boundary Violated}Buffer boundary.
+
+\field{Preconditions}A later consumer uses terminator-based functions such as length, search, copy, formatting, or path APIs.
+
+\field{Failure Mechanism}The consumer scans beyond the buffer until it encounters a zero byte elsewhere in memory.
+
+\field{Security Impact}Out-of-bounds read, information disclosure, crash, or a later out-of-bounds write.
+
+\field{Code-Review Indicators}Fixed-size buffers filled to capacity, \texttt{strncpy}-style calls, low-level reads followed by C-string functions, and conversion routines whose error behavior does not guarantee termination.
+
+\field{Dangerous Assumptions}``The bounded function terminates for me.''
+
+\field{Detection Strategy}Exact-capacity tests and instrumentation that detects reads beyond the object.
+
+\field{Defensive Pattern}Reserve explicit terminator space and set it after successful writes; prefer APIs that return explicit lengths.
+
+\field{Remediation}Guarantee termination on every success path and fail closed on conversion or read errors.
+
+\field{Related Vulnerabilities}\cwe{CWE-170}, \cwe{CWE-125}.
+\end{catalogbox}
+\clearpage
+
+\subsection{NUL Injection and Dual String Views}
+
+\begin{catalogbox}{NUL Injection / Validation--Consumer String Mismatch}
+\field{Definition}An attacker places an embedded NUL in a counted or binary-safe string that is later passed to a NUL-terminated consumer.
+
+\field{Root Cause}One subsystem validates the full logical string while another stops at the first zero byte.
+
+\field{Security Boundary Violated}Parser boundary and representation boundary.
+
+\field{Preconditions}Input can contain or decode to a zero byte, and the value later crosses into a C-style API or equivalent terminator-based interface.
+
+\field{Vulnerable Data Flow}
+\[
+\text{counted string ``name.ext''} \rightarrow
+\text{embedded NUL} \rightarrow
+\text{validator sees suffix} \rightarrow
+\text{C consumer sees shorter name}
+\]
+
+\field{Failure Mechanism}The security decision is based on one view of the string while the sensitive operation acts on a shorter prefix.
+
+\field{Security Impact}Extension-check bypass, unexpected file access, parser confusion, or memory corruption in code that assumes a nonempty or fully terminated string.
+
+\field{Code-Review Indicators}Managed-to-native boundaries, percent-decoding, raw network/file reads, FFI calls, path and filename checks, and C APIs reached from counted-string languages.
+
+\field{Dangerous Assumptions}``My language allows this byte, therefore every downstream API does too.''
+
+\field{Detection Strategy}Inject a zero code unit at boundaries and compare validation behavior with the actual sink input.
+
+\field{Defensive Pattern}Reject embedded NUL where the downstream grammar cannot represent it, or use APIs that accept explicit lengths end-to-end.
+
+\field{Remediation}Perform validation after decoding and immediately before the sink, using the exact representation and string convention the sink consumes.
+
+\field{Related Vulnerabilities}\cwe{CWE-170}, \cwe{CWE-180}.
+\end{catalogbox}
+
+\begin{dangerousassumption}
+\textbf{Validation view versus consumer view.} A secure review must identify exactly where each component believes the string ends. A disagreement is itself a finding candidate, even before exploitability is established.
+\end{dangerousassumption}
+\clearpage
+
+\section{Delimiter and Field-Boundary Injection}
+
+Structured text frequently uses delimiters such as colons, commas, newlines, carriage returns, semicolons, equals signs, quotes, and whitespace. If an attacker can place one of those delimiters inside a field, the parser can reinterpret one logical value as several fields or records.
+
+\begin{catalogbox}{Embedded Delimiter / Record Injection}
+\field{Definition}Attacker-controlled data contains a delimiter that a downstream parser treats as structural metadata.
+
+\field{Root Cause}The producer concatenates data into a delimited representation without ensuring that data cannot contain structural delimiters.
+
+\field{Security Boundary Violated}Field boundary, record boundary, and parser boundary.
+
+\field{Preconditions}User data is stored, transmitted, logged, configured, or later parsed in a delimiter-based format.
+
+\field{Vulnerable Data Flow}
+\[
+\text{untrusted field} \rightarrow
+\text{delimiter-containing value} \rightarrow
+\text{serialized record} \rightarrow
+\text{downstream parser creates extra structure}
+\]
+
+\field{Failure Mechanism}The same character is treated as ordinary data by the producer and control syntax by the consumer.
+
+\field{Security Impact}Record injection, configuration manipulation, header injection, privilege changes, or second-order injection when stored content is interpreted later.
+
+\field{Code-Review Indicators}String concatenation used to construct line-based files, headers, protocol frames, CSV-like formats, configuration files, or audit records.
+
+\field{Dangerous Assumptions}``The value is only one field.''
+
+\field{Detection Strategy}Enumerate all delimiters recognized by the consumer and test each at field boundaries, including CR/LF and repeated delimiters.
+
+\field{Defensive Pattern}Use a structured serialization format or an API that represents field boundaries separately from values.
+
+\field{Remediation}Reject or correctly encode delimiter characters for the exact grammar and ensure decode/encode symmetry.
+
+\field{Related Vulnerabilities}\cwe{CWE-20}, \cwe{CWE-116}.
+\end{catalogbox}
+
+\begin{auditheuristic}
+For any custom textual format: (1) list every delimiter and control sequence the consumer recognizes, (2) list what the producer permits in untrusted fields, and (3) inspect the intersection. Any unhandled intersection is a candidate injection path.
+\end{auditheuristic}
+\clearpage
+
+\section{String Truncation}
+
+Truncation avoids overflow but can still change security semantics. A fixed-size formatted path can lose its mandatory suffix; a query can lose a trailing authorization predicate; a registry or configuration path can lose a required subcomponent.
+
+\begin{catalogbox}{Security-Significant Truncation}
+\field{Definition}An operation shortens a string so that a security-relevant component is omitted or the caller unknowingly uses incomplete data.
+
+\field{Root Cause}Fixed-size buffers, bounded formatting, conversion limits, or APIs whose return conventions are not checked.
+
+\field{Security Boundary Violated}Semantic boundary and API contract boundary.
+
+\field{Preconditions}Attacker-controlled content appears before a mandatory static suffix, predicate, extension, path component, or delimiter.
+
+\field{Vulnerable Data Flow}
+\[
+\text{prefix} + \text{attacker data} + \text{mandatory suffix}
+\rightarrow \text{bounded output}
+\rightarrow \text{suffix removed}
+\]
+
+\field{Failure Mechanism}The memory operation is spatially safe but the resulting string no longer expresses the intended security policy.
+
+\field{Security Impact}Extension bypass, path-policy bypass, authorization predicate removal, wrong object access, or use of uninitialized output when an API refuses to write on insufficient capacity.
+
+\field{Code-Review Indicators}Bounded formatting where attacker data precedes static security-sensitive text; return values that can signal ``required size''; ignored truncation flags.
+
+\field{Dangerous Assumptions}``Truncation is only a usability issue.''
+
+\field{Detection Strategy}Test values just large enough to cut off each static trailing component and verify the caller detects truncation.
+
+\field{Defensive Pattern}Treat truncation as an error for security-sensitive identifiers and commands.
+
+\field{Remediation}Calculate required size before construction or dynamically size the destination; check every return code and reject incomplete output.
+
+\field{Related Vulnerabilities}\cwe{CWE-20}; consequences may overlap path, query, or authorization weaknesses.
+\end{catalogbox}
+
+\begin{auditheuristic}
+Bounded formatting deserves extra attention when static data follows an attacker-controlled insertion. Ask what happens if the insertion consumes all remaining capacity before the static suffix is emitted.
+\end{auditheuristic}
+\clearpage
+
+\section{Metacharacter Injection}
+
+A metacharacter is a character or sequence that changes the grammar or semantics of the text in which it appears. The general failure pattern is:
+
+\[
+\boxed{\text{attacker data}}
++
+\boxed{\text{string construction}}
++
+\boxed{\text{interpreter}}
+=
+\boxed{\text{potential syntax injection}}
+\]
+
+The specific metacharacters differ by grammar, but the root cause is the same: data and control instructions share one textual channel.
+
+\begin{catalogbox}{Generic Metacharacter Injection}
+\field{Definition}Untrusted data enters a string that a downstream component interprets using a grammar in which some attacker-controlled characters have control meaning.
+
+\field{Root Cause}In-band representation of values and control syntax without a reliable separation mechanism.
+
+\field{Security Boundary Violated}Data/control boundary and interpreter boundary.
+
+\field{Preconditions}The attacker controls characters that survive to an interpreter or parser.
+
+\field{Failure Mechanism}The consumer reclassifies attacker bytes from data tokens into structural or executable tokens.
+
+\field{Security Impact}Depends on the interpreter: path traversal, format-string exploitation, command execution, query manipulation, record injection, or policy bypass.
+
+\field{Code-Review Indicators}Concatenation into pathnames, query strings, shell commands, format strings, protocol headers, configuration lines, or other interpreter input.
+
+\field{Dangerous Assumptions}``I removed the obvious bad character.''
+
+\field{Detection Strategy}Identify the full grammar of the sink, not just the application's local parser.
+
+\field{Defensive Pattern}Prefer typed or parameterized interfaces.
+
+\field{Remediation}Eliminate string interpretation where possible; otherwise canonicalize, validate, and apply context-correct encoding at the final boundary.
+\end{catalogbox}
+\clearpage
+
+\section{Path and Filename Interpretation}
+
+Paths are structured identifiers. Separators, current-directory markers, parent-directory segments, alternate separators, device or root syntax, normalization rules, and repeated separators can all change which object a path identifies.
+
+\subsection{Path Traversal and Canonicalization}
+
+\begin{catalogbox}{Path Traversal / Canonicalization Mismatch}
+\field{Definition}Untrusted path text resolves to a filesystem or hierarchical object outside the resource set the application intends to expose.
+
+\field{Root Cause}The application validates raw path text without considering how the operating system or downstream API canonicalizes it.
+
+\field{Security Boundary Violated}Filesystem boundary and authorization boundary.
+
+\field{Preconditions}Untrusted input influences any path component and the process has access to resources outside the intended subtree.
+
+\field{Vulnerable Data Flow}
+\[
+\text{raw path} \rightarrow \text{text filter} \rightarrow
+\text{OS canonicalization} \rightarrow \text{different resource}
+\]
+
+\field{Failure Mechanism}Dot segments, alternate separators, absolute-path forms, repeated separators, encoded separators, truncation, or equivalent names cause the final resolved resource to differ from the one the filter modeled.
+
+\field{Security Impact}Unauthorized file read/write, configuration manipulation, sensitive-object access, or code execution when writable executable content is reached.
+
+\field{Code-Review Indicators}User input inserted into filenames, upload destinations, archive extraction paths, registry/configuration paths, or resource locators.
+
+\field{Dangerous Assumptions}``If the string does not contain \texttt{../}, it cannot escape the directory.''
+
+\field{Detection Strategy}Compare the intended resource set with the resource set actually reachable after canonicalization. Test alternate equivalent path forms.
+
+\field{Defensive Pattern}Resolve paths against an approved root and verify the canonical resolved object remains inside that root; use directory-handle-relative APIs when available.
+
+\field{Remediation}Canonicalize exactly once at a defined boundary, validate the resolved object, and perform authorization on that resolved identity.
+
+\field{Related Vulnerabilities}\cwe{CWE-22}, \cwe{CWE-180}.
+\end{catalogbox}
+
+\subsection{Validation, Normalization, Canonicalization, Authorization, Access}
+
+These operations are distinct:
+
+\begin{description}[style=nextline,leftmargin=0.22in]
+  \item[\term{Validation}] Determines whether an input satisfies policy or grammar constraints.
+  \item[\term{Normalization}] Transforms a representation into a preferred form, but not necessarily a globally unique one.
+  \item[\term{Canonicalization}] Resolves equivalent representations to the identity on which the security decision should operate.
+  \item[\term{Authorization}] Decides whether the principal may access that resolved object.
+  \item[\term{Resource access}] Performs the actual file, key, or object operation.
+\end{description}
+
+Reordering these steps can be security-significant. In particular, validation before a transformation that changes object identity is suspect.
+
+\section{Format-String Vulnerabilities}
+
+A format string is executable metadata for a formatting engine. In C-family variadic formatting, externally controlled directives can cause the function to fetch arguments that were never supplied, interpret stack or register contents as values or pointers, disclose memory, or perform writes through special conversion directives.
+
+\begin{catalogbox}{Externally Controlled Format String}
+\field{Definition}Attacker-controlled text is supplied as the format/control string rather than as a data argument.
+
+\field{Root Cause}The application confuses a data string with formatting instructions.
+
+\field{Security Boundary Violated}Data/control boundary and variadic-call contract.
+
+\field{Preconditions}Untrusted content reaches a printf-like, logging, diagnostic, or formatting API as the format parameter.
+
+\field{Vulnerable Data Flow}
+\[
+\text{untrusted message} \rightarrow \text{format parameter}
+\rightarrow \text{format engine} \rightarrow \text{memory interpretation}
+\]
+
+\field{Failure Mechanism}Format specifiers instruct the function to consume or write variadic arguments according to attacker-controlled types and positions.
+
+\field{Security Impact}Information disclosure, crash, memory corruption, and potentially arbitrary code execution.
+
+\field{Code-Review Indicators}Calls such as \texttt{printf(user)}, \texttt{syslog(level, user)}, or wrappers that forward a caller-controlled string as a format template.
+
+\field{Dangerous Assumptions}``This is only a log message.''
+
+\field{Detection Strategy}SAST format-security checks and manual tracing of format-parameter provenance.
+
+\field{Defensive Pattern}Use a static format string and pass untrusted text strictly as a data argument.
+
+\field{Remediation}Replace attacker-controlled format templates with explicit literal formats.
+
+\field{Related Vulnerabilities}\cwe{CWE-134}.
+\end{catalogbox}
+
+\begin{lstlisting}[language=C,caption={Format string: unsafe versus safer data/control separation}]
+/* Vulnerable: message becomes formatting instructions. */
+printf(message);
+
+/* Safer: message remains a data argument. */
+printf("%s", message);
+\end{lstlisting}
+
+\section{Shell and Command Interpretation}
+
+Command interpreters assign special semantics to separators, pipes, redirection, quoting, variable expansion, command substitution, whitespace, wildcard expansion, and environment-dependent syntax. Correct escaping is difficult because the shell is not necessarily the only parser: the invoked program can parse the resulting arguments again.
+
+\begin{catalogbox}{OS Command / Shell Injection}
+\field{Definition}Untrusted text influences the syntax of a command interpreted by a shell or equivalent command processor.
+
+\field{Root Cause}The program constructs one command-line string instead of passing executable identity and arguments as separate typed values.
+
+\field{Security Boundary Violated}Data/control boundary and process-execution boundary.
+
+\field{Preconditions}Attacker input reaches shell-parsed text and contains or can decode to shell metacharacters.
+
+\field{Failure Mechanism}Input terminates, extends, substitutes, redirects, or creates additional command syntax.
+
+\field{Security Impact}Command execution with the privileges of the vulnerable process, data exfiltration, filesystem modification, or denial of service.
+
+\field{Code-Review Indicators}Shell invocation APIs, command strings assembled with concatenation or formatting, environment-variable expansion, and ``sanitize then execute'' helpers.
+
+\field{Dangerous Assumptions}``Escaping quotes is enough.''
+
+\field{Detection Strategy}Trace the exact interpreter path, including shell selection and downstream application parsing; test grammar metacharacters and encoded forms.
+
+\field{Defensive Pattern}Use structured process-execution APIs that take an executable and argument vector separately, without invoking a shell.
+
+\field{Remediation}Remove shell interpretation. If unavoidable, enforce strict allowlists and a context-specific quoting routine designed for that exact shell.
+
+\field{Related Vulnerabilities}\cwe{CWE-78}, \cwe{CWE-116}.
+\end{catalogbox}
+
+\begin{lstlisting}[language=Python,caption={Prefer structured process execution}]
+# Avoid building one shell command from untrusted text.
+# subprocess.run("tool --name " + user_value, shell=True)
+
+# Prefer argument separation with no shell interpretation.
+subprocess.run(["tool", "--name", user_value], shell=False, check=True)
+\end{lstlisting}
+\clearpage
+
+\section{Query-Language Interpretation}
+
+SQL illustrates a broader injection class: a query string mixes data values and query grammar. Quotes, comments, operators, statement separators, function calls, and unquoted numeric expressions can all become control syntax if values are concatenated directly.
+
+\begin{catalogbox}{SQL / Query-Language Injection}
+\field{Definition}Untrusted input changes the grammatical structure or logic of a dynamically constructed query.
+
+\field{Root Cause}Query code and data are assembled into one string.
+
+\field{Security Boundary Violated}Data/control boundary and database authorization boundary.
+
+\field{Preconditions}Attacker-controlled content reaches a query interpreter without structural parameterization.
+
+\field{Failure Mechanism}Input terminates a literal, introduces an expression, comment, operator, or additional statement, or changes the intended predicate.
+
+\field{Security Impact}Authentication or authorization bypass, data disclosure, data modification, destructive operations, and in some database environments escalation to host-level capabilities.
+
+\field{Code-Review Indicators}String concatenation or formatting around query keywords; ``escaped'' values inserted into query text; numeric parameters copied without strict type enforcement.
+
+\field{Dangerous Assumptions}``Only quoted strings are injectable'' or ``this hidden field is numeric.''
+
+\field{Detection Strategy}Data-flow analysis from request/session values to query execution and negative tests around literal boundaries and expression contexts.
+
+\field{Defensive Pattern}Prepared statements or equivalent parameterized APIs that keep statement structure separate from values.
+
+\field{Remediation}Parameterize every value that the database API permits to be parameterized; use allowlists for identifiers that cannot be parameterized.
+
+\field{Related Vulnerabilities}\cwe{CWE-89}, \cwe{CWE-116}.
+\end{catalogbox}
+
+\begin{lstlisting}[language=Python,caption={Parameterization separates query structure from data}]
+# Vulnerable:
+sql = "SELECT id FROM accounts WHERE name = '" + name + "'"
+
+# Preferred:
+cursor.execute(
+    "SELECT id FROM accounts WHERE name = ?",
+    (name,)
+)
+\end{lstlisting}
+
+\begin{implementationnote}
+Escaping and parameterization are different controls. Escaping still depends on the correctness of a context-sensitive in-band encoding. Parameterization changes the interface so values are transmitted out-of-band from the query grammar.
+\end{implementationnote}
+\clearpage
+
+\section{Filtering and Escaping Failures}
+
+\subsection{Denylist and Incomplete Filtering}
+
+\begin{catalogbox}{Insufficient Metacharacter Filtering}
+\field{Definition}A sanitizer attempts to reject or remove dangerous syntax but fails to cover all representations or control sequences recognized by the sink.
+
+\field{Root Cause}Incomplete model of the downstream grammar.
+
+\field{Security Boundary Violated}Parser boundary.
+
+\field{Preconditions}The application depends on a filter as the primary barrier before interpretation.
+
+\field{Failure Mechanism}An overlooked control character, alternate separator, newline, comment syntax, equivalent encoding, or version-specific feature survives the filter.
+
+\field{Security Impact}Injection into the downstream grammar.
+
+\field{Code-Review Indicators}Hard-coded ``bad character'' strings, regular expressions listing forbidden characters, and comments claiming input is ``sanitized.''
+
+\field{Dangerous Assumptions}``The dangerous set is small and stable.''
+
+\field{Detection Strategy}Derive the accepted character set and the dangerous sink set independently; inspect their intersection.
+
+\field{Defensive Pattern}Use a narrow allowlist when the domain is constrained, but prefer structural separation over filtering.
+
+\field{Remediation}Replace sink-facing denylists with typed APIs or an allowlist derived from the data domain, then validate after canonicalization.
+
+\field{Related Vulnerabilities}\cwe{CWE-20}, \cwe{CWE-116}.
+\end{catalogbox}
+\clearpage
+
+\subsection{Character-Stripping and Filter-Rewrite Bugs}
+
+Removing dangerous sequences can itself construct a dangerous sequence. For example, deleting a forbidden token from inside a larger string can cause the characters on either side to join into the same forbidden token.
+
+\begin{catalogbox}{Sanitizer-Induced Dangerous Sequence}
+\field{Definition}A transformation intended to remove illegal syntax rewrites the input into a new string that contains illegal syntax.
+
+\field{Root Cause}Single-pass stripping, incorrect pointer advancement, overlapping-pattern handling, or non-idempotent sanitization.
+
+\field{Security Boundary Violated}Transformation boundary.
+
+\field{Preconditions}The forbidden pattern contains multiple characters and the sanitizer mutates the input in place or performs only one replacement pass.
+
+\field{Failure Mechanism}Characters that were separated before stripping become adjacent afterward, forming the prohibited sequence.
+
+\field{Security Impact}Traversal, injection, or parser bypass.
+
+\field{Code-Review Indicators}Repeated substitutions, in-place \texttt{memmove}-style filtering, global regex removal, or loops that advance past removed content.
+
+\field{Dangerous Assumptions}``If I remove every match I see once, the output cannot contain the pattern.''
+
+\field{Detection Strategy}Check whether sanitization is idempotent and whether the output can contain a prohibited sequence not present contiguously in the input.
+
+\field{Defensive Pattern}Validate against an allowed final grammar rather than trying to repair arbitrary hostile input.
+
+\field{Remediation}Prefer rejection. If rewriting is required, parse to a structured representation and serialize from that structure.
+\end{catalogbox}
+\clearpage
+
+\subsection{Escaping Vulnerabilities}
+
+\begin{catalogbox}{Incorrect or Context-Mismatched Escaping}
+\field{Definition}The application escapes metacharacters incorrectly, incompletely, or for a grammar different from the one that ultimately consumes the data.
+
+\field{Root Cause}Missing escape character handling, double escaping, wrong escape convention, wrong order, or cross-context reuse.
+
+\field{Security Boundary Violated}Interpreter boundary and representation boundary.
+
+\field{Preconditions}Escaping is the primary mechanism used to embed untrusted values in an interpreter grammar.
+
+\field{Failure Mechanism}An attacker injects the escape character itself, causes the escape to be consumed differently, or passes through a second interpreter where the first escape scheme is meaningless.
+
+\field{Security Impact}Injection or corruption of the intended text representation.
+
+\field{Code-Review Indicators}Home-grown quoting functions, replacement of only quote characters, reuse of HTML escaping for JavaScript/SQL/shell contexts, or decode-after-escape flows.
+
+\field{Dangerous Assumptions}``Escaped once means safe everywhere.''
+
+\field{Detection Strategy}Verify escape semantics against the exact sink grammar and all subsequent decoding stages.
+
+\field{Defensive Pattern}Use vetted context-specific encoders only at the final output boundary; prefer parameterized/typed APIs when available.
+
+\field{Remediation}Escape the escape character, reject invalid encodings, avoid double decoding, and never reuse escaped strings across grammars.
+
+\field{Related Vulnerabilities}\cwe{CWE-116}.
+\end{catalogbox}
+
+\begin{securityprinciple}
+Escaping is context-dependent. A value safe for one grammar is not automatically safe for another, and a value escaped before later decoding or normalization may become unsafe again.
+\end{securityprinciple}
+\clearpage
+
+\section{Canonicalization and Representation Evasion}
+
+Text can have multiple equivalent representations. Security logic fails when it rejects a dangerous canonical form but permits an alternate encoding that becomes dangerous only after a later decode.
+
+\begin{catalogbox}{Validate-Before-Canonicalize}
+\field{Definition}A security decision is made on an encoded or noncanonical representation and the data is normalized or decoded afterward.
+
+\field{Root Cause}Incorrect ordering of validation and transformation.
+
+\field{Security Boundary Violated}Representation boundary.
+
+\field{Preconditions}The attacker can express a prohibited value in more than one representation.
+
+\field{Vulnerable Data Flow}
+\[
+\text{encoded input} \rightarrow
+\text{security filter} \rightarrow
+\text{decode / normalize} \rightarrow
+\text{hidden metacharacter} \rightarrow
+\text{sensitive sink}
+\]
+
+\field{Failure Mechanism}The filter and the sink reason about different byte or character sequences.
+
+\field{Security Impact}Path traversal, injection, filter bypass, authentication/authorization mismatch, or evasion of security controls.
+
+\field{Code-Review Indicators}Percent/entity decoding after validation, repeated decoding layers, Unicode conversion after filtering, normalization late in a request pipeline.
+
+\field{Dangerous Assumptions}``The validator sees the same text the sink sees.''
+
+\field{Detection Strategy}Inventory every decode/normalize stage and couple each security decision with the exact stage it protects.
+
+\field{Defensive Pattern}Decode and canonicalize at a defined trust boundary, reject invalid/noncanonical forms as policy requires, then validate and consume without reinterpreting the value again.
+
+\field{Remediation}Move the security check after the final relevant decode and prevent repeated or ambiguous decoding.
+
+\field{Related Vulnerabilities}\cwe{CWE-180}.
+\end{catalogbox}
+
+\subsection{Multiple Encoding Layers}
+
+Repeated decoders multiply ambiguity. A value may be percent-decoded by a web server, Unicode-decoded by a framework, entity-decoded by an XML layer, and decoded again by application logic. Each layer must know whether it receives encoded or already-decoded data.
+
+\begin{auditheuristic}
+Build a \textbf{decode ledger}: list each component, the representation it accepts, the transformation it performs, and the representation it emits. Then place each security decision on that ledger. Any security decision that precedes a semantics-changing decode requires justification.
+\end{auditheuristic}
+\clearpage
+
+\section{Character Sets and Unicode}
+
+\subsection{Bytes, Characters, Code Units, and Code Points}
+
+These terms are not interchangeable:
+
+\begin{itemize}
+  \item \term{Byte}: an 8-bit storage unit.
+  \item \term{Character}: an abstract textual element in the application's domain; not a reliable storage-size unit.
+  \item \term{Code point}: an integer assigned to a Unicode abstract character.
+  \item \term{Code unit}: the fixed-width storage element used by an encoding, such as 8 bits for UTF-8 or 16 bits for UTF-16.
+  \item \term{Encoding}: a mapping from code points to code units/bytes.
+\end{itemize}
+
+UTF-8 uses one to four bytes per Unicode scalar value; UTF-16 uses one or two 16-bit code units for Unicode scalar values; UTF-32 uses one 32-bit code unit. A security review must identify the unit expected by every size and index operation.
+
+\begin{dangerousassumption}
+\textbf{Never assume \(1\) character \(=\) \(1\) byte.} Buffer capacity, string length, code-unit count, code-point count, and user-perceived characters are different quantities.
+\end{dangerousassumption}
+
+\subsection{Encoding and Decoder Inconsistency}
+
+\begin{catalogbox}{Character-Set / Decoder Differential}
+\field{Definition}Two components decode the same byte sequence differently or apply different validity and normalization rules.
+
+\field{Root Cause}Different code pages, decoder strictness, invalid-sequence handling, normalization behavior, or historical support for noncanonical forms.
+
+\field{Security Boundary Violated}Encoding boundary and parser boundary.
+
+\field{Preconditions}Input crosses components with different decoding policies.
+
+\field{Failure Mechanism}A byte sequence rejected or treated as harmless by one component becomes a metacharacter, delimiter, or different identifier in another.
+
+\field{Security Impact}Filter bypass, injection, identity confusion, or inconsistent authorization.
+
+\field{Code-Review Indicators}Implicit platform code pages, mixed UTF and legacy encodings, filters operating on bytes before conversion, permissive replacement behavior, and multiple decoder implementations.
+
+\field{Dangerous Assumptions}``All decoders interpret this byte stream the same way.''
+
+\field{Detection Strategy}Differential tests across every decoder in the pipeline, including malformed sequences and boundary code points.
+
+\field{Defensive Pattern}Use one declared encoding, strict decoding, and reject invalid input at the boundary.
+
+\field{Remediation}Normalize the pipeline to a single internal representation and avoid reinterpretation under a different code page.
+
+\field{Related Vulnerabilities}\cwe{CWE-176}, \cwe{CWE-180}.
+\end{catalogbox}
+
+\section{Unicode Security Issues}
+
+\subsection{Normalization and Equivalent Representations}
+
+Some characters can be represented by multiple code-point sequences that are canonically or compatibly related. If identity, authorization, uniqueness, or filtering depends on exact textual comparison, normalization policy must be explicit and consistent.
+
+\begin{catalogbox}{Unicode Normalization Mismatch}
+\field{Definition}Security logic compares or filters one Unicode representation while a later component normalizes it to another semantically equivalent representation.
+
+\field{Root Cause}Inconsistent normalization policy across trust boundaries.
+
+\field{Security Boundary Violated}Identity and representation boundary.
+
+\field{Preconditions}Equivalent code-point sequences are accepted and later normalized or compared differently.
+
+\field{Failure Mechanism}The application believes two strings differ while another component treats them as the same, or vice versa.
+
+\field{Security Impact}Identity confusion, allowlist bypass, duplicate-account/object issues, or metacharacter/filter mismatch.
+
+\field{Code-Review Indicators}Normalization after validation, inconsistent library defaults, Unicode identifiers, filesystem names, or authentication names.
+
+\field{Detection Strategy}Test canonical-equivalent and compatibility-related sequences according to the application's chosen normalization policy.
+
+\field{Defensive Pattern}Normalize once at a defined boundary and perform equality/security checks on that representation.
+
+\field{Remediation}Document a normalization form appropriate to the domain and prohibit later normalization that changes security-relevant identity.
+\end{catalogbox}
+\clearpage
+
+\subsection{Visual Confusables and Homographs}
+
+Visual confusables are distinct from parser bypasses. Two different code points may render similarly or identically even when no decoder treats them as equivalent.
+
+\begin{catalogbox}{Unicode Visual Confusable / Homograph}
+\field{Definition}Distinct Unicode characters produce visually similar identifiers or security-relevant labels.
+
+\field{Root Cause}Human review relies on glyph appearance rather than underlying code-point identity.
+
+\field{Security Boundary Violated}Human trust boundary.
+
+\field{Preconditions}Attackers can choose identifiers, labels, links, or names presented to users or operators.
+
+\field{Failure Mechanism}The display appears to reference a trusted identifier while the underlying string is different.
+
+\field{Security Impact}Phishing, operator error, deceptive names, or review confusion.
+
+\field{Code-Review Indicators}Security-sensitive identifiers rendered without script restrictions, confusable detection, or explicit code-point inspection.
+
+\field{Detection Strategy}Mixed-script and confusable-character tests.
+
+\field{Defensive Pattern}Apply domain-specific identifier policies, script restrictions where appropriate, and disambiguating display for high-risk contexts.
+
+\field{Remediation}Do not rely on visual equality for identity or authorization decisions.
+\end{catalogbox}
+
+\subsection{Noncanonical and Invalid Encodings}
+
+Historical and permissive UTF decoders have sometimes accepted representations that a strict decoder rejects. The general lesson is independent of any specific legacy form: canonical representation and decoder strictness are part of the security boundary.
+
+\begin{securityprinciple}
+Reject invalid encoding sequences at the earliest trusted boundary. Do not let one component ``repair'' or replace malformed text if a later component may interpret the repaired output as security-sensitive syntax.
+\end{securityprinciple}
+\clearpage
+
+\section{Encoding-Conversion Vulnerabilities}
+
+Conversion APIs combine several hazards at once: length units, destination sizing, invalid-sequence handling, replacement behavior, termination guarantees, and return-value contracts.
+
+\begin{catalogbox}{Encoding-Conversion API Misuse}
+\field{Definition}A conversion between byte and wide-character representations is performed with incorrect size units, unchecked errors, or unsafe fallback behavior.
+
+\field{Root Cause}Confusion between byte count and code-unit count, assumptions about worst-case output size, ignored conversion failures, or best-fit/default-character substitution.
+
+\field{Security Boundary Violated}Buffer boundary and encoding boundary.
+
+\field{Preconditions}Attacker-controlled text reaches a conversion routine or can influence the selected code page/encoding.
+
+\field{Failure Mechanism}The destination size is overstated, an incomplete multibyte sequence advances past termination, a failed conversion returns unterminated output, or multiple source values collapse to the same destination character.
+
+\field{Security Impact}Memory corruption, filter bypass, identity confusion, unexpected metacharacters, or uninitialized-data use.
+
+\field{Code-Review Indicators}\texttt{sizeof()} passed where character count is expected; manual \(\times 2\) sizing; conversion calls whose return values are ignored; permissive best-fit behavior; user-influenced code pages.
+
+\field{Dangerous Assumptions}``Wide characters are always exactly two bytes'' or ``conversion cannot fail.''
+
+\field{Detection Strategy}Malformed-sequence tests, lead-byte-at-end tests for legacy multibyte encodings, output-size boundary tests, and checks for replacement/best-fit mappings.
+
+\field{Defensive Pattern}Use strict, explicit encodings; query required output size when the API supports it; allocate exactly; check all return values; fail closed.
+
+\field{Remediation}Correct size units, disable best-fit behavior where inappropriate, reject invalid sequences, and ensure destination termination is guaranteed only after confirmed success.
+
+\field{Related Vulnerabilities}\cwe{CWE-176}, \cwe{CWE-170}, \cwe{CWE-120}.
+\end{catalogbox}
+\clearpage
+
+\section{Cross-Cutting Vulnerability Catalog}
+
+Table~\ref{tab:cwe} maps the catalog to representative CWE families. The mapping is intentionally conservative: a single defect can have a root-cause weakness and one or more consequence weaknesses.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Representative CWE mappings}
+\label{tab:cwe}
+\begin{tabularx}{\textwidth}{>{\ttfamily}l X}
+\toprule
+CWE & Typical relevance in this catalog \\
+\midrule
+CWE-20  & Improper validation of textual input or malformed structure. \\
+CWE-22  & Path traversal and improper restriction of a pathname to a limited directory. \\
+CWE-78  & OS command injection through shell-interpreted strings. \\
+CWE-89  & SQL injection through dynamically constructed queries. \\
+CWE-116 & Improper encoding or escaping for a downstream interpreter. \\
+CWE-120 & Classic buffer overflow from incorrect string-size handling. \\
+CWE-121 & Stack-based buffer overflow when the destination object is on the stack. \\
+CWE-122 & Heap-based buffer overflow when the destination object is heap-allocated. \\
+CWE-125 & Out-of-bounds reads due to missing termination or bad indexing. \\
+CWE-126 & Buffer over-read from scanning beyond the intended string object. \\
+CWE-134 & Externally controlled format strings. \\
+CWE-170 & Improper NUL termination. \\
+CWE-176 & Improper handling of Unicode encoding. \\
+CWE-180 & Validate-before-canonicalize ordering errors. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Parser Differential as a Unifying Pattern}
+
+\begin{vulnpattern}
+\begin{center}
+\begin{tabular}{ccc}
+& Same input & \\
+\(\swarrow\) & & \(\searrow\) \\
+Validator & & Consumer \\
+\(\downarrow\) & & \(\downarrow\) \\
+Meaning A & & Meaning B \\
+\multicolumn{3}{c}{\(\searrow\quad\quad\swarrow\)} \\
+\multicolumn{3}{c}{\textbf{Security failure}}
+\end{tabular}
+\end{center}
+
+A parser differential exists when two components assign different meaning, boundaries, validity, or identity to the same textual input. NUL injection, encoding mismatch, path canonicalization, repeated decoding, and delimiter injection are all special cases.
+\end{vulnpattern}
+\clearpage
+
+\section{Code-Review Heuristics for Textual Data Processing}
+
+For every security-relevant string, reviewers should be able to answer the following questions:
+
+\begin{itemize}
+  \item Where does the string originate, and which bytes or code points are attacker-controlled?
+  \item What is the destination buffer's actual capacity?
+  \item Is length measured in bytes, characters, code units, code points, or some API-specific unit?
+  \item Is room for a required terminator included?
+  \item Can any transformation increase the representation length?
+  \item Can the attacker insert a delimiter, record terminator, quote, escape character, slash, format directive, or other metacharacter?
+  \item Can the attacker insert or encode a NUL value?
+  \item Is the data decoded after validation?
+  \item Is the data normalized or canonicalized after validation?
+  \item Does a later component reinterpret the same bytes under another grammar?
+  \item Does the receiving component use the same character encoding and validity rules?
+  \item Does validation operate on exactly the representation consumed by the sink?
+  \item Can multiple decoding layers process the value?
+  \item Is escaping performed for the exact destination grammar?
+  \item Can a structured API eliminate text construction entirely?
+  \item Does a bounded API report truncation, and is that report checked?
+  \item If a delimiter is absent, what exact reason terminates the parser loop?
+  \item Can malformed multibyte input place a lead byte immediately before the string terminator?
+  \item Can two distinct source strings map to the same converted or normalized destination?
+  \item Can the consumer reach a resource outside the set the application intends to authorize?
+\end{itemize}
+
+\begin{auditheuristic}
+For custom parsers, review malformed input before valid input. Missing delimiters, truncated escapes, incomplete multibyte sequences, unexpected NUL bytes, and exact-capacity strings expose assumptions that well-formed examples hide.
+\end{auditheuristic}
+\clearpage
+
+\section{String-Processing Security Invariants}
+
+The following invariants are useful both in design reviews and code audits:
+
+\begin{enumerate}
+  \item Every write remains within the destination object's true capacity.
+  \item Every read remains within the source object's true bounds.
+  \item Length arithmetic is checked for overflow before allocation or copy.
+  \item The unit used by the size calculation matches the unit required by the API.
+  \item Required terminators fit inside the allocated object and are actually written.
+  \item A parser never assumes a delimiter, escape continuation, or multibyte continuation exists without checking remaining length.
+  \item Transformations that can expand data are sized from worst-case output, not input length.
+  \item Truncation is treated as an error whenever omitted suffixes or clauses are security-significant.
+  \item Validation applies to the final canonical representation used by the security-sensitive consumer.
+  \item Invalid encodings fail closed instead of being silently repaired into security-sensitive characters.
+  \item Untrusted data never becomes interpreter control syntax through concatenation.
+  \item Structured data/control separation is preferred to sanitizing one combined string.
+  \item Escaping is performed for one explicitly identified destination grammar and is not reused across contexts.
+  \item Conversion return values are checked before converted output is used.
+  \item Authorization decisions operate on the final resolved resource identity, not on an unresolved path string.
+  \item Parser disagreement across a trust boundary is treated as a security defect until proven otherwise.
+\end{enumerate}
+\clearpage
+
+\section{Attack-Pattern Matrix}
+
+\small
+\begin{longtable}{p{0.14\textwidth} p{0.14\textwidth} p{0.17\textwidth} p{0.17\textwidth} p{0.14\textwidth} p{0.16\textwidth}}
+\caption{Textual-data attack patterns and preferred controls}\label{tab:attackmatrix}\\
+\toprule
+\textbf{Family} & \textbf{Attacker Controls} & \textbf{Dangerous Operation} & \textbf{Primary Failure} & \textbf{Typical Impact} & \textbf{Preferred Defense} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Family} & \textbf{Attacker Controls} & \textbf{Dangerous Operation} & \textbf{Primary Failure} & \textbf{Typical Impact} & \textbf{Preferred Defense} \\
+\midrule
+\endhead
+Unbounded copy & Source length/content & Copy/format/scan & Destination capacity ignored & Memory corruption & Capacity-aware API + proof of size \\
+Unterminated string & Exact buffer fill or error path & Length/search/copy & Missing terminator & Over-read, later overwrite & Explicit termination + length-aware APIs \\
+Character expansion & Expansion-triggering characters & Escape/encode/format & Output larger than input estimate & Overflow/truncation & Precompute required size \\
+Embedded delimiter & Delimiter characters & Serialize then parse & Data becomes structure & Record/header/config injection & Structured serialization \\
+NUL injection & Embedded zero value & Managed/native boundary & Different string-end views & Truncation/bypass & Reject NUL or preserve explicit length \\
+Truncation & Long prefix/input & Bounded construction & Security suffix omitted & Policy bypass & Reject truncation \\
+Path metacharacters & Path segments/encoding & File/resource access & Canonical resource differs & Unauthorized access & Resolve and authorize canonical object \\
+Format string & Format text & printf-like engine & Data becomes format control & Disclosure/corruption & Static format + data argument \\
+Command injection & Shell syntax & Shell execution & Data becomes command syntax & Code execution & Structured argv; no shell \\
+SQL injection & Query fragments/values & Dynamic query execution & Data becomes SQL grammar & Data/authorization compromise & Prepared statements \\
+Filtering bypass & Alternate control syntax & Denylist/stripper & Dangerous form omitted & Injection & Narrow allowlist / typed API \\
+Canonicalization mismatch & Encoded form & Decode after check & Decision on wrong representation & Filter bypass & Canonicalize before validation \\
+Unicode/encoding bypass & Alternate encodings & Cross-decoder pipeline & Parser differential & Injection/identity confusion & Strict single encoding \\
+Conversion buffer error & Length/code page & Encoding conversion API & Wrong unit/capacity/error handling & Overflow/unterminated output & Two-pass sizing + checked result \\
+\bottomrule
+\end{longtable}
+\normalsize
+\clearpage
+
+\section{Data-Flow Patterns}
+
+\subsection{Memory-Safety Failure}
+
+\begin{vulnpattern}
+\begin{center}
+\begin{tabular}{c}
+Input \\
+\(\downarrow\) \\
+Length assumption \\
+\(\downarrow\) \\
+Copy / expansion \\
+\(\downarrow\) \\
+Fixed buffer \\
+\(\downarrow\) \\
+\textbf{Out-of-bounds write}
+\end{tabular}
+\end{center}
+\end{vulnpattern}
+
+\subsection{Metacharacter Injection}
+
+\begin{vulnpattern}
+\begin{center}
+\begin{tabular}{c}
+Untrusted data \\
+\(\downarrow\) \\
+String concatenation \\
+\(\downarrow\) \\
+Interpreter grammar \\
+\(\downarrow\) \\
+\textbf{Data becomes control syntax}
+\end{tabular}
+\end{center}
+\end{vulnpattern}
+
+\subsection{Canonicalization Failure}
+
+\begin{vulnpattern}
+\begin{center}
+\begin{tabular}{c}
+Encoded input \\
+\(\downarrow\) \\
+Security filter \\
+\(\downarrow\) \\
+Decode / normalize \\
+\(\downarrow\) \\
+Previously hidden metacharacter \\
+\(\downarrow\) \\
+\textbf{Sensitive operation}
+\end{tabular}
+\end{center}
+\end{vulnpattern}
+
+\subsection{Parser Differential}
+
+\begin{vulnpattern}
+\begin{center}
+\begin{tabular}{ccc}
+& Same input & \\
+\(\swarrow\) & & \(\searrow\) \\
+Validator & & Consumer \\
+\(\downarrow\) & & \(\downarrow\) \\
+Meaning A & & Meaning B \\
+\multicolumn{3}{c}{\(\searrow\quad\swarrow\)} \\
+\multicolumn{3}{c}{\textbf{Security failure}}
+\end{tabular}
+\end{center}
+\end{vulnpattern}
+
+\section{Detection and Testing Strategy}
+
+\subsection{Manual Review}
+
+Manual review should follow data from origin to final interpretation. For each transition, record:
+
+\begin{itemize}
+  \item representation and encoding;
+  \item length and capacity unit;
+  \item transformations applied;
+  \item delimiters and metacharacters recognized;
+  \item whether the operation can truncate or expand;
+  \item validation/authorization decisions;
+  \item final sink semantics.
+\end{itemize}
+
+\subsection{Static Analysis}
+
+High-value static rules include:
+
+\begin{itemize}
+  \item unbounded copy/format/scan calls;
+  \item externally controlled format parameters;
+  \item shell execution with constructed strings;
+  \item dynamic SQL construction;
+  \item path construction from untrusted sources;
+  \item ignored return values from conversion and bounded formatting APIs;
+  \item wide-character APIs passed byte-sized bounds;
+  \item tainted data crossing decode/normalize stages after validation.
+\end{itemize}
+
+SAST is most effective when paired with manual review of custom wrappers and sanitizers because wrapper functions can hide the actual sink from syntax-only rules.
+
+\subsection{Dynamic and Boundary Testing}
+
+At minimum, test:
+
+\begin{itemize}
+  \item zero-length input;
+  \item one-byte input;
+  \item exact destination capacity minus one;
+  \item exact destination capacity;
+  \item capacity plus one;
+  \item missing required delimiter;
+  \item delimiter at first and last position;
+  \item embedded NUL;
+  \item truncated percent/entity escape;
+  \item maximum-expansion characters;
+  \item malformed and noncanonical encoding sequences;
+  \item canonical-equivalent Unicode strings;
+  \item alternate path separators and dot segments;
+  \item repeated decode layers.
+\end{itemize}
+
+\subsection{Fuzzing}
+
+Grammar-aware fuzzing should mutate structural fields separately from data fields. Useful mutation classes include delimiter insertion, delimiter deletion, encoding substitution, invalid multibyte sequences, repeated encoding, overlong fields, and cross-field boundary shifts.
+
+\subsection{Differential Testing}
+
+When multiple parsers or decoders handle the same text, feed identical corpora to each component and compare:
+
+\begin{itemize}
+  \item accepted/rejected status;
+  \item decoded byte or code-point sequence;
+  \item normalized result;
+  \item path/resource identity;
+  \item number of parsed records/fields;
+  \item error and truncation behavior.
+\end{itemize}
+
+Differences are review targets because security often fails at parser boundaries rather than inside one parser.
+
+\section{Secure Design and Remediation Patterns}
+
+A robust defense hierarchy is:
+
+\begin{enumerate}
+  \item \textbf{Eliminate unnecessary string interpretation.}
+  \item \textbf{Use structured and typed APIs.}
+  \item \textbf{Maintain explicit data/control separation.}
+  \item \textbf{Use memory-safe abstractions where practical.}
+  \item \textbf{Decode and canonicalize at a defined boundary.}
+  \item \textbf{Validate the canonical representation.}
+  \item \textbf{Apply narrow allowlists when the domain supports them.}
+  \item \textbf{Use context-specific encoding/escaping only when interpretation cannot be eliminated.}
+  \item \textbf{Preserve explicit lengths and size units.}
+  \item \textbf{Check every transformation and conversion result.}
+  \item \textbf{Treat truncation and replacement as explicit states, not silent success.}
+  \item \textbf{Test boundary conditions and alternate encodings.}
+  \item \textbf{Use defense in depth rather than relying on one sanitizer.}
+\end{enumerate}
+
+\begin{defensivepattern}
+\textbf{Architectural elimination beats increasingly complicated sanitization.} A prepared statement is preferable to trying to enumerate SQL metacharacters; an argument-vector process API is preferable to shell escaping; a resolved directory-handle-relative file API is preferable to filtering path strings.
+\end{defensivepattern}
+
+\section{Historical APIs and Current Engineering Practice}
+
+Many string-processing vulnerability patterns were first observed around traditional C library APIs, but the underlying failures remain relevant in modern systems.
+
+\begin{itemize}
+  \item Treat legacy unbounded functions as illustrations of the invariant that destination capacity must govern every write.
+  \item Treat bounded functions as contract-heavy APIs, not security guarantees.
+  \item Treat managed-language strings as safer for memory handling but still potentially dangerous when crossing native, filesystem, database, command, and protocol boundaries.
+  \item Prefer modern abstractions that retain length/capacity with the object and make truncation explicit.
+  \item Separate \emph{memory-safety defects} from \emph{interpreter-injection defects}; the remediation strategy differs even when both involve strings.
+\end{itemize}
+\clearpage
+
+\section{Assessment Checklist}
+
+\subsection*{Memory and Length}
+\begin{itemize}
+  \item[\checkbox] Destination capacity is known and enforced for every write.
+  \item[\checkbox] Length arithmetic cannot overflow.
+  \item[\checkbox] Character expansion is included in sizing.
+  \item[\checkbox] Size units match API expectations.
+  \item[\checkbox] Bounded functions are not assumed safe without checking semantics.
+\end{itemize}
+
+\subsection*{Terminators}
+\begin{itemize}
+  \item[\checkbox] Every C-style string is terminated within bounds.
+  \item[\checkbox] Embedded NUL values are rejected or safely represented where necessary.
+  \item[\checkbox] Exact-fill and error paths do not return unterminated output.
+\end{itemize}
+
+\subsection*{Delimiters}
+\begin{itemize}
+  \item[\checkbox] All consumer-recognized delimiters are identified.
+  \item[\checkbox] Untrusted fields cannot create extra fields or records.
+  \item[\checkbox] Stored values are safe against second-order interpretation.
+\end{itemize}
+
+\subsection*{Metacharacters}
+\begin{itemize}
+  \item[\checkbox] Data cannot become formatting, command, query, or protocol syntax.
+  \item[\checkbox] Newline and other less-obvious separators are included in grammar analysis.
+\end{itemize}
+
+\subsection*{Paths}
+\begin{itemize}
+  \item[\checkbox] Canonical resolution occurs before path policy enforcement.
+  \item[\checkbox] Authorization applies to the resolved resource.
+  \item[\checkbox] Alternate separators, dot segments, and truncation are tested.
+\end{itemize}
+
+\subsection*{Interpreter Boundaries}
+\begin{itemize}
+  \item[\checkbox] SQL uses parameterization.
+  \item[\checkbox] Process execution avoids shell interpretation.
+  \item[\checkbox] Format strings are constant or otherwise trusted.
+\end{itemize}
+
+\subsection*{Filtering and Escaping}
+\begin{itemize}
+  \item[\checkbox] Filters model the exact downstream grammar.
+  \item[\checkbox] Sanitizers cannot create prohibited sequences.
+  \item[\checkbox] Escaping is context-specific and applied at the final boundary.
+  \item[\checkbox] Escape characters themselves are handled correctly.
+\end{itemize}
+
+\subsection*{Canonicalization}
+\begin{itemize}
+  \item[\checkbox] Security decisions occur after the final relevant decode/normalize step.
+  \item[\checkbox] Repeated decoders are inventoried and justified.
+  \item[\checkbox] Invalid or noncanonical forms are handled explicitly.
+\end{itemize}
+
+\subsection*{Character Encodings}
+\begin{itemize}
+  \item[\checkbox] The accepted encoding is explicit.
+  \item[\checkbox] Decoder behavior for malformed sequences is known.
+  \item[\checkbox] Legacy code pages do not introduce alternate metacharacter representations.
+\end{itemize}
+
+\subsection*{Unicode}
+\begin{itemize}
+  \item[\checkbox] Normalization policy is explicit for security-sensitive identifiers.
+  \item[\checkbox] Visual confusables are considered where humans verify identity.
+  \item[\checkbox] Byte, code-unit, code-point, and display-character counts are not conflated.
+\end{itemize}
+
+\subsection*{Conversion APIs}
+\begin{itemize}
+  \item[\checkbox] Input/output size units are correct.
+  \item[\checkbox] Required output length is queried or conservatively computed with checked arithmetic.
+  \item[\checkbox] Return values and conversion errors are checked.
+  \item[\checkbox] Best-fit/replacement behavior is understood and acceptable.
+\end{itemize}
+
+\subsection*{Cross-Component Parsing}
+\begin{itemize}
+  \item[\checkbox] Validator and consumer assign the same meaning to the same input.
+  \item[\checkbox] Stored and later-interpreted data is reviewed for second-order injection.
+  \item[\checkbox] Parser differentials are tested across security boundaries.
+\end{itemize}
+\clearpage
+\section{Terminology Reference}
+
+\begin{description}[style=nextline,leftmargin=0.24in]
+  \item[\term{String length}] Number of units currently representing string content under a defined convention.
+  \item[\term{Buffer capacity}] Number of writable storage units available in the destination object.
+  \item[\term{Terminator}] In-band marker indicating the end of a textual value, such as NUL in a C string.
+  \item[\term{Delimiter}] In-band marker separating fields, records, or structural components.
+  \item[\term{Metacharacter}] Character or sequence that has control meaning in a grammar or interpreter.
+  \item[\term{Escaping}] Encoding a character so a specific grammar interprets it as data rather than control syntax.
+  \item[\term{Encoding}] Mapping code points or data values into code units/bytes.
+  \item[\term{Decoding}] Reconstructing the interpreted value from an encoded representation.
+  \item[\term{Normalization}] Transforming text into a preferred representation according to defined rules.
+  \item[\term{Canonicalization}] Resolving equivalent representations to the identity used by a security decision.
+  \item[\term{Parser}] Component that turns a representation into structured data.
+  \item[\term{Interpreter}] Component that executes or applies semantics encoded in textual control syntax.
+  \item[\term{Validation}] Determining whether data satisfies policy or grammar constraints.
+  \item[\term{Sanitization}] Modifying or rejecting input to make it acceptable for a particular use; not a substitute for structural separation.
+\end{description}
+\clearpage
+
+\section{Key Takeaways}
+
+\begin{enumerate}
+  \item String security is fundamentally about \textbf{boundaries}: memory boundaries, field boundaries, parser boundaries, encoding boundaries, and trust boundaries.
+  \item A bounded operation can still be vulnerable when its size argument, unit, termination behavior, or truncation handling is wrong.
+  \item NUL injection is a special form of parser disagreement: one component sees a complete counted string while another sees only the prefix.
+  \item Delimiters and metacharacters create control meaning inside data streams; injection occurs when untrusted data is allowed to cross that data/control boundary.
+  \item Truncation is security-relevant whenever omitted trailing text carries policy, identity, authorization, or type information.
+  \item Validation must occur on the same canonical representation that the security-sensitive consumer uses.
+  \item Unicode and legacy character-set conversion introduce additional ambiguity through variable-width encodings, decoder differences, normalization, replacement behavior, and visual confusables.
+  \item Prefer designs that remove ambiguity: typed APIs, prepared statements, structured process arguments, explicit lengths, strict decoding, canonical resource identities, and final-boundary validation.
+\end{enumerate}
+
+\begin{securityprinciple}
+The most reliable question in a string-processing review is: \textbf{Will every component that touches this value agree on its length, encoding, structure, and control meaning?} If the answer is uncertain, the boundary deserves deeper analysis.
+\end{securityprinciple}
+
+\end{document}

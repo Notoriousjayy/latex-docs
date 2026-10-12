@@ -1,0 +1,261 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=0.8in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{booktabs}
+\usepackage{amssymb}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage[hidelinks]{hyperref}
+\usepackage{ragged2e}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+
+\definecolor{ScoreBlue}{HTML}{1F4E79}
+\definecolor{ScoreBlueLight}{HTML}{EAF2F8}
+\definecolor{ScoreGray}{HTML}{F4F6F7}
+\definecolor{ScoreBorder}{HTML}{AAB7B8}
+\definecolor{RiskAmber}{HTML}{FFF4E5}
+\definecolor{RiskRed}{HTML}{FDEDEC}
+\definecolor{RiskGreen}{HTML}{EAF8F2}
+
+\hypersetup{
+  pdftitle={Synchronization Object Scoreboard},
+  pdfauthor={Engineering Review Template}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Synchronization Object Scoreboard}
+\rhead{Concurrency Review Artifact}
+\cfoot{\thepage\ of \pageref{LastPage}}
+\setlength{\headheight}{14pt}
+
+\setlist[itemize]{leftmargin=1.35em,itemsep=0.2em,topsep=0.25em}
+\setlist[enumerate]{leftmargin=1.5em,itemsep=0.2em,topsep=0.25em}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\placeholder}[1]{\textit{\textless #1\textgreater}}
+
+\newtcolorbox{syncscoreboard}[1]{
+  enhanced,
+  breakable,
+  colback=white,
+  colframe=ScoreBlue,
+  colbacktitle=ScoreBlue,
+  coltitle=white,
+  fonttitle=\bfseries,
+  title={#1},
+  boxrule=0.8pt,
+  arc=1.5mm,
+  left=2mm,
+  right=2mm,
+  top=1.5mm,
+  bottom=1.5mm,
+  before skip=0.8em,
+  after skip=0.8em,
+  before upper={\small}
+}
+
+\newcommand{\SyncField}[2]{#1 & #2 \\\addlinespace[0.15em]}
+
+\newtcolorbox{guidancebox}[1]{
+  breakable,
+  colback=ScoreGray,
+  colframe=ScoreBorder,
+  title={#1},
+  fonttitle=\bfseries,
+  coltitle=black,
+  boxrule=0.5pt,
+  arc=1mm
+}
+
+\title{\textbf{Synchronization Object Scoreboard}\\[0.4em]
+\large Concurrency, Ownership, and Shared-Resource Review Card}
+\author{Engineering Review Template}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{tcolorbox}[colback=ScoreBlueLight,colframe=ScoreBlue,boxrule=0.6pt,arc=1mm]
+\textbf{Purpose.} This artifact provides a compact, repeatable way to document synchronization primitives and review how they relate to shared resources, execution contexts, initialization, permissions, acquisition/release behavior, and concurrency or security risks.
+\end{tcolorbox}
+
+\section{Purpose}
+
+A synchronization-object scoreboard captures the operational contract of a synchronization primitive in one reviewable card. It is intended for secure code review, architecture review, concurrency analysis, embedded/RTOS design review, and software security assessment.
+
+The card should make it possible to determine quickly:
+\begin{itemize}
+  \item what object exists and what synchronization semantics it provides;
+  \item where and how the object is created, opened, or initialized;
+  \item which threads, tasks, processes, handlers, or components use it;
+  \item what shared resource or invariant it protects;
+  \item what access-control or namespace assumptions apply; and
+  \item whether the implementation exhibits race, deadlock, starvation, ownership, lifetime, or denial-of-service risk.
+\end{itemize}
+
+\clearpage
+\section{Completed Example --- \code{MyMutex}}
+
+\begin{syncscoreboard}{Synchronization Object Scoreboard --- \code{MyMutex}}
+\renewcommand{\arraystretch}{1.22}
+\begin{tabularx}{\linewidth}{>{\bfseries\RaggedRight\arraybackslash}p{0.26\linewidth} >{\RaggedRight\arraybackslash}X}
+  \SyncField{Object name}{\code{MyMutex}}
+  \SyncField{Object type}{Mutex}
+  \SyncField{Use}{Used to control access to the shared resource \code{hObject}, declared in \code{main.c}, line 50. Only one thread may access the shared resource at a time, whether the thread is reading or writing.}
+  \SyncField{Instantiated}{\code{open\_mutex()}, \code{util.c}, line 139}
+  \SyncField{Instantiation parameters}{\code{OpenMutex(NULL, TRUE, "MyMutex")}}
+  \SyncField{Object permissions}{Default}
+  \SyncField{Used by}{%
+    \begin{minipage}[t]{\linewidth}
+      \begin{itemize}[leftmargin=1.2em,topsep=0pt,itemsep=0pt]
+        \item \code{writer\_task()}, \code{writer.c}, line 139
+        \item \code{reader\_task()}, \code{reader.c}, line 158
+      \end{itemize}
+    \end{minipage}}
+  \SyncField{Protects}{A linked-list queue declared in \code{main.c}, line 76.}
+  \SyncField{Notes}{%
+    \begin{minipage}[t]{\linewidth}
+      \begin{itemize}[leftmargin=1.2em,topsep=0pt,itemsep=0.3em]
+        \item \textbf{Observed fact:} the mutex uses the static name \code{MyMutex}.
+        \item \textbf{Potential vulnerability:} the code does not verify the relevant error/status information after \code{OpenMutex()} returns. In a named-object design, insufficient verification can create a named synchronization-object collision, pre-creation, or namespace-squatting risk.
+        \item \textbf{Unverified security consequence:} a successful object-hijacking or denial-of-service condition is not established by the available information alone; exploitability would depend on namespace visibility, object permissions, process integrity boundaries, creation order, and actual error-handling behavior.
+        \item \textbf{Possible race condition:} \code{reader.c}, line 140 contains an execution path that may access or operate on \code{hObject} without first acquiring the mutex. That path should be traced to confirm whether the linked-list queue can be accessed concurrently without the intended exclusion guarantee.
+      \end{itemize}
+    \end{minipage}}
+\end{tabularx}
+\end{syncscoreboard}
+
+\begin{guidancebox}{Review Interpretation}
+The card distinguishes an \emph{implementation fact} from a \emph{potential weakness} and from a \emph{demonstrated security impact}. This avoids converting a code-review observation into an exploitability claim without evidence.
+\end{guidancebox}
+
+\section{Blank Synchronization Object Scoreboard}
+
+Copy the following card for each synchronization primitive under review.
+
+\begin{syncscoreboard}{Synchronization Object Scoreboard --- Blank Template}
+\renewcommand{\arraystretch}{1.22}
+\begin{tabularx}{\linewidth}{>{\bfseries\RaggedRight\arraybackslash}p{0.26\linewidth} >{\RaggedRight\arraybackslash}X}
+  \SyncField{Object name}{\placeholder{object-name}}
+  \SyncField{Object type}{\placeholder{mutex | semaphore | event | condition variable | spinlock | reader/writer lock | barrier | ...}}
+  \SyncField{Use}{\placeholder{purpose and synchronization semantics}}
+  \SyncField{Instantiated}{\placeholder{function}, \placeholder{file}, line \placeholder{n}}
+  \SyncField{Instantiation parameters}{\placeholder{constructor/API invocation}}
+  \SyncField{Object permissions}{\placeholder{permissions/access-control description}}
+  \SyncField{Used by}{\placeholder{thread/task/process/handler/component and source location}}
+  \SyncField{Protects}{\placeholder{shared resource, invariant, data structure, device, queue, or state transition}}
+  \SyncField{Notes}{\placeholder{observations, hazards, assumptions, open questions, or security findings}}
+\end{tabularx}
+\end{syncscoreboard}
+
+\subsection*{Copyable LaTeX Skeleton}
+
+\begin{verbatim}
+\begin{syncscoreboard}{Synchronization Object Scoreboard --- <name>}
+\begin{tabularx}{\linewidth}{p{0.26\linewidth} X}
+  \SyncField{Object name}{<object-name>}
+  \SyncField{Object type}{<object-type>}
+  \SyncField{Use}{<purpose and synchronization semantics>}
+  \SyncField{Instantiated}{<function>, <file>, line <n>}
+  \SyncField{Instantiation parameters}{<constructor/API invocation>}
+  \SyncField{Object permissions}{<permissions/access-control description>}
+  \SyncField{Used by}{<thread/task/process and source location>}
+  \SyncField{Protects}{<shared resource or invariant>}
+  \SyncField{Notes}{<observations, hazards, assumptions, or open questions>}
+\end{tabularx}
+\end{syncscoreboard}
+\end{verbatim}
+
+\section{Field Completion Guidance}
+
+\renewcommand{\arraystretch}{1.22}
+\begin{tabularx}{\linewidth}{>{\bfseries\RaggedRight\arraybackslash}p{0.24\linewidth} >{\RaggedRight\arraybackslash}X}
+\toprule
+Field & Completion guidance \\
+\midrule
+Object name & Record the symbolic variable, handle, kernel-object name, or logical identifier used by the implementation. \\
+Object type & Identify the primitive precisely: mutex, binary/counting semaphore, event, condition variable, spinlock, reader/writer lock, barrier, monitor, or other synchronization mechanism. \\
+Use & State the synchronization contract. Describe whether the object provides exclusive access, shared-reader access, signaling, ordering, rendezvous, rate limiting, or another coordination behavior. \\
+Instantiated & Record the creating/opening function, source file, and source line. For dynamically created objects, identify the code path responsible for initialization. \\
+Instantiation parameters & Capture the exact API call or constructor arguments that materially affect ownership, naming, initial state, recursion, fairness, security attributes, timeout behavior, or scope. \\
+Object permissions & Record ACLs, modes, inherited/default permissions, security descriptors, namespace rules, privilege assumptions, or other access-control semantics. \\
+Used by & Enumerate every known thread, task, process, interrupt handler, callback, worker, or component that acquires, waits on, signals, releases, closes, or otherwise manipulates the object. \\
+Protects & Name the shared resource or invariant: data structure, memory region, queue, device, file, critical section, lifecycle state, transaction boundary, or state transition. \\
+Notes & Capture race conditions, lock-order assumptions, missing checks, early-return hazards, recursion, timeouts, starvation, deadlock, ownership, handle lifetime, teardown, namespace collision, or other review findings. \\
+\bottomrule
+\end{tabularx}
+
+\section{Synchronization Review Checklist}
+
+\begin{tcolorbox}[breakable,colback=white,colframe=ScoreBlue,title={Reviewer Checklist},fonttitle=\bfseries]
+\begin{itemize}
+  \item[$\square$] Is creation/opening failure checked?
+  \item[$\square$] Are returned handles, object references, and status codes validated?
+  \item[$\square$] Can a named object collide with, or be pre-created by, another component or process?
+  \item[$\square$] Are permissions and namespace scope intentionally configured?
+  \item[$\square$] Is every access to the protected resource consistently synchronized?
+  \item[$\square$] Are all successful acquisition paths paired with release paths?
+  \item[$\square$] Can early returns, exceptions, cancellation, or error paths bypass release?
+  \item[$\square$] Is lock ordering defined when multiple synchronization objects can be acquired together?
+  \item[$\square$] Is nested locking present, and is it intentional?
+  \item[$\square$] Is recursive acquisition possible, and does the primitive support or prohibit it?
+  \item[$\square$] Can circular wait or another deadlock condition occur?
+  \item[$\square$] Can starvation or unfair scheduling occur?
+  \item[$\square$] Is a bounded wait or timeout required?
+  \item[$\square$] Is ownership transfer defined and documented?
+  \item[$\square$] Can any thread or execution path reach the shared resource without acquiring the required object?
+  \item[$\square$] Can the synchronization object be destroyed, closed, or invalidated while still referenced?
+  \item[$\square$] Are initialization and teardown race-free?
+  \item[$\square$] Is the synchronization primitive appropriate for the actual read/write or producer/consumer access pattern?
+\end{itemize}
+\end{tcolorbox}
+
+\section{Optional Extended Scoreboard}
+
+Use the extended variant for deeper design or security reviews. The original nine-field card remains the mandatory baseline.
+
+\begin{syncscoreboard}{Extended Synchronization Object Scoreboard --- Optional Fields}
+\renewcommand{\arraystretch}{1.22}
+\begin{tabularx}{\linewidth}{>{\bfseries\RaggedRight\arraybackslash}p{0.26\linewidth} >{\RaggedRight\arraybackslash}X}
+  Scope / namespace & \placeholder{process-local, system-wide, kernel namespace, RTOS object registry, etc.} \\
+  Lifetime & \placeholder{creation point, expected lifetime, teardown point} \\
+  Initial owner & \placeholder{none | creator | named thread/task/process} \\
+  Acquisition API & \placeholder{lock/wait/take/acquire call} \\
+  Release API & \placeholder{unlock/post/give/release/signal call} \\
+  Timeout behavior & \placeholder{infinite | bounded | non-blocking | retry policy} \\
+  Lock ordering & \placeholder{relative order with other synchronization objects} \\
+  Protected invariant & \placeholder{state relationship that must hold while the lock is owned} \\
+  Failure behavior & \placeholder{behavior on timeout, abandoned object, invalid handle, or API failure} \\
+  Cleanup / destruction & \placeholder{close/destroy/delete semantics and responsible owner} \\
+  Recursive? & \placeholder{yes/no/implementation-dependent} \\
+  Cross-process? & \placeholder{yes/no and trust-boundary implications} \\
+  Interrupt-safe? & \placeholder{yes/no/not applicable} \\
+  Async-signal-safe? & \placeholder{yes/no/not applicable} \\
+  Observed race conditions & \placeholder{known or suspected paths} \\
+  Deadlock dependencies & \placeholder{other locks/resources participating in wait-for relationships} \\
+  Security findings & \placeholder{permissions, namespace, hijacking, DoS, privilege, lifetime, or integrity findings} \\
+  Review status & \placeholder{open | needs evidence | remediated | accepted | not applicable} \\
+\end{tabularx}
+\end{syncscoreboard}
+
+\section{Recommended Review Discipline}
+
+For each card, reviewers should separate evidence into three levels:
+\begin{enumerate}
+  \item \textbf{Observed fact} --- directly supported by source code, configuration, runtime traces, or documentation.
+  \item \textbf{Potential weakness} --- a plausible concurrency or security condition requiring additional validation.
+  \item \textbf{Demonstrated consequence} --- an impact confirmed by a reproducible execution path, exploit scenario, test case, or other evidence.
+\end{enumerate}
+
+This separation keeps the scoreboard useful for both engineering remediation and security triage without overstating conclusions.
+
+\end{document}

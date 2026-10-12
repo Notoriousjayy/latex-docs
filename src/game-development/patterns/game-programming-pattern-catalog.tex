@@ -1,0 +1,1481 @@
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=0.72in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{xurl}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage[most]{tcolorbox}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{pdflscape}
+\usepackage{ragged2e}
+\usepackage{etoolbox}
+
+\definecolor{navy}{HTML}{17365D}
+\definecolor{slate}{HTML}{4B5563}
+\definecolor{lightblue}{HTML}{EAF2F8}
+\definecolor{lightgray}{HTML}{F3F4F6}
+\definecolor{warningbg}{HTML}{FFF4E5}
+\definecolor{greenbg}{HTML}{EEF7EE}
+
+\hypersetup{colorlinks=true,linkcolor=navy,urlcolor=navy,citecolor=navy,pdftitle={Game Programming Pattern Catalog}}
+\setlist[itemize]{leftmargin=1.45em,itemsep=0.2em,topsep=0.3em}
+\setlist[description]{itemsep=0.35em,topsep=0.3em}
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{2}
+\renewcommand{\arraystretch}{1.15}
+\emergencystretch=2em
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Game Programming Pattern Catalog}
+\rhead{Engineering Reference}
+\cfoot{\thepage}
+\setlength{\headheight}{14pt}
+
+\titleformat{\section}{\Large\bfseries\color{navy}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{navy}}{\thesubsection}{0.6em}{}
+\titleformat{\paragraph}[runin]{\bfseries\color{slate}}{}{0pt}{}[.]
+
+\lstdefinestyle{cppstyle}{
+  language=C++,
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\bfseries,
+  commentstyle=\itshape,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  frame=single,
+  breaklines=true,
+  tabsize=4,
+  xleftmargin=0.3em,
+  xrightmargin=0.3em,
+  aboveskip=0.7em,
+  belowskip=0.7em
+}
+\lstset{style=cppstyle}
+
+\newtcolorbox{patternsummary}[1]{
+  enhanced,breakable,colback=lightblue,colframe=navy,
+  boxrule=0.7pt,arc=2pt,title={#1},fonttitle=\bfseries,
+  left=1.2mm,right=1.2mm,top=1mm,bottom=1mm
+}
+\newtcolorbox{engineeringnote}[1][Engineering Note]{enhanced,breakable,colback=lightgray,colframe=slate,title={#1},fonttitle=\bfseries}
+\newtcolorbox{tradeoff}[1][Trade-off]{enhanced,breakable,colback=greenbg,colframe=navy,title={#1},fonttitle=\bfseries}
+\newtcolorbox{warningbox}[1][Caution]{enhanced,breakable,colback=warningbg,colframe=slate,title={#1},fonttitle=\bfseries}
+\newtcolorbox{examplebox}[1][Example]{enhanced,breakable,colback=white,colframe=navy,title={#1},fonttitle=\bfseries}
+
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+\newcolumntype{P}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+
+\begin{document}
+\hypersetup{pageanchor=false}
+\begin{titlepage}
+\centering
+\vspace*{1.2in}
+{\Huge\bfseries\color{navy} Game Programming Pattern Catalog\par}
+\vspace{0.3in}
+{\Large An Implementation-Oriented Architecture Reference\par}
+\vspace{0.55in}
+\begin{tcolorbox}[colback=lightblue,colframe=navy,width=0.88\textwidth]
+\centering
+Nineteen patterns for structuring behavior, sequencing simulation, decoupling systems, and optimizing real-time software, with modern C++ sketches, trade-offs, selection guidance, and engine-level combinations.
+\end{tcolorbox}
+\vfill
+{\large Technical Reference\par}
+\vspace{0.1in}
+{\normalsize C++17+ oriented; engine-agnostic\par}
+\end{titlepage}
+\hypersetup{pageanchor=true}
+
+\begin{abstract}
+This catalog presents a compact but engineering-focused pattern language for real-time game software. The emphasis is not on pattern names as ends in themselves, but on the forces that make a pattern useful: changeability, timing, lifetime, communication, memory layout, and performance. Each pattern is documented with a uniform decision structure, a modern implementation sketch, failure modes, and explicit relationships to neighboring patterns. The final sections provide selection tables, sparse relationship and trade-off matrices, common combinations, and practical architecture examples.
+\end{abstract}
+
+\tableofcontents
+\clearpage
+
+\section{How to Use This Catalog}\label{sec:how-to-use}
+Start with the engineering problem, not the pattern name. The \emph{Intent} and \emph{When to Use} paragraphs identify the shape of the problem; \emph{Forces}, \emph{Consequences}, and \emph{When Not to Use} determine whether the trade-off is justified. The implementation sketch demonstrates one possible realization rather than a canonical recipe. The same pattern can look different in an object-oriented engine, a data-oriented ECS, a multithreaded job system, or a deterministic server simulation.
+
+\begin{engineeringnote}
+Patterns are open-ended design strategies. They are not compliance requirements and they are not automatically improvements. A pattern earns its place when it removes a concrete source of change cost, coordination risk, latency, memory pressure, or repeated work.
+\end{engineeringnote}
+
+\section{Architectural Principles}\label{sec:principles}
+\subsection{Changeability}
+Architecture is most valuable when software changes. Coupling measures how much one unit must know about another; cohesion measures how strongly the responsibilities inside a unit belong together. Good boundaries reduce the amount of code a developer must understand before making a safe change. Abstraction and information hiding help when they isolate volatile decisions, but each abstraction also becomes something that must be learned, debugged, and maintained.
+
+Dependency direction should place stable policy behind narrow interfaces and keep high-level behavior from depending on accidental implementation details. Modularity is therefore not the pursuit of the maximum number of modules; it is the deliberate placement of boundaries where change is likely to occur independently.
+
+\subsection{Runtime Performance}
+Real-time software lives within frame, tick, audio, and network budgets. Flexibility mechanisms such as virtual dispatch, pointer-rich object graphs, messages, and dynamic allocation may impose runtime costs through indirection, cache misses, branch unpredictability, synchronization, or allocator work. Conversely, optimization frequently encodes assumptions that make code less flexible. Contiguous storage, static dispatch, bounded capacities, and fixed layouts can be fast precisely because they restrict possibilities.
+
+The correct response is measurement plus architectural awareness. Keep high-level code flexible where iteration is valuable; harden and specialize measured hot paths where constraints are understood. Cache locality, allocation behavior, and CPU/GPU synchronization deserve design attention because their costs are often larger than arithmetic complexity suggests.
+
+\subsection{Development Velocity}
+Three speeds compete: short-term implementation speed, long-term change speed, and runtime execution speed. A quick feature hack can accumulate maintenance debt; a highly generalized framework can delay learning about whether the feature is fun; an aggressively optimized representation can freeze a design before requirements stabilize. Prototypes are legitimate when they are truly disposable. Production paths need enough structure that future changes do not ripple through unrelated systems.
+
+\subsection{Simplicity and YAGNI}
+YAGNI (``You Aren't Gonna Need It'') is a useful check against speculative extension points. Every interface, plugin hook, generic framework, and indirection layer consumes engineering attention. Prefer the simplest design that satisfies demonstrated requirements, then introduce a pattern when the concrete forces described in this catalog appear.
+
+\begin{tradeoff}
+A useful architecture deliberately balances flexibility and assumptions. Flexibility accelerates change; assumptions enable optimization. The design task is to place each on the side of the boundary where it has the greatest value.
+\end{tradeoff}
+
+\section{Master Pattern Catalog}\label{sec:master-catalog}
+\small
+\begin{longtable}{P{2.10cm}P{1.80cm}P{2.10cm}P{2.50cm}P{2.30cm}P{2.60cm}}
+\toprule
+\textbf{Pattern} & \textbf{Category} & \textbf{Primary concern} & \textbf{Typical use} & \textbf{Main benefit} & \textbf{Main trade-off}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Pattern} & \textbf{Category} & \textbf{Primary concern} & \textbf{Typical use} & \textbf{Main benefit} & \textbf{Main trade-off}\\
+\midrule
+\endhead
+Command & Found. & Behavior as data & Input, undo, replay & Decouples request from execution & Indirection / history storage\\
+Flyweight & Found. & Shared immutable state & Instancing, shared assets & Lower memory/bandwidth & Shared-state management\\
+Observer & Found. & Immediate notification & Achievements, UI, signals & Producer / consumer decoupling & Lifecycle and callback cost\\
+Prototype & Found. & Runtime creation & Prefabs, configured spawns & Flexible cloning & Copy semantics\\
+Singleton & Found. & Unique global service & Singular process resources & One coordinated owner & Hidden global coupling\\
+State & Found. & Discrete behavior modes & Locomotion, menus, AI & Explicit legal transitions & State explosion\\
+Double Buffer & Sequencing & Atomic-looking publication & Render / simulation snapshots & Stable reads & Duplicate storage\\
+Game Loop & Sequencing & Time progression & Engine tick & Explicit cadence & Timing policy complexity\\
+Update Method & Sequencing & Per-tick behavior & Actors, controllers & Uniform simulation & Temporal state/order\\
+Bytecode & Behavioral & Behavior as executable data & Scripting, sandboxing & Flexible safe runtime & VM/tooling complexity\\
+Subclass Sandbox & Behavioral & Controlled subclass extension & Abilities, framework hooks & Contains subclass coupling & Brittle base class\\
+Type Object & Behavioral & Runtime logical types & Archetypes, items & Data-driven extensibility & Runtime bookkeeping\\
+Component & Decoupling & Domain separation & Entity capabilities & Composition and isolation & Wiring / indirection\\
+Event Queue & Decoupling & Temporal messaging & Thread/phase handoff & Async decoupling/batching & Latency / backpressure\\
+Service Locator & Decoupling & Service resolution & Logging, platform/audio & Provider substitution & Hidden dependencies\\
+Data Locality & Opt. & Cache efficiency & ECS/hot loops & Higher memory throughput & Reduced abstraction\\
+Dirty Flag & Opt. & Deferred work & Transforms, UI layout & Coalesced recomputation & Invalidation complexity\\
+Object Pool & Opt. & Allocation reuse & Particles, projectiles & Predictable reuse & Capacity/reset policy\\
+Spatial Partition & Opt. & Spatial indexing & Collision, visibility & Smaller candidate sets & Index maintenance\\
+\bottomrule
+\end{longtable}
+\normalsize
+\clearpage
+\section{Foundational Design Patterns}\label{sec:foundational}
+These patterns reinterpret widely used object-oriented design ideas in a real-time context. They address behavior representation, sharing, notification, creation, global access, and explicit behavioral modes.
+
+\subsection{Command}\label{pat:command}
+\paragraph{Classification} \textbf{Category:} Foundational. \textbf{Architectural concerns:} behavior, input, undo/redo, replay, decoupling, serialization.
+\paragraph{Intent} Represent an action or request as a first-class value so it can be stored, parameterized, delayed, queued, logged, serialized, replayed, or reversed independently of the code that produced it.
+\paragraph{Problem} Direct calls bind an input source, AI system, editor tool, or network endpoint to a concrete receiver and to the exact time of execution. That coupling makes remapping, replay, undo, and deferred execution awkward because the request exists only as transient control flow.
+\paragraph{Context} Typical contexts include configurable controls, turn-based actions, level-editor operations, network input, deterministic replay, AI issuing actor actions, and work submission to another subsystem.
+\paragraph{Forces} The design balances explicit representation of behavior against allocation and indirection overhead. Commands may need target identity, parameters, prior state for undo, deterministic serialization, and a clear lifetime while still remaining small enough to move through queues efficiently.
+\paragraph{Structure} A producer creates or selects a command; the command captures the operation and any required parameters; a dispatcher or receiver executes it. For deferred systems the flow is Producer $\rightarrow$ Command $\rightarrow$ Queue/Log $\rightarrow$ Receiver.
+\paragraph{Participants} A command interface or value type, one or more concrete command representations, a producer such as an input mapper or AI planner, a receiver such as an actor or editor model, and optionally a history/queue that owns pending or completed commands.
+\paragraph{Runtime Collaboration} The producer converts an external stimulus into a command. The command may execute immediately or be stored. Execution invokes receiver behavior using captured parameters; undoable commands additionally preserve the minimal state needed to restore the previous result. Replay re-executes the recorded sequence under equivalent simulation conditions.
+\paragraph{Implementation Sketch} A compact modern C++ sketch follows.
+\begin{lstlisting}
+struct Actor {
+    void jump();
+    void move(float dx, float dy);
+};
+
+struct Command {
+    virtual ~Command() = default;
+    virtual void execute(Actor& actor) = 0;
+};
+
+class MoveCommand final : public Command {
+public:
+    MoveCommand(float dx, float dy) : dx_(dx), dy_(dy) {}
+    void execute(Actor& actor) override { actor.move(dx_, dy_); }
+private:
+    float dx_;
+    float dy_;
+};
+
+std::unique_ptr<Command> mapInput(Input input) {
+    if (input == Input::Up) {
+        return std::make_unique<MoveCommand>(0.0f, 1.0f);
+    }
+    return {};
+}
+\end{lstlisting}
+\paragraph{When to Use} Use it when actions must outlive the call site, controls must be rebound, requests must be queued or logged, AI and player input should share the same execution surface, or undo/replay requires explicit action history.
+\paragraph{When Not to Use} Avoid introducing a command hierarchy for a local call that is immediate, one-off, and unlikely to require substitution or history. A function object, lambda, or direct call may be simpler when there is no need for identity, serialization, undo, or multiple operations on the request.
+\paragraph{Design Decisions} Choose class-based polymorphism versus tagged value commands or callable objects; bind the receiver into the command or pass it at execution; store deltas versus snapshots for undo; choose owning versus non-owning target handles; and decide whether commands are immutable, serializable, and deterministic across machines.
+\paragraph{Consequences}
+\begin{description}[leftmargin=2.7cm,style=nextline]
+\item[Benefits] Decouples request production from execution, centralizes input mapping, enables queues and logs, and provides a natural foundation for undo, redo, replay, and network command streams.
+\item[Costs] Adds one more representation layer and may introduce allocations, dispatch overhead, command-type proliferation, and state-history storage.
+\item[Risks] Commands that capture raw pointers can outlive targets; nondeterministic commands undermine replay; overly granular command types can become boilerplate; and using commands as an implicit global bus can obscure control flow.
+\end{description}
+\paragraph{Performance Characteristics} Dispatch is usually O(1) per command. Virtual calls or variant visitation add small constant costs; queueing can improve batching but can also add latency. For high-frequency input, use compact value commands and reserve storage to avoid per-frame heap allocation.
+\paragraph{Memory Characteristics} Stateful or undoable commands consume history memory proportional to retained operations. Prefer storing only changed fields when possible; use stable entity identifiers rather than owning pointers for serialized or delayed commands.
+\paragraph{Concurrency Considerations} Command queues are natural producer/consumer boundaries. Make ownership transfer explicit, use thread-safe queues only where required, and ensure command execution respects receiver-thread affinity. Immutable command payloads simplify cross-thread use.
+\paragraph{Game-Engine Applications} Input rebinding, AI action selection, editor transactions, gameplay ability activation, network lockstep input, deterministic replay, render/physics command buffers, and server-authoritative request processing.
+\paragraph{Common Failure Modes} Capturing mutable external state instead of explicit parameters; implementing undo without preserving enough prior state; retaining commands after targets are destroyed; assuming serialization order is irrelevant; and creating a class hierarchy when a simple callable value would suffice.
+\paragraph{Related Patterns} Event Queue commonly transports commands when execution is deferred; Flyweight can reduce storage for stateless commands; State may select commands based on the current mode; Subclass Sandbox can supply reusable operations that command subclasses invoke.
+
+\begin{patternsummary}{Command -- Summary}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.25\linewidth}X@{}}
+Intent & Make an action a manipulable value. \\
+Primary problem & Direct calls couple producer, receiver, and execution time. \\
+Best fit & Input mapping, undo/replay, deferred or networked actions. \\
+Main benefit & Request/execution decoupling and explicit history. \\
+Primary cost & Indirection, representation, and possible allocation. \\
+Closely related & Event Queue, State, Flyweight, Subclass Sandbox \\
+\end{tabularx}
+\end{patternsummary}
+
+\subsection{Flyweight}\label{pat:flyweight}
+\paragraph{Classification} \textbf{Category:} Foundational. \textbf{Architectural concerns:} memory, rendering, shared immutable data, instancing.
+\paragraph{Intent} Reduce per-instance cost by separating state shared by many objects from state unique to each object and storing the shared portion once.
+\paragraph{Problem} Large populations of similar objects can redundantly duplicate meshes, textures, animation data, material definitions, or other invariant data. The duplication wastes memory and may increase transfer bandwidth to accelerators.
+\paragraph{Context} Forests, crowds, projectiles of the same archetype, tiles, glyphs, repeated props, material instances, and other populations where many runtime instances differ mainly by transform, color, state, or a small parameter set.
+\paragraph{Forces} Shared data should be immutable or carefully synchronized, while per-instance data must remain cheap to access. The design trades direct self-contained objects for references into shared data and often benefits most when rendering or simulation can process instances in batches.
+\paragraph{Structure} A flyweight object stores intrinsic shared state. Each logical instance stores or receives only extrinsic state plus a reference or key to the flyweight. Rendering or simulation combines the two at use time.
+\paragraph{Participants} Flyweight/shared resource, flyweight registry or asset manager, lightweight instances, and a consumer that combines shared and per-instance state.
+\paragraph{Runtime Collaboration} Instances are created with a handle to shared data. During update or rendering, code reads the shared definition and applies instance-specific parameters. Multiple instances therefore reuse the same heavy resource without copying it.
+\paragraph{Implementation Sketch} A compact modern C++ sketch follows.
+\begin{lstlisting}
+struct TreeModel {
+    Mesh mesh;
+    Texture bark;
+    Texture leaves;
+};
+
+struct TreeInstance {
+    std::shared_ptr<const TreeModel> model; // intrinsic state
+    Vec3 position;                          // extrinsic state
+    float scale{1.0f};
+    Color tint{};
+};
+
+void draw(const TreeInstance& tree) {
+    renderer.drawInstanced(*tree.model, tree.position,
+                           tree.scale, tree.tint);
+}
+\end{lstlisting}
+\paragraph{When to Use} Use it when profiling or capacity analysis shows substantial duplication of immutable or slowly changing data across many instances, especially when the shared form maps well to GPU instancing or asset reuse.
+\paragraph{When Not to Use} Do not split tiny objects whose shared data is negligible, or data that changes independently for most instances. If sharing creates constant indirection, synchronization, or branching with little memory saved, the decomposition is counterproductive.
+\paragraph{Design Decisions} Define the intrinsic/extrinsic boundary; decide whether shared state is immutable; choose registry keys, direct handles, or resource IDs; determine ownership and eviction policy; and decide whether per-instance state is AoS, SoA, or GPU instance-buffer data.
+\paragraph{Consequences}
+\begin{description}[leftmargin=2.7cm,style=nextline]
+\item[Benefits] Reduces duplicate storage and resource uploads, enables large instance counts, and can align naturally with instanced rendering and centralized asset management.
+\item[Costs] Adds indirection and requires explicit management of shared-resource lifetime and identity.
+\item[Risks] Accidentally mutating shared state changes all instances; placing too much state in the flyweight destroys instance independence; placing too little state there leaves memory savings unrealized.
+\end{description}
+\paragraph{Performance Characteristics} The main gain is bandwidth and footprint reduction. It can improve cache behavior when heavy shared data remains resident, and GPU instancing can reduce draw-call overhead. Indirection may hurt if shared resources are scattered or accessed unpredictably.
+\paragraph{Memory Characteristics} Shared intrinsic state is O(k) for k unique definitions rather than O(n) for n instances. Each instance retains only a handle plus extrinsic state. Registry metadata and shared-pointer control blocks are additional overhead.
+\paragraph{Concurrency Considerations} Immutable shared state is naturally read-friendly across threads. Resource streaming or hot reload requires versioning or synchronization so readers never observe partially replaced assets.
+\paragraph{Game-Engine Applications} Meshes and textures, tile definitions, font glyph metrics, immutable ability definitions, animation clips, materials, archetype data, vegetation and crowd instancing.
+\paragraph{Common Failure Modes} Treating shared objects as mutable scratch space, using ownership models that keep obsolete assets alive forever, confusing Flyweight with object pooling, or assuming sharing alone guarantees good cache locality.
+\paragraph{Related Patterns} Type Object also shares invariant data, but its primary purpose is flexible runtime typing rather than memory reduction. Object Pool reuses whole object slots over time rather than sharing immutable state. Data Locality can reorganize extrinsic instance data for fast iteration.
+
+\begin{patternsummary}{Flyweight -- Summary}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.25\linewidth}X@{}}
+Intent & Share heavy invariant state across many instances. \\
+Primary problem & Per-instance duplication wastes memory and bandwidth. \\
+Best fit & Large populations with common meshes, textures, or definitions. \\
+Main benefit & Lower footprint and better batching potential. \\
+Primary cost & Indirection and shared-resource management. \\
+Closely related & Type Object, Object Pool, Data Locality \\
+\end{tabularx}
+\end{patternsummary}
+
+\subsection{Observer}\label{pat:observer}
+\paragraph{Classification} \textbf{Category:} Foundational. \textbf{Architectural concerns:} communication, notification, decoupling, lifecycle.
+\paragraph{Intent} Let a subject announce a state change or event to interested observers without knowing the concrete systems that react.
+\paragraph{Problem} Cross-cutting systems such as achievements, UI, telemetry, audio, or quests often need to react to gameplay events. Direct calls from producers into every consumer spread dependencies through unrelated code.
+\paragraph{Context} Immediate in-process notification where producers know that something happened but should not own the reaction logic.
+\paragraph{Forces} The subject should remain ignorant of concrete observers, yet notification order, reentrancy, observer lifetime, and synchronous execution cost remain real concerns. Immediate callbacks preserve current state but couple the sender to observer execution time.
+\paragraph{Structure} A Subject stores registrations for an Observer interface or callback. Observers subscribe and unsubscribe. The subject iterates the registrations and invokes them when a relevant event occurs.
+\paragraph{Participants} Subject/event source, observer/subscriber, event payload, and registration token or subscription handle.
+\paragraph{Runtime Collaboration} Observers register before the event. The subject detects a state change and synchronously notifies current subscribers. Each observer handles the event independently; unsubscription removes the callback from future notifications.
+\paragraph{Implementation Sketch} A compact modern C++ sketch follows.
+\begin{lstlisting}
+class Subject {
+public:
+    using Callback = std::function<void(const Event&)>;
+    SubscriptionId subscribe(Callback cb) {
+        const auto id = next_++;
+        observers_.emplace(id, std::move(cb));
+        return id;
+    }
+    void unsubscribe(SubscriptionId id) { observers_.erase(id); }
+    void notify(const Event& e) const {
+        for (const auto& [id, cb] : observers_) cb(e);
+    }
+private:
+    std::unordered_map<SubscriptionId, Callback> observers_;
+    SubscriptionId next_{1};
+};
+\end{lstlisting}
+\paragraph{When to Use} Use it when multiple consumers need immediate notification and the producer should not depend on their concrete types. It is particularly suitable when consumers need to inspect the world while it still reflects the event that just occurred.
+\paragraph{When Not to Use} Prefer a direct call for a single stable dependency, or Event Queue when producer and consumer must be decoupled in time. Avoid synchronous observer chains when callbacks can block, recurse unpredictably, or cross thread-affinity boundaries.
+\paragraph{Design Decisions} Callbacks versus interface objects; strong versus weak subscription ownership; stable ordering versus unspecified ordering; whether observers may subscribe/unsubscribe during notification; payload by value versus reference; and error isolation policy.
+\paragraph{Consequences}
+\begin{description}[leftmargin=2.7cm,style=nextline]
+\item[Benefits] Removes direct producer-to-consumer dependencies, supports dynamic subscribers, and centralizes reaction logic in the systems that own it.
+\item[Costs] Introduces registration bookkeeping and makes the full set of runtime reactions less obvious at the call site.
+\item[Risks] Dangling subscriptions, reentrant modification, notification storms, hidden execution cost, and deadlocks if callbacks take locks in conflicting order.
+\end{description}
+\paragraph{Performance Characteristics} Notification is O(m) for m observers. Synchronous dispatch has low latency but the producer pays the aggregate callback cost. Avoid heap allocation in hot paths by preallocating or using lightweight delegates.
+\paragraph{Memory Characteristics} Subjects store subscription entries; observers may need tokens for safe removal. Weak-reference schemes add metadata but reduce lifetime hazards.
+\paragraph{Concurrency Considerations} Synchronous observers are simplest when confined to one thread. Cross-thread notification requires locking, copy-on-write subscriber lists, or handing events to a queue; do not hold broad locks while invoking arbitrary callbacks.
+\paragraph{Game-Engine Applications} Achievements, UI refresh, quest tracking, animation notifies, gameplay tags, health/death signals, resource-change callbacks, editor model/view synchronization.
+\paragraph{Common Failure Modes} Failing to unsubscribe before observer destruction, allowing callbacks to mutate the collection being iterated without a policy, using Observer as a hidden global event bus, and putting expensive asynchronous work directly in callbacks.
+\paragraph{Related Patterns} Event Queue adds temporal decoupling and buffering; Command represents requested work rather than notification of something that occurred; Service Locator solves service access rather than event propagation.
+
+\begin{patternsummary}{Observer -- Summary}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.25\linewidth}X@{}}
+Intent & Notify interested parties without naming concrete receivers. \\
+Primary problem & Cross-cutting reactions create direct dependencies. \\
+Best fit & Immediate in-process notifications with dynamic subscribers. \\
+Main benefit & Static decoupling between producer and consumers. \\
+Primary cost & Lifecycle bookkeeping and hidden callback cost. \\
+Closely related & Event Queue, Command, Service Locator \\
+\end{tabularx}
+\end{patternsummary}
+
+\subsection{Prototype}\label{pat:prototype}
+\paragraph{Classification} \textbf{Category:} Foundational. \textbf{Architectural concerns:} creation, cloning, runtime configuration, data-driven content.
+\paragraph{Intent} Create new objects by copying an existing exemplar so construction can be driven by runtime objects instead of a parallel hierarchy of creator classes.
+\paragraph{Problem} When many concrete runtime types require corresponding factories or spawners, creation logic duplicates the type hierarchy. Content creators may also need to define configured variants without adding a new compiled subclass for each one.
+\paragraph{Context} Enemy spawners, prefabs, item templates, effect templates, editor duplication, and runtime-defined object families.
+\paragraph{Forces} Cloning must define what state is copied, shared, reset, or rebound. Deep copies are safer for owned mutable state but costlier; shallow copies are cheaper but can accidentally share state. Construction must also restore invariants and unique identity.
+\paragraph{Structure} A prototype exposes clone/copy behavior. A creator holds a prototype and produces new instances by cloning it. The clone may then receive instance-specific identity or placement.
+\paragraph{Participants} Prototype interface/value, concrete prototype object, spawner/factory, and the cloned runtime instance.
+\paragraph{Runtime Collaboration} A configured exemplar is registered or selected. When a new object is needed, the factory clones the exemplar, resets transient state, assigns identity/placement, and returns the new instance.
+\paragraph{Implementation Sketch} A compact modern C++ sketch follows.
+\begin{lstlisting}
+class Monster {
+public:
+    virtual ~Monster() = default;
+    virtual std::unique_ptr<Monster> clone() const = 0;
+};
+
+class Ghost final : public Monster {
+public:
+    Ghost(int hp, float speed) : hp_(hp), speed_(speed) {}
+    std::unique_ptr<Monster> clone() const override {
+        return std::make_unique<Ghost>(*this);
+    }
+private:
+    int hp_;
+    float speed_;
+};
+
+class Spawner {
+public:
+    explicit Spawner(std::unique_ptr<Monster> prototype)
+        : prototype_(std::move(prototype)) {}
+    std::unique_ptr<Monster> spawn() const { return prototype_->clone(); }
+private:
+    std::unique_ptr<Monster> prototype_;
+};
+\end{lstlisting}
+\paragraph{When to Use} Use it when runtime-configured exemplars are natural, cloning is well-defined, or a family of specialized factory classes would simply repeat the concrete type being constructed.
+\paragraph{When Not to Use} Avoid it when object construction has important external side effects, ownership graphs are difficult to copy safely, or the desired variability is better expressed as shared Type Objects plus small per-instance state.
+\paragraph{Design Decisions} Deep versus shallow copy; copy-on-write for heavy subobjects; whether identity, handles, timers, and subscriptions are cloned or regenerated; how references to other entities are rebound; and whether prototypes are immutable templates or live mutable instances.
+\paragraph{Consequences}
+\begin{description}[leftmargin=2.7cm,style=nextline]
+\item[Benefits] Collapses parallel creator hierarchies, supports runtime-defined configured variants, and makes editor duplication/prefab behavior straightforward.
+\item[Costs] Requires disciplined copy semantics and often explicit post-clone initialization.
+\item[Risks] Accidental aliasing of mutable owned state, duplicated unique IDs, copied subscriptions pointing to old subjects, and stale resource references after hot reload.
+\end{description}
+\paragraph{Performance Characteristics} Clone cost is proportional to copied state. It can be cheaper than reconstructing complex graphs, but deep copying large resources is expensive. Combine with Flyweight or shared immutable assets so clones copy handles rather than bytes.
+\paragraph{Memory Characteristics} A naive deep clone duplicates everything. Prefer shared immutable resources and explicit ownership rules; use copy-on-write only when its complexity is justified.
+\paragraph{Concurrency Considerations} Immutable prototypes are safe to clone concurrently if referenced resources support concurrent reads. Mutable prototypes require synchronization or snapshotting.
+\paragraph{Game-Engine Applications} Prefab instantiation, editor duplicate operations, configured projectile/effect templates, enemy spawn definitions, runtime content packs, and test fixture generation.
+\paragraph{Common Failure Modes} Relying on default copy for owning pointers, copying runtime identity, cloning transient state that should reset, or using Prototype where a simple constructor/factory is clearer.
+\paragraph{Related Patterns} Type Object stores shared type definitions instead of copying them; Flyweight shares heavy immutable state among clones; Object Pool can provide storage for frequently cloned short-lived instances.
+
+\begin{patternsummary}{Prototype -- Summary}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.25\linewidth}X@{}}
+Intent & Create from a configured exemplar. \\
+Primary problem & Creator hierarchies and rigid construction duplicate type information. \\
+Best fit & Prefabs, spawners, runtime-configured object families. \\
+Main benefit & Flexible creation without parallel factories. \\
+Primary cost & Complex copy/reset semantics. \\
+Closely related & Type Object, Flyweight, Object Pool \\
+\end{tabularx}
+\end{patternsummary}
+
+\subsection{Singleton}\label{pat:singleton}
+\paragraph{Classification} \textbf{Category:} Foundational. \textbf{Architectural concerns:} global access, lifecycle, services, testability, concurrency.
+\paragraph{Intent} Constrain a class to one instance and optionally provide a globally reachable access point; treat those two goals as separate design decisions rather than an automatic package.
+\paragraph{Problem} Some facilities coordinate a single external resource or process-wide state, yet callers across the program need access. The tempting solution is a globally accessible singleton, which can solve instance uniqueness while simultaneously creating hidden dependencies.
+\paragraph{Context} Platform devices, legacy global managers, process-level registries, or truly singular adapters. In modern engine code the critical question is usually whether uniqueness is required and whether global access is actually justified.
+\paragraph{Forces} Global convenience competes with explicit dependency structure, deterministic initialization, test isolation, hot reload, teardown order, and thread safety. Lazy initialization solves some ordering issues but does not make the service itself safe or well-scoped.
+\paragraph{Structure} A classic singleton hides construction, owns one instance, and exposes a static accessor. A stricter design may enforce one instance without global access, or provide the instance through dependency injection.
+\paragraph{Participants} Singleton/service class, static lifetime manager or application composition root, and consumers.
+\paragraph{Runtime Collaboration} The first access may construct the instance; later callers receive the same object. Teardown occurs at a chosen lifecycle boundary, which should be explicit for engine subsystems that own OS or GPU resources.
+\paragraph{Implementation Sketch} A compact modern C++ sketch follows.
+\begin{lstlisting}
+class AudioDevice {
+public:
+    AudioDevice(const AudioDevice&) = delete;
+    AudioDevice& operator=(const AudioDevice&) = delete;
+
+    void play(SoundId id);
+
+private:
+    friend class Engine;
+    AudioDevice() = default;
+};
+
+class Engine {
+public:
+    AudioDevice& audio() noexcept { return audio_; }
+private:
+    AudioDevice audio_; // one instance, but not global
+};
+\end{lstlisting}
+\paragraph{When to Use} Use one-instance enforcement when the underlying resource is genuinely singular or coordination correctness requires one owner. Prefer explicit ownership and injection; reserve global access for ambient facilities whose ubiquity is intentional and documented.
+\paragraph{When Not to Use} Do not use Singleton merely because passing a dependency feels inconvenient. Avoid it for mutable gameplay state, managers with multiple plausible contexts, tests that need substitutes, and systems that may exist once per world, scene, client, or server rather than once per process.
+\paragraph{Design Decisions} Separate uniqueness from accessibility; eager versus lazy lifetime; process-wide versus world-scoped instance; static accessor versus application-owned instance; replacement/testing strategy; and explicit shutdown order.
+\paragraph{Consequences}
+\begin{description}[leftmargin=2.7cm,style=nextline]
+\item[Benefits] Can enforce one owner of a singular resource and provide simple access when global scope is genuinely appropriate.
+\item[Costs] Global access hides dependency edges, complicates testing, centralizes mutable state, and can make initialization and teardown implicit.
+\item[Risks] Static initialization order issues, cross-test contamination, accidental concurrency bottlenecks, inability to run multiple worlds/servers in one process, and cascading hidden coupling.
+\end{description}
+\paragraph{Performance Characteristics} Accessor cost is usually trivial; the larger cost is architectural. A single synchronized instance can become a contention point, and lazy initialization may add first-use latency.
+\paragraph{Memory Characteristics} One instance may reduce duplication, but that is not a reason by itself to use global access. Static lifetime can also keep large resources alive longer than needed.
+\paragraph{Concurrency Considerations} C++ local-static initialization is one-time safe, but member operations still require their own synchronization policy. Prefer ownership on the thread that uses the resource, or explicit concurrent interfaces.
+\paragraph{Game-Engine Applications} OS/device adapters, one process-wide diagnostics sink, legacy engine registries, or compatibility layers where a single external facility truly exists.
+\paragraph{Common Failure Modes} Conflating ``one instance with ``accessible everywhere, using mutable global managers for convenience, assuming initialization safety implies thread-safe behavior, and hiding environment-specific dependencies behind static calls.
+\paragraph{Related Patterns} Service Locator offers replaceable providers but retains hidden lookup dependencies; explicit dependency injection often replaces both. Subclass Sandbox sometimes centralizes access behind a base class instead of exposing it globally.
+
+\begin{patternsummary}{Singleton -- Summary}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.25\linewidth}X@{}}
+Intent & Enforce uniqueness; global access is optional, not inherent to good design. \\
+Primary problem & Singular resources need ownership without spreading global state. \\
+Best fit & Truly process-wide facilities with controlled lifecycle. \\
+Main benefit & Single coordinated owner. \\
+Primary cost & Hidden coupling when globally accessible. \\
+Closely related & Service Locator, Subclass Sandbox, dependency injection \\
+\end{tabularx}
+\end{patternsummary}
+
+\subsection{State}\label{pat:state}
+\paragraph{Classification} \textbf{Category:} Foundational. \textbf{Architectural concerns:} behavior, state machines, input, AI, temporal logic.
+\paragraph{Intent} Represent discrete behavioral modes explicitly so an object delegates mode-specific behavior and transitions instead of accumulating interdependent flags and conditionals.
+\paragraph{Problem} As an entity gains mutually exclusive modes, boolean flags and nested branches permit invalid combinations and make transitions hard to reason about. The code needs an explicit model of which states exist and which events move between them.
+\paragraph{Context} Character locomotion, UI navigation, connection protocols, animation control, simple AI, mission phases, and other event-driven behavior over time.
+\paragraph{Forces} State boundaries must be meaningful and relatively small in number. Transitions need clear ownership; state-specific data may belong in the state object; hierarchical states reduce duplication but add complexity; history stacks enable pushdown behavior.
+\paragraph{Structure} A context owns the current state. Each state handles events/update behavior and may request a transition. Entry and exit hooks establish invariants. Hierarchical variants factor shared behavior into parent states; pushdown variants maintain a stack.
+\paragraph{Participants} Context/entity, state interface or tagged state representation, concrete states, transition logic, and optionally a state stack.
+\paragraph{Runtime Collaboration} The context forwards input/update to the active state. That state performs behavior or returns the next state. On transition, exit logic runs, state-specific storage changes, then entry logic establishes the new mode.
+\paragraph{Implementation Sketch} A compact modern C++ sketch follows.
+\begin{lstlisting}
+struct Heroine;
+
+struct State {
+    virtual ~State() = default;
+    virtual std::unique_ptr<State> handle(Heroine&, Input) { return {}; }
+    virtual void enter(Heroine&) {}
+    virtual void update(Heroine&, float) {}
+};
+
+class Standing final : public State {
+public:
+    std::unique_ptr<State> handle(Heroine&, Input input) override;
+};
+
+void Heroine::handle(Input input) {
+    if (auto next = state_->handle(*this, input)) {
+        state_ = std::move(next);
+        state_->enter(*this);
+    }
+}
+\end{lstlisting}
+\paragraph{When to Use} Use a finite state model when behavior depends on one of a relatively small set of discrete modes and the object responds to inputs/events over time. It is especially effective when invalid combinations of flags are a recurring bug source.
+\paragraph{When Not to Use} Avoid forcing continuously varying behavior or large combinatorial decision spaces into an FSM. Complex tactical AI may be clearer with behavior trees, utility systems, planners, or hybrid models.
+\paragraph{Design Decisions} Enum-and-switch versus state objects; static shared state instances versus per-context state objects; transition tables versus transitions embedded in states; hierarchical states; pushdown stacks; entry/exit actions; and whether state-specific data lives in the context or state.
+\paragraph{Consequences}
+\begin{description}[leftmargin=2.7cm,style=nextline]
+\item[Benefits] Makes legal modes and transitions explicit, localizes mode-specific behavior, and replaces flag combinations with a model that is easier to inspect and test.
+\item[Costs] Adds state types/tables and transition machinery; hierarchical and pushdown variants increase conceptual overhead.
+\item[Risks] State explosion, transitions scattered across many classes, cycles that are hard to visualize, and using state objects as containers for unrelated global logic.
+\end{description}
+\paragraph{Performance Characteristics} Dispatch is typically O(1) per event/update. Virtual dispatch is usually negligible for ordinary actor counts; data-oriented engines may use compact enums and tables for better cache density.
+\paragraph{Memory Characteristics} Per-instance state objects may allocate; shared stateless states or tagged variants avoid that. Pushdown automata require a bounded or dynamic stack of active states.
+\paragraph{Concurrency Considerations} A context should usually have one owner for transitions. If events arrive cross-thread, queue them so transitions occur at a deterministic simulation point rather than mutating state concurrently.
+\paragraph{Game-Engine Applications} Player movement, animation modes, menus, network connection states, boss phases, simple NPC AI, tutorial progression, tool modes.
+\paragraph{Common Failure Modes} Encoding orthogonal concerns in one giant state enum, allowing transitions from arbitrary external code, forgetting entry/exit invariants, and using FSMs for problems whose state space is not naturally discrete.
+\paragraph{Related Patterns} Type Object delegates what an object broadly is, while State delegates what it is doing now. Command often represents events/actions that trigger transitions. Update Method repeatedly invokes the active state over time.
+
+\begin{patternsummary}{State -- Summary}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.25\linewidth}X@{}}
+Intent & Make discrete behavioral modes explicit. \\
+Primary problem & Flag combinations and conditionals create invalid, tangled behavior. \\
+Best fit & Event-driven behavior with a modest state space. \\
+Main benefit & Clear transitions and localized mode logic. \\
+Primary cost & State/transition machinery and possible state explosion. \\
+Closely related & Type Object, Command, Update Method \\
+\end{tabularx}
+\end{patternsummary}
+
+\section{Sequencing Patterns}\label{sec:sequencing}
+These patterns organize time: how state is published, how the simulation advances, and how many independently behaving objects receive time slices.
+
+\subsection{Double Buffer}\label{pat:double-buffer}
+\paragraph{Classification} \textbf{Category:} Sequencing. \textbf{Architectural concerns:} timing, synchronization, rendering, snapshots, state publication.
+\paragraph{Intent} Make incremental updates appear atomic by writing to a hidden next buffer while readers continue using a stable current buffer, then swapping the roles.
+\paragraph{Problem} Readers may observe partially updated state when a producer modifies the same data incrementally. Rendering can tear; simulations can see neighbors at inconsistent temporal points; worker threads can race with consumers.
+\paragraph{Context} Framebuffers, transform snapshots, visibility data, animation poses, render command data, simulation state, and producer/consumer handoff.
+\paragraph{Forces} Readers need uninterrupted access to stable data, writers need room to build the next version, the swap must be cheap and well synchronized, and the application must afford duplicate storage.
+\paragraph{Structure} Current buffer is read-only to consumers; next buffer is writable to the producer. After construction of the next state completes, an atomic or synchronized swap publishes it and recycles the old current buffer.
+\paragraph{Participants} Current buffer, next buffer, producer/update stage, consumer/read stage, and swap/publication operation.
+\paragraph{Runtime Collaboration} At frame N, consumers read current while producers populate next. At a synchronization point the system swaps pointers/indices. Consumers then see the fully completed state for frame N+1; the former current buffer becomes writable.
+\paragraph{Implementation Sketch} A compact modern C++ sketch follows.
+\begin{lstlisting}
+template <class T>
+class DoubleBuffer {
+public:
+    const T& current() const noexcept { return buffers_[read_]; }
+    T& next() noexcept { return buffers_[1 - read_]; }
+    void publish() noexcept { read_ = 1 - read_; }
+private:
+    std::array<T, 2> buffers_{};
+    std::size_t read_{0};
+};
+\end{lstlisting}
+\paragraph{When to Use} Use it when state is modified incrementally, may be read during modification, partial state must never be visible, and readers should not block for the whole write operation.
+\paragraph{When Not to Use} Do not pay for a second full copy when state is tiny and a short lock or transactional update is simpler. It is also a poor fit when copying/building the next buffer costs more than the contention it avoids.
+\paragraph{Design Decisions} Pointer/index swap versus copy; whole-state versus chunked buffering; two versus three buffers; who owns the synchronization barrier; and whether writers start from a copy of current or rebuild next from scratch.
+\paragraph{Consequences}
+\begin{description}[leftmargin=2.7cm,style=nextline]
+\item[Benefits] Provides stable snapshots, isolates readers from incremental writes, and can overlap work between pipeline stages.
+\item[Costs] Requires duplicate storage and an explicit publication step.
+\item[Risks] Publishing before all writes complete, writing accidentally into current, stale readers retaining a buffer after it is recycled, and assuming pointer swap alone provides memory-order guarantees across threads.
+\end{description}
+\paragraph{Performance Characteristics} Reads remain lock-free or minimally synchronized in many designs. Swap can be O(1) when exchanging indices/pointers. Building the next buffer still incurs full write bandwidth, and copying current can be expensive.
+\paragraph{Memory Characteristics} Approximately doubles the buffered state; triple buffering increases this further. Use handles or compact snapshots when full object duplication is too costly.
+\paragraph{Concurrency Considerations} The swap is a synchronization boundary. Cross-thread implementations need appropriate atomics/fences or barriers so all writes to next happen-before readers observe it as current.
+\paragraph{Game-Engine Applications} Render snapshots, simulation interpolation state, GPU staging, audio buffers, navigation snapshots, network replication snapshots, and frame-to-frame visibility lists.
+\paragraph{Common Failure Modes} Treating both buffers as independently authoritative, forgetting to initialize the next buffer, swapping while writers are still active, and duplicating resources that should instead be referenced by handle.
+\paragraph{Related Patterns} Game Loop defines the cadence at which buffers are published; Update Method may write next-state snapshots; Dirty Flag can reduce how much of the next buffer must be recomputed.
+
+\begin{patternsummary}{Double Buffer -- Summary}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.25\linewidth}X@{}}
+Intent & Publish a complete new state atomically. \\
+Primary problem & Readers must not see partially written state. \\
+Best fit & Frame/snapshot handoff between update and read phases. \\
+Main benefit & Stable reads with minimal writer blocking. \\
+Primary cost & Duplicate storage and swap synchronization. \\
+Closely related & Game Loop, Update Method, Dirty Flag \\
+\end{tabularx}
+\end{patternsummary}
+
+\subsection{Game Loop}\label{pat:game-loop}
+\paragraph{Classification} \textbf{Category:} Sequencing. \textbf{Architectural concerns:} timing, simulation cadence, input, rendering, determinism.
+\paragraph{Intent} Drive input, simulation, and rendering continuously while controlling how real time maps to game time independently of input arrival and raw processor speed.
+\paragraph{Problem} Interactive simulations must progress even when the player provides no input, but they must also avoid running faster on faster hardware or slower on slower machines. Rendering and simulation may benefit from different rates.
+\paragraph{Context} Nearly every real-time game or engine has an explicit or platform-owned loop that repeatedly polls events, advances simulation, and presents output.
+\paragraph{Forces} Responsiveness, stable simulation, deterministic behavior, frame pacing, battery/CPU use, platform event integration, catch-up limits, and rendering smoothness all compete. Fixed and variable timesteps trade simplicity, determinism, and responsiveness differently.
+\paragraph{Structure} The loop reads platform input/events, computes elapsed time, advances simulation according to a timestep policy, renders the current/interpolated state, and optionally waits or yields to meet pacing goals.
+\paragraph{Participants} Clock, input/event pump, simulation/update pipeline, renderer/presenter, frame limiter or scheduler, and optionally an accumulator for fixed-step simulation.
+\paragraph{Runtime Collaboration} Each iteration samples elapsed wall time. A variable-step loop passes elapsed time directly to update; a fixed-step accumulator runs zero or more deterministic simulation ticks and renders using interpolation between simulation states.
+\paragraph{Implementation Sketch} Two common timing strategies are shown: a variable timestep and a fixed-step accumulator.
+\begin{lstlisting}
+// Variable timestep
+while (running) {
+    const double dt = clock.restartSeconds();
+    pollInput();
+    update(dt);
+    render();
+}
+
+// Fixed simulation step with interpolation
+constexpr double step = 1.0 / 60.0;
+double previous = clock.nowSeconds();
+double accumulator = 0.0;
+while (running) {
+    const double now = clock.nowSeconds();
+    accumulator += std::min(now - previous, 0.25);
+    previous = now;
+    pollInput();
+    while (accumulator >= step) {
+        fixedUpdate(step);
+        accumulator -= step;
+    }
+    render(accumulator / step);
+}
+\end{lstlisting}
+\paragraph{When to Use} A real-time interactive program almost always needs this concept, even if the platform or engine owns it. Turn-based games still commonly run a presentation loop for animation, audio, networking, and UI.
+\paragraph{When Not to Use} Do not create a second uncontrolled loop inside a framework that already owns scheduling. Integrate through callbacks, ticks, coroutines, or platform event hooks instead of competing with the host loop.
+\paragraph{Design Decisions} Fixed, variable, or semi-fixed timestep; simulation rate versus render rate; accumulator clamp; input sampling policy; interpolation/extrapolation; frame limiter; pause/time-scale behavior; and ownership by application versus host platform.
+\paragraph{Consequences}
+\begin{description}[leftmargin=2.7cm,style=nextline]
+\item[Benefits] Centralizes temporal progression, makes simulation cadence explicit, and decouples gameplay from blocking input and raw processor throughput.
+\item[Costs] The loop becomes critical infrastructure whose timing policy affects nearly every subsystem.
+\item[Risks] Spiral of death during catch-up, unstable physics with large variable dt, non-deterministic simulation, excessive input latency, busy-waiting, and accidentally processing platform events too infrequently.
+\end{description}
+\paragraph{Performance Characteristics} The loop is a hot path. Measure frame stages, cap pathological elapsed-time spikes, avoid unnecessary allocations, and budget update/render work against target frame time. Decoupling render from fixed simulation can preserve determinism while using available display rate.
+\paragraph{Memory Characteristics} The loop itself is small, but interpolation or rollback designs may retain previous simulation snapshots or input history.
+\paragraph{Concurrency Considerations} Modern loops often schedule jobs but retain deterministic synchronization points before dependent phases. Threaded rendering frequently consumes a previous-frame snapshot while simulation builds the next.
+\paragraph{Game-Engine Applications} Main engine tick, dedicated server tick, fixed-rate physics, frame pacing, rollback input processing, platform event integration, editor viewport updates.
+\paragraph{Common Failure Modes} Using frame count as time, letting a slow frame trigger unbounded catch-up, mixing simulation and wall-clock time inconsistently, or running physics at variable dt without validation.
+\paragraph{Related Patterns} Update Method defines per-object work invoked by the loop; Double Buffer publishes coherent frame state; Event Queue can be drained at deterministic points; State and Command commonly process input during the loop.
+
+\begin{patternsummary}{Game Loop -- Summary}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.25\linewidth}X@{}}
+Intent & Control how real time advances simulation and presentation. \\
+Primary problem & Gameplay must progress independently of input and CPU speed. \\
+Best fit & Every real-time engine or interactive simulation. \\
+Main benefit & Explicit cadence and deterministic timing policy. \\
+Primary cost & Central timing complexity and frame-budget pressure. \\
+Closely related & Update Method, Double Buffer, Event Queue \\
+\end{tabularx}
+\end{patternsummary}
+
+\subsection{Update Method}\label{pat:update-method}
+\paragraph{Classification} \textbf{Category:} Sequencing. \textbf{Architectural concerns:} per-frame behavior, object lifecycle, simulation, temporal state.
+\paragraph{Intent} Simulate many independent actors by giving each one a method that advances its behavior by one frame or tick.
+\paragraph{Problem} Straight-line behavior code monopolizes control flow. When many actors must appear to act simultaneously, their work must be sliced into resumable per-frame steps while the central loop continues to process input and rendering.
+\paragraph{Context} Actors, particles, animation controllers, UI widgets, scripted behaviors, and systems that evolve continuously over time.
+\paragraph{Forces} Each update should be independent enough to iterate uniformly, but ordering between objects can leak into behavior. Objects need explicit temporal state because stack position is not preserved between frames. Lifecycle changes during iteration must be safe.
+\paragraph{Structure} A world owns a collection of updateable objects. Each frame/tick it visits the active set and calls update(dt) or a fixed-step equivalent. Objects store the state needed to resume behavior next time.
+\paragraph{Participants} World/update scheduler, updateable actor or system, per-object temporal state, and lifecycle queues for spawn/destruction.
+\paragraph{Runtime Collaboration} The loop visits each active object once per tick. Each object advances one slice of behavior and returns. Adds/removes are commonly deferred until a stable boundary to avoid invalidating iteration.
+\paragraph{Implementation Sketch} A compact modern C++ sketch follows.
+\begin{lstlisting}
+struct Updatable {
+    virtual ~Updatable() = default;
+    virtual void update(float dt) = 0;
+};
+
+class World {
+public:
+    void tick(float dt) {
+        for (auto& object : objects_) object->update(dt);
+        applyPendingLifecycleChanges();
+    }
+private:
+    std::vector<std::unique_ptr<Updatable>> objects_;
+};
+\end{lstlisting}
+\paragraph{When to Use} Use it when many objects or systems need to progress concurrently over time and each has reasonably independent per-tick behavior.
+\paragraph{When Not to Use} Avoid forcing static turn-based pieces or purely event-driven objects to run every frame. Large homogeneous populations may be better represented by ECS/system iteration rather than one virtual call per object.
+\paragraph{Design Decisions} Object-oriented updates versus ECS systems; fixed versus variable dt; update order; active/inactive filtering; deferred lifecycle changes; coroutines/fibers for long sequential behaviors; and whether rendering state is written directly or via snapshots.
+\paragraph{Consequences}
+\begin{description}[leftmargin=2.7cm,style=nextline]
+\item[Benefits] Keeps the main loop generic, localizes actor behavior, supports dynamic populations, and provides a simple concurrency illusion through repeated small time slices.
+\item[Costs] Behavior must be converted into resumable slices and temporal state must be stored explicitly.
+\item[Risks] Order-dependent behavior, invalid iterators during spawn/despawn, excessive virtual dispatch, updating inactive objects, and large numbers of tiny objects causing poor cache behavior.
+\end{description}
+\paragraph{Performance Characteristics} Naive object-by-object virtual updates can be cache-unfriendly. Batch by type, skip dormant objects, or move hot data into SoA/ECS systems when profiles show dispatch or locality costs.
+\paragraph{Memory Characteristics} Every object stores enough temporal state to resume. Object-oriented layouts also add per-object allocation/vtable overhead; pooled or contiguous storage can reduce this.
+\paragraph{Concurrency Considerations} Parallel update is possible only when dependencies are explicit. Job systems often group independent components/systems and synchronize before phases that consume each other's results.
+\paragraph{Game-Engine Applications} Actor simulation, particle logic, animation state, status effects, UI animation, NPC controllers, timers, and scene objects.
+\paragraph{Common Failure Modes} Updating objects in an accidental semantic order, modifying the active collection while iterating, embedding rendering side effects in simulation updates, and retaining per-frame work for objects that could sleep.
+\paragraph{Related Patterns} Game Loop invokes updates; State often supplies per-mode update behavior; Component decomposes an entity into updateable domains; Data Locality motivates moving from object iteration to packed system iteration.
+
+\begin{patternsummary}{Update Method -- Summary}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.25\linewidth}X@{}}
+Intent & Advance each live object one time slice at a time. \\
+Primary problem & Many behaviors must progress without taking over control flow. \\
+Best fit & Live actors and continuously simulated systems. \\
+Main benefit & Simple uniform simulation scheduling. \\
+Primary cost & Explicit temporal state and ordering concerns. \\
+Closely related & Game Loop, State, Component, Data Locality \\
+\end{tabularx}
+\end{patternsummary}
+
+\section{Behavioral Patterns}\label{sec:behavioral}
+These patterns provide alternative ways to define behavior and logical type relationships when ordinary compiled class structure is too rigid or too coupled.
+
+\subsection{Bytecode}\label{pat:bytecode}
+\paragraph{Classification} \textbf{Category:} Behavioral. \textbf{Architectural concerns:} scripting, virtual machines, sandboxing, data-defined behavior, tooling.
+\paragraph{Intent} Represent behavior as a compact instruction stream executed by a purpose-built virtual machine so behavior becomes data that can be authored, loaded, validated, and sandboxed.
+\paragraph{Problem} Native implementation code may be too low-level, slow to iterate, or too trusted for mod/content behavior. A high-level tree interpreter may be flexible but memory-heavy and slow; raw machine code is fast but unsafe and platform-specific.
+\paragraph{Context} Ability scripting, dialogue logic, quest rules, deterministic gameplay scripts, user-authored behavior, or domain-specific logic where a small instruction set is sufficient.
+\paragraph{Forces} A VM trades native speed for control, portability, validation, and iteration speed. The instruction set must remain stable and constrained; authoring usually requires a higher-level frontend/compiler; versioning and debugging tools become part of the architecture.
+\paragraph{Structure} A bytecode format stores opcodes and operands. A VM owns an instruction pointer, stack/registers, and access to a constrained host API. A compiler or assembler translates authoring syntax/data into the instruction stream.
+\paragraph{Participants} Instruction set, bytecode program, compiler/frontend, VM/interpreter, operand stack or registers, and host/native functions exposed to scripts.
+\paragraph{Runtime Collaboration} The VM fetches an opcode, decodes operands, performs the operation, updates its stack/registers, and advances or branches the instruction pointer until completion/yield. Host calls cross a controlled boundary into engine services.
+\paragraph{Implementation Sketch} A compact modern C++ sketch follows.
+\begin{lstlisting}
+enum class Op : std::uint8_t { Push, Add, Damage, Halt };
+
+class VM {
+public:
+    void run(std::span<const std::uint8_t> code) {
+        std::size_t ip = 0;
+        while (ip < code.size()) {
+            switch (static_cast<Op>(code[ip++])) {
+            case Op::Push: stack_.push_back(code[ip++]); break;
+            case Op::Add: {
+                int b = pop(), a = pop(); stack_.push_back(a + b); break;
+            }
+            case Op::Damage: host_.damage(pop()); break;
+            case Op::Halt: return;
+            }
+        }
+    }
+private:
+    int pop();
+    std::vector<int> stack_;
+    ScriptHost& host_;
+};
+\end{lstlisting}
+\paragraph{When to Use} Use it when there is substantial behavior that benefits from data-driven deployment, rapid iteration, deterministic execution, validation, or sandboxing and a constrained domain-specific instruction set can express it.
+\paragraph{When Not to Use} Prefer native code for performance-critical inner loops and a mature embedded scripting language when general language features, libraries, debugger support, garbage collection, or broad tooling are required.
+\paragraph{Design Decisions} Stack versus register VM; fixed versus variable-width instructions; direct threading versus switch dispatch; host API surface; validation; yields/coroutines; deterministic numeric types; bytecode versioning; and whether to build or embed a scripting frontend.
+\paragraph{Consequences}
+\begin{description}[leftmargin=2.7cm,style=nextline]
+\item[Benefits] Behavior becomes loadable data, can be validated/sandboxed, can iterate without rebuilding the engine, and can be made deterministic and portable.
+\item[Costs] VM implementation, compiler/frontend, debugging, profiling, serialization, and compatibility all become maintained subsystems.
+\item[Risks] Feature creep turns a tiny VM into an ad-hoc language; unsafe host bindings break the sandbox; malformed bytecode crashes the interpreter if not validated; instruction changes break old content.
+\end{description}
+\paragraph{Performance Characteristics} Interpreter dispatch and stack traffic are slower than native code. Compact linear bytecode can still be cache-friendly. Hot paths can use specialized opcodes, batching, or JIT/AOT compilation only if complexity is justified.
+\paragraph{Memory Characteristics} Bytecode is typically dense. VM stacks, call frames, constants, and debug metadata add runtime storage; many concurrent scripts multiply per-instance interpreter state.
+\paragraph{Concurrency Considerations} Independent VMs can run on worker threads if host calls are thread-safe. Deterministic simulations should restrict nondeterministic APIs and schedule observable effects at controlled points.
+\paragraph{Game-Engine Applications} Ability logic, dialogue/quest systems, mod scripting, cutscene logic, deterministic rule execution, shader-like domain programs, and safe user-generated content.
+\paragraph{Common Failure Modes} Designing bytecode before defining the authoring workflow, exposing unrestricted engine pointers, omitting validation/versioning, growing the instruction set without semantics discipline, and interpreting hot numerical loops unnecessarily.
+\paragraph{Related Patterns} Update Method can resume bytecode programs each frame; State may be encoded by scripts; Command can expose safe host operations; Service Locator should generally not be handed wholesale to scripts because it defeats sandboxing.
+
+\begin{patternsummary}{Bytecode -- Summary}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.25\linewidth}X@{}}
+Intent & Encode behavior as VM instructions. \\
+Primary problem & Need flexible, safer behavior outside native engine code. \\
+Best fit & Domain scripting with a constrained, controlled runtime. \\
+Main benefit & Data-driven, sandboxable, portable behavior. \\
+Primary cost & VM, tooling, and language-maintenance complexity. \\
+Closely related & Update Method, State, Command \\
+\end{tabularx}
+\end{patternsummary}
+
+\subsection{Subclass Sandbox}\label{pat:subclass-sandbox}
+\paragraph{Classification} \textbf{Category:} Behavioral. \textbf{Architectural concerns:} inheritance, extension surface, behavior reuse, coupling control.
+\paragraph{Intent} Let derived classes define high-level behavior using a protected vocabulary of safe operations supplied by the base class.
+\paragraph{Problem} Many related subclasses need to interact with numerous engine subsystems. Allowing each subclass direct access spreads coupling; duplicating helper code repeats policy and makes engine evolution expensive.
+\paragraph{Context} Abilities, gameplay effects, tools, scripted C++ behaviors, platform-specific specializations, or framework hooks where a stable extension surface is valuable.
+\paragraph{Forces} The base class should expose enough primitives to be expressive without becoming a god object. Inheritance provides convenience but tightly couples subclasses to the base-class contract and can suffer the brittle-base-class problem.
+\paragraph{Structure} The base class declares a sandbox method to be implemented by subclasses and provides protected helper operations. Subclasses compose those operations to implement behavior without directly depending on the underlying services.
+\paragraph{Participants} Base/sandbox class, concrete subclasses, protected primitive operations, and engine services hidden behind those primitives.
+\paragraph{Runtime Collaboration} Framework code invokes the subclass sandbox method. The subclass calls protected primitives; the base class translates them into operations on engine systems and enforces shared policy.
+\paragraph{Implementation Sketch} A compact modern C++ sketch follows.
+\begin{lstlisting}
+class Ability {
+public:
+    virtual ~Ability() = default;
+    virtual void activate() = 0;
+protected:
+    void playSound(SoundId id) { audio_.play(id); }
+    void spawnEffect(EffectId id) { effects_.spawn(id); }
+    void applyDamage(EntityId e, int amount) { combat_.damage(e, amount); }
+
+    Ability(Audio& a, Effects& f, Combat& c)
+        : audio_(a), effects_(f), combat_(c) {}
+private:
+    Audio& audio_;
+    Effects& effects_;
+    Combat& combat_;
+};
+\end{lstlisting}
+\paragraph{When to Use} Use it when there is a stable family of subclasses, the base can provide nearly all operations subclasses need, behavior overlaps across subclasses, and shielding subclasses from the wider engine is valuable.
+\paragraph{When Not to Use} Prefer composition when the extension set is open-ended, subclasses need unrelated service combinations, or the base class is already accumulating many unrelated responsibilities.
+\paragraph{Design Decisions} What primitives belong in the base; protected methods versus injected helper objects; whether helpers are thin or enforce policy; base constructor dependencies; and whether a Template Method, Component composition, or scripting surface would be clearer.
+\paragraph{Consequences}
+\begin{description}[leftmargin=2.7cm,style=nextline]
+\item[Benefits] Keeps derived behavior concise, centralizes cross-engine dependencies, and provides a controlled extension API.
+\item[Costs] Strengthens inheritance coupling and makes the base class responsible for a broad support surface.
+\item[Risks] Brittle base class, uncontrolled growth of protected methods, hidden dependencies through base helpers, and deep inheritance hierarchies.
+\end{description}
+\paragraph{Performance Characteristics} Protected helper calls are often statically bound/inlinable. Cost depends on the underlying service operations, not the pattern itself.
+\paragraph{Memory Characteristics} Little inherent overhead beyond base-class fields. If the base stores references to many services, every subclass instance may carry those references unless they are shared elsewhere.
+\paragraph{Concurrency Considerations} The base operations define thread-safety expectations. A sandbox is valuable for enforcing that certain operations are deferred to thread-safe command queues rather than called directly.
+\paragraph{Game-Engine Applications} Gameplay ability classes, editor tools, platform adapters, special effects behaviors, AI action classes, and engine plugin points with a narrow protected API.
+\paragraph{Common Failure Modes} Adding a new protected helper for every subclass request, letting subclasses bypass the sandbox, mixing unrelated domains in the base, and using inheritance where independent reusable components are needed.
+\paragraph{Related Patterns} Template Method reverses which level defines the high-level algorithm; Component can extract swollen helper responsibilities; Service Locator is sometimes used by the base but can reintroduce hidden dependencies; Update Method is often the sandbox method.
+
+\begin{patternsummary}{Subclass Sandbox -- Summary}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.25\linewidth}X@{}}
+Intent & Give subclasses a controlled vocabulary for behavior. \\
+Primary problem & Derived classes otherwise couple directly to many engine systems. \\
+Best fit & Stable extension hierarchies with shared primitive operations. \\
+Main benefit & Contained coupling and reusable high-level helpers. \\
+Primary cost & Brittle-base-class and inheritance coupling. \\
+Closely related & Component, Service Locator, Update Method \\
+\end{tabularx}
+\end{patternsummary}
+
+\subsection{Type Object}\label{pat:type-object}
+\paragraph{Classification} \textbf{Category:} Behavioral. \textbf{Architectural concerns:} runtime typing, data-driven content, shared invariant data, extensibility.
+\paragraph{Intent} Move logical type definitions from the programming language into runtime objects so new kinds can be added or changed as data without creating new compiled subclasses.
+\paragraph{Problem} A subclass per enemy, item, or ability type hard-codes content into the executable and requires recompilation. Designers often need many variants whose differences are mostly data and shared behavior.
+\paragraph{Context} Enemy breeds, item archetypes, weapon definitions, card types, abilities, status effects, and downloadable or modded content.
+\paragraph{Forces} Type definitions gain runtime flexibility but lose compiler-enforced type structure. Definitions need lifecycle management, identifiers, validation, inheritance/composition rules, and a way to attach behavior without devolving into an ad-hoc scripting language.
+\paragraph{Structure} A typed instance stores mutable per-instance data plus a reference to a Type Object. The Type Object stores invariant/shared data and possibly behavior hooks. Multiple instances referencing the same Type Object behave as the same logical type.
+\paragraph{Participants} Type Object/archetype, typed runtime instance, registry/loader, and optional parent type for inheritance/defaulting.
+\paragraph{Runtime Collaboration} Content definitions are loaded into type objects. New instances bind to a type object and initialize instance state from it. During gameplay, the instance delegates type-level queries or behavior to that definition.
+\paragraph{Implementation Sketch} A compact modern C++ sketch follows.
+\begin{lstlisting}
+struct MonsterType {
+    std::string name;
+    int startingHealth{};
+    AttackId attack{};
+};
+
+class Monster {
+public:
+    explicit Monster(std::shared_ptr<const MonsterType> type)
+        : type_(std::move(type)), health_(type_->startingHealth) {}
+    AttackId attack() const noexcept { return type_->attack; }
+private:
+    std::shared_ptr<const MonsterType> type_;
+    int health_;
+};
+\end{lstlisting}
+\paragraph{When to Use} Use it when the set of logical types is large, data-driven, downloadable, moddable, or frequently tuned, and the distinctions do not require a unique compiled class for every variant.
+\paragraph{When Not to Use} Keep language-level types when variants have fundamentally different invariants, algorithms, ownership, or performance layouts that data definitions cannot express cleanly.
+\paragraph{Design Decisions} Flat definitions versus inheritance/default chains; immutable definitions versus hot-reloadable versions; data-only versus behavior callbacks/scripts; ID/handle strategy; registry lifetime; and how missing or cyclic parent definitions are validated.
+\paragraph{Consequences}
+\begin{description}[leftmargin=2.7cm,style=nextline]
+\item[Benefits] Lets content define new logical types without code changes, centralizes shared invariant data, and avoids enormous subclass hierarchies.
+\item[Costs] Requires runtime bookkeeping, validation, type-definition lifetime management, and explicit indirection from instance to type.
+\item[Risks] Recreating a complex inheritance language in data, dangling type references during reload, unvalidated content producing invalid instances, and pushing too much behavior into unstructured data.
+\end{description}
+\paragraph{Performance Characteristics} Type lookup is O(1) with direct handles. Shared definitions improve memory footprint; scattered type objects can add pointer chasing. Stable numeric IDs can enable compact tables and cache-friendly lookup.
+\paragraph{Memory Characteristics} Shared type data is stored once per logical kind, while mutable state remains per instance. This often overlaps with Flyweight but with a semantic focus on type definition rather than optimization alone.
+\paragraph{Concurrency Considerations} Immutable type definitions are safe to read broadly. Hot reload should publish new versions atomically and decide whether existing instances migrate or retain the old definition.
+\paragraph{Game-Engine Applications} Monster/item archetypes, data-driven weapons, status-effect definitions, cards, abilities, recipes, prefab metadata, downloadable content.
+\paragraph{Common Failure Modes} Encoding every behavior difference as flags in a type record, uncontrolled inheritance chains, missing schema validation, and conflating type identity with mutable instance state.
+\paragraph{Related Patterns} Flyweight shares invariant data for efficiency; Prototype copies exemplars instead of referencing a shared type definition; State represents temporary mode rather than enduring logical type.
+
+\begin{patternsummary}{Type Object -- Summary}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.25\linewidth}X@{}}
+Intent & Represent logical types as runtime data objects. \\
+Primary problem & Subclass-per-content-type is too rigid. \\
+Best fit & Data-driven archetypes and downloadable/tunable content. \\
+Main benefit & Add or tune types without recompiling. \\
+Primary cost & Runtime bookkeeping and weaker compiler guarantees. \\
+Closely related & Flyweight, Prototype, State \\
+\end{tabularx}
+\end{patternsummary}
+
+\section{Decoupling Patterns}\label{sec:decoupling}
+These patterns reduce dependencies between domains, senders and receivers, or service consumers and providers. Their benefits must be weighed against hidden control flow and runtime wiring.
+
+\subsection{Component}\label{pat:component}
+\paragraph{Classification} \textbf{Category:} Decoupling. \textbf{Architectural concerns:} entity decomposition, composition, domain isolation, lifecycle.
+\paragraph{Intent} Split a multi-domain entity into collaborating components so input, physics, rendering, AI, audio, and other concerns can evolve with less direct coupling.
+\paragraph{Problem} A monolithic entity class accumulates unrelated responsibilities and dependencies. Inheritance becomes awkward when game objects need arbitrary combinations of capabilities rather than a single taxonomy.
+\paragraph{Context} Character and world entities that simultaneously participate in multiple engine domains and share capabilities in different combinations.
+\paragraph{Forces} Composition improves isolation and reuse but creates wiring, ownership, inter-component communication, and memory-layout questions. A traditional object component model is not automatically a data-oriented ECS.
+\paragraph{Structure} A thin entity/container owns or references domain components. Each component implements one concern and communicates through explicit entity state, messages, mediator APIs, or narrow references.
+\paragraph{Participants} Entity/container, domain component interfaces or types, concrete components, composition/creation logic, and optional message/mediator mechanism.
+\paragraph{Runtime Collaboration} Entity construction assembles the required component set. Engine phases call relevant components or systems. Components collaborate through explicit channels rather than reaching arbitrarily into each other.
+\paragraph{Implementation Sketch} A compact modern C++ sketch follows.
+\begin{lstlisting}
+struct PhysicsComponent { void update(Transform&, float dt); };
+struct GraphicsComponent { void draw(const Transform&) const; };
+
+class GameObject {
+public:
+    void update(float dt) { physics_.update(transform_, dt); }
+    void draw() const { graphics_.draw(transform_); }
+private:
+    Transform transform_{};
+    PhysicsComponent physics_{};
+    GraphicsComponent graphics_{};
+};
+\end{lstlisting}
+\paragraph{When to Use} Use it when one class spans multiple domains, is becoming difficult to maintain, or object variants need mix-and-match capabilities that inheritance cannot express precisely.
+\paragraph{When Not to Use} Do not decompose a small cohesive object into a web of micro-components. If the primary requirement is high-volume data-oriented iteration, adopt an ECS/storage architecture deliberately instead of assuming object composition alone provides it.
+\paragraph{Design Decisions} Owned objects versus handles; fixed members versus dynamic component maps; direct component references versus messages; creation/configuration format; update ownership; and transition from object components to table/SoA ECS storage.
+\paragraph{Consequences}
+\begin{description}[leftmargin=2.7cm,style=nextline]
+\item[Benefits] Improves domain separation, composition reuse, testability, and flexibility of entity capability combinations.
+\item[Costs] More objects/handles, construction and wiring logic, communication protocols, and potential indirection.
+\item[Risks] Replacing one god object with a hidden web of tightly coupled components, circular component dependencies, excessive runtime lookup, and mislabeling an object-component model as an ECS.
+\end{description}
+\paragraph{Performance Characteristics} Pointer-rich component graphs can hurt cache locality; component separation can also enable hot data to be packed by domain. ECS designs take the latter further by storing same-type components contiguously and iterating systems over them.
+\paragraph{Memory Characteristics} Per-component allocations and vtables add overhead in naive designs. Inline fixed components, arenas, pools, or ECS columns can improve density. Shared resources should remain handles rather than duplicated component state.
+\paragraph{Concurrency Considerations} Domain separation creates useful job boundaries if component access sets are known. Avoid simultaneous mutation of shared entity state; schedule systems by read/write dependencies.
+\paragraph{Game-Engine Applications} Actor decomposition, vehicles, weapons, interactive props, editor entities, camera rigs, UI widgets, and transition paths toward ECS.
+\paragraph{Common Failure Modes} Components calling each other arbitrarily, dynamic string-based lookup in hot loops, one component per tiny field, unclear lifecycle order, and storing shared assets independently in every component.
+\paragraph{Related Patterns} Update Method often drives components in object-oriented designs; Data Locality motivates grouping components by type; Event Queue can decouple component communication; Type Object can describe component composition as data.
+
+\begin{patternsummary}{Component -- Summary}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.25\linewidth}X@{}}
+Intent & Compose entities from domain-focused parts. \\
+Primary problem & Monolithic entity classes couple unrelated concerns. \\
+Best fit & Entities spanning multiple reusable capabilities. \\
+Main benefit & Domain isolation and composition flexibility. \\
+Primary cost & Wiring, lifecycle, and indirection complexity. \\
+Closely related & Update Method, Data Locality, Event Queue, Type Object \\
+\end{tabularx}
+\end{patternsummary}
+
+\subsection{Event Queue}\label{pat:event-queue}
+\paragraph{Classification} \textbf{Category:} Decoupling. \textbf{Architectural concerns:} asynchronous communication, temporal decoupling, messaging, backpressure.
+\paragraph{Intent} Decouple when a message is produced from when it is processed by placing notifications or requests in a queue consumed later.
+\paragraph{Problem} A producer may need to publish work at a time that is inconvenient or unsafe for the consumer, while the consumer needs control over when and how much work it processes. Direct calls and synchronous observers couple both sides in time.
+\paragraph{Context} Audio requests, gameplay events crossing phase boundaries, job submission, cross-thread messages, telemetry, network receive queues, and deferred UI or scripting events.
+\paragraph{Forces} The queue provides temporal decoupling but loses immediate return values and introduces latency, ordering, storage, stale-data, and overload concerns. Payloads must remain valid until consumption.
+\paragraph{Structure} Producers enqueue messages into a FIFO or priority structure. A consumer drains or processes items at controlled points. Routing may be direct to one consumer or fan out after dequeue.
+\paragraph{Participants} Producer, event/message value, queue/buffer, consumer/dispatcher, and optional subscribers or routing table.
+\paragraph{Runtime Collaboration} Producer packages all data required later and enqueues it. Control returns immediately. At a later phase/thread/frame, the consumer removes messages, validates them against current state if necessary, and handles or routes them.
+\paragraph{Implementation Sketch} A compact modern C++ sketch follows.
+\begin{lstlisting}
+struct Event {
+    EventType type{};
+    EntityId entity{};
+    int value{};
+};
+
+class EventQueue {
+public:
+    void push(Event e) { events_.push_back(e); }
+    void drain(EventHandler& handler) {
+        auto pending = std::move(events_);
+        events_.clear();
+        for (const auto& e : pending) handler.handle(e);
+    }
+private:
+    std::vector<Event> events_;
+};
+\end{lstlisting}
+\paragraph{When to Use} Use it when senders and receivers should be decoupled in time, the receiver should pull at a safe point, or events must cross thread/phase boundaries.
+\paragraph{When Not to Use} Use Observer or direct calls when only static coupling is the problem and immediate handling/return values are needed. A queue adds architecture and should not be introduced merely to look decoupled.
+\paragraph{Design Decisions} FIFO, priority, ring buffer, MPSC/MPMC structure; bounded versus unbounded; copy versus move payload; ID versus pointer references; coalescing/deduplication; overflow/backpressure policy; and deterministic drain points.
+\paragraph{Consequences}
+\begin{description}[leftmargin=2.7cm,style=nextline]
+\item[Benefits] Temporal decoupling, receiver-controlled batching, safe phase handoff, and natural producer/consumer architecture.
+\item[Costs] Latency, queue memory, payload copying, routing infrastructure, and more indirect control flow.
+\item[Risks] Unbounded growth, stale object references, reordering bugs, event storms, silent drops, and a single global queue becoming a disguised global variable.
+\end{description}
+\paragraph{Performance Characteristics} Enqueue/dequeue can be O(1). Batching can improve locality and amortize synchronization. Lock-free structures are not automatically faster; choose them only after measuring contention and memory-order cost.
+\paragraph{Memory Characteristics} Queued events must own or safely reference their payload until consumed. Bounded ring buffers provide predictable memory but require explicit overflow policy.
+\paragraph{Concurrency Considerations} This pattern is a common cross-thread boundary. Use an appropriate SPSC/MPSC/MPMC queue, document producer and consumer ownership, and publish immutable payloads or handles.
+\paragraph{Game-Engine Applications} Audio event submission, render command queues, network ingress, telemetry, gameplay phase changes, scripting messages, asynchronous resource completions.
+\paragraph{Common Failure Modes} Putting raw pointers to ephemeral objects in delayed events, assuming immediate world state still matches the event, using one global bus for every subsystem, and failing to define overload behavior.
+\paragraph{Related Patterns} Observer decouples sender from receiver but remains synchronous; Command can be the queued payload when the message represents requested work; Game Loop provides deterministic drain points.
+
+\begin{patternsummary}{Event Queue -- Summary}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.25\linewidth}X@{}}
+Intent & Buffer messages so processing can occur later. \\
+Primary problem & Producer and consumer should not be synchronized in time. \\
+Best fit & Phase/thread handoff and asynchronous requests. \\
+Main benefit & Temporal decoupling and batching. \\
+Primary cost & Latency, storage, and overload policy. \\
+Closely related & Observer, Command, Game Loop \\
+\end{tabularx}
+\end{patternsummary}
+
+\subsection{Service Locator}\label{pat:service-locator}
+\paragraph{Classification} \textbf{Category:} Decoupling. \textbf{Architectural concerns:} service access, indirection, runtime binding, global scope.
+\paragraph{Intent} Provide access to a service through an abstract contract while hiding the concrete provider and lookup mechanism.
+\paragraph{Problem} Widely used facilities such as logging, audio, or platform services may be tedious to thread through many APIs. Direct construction couples clients to implementations, while global singletons make substitution difficult.
+\paragraph{Context} Ambient engine facilities whose use is broad enough that explicit parameter plumbing would dominate unrelated APIs, especially when providers vary by platform or mode.
+\paragraph{Forces} Lookup improves configurability but hides dependencies and defers wiring errors to runtime. Global scope can recreate Singleton problems. Failure policy, default/null providers, test overrides, and service lifetime must be deliberate.
+\paragraph{Structure} Clients ask a locator for an abstract service. The locator stores or discovers a concrete provider. Registration/composition happens during initialization; clients depend only on the service interface.
+\paragraph{Participants} Service interface, concrete provider, locator/registry, composition code, optional Null Service, and consumers.
+\paragraph{Runtime Collaboration} Startup registers a provider. A consumer requests the interface from the locator and invokes it. Provider replacement can occur for tests or platform selection if lifetime rules permit.
+\paragraph{Implementation Sketch} A compact modern C++ sketch follows.
+\begin{lstlisting}
+struct Audio {
+    virtual ~Audio() = default;
+    virtual void play(SoundId) = 0;
+};
+
+class Services {
+public:
+    static void provide(Audio& audio) noexcept { audio_ = &audio; }
+    static Audio& audio() { return *audio_; }
+private:
+    inline static Audio* audio_ = nullptr;
+};
+\end{lstlisting}
+\paragraph{When to Use} Use sparingly for genuinely ambient facilities where explicit injection through many unrelated layers adds more noise than clarity and provider substitution is valuable.
+\paragraph{When Not to Use} Prefer constructor/function injection for ordinary dependencies, especially domain-local services. Do not expose world, gameplay, or mutable scene state globally through a locator.
+\paragraph{Design Decisions} Global versus scoped locator; typed registry versus dedicated accessors; registration timing; null/default service; missing-service failure behavior; provider replacement; and whether only a narrow subsystem hierarchy can access the locator.
+\paragraph{Consequences}
+\begin{description}[leftmargin=2.7cm,style=nextline]
+\item[Benefits] Decouples clients from concrete providers and centralizes provider selection or replacement.
+\item[Costs] Dependencies are less visible in signatures and resolution moves to runtime.
+\item[Risks] Hidden global coupling, service availability failures, arbitrary use from unsafe contexts, test contamination, and turning the locator into a dumping ground.
+\end{description}
+\paragraph{Performance Characteristics} Lookup can be a direct pointer access or hash/type lookup. In hot loops cache the resolved service locally rather than repeatedly performing dynamic lookup.
+\paragraph{Memory Characteristics} Registry storage is small; provider lifetime typically dominates. Null services can avoid repeated optional checks at call sites.
+\paragraph{Concurrency Considerations} Registration is usually single-threaded during startup. After startup, immutable provider bindings simplify concurrency. Hot replacement needs atomic publication and clear lifetime ownership.
+\paragraph{Game-Engine Applications} Logging, diagnostics, audio device access, platform services, crash reporting, narrow tool services, and legacy dependency seams.
+\paragraph{Common Failure Modes} Using locator access everywhere instead of explicit dependencies, allowing arbitrary late mutation of providers, returning null without a policy, and storing per-world services in a process-global registry.
+\paragraph{Related Patterns} Singleton provides a global instance but not provider abstraction; dependency injection makes dependencies explicit and is usually preferable; Subclass Sandbox may confine service access to a base class.
+
+\begin{patternsummary}{Service Locator -- Summary}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.25\linewidth}X@{}}
+Intent & Resolve an abstract service without naming its provider. \\
+Primary problem & Broad service plumbing or provider coupling. \\
+Best fit & Sparse ambient infrastructure services. \\
+Main benefit & Provider substitution and centralized binding. \\
+Primary cost & Hidden dependencies and runtime wiring. \\
+Closely related & Singleton, Subclass Sandbox, dependency injection \\
+\end{tabularx}
+\end{patternsummary}
+
+\section{Optimization Patterns}\label{sec:optimization}
+These patterns attack common mid-level performance costs: cache misses, redundant work, allocation churn, and spatial search. They should be driven by measured constraints.
+
+\subsection{Data Locality}\label{pat:data-locality}
+\paragraph{Classification} \textbf{Category:} Optimization. \textbf{Architectural concerns:} CPU cache, memory layout, hot/cold data, throughput.
+\paragraph{Intent} Arrange data in memory in the order and density in which the CPU processes it so cache lines deliver useful work instead of pointer-chasing misses.
+\paragraph{Problem} Processor throughput can be limited by memory latency rather than arithmetic. Object graphs with scattered allocations, virtual dispatch, and cold fields force the CPU to fetch cache lines containing little immediately useful data.
+\paragraph{Context} Large homogeneous populations, animation transforms, particles, physics bodies, ECS components, visibility sets, and any measured hot loop dominated by memory stalls.
+\paragraph{Forces} Cache-friendly storage often reduces abstraction, pointer stability, and object-oriented flexibility. Reorganizing data can increase code complexity and make individual objects less convenient to manipulate.
+\paragraph{Structure} Pack hot fields contiguously, separate cold data, process arrays sequentially, and group by operation/type. Use AoS when most fields are consumed together and SoA when a loop touches only selected fields.
+\paragraph{Participants} Hot data arrays/chunks, systems that stream through them, cold/rarely used storage, and profiling tools that identify cache misses.
+\paragraph{Runtime Collaboration} A system iterates contiguous elements in predictable order. Hardware prefetchers and cache lines bring adjacent values into fast memory, reducing stalls compared with following scattered object pointers.
+\paragraph{Implementation Sketch} A compact modern C++ sketch follows.
+\begin{lstlisting}
+struct Positions {
+    std::vector<float> x, y, z; // structure of arrays
+};
+
+void integrate(Positions& p, const Velocities& v, float dt) {
+    const auto n = p.x.size();
+    for (std::size_t i = 0; i < n; ++i) {
+        p.x[i] += v.x[i] * dt;
+        p.y[i] += v.y[i] * dt;
+        p.z[i] += v.z[i] * dt;
+    }
+}
+\end{lstlisting}
+\paragraph{When to Use} Use it after profiling shows memory/cache behavior is a meaningful bottleneck, especially in large repeated loops. Consider locality during architecture design, but avoid invasive rewrites without evidence.
+\paragraph{When Not to Use} Do not flatten infrequently used, low-volume code merely for theoretical cache wins. If work is compute-bound, I/O-bound, or dominated by synchronization, data layout changes may not help.
+\paragraph{Design Decisions} AoS versus SoA/AoSoA; chunk size; hot/cold split; stable IDs versus pointers; compaction policy; alignment; iteration order; and whether polymorphism is replaced by type sorting, variants, or function tables.
+\paragraph{Consequences}
+\begin{description}[leftmargin=2.7cm,style=nextline]
+\item[Benefits] Reduces cache misses and memory bandwidth waste, improves sequential throughput, and often enables SIMD/vectorization and efficient job batching.
+\item[Costs] May sacrifice encapsulation, pointer stability, inheritance-based polymorphism, and convenience of per-object ownership.
+\item[Risks] Optimizing the wrong path, over-specializing layout, introducing complex indirection tables, and making code harder to change for negligible gain.
+\end{description}
+\paragraph{Performance Characteristics} This pattern directly targets constant factors caused by the memory hierarchy. Complexity class usually does not change, but real throughput can improve substantially when fewer cache lines and page translations are touched.
+\paragraph{Memory Characteristics} Dense arrays reduce allocator metadata and pointer overhead. SoA may increase padding efficiency for selected fields, while spare-capacity and chunking strategies trade memory for stable growth.
+\paragraph{Concurrency Considerations} Contiguous partitions are easy to split into jobs, but false sharing occurs when multiple threads write neighboring data on the same cache line. Partition by chunks and separate frequently written per-thread data.
+\paragraph{Game-Engine Applications} ECS component stores, particle updates, skeletal transforms, physics broadphase data, render instance arrays, audio mixing buffers, navigation nodes.
+\paragraph{Common Failure Modes} Assuming vector-of-pointers is contiguous data, mixing hot and cold fields, random iteration over otherwise packed arrays, and ignoring profiler evidence after a layout rewrite.
+\paragraph{Related Patterns} Component can enable domain-specific packing; Object Pool can provide contiguous storage; Spatial Partition changes which objects are visited; Flyweight reduces duplicated heavy data but does not guarantee locality.
+
+\begin{patternsummary}{Data Locality -- Summary}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.25\linewidth}X@{}}
+Intent & Put hot data where the CPU will fetch it efficiently. \\
+Primary problem & Cache misses and pointer chasing dominate hot loops. \\
+Best fit & Large measured throughput loops over similar data. \\
+Main benefit & Higher cache/bandwidth efficiency. \\
+Primary cost & Reduced abstraction and layout flexibility. \\
+Closely related & Component, Object Pool, Spatial Partition, Flyweight \\
+\end{tabularx}
+\end{patternsummary}
+
+\subsection{Dirty Flag}\label{pat:dirty-flag}
+\paragraph{Classification} \textbf{Category:} Optimization. \textbf{Architectural concerns:} deferred recomputation, caching, synchronization, invalidation.
+\paragraph{Intent} Track when expensive derived data is stale so recomputation or synchronization occurs only when the result is actually needed.
+\paragraph{Problem} Primary state may change repeatedly while expensive derived state is recomputed after every edit even though intermediate results are never consumed. Eager work wastes CPU, I/O, or network bandwidth.
+\paragraph{Context} World transforms in scene graphs, UI layout, cached bounds, navigation data, shadow/visibility metadata, serialized save state, or synchronization to another system.
+\paragraph{Forces} Deferral saves repeated work only when primary data changes more often than derived data is consumed. Delaying too long can create latency spikes or durability risk. Invalidation must propagate correctly through dependencies.
+\paragraph{Structure} Primary data has associated derived/cached data and a dirty bit or generation counter. Mutations mark the result stale. On read/use, the system recomputes only if stale and then clears or advances the dirty marker.
+\paragraph{Participants} Primary data, derived data/cache, dirty flag or generation, mutators that invalidate, and readers that ensure freshness.
+\paragraph{Runtime Collaboration} A mutation marks dirty and may propagate invalidation to dependents. Multiple mutations can occur with no recomputation. The next consumer checks dirty, rebuilds derived data once, clears the marker, and uses the fresh result.
+\paragraph{Implementation Sketch} A compact modern C++ sketch follows.
+\begin{lstlisting}
+class TransformNode {
+public:
+    void setLocal(Mat4 m) { local_ = m; markDirty(); }
+    const Mat4& world() {
+        if (dirty_) {
+            world_ = parent_ ? parent_->world() * local_ : local_;
+            dirty_ = false;
+        }
+        return world_;
+    }
+private:
+    void markDirty() { dirty_ = true; /* propagate to children */ }
+    TransformNode* parent_{};
+    Mat4 local_{}, world_{};
+    bool dirty_{true};
+};
+\end{lstlisting}
+\paragraph{When to Use} Use it when deriving or synchronizing state is expensive, primary data may change multiple times before use, and incremental maintenance is difficult or more complex than deferred recomputation.
+\paragraph{When Not to Use} Maintain a running total or other incremental result when updates are cheap and easy. Do not add dirty tracking if derived data is needed after every mutation anyway.
+\paragraph{Design Decisions} Boolean flag versus generation counters; eager propagation versus lazy ancestor checks; per-object versus batch dirty sets; when to force refresh; and whether background/preemptive recomputation is needed to avoid visible spikes.
+\paragraph{Consequences}
+\begin{description}[leftmargin=2.7cm,style=nextline]
+\item[Benefits] Coalesces repeated changes into one expensive operation and can defer work out of paths where the result is never used.
+\item[Costs] Adds invalidation state and makes freshness conditional rather than immediate.
+\item[Risks] Forgetting to mark dirty, clearing too early, invalidation storms in hierarchies, deferred latency spikes, and losing unsynchronized durable data on crash.
+\end{description}
+\paragraph{Performance Characteristics} Best case replaces many recomputations with one. Worst case adds branch/bookkeeping overhead with no savings. Batch dirty sets and generation counters can be more scalable than recursively propagating booleans.
+\paragraph{Memory Characteristics} Usually one bit/byte or generation value plus the cached derived result. Large systems may maintain dirty lists/bitsets to find stale entries without scanning all objects.
+\paragraph{Concurrency Considerations} Concurrent readers/writers require a freshness protocol; a plain bool is not sufficient across threads. Use phase ownership, atomics with versioning, or rebuild immutable snapshots and publish them safely.
+\paragraph{Game-Engine Applications} Scene transforms, UI layout, cached bounds, render-state derivation, asset rebuilds, save/sync queues, physics sleeping/activity markers.
+\paragraph{Common Failure Modes} Missing an invalidation path, using dirty flags where incremental updates are trivial, allowing a long chain of deferred work to explode on first access, and mixing dirty state across thread domains without synchronization.
+\paragraph{Related Patterns} Double Buffer can publish recomputed snapshots; Data Locality can store dirty bits as compact bitsets; Spatial Partition may need dirty/reinsert logic when objects move.
+
+\begin{patternsummary}{Dirty Flag -- Summary}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.25\linewidth}X@{}}
+Intent & Recompute expensive derived state only when stale data is actually needed. \\
+Primary problem & Eager recomputation repeats work after successive changes. \\
+Best fit & Costly derived data with many invalidations between reads. \\
+Main benefit & Coalesced work and deferred cost. \\
+Primary cost & Invalidation bookkeeping and freshness complexity. \\
+Closely related & Double Buffer, Data Locality, Spatial Partition \\
+\end{tabularx}
+\end{patternsummary}
+
+\subsection{Object Pool}\label{pat:object-pool}
+\paragraph{Classification} \textbf{Category:} Optimization. \textbf{Architectural concerns:} allocation, lifetime, fragmentation, reuse, capacity.
+\paragraph{Intent} Reuse a preallocated set of object slots so frequent create/destroy cycles avoid repeated general-purpose allocation and resource acquisition.
+\paragraph{Problem} High-frequency short-lived objects such as particles and projectiles can cause allocator overhead, unpredictable latency, and fragmentation, especially on constrained platforms or when each object owns expensive reusable resources.
+\paragraph{Context} Particles, bullets, decals, transient audio voices, network buffers, effects, temporary gameplay entities, and fixed-capacity console/mobile workloads.
+\paragraph{Forces} A fixed pool offers predictable allocation but requires capacity planning, reset discipline, and an overflow policy. Modern allocators may already make general allocation cheap enough that a custom pool is unnecessary.
+\paragraph{Structure} The pool owns N reusable slots. Acquisition finds a free slot and initializes it; release resets the slot and marks it free. Free-list, bitset, generational handle, or intrusive free-chain implementations are common.
+\paragraph{Participants} Pool/storage, object slot, free-slot tracking, acquire/release operations, and optional handle generation for stale-reference detection.
+\paragraph{Runtime Collaboration} Pool storage is allocated up front or by chunks. Spawn acquires a free slot and constructs/resets state. Despawn runs cleanup and returns the slot to the free structure for later reuse.
+\paragraph{Implementation Sketch} A compact modern C++ sketch follows.
+\begin{lstlisting}
+template <class T, std::size_t N>
+class Pool {
+public:
+    template <class... Args>
+    T* acquire(Args&&... args) {
+        if (free_.empty()) return nullptr;
+        auto index = free_.back(); free_.pop_back();
+        T* ptr = std::construct_at(slot(index), std::forward<Args>(args)...);
+        used_[index] = true;
+        return ptr;
+    }
+    void release(T* ptr) {
+        const auto index = indexOf(ptr);
+        std::destroy_at(ptr);
+        used_[index] = false;
+        free_.push_back(index);
+    }
+private:
+    // Fixed storage plus free-list bookkeeping omitted for brevity.
+};
+\end{lstlisting}
+\paragraph{When to Use} Use it when objects are created/destroyed frequently, sizes are similar, allocation latency or fragmentation is measured as a problem, or expensive resources should be reused.
+\paragraph{When Not to Use} Prefer normal allocation or standard polymorphic allocators when churn is low, lifetimes are simple, memory is plentiful, or profiling shows allocation is not significant. Do not pool long-lived objects merely by habit.
+\paragraph{Design Decisions} Fixed versus growable/chunked capacity; free list versus bitset; constructor/destructor versus reset method; handle generation; overflow behavior (fail, grow, recycle oldest, degrade effect); and one pool per type/size class versus general arena.
+\paragraph{Consequences}
+\begin{description}[leftmargin=2.7cm,style=nextline]
+\item[Benefits] Predictable allocation behavior, reduced fragmentation, reusable resources, and potentially better locality when storage is contiguous.
+\item[Costs] Reserved capacity, custom lifetime logic, reset/cleanup code, and capacity tuning.
+\item[Risks] Pool exhaustion, stale references after slot reuse, incomplete reset leaking state, wasting memory on rare peak capacity, and assuming pooling automatically improves cache behavior.
+\end{description}
+\paragraph{Performance Characteristics} Acquire/release can be O(1) with a free list. Benefits are largest when general allocation is expensive or unpredictable. Pools can also improve iteration if active objects are compacted, but a sparse fixed pool may still touch many dead slots.
+\paragraph{Memory Characteristics} Memory is reserved according to capacity, even if demand is temporarily low. Chunked pools trade some predictability for elasticity. Generational handles add small metadata to detect use-after-recycle.
+\paragraph{Concurrency Considerations} Thread-local pools reduce contention. Shared pools need synchronized free structures or lock-free schemes; cross-thread release complicates ownership and cache locality.
+\paragraph{Game-Engine Applications} Particles, projectiles, decals, temporary contacts, audio voices, packet buffers, task nodes, and transient UI effects.
+\paragraph{Common Failure Modes} Choosing capacity from averages rather than peaks, silently recycling gameplay-critical objects, not resetting all fields, handing out raw pointers that survive reuse, and building a custom pool when a standard allocator suffices.
+\paragraph{Related Patterns} Data Locality can organize pool storage for efficient iteration; Flyweight shares immutable state while a pool reuses mutable slots; Update Method commonly iterates active pooled objects.
+
+\begin{patternsummary}{Object Pool -- Summary}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.25\linewidth}X@{}}
+Intent & Reuse storage for frequently recurring objects. \\
+Primary problem & Allocation churn, fragmentation, or expensive acquisition. \\
+Best fit & High-frequency transient objects with predictable size/capacity. \\
+Main benefit & Predictable O(1)-style reuse and reduced allocator churn. \\
+Primary cost & Reserved memory and explicit lifecycle/capacity policy. \\
+Closely related & Data Locality, Flyweight, Update Method \\
+\end{tabularx}
+\end{patternsummary}
+
+\subsection{Spatial Partition}\label{pat:spatial-partition}
+\paragraph{Classification} \textbf{Category:} Optimization. \textbf{Architectural concerns:} spatial queries, collision, visibility, proximity, indexing.
+\paragraph{Intent} Organize objects by position so nearby-object queries avoid scanning the entire world.
+\paragraph{Problem} Naive proximity, collision, influence, or visibility checks examine every object or every pair, producing $O(n)$ or $O(n^2)$ work even though most objects are far apart.
+\paragraph{Context} Collision broadphase, AI neighborhood queries, area-of-effect attacks, streaming, visibility, interest management, and world/editor selection.
+\paragraph{Forces} Indexing trades memory and update cost for faster queries. Moving objects require reinsertion/update; the best structure depends on dimensionality, density, motion, query shapes, and world extent.
+\paragraph{Structure} Objects are stored in a spatial index keyed by position/bounds. Queries traverse only cells/nodes whose regions overlap the requested point, volume, ray, or neighborhood.
+\paragraph{Participants} Spatial index, object bounds/position, insertion/removal/update operations, and query traversal. Concrete indexes include grids, spatial hashes, quadtrees, octrees, BVHs, and k-d trees.
+\paragraph{Runtime Collaboration} Insert each object into the regions/nodes that cover it. When an object moves, update its membership. A query maps the search volume to candidate regions and tests only returned candidates precisely.
+\paragraph{Implementation Sketch} A compact modern C++ sketch follows.
+\begin{lstlisting}
+class UniformGrid {
+public:
+    void insert(EntityId e, Vec2 p) { cells_[cell(p)].push_back(e); }
+
+    template <class F>
+    void forNearby(Vec2 p, F&& visit) const {
+        const Cell c = cell(p);
+        for (Cell n : neighbors(c)) {
+            auto it = cells_.find(n);
+            if (it == cells_.end()) continue;
+            for (EntityId e : it->second) visit(e);
+        }
+    }
+private:
+    Cell cell(Vec2 p) const;
+    std::unordered_map<Cell, std::vector<EntityId>, CellHash> cells_;
+};
+\end{lstlisting}
+\paragraph{When to Use} Use it when many positioned objects are queried often enough that full scans or pairwise checks are a measured bottleneck.
+\paragraph{When Not to Use} Skip the index for small populations or rare queries. If most objects move every frame and the chosen tree is expensive to maintain, a simple grid/hash or even a scan may be faster.
+\paragraph{Design Decisions} Uniform grid versus spatial hash; quadtree/octree for hierarchical space; BVH for bounding-volume queries; k-d tree for point/range queries; static versus dynamic partitions; cell/node size; loose bounds; and update/refit strategy.
+\paragraph{Consequences}
+\begin{description}[leftmargin=2.7cm,style=nextline]
+\item[Benefits] Reduces candidate counts for neighborhood queries, broadphase collision, culling, and interest management.
+\item[Costs] Additional memory, insertion/update logic, and structure-specific tuning.
+\item[Risks] Poor partition parameters causing overloaded cells or deep trees, stale membership after movement, duplicate candidates, pathological distributions, and assuming asymptotic improvement guarantees better constants.
+\end{description}
+\paragraph{Performance Characteristics} The goal is to reduce $O(n)$ or $O(n^2)$ candidate search toward query costs proportional to visited spatial regions and local density. Exact complexity depends on structure and distribution; final narrow-phase tests remain necessary.
+\paragraph{Memory Characteristics} Indexes store nodes/cells and object references, often duplicating references when an object spans multiple regions. Sparse hashes reduce empty-grid storage; trees add node metadata.
+\paragraph{Concurrency Considerations} Read-mostly indexes can be queried in parallel. Dynamic updates need partitioned ownership, double-buffered indexes, refit phases, or locks; mixing arbitrary writes with queries complicates correctness.
+\paragraph{Game-Engine Applications} Physics broadphase, nearby AI agents, projectile targets, visibility/culling, audio attenuation candidates, multiplayer interest management, world streaming, editor selection.
+\paragraph{Common Failure Modes} Choosing a sophisticated tree without profiling workload shape, failing to update moved objects, returning candidates as if they were exact hits, and using one global index for objects with incompatible query patterns.
+\paragraph{Related Patterns} Data Locality governs how cells/nodes and object references are laid out; Dirty Flag can mark moved bounds/index entries for deferred update; Double Buffer can publish a stable read-only spatial snapshot.
+
+\begin{patternsummary}{Spatial Partition -- Summary}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.25\linewidth}X@{}}
+Intent & Index world objects by position for efficient spatial queries. \\
+Primary problem & Full scans/pair checks waste work on distant objects. \\
+Best fit & Large worlds with frequent proximity/collision/visibility queries. \\
+Main benefit & Smaller candidate sets and scalable queries. \\
+Primary cost & Index memory and movement-maintenance cost. \\
+Closely related & Data Locality, Dirty Flag, Double Buffer \\
+\end{tabularx}
+\end{patternsummary}
+
+
+\section{Pattern Selection Guide}\label{sec:selection}
+The following table starts from a concrete engineering symptom. It is a filter, not an instruction to force a pattern into the design.
+
+\begin{longtable}{P{6.3cm}P{3.1cm}P{6.2cm}}
+\toprule
+\textbf{If the problem is...} & \textbf{Consider} & \textbf{Check before adopting}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{If the problem is...} & \textbf{Consider} & \textbf{Check before adopting}\\
+\midrule
+\endhead
+Input actions need rebinding, history, serialization, or replay & Command & Would a callable or direct function already satisfy the need?\\
+Many consumers need an immediate notification from one source & Observer & Are callback lifetime and synchronous cost controlled?\\
+Communication must happen later or across a phase/thread boundary & Event Queue & Is temporal decoupling actually required, and what is the overflow policy?\\
+Behavior changes among discrete modes & State & Is the state space modest and genuinely discrete?\\
+Many instances duplicate expensive immutable data & Flyweight & Can shared data remain immutable and long-lived?\\
+A configured object should create more like itself & Prototype & Are clone/copy semantics safe and explicit?\\
+Content types must be added or tuned without recompilation & Type Object & Are schema validation and runtime type lifetimes defined?\\
+One entity class spans unrelated engine domains & Component & Is the decomposition larger than the wiring overhead it introduces?\\
+Readers must not see a state while it is being incrementally rewritten & Double Buffer & Can the memory cost of another buffer be afforded?\\
+The application needs a controlled simulation cadence & Game Loop & Does the host framework already own the loop?\\
+Many live objects need one slice of behavior per tick & Update Method & Would ECS/system iteration better match the population?\\
+Behavior must be data-driven, sandboxed, and compact & Bytecode & Would an existing scripting runtime avoid building a language toolchain?\\
+Derived data is expensive and often invalidated repeatedly before use & Dirty Flag & Is incremental maintenance simpler?\\
+Allocation churn or fragmentation is measured in a transient population & Object Pool & Is the standard allocator already sufficient?\\
+Cache misses dominate a hot loop & Data Locality & Do profiling counters confirm memory stalls?\\
+Nearby-object queries dominate runtime & Spatial Partition & Is the population large enough and motion pattern suitable for an index?\\
+Many subclasses need the same controlled engine operations & Subclass Sandbox & Is the base class becoming a god object?\\
+Broad infrastructure needs replaceable service access & Service Locator & Can normal dependency injection remain explicit instead?\\
+A truly singular resource needs one owner & Singleton / explicit unique owner & Does uniqueness actually require global accessibility?\\
+\bottomrule
+\end{longtable}
+
+\section{Pattern Relationship Matrix}\label{sec:relationships}
+This sparse matrix records high-value relationships instead of filling every possible pair.
+
+\begin{longtable}{P{2.6cm}P{2.8cm}P{2.6cm}P{6.2cm}}
+\toprule
+\textbf{Pattern A} & \textbf{Relationship} & \textbf{Pattern B} & \textbf{Engineering interpretation}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Pattern A} & \textbf{Relationship} & \textbf{Pattern B} & \textbf{Engineering interpretation}\\
+\midrule
+\endhead
+Command & commonly carried by & Event Queue & The command is requested work; the queue defers when a consumer executes it.\\
+Observer & often confused with & Event Queue & Observer is normally synchronous; Event Queue intentionally separates send and receive time.\\
+Component & enables & Data Locality & Domain separation can be followed by packing same-type component data for hot system iteration.\\
+Component & commonly combined with & Update Method & Object-oriented entities often tick their domain components each frame.\\
+State & conceptually parallels & Type Object & State describes what an object is doing now; Type Object describes the logical kind it broadly is.\\
+Prototype & alternative / complement to & Type Object & Prototype copies an exemplar; Type Object shares a definition referenced by many instances.\\
+Flyweight & overlaps with & Type Object & Both share invariant data; Flyweight is motivated by efficiency, Type Object by runtime typing/flexibility.\\
+Singleton & sibling / alternative to & Service Locator & Both can provide ambient access; Service Locator adds provider abstraction but retains hidden lookup dependencies.\\
+Game Loop & drives & Update Method & The loop establishes cadence; update methods consume one time slice.\\
+Game Loop & publication boundary for & Double Buffer & Frame/tick boundaries are natural points to swap current and next state.\\
+Object Pool & may improve with & Data Locality & Pool storage can be contiguous, though a sparse pool still needs active-set discipline.\\
+Spatial Partition & benefits from & Data Locality & Spatial cells/nodes and candidate lists should be arranged for predictable traversal.\\
+Dirty Flag & commonly applied to & Hierarchical transforms & Parent/local changes invalidate cached world-space derived transforms.\\
+Dirty Flag & can feed & Double Buffer & Dirty items can be rebuilt into a next snapshot before publication.\\
+Command & can trigger & State & Input/network commands often become events interpreted by the current state.\\
+Event Queue & drained by & Game Loop & Processing at a deterministic phase boundary controls temporal semantics.\\
+\bottomrule
+\end{longtable}
+
+\section{Architectural Trade-off Matrix}\label{sec:tradeoffs}
+Ratings are qualitative architectural tendencies, not benchmark results. ``Ctx'' means context-dependent and ``--'' means the dimension is not a primary purpose of the pattern.
+
+\begin{landscape}
+\scriptsize
+\begin{longtable}{P{2.7cm}P{1.7cm}P{1.7cm}P{1.7cm}P{1.7cm}P{1.7cm}P{1.7cm}P{1.7cm}P{1.7cm}}
+\toprule
+\textbf{Pattern} & \textbf{Decouple} & \textbf{Extend} & \textbf{Runtime OH} & \textbf{Memory OH} & \textbf{Complexity} & \textbf{Cache fit} & \textbf{Temporal decouple} & \textbf{Testability}\\
+\midrule
+Command & High & High & Low--Med & Low--Med & Med & Ctx & Med & High\\
+Flyweight & Med & Med & Low & Low & Med & Ctx & -- & Med\\
+Observer & High & High & Med & Low & Med & Ctx & Low & Med\\
+Prototype & Med & High & Ctx & Ctx & Med & Ctx & -- & Med\\
+Singleton & Low & Low & Low & Low & Low--Med & Ctx & -- & Low\\
+State & Med & High & Low & Low--Med & Med & Ctx & -- & High\\
+Double Buffer & Med & Med & Low & High & Med & High & High & Med\\
+Game Loop & Med & Med & Low & Low & High & Ctx & -- & High\\
+Update Method & Med & High & Med & Med & Med & Low--Ctx & -- & High\\
+Bytecode & High & High & High & Med & High & Med & Med & High\\
+Subclass Sandbox & Med & Med & Low & Low & Med & Ctx & -- & Med\\
+Type Object & Med & High & Low & Low & Med & Med & -- & High\\
+Component & High & High & Med & Med & High & Ctx--High & -- & High\\
+Event Queue & High & High & Med & Med & High & Med & High & High\\
+Service Locator & Med & High & Low--Med & Low & Med & Ctx & -- & Low--Med\\
+Data Locality & Low & Low & Low & Low & High & High & -- & Ctx\\
+Dirty Flag & Low & Med & Low & Low & Med & High & Med & Med\\
+Object Pool & Low & Low & Low & Med--High & Med & Med--High & -- & Med\\
+Spatial Partition & Low & Med & Low & Med & High & High & -- & High\\
+\bottomrule
+\end{longtable}
+\end{landscape}
+\normalsize
+
+\section{Common Pattern Combinations}\label{sec:combinations}
+\subsection{Input and Replay Architecture: Command + Event Queue + Game Loop}
+\textbf{Purpose.} Normalize player, AI, and network input into explicit commands and execute them at deterministic simulation boundaries. \textbf{Flow.} Input produces commands; an event/command queue buffers them; the game loop drains the queue before a fixed simulation tick; replay stores the same normalized commands. \textbf{Why it works.} Command gives requests identity, Event Queue gives temporal decoupling, and Game Loop supplies a stable execution cadence. \textbf{Risks.} Commands must be deterministic, target handles must remain valid, and unbounded queues create latency.
+
+\subsection{Entity Architecture: Component + Update Method + Data Locality}
+\textbf{Purpose.} Separate entity domains while retaining a path toward high-throughput iteration. \textbf{Flow.} A traditional object component model calls each entity/component through Update Method; a data-oriented ECS instead stores same-type components in packed columns and systems iterate those columns directly. \textbf{Why it works.} Component defines domain boundaries, Update Method expresses temporal progression, and Data Locality informs the storage/iteration transformation. \textbf{Risks.} An object graph with one heap allocation per component captures the abstraction but not the locality benefit.
+
+\subsection{AI Behavior Architecture: State + Command + Event Queue}
+\textbf{Purpose.} Keep mode logic explicit while separating decision, action, and asynchronous stimuli. \textbf{Flow.} Events enter through a queue; the active state interprets them; selected actions are emitted as commands to actor subsystems. \textbf{Why it works.} State constrains legal behavior, Command isolates requested actions, and Event Queue controls timing. \textbf{Risks.} Too many states or globally routed events can hide causality.
+
+\subsection{High-Volume Effects: Object Pool + Data Locality + Update Method}
+\textbf{Purpose.} Support thousands of short-lived effects within a stable frame budget. \textbf{Flow.} Spawns acquire slots from a pool; active particles are packed or indexed for sequential update; Update Method/system iteration advances them. \textbf{Why it works.} Pooling controls allocation, locality controls memory traffic, and the update cadence is uniform. \textbf{Risks.} Sparse pools, bad capacity limits, and per-particle virtual calls can erase expected wins.
+
+\subsection{World Interaction: Spatial Partition + Dirty Flag + Data Locality}
+\textbf{Purpose.} Keep large-world queries fast while avoiding unnecessary index maintenance. \textbf{Flow.} Movement marks spatial bounds dirty; a batch phase updates affected index entries; queries traverse compact cells/nodes. \textbf{Why it works.} Spatial Partition reduces candidate count, Dirty Flag coalesces changes, and Data Locality reduces traversal cost. \textbf{Risks.} Delayed reinsertion must not let queries observe stale positions without a defined policy.
+
+\section{Pattern Misuse and Overengineering}\label{sec:misuse}
+\begin{warningbox}
+The most common pattern failure is solving a hypothetical problem. Every layer below should correspond to a measurable or repeatedly observed force.
+\end{warningbox}
+\begin{itemize}
+\item \textbf{Pattern stacking without a problem statement.} Command + bus + locator + factories can turn a direct interaction into an opaque path with no demonstrated benefit.
+\item \textbf{Global infrastructure disguised as decoupling.} A global Event Queue or Service Locator may reduce compile-time references while increasing semantic coupling because any subsystem can affect any other.
+\item \textbf{Object orientation in hot loops by default.} Components and interfaces help changeability, but pointer-rich graphs and virtual dispatch should not be assumed optimal for large homogeneous data sets.
+\item \textbf{Optimization without measurement.} Pools, custom spatial trees, dirty propagation, and SoA layouts introduce maintenance cost. Profile first and verify after the change.
+\item \textbf{Ignoring lifetime.} Observer subscriptions, queued events, commands, flyweights, prototypes, and service providers all carry lifetime contracts. Undefined lifetime is a correctness bug, not a style issue.
+\item \textbf{Confusing a pattern with a framework.} A Component pattern is not automatically an ECS; Bytecode is not automatically a complete scripting language; State is not automatically an AI architecture.
+\end{itemize}
+
+\section{Modern Game-Engine Context}\label{sec:modern-context}
+\subsection{Entity Component Systems}
+ECS architectures generalize part of the Component idea by separating identity, component data, and system behavior. The important modernization is storage and scheduling: same-type components are commonly stored in dense tables/chunks, and systems declare the data they read or write. This moves performance concerns from per-object polymorphism toward data locality and dependency-aware job scheduling.
+
+\subsection{Data-Oriented Design and Job Systems}
+Data Locality becomes more consequential as engines schedule wide jobs over large arrays. The unit of design shifts from an object and its methods to a transformation over data sets. Component boundaries can still guide domain ownership, but storage layout and access patterns become first-class architecture decisions. Job systems require explicit read/write dependencies so concurrency is safe and deterministic enough for the product's needs.
+
+\subsection{Event Buses and Command Buffers}
+Observer, Event Queue, and Command are often combined into typed signal systems, per-thread command buffers, and phase-local event channels. Modern designs benefit from scope: a render command buffer is easier to reason about than one process-wide ``event bus'' carrying unrelated gameplay, editor, network, and telemetry traffic.
+
+\subsection{Render Graphs and Scene Graphs}
+Double buffering, Dirty Flag, Data Locality, and Spatial Partition all appear in modern rendering architectures. Render graphs make resource and pass dependencies explicit; scene graphs provide hierarchical transforms and spatial organization. Their concrete implementations may differ significantly from object-oriented examples, but the underlying forces -- coherent publication, invalidation, locality, and query pruning -- remain.
+
+\subsection{Scripting Runtimes and Data-Defined Behavior}
+Bytecode, Type Object, Prototype, and State all contribute to content-driven engines. Production engines frequently embed a mature language or visual graph runtime instead of inventing a general-purpose VM. A custom VM is strongest when its instruction set can stay deliberately narrow and deterministic.
+
+\subsection{Deterministic Simulation, Rollback, and Replay}
+Command streams and fixed-step Game Loops provide a basis for deterministic replay. Rollback systems additionally retain or reconstruct historical simulation state, reapply authoritative inputs, and isolate presentation from rewound simulation. Double buffering/snapshots and strict control of nondeterministic APIs become important implementation techniques.
+
+\section{Practical Game-Engine Architecture Examples}\label{sec:examples}
+\subsection{Deterministic Character Controller}
+A fixed-step Game Loop samples normalized input Commands. The character's State interprets those commands and writes motion into simulation data. Update Method or an ECS movement system advances the actor. Events such as landing are emitted synchronously through narrow Observer signals when immediate state inspection is required; cosmetic audio requests may instead enter an Event Queue. The design keeps deterministic simulation inputs explicit while allowing presentation work to occur later.
+
+\subsection{Large Outdoor Scene}
+Tree and rock instances reference Flyweight asset data. Instance transforms are stored in packed arrays following Data Locality principles. A Spatial Partition selects visible/collision candidates. Dirty Flags mark moved transforms or changed bounds, and a Double Buffer publishes render-ready instance data to the rendering thread. Each pattern solves a different measured force: duplicate resource data, memory throughput, query scale, redundant derivation, and cross-thread publication.
+
+\subsection{Ability and Content System}
+Ability definitions are Type Objects loaded from content. Runtime ability instances may be created from Prototypes when configured exemplar copying is convenient. State tracks cast phases; Commands represent activation requests; a constrained Bytecode VM handles designer-authored effect logic. A Subclass Sandbox remains useful for native abilities that need a controlled set of engine operations. Service Locator is deliberately avoided inside scripts so the sandbox cannot reach arbitrary global services.
+
+\section{Glossary}\label{sec:glossary}
+\begin{description}[leftmargin=3.7cm,style=nextline]
+\item[Allocation] Reserving storage for an object or data block, often through a heap or arena.
+\item[Bytecode] A compact instruction representation executed by a virtual machine rather than directly by the CPU.
+\item[Cache locality] The degree to which accesses reuse nearby memory likely to reside in the CPU cache hierarchy.
+\item[Cohesion] How strongly the responsibilities inside a module belong together.
+\item[Command] A representation of a requested action as data or an object.
+\item[Component] A unit representing one domain/capability of a larger entity or architecture.
+\item[Coupling] The degree to which one unit depends on knowledge of another.
+\item[Dirty state] A marker indicating cached/derived data no longer corresponds to its primary source.
+\item[Entity] An identity-bearing game/world object, regardless of whether its data is stored in an object or ECS tables.
+\item[Event] A representation that something happened; unlike a command, it usually describes a fact rather than an instruction.
+\item[Extrinsic state] Per-instance state kept outside a shared flyweight.
+\item[Fixed timestep] Simulation using a constant amount of game time per update.
+\item[Fragmentation] Free memory split into non-contiguous regions or size classes that reduce allocation efficiency.
+\item[Frame] One presentation iteration, usually ending with rendering/presenting an image.
+\item[Indirection] Access through a pointer, handle, lookup, interface, or another intermediate representation.
+\item[Intrinsic state] Shared invariant state stored inside a flyweight.
+\item[Object lifetime] The interval from creation/initialization to destruction/release during which references are valid.
+\item[Service] A facility exposed through a stable operational interface, such as audio or logging.
+\item[Spatial coupling] Dependence caused by direct knowledge of concrete structure or location of another object/module.
+\item[Spatial query] A search for objects intersecting or near a position, region, ray, or volume.
+\item[Temporal coupling] Dependence on when another operation runs or when state is available.
+\item[Tick] One simulation update step; a rendered frame may contain zero, one, or multiple ticks.
+\item[Virtual machine] A software interpreter for an abstract instruction set and execution state.
+\end{description}
+
+\section{Quick-Reference Cheat Sheet}\label{sec:cheat-sheet}
+\small
+\begin{longtable}{P{2.15cm}P{1.65cm}P{3.50cm}P{3.25cm}P{3.55cm}}
+\toprule
+\textbf{Pattern} & \textbf{Category} & \textbf{One-line intent} & \textbf{Best use} & \textbf{Primary risk}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Pattern} & \textbf{Category} & \textbf{One-line intent} & \textbf{Best use} & \textbf{Primary risk}\\
+\midrule
+\endhead
+Command & Found. & Represent requests as data & Input, replay, undo & Stale targets / boilerplate\\
+Flyweight & Found. & Share heavy invariant state & Repeated assets/instances & Accidental shared mutation\\
+Observer & Found. & Notify unknown subscribers immediately & Local signals & Lifetime/reentrancy\\
+Prototype & Found. & Clone configured exemplars & Prefabs/spawners & Incorrect copy semantics\\
+Singleton & Found. & Enforce one instance & Truly singular resource owner & Hidden global coupling\\
+State & Found. & Model discrete behavioral modes & Input, modes, simple AI & State explosion\\
+Double Buffer & Seq. & Publish complete snapshots & Render/simulation handoff & Double memory / bad sync\\
+Game Loop & Seq. & Control time progression & Real-time engine tick & Timing instability\\
+Update Method & Seq. & Advance each object one slice & Live actors/systems & Ordering/cache cost\\
+Bytecode & Behav. & Execute behavior as VM data & Sandboxed scripting & Tool/language creep\\
+Subclass Sandbox & Behav. & Restrict subclass operations & Controlled extensions & Brittle base class\\
+Type Object & Behav. & Make logical types runtime data & Archetypes/content & Runtime schema/lifetime\\
+Component & Decoup. & Split entity domains & Mixed-capability entities & Wiring/circular dependencies\\
+Event Queue & Decoup. & Process messages later & Phase/thread handoff & Latency / backpressure\\
+Service Locator & Decoup. & Resolve abstract services & Ambient infrastructure & Hidden dependencies\\
+Data Locality & Opt. & Arrange data for caches & Hot homogeneous loops & Over-specialization\\
+Dirty Flag & Opt. & Recompute only when stale & Expensive derived state & Missed invalidation\\
+Object Pool & Opt. & Reuse object storage & High-churn transient objects & Capacity/stale handles\\
+Spatial Partition & Opt. & Index objects by position & Collision / proximity / culling & Update/tuning cost\\
+\bottomrule
+\end{longtable}
+\normalsize
+
+\section{Conclusion}\label{sec:conclusion}
+The durable value of these patterns is not their names but the design vocabulary they provide. Command separates a request from its execution; Observer and Event Queue separate communication partners in different ways; Game Loop and Update Method give time an explicit architecture; Component and Type Object move variation away from rigid inheritance; Data Locality, Dirty Flag, Object Pool, and Spatial Partition convert measured performance constraints into structural changes. The most effective architecture uses only the subset justified by the product's current forces and keeps the resulting contracts explicit enough to test, profile, and change.
+
+\section*{Further Reading}
+\addcontentsline{toc}{section}{Further Reading}
+For broader context, useful follow-on material includes classic object-oriented design-pattern literature; game-engine architecture references; CPU cache and memory-hierarchy optimization manuals; graphics API documentation covering instancing, synchronization, and resource lifetime; ECS/data-oriented design literature; and virtual-machine/compiler texts for bytecode design. Prefer primary platform and compiler documentation when making implementation-specific performance decisions.
+
+\end{document}
