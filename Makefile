@@ -58,6 +58,7 @@ help:
 	@echo "Commands:"
 	@echo "  make list-roots"
 	@echo "  make list-categories"
+	@echo "  make preflight"
 	@echo "  make build-all"
 	@echo "  make build-parallel JOBS=8"
 	@echo "  make build-category-<name>"
@@ -78,6 +79,13 @@ list-roots:
 .PHONY: list-categories
 list-categories:
 	@$(BUILD) list-categories
+
+# pdfLaTeX-only policy scan: fails when any first-party LaTeX source carries
+# an active LuaLaTeX/XeLaTeX-only construct (fontspec, engine magic comments,
+# \setmainfont, ...). Also enforced automatically by `make plan`.
+.PHONY: preflight
+preflight:
+	@$(BUILD) preflight
 
 .PHONY: build-all
 build-all:

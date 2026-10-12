@@ -224,3 +224,22 @@ is accounted for.
 - Removed: all 165 root intake files (after per-file hash verification).
 - No source intake remains unclassified; every uploaded file present in the
   checkout has a recorded disposition in the manifest.
+
+---
+
+## Update (2026-10-12, pdfLaTeX-only migration)
+
+The engine-dispatch contract described in sections 5 and 6 is superseded.
+CI runners do not provide the system fonts that `fontspec` resolved locally
+(run 38311143100 failed with "The font 'Inter'/'Noto Serif'/'LinuxLibertineO'
+cannot be found"), so the repository now enforces a **pdfLaTeX-only**
+compiler contract:
+
+- All seven engine-specific documents were migrated to Type 1 font packages
+  from `texlive-fonts-extra` (`noto`, `libertinus`, `libertine`,
+  `ebgaramond`, `inter`, `lato`, `DejaVuSansMono`) with `[T1]{fontenc}`,
+  preserving the original serif/sans/mono role assignments and mono scaling.
+- `% !TeX program = lualatex/xelatex` magic comments were removed; the build
+  orchestrator no longer honours them and `tooling/scripts/latex_build.py
+  preflight` (also run by `make plan`) rejects any active fontspec/
+  unicode-math/engine-magic construct. See `tests/test_pdflatex_policy.py`.

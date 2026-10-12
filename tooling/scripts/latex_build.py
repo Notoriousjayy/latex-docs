@@ -668,16 +668,152 @@ def determine_affected_roots(roots: Sequence[Path], changed_path: Path | None = 
     return sorted(affected)
 
 
-def _detect_engine(tex_path: Path) -> str:
+# -----------------------------------------------------------------------------
+# pdfLaTeX-only compiler contract
+# -----------------------------------------------------------------------------
+# Policy: pdfLaTeX is the sole engine for every publishable document. The
+# repository historically honoured "% !TeX program = lualatex/xelatex" magic
+# comments, which made builds depend on system fonts that are absent on CI
+# runners (fontspec: "font not found") and, before that, on fragile latexmk
+# engine plumbing ("Stopping because of bad filename(s)"). The preflight below
+# rejects any construct that requires an alternative engine so the policy is
+# enforced at plan time instead of failing midway through a shard.
+
+# Environments whose body is literal content (code samples, documentation of
+# the migration itself) and must never trigger a policy violation.
+_PREFLIGHT_VERBATIM_ENVS = (
+    "verbatim",
+    "verbatim*",
+    "Verbatim",
+    "BVerbatim",
+    "LVerbatim",
+    "lstlisting",
+    "minted",
+    "alltt",
+    "filecontents",
+    "filecontents*",
+)
+
+# Packages that only work (or select fonts) under LuaTeX/XeTeX.
+_PREFLIGHT_FORBIDDEN_PACKAGES = frozenset(
+    {
+        "fontspec",
+        "unicode-math",
+        "polyglossia",
+        "mathspec",
+        "luacode",
+        "luatexbase",
+        "luaotfload",
+        "luacolor",
+    }
+)
+
+_PREFLIGHT_MAGIC_RE = re.compile(
+    r"^\s*%\s*!TeX\s+program\s*=\s*(lualatex|xelatex|luatex|xetex|luahbtex|luajittex)\b",
+    re.IGNORECASE,
+)
+_PREFLIGHT_COMMAND_RE = re.compile(
+    r"\\(setmainfont|setsansfont|setmonofont|setmathfont|newfontfamily|newfontface|defaultfontfeatures|directlua|luaexec|XeTeXinterchartoks)\b"
+)
+_PREFLIGHT_PACKAGE_RE = re.compile(r"\\(?:usepackage|RequirePackage|RequirePackageWithOptions)\s*(?:\[[^\]]*\])?\s*\{([^}]*)\}")
+
+
+def _preflight_strip_verbatim(text: str) -> str:
+    """Blank out verbatim-like environment bodies and inline \\verb, keeping line numbers stable."""
+
+    def _blank(match: re.Match[str]) -> str:
+        return "\n" * match.group(0).count("\n")
+
+    for env in _PREFLIGHT_VERBATIM_ENVS:
+        pattern = re.compile(r"\\begin\{" + re.escape(env) + r"\}.*?(?:\\end\{" + re.escape(env) + r"\}|\Z)", re.DOTALL)
+        text = pattern.sub(_blank, text)
+    text = re.sub(r"\\verb\*?([^A-Za-z\s])(?:(?!\1).)*\1", "", text)
+    text = re.sub(r"\\(?:lstinline|mintinline\{[^}]*\})([^A-Za-z\s{])(?:(?!\1).)*\1", "", text)
+    return text
+
+
+def _preflight_strip_comment(line: str) -> str:
+    """Drop everything after an unescaped % (TeX comment)."""
+    out: list[str] = []
+    index = 0
+    while index < len(line):
+        char = line[index]
+        if char == "\\" and index + 1 < len(line):
+            out.append(line[index : index + 2])
+            index += 2
+            continue
+        if char == "%":
+            break
+        out.append(char)
+        index += 1
+    return "".join(out)
+
+
+def pdflatex_preflight_file(tex_path: Path) -> list[dict[str, object]]:
+    """Return the active pdfLaTeX-policy violations found in one source file."""
     try:
         text = tex_path.read_text(encoding="utf-8", errors="ignore")
     except OSError:
-        return "pdflatex"
-    if re.search(r"^\s*%\s*!TeX\s+program\s*=\s*lualatex", text, re.MULTILINE):
-        return "lualatex"
-    if re.search(r"^\s*%\s*!TeX\s+program\s*=\s*xelatex", text, re.MULTILINE):
-        return "xelatex"
-    return "pdflatex"
+        return []
+    violations: list[dict[str, object]] = []
+    stripped = _preflight_strip_verbatim(text)
+    lines = stripped.splitlines()
+    for number, raw_line in enumerate(lines, start=1):
+        magic = _PREFLIGHT_MAGIC_RE.match(raw_line)
+        if magic:
+            violations.append(
+                {
+                    "path": _rel(tex_path),
+                    "line": number,
+                    "construct": f"% !TeX program = {magic.group(1)}",
+                    "reason": "magic comment selects a forbidden engine",
+                }
+            )
+            continue
+        line = _preflight_strip_comment(raw_line)
+        if not line.strip():
+            continue
+        for match in _PREFLIGHT_PACKAGE_RE.finditer(line):
+            names = {name.strip() for name in match.group(1).split(",")}
+            for forbidden in sorted(names & _PREFLIGHT_FORBIDDEN_PACKAGES):
+                violations.append(
+                    {
+                        "path": _rel(tex_path),
+                        "line": number,
+                        "construct": f"\\usepackage{{{forbidden}}}",
+                        "reason": "package requires LuaLaTeX/XeLaTeX",
+                    }
+                )
+        for match in _PREFLIGHT_COMMAND_RE.finditer(line):
+            violations.append(
+                {
+                    "path": _rel(tex_path),
+                    "line": number,
+                    "construct": f"\\{match.group(1)}",
+                    "reason": "command requires LuaLaTeX/XeLaTeX",
+                }
+            )
+    return violations
+
+
+def pdflatex_preflight(paths: Sequence[Path] | None = None) -> list[dict[str, object]]:
+    """Scan first-party LaTeX sources for constructs incompatible with pdfLaTeX.
+
+    When ``paths`` is omitted the scan covers every ``.tex``/``.sty``/``.cls``
+    under ``src/`` and the shared style trees, i.e. everything a root build
+    could pull in through TEXINPUTS.
+    """
+    if paths is None:
+        candidates: list[Path] = []
+        for base in (ROOT / "src", ROOT / "tooling" / "latex", ROOT / "tooling" / "styles" / "latex"):
+            if base.is_dir():
+                for suffix in ("*.tex", "*.sty", "*.cls"):
+                    candidates.extend(sorted(base.rglob(suffix)))
+        paths = candidates
+    violations: list[dict[str, object]] = []
+    for path in paths:
+        violations.extend(pdflatex_preflight_file(Path(path)))
+    return violations
 
 
 def _uses_minted_syntax(text: str) -> bool:
@@ -1216,18 +1352,6 @@ def build_root(
     base_cmd = [LATEXMK, "-pdf", "-interaction=nonstopmode", "-halt-on-error", "-file-line-error", "-shell-escape", "-synctex=1"]
     if rc_file.exists():
         base_cmd.extend(["-r", str(rc_file)])
-    engine = _detect_engine(tex_path)
-    # Engine selection must use latexmk's documented engine switches. Passing
-    # "%O"/"%S" as separate argv entries (instead of inside a single
-    # -pdflatex="<engine> %O %S" template) makes latexmk treat them as literal
-    # input filenames and abort with "Stopping because of bad filename(s)".
-    # -lualatex/-xelatex switch the engine while inheriting every option
-    # already present in base_cmd (-interaction, -halt-on-error,
-    # -file-line-error, -shell-escape, -synctex).
-    if engine == "lualatex":
-        base_cmd.append("-lualatex")
-    elif engine == "xelatex":
-        base_cmd.append("-xelatex")
 
     build_dir = work_dir
     if output_dir is not None:
@@ -1244,6 +1368,24 @@ def build_root(
         cmd = [*base_cmd, f"-jobname={stem}", build_input_path.name]
     stdout_path, stderr_path = _log_paths(tex_path, log_dir)
     native_log_copy_path = _native_log_copy_path(tex_path, log_dir)
+
+    # pdfLaTeX is the only supported engine (see pdflatex_preflight). latexmk's
+    # "-pdf" mode compiles with pdflatex; no per-document engine switching is
+    # permitted, so a root that still carries an engine magic comment or an
+    # engine-only package is rejected up front with an actionable message
+    # instead of failing mid-compile on a runner without the system fonts.
+    policy_violations = pdflatex_preflight_file(tex_path)
+    if policy_violations:
+        messages = [
+            f"pdfLaTeX policy violation in {violation['path']}:{violation['line']}: "
+            f"{violation['construct']} ({violation['reason']})"
+            for violation in policy_violations
+        ]
+        for message in messages:
+            print(message, file=sys.stderr)
+        if stderr_path is not None:
+            stderr_path.write_text("\n".join(messages) + "\n", encoding="utf-8")
+        return 2
 
     stdout_handle = stdout_path.open("w", encoding="utf-8") if stdout_path else None
     stderr_handle = stderr_path.open("w", encoding="utf-8") if stderr_path else None
@@ -2755,6 +2897,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     plan_parser.add_argument("--min-roots-per-shard", type=int, default=25)
     plan_parser.add_argument("--output", type=Path, default=None)
     plan_parser.add_argument("--emit", choices=["plan", "matrix", "summary"], default="summary")
+    plan_parser.add_argument("--skip-preflight", action="store_true", help="Skip the pdfLaTeX-only policy scan (tests only)")
+
+    preflight_parser = subparsers.add_parser("preflight", help="Scan first-party LaTeX sources for pdfLaTeX-only policy violations")
+    preflight_parser.add_argument("paths", nargs="*", type=Path, help="Specific files to scan (default: whole corpus)")
 
     selection_parser = subparsers.add_parser("build-selection", help="Build an explicit list of roots (one shard)")
     selection_parser.add_argument("--plan", type=Path, required=True)
@@ -2880,7 +3026,32 @@ def main(argv: Sequence[str] | None = None) -> int:
             mode_name=args.mode_name,
         )
 
+    if args.command == "preflight":
+        scan_paths = [path.resolve() for path in args.paths] if args.paths else None
+        found = pdflatex_preflight(scan_paths)
+        for violation in found:
+            print(
+                f"::error file={violation['path']},line={violation['line']}::"
+                f"pdfLaTeX policy violation: {violation['construct']} ({violation['reason']})"
+            )
+        if found:
+            print(f"preflight: {len(found)} pdfLaTeX policy violation(s) found", file=sys.stderr)
+            return 1
+        print("preflight: no pdfLaTeX policy violations found")
+        return 0
+
     if args.command == "plan":
+        if not args.skip_preflight:
+            found = pdflatex_preflight()
+            if found:
+                for violation in found:
+                    print(
+                        f"::error file={violation['path']},line={violation['line']}::"
+                        f"pdfLaTeX policy violation: {violation['construct']} ({violation['reason']})",
+                        file=sys.stderr,
+                    )
+                print(f"plan: refusing to emit a build plan with {len(found)} pdfLaTeX policy violation(s)", file=sys.stderr)
+                return 1
         plan = plan_build(
             mode=args.mode,
             base_ref=args.base_ref,
