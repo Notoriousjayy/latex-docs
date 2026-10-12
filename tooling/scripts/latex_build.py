@@ -922,7 +922,7 @@ def _prepare_build_input(tex_path: Path) -> tuple[Path, bool]:
 
 PAGES_ACRONYMS = {
     "ai": "AI", "api": "API", "c": "C", "ci": "CI", "cd": "CD", "cissp": "CISSP",
-    "cpp": "C++", "cpu": "CPU", "css": "CSS", "dna": "DNA", "dp": "DP", "fft": "FFT",
+    "cpp": "C++", "cpu": "CPU", "css": "CSS", "devops": "DevOps", "dna": "DNA", "dp": "DP", "fft": "FFT",
     "gpu": "GPU", "html": "HTML", "http": "HTTP", "iec": "IEC", "ieee": "IEEE",
     "io": "I/O", "iso": "ISO", "lcp": "LCP", "ml": "ML", "os": "OS", "pdf": "PDF",
     "sql": "SQL", "tls": "TLS", "ui": "UI", "uml": "UML", "unix": "UNIX",
@@ -1005,26 +1005,25 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = Non
             if path.is_file() and path.suffix.lower() in {".png", ".jpg", ".jpeg"}
         )
 
-    def _numeric_chapter_key(path: Path) -> tuple[int, str]:
-        match = re.match(r"ch(\d+)-", path.name)
-        if match:
-            return int(match.group(1)), path.name
-        match = re.match(r"chapter_(\d+)_", path.name)
-        if match:
-            return int(match.group(1)), path.name
-        return (10**9, path.name)
-
-    def _collection_path_key(path: Path) -> tuple[object, ...]:
-        name = path.name.lower()
-        annex = re.match(r"annex-([a-f])-([0-9-]+)-", name)
+    def _tree_order_key(path: Path) -> tuple:
+        """Natural ordering with annexes sorted after chapters within a directory."""
+        annex = re.match(r"annex[-_]([a-z])(?=[-_.])", path.name, re.I)
         if annex:
-            numbers = tuple(int(part) for part in annex.group(2).split("-"))
-            return (1, annex.group(1), numbers, name)
-        numbers = tuple(int(part) for part in re.match(r"([0-9]+(?:-[0-9]+)*)-", name).group(1).split("-")) if re.match(r"([0-9]+(?:-[0-9]+)*)-", name) else (10**9,)
-        return (0, numbers, name)
+            return (1, annex.group(1).casefold(), _natural_key(path.name))
+        return (0, "", _natural_key(path.name))
 
-    cornell_paths = sorted(path for path in pdf_rel_paths if path.parts and path.parts[0] == "cornell-notes")
-    non_cornell_paths = sorted(path for path in pdf_rel_paths if not (path.parts and path.parts[0] == "cornell-notes"))
+    def _category_slug(segment: str) -> str:
+        return "category-" + re.sub(r"[^a-z0-9]+", "-", segment.casefold()).strip("-")
+
+    # Category-first taxonomy: every populated top-level directory of the staged
+    # PDF corpus is a category discovered from the artifact paths themselves.
+    # Each category renders with the same recursive directory hierarchy; there
+    # is no privileged "Cornell Notes" split and no flat "Other PDFs" bucket.
+    categories: dict[str, list[Path]] = {}
+    for rel_path in pdf_rel_paths:
+        if rel_path.parts:
+            categories.setdefault(rel_path.parts[0], []).append(rel_path)
+    category_names = sorted(categories, key=_natural_key)
 
     heading_counter = 0
 
@@ -1034,25 +1033,10 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = Non
         heading_id = anchor or f"heading-{heading_counter}"
         return f'<h{level} id="{html.escape(heading_id, quote=True)}">{html.escape(text)}</h{level}>'
 
-    def _emit_links(handle: Any, paths: list[Path], sort_by_chapter: bool = False) -> None:
-        ordered = sorted(paths, key=_collection_path_key if sort_by_chapter else lambda path: (path.as_posix(),))
-        handle.write('<ul class="document-list">')
-        for rel_path in ordered:
-            rel_posix = rel_path.as_posix()
-            label = html.escape(rel_posix)
-            target = html.escape("pdfs/" + quote(rel_posix, safe="/:@-._~"), quote=True)
-            search_text = html.escape(rel_posix.casefold(), quote=True)
-            handle.write(
-                f'<li class="document-row" data-search="{search_text}">'
-                f'<a href="{target}" title="Open {label}"><span class="document-name">{label}</span>'
-                f'<span class="document-path">{label}</span></a></li>'
-            )
-        handle.write("</ul>")
-
     def _emit_tree_links(handle: Any, paths: list[Path]) -> None:
         """Human label plus the canonical relative path, so identical basenames stay distinguishable."""
         handle.write('<ul class="document-list">')
-        for rel_path in sorted(paths, key=lambda path: _natural_key(path.name)):
+        for rel_path in sorted(paths, key=_tree_order_key):
             rel_posix = rel_path.as_posix()
             name = html.escape(_document_label(rel_path.stem))
             path_label = html.escape(rel_posix)
@@ -1109,7 +1093,7 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = Non
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LaTeX document library</title>
+<title>Technical Documentation Library</title>
 <style>
 :root { color-scheme: light; --page: #f5f7f9; --panel: #ffffff; --text: #17212b; --muted: #5c6b78; --accent: #126782; --border: #d8e0e6; --hover: #eaf4f6; --focus: #d97706; --shadow: 0 8px 24px rgba(23, 33, 43, .07); }
 @media (prefers-color-scheme: dark) { :root { color-scheme: dark; --page: #11181d; --panel: #1b252c; --text: #edf3f5; --muted: #b4c3ca; --accent: #76d0e5; --border: #3a4a54; --hover: #263943; --focus: #f7bd63; --shadow: 0 8px 24px rgba(0, 0, 0, .24); } }
@@ -1138,6 +1122,8 @@ main { padding: 2rem 0 4rem; }
 a { color: var(--accent); }
 .jump a { padding: .35rem .65rem; border: 1px solid var(--border); border-radius: 999px; text-decoration: none; }
 .jump a:hover, .jump a:focus-visible { background: var(--hover); }
+.jump-count { display: inline-block; min-width: 1.4em; padding: 0 .35em; border-radius: 999px; background: var(--hover); color: var(--muted); font-size: .8em; text-align: center; }
+.category-section { scroll-margin-top: 1rem; }
 .library h2 { margin: 2.5rem 0 1rem; padding-bottom: .55rem; border-bottom: 2px solid var(--border); font-size: 1.7rem; }
 .library h3 { margin: 2rem 0 .7rem; font-size: 1.3rem; }
 .library h4 { margin: 1.35rem 0 .5rem; font-size: 1.08rem; }
@@ -1161,7 +1147,7 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to documents</a>
-<header><div class="shell"><p class="eyebrow">Document library</p><h1>LaTeX PDFs & Diagram catalog</h1><p class="subtitle">Browse the published technical notes, guides, and PlantUML-derived diagram previews.</p></div></header>
+<header><div class="shell"><p class="eyebrow">Documentation library</p><h1>Technical Documentation Library</h1><p class="subtitle">Browse every published document category, from architecture and security guides to Cornell Notes, plus PlantUML diagram previews.</p></div></header>
 <main id="main-content" class="shell">
 <section class="summary" aria-label="Library summary">
 <div class="summary-card"><span class="summary-value">""" + str(total_documents) + """</span><span class="summary-label">PDFs</span></div>
@@ -1174,25 +1160,29 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
 <p class="result-count" id="result-count" aria-live="polite">Showing """ + str(total_documents + total_png + total_jpg) + """ of """ + str(total_documents + total_png + total_jpg) + """ assets</p>
 <nav class="jump" aria-label="Jump to category"><span class="jump-title">Jump to</span>""")
 
-        if cornell_paths:
-            handle.write('<a href="#category-cornell-notes">Cornell Notes</a>')
-        if non_cornell_paths:
-            handle.write('<a href="#category-other-pdfs">Other PDFs</a>')
+        for name in category_names:
+            slug = _category_slug(name)
+            handle.write(
+                f'<a href="#{html.escape(slug, quote=True)}">{html.escape(_humanize_segment(name))}'
+                f' <span class="jump-count">{len(categories[name])}</span></a>'
+            )
+        if raster_rel_paths:
+            handle.write('<a href="#plantuml-diagrams">PlantUML Diagrams</a>')
         handle.write('</nav></section><section class="library" aria-label="Published documents">')
 
         handle.write(_heading(2, "Documents"))
 
-        if cornell_paths:
-            handle.write(_heading(3, "Cornell Notes", anchor="category-cornell-notes"))
-            _emit_directory_tree(handle, cornell_paths, depth=1, level=4)
-
-        if non_cornell_paths:
-            handle.write(_heading(3, "Other PDFs", anchor="category-other-pdfs"))
-            _emit_links(handle, non_cornell_paths)
+        for name in category_names:
+            slug = _category_slug(name)
+            handle.write(f'<section class="category-section" id="{html.escape(slug, quote=True)}" data-category-section>')
+            handle.write(_heading(3, _humanize_segment(name)))
+            _emit_directory_tree(handle, categories[name], depth=1, level=4)
+            handle.write("</section>")
 
         if not pdf_rel_paths:
             handle.write("<p>No PDFs are currently staged for publication.</p>")
 
+        handle.write('</section><section class="library" id="plantuml-diagrams" aria-label="Diagram previews" data-category-section>')
         handle.write(_heading(2, "PlantUML Diagrams"))
         _emit_raster_cards(handle)
 
@@ -1204,6 +1194,7 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
     const input = document.getElementById('document-search');
     const count = document.getElementById('result-count');
     const rows = Array.from(document.querySelectorAll('.document-row, .image-card'));
+    const sections = Array.from(document.querySelectorAll('[data-category-section]'));
     function update() {
         const query = (input ? input.value : '').trim().toLocaleLowerCase();
         let visible = 0;
@@ -1212,6 +1203,9 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
             const matches = !query || searchText.includes(query);
             row.hidden = !matches;
             if (matches) visible += 1;
+        });
+        sections.forEach(function (section) {
+            section.hidden = !section.querySelector('.document-row:not([hidden]), .image-card:not([hidden])');
         });
         count.textContent = 'Showing ' + visible + ' of ' + rows.length + ' assets';
     }

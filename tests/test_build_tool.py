@@ -10,6 +10,7 @@ import shlex
 import yaml
 from io import StringIO
 from pathlib import Path
+from urllib.parse import unquote
 from contextlib import redirect_stderr
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -1837,3 +1838,178 @@ class CacheActionContractTests(unittest.TestCase):
     def test_all_executable_manifests_parse(self) -> None:
         for path in self._executable_manifests():
             self.assertIsInstance(yaml.safe_load(path.read_text(encoding="utf-8")), dict, str(path))
+
+
+class PagesUnifiedTaxonomyTests(unittest.TestCase):
+    """The Pages index is a category-first library: every populated top-level
+    directory of the staged PDF corpus renders with the same recursive
+    hierarchy, with no privileged Cornell split and no flat "Other PDFs" bucket."""
+
+    def _stage(self, rel_paths, image_files=()):
+        temp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, temp, ignore_errors=True)
+        pdf_dir, site_dir, image_dir = temp / "pdfs", temp / "site", temp / "images"
+        pdf_dir.mkdir(parents=True, exist_ok=True)
+        for rel in rel_paths:
+            target = pdf_dir / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(b"%PDF-1.4\n")
+        for rel in image_files:
+            target = image_dir / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(b"PNG")
+        staged = latex_build.stage_pages_site(pdf_dir, site_dir, image_dir if image_files else None)
+        return staged, (site_dir / "index.html").read_text(encoding="utf-8"), site_dir
+
+    MULTI_CATEGORY = [
+        Path("architecture/cloud/cloud-computing-concepts/ch03-cloud-delivery-models.pdf"),
+        Path("architecture/cloud/cloud-computing-concepts/ch10-fundamental-cloud-architectures.pdf"),
+        Path("architecture/ccoe/governance/ccoe-charter.pdf"),
+        Path("security/application-security/auditing/catalog.pdf"),
+        Path("programming/web/http-headers-reference.pdf"),
+        Path("devops/foundations/guide.pdf"),
+        Path("mathematics/linear-algebra-reference.pdf"),
+        Path("electronics/orange-pi-zero-engineering-guide.pdf"),
+        Path("business-analysis/stakeholder-matrix.pdf"),
+        Path("cornell-notes/mathematics/calculus/01-limits-and-their-properties-cornell-notes.pdf"),
+        Path("cornell-notes/security/certifications/cissp/01-security-and-risk-management-cornell-notes.pdf"),
+    ]
+
+    def test_every_populated_category_renders_with_hierarchy_and_no_other_pdfs(self) -> None:
+        staged, index, _ = self._stage(self.MULTI_CATEGORY)
+        self.assertEqual(len(self.MULTI_CATEGORY), len(staged))
+        for slug, label in (
+            ("category-architecture", "Architecture"),
+            ("category-business-analysis", "Business Analysis"),
+            ("category-cornell-notes", "Cornell Notes"),
+            ("category-devops", "DevOps"),
+            ("category-electronics", "Electronics"),
+            ("category-mathematics", "Mathematics"),
+            ("category-programming", "Programming"),
+            ("category-security", "Security"),
+        ):
+            self.assertIn(f'<section class="category-section" id="{slug}" data-category-section>', index)
+            self.assertIn(f'<a href="#{slug}">{label}', index)
+        self.assertNotIn("Other PDFs", index)
+        self.assertNotIn("category-other-pdfs", index)
+        # Non-Cornell categories get the same nested headings as Cornell ones.
+        self.assertIn(">Cloud</h", index)
+        self.assertIn(">Cloud Computing Concepts</h", index)
+        self.assertIn(">Governance</h", index)
+        self.assertIn(">Application Security</h", index)
+
+    def test_cornell_notes_is_an_ordinary_category(self) -> None:
+        _, index, _ = self._stage(self.MULTI_CATEGORY)
+        sections = re.findall(r'<section class="category-section" id="(category-[^"]+)" data-category-section>', index)
+        self.assertIn("category-cornell-notes", sections)
+        # Categories are emitted in natural order with identical markup; Cornell
+        # is neither first by privilege nor separated from the others.
+        self.assertEqual(sections, sorted(sections, key=latex_build._natural_key))
+
+    def test_every_staged_pdf_is_linked_exactly_once_and_resolves(self) -> None:
+        staged, index, site_dir = self._stage(self.MULTI_CATEGORY)
+        hrefs = re.findall(r'href="(pdfs/[^"]+)"', index)
+        self.assertEqual(len(staged), len(hrefs))
+        self.assertEqual(len(hrefs), len(set(hrefs)))
+        for href in hrefs:
+            self.assertTrue((site_dir / unquote(href)).is_file(), href)
+        linked = {Path(unquote(href)).relative_to("pdfs") for href in hrefs}
+        self.assertEqual(set(staged), linked)
+
+    def test_documents_directly_under_a_category_and_deeply_nested_both_render(self) -> None:
+        rels = [
+            Path("mathematics/top-level-reference.pdf"),
+            Path("security/a/b/c/d/e/f/deeply-nested-guide.pdf"),
+        ]
+        _, index, _ = self._stage(rels)
+        self.assertIn('href="pdfs/mathematics/top-level-reference.pdf"', index)
+        self.assertIn('href="pdfs/security/a/b/c/d/e/f/deeply-nested-guide.pdf"', index)
+        self.assertNotIn("<h7", index)
+        for level in re.findall(r"<h(\d)", index):
+            self.assertLessEqual(int(level), 6)
+
+    def test_chapter_and_annex_ordering_is_deterministic(self) -> None:
+        rels = [
+            Path("programming/standard/annex-b-grammar.pdf"),
+            Path("programming/standard/ch10-classes.pdf"),
+            Path("programming/standard/ch2-lexical.pdf"),
+            Path("programming/standard/annex-a-compatibility.pdf"),
+        ]
+        _, index, _ = self._stage(rels)
+        positions = [index.find(f"pdfs/programming/standard/{name}") for name in
+                     ("ch2-lexical.pdf", "ch10-classes.pdf", "annex-a-compatibility.pdf", "annex-b-grammar.pdf")]
+        self.assertNotIn(-1, positions)
+        self.assertEqual(sorted(positions), positions, "chapters order numerically and precede annexes")
+
+    def test_empty_category_directories_are_omitted(self) -> None:
+        temp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, temp, ignore_errors=True)
+        pdf_dir, site_dir = temp / "pdfs", temp / "site"
+        (pdf_dir / "empty-category").mkdir(parents=True)
+        (pdf_dir / "security").mkdir(parents=True)
+        (pdf_dir / "security" / "guide.pdf").write_bytes(b"%PDF-1.4\n")
+        latex_build.stage_pages_site(pdf_dir, site_dir)
+        index = (site_dir / "index.html").read_text(encoding="utf-8")
+        self.assertIn("category-security", index)
+        self.assertNotIn("empty-category", index)
+
+    def test_duplicate_basenames_across_categories_stay_distinguishable(self) -> None:
+        rels = [Path("devops/foundations/guide.pdf"), Path("security/foundations/guide.pdf")]
+        _, index, _ = self._stage(rels)
+        hrefs = re.findall(r'href="(pdfs/[^"]+)"', index)
+        self.assertEqual(2, len(set(hrefs)))
+        for rel in rels:
+            self.assertIn(f'<span class="document-path">{rel.as_posix()}</span>', index)
+
+    def test_special_characters_escape_and_encode_in_every_category(self) -> None:
+        rels = [Path('security/weird <dir> & "quotes"/a & b.pdf'), Path("devops/ünïcode/naïve-guide.pdf")]
+        _, index, site_dir = self._stage(rels)
+        self.assertNotIn("<dir>", index)
+        self.assertIn("&lt;dir&gt;", index)
+        self.assertIn("&amp;", index)
+        hrefs = re.findall(r'href="(pdfs/[^"]+)"', index)
+        self.assertEqual(2, len(hrefs))
+        for href in hrefs:
+            self.assertTrue((site_dir / unquote(href)).is_file(), href)
+
+    def test_search_script_hides_empty_categories_and_updates_counts(self) -> None:
+        _, index, _ = self._stage(self.MULTI_CATEGORY)
+        self.assertIn('id="document-search"', index)
+        self.assertIn('aria-live="polite"', index)
+        self.assertIn("data-category-section", index)
+        self.assertIn("querySelectorAll('[data-category-section]')", index)
+        self.assertIn(".document-row:not([hidden]), .image-card:not([hidden])", index)
+        self.assertIn("'Showing ' + visible + ' of ' + rows.length + ' assets'", index)
+
+    def test_jump_navigation_anchors_are_valid_and_unique(self) -> None:
+        _, index, _ = self._stage(self.MULTI_CATEGORY, image_files=[Path("png/architecture/diagram.png")])
+        anchors = re.findall(r'<nav class="jump"[^>]*>.*?</nav>', index, re.S)[0]
+        targets = re.findall(r'href="#([^"]+)"', anchors)
+        self.assertEqual(len(targets), len(set(targets)))
+        ids = set(re.findall(r'\bid="([^"]+)"', index))
+        for target in targets:
+            self.assertIn(target, ids)
+        self.assertIn("plantuml-diagrams", targets)
+
+    def test_plantuml_preview_section_is_separate_and_functional(self) -> None:
+        _, index, site_dir = self._stage(
+            [Path("architecture/guide.pdf")], image_files=[Path("png/architecture/diagram.png")]
+        )
+        self.assertIn('id="plantuml-diagrams"', index)
+        self.assertIn('src="images/png/architecture/diagram.png"', index)
+        self.assertTrue((site_dir / "images" / "png" / "architecture" / "diagram.png").exists())
+
+    def test_mobile_and_accessibility_contract_is_preserved(self) -> None:
+        _, index, _ = self._stage(self.MULTI_CATEGORY)
+        self.assertIn('<meta name="viewport"', index)
+        self.assertIn("@media (max-width: 600px)", index)
+        self.assertIn("prefers-reduced-motion", index)
+        self.assertIn('class="skip-link"', index)
+        self.assertIn('<nav class="jump" aria-label="Jump to category">', index)
+        self.assertIn('<main id="main-content"', index)
+        self.assertIn('for="document-search"', index)
+
+    def test_repeated_staging_from_identical_inputs_is_deterministic(self) -> None:
+        _, first, _ = self._stage(self.MULTI_CATEGORY)
+        _, second, _ = self._stage(self.MULTI_CATEGORY)
+        self.assertEqual(first, second)
