@@ -15,6 +15,9 @@ All documents share a single canonical house style supplied by
 - `src/` — all LaTeX sources, grouped by domain (`security/`,
   `architecture/`, `devops/`, `data-systems/`, `programming/`,
   `mathematics/`, `game-development/`, `electronics/`, `personal/`, …).
+- [CCoE governance catalog](src/architecture/governance/ccoe/readme.md) —
+  process-group inventory, editable template links, governance relationships,
+  and outstanding source gaps.
 - `src/common/` — shared helpers (e.g., CI-safe macros).
 - `tooling/latex/` — shared style and preamble:
   - `style.sty` — the canonical house style inherited by semantic
@@ -264,6 +267,5 @@ make list-roots
 
 That list is the authoritative set of standalone PDFs the automation
 expects to build.
-
 
 

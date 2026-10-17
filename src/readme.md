@@ -9,7 +9,7 @@ type. The repository builds standalone roots (`.tex` files containing
 
 | Folder | Contents |
 |---|---|
-| `architecture/` | Software & enterprise architecture, Views and Beyond, TOGAF, governance. |
+| `architecture/` | Software & enterprise architecture, Views and Beyond, TOGAF, governance, including the [CCoE documentation catalog](architecture/governance/ccoe/readme.md). |
 | `data-systems/` | AI/ML, streaming (Kafka), and other data-platform documentation. |
 | `devops/` | CI/CD, GitHub Actions, GitOps, platform (k8s, nginx), secrets management. |
 | `electronics/` | Self-study electronics (Art of Electronics curriculum). |
@@ -65,6 +65,5 @@ convention, not a mandate.
 - `../readme.md` — repository top-level readme.
 - `../tooling/latex/style.sty` — house style.
 - `../RESTRUCTURE-PROPOSAL.md` — restructuring rationale.
-
 
 

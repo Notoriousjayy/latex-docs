@@ -21,7 +21,7 @@ adoption material.
 
 | Child | Purpose |
 |---|---|
-| `governance/` | Cloud governance and control frameworks; Confluence space rationale. |
+| `governance/` | Cloud governance and control frameworks; the [CCoE project management and governance suite](./governance/ccoe/readme.md). |
 | `patterns/` | Architectural patterns (build-system facade, etc.). |
 | `systems-engineering/` | Systems-engineering perspective on software architecture. |
 | `togaf/` | TOGAF ADM user stories and overviews. |
@@ -47,6 +47,5 @@ make build-category-architecture
 - `../readme.md`
 - `views-and-beyond/readme.md`
 - Upstream: *Documenting Software Architectures: Views and Beyond* (Clements et al., 2nd ed.).
-
 
 
