@@ -1835,6 +1835,19 @@ class CacheActionContractTests(unittest.TestCase):
         self.assertIn("FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true", pages)
         self.assertIn("actions/deploy-pages@v4", pages)
 
+    def test_latex_environments_install_scalable_t1_computer_modern(self) -> None:
+        """cm-super is only a Recommends of texlive-fonts-extra, so every
+        --no-install-recommends TeX provisioning path must request it
+        explicitly. Without it, T1-encoded Computer Modern falls back to
+        bitmap EC/PK fonts and pdfTeX fails with "font expansion: auto
+        expansion is only possible with scalable fonts" in any document that
+        combines fontenc T1 with microtype expansion (run 39165336068)."""
+        action = (self.REPO_ROOT / ".github/actions/setup-latex/action.yml").read_text(encoding="utf-8")
+        self.assertIn("cm-super", action)
+        self.assertIn("sfrm1000.pfb", action)
+        dockerfile = (self.REPO_ROOT / ".github/docker/texlive/Dockerfile").read_text(encoding="utf-8")
+        self.assertIn("cm-super", dockerfile)
+
     def test_all_executable_manifests_parse(self) -> None:
         for path in self._executable_manifests():
             self.assertIsInstance(yaml.safe_load(path.read_text(encoding="utf-8")), dict, str(path))
