@@ -1,0 +1,318 @@
+\documentclass[11pt]{article}
+\newcommand{\DocNumber}{VOLUME 05}
+\newcommand{\DocTitle}{Secure C++23 Engineering Guide}
+\newcommand{\DocSubtitle}{Object safety, concurrency and input trust}
+\newcommand{\DocSummary}{Twelve security-control modules, defensible CWE distinctions, a review scorecard and adversarial labs.}
+\input{cpp23-common-preamble.tex}
+\begin{document}
+\docfront
+\section{Assurance boundary}
+The C++ language standard defines what programs mean or when it imposes no requirements; it does not certify that a program is secure. This document introduces optional security controls and selected Common Weakness Enumeration (CWE) mappings as modern engineering additions. CWE mappings are examples, not an exhaustive or normative crosswalk.
+
+\small
+\begin{longtable}{@{}p{.18\linewidth}p{.40\linewidth}p{.34\linewidth}@{}}
+\toprule
+\textbf{Source construct} & \textbf{Failure condition} & \textbf{Control objective}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Source construct} & \textbf{Failure condition} & \textbf{Control objective}\\
+\midrule
+\endhead
+Raw pointer/reference & Referent dead or inaccessible & Explicit owner + lifetime proof\\
+\addlinespace[2pt]
+Index arithmetic & Value out of valid range & Checked bounds and overflow\\
+\addlinespace[2pt]
+Shared mutable state & Missing happens-before edge & Synchronization discipline\\
+\addlinespace[2pt]
+Non-owning view & Owner changed or destroyed & Borrowing contract\\
+\addlinespace[2pt]
+Exception path & Partially updated invariant & Commit/rollback structure\\
+\addlinespace[2pt]
+File access & Untrusted path or race & OS-backed authorization\\
+\addlinespace[2pt]
+\bottomrule
+\end{longtable}
+\normalsize
+\section{C++ semantic classification and threat modeling}
+\anchorref{3; 4.1; 6.9}
+A secure coding rule can be stricter than the language standard. Undefined behavior, ill-formed code, implementation-defined choices, and data races must be handled according to their actual semantic categories.
+
+\standard{The referenced C++ clauses define the language and library semantics that can underlie this weakness; they do not prescribe a cybersecurity control program.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Identify adversarial inputs and preconditions.
+\item Create a minimally unsafe test as a negative fixture, isolated from production.
+\item Test the repaired implementation with appropriate instrumentation.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+// Review checklist, not a complete program:
+// Untrusted input -> parse -> validated domain type -> operation
+// Record ownership, bounds, integer domain, and failure mode.
+\end{lstlisting}
+\practice{Create a threat model for trust boundaries and each resource lifetime; do not equate clean compilation with safe execution.}
+\takeaway{Security evidence target: Evidence: input trust map, threat assumptions and violated precondition catalog.}
+\section{Out-of-bounds access and container misuse}
+\anchorref{6.7; 7.6; 24.2--24.3}
+Indexing raw storage or a vector outside its valid range is not prevented by the type system. at() can provide an explicit checked access contract.
+
+\standard{The referenced C++ clauses define the language and library semantics that can underlie this weakness; they do not prescribe a cybersecurity control program.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Identify adversarial inputs and preconditions.
+\item Create a minimally unsafe test as a negative fixture, isolated from production.
+\item Test the repaired implementation with appropriate instrumentation.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <vector>
+#include <optional>
+std::optional<int> lookup(const std::vector<int>& v,
+                          std::size_t index) {
+    if (index >= v.size()) return std::nullopt;
+    return v[index];
+}
+\end{lstlisting}
+\practice{Keep range checks at the trust boundary and avoid unchecked narrowing from signed input.}
+\takeaway{Security evidence target: CWE-125 / CWE-787 are useful external taxonomy examples, not ISO C++ rule identifiers.}
+\section{Use-after-free and dangling references}
+\anchorref{6.7.3--6.7.7; 20; 23.3}
+Object lifetime and view lifetime are independent. A valid-looking string\_view can still reference destroyed or reallocated data.
+
+\standard{The referenced C++ clauses define the language and library semantics that can underlie this weakness; they do not prescribe a cybersecurity control program.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Identify adversarial inputs and preconditions.
+\item Create a minimally unsafe test as a negative fixture, isolated from production.
+\item Test the repaired implementation with appropriate instrumentation.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <string>
+#include <string_view>
+std::string safe_name() {
+    std::string owned{"item"};
+    return owned; // return owning object
+}
+// Never return string_view referring to a local string.
+\end{lstlisting}
+\practice{Do not persist borrowed views unless the owner and invalidation conditions are explicit.}
+\takeaway{Security evidence target: CWE-416 and CWE-825 provide external classification vocabulary.}
+\section{Integer overflow, conversion and allocation math}
+\anchorref{6.8; 7.3--7.4; 7.6}
+Signed arithmetic overflow can be undefined; conversions, narrowing and size arithmetic create hazards even when behavior is otherwise defined.
+
+\standard{The referenced C++ clauses define the language and library semantics that can underlie this weakness; they do not prescribe a cybersecurity control program.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Identify adversarial inputs and preconditions.
+\item Create a minimally unsafe test as a negative fixture, isolated from production.
+\item Test the repaired implementation with appropriate instrumentation.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <limits>
+#include <optional>
+#include <cstddef>
+std::optional<std::size_t> add_sizes(std::size_t a,
+                                      std::size_t b) {
+    if (b > std::numeric_limits<std::size_t>::max() - a)
+        return std::nullopt;
+    return a + b;
+}
+\end{lstlisting}
+\practice{Perform precondition arithmetic in a domain that cannot overflow; use bounded allocations.}
+\takeaway{Security evidence target: CWE-190 / CWE-681 are external labels; include adversarial tests near numeric limits.}
+\section{Uninitialized or indeterminate data}
+\anchorref{6.7; 9.4}
+Using values before permitted initialization can have undefined behavior in specified contexts; the treatment of particular uninitialized-friendly types and operations requires close reading of the applicable clauses.
+
+\standard{The referenced C++ clauses define the language and library semantics that can underlie this weakness; they do not prescribe a cybersecurity control program.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Identify adversarial inputs and preconditions.
+\item Create a minimally unsafe test as a negative fixture, isolated from production.
+\item Test the repaired implementation with appropriate instrumentation.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+struct Settings {
+    bool enabled{false};
+    unsigned retries{0};
+};
+Settings s{};
+\end{lstlisting}
+\practice{Use definite initialization, default member initializers and value-initialization for scalar state.}
+\takeaway{Security evidence target: Require initialization before each control-flow read.}
+\section{Type punning, alignment and object representation}
+\anchorref{6.7; 7.6; 20}
+Object representation, alignment, aliasing, and lifetime rules constrain access to bytes reinterpreted as other types.
+
+\standard{The referenced C++ clauses define the language and library semantics that can underlie this weakness; they do not prescribe a cybersecurity control program.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Identify adversarial inputs and preconditions.
+\item Create a minimally unsafe test as a negative fixture, isolated from production.
+\item Test the repaired implementation with appropriate instrumentation.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <bit>
+#include <cstdint>
+#include <limits>
+static_assert(sizeof(float) == sizeof(std::uint32_t));
+std::uint32_t bits(float f) { return std::bit_cast<std::uint32_t>(f); }
+\end{lstlisting}
+\practice{Prefer bit\_cast for same-size trivially copyable bit representations and serialization for external formats.}
+\takeaway{Security evidence target: Check the target representation and intended bit semantics, not merely that sizes happen to match.}
+\section{Iterator and view invalidation}
+\anchorref{24--26}
+Container mutation can invalidate references, iterators or pointers. Lazy views can defer dereference until after the backing container changes.
+
+\standard{The referenced C++ clauses define the language and library semantics that can underlie this weakness; they do not prescribe a cybersecurity control program.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Identify adversarial inputs and preconditions.
+\item Create a minimally unsafe test as a negative fixture, isolated from production.
+\item Test the repaired implementation with appropriate instrumentation.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <vector>
+void append_then_access(std::vector<int>& v, int x) {
+    v.push_back(x);
+    if (!v.empty()) { int y = v.back(); (void)y; }
+}
+\end{lstlisting}
+\practice{Document invalidation behavior per container and mutation; avoid deferred closures over mutating storage.}
+\takeaway{Security evidence target: Test capacity growth, erase, rehash and move transitions.}
+\section{Concurrency, races and memory ordering}
+\anchorref{6.9.2; 33}
+Conflicting unsynchronized non-atomic accesses can create a data race and undefined behavior. Atomic operations need the right ordering for the intended communication protocol.
+
+\standard{The referenced C++ clauses define the language and library semantics that can underlie this weakness; they do not prescribe a cybersecurity control program.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Identify adversarial inputs and preconditions.
+\item Create a minimally unsafe test as a negative fixture, isolated from production.
+\item Test the repaired implementation with appropriate instrumentation.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <mutex>
+struct State {
+    std::mutex mu;
+    int version{};
+};
+void change(State& s) {
+    std::lock_guard lock{s.mu};
+    ++s.version;
+}
+\end{lstlisting}
+\practice{Prefer mutexes for compound shared invariants, and explicitly document happens-before edges.}
+\takeaway{Security evidence target: CWE-362 is an external vulnerability category; run ThreadSanitizer independently of AddressSanitizer.}
+\section{Exception safety and transactional updates}
+\anchorref{14; 20; 24}
+An exception can interrupt a function between state changes. The basic or strong exception guarantee depends on invariants and commit structure, not syntactic exception handling.
+
+\standard{The referenced C++ clauses define the language and library semantics that can underlie this weakness; they do not prescribe a cybersecurity control program.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Identify adversarial inputs and preconditions.
+\item Create a minimally unsafe test as a negative fixture, isolated from production.
+\item Test the repaired implementation with appropriate instrumentation.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <vector>
+void replace_if_valid(std::vector<int>& target,
+                      const std::vector<int>& proposed) {
+    std::vector<int> candidate = proposed; // may throw
+    target.swap(candidate);                  // commit
+}
+\end{lstlisting}
+\practice{Build a prospective state first, then commit it with a nonthrowing operation when possible.}
+\takeaway{Security evidence target: Inject allocation failures or throwing test elements and assert invariants.}
+\section{Untrusted parsing and expensive computation}
+\anchorref{23; 27; 31--32}
+Parsing errors, unbounded allocation, and pathological regular expressions can exhaust resources without requiring a memory violation.
+
+\standard{The referenced C++ clauses define the language and library semantics that can underlie this weakness; they do not prescribe a cybersecurity control program.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Identify adversarial inputs and preconditions.
+\item Create a minimally unsafe test as a negative fixture, isolated from production.
+\item Test the repaired implementation with appropriate instrumentation.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <string_view>
+#include <expected>
+enum class InputError { too_long, empty };
+std::expected<std::string_view, InputError>
+validate(std::string_view x) {
+    if (x.empty()) return std::unexpected(InputError::empty);
+    if (x.size() > 4096)
+        return std::unexpected(InputError::too_long);
+    return x;
+}
+\end{lstlisting}
+\practice{Apply input-size limits, parser state budgets and timeouts outside the language contract.}
+\takeaway{Security evidence target: CWE-400 is an external label for resource exhaustion.}
+\section{Filesystem paths and external process boundaries}
+\anchorref{31.12; 31.10}
+filesystem path normalization is not by itself a sandbox. Symbolic links, time-of-check/time-of-use and OS permissions affect the actual resource resolved.
+
+\standard{The referenced C++ clauses define the language and library semantics that can underlie this weakness; they do not prescribe a cybersecurity control program.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Identify adversarial inputs and preconditions.
+\item Create a minimally unsafe test as a negative fixture, isolated from production.
+\item Test the repaired implementation with appropriate instrumentation.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <filesystem>
+#include <system_error>
+namespace fs = std::filesystem;
+std::error_code ec;
+auto exists = fs::exists(fs::path{"data.txt"}, ec);
+// An existence check is not a safe authorization decision.
+\end{lstlisting}
+\practice{Enforce permissions and trusted-root policies with appropriate OS primitives; treat paths as untrusted data.}
+\takeaway{Security evidence target: CWE-22 and CWE-367 are external taxonomies, not guarantees from std::filesystem.}
+\section{Dependency and artifact integrity}
+\anchorref{16; 20--33}
+Library correctness does not prove the security of your third-party implementation or its supply chain. Toolchains, standard libraries and transitive dependencies also carry risks.
+
+\standard{The referenced C++ clauses define the language and library semantics that can underlie this weakness; they do not prescribe a cybersecurity control program.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Identify adversarial inputs and preconditions.
+\item Create a minimally unsafe test as a negative fixture, isolated from production.
+\item Test the repaired implementation with appropriate instrumentation.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+// Review evidence:
+// compiler + libstdc++/libc++ identity
+// dependency lockfile + artifact digest
+// SAST/DAST/fuzz coverage + disclosed residual risk
+\end{lstlisting}
+\practice{Use pinned dependencies, SBOM/provenance evidence, vulnerability review and reproducible builds as appropriate.}
+\takeaway{Security evidence target: Record remediation owner and service-level objectives outside ISO conformity.}
+\section{Security review scorecard}
+\small
+\begin{longtable}{@{}p{.18\linewidth}p{.40\linewidth}p{.34\linewidth}@{}}
+\toprule
+\textbf{Control} & \textbf{Evidence required} & \textbf{Disposition}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Control} & \textbf{Evidence required} & \textbf{Disposition}\\
+\midrule
+\endhead
+Ownership & Owner identified for each externally visible view & Pass / action / exception\\
+\addlinespace[2pt]
+Bounds & All untrusted indices checked & Pass / action / exception\\
+\addlinespace[2pt]
+Integers & Range proof for lengths, allocation and offsets & Pass / action / exception\\
+\addlinespace[2pt]
+Concurrency & Thread-sharing model, lock protocol and races & Pass / action / exception\\
+\addlinespace[2pt]
+Failures & Exception guarantees and error propagation & Pass / action / exception\\
+\addlinespace[2pt]
+Parsers & Size, nesting, CPU and memory limits & Pass / action / exception\\
+\addlinespace[2pt]
+Build & Reproducible flags, sanitizer logs and dependencies & Pass / action / exception\\
+\addlinespace[2pt]
+\bottomrule
+\end{longtable}
+\normalsize
+\section{Adversarial lab cases}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Pass index -1 through a signed-to-size\_t conversion boundary and verify controlled rejection.
+\item Invalidate vector storage through reserve/push\_back and confirm no borrowed references survive.
+\item Fuzz a bounded record parser with zero-length, maximum-length and malformed encodings.
+\item Run shared-state mutation under ThreadSanitizer and compare to a locked version.
+\item Inject a throwing value into vector construction and verify the original committed state is preserved.
+\end{itemize}
+\docend
+\end{document}

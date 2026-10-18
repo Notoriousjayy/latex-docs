@@ -1,0 +1,90 @@
+\documentclass[11pt,letterpaper]{article}
+\input{cmake-wasm-preamble.tex}
+\DocHeader{Reference Architecture and Decisions}{SUBReference Architecture and Decisions}{1.0}
+\begin{document}
+\frontmatterdoc
+\section{Engineering problem and decisions}
+A CMake project selects a compiler, linker, system root, and platform model when it is configured. Compiling the same source on three platforms does \emph{not} produce three interchangeable executables. In particular, Emscripten's generated JavaScript runtime is an application host, while WASI relies on a separately provisioned capability-based host. Native executables use the platform OS and native ABI directly.
+
+\begin{principle}{Architecture thesis}
+Keep data transformations and portable algorithms in a target named \texttt{portable\_core}. Connect them to three separate entrypoints: \texttt{portable\_cli} (native and WASI), \texttt{portable\_browser} (Emscripten only), and dedicated CTest binaries. Platform-specific compile definitions and link flags belong to their adapter targets, never to an unqualified global build setting.
+\end{principle}
+
+\section{Logical and deployment architecture}
+\begin{center}\small
+\noindent\begin{tabularx}{\linewidth}{>{\bfseries}p{0.19\linewidth}X X}
+\toprule
+Zone & Responsibilities & Deployable artifact \\
+\midrule
+Domain core & Algorithms, validation, portable data contracts, deterministic behavior & Static library linked separately for each toolchain \\
+Browser adapter & C ABI exports, JS wrapper, buffer ownership, asynchronous module initialization & ES module, \texttt{.wasm}, web assets \\
+WASI adapter & Command entrypoint, host capability requests, guest ABI contracts & WASI \texttt{.wasm} module or component \\
+Native adapter & OS integration, process lifecycle, debugging interfaces & Native executable and optional shared library \\
+Validation plane & Native CTest, Node ABI smoke tests, browser E2E, Wasmtime CTest, binary checks & Logs, checksums, provenance metadata \\
+\bottomrule
+\end{tabularx}
+\end{center}
+The dependency direction is \textbf{adapters $\rightarrow$ core}; reverse imports are forbidden. Host APIs are replaced by a port interface and provided through explicit dependency injection. Host policy, not a WASM extension, determines how much filesystem/network/process authority a module receives.
+
+
+\subsection{Deployment view (not to scale)}
+\begin{center}
+\begin{tikzpicture}[>=Stealth,scale=0.84,transform shape,rounded corners=2pt,
+ every node/.style={font=\small,align=center},box/.style={draw=navy,fill=light,minimum width=3.1cm,minimum height=0.8cm},host/.style={draw=teal,fill=teal!10,minimum width=3.4cm,minimum height=1.1cm}]
+\node[box,fill=navy!12] (core) at (0,2.2) {Portable C++ core\\CMake STATIC library};
+\node[box] (browser) at (-4.0,0.4) {Emscripten adapter\\C exports / JS wrapper};
+\node[box] (wasi) at (0,0.4) {WASI command adapter\\Preview 1 baseline};
+\node[box] (native) at (4.0,0.4) {Native adapter\\OS and process ABI};
+\node[host] (web) at (-4.0,-1.6) {Browser host\\WASM + ES module};
+\node[host] (wasmtime) at (0,-1.6) {WASI runtime host\\Capability imports};
+\node[host] (os) at (4.0,-1.6) {Native operating system\\Executable process};
+\draw[->,thick] (core) -- (browser); \draw[->,thick] (core) -- (wasi); \draw[->,thick] (core) -- (native);
+\draw[->,thick] (browser) -- (web); \draw[->,thick] (wasi) -- (wasmtime); \draw[->,thick] (native) -- (os);
+\end{tikzpicture}
+\end{center}
+\noindent\emph{Arrows show build/deployment flow; source dependencies point from adapters to the core.}
+
+\section{Architecture decision record register}
+Each ADR documents status, context, decision, alternatives, consequences, and measurable validation. The following register defines the baseline decisions.
+\begin{longtable}{p{0.13\linewidth}p{0.26\linewidth}p{0.53\linewidth}}
+\toprule ID & Decision & Rationale and evidence required \\ \midrule \endhead
+ADR-001 & One portable core & Prevent host SDK imports from contaminating domain code; compile it in all three variants. \\
+ADR-002 & Distinct build directories & Toolchain identity is cached by CMake; no in-place native-to-WASM transition. \\
+ADR-003 & Browser: C ABI + typed arrays & Predictable binary byte contract; leave Embind optional for richer objects. Test invalid lengths, memory growth, and lifetime. \\
+ADR-004 & WASI: Preview 1 command baseline & Minimum viable portable CLI artifact and Wasmtime test. Do not call it a Preview 2 component. \\
+ADR-005 & Preview 2 components separate & WIT contracts, component-aware tooling, and host compatibility tests precede promotion. \\
+ADR-006 & Native reference oracle & Native unit tests and sanitizers detect undefined behavior before cross-target integration. \\
+ADR-007 & Locked toolchain manifest & Record CMake, Emscripten, WASI SDK, runtime, dependencies, action revisions, and artifact digests. \\
+ADR-008 & CI profile isolation & Independent configure/build/test jobs; test cross-target parity and publish only complete bundles. \\
+ADR-009 & Provenance and verification & Build attestation ties subject digest to trusted workflow; hashes alone do not authenticate publisher. \\
+ADR-010 & Least authority at runtime & Restrict exported browser APIs, enforce web security headers, and grant minimal WASI host resources. \\
+\bottomrule
+\end{longtable}
+
+\section{Decision matrix and tradeoffs}
+\noindent\begin{tabularx}{\linewidth}{p{0.22\linewidth}XXX}
+\toprule Constraint & Browser & WASI & Native \\ \midrule
+UI integration & Strong JS/DOM host & External host adapter & OS/UI framework \\
+Startup model & Async instantiate & Runtime instantiate & Process start \\
+Host access & Web origin and JS APIs & WASI grants/imports & OS user privileges \\
+Debugging & Browser devtools & Guest + host diagnostics & OS debugger/sanitizers \\
+Threads & Browser isolation prerequisites & Target/runtime-specific & OS threads \\
+Distribution & Web CDN/static asset pair & Versioned module/component & OS/architecture package \\
+\bottomrule
+\end{tabularx}
+
+\section{Nonfunctional architecture requirements}
+\begin{enumerate}
+\item Performance: publish throughput, p95 cold-start, and binary-size budgets for each profile; do not compare unlike initialization models.
+\item Portability: shared tests must return identical results for fixed byte vectors across all supported targets.
+\item Memory safety: bounded inputs, checked allocations, no retained typed-array view across growth, no double release.
+\item Release integrity: artifact inventory reconciles to the build manifest, checksum verification, and authenticated attestation.
+\item Operability: startup diagnostics identify runtime and SDK versions; host authority is declared before deployment.
+\end{enumerate}
+\accept{A reviewer can trace every host-specific API and toolchain flag to an adapter target and an ADR.}
+
+\section{Source baseline}
+\sourceurl{https://emscripten.org/docs/compiling/Building-Projects.html}
+\sourceurl{https://github.com/WebAssembly/wasi-sdk}
+\sourceurl{https://github.com/bytecodealliance/wasmtime}
+\end{document}

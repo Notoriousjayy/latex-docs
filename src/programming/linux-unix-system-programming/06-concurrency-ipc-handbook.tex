@@ -1,0 +1,231 @@
+\documentclass[11pt,letterpaper,oneside]{report}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.90in,headheight=15pt]{geometry}
+\usepackage{microtype}
+\usepackage[svgnames,table]{xcolor}
+\usepackage{amsmath,amssymb,booktabs,longtable,tabularx,array}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{lastpage}
+\definecolor{ink}{HTML}{14273C}
+\definecolor{primary}{HTML}{0B5379}
+\definecolor{accent}{HTML}{B66A30}
+\definecolor{pale}{HTML}{F1F5F8}
+\definecolor{codebg}{HTML}{F5F7F8}
+\hypersetup{colorlinks=true,linkcolor=primary,urlcolor=primary,pdftitle={Linux and UNIX System Programming Engineering Suite}}
+\titleformat{\chapter}[display]{\normalfont\LARGE\bfseries\color{ink}}{\color{accent}\large\MakeUppercase{\chaptername}\ \thechapter}{10pt}{}[\vspace{0.4ex}\titlerule]
+\titleformat{\section}{\Large\bfseries\color{primary}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{ink}}{\thesubsection}{0.7em}{}
+\setlist[itemize]{leftmargin=*,topsep=3pt,itemsep=2pt}
+\setlist[enumerate]{leftmargin=*,topsep=3pt,itemsep=3pt}
+\setlength{\parskip}{5pt}
+\setlength{\parindent}{0pt}
+\lstdefinestyle{sysc}{language=C,basicstyle=\ttfamily\footnotesize,backgroundcolor=\color{codebg},keywordstyle=\bfseries\color{primary},commentstyle=\color{ForestGreen},stringstyle=\color{Brown},breaklines=true,showstringspaces=false,tabsize=4,frame=single,rulecolor=\color{LightSteelBlue},columns=fullflexible,keepspaces=true}
+\lstset{style=sysc}
+\newtcolorbox{engineeringnote}[1][]{colback=pale,colframe=primary,boxrule=0.55pt,arc=1.5mm,title=Engineering note,fonttitle=\bfseries,#1}
+\newtcolorbox{modernnote}[1][]{colback=white,colframe=accent,boxrule=0.55pt,arc=1.5mm,title=Modern extension --- not in the 2010 textbook,fonttitle=\bfseries,#1}
+\newcommand{\sys}[1]{\texttt{#1}}
+\pagestyle{fancy}\fancyhf{}\fancyhead[L]{\small\color{ink} Linux / UNIX Engineering Suite}\fancyhead[R]{\small\color{primary}\nouppercase{\leftmark}}\fancyfoot[C]{\small\thepage\ / \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.45pt}
+\setcounter{tocdepth}{1}
+\setlength{\emergencystretch}{2em}
+\begin{document}
+\begin{titlepage}\centering\vspace*{2cm}{\color{primary}\Large ENGINEERING REFERENCE SERIES\par}\vspace{1.25cm}{\color{ink}\Huge\bfseries Concurrency and IPC Handbook\par}\vspace{0.6cm}{\Large Pthreads, processes, synchronization and message transport\par}\vspace{2cm}\rule{0.75\textwidth}{1.2pt}\par\vspace{0.55cm}{\large An original companion to Michael Kerrisk\textquotesingle s 2010 text}\par\vspace{0.3cm}{\large Edition 1.0\quad |\quad October 2026}\par\vfill{\small Document 06\quad |\quad pdfLaTeX-compatible standalone source}\par\end{titlepage}
+\tableofcontents\clearpage
+\chapter{Ownership and progress model}
+Concurrency control requires two distinct arguments: safety, meaning forbidden states never occur; and liveness, meaning work can eventually advance under stated scheduling and availability assumptions. A lock prevents certain races but can create deadlocks or starvation. A queue provides a communication abstraction but introduces capacity and shutdown state.
+
+\section{Progress properties}
+\begin{itemize}
+\item Mutual exclusion: only one thread can mutate a protected invariant at a time.
+\item Deadlock freedom: no cycle of permanent waits on locks, queues or other resources under declared assumptions.
+\item Starvation resistance: a participant is not indefinitely excluded under intended load.
+\item Backpressure: memory and queued work stay within explicit bounds.
+\item Termination: waiting threads and subprocesses can observe a closed state and exit.
+\end{itemize}
+\chapter{Mutex and condition variable protocol}
+The guarded predicate is the source of truth. A signal or broadcast only announces that rechecking may succeed. Condition-variable waits release and reacquire a mutex atomically, but wakeups may occur without the application predicate becoming true.
+
+\begin{lstlisting}
+#define _POSIX_C_SOURCE 200809L
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define N 8
+struct queue {
+    int a[N], head, tail, count, closed;
+    pthread_mutex_t mu;
+    pthread_cond_t readable, writable;
+};
+static struct queue q = { .mu = PTHREAD_MUTEX_INITIALIZER,
+    .readable = PTHREAD_COND_INITIALIZER,
+    .writable = PTHREAD_COND_INITIALIZER };
+static void *consumer(void *unused) {
+    (void)unused;
+    long sum = 0;
+    pthread_mutex_lock(&q.mu);
+    for (;;) {
+        while (q.count == 0 && !q.closed)
+            pthread_cond_wait(&q.readable, &q.mu);
+        if (q.count == 0 && q.closed) break;
+        int x = q.a[q.head]; q.head = (q.head + 1) % N; --q.count;
+        pthread_cond_signal(&q.writable);
+        pthread_mutex_unlock(&q.mu);
+        sum += x;
+        pthread_mutex_lock(&q.mu);
+    }
+    pthread_mutex_unlock(&q.mu);
+    printf("sum=%ld\n", sum);
+    return NULL;
+}
+int main(void) {
+    pthread_t t;
+    int rc = pthread_create(&t, NULL, consumer, NULL);
+    if (rc != 0) { fprintf(stderr, "pthread_create: %d\n", rc); return 1; }
+    for (int i = 1; i <= 100; ++i) {
+        pthread_mutex_lock(&q.mu);
+        while (q.count == N)
+            pthread_cond_wait(&q.writable, &q.mu);
+        q.a[q.tail] = i; q.tail = (q.tail + 1) % N; ++q.count;
+        pthread_cond_signal(&q.readable);
+        pthread_mutex_unlock(&q.mu);
+    }
+    pthread_mutex_lock(&q.mu);
+    q.closed = 1;
+    pthread_cond_broadcast(&q.readable);
+    pthread_mutex_unlock(&q.mu);
+    rc = pthread_join(t, NULL);
+    if (rc != 0) { fprintf(stderr, "pthread_join: %d\n", rc); return 1; }
+    pthread_cond_destroy(&q.writable); pthread_cond_destroy(&q.readable);
+    pthread_mutex_destroy(&q.mu);
+    return 0;
+}
+\end{lstlisting}
+\section{State transition proof}
+\begin{enumerate}
+\item Invariant I1: 0 <= count <= N.
+\item Invariant I2: head and tail are updated only while mutex mu is held.
+\item Producer waits while count == N and observes the room predicate under the same mutex.
+\item Consumer waits while count == 0 and closed is false.
+\item Setting closed and broadcasting allows a blocked consumer to terminate once the queue drains.
+\item All heap/stack objects must remain valid through pthread\_join, and the mutex/conditions are destroyed last.
+\end{enumerate}
+\chapter{Deadlock prevention and cancellation}
+\begin{itemize}
+\item Maintain a global acquisition order across locks.
+\item Do not block on external I/O while holding a coarse shared-state mutex.
+\item Avoid callbacks into arbitrary user code while holding internal locks.
+\item Use deferred cancellation and cleanup handlers around protected resources.
+\item Use deadline-aware waits, and treat timed waits as potentially racing with normal completion.
+\end{itemize}
+\chapter{Process communication choices}
+\begin{longtable}{p{.19\linewidth}p{.26\linewidth}p{.22\linewidth}p{.22\linewidth}}\toprule
+Facility & Transfer unit & Coordination & Failure/lifetime concern\\\midrule\endhead
+pipe / FIFO & bytes & Blocking/nonblocking read/write & EOF and surviving writers\\
+UNIX socket & stream or datagram & send/recv with peer model & Connection shutdown and credentials\\
+POSIX mq & whole message + priority & queue management & Message limit and name cleanup\\
+SysV mq & typed messages & ID and key-based access & Persistent kernel object cleanup\\
+POSIX shm & shared bytes & Separate mutex/semaphore & ABI layout and initialization\\
+SysV shm & shared bytes & Separate sync primitive & Segment lifetime and attach semantics\\
+POSIX semaphore & integer count & \sys{sem\_wait}/\sys{sem\_post} & No owner recovery guarantee\\
+fcntl locks & byte ranges & Cooperative file participants & Lock ownership and advisory model\\
+\bottomrule\end{longtable}\chapter{IPC protocol specification template}
+\section{Binary header contract}
+For any IPC mechanism that transports untrusted messages, define a version, message type, fixed header size, payload size, byte order, integrity policy, correlation token and timeout rule. Never cast an untrusted byte buffer directly to a padding-sensitive C struct unless the ABI is explicitly controlled.
+
+\begin{center}\fcolorbox{primary}{pale}{\parbox{.90\linewidth}{\texttt{magic:4 | version:2 | type:2 | length:4 | request-id:8 | payload:length}\par\smallskip
+All fields have declared network byte order; reject length above a configured maximum before allocation.}}
+\end{center}\section{State machine}
+\begin{enumerate}
+\item DISCONNECTED: obtain transport and authenticate endpoint.
+\item NEGOTIATING: check version and capabilities, with size and time bounds.
+\item READY: accept frames, validate sizes and enqueue bounded work.
+\item DRAINING: reject new work, finish or cancel in-flight requests, release resources.
+\item CLOSED: close handles, unlink owned objects and record termination result.
+\end{enumerate}
+\chapter{Shared memory publication}
+A mapped shared region can have different virtual addresses in each process. Use offsets from a versioned region base, never raw process pointers. Synchronization primitives must be initialized for process sharing where the standard supports them. Initialization, recovery after crash, endian/ABI assumptions and writer/reader visibility all require a protocol.
+
+\begin{itemize}
+\item Header: magic, version, total length, state, data offsets and optional generation counter.
+\item Publisher: validate size, allocate and map, initialize lock and metadata, then mark READY through synchronized publication.
+\item Reader: map, verify header and capabilities, acquire synchronization and bounds-check every offset.
+\item Teardown: mark DRAINING/CLOSED, stop new attachers, release mappings, unlink owned names.
+\item Recovery: define whether an owner dying mid-update can be detected and repaired.
+\end{itemize}
+\chapter{Signals versus synchronous coordination}
+Signals are useful for lifecycle notifications, but standard signals can coalesce and handler execution is constrained. Prefer queued messages for durable work requests, mutexes and condition variables for shared-memory state, and dedicated sigwait threads or signalfd-based event loops where appropriate. Linux signalfd is an explicit extension.
+
+\chapter{Linux eventfd, timerfd, signalfd and epoll}
+Linux exposes several synchronization and notification events through file descriptors, enabling a unified readiness loop. This can simplify architecture when an application already uses epoll, but each descriptor has separate consumption semantics and portability limits.
+
+\begin{lstlisting}
+#define _GNU_SOURCE
+#include <errno.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/epoll.h>
+#include <sys/eventfd.h>
+#include <unistd.h>
+
+int main(void) {
+    int e = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+    if (e == -1) { perror("eventfd"); return 1; }
+    int ep = epoll_create1(EPOLL_CLOEXEC);
+    if (ep == -1) { perror("epoll_create1"); close(e); return 1; }
+    struct epoll_event event = { .events = EPOLLIN,
+                                 .data.fd = e };
+    if (epoll_ctl(ep, EPOLL_CTL_ADD, e, &event) == -1) {
+        perror("epoll_ctl"); close(ep); close(e); return 1;
+    }
+    uint64_t one = 1, got = 0;
+    if (write(e, &one, sizeof one) != (ssize_t)sizeof one) {
+        perror("write eventfd"); close(ep); close(e); return 1;
+    }
+    struct epoll_event ready;
+    int count = epoll_wait(ep, &ready, 1, 1000);
+    if (count != 1 || !(ready.events & EPOLLIN) ||
+        read(e, &got, sizeof got) != (ssize_t)sizeof got) {
+        fprintf(stderr, "readiness test failed\n");
+        close(ep); close(e); return 1;
+    }
+    printf("event count=%llu\n", (unsigned long long)got);
+    close(ep); close(e); return 0;
+}
+\end{lstlisting}
+\chapter{Performance and correctness experiment design}
+\begin{longtable}{p{.28\linewidth}p{.59\linewidth}}\toprule
+Measured dimension & Measurement discipline\\\midrule\endhead
+Throughput & Fixed payload distribution; warm-up, repeated runs, stated CPU count\\
+Latency & p50/p95/p99, maximum, arrival process and end-to-end definition\\
+CPU & user/system time, context switches and idle baseline\\
+Memory & peak RSS, queue bytes and shared-region size\\
+Fairness & per-worker completed jobs and starvation indicators\\
+Reliability & fault-injected missed wakeups, crash recovery and cleanup\\
+\bottomrule\end{longtable}\chapter{Concurrency review gates}
+\begin{enumerate}
+\item Can every shared variable be associated with a lock, atomic or immutable publication rule?
+\item Is there a unique shutdown owner and a finite wait path for every worker?
+\item Can lost notifications, spurious wakeups or a peer crash violate safety?
+\item Does a queue have explicit size and overload behavior?
+\item Does IPC object cleanup work after both graceful and forced termination?
+\item Were ThreadSanitizer and stress loops run where compatible with the chosen IPC model?
+\end{enumerate}
+
+\chapter*{Source and currency notes}
+\addcontentsline{toc}{chapter}{Source and currency notes}
+\textbf{Foundational source:} Michael Kerrisk, \emph{The Linux Programming Interface: A Linux and UNIX System Programming Handbook}, No Starch Press, 2010, ISBN 978-1-59327-220-3. The textbook's chapter titles and start pages organize the study guide; explanations, tasks, and code in this suite are independently authored educational material, not reproductions of the original text or its example programs.
+
+\textbf{Current reference baseline:} The Open Group / IEEE, \emph{POSIX.1-2024, Issue 8}, \url{https://pubs.opengroup.org/onlinepubs/9799919799/}; Linux man-pages project, \url{https://man7.org/linux/man-pages/}; Linux kernel documentation, \url{https://docs.kernel.org/}. For Linux-only extensions consult the relevant per-interface manual pages and kernel documentation for the target kernel, architecture and libc; availability can differ materially.
+
+\textbf{Scope:} This is an engineering study and implementation companion. It does not claim to restate a normative standard or guarantee a specific Linux kernel's behavior. System calls, libc wrappers and higher-level library functions are explicitly distinguished where material.
+\end{document}

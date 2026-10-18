@@ -1,0 +1,124 @@
+\documentclass[11pt]{article}
+\newcommand{\DocTitle}{Implementation and Migration Blueprint}
+\newcommand{\DocSubtitle}{Incremental modernization with HTML, APIs, state machines and rollback}
+\newcommand{\DocID}{DOS-08}
+\input{design-of-sites-style.tex}
+\begin{document}
+\MakeFront
+\section{Scenario and objective}
+
+\Provenance
+\begin{groundedbox}The historical reference categories used here are B/C/D/F/H/K/L/M [B1]. The hypothetical application and all technical designs/code in this document are newly created teaching examples.\end{groundedbox}
+\textbf{Scenario.} A legacy commerce portal uses a server-rendered catalog, several client-side widgets, desktop-only navigation and a monolithic checkout endpoint. The goal is an accessible, secure and measurable experience without an avoidable rewrite.
+\textbf{Non-goals.} Framework migration for its own sake, one microservice per pattern, replacing usable server rendering with unnecessary hydration, and collecting additional personal data to increase analytics volume.
+
+\section{As-is assessment checklist}
+\begin{itemize}
+\item Inventory top user journeys, conversion interruptions, core route graph and customer support issues.
+\item Inventory browser entry points, pages, forms, identity/session flows, static asset pipeline and APIs.
+\item Assess semantic HTML, keyboard operation, 400 percent zoom, focus and screen reader critical tasks.
+\item Enumerate trust boundaries, payment-provider integration, price authority and log-data exposure.
+\item Capture baseline field web vitals, backend latency, availability and deployment recovery capability.
+\item Identify owners and versions of shared UI libraries and unpublished CMS schemas.
+\end{itemize}
+
+\section{Strangler-style delivery milestones}
+
+\begin{longtable}{@{}p{20mm}p{40mm}p{64mm}p{27mm}@{}}\toprule
+Phase & Delivery target & Exit evidence & Key patterns\\\midrule\endhead
+0 Discover & Research and measurement foundation & Task baselines, threat and route inventory & A/B/E\\
+1 Stabilize & Semantic templates and error recovery & Accessibility and E2E smoke tests & D/H/I/K\\
+2 Extract & Catalog and search contract & Versioned API, ACL tests, query relevance & B/D/J\\
+3 Harden & Cart/order state and identity & Replay, cross-user, payment exceptions & E/F/H\\
+4 Optimize & CDN and rendering/profile changes & Device-segment Web Vitals and tracing & L/M\\
+5 Evolve & Ownership boundaries if justified & ADR, release independence and rollback & A/F/G\\
+\bottomrule\end{longtable}
+\textit{Phase numbering is an implementation plan, not the historical chapter order.}
+
+\section{HTML-first accessible form example}
+
+\begin{lstlisting}[language=HTML]
+<form action="/checkout/address" method="post">
+  <h2>Delivery address</h2>
+  <label for="street">Street address</label>
+  <input id="street" name="street"
+         autocomplete="shipping street-address" required>
+  <p id="street-help">Use the address where you can
+     receive deliveries.</p>
+  <button type="submit">Continue to shipping</button>
+</form>
+\end{lstlisting}
+\textbf{Important:} This shows a minimum semantic baseline, not a complete checkout implementation. Production must associate help using \texttt{aria-describedby}, present validation errors programmatically, use CSRF defenses as applicable and implement server-side validation and authorization.
+
+\section{Progressively enhanced task state}
+
+\begin{enumerate}
+\item GET a canonical route to load state as accessible HTML from the server.
+\item POST a transition with server-side validation, CSRF protection where applicable and idempotency as required.
+\item Redirect after successful mutation to avoid accidental form resubmission where appropriate.
+\item Add client enhancements only after the basic journey and recovery path work; announce dynamic changes accessibly.
+\item Store only necessary draft state and provide explicit expiration behavior.
+\end{enumerate}
+\begin{modernbox}A state machine is preferable to a collection of implicit flags. For checkout, use states such as \texttt{Draft}, \texttt{Reviewed}, \texttt{Submitted}, \texttt{Authorized}, \texttt{Confirmed}, \texttt{Failed} and \texttt{Cancelled}. Define allowed commands, retries and side-effect boundaries for each transition.\end{modernbox}
+
+\section{Server-side idempotency and authorization sketch}
+
+\begin{lstlisting}[language={}]
+// Illustrative pseudocode: one transaction and durable key scope.
+function confirmOrder(actor, cartId, expectedVersion, key) {
+  authorize(actor, "checkout:create", cartId);
+  return transaction(() => {
+    const existing = commands.find(actor.id, "checkout", key);
+    if (existing) return existing.persistedResult;
+    const cart = carts.lockAndRead(cartId);
+    if (cart.version !== expectedVersion) throw Conflict();
+    const price = pricing.recalculate(cart.items);
+    requireExplicitApproval(actor, cart, price);
+    const order = orders.createFromApprovedCart(cart, price);
+    commands.save(actor.id, "checkout", key, order.id);
+    outbox.enqueue("OrderCreated", order.id);
+    return { orderId: order.id };
+  });
+}
+\end{lstlisting}
+\textbf{Production caveat:} The example omits implementation-specific payment authorization, storage retention, distributed command semantics and retry compensation. Never treat \texttt{actor.id} from an unverified client request as proof of identity; use authenticated server context. A persistent uniqueness constraint is required for idempotency.
+
+\section{Component ownership and contracts}
+
+\begin{tabularx}{\linewidth}{@{}p{30mm}XX@{}}\toprule
+Contract & Producer obligation & Consumer obligation\\\midrule
+Design token package & Version semantics, contrast-safe defaults, documentation & Test visual and forced-colors variants\\
+Navigation shell & Landmarks, identity state, route fallback, keyboard behavior & Do not override global focus semantics\\
+Catalog API & Stable identifiers, availability and cache policy & Display freshness and handle unavailable variants\\
+Checkout API & Authoritative pricing, idempotency, traceable errors & Avoid optimistic success before confirmation\\
+Telemetry schema & Redaction rules, units, version, retention & No credentials, private query or payment logging\\
+\bottomrule\end{tabularx}
+
+\section{Release and rollback choreography}
+
+\begin{enumerate}
+\item Introduce route-based traffic segmentation and capture the baseline task completion rate.
+\item Launch read-only pages first; compare SEO, performance, navigation and accessible behavior.
+\item Use contract tests and dual-run shadow reads where safe. Do not duplicate state-changing payment calls.
+\item Canary checkout by a controlled cohort with immediate disablement and state reconciliation procedures.
+\item Verify the order/event ledger before increasing traffic and audit cross-user authorization failures.
+\item Remove legacy paths only after bookmarks, redirects and operational runbooks are validated.
+\end{enumerate}
+\begin{decisionbox}Rollback must account for \emph{data and workflow state}, not only code. An old frontend must not silently misinterpret an order created using a newer state model.\end{decisionbox}
+
+\section{Operational runbook example}
+
+\textbf{Incident:} Order confirmation page times out after payment authorization.
+\begin{enumerate}
+\item Identify correlation by opaque order ID, not customer email or card details.
+\item Inspect checkout transition and provider webhook event; do not blindly resubmit a payment request.
+\item Query idempotency ledger and outbox for durable commit state.
+\item If order exists, return a stable confirmation route; if state is indeterminate, show a recovery message and route to human support.
+\item Reconcile asynchronously with provider records under dual controls and audit changes.
+\item Review user-facing error language, alerts and synthetic recovery tests.
+\end{enumerate}
+
+
+\clearpage
+\input{design-of-sites-references.tex}
+\end{document}

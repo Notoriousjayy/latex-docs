@@ -1,0 +1,128 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage{ad42010-suite}
+\begin{document}
+\DocFront{05}{Architecture Correspondence and Decision Records}{Traceability, consistency, exceptions and rationale}{A record model for connecting architecture description elements, evaluating consistency methods and preserving architecturally significant decisions.}
+\InterpretationKey
+\section{Why explicit relationships matter}
+\begin{Requirement}\FlagReq{} The AD must document its known inconsistencies and contain or reference correspondences and applicable correspondence methods. Every recorded correspondence identifies its participating elements and ADs, and any governing method. Essential architecture decisions and their rationale must be retained. \Source{6.9--6.10}\end{Requirement}
+\begin{Guidance}A useful trace graph has stable nodes, typed edges, provenance, applicability and review history. Avoid equating a document hyperlink with a validated consistency relationship. Define the predicate behind each relation, then provide evidence for satisfied or violated outcomes. The standard allows many kinds of relations; the schemas and algorithms below are local implementation guidance.\end{Guidance}
+\section{Recommended logical record schema}
+\small
+\begin{longtable}{p{0.26\linewidth}p{0.61\linewidth}}\toprule\textbf{Entity / key}&\textbf{Minimal fields and invariants proposed by this suite}\\\midrule\endhead
+\texttt{AD(ad\_id, version)}&EoI ID, environment, purpose, lifecycle baseline and document URI.\\
+\texttt{AD\_Element(element\_id)}&Owning AD/version, element type, element version, canonical URI and lifecycle state.\\
+\texttt{Stakeholder(sh\_id)}&AD scope, role or class, owning organization, disposition.\\
+\texttt{Concern(cn\_id)}&AD scope, question, stakeholder relationship(s), priority source.\\
+\texttt{Perspective(sp\_id)}&Stakeholders holding the perspective, resulting concerns.\\
+\texttt{Aspect(as\_id)}&Related concerns; rationale for selection.\\
+\texttt{Viewpoint(vp\_id, v)}&Specification URI, framed concerns, perspectives, aspects and methods.\\
+\texttt{View(vw\_id, v)}&Governing viewpoint, addressed concerns, aspects, issues, component references.\\
+\texttt{View\_Component(vc\_id,v)}&Associated views, governing model kind or legend, version and evidence URI.\\
+\texttt{Correspondence(co\_id)}&Relation type, participants, participating AD IDs, method ID, recorded evidence.\\
+\texttt{Method(cm\_id,v)}&Applicability, predicate, inputs, evaluation procedure and finding severity.\\
+\texttt{Inconsistency(issue\_id)}&Conflicting elements or claims, observed evidence, owner, impact and resolution.\\
+\texttt{Decision(adr\_id)}&Status, decision owner, scope, essentiality, chosen option, alternatives, rationale, consequences.\\\bottomrule\end{longtable}
+\normalsize
+\begin{Guidance}Prefer typed relations with composite keys including version. If components are shared by views, store the relationship in a join table rather than copying diagram bytes, and pin revisions used by a particular AD baseline.\end{Guidance}
+\section{Core coverage and correspondence rules}
+\begin{longtable}{p{0.16\linewidth}p{0.37\linewidth}p{0.32\linewidth}}\toprule\textbf{Method ID}&\textbf{Predicate (local expression)}&\textbf{Evidence / failure diagnostic}\\\midrule\endhead
+\texttt{CM-01}&Every concern belongs to one or more stakeholders.&Concern-to-stakeholder join; unowned IDs.\\
+\texttt{CM-02}&Each perspective links to identified stakeholders and enumerated concerns.&Perspective join integrity; missing source.\\
+\texttt{CM-03}&Each aspect connects to the concerns to which it applies.&Aspect-to-concern register.\\
+\texttt{CM-04}&Each concern is framed by one or more selected viewpoints.&Concern--viewpoint join, selected revisions.\\
+\texttt{CM-05}&Each concern is addressed by an appropriate view with governing viewpoint.&Coverage join: concern, viewpoint, view.\\
+\texttt{CM-06}&Each perspective and aspect has an addressing view.&Perspective/aspect view coverage.\\
+\texttt{CM-07}&Each selected viewpoint governs at least one view.&Orphan viewpoint scan.\\
+\texttt{CM-08}&Each view contains components, issues and version.&View manifest completeness.\\
+\texttt{CM-09}&Each component has governing model kind or legend.&Component governance scan.\\
+\texttt{CM-10}&Each correspondence identifies elements, ADs and governing methods.&Referential-integrity scan.\\
+\texttt{CM-11}&Every relevant deployed service resolves to a deployment target.&Cross-view runtime/allocation consistency.\\
+\texttt{CM-12}&Every material trust-boundary data flow has defined treatment and owner.&Security/dataflow cross-check.\\\bottomrule\end{longtable}
+\Source{Requirements motivating checks: 6.2--6.9; checks themselves are implementation guidance.}
+\section{Formalizing a consistency check}
+Define the following finite sets and relations for a specific AD baseline:
+\[C=\{\text{concern IDs}\},\qquad P=\{\text{selected viewpoint IDs}\},\qquad V=\{\text{view IDs}\}.\]
+Let \(F\subseteq C\times P\) mean ``viewpoint frames concern'', \(G\subseteq P\times V\) mean ``viewpoint governs view'', and \(A\subseteq V\times C\) mean ``view addresses concern''. A useful local coverage condition is
+\[\forall c\in C,\;\exists p\in P,\, v\in V:\; (c,p)\in F\;\land\;(p,v)\in G\;\land\;(v,c)\in A.\]
+\begin{Worked}\textbf{Failure scenario}: concern \texttt{CN-17} is framed by \texttt{VP-SEC}, but the only related view \texttt{VW-OPS} is governed by \texttt{VP-OPS}. A superficial ``view mentions concern'' search passes; the typed join fails. Repair by relating the concern to an appropriate security view or by revisiting the governing viewpoint specification and associations.\end{Worked}
+\section{Validation algorithm (illustrative)}
+\begin{lstlisting}[language=Python,caption={Local check, not an algorithm prescribed by 42010}]
+def uncovered_concerns(concerns, frames, governs, addresses):
+    # frames: (concern, viewpoint)
+    # governs: (viewpoint, view)
+    # addresses: (view, concern)
+    findings = []
+    for concern in concerns:
+        matches = [
+            (vp, view)
+            for (c, vp) in frames if c == concern
+            for (p, view) in governs if p == vp
+            if (view, concern) in addresses
+        ]
+        if not matches:
+            findings.append((concern, "no valid framed view path"))
+    return findings
+\end{lstlisting}
+\begin{Guidance}Evaluate a snapshot rather than a moving target. Include the AD revision, inventory revision, validation ruleset version, results, assessor and timestamp in generated evidence. Dynamic automation can identify structural gaps, but does not decide whether selected views satisfactorily address architectural concerns.\end{Guidance}
+\section{Correspondence-record template}
+\Field{Correspondence identifier / version / description}{[CO-... / TODO]}
+\Field{Participating elements and source AD identifiers/versions}{[TODO]}
+\Field{Relation type and direction (if meaningful)}{[refines / depends on / satisfies / etc.]}
+\Field{Governing correspondence method / version}{[CM-... / TODO]}
+\Field{Evidence record, evaluator, evaluation date, outcome}{[TODO]}
+\Field{Known conflict and disposition (if any)}{[TODO]}
+\section{Correspondence-method template}
+\Field{Method identifier, source and version}{[CM-... / TODO]}
+\Field{Applicability / participating element kinds and ADs}{[TODO]}
+\Field{Predicate / graph pattern / consistency criterion}{[TODO]}
+\Field{Input sources and required quality/freshness}{[TODO]}
+\Field{Evaluation procedure / reviewer / tooling}{[TODO]}
+\Field{Pass, failure, indeterminate and exception semantics}{[TODO]}
+\begin{Guidance}The explanatory Note 1 in Clause 6.9.3 discusses recording whether methods hold and their known violations. This suite strongly recommends an explicit status per method; for formal normative claims, rely on the controlling numbered provisions of Clauses 6.9.2--6.9.3 and the standard's conventions for informative notes.\end{Guidance}
+\section{Inconsistencies are first-class records}
+\begin{Requirement}\FlagReq{} Record known inconsistencies rather than silently resolving or hiding them in diagram differences. \Source{6.9.1}\end{Requirement}
+\begin{longtable}{p{0.18\linewidth}p{0.26\linewidth}p{0.37\linewidth}}\toprule\textbf{Record}&\textbf{Example}&\textbf{Resolution evidence}\\\midrule\endhead
+\texttt{INC-01}&Context view shows dependency A; deployment shows B.&Owner inspects baseline, accepts alias map or issues corrective ADR.\\
+\texttt{INC-02}&Runtime view retry count differs from runbook.&Fix view component and regenerate governed projections.\\
+\texttt{INC-03}&Threat model lists an unowned control.&Assign owner or document accepted residual risk with authority.\\\bottomrule\end{longtable}
+\section{Architecture decision record (ADR) workbook}
+\begin{Requirement}\FlagReq{} Include essential architectural decisions within the stated scope and preserve rationale for each. \Source{6.10.1--6.10.2}\end{Requirement}
+\begin{Guidance}Consider a decision essential when it drives significant constraints, recurring cost, irreversible dependencies, external commitments or architecture-wide trade-offs. Identification, date, decision authority, alternatives, assumptions, consequences and links are useful but not all independently mandatory fields in Clause 6.10.\end{Guidance}
+\subsection{ADR template}
+\Field{ID, title, version, decision owner, status, timestamps}{[TODO]}
+\Field{Context: EoI, concern, viewpoint, views, requirements and constraints}{[TODO]}
+\Field{Decision and expected effect on architecture}{[TODO]}
+\Field{Alternatives and explicit rejection reasons (recommended)}{[TODO]}
+\Field{Rationale / evidence / confidence (required for essential decisions)}{[TODO]}
+\Field{Consequences, dependencies, new concerns and risks}{[TODO]}
+\Field{Review trigger / superseded-by relationship}{[TODO]}
+\subsection{Worked example: asynchronous payment processing}
+\begin{Worked}
+\textbf{ADR-012}: adopt asynchronous completion with idempotent submission for external provider requests.\par
+\textbf{Context}: under peak load, synchronous provider calls risk exhausting application request capacity. Related concerns: \texttt{CN-02} failure and completion, \texttt{CN-05} latency.\par
+\textbf{Options}: (A) synchronous request/response; (B) queue-backed processing with completion status; (C) batch settlement.\par
+\textbf{Decision}: B; provide idempotency key and durable transaction state; expose status queries.\par
+\textbf{Rationale}: decouples user-facing request lifetime from provider availability but makes eventual completion and operational state visibility explicit architecture responsibilities.\par
+\textbf{Consequences}: event retries, dead-letter handling, reconciliation and observability become essential; new data consistency concerns arise.\par
+\textbf{Trace links}: \texttt{VW-FUN-02}, \texttt{VW-OPS-01}, \texttt{VC-SEQUENCE-02}; \texttt{CM-EVENT/1} validates message/contract consistency.\par
+\textbf{Evidence to seek}: throughput/failure tests, runbook exercise, state model. These are not supplied by the example.
+\end{Worked}
+\section{Change-impact and review workflow}
+\begin{enumerate}
+\item Freeze the current EoI, viewpoint, view and component revisions.
+\item For each changed AD element, calculate related incoming and outgoing correspondences.
+\item Re-run impacted correspondence methods and compare against previous results.
+\item Update known inconsistencies and identify new essential decisions or superseded rationale.
+\item Verify coverage relationships for newly identified concerns, perspectives and aspects.
+\item Document affected stakeholders and publish a new AD baseline with review evidence.
+\end{enumerate}
+\begin{Guidance}This workflow is an optional approach to maintaining traceable ADs. In a CI pipeline, use a blocking gate only for well-defined syntactic and referential-integrity properties; route interpretive concerns to human architecture review rather than claiming machine-proven architectural adequacy.\end{Guidance}
+\section{Audit-ready metrics (optional)}
+\begin{align*}
+\text{Concern coverage} &= \frac{|\{c\in C : \exists p,v\text{ satisfying the coverage rule}\}|}{|C|},\quad |C|>0\\
+\text{Method evaluation rate} &= \frac{\#\text{ applicable methods with recorded outcomes}}{\#\text{ applicable methods}},\\
+\text{Issue closure rate} &= \frac{\#\text{ resolved known inconsistencies}}{\#\text{ known inconsistencies}}.
+\end{align*}
+These ratios are internal indicators only, not threshold requirements or proxies for formal conformance. A 100\% structural coverage score cannot establish that a view resolves a concern satisfactorily.
+\LegalFooter
+\end{document}

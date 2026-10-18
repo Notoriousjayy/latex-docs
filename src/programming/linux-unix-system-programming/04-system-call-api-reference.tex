@@ -1,0 +1,186 @@
+\documentclass[11pt,letterpaper,oneside]{report}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.90in,headheight=15pt]{geometry}
+\usepackage{microtype}
+\usepackage[svgnames,table]{xcolor}
+\usepackage{amsmath,amssymb,booktabs,longtable,tabularx,array}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{lastpage}
+\definecolor{ink}{HTML}{14273C}
+\definecolor{primary}{HTML}{0B5379}
+\definecolor{accent}{HTML}{B66A30}
+\definecolor{pale}{HTML}{F1F5F8}
+\definecolor{codebg}{HTML}{F5F7F8}
+\hypersetup{colorlinks=true,linkcolor=primary,urlcolor=primary,pdftitle={Linux and UNIX System Programming Engineering Suite}}
+\titleformat{\chapter}[display]{\normalfont\LARGE\bfseries\color{ink}}{\color{accent}\large\MakeUppercase{\chaptername}\ \thechapter}{10pt}{}[\vspace{0.4ex}\titlerule]
+\titleformat{\section}{\Large\bfseries\color{primary}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{ink}}{\thesubsection}{0.7em}{}
+\setlist[itemize]{leftmargin=*,topsep=3pt,itemsep=2pt}
+\setlist[enumerate]{leftmargin=*,topsep=3pt,itemsep=3pt}
+\setlength{\parskip}{5pt}
+\setlength{\parindent}{0pt}
+\lstdefinestyle{sysc}{language=C,basicstyle=\ttfamily\footnotesize,backgroundcolor=\color{codebg},keywordstyle=\bfseries\color{primary},commentstyle=\color{ForestGreen},stringstyle=\color{Brown},breaklines=true,showstringspaces=false,tabsize=4,frame=single,rulecolor=\color{LightSteelBlue},columns=fullflexible,keepspaces=true}
+\lstset{style=sysc}
+\newtcolorbox{engineeringnote}[1][]{colback=pale,colframe=primary,boxrule=0.55pt,arc=1.5mm,title=Engineering note,fonttitle=\bfseries,#1}
+\newtcolorbox{modernnote}[1][]{colback=white,colframe=accent,boxrule=0.55pt,arc=1.5mm,title=Modern extension --- not in the 2010 textbook,fonttitle=\bfseries,#1}
+\newcommand{\sys}[1]{\texttt{#1}}
+\pagestyle{fancy}\fancyhf{}\fancyhead[L]{\small\color{ink} Linux / UNIX Engineering Suite}\fancyhead[R]{\small\color{primary}\nouppercase{\leftmark}}\fancyfoot[C]{\small\thepage\ / \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.45pt}
+\setcounter{tocdepth}{1}
+\setlength{\emergencystretch}{2em}
+\begin{document}
+\begin{titlepage}\centering\vspace*{2cm}{\color{primary}\Large ENGINEERING REFERENCE SERIES\par}\vspace{1.25cm}{\color{ink}\Huge\bfseries System-Call and API Reference\par}\vspace{0.6cm}{\Large Return contracts, portability, ownership and failure modes\par}\vspace{2cm}\rule{0.75\textwidth}{1.2pt}\par\vspace{0.55cm}{\large An original companion to Michael Kerrisk\textquotesingle s 2010 text}\par\vspace{0.3cm}{\large Edition 1.0\quad |\quad October 2026}\par\vfill{\small Document 04\quad |\quad pdfLaTeX-compatible standalone source}\par\end{titlepage}
+\tableofcontents\clearpage
+\chapter{Reading a system interface correctly}
+This index intentionally includes actual system-call wrappers, standardized library interfaces, and Linux-specific extensions: they are labeled to avoid the common error of calling every C API a kernel syscall. Contracts are concise orientation notes, not full normative specifications. Confirm individual man-pages and the current POSIX volume, particularly any version- or architecture-sensitive interface.
+
+\section{Return-value patterns}
+\begin{itemize}
+\item POSIX read/write: a nonnegative transfer count, potentially short; -1 on error with errno.
+\item pthread APIs: return an error number directly; zero means success.
+\item getaddrinfo: uses EAI\_* return values, not errno, for normal lookup errors.
+\item mmap: failure is MAP\_FAILED, not NULL.
+\item execve: a successful call does not return; if it returns it failed.
+\item time APIs and dynamic-loading functions may use their own status conventions.
+\end{itemize}
+\chapter{Cross-domain interface catalog}
+\footnotesize\setlength{\tabcolsep}{3pt}\setlength\LTleft{0pt}\setlength\LTright{0pt}
+\begin{longtable}{>{\raggedright\arraybackslash}p{.18\linewidth}>{\raggedright\arraybackslash}p{.17\linewidth}>{\raggedright\arraybackslash}p{.12\linewidth}>{\raggedright\arraybackslash}p{.18\linewidth}>{\raggedright\arraybackslash}p{.25\linewidth}}\toprule
+API & Provenance / type & Domain & Result & Pitfall to test\\\midrule\endfirsthead
+\toprule API & Provenance / type & Domain & Result & Pitfall to test\\\midrule\endhead
+\path{open} & POSIX function & file & descriptor or -1 & CLOEXEC and symlink policy\\
+\path{openat} & POSIX function & file & descriptor or -1 & directory trust and traversal\\
+\path{read} & POSIX function & file & count/0/-1 & short transfer and EINTR\\
+\path{write} & POSIX function & file & count/-1 & short transfer and EPIPE\\
+\path{close} & POSIX function & file & 0/-1 & never retry Linux close on EINTR blindly\\
+\path{lseek} & POSIX function & file & offset/-1 & ESPIPE for nonseekable fd\\
+\path{pread} & POSIX function & file & count/-1 & positioned read independent of fd offset\\
+\path{pwrite} & POSIX function & file & count/-1 & partial write and append interactions\\
+\path{dup} & POSIX function & file & descriptor/-1 & shared open file description\\
+\path{dup2} & POSIX function & file & descriptor/-1 & atomic replacement; close-on-exec\\
+\path{dup3} & Linux-specific & file & descriptor/-1 & O\_CLOEXEC availability\\
+\path{fcntl} & POSIX function & file & operation-dependent & advisory locks and flags\\
+\path{stat} & POSIX function & file & 0/-1 & TOCTOU with path relookup\\
+\path{fstat} & POSIX function & file & 0/-1 & object check after open\\
+\path{fchmod} & POSIX function & file & 0/-1 & authorization before attribute change\\
+\path{rename} & POSIX function & file & 0/-1 & atomic namespace change, not durability\\
+\path{renameat} & POSIX function & file & 0/-1 & dirfd anchor and race policies\\
+\path{unlinkat} & POSIX function & file & 0/-1 & directory entry not open-file close\\
+\path{mkdirat} & POSIX function & file & 0/-1 & mode and umask interact\\
+\path{readlinkat} & POSIX function & file & count/-1 & no automatic terminating NUL\\
+\path{fsync} & POSIX function & file & 0/-1 & sync file but not necessarily directory\\
+\path{fdatasync} & POSIX function & file & 0/-1 & data and necessary metadata sync\\
+\path{mmap} & POSIX function & memory & MAP\_FAILED & mapping lifetime and SIGBUS\\
+\path{munmap} & POSIX function & memory & 0/-1 & dangling pointers after unmap\\
+\path{mprotect} & POSIX function & memory & 0/-1 & page-aligned ranges\\
+\path{madvise} & POSIX function & memory & 0/-1 & hints do not guarantee outcomes\\
+\path{fork} & POSIX function & process & PID/0/-1 & multithreaded fork restrictions\\
+\path{execve} & POSIX function & process & does not return/-1 & argv env and fd inheritance\\
+\path{waitpid} & POSIX function & process & PID/0/-1 & child ownership and zombies\\
+\path{waitid} & POSIX function & process & 0/-1 & status and option validation\\
+\path{_exit} & POSIX function & process & no return & exit without stdio flushing\\
+\path{kill} & POSIX function & signal & 0/-1 & PID reuse and permission semantics\\
+\path{sigaction} & POSIX function & signal & 0/-1 & async-signal-safe handlers\\
+\path{sigprocmask} & POSIX function & signal & 0/-1 & threads require pthread\_sigmask\\
+\path{sigsuspend} & POSIX function & signal & -1/EINTR & mask replacement atomicity\\
+\path{sigwaitinfo} & POSIX function & signal & signal/-1 & block signals before waiting\\
+\path{clock_gettime} & POSIX function & time & 0/-1 & choose monotonic for durations\\
+\path{clock_nanosleep} & POSIX function & time & 0 or error code & absolute deadlines; direct error return\\
+\path{getrlimit} & POSIX function & resource & 0/-1 & hard and soft limits\\
+\path{setrlimit} & POSIX function & resource & 0/-1 & privileges and inherited bounds\\
+\path{getrusage} & POSIX function & resource & 0/-1 & per-process or child accounting\\
+\path{setpgid} & POSIX function & process & 0/-1 & process-group races\\
+\path{setsid} & POSIX function & process & session ID/-1 & controlling terminal semantics\\
+\path{sched_yield} & POSIX function & scheduler & 0/-1 & avoid busy waiting design\\
+\path{shm_open} & POSIX function & IPC & descriptor/-1 & named object lifecycle\\
+\path{shm_unlink} & POSIX function & IPC & 0/-1 & name removal vs mappings\\
+\path{sem_open} & POSIX library API & IPC & pointer/SEM\_FAILED & named semaphore ownership\\
+\path{sem_wait} & POSIX library API & IPC & 0/-1 & interruptions and shutdown\\
+\path{sem_post} & POSIX library API & IPC & 0/-1 & no mutex-style ownership\\
+\path{mq_open} & POSIX function & IPC & mq descriptor/-1 & naming quotas; Linux fd behavior nonportable\\
+\path{mq_send} & POSIX function & IPC & 0/-1 & queue full or deadline\\
+\path{mq_receive} & POSIX function & IPC & bytes/-1 & sufficient buffer sizing\\
+\path{msgget} & System V IPC API & IPC & identifier/-1 & persistent key namespace\\
+\path{msgsnd} & System V IPC API & IPC & 0/-1 & bounded capacity and permissions\\
+\path{msgrcv} & System V IPC API & IPC & bytes/-1 & message type rules\\
+\path{semget} & System V IPC API & IPC & identifier/-1 & set allocation and persistence\\
+\path{semop} & System V IPC API & IPC & 0/-1 & atomic vector and undo semantics\\
+\path{shmget} & System V IPC API & IPC & identifier/-1 & persistent segment lifetime\\
+\path{shmat} & System V IPC API & IPC & address/(void*)-1 & offset-based shared data\\
+\path{flock} & Linux/BSD API & file & 0/-1 & not portable as a POSIX standard interface\\
+\path{socket} & POSIX function & network & descriptor/-1 & domain and socket type\\
+\path{bind} & POSIX function & network & 0/-1 & address and local privilege\\
+\path{listen} & POSIX function & network & 0/-1 & bounded connection backlog\\
+\path{accept} & POSIX function & network & descriptor/-1 & inherited flags vary by platform\\
+\path{connect} & POSIX function & network & 0/-1 & EINPROGRESS on nonblocking sockets\\
+\path{send} & POSIX function & network & bytes/-1 & short sends and EPIPE\\
+\path{recv} & POSIX function & network & bytes/0/-1 & stream boundaries absent\\
+\path{sendmsg} & POSIX function & network & bytes/-1 & ancillary-data validation\\
+\path{recvmsg} & POSIX function & network & bytes/0/-1 & SCM\_RIGHTS ownership\\
+\path{setsockopt} & POSIX function & network & 0/-1 & options vary by platform\\
+\path{getsockopt} & POSIX function & network & 0/-1 & type/length validation\\
+\path{getaddrinfo} & POSIX library API & network & 0 or EAI error & not errno; result iteration\\
+\path{poll} & POSIX function & readiness & ready count/-1 & POLLHUP and POLLERR handling\\
+\path{select} & POSIX function & readiness & ready count/-1 & FD\_SETSIZE caveats\\
+\path{epoll_create1} & Linux-specific & readiness & descriptor/-1 & CLOEXEC and lifetime\\
+\path{epoll_ctl} & Linux-specific & readiness & 0/-1 & interest-list races and limits\\
+\path{epoll_wait} & Linux-specific & readiness & ready count/-1 & drain nonblocking ET fds\\
+\path{signalfd} & Linux-specific & signal & descriptor/-1 & mask and signal ownership\\
+\path{timerfd_create} & Linux-specific & time & descriptor/-1 & clock and deadline choice\\
+\path{eventfd} & Linux-specific & IPC & descriptor/-1 & counter semantics\\
+\path{inotify_init1} & Linux-specific & filesystem & descriptor/-1 & watch and event queue limits\\
+\path{openat2} & Linux-specific & filesystem & descriptor/-1 & struct open\_how and resolution policy\\
+\path{pidfd_open} & Linux-specific & process & descriptor/-1 & process lifetime and permissions\\
+\path{clone3} & Linux-specific & process & PID/-1 & flag ABI and kernel version\\
+\path{seccomp} & Linux-specific & security & operation-dependent & filters are not comprehensive sandboxes\\
+\path{landlock_create_ruleset} & Linux-specific & security & descriptor/-1 & ABI and ruleset limitations\\
+\path{io_uring_setup} & Linux-specific & async I/O & descriptor/-1 & SQ/CQ lifetime and supported features\\
+\path{pthread_create} & POSIX library API & threads & 0 or error code & join/detach ownership\\
+\path{pthread_join} & POSIX library API & threads & 0 or error code & lifecycle and deadlocks\\
+\path{pthread_mutex_lock} & POSIX library API & threads & 0 or error code & ordering and deadlock\\
+\path{pthread_cond_wait} & POSIX library API & threads & 0 or error code & predicate while-loop\\
+\path{pthread_cancel} & POSIX library API & threads & 0 or error code & cleanup handlers\\
+\path{posix_spawn} & POSIX library API & process & 0 or error code & file actions; controlled environment\\
+\bottomrule\end{longtable}\normalsize\setlength{\tabcolsep}{6pt}
+\chapter{API selection: common errors}
+\section{read/write loops}
+Model positive partial return values as progress. A zero-length successful read on a regular file is EOF; 0 from write with a nonzero request is not useful progress. EINTR retry logic must not discard progress.
+
+\section{Object identity and races}
+Pathnames are lookups, not stable object references. Prefer operations anchored to file descriptors where security decisions are tied to the opened object.
+
+\section{Cleanup}
+Do not retry close blindly when Linux has already released the descriptor: it may close a different descriptor reused by another thread. Decide how to preserve and report delayed write errors.
+
+\section{Blocking and cancellation}
+Specify which operations can block, whether they are interruptible, and the protocol for shutdown. Error injection should cover EAGAIN and canceled work.
+
+\section{Non-POSIX controls}
+Keep Linux-only syscall probes behind a small abstraction and explicitly define behavior on older kernels, unsupported filesystems, or constrained containers.
+
+\chapter{Suggested API audit worksheet}
+\begin{longtable}{p{.23\linewidth}p{.65\linewidth}}\toprule Field & Required evidence\\\midrule\endhead
+Contract & Exact header, function signature, feature-test macros and return semantics\\
+Resource & Owner, lifetime, inheritance and explicit close/destroy action\\
+Failure & Error codes, retries, partial progress and failure cleanup\\
+Security & Input trust boundary, permissions, credentials and race behavior\\
+Concurrency & Atomicity guarantees and thread-/signal-safety constraints\\
+Portability & POSIX issue versus Linux-specific; fallback and tests\\
+Performance & Baseline, workload distributions, system limits and observability\\
+\bottomrule\end{longtable}
+\chapter*{Source and currency notes}
+\addcontentsline{toc}{chapter}{Source and currency notes}
+\textbf{Foundational source:} Michael Kerrisk, \emph{The Linux Programming Interface: A Linux and UNIX System Programming Handbook}, No Starch Press, 2010, ISBN 978-1-59327-220-3. The textbook's chapter titles and start pages organize the study guide; explanations, tasks, and code in this suite are independently authored educational material, not reproductions of the original text or its example programs.
+
+\textbf{Current reference baseline:} The Open Group / IEEE, \emph{POSIX.1-2024, Issue 8}, \url{https://pubs.opengroup.org/onlinepubs/9799919799/}; Linux man-pages project, \url{https://man7.org/linux/man-pages/}; Linux kernel documentation, \url{https://docs.kernel.org/}. For Linux-only extensions consult the relevant per-interface manual pages and kernel documentation for the target kernel, architecture and libc; availability can differ materially.
+
+\textbf{Scope:} This is an engineering study and implementation companion. It does not claim to restate a normative standard or guarantee a specific Linux kernel's behavior. System calls, libc wrappers and higher-level library functions are explicitly distinguished where material.
+\end{document}

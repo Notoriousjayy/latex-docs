@@ -1,0 +1,190 @@
+\documentclass[11pt,letterpaper,oneside]{report}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.90in,headheight=15pt]{geometry}
+\usepackage{microtype}
+\usepackage[svgnames,table]{xcolor}
+\usepackage{amsmath,amssymb,booktabs,longtable,tabularx,array}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{lastpage}
+\definecolor{ink}{HTML}{14273C}
+\definecolor{primary}{HTML}{0B5379}
+\definecolor{accent}{HTML}{B66A30}
+\definecolor{pale}{HTML}{F1F5F8}
+\definecolor{codebg}{HTML}{F5F7F8}
+\hypersetup{colorlinks=true,linkcolor=primary,urlcolor=primary,pdftitle={Linux and UNIX System Programming Engineering Suite}}
+\titleformat{\chapter}[display]{\normalfont\LARGE\bfseries\color{ink}}{\color{accent}\large\MakeUppercase{\chaptername}\ \thechapter}{10pt}{}[\vspace{0.4ex}\titlerule]
+\titleformat{\section}{\Large\bfseries\color{primary}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{ink}}{\thesubsection}{0.7em}{}
+\setlist[itemize]{leftmargin=*,topsep=3pt,itemsep=2pt}
+\setlist[enumerate]{leftmargin=*,topsep=3pt,itemsep=3pt}
+\setlength{\parskip}{5pt}
+\setlength{\parindent}{0pt}
+\lstdefinestyle{sysc}{language=C,basicstyle=\ttfamily\footnotesize,backgroundcolor=\color{codebg},keywordstyle=\bfseries\color{primary},commentstyle=\color{ForestGreen},stringstyle=\color{Brown},breaklines=true,showstringspaces=false,tabsize=4,frame=single,rulecolor=\color{LightSteelBlue},columns=fullflexible,keepspaces=true}
+\lstset{style=sysc}
+\newtcolorbox{engineeringnote}[1][]{colback=pale,colframe=primary,boxrule=0.55pt,arc=1.5mm,title=Engineering note,fonttitle=\bfseries,#1}
+\newtcolorbox{modernnote}[1][]{colback=white,colframe=accent,boxrule=0.55pt,arc=1.5mm,title=Modern extension --- not in the 2010 textbook,fonttitle=\bfseries,#1}
+\newcommand{\sys}[1]{\texttt{#1}}
+\pagestyle{fancy}\fancyhf{}\fancyhead[L]{\small\color{ink} Linux / UNIX Engineering Suite}\fancyhead[R]{\small\color{primary}\nouppercase{\leftmark}}\fancyfoot[C]{\small\thepage\ / \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.45pt}
+\setcounter{tocdepth}{1}
+\setlength{\emergencystretch}{2em}
+\begin{document}
+\begin{titlepage}\centering\vspace*{2cm}{\color{primary}\Large ENGINEERING REFERENCE SERIES\par}\vspace{1.25cm}{\color{ink}\Huge\bfseries Technical Reference\par}\vspace{0.6cm}{\Large Linux and UNIX system programming architecture\par}\vspace{2cm}\rule{0.75\textwidth}{1.2pt}\par\vspace{0.55cm}{\large An original companion to Michael Kerrisk\textquotesingle s 2010 text}\par\vspace{0.3cm}{\large Edition 1.0\quad |\quad October 2026}\par\vfill{\small Document 01\quad |\quad pdfLaTeX-compatible standalone source}\par\end{titlepage}
+\tableofcontents\clearpage
+\chapter{System programming mental model}
+A user-space program interacts with the kernel through system calls, usually by C library wrappers. libc provides ABI mediation, cancellation behavior, feature-test-macro exposure, and additional functions implemented wholly in user space. Successful engineering begins by separating the API contract from kernel details, and persistent objects from process-local handles.
+
+\section{Four separations to model}
+\begin{itemize}
+\item Process versus program: an exec operation replaces the program image without necessarily changing process identity.
+\item File descriptor versus open file description versus inode: descriptor copies can share offsets; independent opens generally do not.
+\item Virtual addresses versus physical memory: page tables, page faults, mappings and copy-on-write govern visibility.
+\item Portability guarantee versus Linux-specific extension: the POSIX interface and Linux kernel facilities are not identical sets.
+\end{itemize}
+\begin{engineeringnote}
+Document each API with caller-visible behavior, failure conditions, ownership transfer, synchronization constraints, resource bounds, privilege requirements, and portability. Do not infer behavior solely from a successful demonstration.
+\end{engineeringnote}
+\section{User-space / kernel boundary and ownership}
+\begin{center}\fcolorbox{primary}{pale}{\parbox{.82\linewidth}{\centering
+Application state, invariants and protocol framing\\[4pt]
+\textbf{$\downarrow$ C/POSIX API and libc wrappers $\downarrow$}\\[4pt]
+Kernel tasks, file tables, virtual memory, VFS, IPC and network stack\\[4pt]
+\textbf{$\downarrow$ devices, peers, filesystems and scheduling $\downarrow$}\\[4pt]
+Externally observable effects and recoverable failures}}
+\end{center}
+\section{A resource lifecycle contract}
+\begin{enumerate}
+\item Acquire the resource with explicit flags and a documented starting state.
+\item Check the return contract; record only enough diagnostic context, then handle or propagate failure.
+\item Establish a single responsible owner and define whether ownership is transferred or shared.
+\item Perform partial and interrupted operations in a bounded loop; avoid consuming unvalidated data.
+\item Apply deadlines, maximum sizes, and cancellation policies.
+\item Close/unmap/destroy all resources; detect cleanup errors where they affect data integrity.
+\item Assert externally observable postconditions and fault-injection behavior.
+\end{enumerate}
+\chapter{Portable interface design}
+POSIX.1-2001 and POSIX.1-2008 frame the source textbook. POSIX.1-2024 is a later normative edition and must be verified independently. Linux-specific APIs should be hidden behind feature probes and explicit fallbacks where portability is a requirement.
+
+\begin{longtable}{p{.22\linewidth}p{.31\linewidth}p{.35\linewidth}}\toprule
+Boundary & Preferred baseline & Linux-only or implementation-sensitive alternative\\\midrule\endhead
+File opening & \sys{openat}, \sys{O\_CLOEXEC} & \sys{openat2} with restricted resolution policies\\
+Process launch & \sys{posix\_spawn}, \sys{fork}/\sys{execve} & \sys{clone3} and pidfds\\
+Timing & \sys{clock\_gettime}, \sys{clock\_nanosleep} & \sys{timerfd} for descriptor-based loops\\
+I/O readiness & \sys{poll} / \sys{select} & \sys{epoll}; \sys{io\_uring} for async completions\\
+Filesystem watch & Periodic inspection with cost bounds & \sys{inotify}, fanotify (distinct capabilities)\\
+Privileges & Effective credentials, permission model & Capabilities, seccomp, Landlock, namespaces\\
+Resources & \sys{getrlimit}/\sys{setrlimit} & cgroup v2 hierarchical resource control\\
+\bottomrule\end{longtable}
+\section{Feature-detection protocol}
+\begin{enumerate}
+\item Build an API availability table for minimum kernel and libc, noting the syscall wrapper independently.
+\item Probe runtime support without treating EPERM, ENOSYS and EINVAL as equivalent.
+\item Keep an explicit contract for a supported fallback implementation.
+\item Exercise unit and integration tests on the minimum supported systems; never gate solely on uname release strings.
+\end{enumerate}
+\chapter{I/O correctness and durability}
+\section{Read/write semantics}
+read may return fewer bytes than requested and zero indicates EOF for regular files; for sockets it can signal orderly stream shutdown. write may complete partially; robust loops track an offset and retry interrupted calls when appropriate.
+
+\section{Atomicity and shared offsets}
+Atomicity applies to specific interfaces and conditions, not arbitrary sequences. O\_APPEND controls append positioning; dup and fork can share an underlying open file description. pread/pwrite avoid the shared sequential offset for positioned operations.
+
+\section{Durability and consistency}
+stdio flushing, kernel page-cache writeback and power-loss persistence are distinct layers. For durable file replacement, a documented application may need temporary-file creation, data fsync, atomic rename and directory sync; filesystem and storage semantics still matter.
+
+\section{Pathnames and identity}
+Use dirfd-relative operations to bind traversal to known directories. Avoid check-then-open sequences on attacker-influenced paths. Retain file descriptors and verify the opened object with fstat when object properties matter.
+
+\chapter{Process and thread lifecycle}
+\section{Transition model}
+\begin{itemize}
+\item fork creates a child with copied logical memory state and inherited descriptor references; async-signal-safe restrictions matter between fork and exec in a multithreaded program.
+\item execve replaces a process image. Deliberately specify argv/envp and close-on-exec policy; do not pass untrusted input through a shell.
+\item waitpid and waitid reclaim child status; use a clearly owned reaping strategy to avoid zombies.
+\item pthread\_create introduces concurrent execution over shared address space; pthread\_join coordinates completion and ownership.
+\item Signals are event notifications with special safety rules, not a substitute for queue-like IPC or consistent shared-state synchronization.
+\end{itemize}
+\section{Thread/process invariant catalog}
+\begin{itemize}
+\item Every mutex protects a named invariant, and all accesses to the protected mutable state follow that convention.
+\item A condition variable is paired with a predicate checked in a while loop.
+\item All shared-memory protocols define initialization order, publication, atomicity and teardown.
+\item Every spawned child has a reaping owner and an explicit termination path.
+\item All waits have a stated policy for cancellation, signals, deadlines and shutdown.
+\end{itemize}
+\chapter{Filesystem and IPC decision architecture}
+\begin{longtable}{p{.22\linewidth}p{.32\linewidth}p{.31\linewidth}}\toprule
+Mechanism & Strong fit & Operational concern\\\midrule\endhead
+Pipe / FIFO & Stream data between local processes & Backpressure, EOF and descriptor inheritance\\
+UNIX stream socket & Bidirectional local protocol & Framing, authorization and peer identity\\
+UNIX datagram socket & Bounded local messages & Delivery and size behavior must be defined\\
+POSIX message queue & Prioritized messages & Kernel limits and persistent queue naming\\
+Shared memory & High-throughput shared state & Synchronization and layout/ABI versioning\\
+POSIX semaphore & Counting coordination & No automatic owner-based unlock\\
+Record/file locks & Advisory coordinated file access & Lock namespace, ownership and crash cleanup\\
+TCP socket & Reliable byte stream across hosts & No inherent message framing or TLS\\
+UDP socket & Datagram exchange & Loss, ordering and size policies\\
+\bottomrule\end{longtable}
+\chapter{Modern Linux extensions and research map}
+\section{openat2 and pathname resolution}
+Use an open\_how structure and resolution controls for directory-scoped path resolution. The interface is Linux-only; do not mistake it for a general purpose security sandbox.
+
+\begin{modernnote}
+Read the latest platform documentation and test permissions, availability, and explicit fail-closed behavior before selecting this feature.
+\end{modernnote}
+\section{pidfd and clone3}
+File-descriptor references to tasks support less racy lifecycle supervision. clone3 uses an extensible argument structure; version and kernel constraints require checking.
+
+\begin{modernnote}
+Read the latest platform documentation and test permissions, availability, and explicit fail-closed behavior before selecting this feature.
+\end{modernnote}
+\section{io\_uring}
+A submission queue and a completion queue implement asynchronous operations. It is a completion model, not merely an interchangeable epoll optimization. Compare memory lifetimes, cancellation and supported opcodes.
+
+\begin{modernnote}
+Read the latest platform documentation and test permissions, availability, and explicit fail-closed behavior before selecting this feature.
+\end{modernnote}
+\section{seccomp, Landlock and no\_new\_privs}
+seccomp filters restrict syscall entry points, not full object-level authorization. Landlock can restrict selected filesystem and other operations subject to ABI version and ruleset configuration.
+
+\begin{modernnote}
+Read the latest platform documentation and test permissions, availability, and explicit fail-closed behavior before selecting this feature.
+\end{modernnote}
+\section{Namespaces and cgroup v2}
+Namespaces partition visibility and object identity; cgroups organize resource management and enforcement. Neither alone implies secure isolation.
+
+\begin{modernnote}
+Read the latest platform documentation and test permissions, availability, and explicit fail-closed behavior before selecting this feature.
+\end{modernnote}
+\section{eBPF and tracing}
+eBPF enables controlled kernel instrumentation subject to verifier, privileges and deployment policy. Use tracing for diagnostics; do not claim that passive visibility prevents exploitation.
+
+\begin{modernnote}
+Read the latest platform documentation and test permissions, availability, and explicit fail-closed behavior before selecting this feature.
+\end{modernnote}
+\chapter{Engineering evidence and design review}
+\begin{itemize}
+\item Interface contract and version support matrix
+\item Syscall trace capturing both successful and fault-induced paths
+\item Thread ownership, locking order and race analysis
+\item Input boundary and protocol framing tests
+\item Linux privilege and sandbox configuration with least-permission justification
+\item Latency distributions, resource-limit tests and operational cleanup observations
+\end{itemize}
+
+\chapter*{Source and currency notes}
+\addcontentsline{toc}{chapter}{Source and currency notes}
+\textbf{Foundational source:} Michael Kerrisk, \emph{The Linux Programming Interface: A Linux and UNIX System Programming Handbook}, No Starch Press, 2010, ISBN 978-1-59327-220-3. The textbook's chapter titles and start pages organize the study guide; explanations, tasks, and code in this suite are independently authored educational material, not reproductions of the original text or its example programs.
+
+\textbf{Current reference baseline:} The Open Group / IEEE, \emph{POSIX.1-2024, Issue 8}, \url{https://pubs.opengroup.org/onlinepubs/9799919799/}; Linux man-pages project, \url{https://man7.org/linux/man-pages/}; Linux kernel documentation, \url{https://docs.kernel.org/}. For Linux-only extensions consult the relevant per-interface manual pages and kernel documentation for the target kernel, architecture and libc; availability can differ materially.
+
+\textbf{Scope:} This is an engineering study and implementation companion. It does not claim to restate a normative standard or guarantee a specific Linux kernel's behavior. System calls, libc wrappers and higher-level library functions are explicitly distinguished where material.
+\end{document}

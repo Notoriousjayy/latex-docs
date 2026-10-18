@@ -1,0 +1,335 @@
+\documentclass[11pt,letterpaper]{article}
+% This source is intentionally restricted to pdfLaTeX.
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{textcomp}
+\usepackage{lmodern}
+\usepackage[margin=0.82in,top=0.94in,bottom=0.91in,headheight=18pt]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage[table]{xcolor}
+\definecolor{DeepNavy}{HTML}{14283F}
+\definecolor{Teal}{HTML}{0A747C}
+\definecolor{Gold}{HTML}{C78F36}
+\definecolor{Slate}{HTML}{536477}
+\definecolor{Pale}{HTML}{F4F7FA}
+\definecolor{CodeEdge}{HTML}{D4DFE9}
+\usepackage{microtype}
+\usepackage{parskip}
+\setlength{\parskip}{0.47em}
+\usepackage{titlesec}
+\titleformat{\section}{\normalfont\Large\bfseries\color{DeepNavy}}{\thesection}{0.62em}{}
+\titlespacing*{\section}{0pt}{2.0ex plus .7ex minus .2ex}{0.75ex}
+\titleformat{\subsection}{\normalfont\large\bfseries\color{Teal}}{\thesubsection}{0.6em}{}
+\usepackage{longtable,booktabs,array,calc}
+\renewcommand{\arraystretch}{1.22}
+\AtBeginEnvironment{longtable}{\small}
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+\usepackage{listings}
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\lstdefinestyle{suitecode}{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,breakatwhitespace=false,
+  columns=fullflexible,keepspaces=true,showstringspaces=false,
+  frame=single,rulecolor=\color{CodeEdge},
+  backgroundcolor=\color{Pale},
+  keywordstyle=\color{Teal}\bfseries,
+  commentstyle=\color{Slate}\itshape,
+  stringstyle=\color{DeepNavy},
+  xleftmargin=5pt,xrightmargin=5pt,
+  framexleftmargin=5pt,framexrightmargin=5pt,
+  aboveskip=0.85em,belowskip=0.95em,
+  tabsize=2
+}
+\lstset{style=suitecode}
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=1.6em,itemsep=2pt,topsep=3pt}
+\setlist[enumerate]{leftmargin=1.8em,itemsep=2pt,topsep=3pt}
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\newcommand{\passthrough}[1]{#1}
+\usepackage{xurl}
+\usepackage[colorlinks=true,linkcolor=Teal,urlcolor=Teal,citecolor=Teal,pdfborder={0 0 0}]{hyperref}
+\urlstyle{same}
+\usepackage{fancyhdr,lastpage}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize\sffamily\color{Slate} ECMA-262:2025 \textbullet{} Engineering Documentation}
+\fancyhead[R]{\footnotesize\sffamily\color{Slate} 16th Edition}
+\fancyfoot[L]{\footnotesize\sffamily\color{Slate} Independent technical companion}
+\fancyfoot[R]{\footnotesize\sffamily\color{Slate}\thepage\ / \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.35pt}
+\renewcommand{\footrulewidth}{0pt}
+\setlength{\emergencystretch}{3em}
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{2}
+\begin{document}
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{2.8cm}
+{\color{Gold}\rule{18mm}{3pt}}\par\vspace{18mm}
+{\sffamily\Large\bfseries\color{Teal} SOFTWARE ENGINEERING DOCUMENTATION SUITE}\par
+\vspace{8mm}
+{\sffamily\huge\bfseries\color{DeepNavy} ECMAScript 2025 }\par
+\vspace{4mm}
+{\sffamily\fontsize{24}{29}\selectfont\bfseries\color{DeepNavy} Secure Coding Guide }\par
+\vspace{10mm}
+{\large\color{Slate} Language-aware threat modeling and controls }\par
+\vspace{16mm}
+{\color{Teal}\rule{\textwidth}{0.8pt}}\par
+\vfill
+{\sffamily\color{Slate}\large ECMA-262:2025 \textbullet{} 16th Edition \textbullet{} June 2025}\par
+\vspace{3mm}
+{\sffamily\color{Slate} October 2026 \textbullet{} Document 5 of 8}\par
+\vspace{3mm}
+{\small\color{Slate} Original engineering companion. The uploaded ECMA-262:2025 specification remains the authoritative source.}\par
+\end{titlepage}
+\pagenumbering{arabic}
+\tableofcontents
+\clearpage
+\section{Security scope and applicability}\label{security-scope-and-applicability}
+
+This security engineering guide uses ECMA-262:2025 to explain language mechanisms that affect attack surface, then adds defensive requirements from application-security practice. \textbf{ECMA-262 is a language specification, not a secure-coding standard or a source of application authorization requirements.} In this document \textbf{{[}SPEC{]}} = language behavior defined in the standard, \textbf{{[}RISK{]}} = possible exploit scenario depending on application use, and \textbf{{[}CONTROL{]}} = recommended security engineering measure. CWE, OWASP, GHAS, and CodeQL are external taxonomies/tools, not normative parts of ECMA-262.
+
+\section{Threat model and trust boundaries}\label{threat-model-and-trust-boundaries}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Boundary
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Untrusted control
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Common attack class
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Defensive principle
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+HTTP or message payload to JS object & names, shapes, values & prototype manipulation, coercion gadgets & validate schemas and allowed keys \\
+User string to regex/template & pattern fragments, delimiters & injection or resource exhaustion & literal escaping, budgets \\
+String to interpreted program & expression/source code & code injection & prohibit dynamic evaluation \\
+Object to privileged decision & getters/proxies & TOCTOU, side effects & authenticate context, snapshot trusted fields \\
+Module graph to executable code & dependency integrity & malicious packages / substitution & pin, verify, isolate dependencies \\
+Browser DOM & text/HTML content & cross-site scripting & context-appropriate sinks and CSP \\
+Shared memory / cross-agent state & order and races & state desynchronization & explicit synchronization and isolation \\
+\end{longtable}
+
+\textbf{{[}CONTROL{]}} Every risk assessment must identify attacker capability, entry point, vulnerable dataflow, intended sensitive operation, and realistic control. A surprising language coercion without a reachable security boundary is not automatically an exploitable vulnerability.
+
+\section{SEC-01: Dynamic code evaluation}\label{sec-01-dynamic-code-evaluation}
+
+\textbf{{[}SPEC{]}} The \passthrough{\lstinline!eval!} and Function constructors invoke compilation or evaluation semantics (19--20), with host-defined controls also appearing in the spec. \textbf{{[}RISK{]}} Treating user text as JavaScript code can grant the supplied string the privileges of the execution context.
+
+\begin{lstlisting}
+// UNSAFE: an untrusted expression can execute JavaScript.
+function computeUnsafe(input) {
+  return Function(`return (${input})`)();
+}
+
+// SAFER: explicitly choose an operation; no parsing of source code.
+const operations = new Map([
+  ['add', (a, b) => a + b],
+  ['multiply', (a, b) => a * b],
+]);
+function compute(action, a, b) {
+  if (!operations.has(action)) throw new TypeError('unknown operation');
+  if (![a, b].every(Number.isFinite)) throw new TypeError('numbers only');
+  return operations.get(action)(a, b);
+}
+\end{lstlisting}
+
+\textbf{{[}CONTROL{]}} Disallow \passthrough{\lstinline!eval!}, indirect eval, \passthrough{\lstinline!new Function!}, and string-to-code timer APIs where possible. Use purpose-built parsers for constrained mini-languages and reject unknown grammar. \textbf{Verification:} CodeQL/ESLint rules, call graph review, taint tests from user input to evaluation sinks. \emph{Relevant weaknesses:} CWE-94 and CWE-95 (external taxonomy).
+
+\section{SEC-02: Prototype pollution and unsafe keys}\label{sec-02-prototype-pollution-and-unsafe-keys}
+
+\textbf{{[}SPEC{]}} Objects carry prototypes and property descriptors, and assignment/property lookup may involve inherited properties (10, 20). \textbf{{[}RISK{]}} Unvalidated keys, object merges, or special property paths can alter object behavior or enable privilege confusion, depending on merge implementation and target shape.
+
+\begin{lstlisting}
+// UNSAFE: dynamic path handling with magic properties can be dangerous.
+function assignUnsafe(target, key, value) { target[key] = value; }
+
+// SAFER: allowlisted schema; no attacker-selected property paths.
+function updateProfile(profile, changes) {
+  const allowed = new Set(['displayName', 'locale']);
+  for (const [key, value] of Object.entries(changes)) {
+    if (!allowed.has(key) || typeof value !== 'string')
+      throw new TypeError('invalid profile field');
+    profile[key] = value;
+  }
+  return profile;
+}
+\end{lstlisting}
+
+\textbf{{[}CONTROL{]}} Use \passthrough{\lstinline!Map!} or null-prototype dictionaries for arbitrary keys; reject dangerous path segments; employ schema validation before deep merge; use \passthrough{\lstinline!Object.hasOwn!} when own-property presence is intended; avoid assigning into global prototypes. \textbf{Verification:} payloads using \passthrough{\lstinline!\_\_proto\_\_!}, \passthrough{\lstinline!constructor!}, \passthrough{\lstinline!prototype!}, nested paths, inherited getters. \emph{Relevant weakness:} CWE-1321.
+
+\section{SEC-03: Injection through regular-expression construction}\label{sec-03-injection-through-regular-expression-construction}
+
+\textbf{{[}SPEC{]}} RegExp grammar and \passthrough{\lstinline!RegExp.escape!} are defined in 22.2. An escaped literal has distinct semantics from arbitrary regex source. \textbf{{[}RISK{]}} User-controlled regex fragments can change matching logic or cause excessive runtime, depending on surrounding pattern.
+
+\begin{lstlisting}
+// UNSAFE when needle should be literal:
+function unsafeContains(text, needle) {
+  return new RegExp(needle).test(text);
+}
+// Literal-safe composition for engines with RegExp.escape:
+function literalContains(text, needle) {
+  return new RegExp(RegExp.escape(needle), 'u').test(text);
+}
+\end{lstlisting}
+
+\textbf{{[}CONTROL{]}} Prefer \passthrough{\lstinline!includes!} when only substring search is intended; otherwise escape literal fragments and constrain user-controlled regex complexity. \textbf{Verification:} metacharacters, slash, newline, Unicode, catastrophic backtracking patterns, timeout/resource budgets. \emph{Relevant weaknesses:} CWE-1333 and contextual injection categories.
+
+\section{SEC-04: Coercion, getters, and authorization logic}\label{sec-04-coercion-getters-and-authorization-logic}
+
+\textbf{{[}SPEC{]}} \passthrough{\lstinline!ToPrimitive!}, getters, proxy traps, loose equality, and object property reads can execute user code (7, 10, 13). \textbf{{[}RISK{]}} Mixing representations or treating object fields as benign values can cause inconsistent authorization decisions.
+
+\begin{lstlisting}
+// UNSAFE: coercion-based comparison may accept unexpected representations.
+function canAccessUnsafe(userId, ownerId) { return userId == ownerId; }
+
+// SAFER: validate canonical identifiers before comparison.
+function canAccess(userId, ownerId) {
+  if (typeof userId !== 'string' || typeof ownerId !== 'string')
+    return false;
+  return userId === ownerId;
+}
+\end{lstlisting}
+
+\textbf{{[}CONTROL{]}} Use canonical string/integer formats and strict comparisons for principals, tenant IDs, roles, and resource keys. Fetch trusted identity data from a validated source; revalidate where access decisions cross async boundaries. \textbf{Verification:} 0 versus \passthrough{\lstinline!"0"!}, empty string, \passthrough{\lstinline!null!}, symbols, BigInt, objects with malicious \passthrough{\lstinline!valueOf!} or getters. \emph{Relevant areas:} CWE-863, CWE-20, CWE-697, according to exact flaw.
+
+\section{SEC-05: Asynchrony, race conditions, and resource lifetime}\label{sec-05-asynchrony-race-conditions-and-resource-lifetime}
+
+\textbf{{[}SPEC{]}} Promise jobs, \passthrough{\lstinline!await!}, iterators, and shared-memory atomics have defined semantics (9, 25, 27, 29). \textbf{{[}RISK{]}} An application may check permission before an \passthrough{\lstinline!await!}, then act after authorization or resource state changes, or may conflate promise settlement with cancellation.
+
+\begin{lstlisting}
+// Potential business-logic race: privilege may change while awaiting.
+async function transferUnsafe(actor, account) {
+  if (!actor.canTransfer) throw new Error('forbidden');
+  await reserveFunds(account);
+  await executeTransfer(account); // no fresh authorization / transaction
+}
+\end{lstlisting}
+
+\textbf{{[}CONTROL{]}} Enforce authorization near the commit point; use transactional consistency/locks when necessary; use explicit host cancellation (\passthrough{\lstinline!AbortSignal!} where supported), cleanup in \passthrough{\lstinline!finally!}, and iterator \passthrough{\lstinline!return!}/resource-close behavior. \passthrough{\lstinline!Promise.race!} alone does not abort I/O. \textbf{Verification:} force interleavings, deliberately reject promises, simulate cancellation and shutdown, exercise shared-memory data races. \emph{Relevant weaknesses:} CWE-367 and CWE-362 when supported by exploit context.
+
+\section{SEC-06: Deserialization and structured input}\label{sec-06-deserialization-and-structured-input}
+
+\textbf{{[}SPEC{]}} JSON parsing and serialization are part of clause 25.5; a parsed JSON object is still just data and does not guarantee domain validity. \textbf{{[}RISK{]}} Unvalidated nested objects can compromise downstream assumptions, including merge behavior and unsafe template rendering.
+
+\begin{lstlisting}
+export function parseRequest(text) {
+  const value = JSON.parse(text);
+  if (value === null || Array.isArray(value) || typeof value !== 'object')
+    throw new TypeError('expected record');
+  if (!Object.hasOwn(value, 'action') ||
+      (value.action !== 'view' && value.action !== 'edit'))
+    throw new TypeError('invalid action');
+  return { action: value.action };
+}
+\end{lstlisting}
+
+\textbf{{[}CONTROL{]}} Validate types, allowed fields, nesting/size limits, and semantic constraints; never infer authentication from parsed fields; keep data separate from HTML/script/code interpreters. \textbf{Verification:} oversized/nested JSON, duplicate keys policy, unexpected arrays, Unicode control characters, property names that collide with prototypes.
+
+\section{SEC-07: Supply-chain and host isolation}\label{sec-07-supply-chain-and-host-isolation}
+
+\textbf{{[}HOST{]}} ECMA-262 does not define npm packaging, browser Content Security Policy, network fetch behavior, URL resolution, or Node.js process permissions. \textbf{{[}RISK{]}} Importing code crosses a dependency-trust boundary and can run module initialization code with host-granted privileges.
+
+\textbf{{[}CONTROL{]}} Pin dependencies with lockfiles, validate package provenance, restrict workflow tokens, review transitive dependencies, enable software composition analysis, isolate untrusted code, and use host-specific sandbox/permissions. Test JSON import attribute support per runtime. Document any \passthrough{\lstinline!import()!} paths derived from user input and enforce a constrained map of allowed modules.
+
+\section{AppSec detection and triage matrix}\label{appsec-detection-and-triage-matrix}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Detection signal
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Confirm by
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Preferred disposition
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Dynamic code construction & trace data from untrusted source to eval sink & remediate if attacker controlled & dataflow + executable PoC \\
+User-controlled object keys & inspect merge implementation and target prototype & remediate exploitable path & before/after prototype invariants \\
+Dynamic regex & determine if input is literal or pattern & escape or constrain & payload and resource-cost test \\
+Loose equality in access checks & verify identifier validation and authorization path & use canonical strict comparison & privilege escalation test \\
+Async check/use gap & identify mutable state across await & transaction/recheck & forced race schedule \\
+Risky dependency/module import & inspect source, integrity, permissions & pin/remove/isolate & provenance and SBOM evidence \\
+\end{longtable}
+
+\textbf{{[}CONTROL{]}} Findings should identify reachable entry point, security impact, prerequisite conditions, mitigating controls, and remediation acceptance tests. A syntax property of ECMAScript is not itself a finding. Assign CWE only when the specific weakness is demonstrated; CVE/GHSA IDs refer to affected products/packages, not generic language features.
+
+\section{Secure code review procedure}\label{secure-code-review-procedure}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Inventory surfaces:} input parsers, JSON, templating, dynamic property paths, module loading, eval-like constructs, regex, serialization.
+\item
+  \textbf{Identify privileged sinks:} authorization, credentials, filesystem, network, DOM HTML, code execution, data mutations.
+\item
+  \textbf{Trace flows:} source, transformations, coercion, implicit getter/proxy invocation, sanitizer/validator, sink.
+\item
+  \textbf{Assess execution:} async boundaries, module initialization, cleanup paths, cross-realm assumptions, shared memory.
+\item
+  \textbf{Reproduce:} write the smallest failing test with realistic attacker control; avoid purely theoretical alerts.
+\item
+  \textbf{Remediate:} implement allowlists/typed contracts/transactions and verify both positive and negative tests.
+\item
+  \textbf{Prevent recurrence:} regression tests, security-focused static analysis, dependency review, least-privilege CI.
+\end{enumerate}
+
+\section{Security verification exercises}\label{security-verification-exercises}
+
+\textbf{Exercise A -- key contamination.} Write a vulnerable deep-merge utility in a disposable process, construct a nested \passthrough{\lstinline!constructor.prototype!} payload, then replace merge with explicit schema projection. Prove that Object.prototype is unchanged; do not execute against real applications.
+
+\textbf{Exercise B -- regex hardening.} Compare dynamic \passthrough{\lstinline!new RegExp(input)!} with \passthrough{\lstinline!RegExp.escape(input)!} and \passthrough{\lstinline!includes!}. Test literal \passthrough{\lstinline!a+b!}, \passthrough{\lstinline![!}, \passthrough{\lstinline!\\n!}, and Unicode input. Analyze remaining performance risks.
+
+\textbf{Exercise C -- authorization.} Implement a secure tenant-resource lookup with canonical ID types, strict equality, and a fresh commit-time authorization check. Deliberately force a role change during awaited I/O.
+
+\textbf{Exercise D -- agent-synchronization.} Build a host-managed shared-memory counter with \passthrough{\lstinline!Atomics.add!}; compare with non-atomic read/modify/write under parallel workers and record observed outcomes without treating one test as a proof.
+
+\section{Audit-ready security checklist}\label{audit-ready-security-checklist}
+
+\begin{itemize}
+\tightlist
+\item[$\square$]
+  Reject or isolate arbitrary source evaluation; identify all dynamic-code sinks.
+\item[$\square$]
+  Validate unknown JSON/property shapes before merging or authorizing.
+\item[$\square$]
+  Use canonical IDs and strict comparisons for security principals.
+\item[$\square$]
+  Audit prototype keys, getters, proxy traps, and inherited properties.
+\item[$\square$]
+  Escape regex literals and bound computation; use direct string APIs when possible.
+\item[$\square$]
+  Recheck sensitive state at async commit points and synchronize shared memory.
+\item[$\square$]
+  Constrain dynamic imports and verify dependencies and runtime privileges.
+\item[$\square$]
+  Attach proof, boundary, CWE rationale, tests, and owner to significant findings.
+\end{itemize}
+
+\section{References and scope notes}\label{references-and-scope-notes}
+
+\textbf{Language source:} ECMA-262:2025 (uploaded PDF), clauses 2, 6--7, 9--10, 13--16, 19--20, 22, 25, 27, 29. \textbf{External nonnormative references:} CWE https://cwe.mitre.org/ ; OWASP https://owasp.org/ ; CodeQL https://codeql.github.com/docs/ ; ESLint https://eslint.org/docs/latest/rules/no-eval and https://eslint.org/docs/latest/rules/no-implied-eval . Security controls listed here are engineering recommendations, not statements of ECMA-262 conformance.
+
+\end{document}

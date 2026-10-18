@@ -1,0 +1,301 @@
+\documentclass[11pt,letterpaper]{article}
+% This source is intentionally restricted to pdfLaTeX.
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{textcomp}
+\usepackage{lmodern}
+\usepackage[margin=0.82in,top=0.94in,bottom=0.91in,headheight=18pt]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage[table]{xcolor}
+\definecolor{DeepNavy}{HTML}{14283F}
+\definecolor{Teal}{HTML}{0A747C}
+\definecolor{Gold}{HTML}{C78F36}
+\definecolor{Slate}{HTML}{536477}
+\definecolor{Pale}{HTML}{F4F7FA}
+\definecolor{CodeEdge}{HTML}{D4DFE9}
+\usepackage{microtype}
+\usepackage{parskip}
+\setlength{\parskip}{0.47em}
+\usepackage{titlesec}
+\titleformat{\section}{\normalfont\Large\bfseries\color{DeepNavy}}{\thesection}{0.62em}{}
+\titlespacing*{\section}{0pt}{2.0ex plus .7ex minus .2ex}{0.75ex}
+\titleformat{\subsection}{\normalfont\large\bfseries\color{Teal}}{\thesubsection}{0.6em}{}
+\usepackage{longtable,booktabs,array,calc}
+\renewcommand{\arraystretch}{1.22}
+\AtBeginEnvironment{longtable}{\small}
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+\usepackage{listings}
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\lstdefinestyle{suitecode}{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,breakatwhitespace=false,
+  columns=fullflexible,keepspaces=true,showstringspaces=false,
+  frame=single,rulecolor=\color{CodeEdge},
+  backgroundcolor=\color{Pale},
+  keywordstyle=\color{Teal}\bfseries,
+  commentstyle=\color{Slate}\itshape,
+  stringstyle=\color{DeepNavy},
+  xleftmargin=5pt,xrightmargin=5pt,
+  framexleftmargin=5pt,framexrightmargin=5pt,
+  aboveskip=0.85em,belowskip=0.95em,
+  tabsize=2
+}
+\lstset{style=suitecode}
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=1.6em,itemsep=2pt,topsep=3pt}
+\setlist[enumerate]{leftmargin=1.8em,itemsep=2pt,topsep=3pt}
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\newcommand{\passthrough}[1]{#1}
+\usepackage{xurl}
+\usepackage[colorlinks=true,linkcolor=Teal,urlcolor=Teal,citecolor=Teal,pdfborder={0 0 0}]{hyperref}
+\urlstyle{same}
+\usepackage{fancyhdr,lastpage}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize\sffamily\color{Slate} ECMA-262:2025 \textbullet{} Engineering Documentation}
+\fancyhead[R]{\footnotesize\sffamily\color{Slate} 16th Edition}
+\fancyfoot[L]{\footnotesize\sffamily\color{Slate} Independent technical companion}
+\fancyfoot[R]{\footnotesize\sffamily\color{Slate}\thepage\ / \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.35pt}
+\renewcommand{\footrulewidth}{0pt}
+\setlength{\emergencystretch}{3em}
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{2}
+\begin{document}
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{2.8cm}
+{\color{Gold}\rule{18mm}{3pt}}\par\vspace{18mm}
+{\sffamily\Large\bfseries\color{Teal} SOFTWARE ENGINEERING DOCUMENTATION SUITE}\par
+\vspace{8mm}
+{\sffamily\huge\bfseries\color{DeepNavy} ECMAScript 2025 }\par
+\vspace{4mm}
+{\sffamily\fontsize{24}{29}\selectfont\bfseries\color{DeepNavy} Implementation Handbook }\par
+\vspace{10mm}
+{\large\color{Slate} Practical JavaScript engineering laboratories }\par
+\vspace{16mm}
+{\color{Teal}\rule{\textwidth}{0.8pt}}\par
+\vfill
+{\sffamily\color{Slate}\large ECMA-262:2025 \textbullet{} 16th Edition \textbullet{} June 2025}\par
+\vspace{3mm}
+{\sffamily\color{Slate} October 2026 \textbullet{} Document 3 of 8}\par
+\vspace{3mm}
+{\small\color{Slate} Original engineering companion. The uploaded ECMA-262:2025 specification remains the authoritative source.}\par
+\end{titlepage}
+\pagenumbering{arabic}
+\tableofcontents
+\clearpage
+\section{Engineering workflow and technical baseline}\label{engineering-workflow-and-technical-baseline}
+
+This is a hands-on JavaScript/ECMAScript 2025 implementation handbook. \textbf{{[}SPEC{]}} denotes behavior defined by ECMA-262:2025; \textbf{{[}HOST{]}} refers to loading, I/O, timers, web APIs, or engine selection; \textbf{{[}GUIDE{]}} denotes suggested engineering practice. Every example is original. Code using 2025 APIs requires an implementation that supports the corresponding methods; compatibility should be checked with target engines.
+
+\textbf{Lab prerequisites:} an ECMAScript module-capable runtime, a terminal, an editor, and a test runner. Node.js commands in this guide are operational examples, not ECMA-262 requirements. Create an isolated scratch project, commit each passing lab, and do not allow shell/network side effects in untrusted code.
+
+\section{Lab 1 --- type contracts and coercion}\label{lab-1-type-contracts-and-coercion}
+
+\textbf{Objective.} Avoid silent data corruption at API boundaries. \textbf{{[}SPEC{]}} The \passthrough{\lstinline!Number!} type uses binary floating-point; safe integers are limited to a bounded range, while BigInt values are integers of arbitrary magnitude in the language model (6, 7, 21).
+
+\begin{lstlisting}
+export function parseQuantity(input) {
+  if (typeof input !== 'string' || !/^(0|[1-9][0-9]*)$/.test(input)) {
+    throw new TypeError('quantity must be canonical unsigned decimal');
+  }
+  const quantity = BigInt(input);
+  if (quantity === 0n) throw new RangeError('quantity must be positive');
+  return quantity;
+}
+\end{lstlisting}
+
+\textbf{Exercise.} Reject \passthrough{\lstinline!-1!}, \passthrough{\lstinline!01!}, exponential notation, whitespace, unsafe Number coercion, and empty string. Document whether the application may accept leading zeros; the regex policy is \textbf{{[}GUIDE{]}}, not the language grammar.
+
+\section{Lab 2 --- bindings, closures, and private state}\label{lab-2-bindings-closures-and-private-state}
+
+\textbf{Objective.} Design APIs with predictable mutation, encapsulation, and lifetime. \textbf{{[}SPEC{]}} Lexical bindings and private class fields have distinct lookup rules; \passthrough{\lstinline!\#field!} is not equivalent to an object property named \passthrough{\lstinline!"\#field"!} (9, 15).
+
+\begin{lstlisting}
+export class RateLimiter {
+  #remaining;
+  constructor(tokens) {
+    if (!Number.isSafeInteger(tokens) || tokens < 0) throw new RangeError('tokens');
+    this.#remaining = tokens;
+  }
+  tryConsume() {
+    if (this.#remaining === 0) return false;
+    this.#remaining -= 1;
+    return true;
+  }
+  get remaining() { return this.#remaining; }
+}
+\end{lstlisting}
+
+\textbf{Exercise.} Verify external attempts to access \passthrough{\lstinline!\#remaining!} as syntax, reflection, and property keys. Add a clock-controlled replenishment policy without mixing the time source with the class's language-level invariants.
+
+\section{Lab 3 --- prototypes, descriptors, and safe dictionary use}\label{lab-3-prototypes-descriptors-and-safe-dictionary-use}
+
+\textbf{Objective.} Separate general object semantics from record storage. \textbf{{[}SPEC{]}} Ordinary objects have prototypes and property attributes; \passthrough{\lstinline!Object.create(null)!} creates an object without the normal inherited prototype (10, 20).
+
+\begin{lstlisting}
+export function countByKey(keys) {
+  const counts = Object.create(null);
+  for (const key of keys) {
+    if (typeof key !== 'string') throw new TypeError('key');
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+  return counts;
+}
+const result = countByKey(['toString', '__proto__', '__proto__']);
+console.assert(result['__proto__'] === 2);
+\end{lstlisting}
+
+\textbf{{[}GUIDE{]}} Prefer \passthrough{\lstinline!Map!} for arbitrary keys and \passthrough{\lstinline!Object.hasOwn!} for own-property checks. Do not use \passthrough{\lstinline!for...in!} over untrusted objects without deliberate prototype handling.
+
+\section{Lab 4 --- iterables, closing, and lazy processing}\label{lab-4-iterables-closing-and-lazy-processing}
+
+\textbf{Objective.} Build a streaming transform that only consumes required elements. \textbf{{[}SPEC{]}} Iterators expose \passthrough{\lstinline!next()!}; iterable protocols and Iterator helper methods are specified in clauses 7.4 and 27.1. Helper operations may be lazy, while terminal operations consume elements.
+
+\begin{lstlisting}
+export function firstMatching(source, predicate) {
+  return Iterator.from(source)
+    .filter(predicate)
+    .take(1)
+    .toArray()[0];
+}
+console.assert(firstMatching([4, 7, 8], n => n % 2) === 7);
+\end{lstlisting}
+
+\textbf{Exercise.} Implement an iterator with \passthrough{\lstinline!next!} and \passthrough{\lstinline!return!} logging. Test whether \passthrough{\lstinline!take(1)!} closes the upstream iterator. Test thrown predicate and confirm appropriate cleanup. \textbf{{[}GUIDE{]}} Always document resource ownership when adapting file-like or network-like iterators: JS iterator closure alone does not close unrelated host resources unless the adapter implements it.
+
+\section{Lab 5 --- immutable and set-oriented transformations}\label{lab-5-immutable-and-set-oriented-transformations}
+
+\textbf{Objective.} Choose collection APIs with clear complexity and edge cases. \textbf{{[}SPEC{]}} \passthrough{\lstinline!Set.prototype.union!}, \passthrough{\lstinline!intersection!}, \passthrough{\lstinline!difference!}, \passthrough{\lstinline!symmetricDifference!}, \passthrough{\lstinline!isSubsetOf!}, \passthrough{\lstinline!isSupersetOf!}, and \passthrough{\lstinline!isDisjointFrom!} are defined in 24.2.
+
+\begin{lstlisting}
+export function analyzePermissions(granted, requested) {
+  const g = new Set(granted);
+  const r = new Set(requested);
+  return {
+    allowed: r.isSubsetOf(g),
+    missing: r.difference(g),
+    overlap: r.intersection(g),
+  };
+}
+const check = analyzePermissions(['read', 'write'], ['read', 'admin']);
+console.assert(!check.allowed && check.missing.has('admin'));
+\end{lstlisting}
+
+\textbf{{[}GUIDE{]}} This illustrates set algebra; production authorization must also check principal, resource, tenant, action, contextual policy, and revocation. Mathematical membership is not a complete authorization system.
+
+\section{Lab 6 --- parsing, escaping, and Unicode}\label{lab-6-parsing-escaping-and-unicode}
+
+\textbf{Objective.} Compose literal input into regular expressions without silently changing pattern semantics. \textbf{{[}SPEC{]}} \passthrough{\lstinline!RegExp.escape!} is specified in 22.2.5.1; it escapes a \emph{string to be used as pattern text}, not a serialized regular-expression object.
+
+\begin{lstlisting}
+export function containsLiteral(haystack, needle) {
+  if (typeof needle !== 'string') throw new TypeError('needle');
+  const pattern = new RegExp(RegExp.escape(needle), 'u');
+  return pattern.test(haystack);
+}
+console.assert(containsLiteral('a+b', 'a+b'));
+console.assert(!containsLiteral('ab', 'a+b'));
+\end{lstlisting}
+
+\textbf{Exercise.} Test strings containing \passthrough{\lstinline![!} \passthrough{\lstinline!-!} \passthrough{\lstinline!/!} newlines, surrogate pairs, and empty strings. A literal match can often use \passthrough{\lstinline!String.prototype.includes!} instead; reserve dynamic regex compilation for actual regex features. Regexp escaping does \textbf{not} prevent regex denial of service if other user-supplied pattern sections remain untrusted.
+
+\section{Lab 7 --- async orchestration and failure propagation}\label{lab-7-async-orchestration-and-failure-propagation}
+
+\textbf{Objective.} Normalize potentially synchronous or asynchronous callbacks without masking failures. \textbf{{[}SPEC{]}} \passthrough{\lstinline!Promise.try!} executes the callback and returns a promise that fulfills with the returned value or rejects on thrown error (27.2.4.8).
+
+\begin{lstlisting}
+export async function runTask(callback, ...args) {
+  const started = Promise.try(callback, ...args);
+  return await started;
+}
+console.assert(await runTask((x) => x + 1, 4) === 5);
+try { await runTask(() => { throw new Error('fail'); }); }
+catch (error) { console.assert(error.message === 'fail'); }
+\end{lstlisting}
+
+\textbf{{[}GUIDE{]}} Define cancellation and timeout policies separately; neither \passthrough{\lstinline!Promise.try!} nor \passthrough{\lstinline!Promise.race!} cancels underlying host I/O by itself. Record errors with context but never secrets.
+
+\section{Lab 8 --- module boundaries and JSON imports}\label{lab-8-module-boundaries-and-json-imports}
+
+\textbf{Objective.} Understand a language feature versus host interoperability. \textbf{{[}SPEC{]}} ECMAScript 2025 includes JSON module import semantics and attribute syntax in clause 16. \textbf{{[}HOST{]}} Whether \passthrough{\lstinline!./config.json!} resolves and loads depends on the host.
+
+\begin{lstlisting}
+// app.mjs, in a host supporting JSON modules and import attributes
+import config from './config.json' with { type: 'json' };
+export function port() {
+  const candidate = config.port;
+  if (!Number.isSafeInteger(candidate) || candidate < 1 || candidate > 65535)
+    throw new RangeError('port');
+  return candidate;
+}
+\end{lstlisting}
+
+\textbf{Exercise.} Try a browser and a server runtime, documenting differences in resolution, caching, and error messages. Loading JSON is not schema validation: validate the data after loading.
+
+\section{Lab 9 --- typed arrays and numeric fidelity}\label{lab-9-typed-arrays-and-numeric-fidelity}
+
+\textbf{Objective.} Understand representation loss in binary data. \textbf{{[}SPEC{]}} \passthrough{\lstinline!Float16Array!}, \passthrough{\lstinline!Math.f16round!}, and DataView half-precision accessor methods are included in the 2025 edition (21, 23, 25).
+
+\begin{lstlisting}
+const h = new Float16Array(2);
+h[0] = 1.5;
+h[1] = 0.1;
+console.assert(h[0] === 1.5);
+console.assert(h[1] !== 0.1); // typically rounded to half precision
+const bytes = new ArrayBuffer(2);
+const view = new DataView(bytes);
+view.setFloat16(0, 1.5, true);
+console.assert(view.getFloat16(0, true) === 1.5);
+\end{lstlisting}
+
+\textbf{Exercise.} Document representable ranges, distinguish endianness from numerical precision, and test signed zero and non-finite values.
+
+\section{Lab 10 --- systematic error handling}\label{lab-10-systematic-error-handling}
+
+Build a shared error policy: unexpected programming errors propagate, user validation errors have stable types/messages, and host failures carry contextual metadata without credentials. \textbf{{[}SPEC{]}} \passthrough{\lstinline!try!}/\passthrough{\lstinline!catch!}/\passthrough{\lstinline!finally!} statements, \passthrough{\lstinline!throw!}, and Error objects are specified in clauses 14 and 20.5. \textbf{{[}GUIDE{]}} Reserve bare \passthrough{\lstinline!catch!} only when a deliberate fallback exists, and avoid swallowing abort or authorization failures.
+
+\begin{lstlisting}
+export function decodeDomainRecord(text) {
+  let record;
+  try { record = JSON.parse(text); }
+  catch (cause) { throw new SyntaxError('invalid JSON', { cause }); }
+  if (record === null || Array.isArray(record) || typeof record !== 'object')
+    throw new TypeError('record must be an object');
+  return record;
+}
+\end{lstlisting}
+
+\section{Capstone: audited rule evaluator}\label{capstone-audited-rule-evaluator}
+
+\textbf{Problem.} Ingest a JSON array of records containing \passthrough{\lstinline!subject!}, \passthrough{\lstinline!resource!}, and \passthrough{\lstinline!actions!}; calculate requests as sets; return an immutable summary; reject malformed types; avoid evaluation of code strings.
+
+\textbf{Acceptance criteria:}
+
+\begin{itemize}
+\tightlist
+\item[$\square$]
+  Has explicit schema validation at ingress; unknown keys handled by documented policy.
+\item[$\square$]
+  Uses Map/Set, not inherited object keys, for arbitrary identifiers.
+\item[$\square$]
+  Allows no \passthrough{\lstinline!eval!}, dynamic \passthrough{\lstinline!Function!}, or arbitrary property-path execution.
+\item[$\square$]
+  Tests \passthrough{\lstinline!NaN!}, nullish values, empty arrays, Unicode keys, and \passthrough{\lstinline!\_\_proto\_\_!} keys.
+\item[$\square$]
+  Emits consistent rejection on invalid input and no unhandled promises.
+\item[$\square$]
+  Describes which validations are design choices and which behaviors are specified.
+\end{itemize}
+
+\section{Reviewer checklist and further reading}\label{reviewer-checklist-and-further-reading}
+
+Reviewers should verify: input trust boundaries; numeric precision; reference/equality semantics; generator cleanup; async errors; cross-realm objects; prototype inheritance; host-dependent behavior; and feature support. Reproduce results using engine versions, not merely language-year labels.
+
+\textbf{Primary:} ECMA-262:2025 supplied PDF, clauses 6--7, 9--10, 13--16, 20--27. \textbf{Engineering extensions:} project-specific policies above are nonnormative; applicable runtime documentation should be consulted separately.
+
+\end{document}

@@ -1,0 +1,70 @@
+\documentclass[10pt,letterpaper]{article}
+\input{misra-c-style.tex}
+\title{\vspace{-2.3em}\color{DeepNavy}\Huge\bfseries CI/CD Integration Blueprint\\[0.45em]\large\normalfont\color{Teal} GitHub Actions, SARIF, analyzer adapters and merge policies}
+\author{Independent Software Engineering Reference Series}
+\date{Edition 1.0 \quad | \quad October 2026}
+\begin{document}
+\maketitle
+\vspace{-0.4em}
+\begin{center}\color{Slate}\rule{0.83\linewidth}{0.4pt}\end{center}
+\DocNotes
+\tableofcontents
+\newpage
+
+\section{CI/CD architecture}
+A GitHub Actions workflow can compile and test code, invoke a correctly licensed and configured MISRA-compatible analyzer, retain raw findings, optionally publish third-party SARIF results, and enforce project-defined merge gates. GitHub code-scanning alerts are a presentation and developer workflow layer, \emph{not} a full MISRA compliance statement.
+\begin{center}\fbox{Source $\rightarrow$ Reproducible build $\rightarrow$ Analyzer adapter $\rightarrow$ Evidence $\rightarrow$ Gate / SARIF}\end{center}
+\section{Build and analysis contract}
+Use a versioned analyzer adapter rather than guessing tool-specific flags. The sample shell adapter accepts a documented contract: a compile database, normalized SARIF path and explicit policy. Each analyzer implementation must prove that the chosen flags actually select MISRA C:2023 and the project profile.
+\begin{lstlisting}[style=plaincode]
+# Illustrative local commands (from the sample project root)
+cmake -S examples -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build build
+ctest --test-dir build --output-on-failure
+# Requires project-provided MISRA_ANALYZER wrapper:
+MISRA_ANALYZER=/path/to/validated-analyzer-adapter \
+  ci/run-misra-analysis.sh build/compile_commands.json \
+  compliance-results.sarif
+\end{lstlisting}
+\section{GitHub Actions workflow skeleton}
+The package includes \texttt{ci/misra-analysis.yml}, designed for copying into \texttt{.github/workflows/}. It is not operational until the organization provisions a compatible analyzer and runner and validates permissions. \texttt{security-events: write} is required for supported SARIF uploads. Use dedicated SARIF categories for independent tools or analyses to prevent result replacement. Check the current \texttt{upload-sarif} action major version against organization support policy.
+\begin{lstlisting}[style=plaincode]
+name: MISRA evidence
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  security-events: write
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build sample
+        run: |
+          cmake -S examples -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          cmake --build build
+          ctest --test-dir build --output-on-failure
+      # Supply validated MISRA analyzer wrapper and execute adapter.
+      # Refer to ci/misra-analysis.yml for a fail-closed full skeleton.
+\end{lstlisting}
+\section{Gate semantics}
+\begin{enumerate}
+\item Fail when source compilation, test execution or analyzer execution fails. A tooling crash is an \emph{invalid run}, not a zero-finding run.
+\item Fail on new unapproved Mandatory or Required violations, plus any project-recategorized items. Required approved deviations are handled through auditable records, not blanket suppressions.
+\item Track Advisory outcomes according to the documented project policy. Do not quietly convert every Advisory alert into a failure without an approved GRP.
+\item Preserve baseline decisions and compare stable fingerprint/identifier tuples against the merge base, not an unvalidated count of strings in log files.
+\item Ensure cross-file and configuration coverage; running a single default compile database does not prove all product variants are checked.
+\item Capture logs, tool/container digests, scanner policy file hash, build config and exact source commit for release evidence.
+\end{enumerate}
+\section{SARIF ingestion constraints}
+GitHub accepts a supported subset of SARIF 2.1.0. A SARIF upload reports scanner findings but does not impose standard-specific normative meanings or audit approval. Rule descriptors should identify a real checker and optionally include a \texttt{helpUri} pointing to authorized documentation. Do not upload proprietary full MISRA requirement text to public code-scanning interfaces or public CI logs.
+\section{Security and supply-chain controls}
+Pin and review third-party actions under organizational policy; restrict branch write access; set minimal permissions; guard credentials and license servers; never expose vendor analysis tokens to untrusted fork PRs; prefer trusted, sandboxed self-hosted runners for proprietary analyzers; lock dependency/tool versions; redact secret/PII-bearing files from artifacts; and apply retention periods consistent with safety-assurance obligations.
+\section{Example release decision}
+A merge gate may turn green after tests and a configured analyzer return success; the \emph{compliance release gate} still requires GEP completion, deviations review, supplier assessment and GCS approval. Protect both gates, and capture the approval outcome in a tracked release record.
+\SourceNote{GitHub SARIF docs and MISRA C:2023 classification plus MISRA Compliance:2020; CI workflow is newly authored implementation guidance}
+
+\end{document}

@@ -1,0 +1,58 @@
+\documentclass[11pt,letterpaper]{article}
+\input{cmake-wasm-preamble.tex}
+\DocHeader{WebAssembly Threat Model and Security Controls}{SUBWebAssembly Threat Model and Security Controls}{1.0}
+\begin{document}
+\frontmatterdoc
+\section{Security model and assumptions}
+WebAssembly provides a constrained execution abstraction, not universal isolation or freedom from memory-unsafe C/C++ bugs. Guests may corrupt their own linear memory, misuse host imports, exhaust CPU or memory, or exploit vulnerabilities in host runtimes and dependencies. Browser origin isolation and WASI host permissions are distinct security boundaries, neither substituting for the other.
+
+\section{Threat model: assets, boundaries, and attackers}
+\noindent\begin{tabularx}{\linewidth}{p{0.25\linewidth}X}
+\toprule Element & Description \\ \midrule
+Assets & User input, application state, host filesystem/network authority, WASM code, release provenance, service availability \\
+Trust boundaries & JS/C ABI, guest/host imports, CI dependency fetch, artifact consumer, native OS process \\
+Attackers & Malicious input supplier, compromised dependency, supply-chain adversary, unauthorized host integration \\
+Security objectives & Correctness, confidentiality, integrity, bounded resource use, attributable and reproducible artifacts \\
+\bottomrule
+\end{tabularx}
+
+\section{Threat-to-control mapping}
+\begin{longtable}{p{0.20\linewidth}p{0.46\linewidth}p{0.26\linewidth}}
+\toprule Threat & Control & Verification \\ \midrule \endhead
+T-01 ABI size/pointer confusion & Fixed-width types; JS prechecks; guest length limits; explicit ownership & Oversized/bad pointer tests \\
+T-02 Use-after-free/leak & Scoped allocate/copy/call/free; no handle reuse after release & Repeated/cancellation tests \\
+T-03 Resource exhaustion & Heap/CPU/fuel/timeout limits; admission rate caps & Limits/DoS simulation \\
+T-04 Overbroad WASI imports & Deny-by-default FS/HTTP/env; least-capability grants & Denial and import inventory \\
+T-05 Untrusted browser loading & HTTPS, CSP, integrity-controlled artifact release, origin policy & Browser security-header E2E \\
+T-06 Compromised WASM binary & Trusted SHA-256, workflow attestation, immutable artifacts & Identity + digest verify \\
+T-07 Dependency CVE & Lock dependencies, SBOM, vulnerability triage, timely patches & Dependency review gate \\
+T-08 Native undefined behavior & Compiler warnings, ASan/UBSan, fuzzing, secure C++ rules & Sanitizer/fuzz CI results \\
+T-09 Runtime escape & Update host runtime and inspect security advisories & Runtime patch status \\
+T-10 Data exfiltration & No ambient guest access; explicit host grants; egress controls & Negative egress tests \\
+\bottomrule
+\end{longtable}
+
+\section{Browser control profile}
+\begin{enumerate}
+\item Default to an opaque binary processing interface rather than arbitrary string-to-native calls.
+\item Disable debug/assertion tooling in release only after strong test coverage; retain symbolized secure debugging artifacts under controlled storage.
+\item Serve explicit CSP and security headers tuned to the actual runtime, bundler, worker use, and CDN topology.
+\item Do not enable threads/SharedArrayBuffer without validating isolation and third-party resource behavior.
+\item Distinguish WASM memory quota from overall JS heap, worker count, and network resource quotas.
+\end{enumerate}
+
+\section{WASI and native control profile}
+Grant WASI directory handles and environment variables only where required; version and review imports before promotion. Configure host-side memory and execution limits, interrupt long-running tasks, and separate untrusted guests by authorization domain. For native packages, enable least-privilege OS accounts, read-only filesystem protections where possible, system call restrictions, and signed deployment packages. Review all host-to-guest data for input parsing flaws.
+
+\section{Security testing checklist}
+\begin{itemize}
+\item Threat model updated and signed off when new host imports, JS exports, or native permissions are added.
+\item Negative inputs cover size, signedness, malformed UTF-8, offsets, null pointers, and memory pressure.
+\item Runtime and SDK advisories reviewed; exploitability and compensating host controls recorded.
+\item Release artifact attestation and signer identity checked before deploy.
+\item Incident response can identify the exact SDK/runtime/version/repository commit of any deployed WASM module.
+\end{itemize}
+\accept{A review can demonstrate least authority, untrusted-input validation, protected artifact delivery, and bounded resource consumption for every supported profile.}
+\sourceurl{https://docs.wasmtime.dev/}
+\sourceurl{https://emscripten.org/docs/tools_reference/settings_reference.html}
+\end{document}

@@ -1,0 +1,328 @@
+\documentclass[11pt]{article}
+\newcommand{\DocNumber}{VOLUME 06}
+\newcommand{\DocTitle}{C++23 Testing and Quality Assurance Guide}
+\newcommand{\DocSubtitle}{Conformance, automation and defect detection}
+\newcommand{\DocSummary}{Fourteen verification layers, tool-specific limitations, CI pattern and evidence-management templates.}
+\input{cpp23-common-preamble.tex}
+\begin{document}
+\docfront
+\section{Test architecture and pass criteria}
+A rigorous verification system has layers: compile conformance, deterministic functional tests, safety instrumentation, concurrency tests, integration, performance and artifact controls. Each layer tests a different claim; none alone establishes program-wide conformance or security.
+
+\small
+\begin{longtable}{@{}p{.18\linewidth}p{.40\linewidth}p{.34\linewidth}@{}}
+\toprule
+\textbf{Layer} & \textbf{Trigger} & \textbf{Blocking criterion}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Layer} & \textbf{Trigger} & \textbf{Blocking criterion}\\
+\midrule
+\endhead
+Compile probes & toolchain change and PR & Unsupported required language/library capability\\
+\addlinespace[2pt]
+Unit / property & every PR & Contract regression\\
+\addlinespace[2pt]
+ASan / UBSan & every PR or scheduled per runtime & Confirmed memory/UB failure\\
+\addlinespace[2pt]
+TSan & parallel changes, scheduled matrix & Confirmed data race\\
+\addlinespace[2pt]
+Fuzz & continuous or daily & Reproducible crash / invariant failure\\
+\addlinespace[2pt]
+Analysis & PR and baseline comparison & Actionable high-risk new finding\\
+\addlinespace[2pt]
+Integration/ABI & release branches & Compatibility break against stated contract\\
+\addlinespace[2pt]
+Benchmarks & scheduled and release & Regression beyond documented budget\\
+\addlinespace[2pt]
+\bottomrule
+\end{longtable}
+\normalsize
+\section{Language and library conformance probes}
+\anchorref{4; 16.4}
+Feature support must be tested separately for parser, library, runtime and target. A -std=c++23 flag is not a certificate that every facility is available.
+
+\standard{The standard locators determine which language/library property is under test; the tools and quality gates are independent engineering controls.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define one falsifiable property and its test oracle.
+\item Preserve toolchain identity and machine-readable evidence.
+\item Capture limitations and false-negative conditions.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <version>
+#ifndef __cpp_lib_expected
+#error "std::expected feature macro unavailable"
+#endif
+// Probe a tiny valid use in a separate target.
+\end{lstlisting}
+\practice{Do not upgrade tool output to a claim of blanket ISO conformity.}
+\takeaway{Acceptance evidence: Store the probe source, compile command, stdout/stderr and chosen fallback.}
+\section{Diagnostics, extension policy and negative compilation}
+\anchorref{4.1; 5; 9; 13}
+Not all malformed programs have a required diagnostic; distinguish intentional compile-fail fixtures from runtime-unsafe negative examples.
+
+\standard{The standard locators determine which language/library property is under test; the tools and quality gates are independent engineering controls.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define one falsifiable property and its test oracle.
+\item Preserve toolchain identity and machine-readable evidence.
+\item Capture limitations and false-negative conditions.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+// compile_fail.cpp (must not build):
+// static_assert(sizeof(int) == 0, "intentional failure");
+\end{lstlisting}
+\practice{Do not upgrade tool output to a claim of blanket ISO conformity.}
+\takeaway{Acceptance evidence: Assert compile failure only for diagnosable violations and keep the diagnostic text tolerant across vendors.}
+\section{Unit tests and deterministic oracles}
+\anchorref{6--15; 17--33}
+A unit test should assert contracts, invariants and state transitions rather than copy implementation details into expectations.
+
+\standard{The standard locators determine which language/library property is under test; the tools and quality gates are independent engineering controls.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define one falsifiable property and its test oracle.
+\item Preserve toolchain identity and machine-readable evidence.
+\item Capture limitations and false-negative conditions.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <cassert>
+int clamp_nonnegative(int x) { return x < 0 ? 0 : x; }
+void test_clamp() {
+    assert(clamp_nonnegative(-3) == 0);
+    assert(clamp_nonnegative(4) == 4);
+}
+\end{lstlisting}
+\practice{Do not upgrade tool output to a claim of blanket ISO conformity.}
+\takeaway{Acceptance evidence: Record test cases for empty, typical and boundary inputs.}
+\section{Property-based and metamorphic testing}
+\anchorref{7--9; 24--27}
+Properties such as reversibility, monotonicity or idempotence can validate many inputs but need precise preconditions.
+
+\standard{The standard locators determine which language/library property is under test; the tools and quality gates are independent engineering controls.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define one falsifiable property and its test oracle.
+\item Preserve toolchain identity and machine-readable evidence.
+\item Capture limitations and false-negative conditions.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <algorithm>
+#include <vector>
+void verify_sorted(std::vector<int> v) {
+    std::ranges::sort(v);
+    assert(std::ranges::is_sorted(v));
+}
+\end{lstlisting}
+\practice{Do not upgrade tool output to a claim of blanket ISO conformity.}
+\takeaway{Acceptance evidence: Document input generators, shrinking rules and forbidden overflow ranges.}
+\section{AddressSanitizer and lifetime checks}
+\anchorref{6.7; 20; 24}
+AddressSanitizer can detect many spatial and temporal memory errors but cannot prove absence of lifetime UB.
+
+\standard{The standard locators determine which language/library property is under test; the tools and quality gates are independent engineering controls.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define one falsifiable property and its test oracle.
+\item Preserve toolchain identity and machine-readable evidence.
+\item Capture limitations and false-negative conditions.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+# Example Clang/GCC diagnostic build
+c++ -std=c++23 -O1 -g -fsanitize=address     -fno-omit-frame-pointer main.cpp -o asan-test
+\end{lstlisting}
+\practice{Do not upgrade tool output to a claim of blanket ISO conformity.}
+\takeaway{Acceptance evidence: Run tests with logs and leak checks configured for the platform.}
+\section{UndefinedBehaviorSanitizer}
+\anchorref{6.9; 7; 9}
+UBSan instruments selected undefined operations. Its coverage depends on compiler and flags.
+
+\standard{The standard locators determine which language/library property is under test; the tools and quality gates are independent engineering controls.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define one falsifiable property and its test oracle.
+\item Preserve toolchain identity and machine-readable evidence.
+\item Capture limitations and false-negative conditions.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+c++ -std=c++23 -O1 -g -fsanitize=undefined     -fno-sanitize-recover=all main.cpp -o ubsan-test
+\end{lstlisting}
+\practice{Do not upgrade tool output to a claim of blanket ISO conformity.}
+\takeaway{Acceptance evidence: Confirm which checks are enabled, and add explicit overflow boundary tests.}
+\section{ThreadSanitizer and concurrency}
+\anchorref{6.9.2; 33}
+ThreadSanitizer targets data races but does not establish algorithmic liveness, correctness of lock ordering, or all memory-model guarantees.
+
+\standard{The standard locators determine which language/library property is under test; the tools and quality gates are independent engineering controls.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define one falsifiable property and its test oracle.
+\item Preserve toolchain identity and machine-readable evidence.
+\item Capture limitations and false-negative conditions.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+c++ -std=c++23 -O1 -g -fsanitize=thread     -fno-omit-frame-pointer main.cpp -o tsan-test
+\end{lstlisting}
+\practice{Do not upgrade tool output to a claim of blanket ISO conformity.}
+\takeaway{Acceptance evidence: Run separate TSan jobs; do not assume ASan and TSan can be combined.}
+\section{Fuzzing and adversarial input limits}
+\anchorref{23; 27; 31--32}
+Coverage-guided fuzzing finds crash and sanitizer failures but must be supplemented by time/memory bounds and assertions.
+
+\standard{The standard locators determine which language/library property is under test; the tools and quality gates are independent engineering controls.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define one falsifiable property and its test oracle.
+\item Preserve toolchain identity and machine-readable evidence.
+\item Capture limitations and false-negative conditions.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+// Pseudocode harness signature, fuzzer-dependent:
+// extern "C" int LLVMFuzzerTestOneInput(
+//    const unsigned char* data, unsigned long size);
+\end{lstlisting}
+\practice{Do not upgrade tool output to a claim of blanket ISO conformity.}
+\takeaway{Acceptance evidence: Keep corpus provenance, minimized reproducers and crash deduplication.}
+\section{Static analysis, compiler warnings and triage}
+\anchorref{4; 6--15; 16--33}
+Compiler warnings, Clang-Tidy, CodeQL or other analyzers are not part of the C++ normative wording and have nonzero false-positive/false-negative rates.
+
+\standard{The standard locators determine which language/library property is under test; the tools and quality gates are independent engineering controls.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define one falsifiable property and its test oracle.
+\item Preserve toolchain identity and machine-readable evidence.
+\item Capture limitations and false-negative conditions.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+# Example warning profile (vendor-specific)
+c++ -std=c++23 -Wall -Wextra -Wpedantic     -Wconversion -Wshadow -c main.cpp
+\end{lstlisting}
+\practice{Do not upgrade tool output to a claim of blanket ISO conformity.}
+\takeaway{Acceptance evidence: Require line-of-code evidence, a defect hypothesis, and auditable disposition.}
+\section{ABI, link, modules and multi-translation-unit tests}
+\anchorref{6.3; 6.6; 10}
+Single-unit tests miss some ODR, module reachability and ABI failures. Headers and exported module interfaces should be validated as clients consume them.
+
+\standard{The standard locators determine which language/library property is under test; the tools and quality gates are independent engineering controls.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define one falsifiable property and its test oracle.
+\item Preserve toolchain identity and machine-readable evidence.
+\item Capture limitations and false-negative conditions.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+// Compile a public header in a blank client translation unit.
+// Link two distinct source files against the same library.
+// Test shared-library ABI only under defined compatibility policy.
+\end{lstlisting}
+\practice{Do not upgrade tool output to a claim of blanket ISO conformity.}
+\takeaway{Acceptance evidence: Exercise shared builds, static builds and module build ordering.}
+\section{Performance and algorithmic complexity tests}
+\anchorref{24--28}
+Library complexity constraints are not exact time targets. Performance regressions must be evaluated against a workload and environment.
+
+\standard{The standard locators determine which language/library property is under test; the tools and quality gates are independent engineering controls.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define one falsifiable property and its test oracle.
+\item Preserve toolchain identity and machine-readable evidence.
+\item Capture limitations and false-negative conditions.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+// Benchmark conditions to record:
+// input distribution; CPU affinity; warm-up; samples
+// allocator; compiler flags; instrumentation overhead
+\end{lstlisting}
+\practice{Do not upgrade tool output to a claim of blanket ISO conformity.}
+\takeaway{Acceptance evidence: Track p50/p95 latency, memory peak, throughput and regression budgets.}
+\section{Coverage and mutation testing}
+\anchorref{6--15; 16--33}
+Statement and branch coverage are proxies, not proof. Mutation tests can expose weak assertions and missing branches.
+
+\standard{The standard locators determine which language/library property is under test; the tools and quality gates are independent engineering controls.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define one falsifiable property and its test oracle.
+\item Preserve toolchain identity and machine-readable evidence.
+\item Capture limitations and false-negative conditions.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+// Mutants to test:
+// >= becomes > ; loop count loses 1 ; error is ignored
+// Retain mutation survivors for human review.
+\end{lstlisting}
+\practice{Do not upgrade tool output to a claim of blanket ISO conformity.}
+\takeaway{Acceptance evidence: Require risk-weighted coverage with traceable safety claims.}
+\section{Reproducible CI and release gating}
+\anchorref{4; 16}
+CI runs tie source, toolchain and quality evidence into a reviewable artifact. Release gates should distinguish correctness failures from temporary infrastructure outages.
+
+\standard{The standard locators determine which language/library property is under test; the tools and quality gates are independent engineering controls.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define one falsifiable property and its test oracle.
+\item Preserve toolchain identity and machine-readable evidence.
+\item Capture limitations and false-negative conditions.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+# Shell outline for a matrix job:
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
+\end{lstlisting}
+\practice{Do not upgrade tool output to a claim of blanket ISO conformity.}
+\takeaway{Acceptance evidence: Pin action versions, prohibit unaudited privilege escalation, and retain reports.}
+\section{Defect-to-test regression traceability}
+\anchorref{all clauses}
+Every fixed defect should add a test that fails for the original behavior where practical. Capture the exact semantic cause, not just an associated symptom.
+
+\standard{The standard locators determine which language/library property is under test; the tools and quality gates are independent engineering controls.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define one falsifiable property and its test oracle.
+\item Preserve toolchain identity and machine-readable evidence.
+\item Capture limitations and false-negative conditions.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+// Regression entry fields:
+// issue | clause | cause | reproducer | expected
+// compiler/version | sanitizer | fix | review | status
+\end{lstlisting}
+\practice{Do not upgrade tool output to a claim of blanket ISO conformity.}
+\takeaway{Acceptance evidence: Maintain a single finding ID across issue tracker, source change and release note.}
+\section{Example GitHub Actions workflow (illustrative)}
+\begin{lstlisting}[language=]
+name: cpp23-quality
+on: [push, pull_request]
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+\end{lstlisting}
+This example intentionally omits pinned SHA values and a fixed compiler image; production policies should supply both. Separate ASan, UBSan and TSan matrices, plus feature probes for new library APIs. Do not infer a C++23 facility works because the compiler accepts the command-line language flag.
+
+\section{Verification evidence manifest}
+\small
+\begin{longtable}{@{}p{.25\linewidth}p{.69\linewidth}@{}}
+\toprule
+\textbf{Field} & \textbf{Example contents}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Field} & \textbf{Example contents}\\
+\midrule
+\endhead
+Source identity & Git commit SHA and build tree cleanliness\\
+\addlinespace[2pt]
+Toolchain & Compiler, library, target, linker, OS\\
+\addlinespace[2pt]
+Capabilities & Feature macros and dedicated compile probes\\
+\addlinespace[2pt]
+Tests & Suite name, count, exit status, skipped tests\\
+\addlinespace[2pt]
+Diagnostics & Warnings and analyzer findings with triage\\
+\addlinespace[2pt]
+Sanitizers & Flags, runtime versions and logs\\
+\addlinespace[2pt]
+Sign-off & Reviewer and unresolved constraints\\
+\addlinespace[2pt]
+\bottomrule
+\end{longtable}
+\normalsize
+\docend
+\end{document}

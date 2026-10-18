@@ -1,0 +1,78 @@
+\documentclass[10pt,letterpaper]{article}
+\input{misra-c-style.tex}
+\title{\vspace{-2.3em}\color{DeepNavy}\Huge\bfseries Hands-On Implementation Handbook\\[0.45em]\large\normalfont\color{Teal} A bounded C module and an auditable compliance workflow}
+\author{Independent Software Engineering Reference Series}
+\date{Edition 1.0 \quad | \quad October 2026}
+\begin{document}
+\maketitle
+\vspace{-0.4em}
+\begin{center}\color{Slate}\rule{0.83\linewidth}{0.4pt}\end{center}
+\DocNotes
+\tableofcontents
+\newpage
+
+\section{Target project: bounded sensor command processing}
+The supplied code examples implement a deliberately small bounded packet parser with explicit status returns, no heap use and no I/O dependencies. They compile on a hosted C11 implementation for lab purposes. The project is \emph{not claimed to be fully MISRA C:2023 compliant}; a real deployment must supply project profile, checker, complete guidance review and target-specific verification.
+\subsection{Repository layout}
+\begin{lstlisting}[style=plaincode]
+examples/
+  CMakeLists.txt
+  include/sensor_core.h
+  src/sensor_core.c
+  tests/test_sensor_core.c
+ci/
+  misra-analysis.yml
+  run-misra-analysis.sh
+  validate-sarif.py
+  release-gate.py
+templates/
+  guideline-enforcement-plan.csv
+  guideline-recategorization-plan.csv
+  guideline-compliance-summary.csv
+  deviation-record.md
+\end{lstlisting}
+\section{Reference behavior}
+Packet: \texttt{[command, value]}. Commands 1 and 2 mean ``set threshold'' and ``read state'' in this toy example. The parser rejects null pointers, unexpected message size, unsupported command and values outside an explicitly bounded threshold range. Output is initialized to a documented safe fallback on failure. No dynamic allocation is involved.
+\section{Engineer-oriented implementation sequence}
+\subsection{Lab 1: select project profile}
+Record target compiler, C edition, data model, linker/ABI, exceptions, compiler flags, supported configurations, threat/hazard assumptions and the boundary between lab code and vendor source. Result: approved scope manifest.
+\subsection{Lab 2: decompose requirements}
+Assign requirement identifiers such as REQ-PKT-001 (length check), REQ-PKT-002 (supported command), REQ-PKT-003 (bounded threshold), and REQ-PKT-004 (defined status and safe fallback). Link source functions and test cases to each. Result: requirements matrix.
+\subsection{Lab 3: inspect C type semantics}
+Compute the type of each integer constant and comparison. Verify the host compiler's \texttt{stdint.h} and \texttt{stdbool.h} assumptions. Probe zero, maximum supported values and malformed command bytes. Result: annotated expression/type report.
+\subsection{Lab 4: inspect pointer and buffer contracts}
+Prove that \texttt{length == 2U} entails two readable input bytes only if the caller provides a buffer of that extent; this is an API precondition. Examine null-pointer handling and object lifetime. Result: contract table and fault-injection tests.
+\subsection{Lab 5: perform guideline review}
+Choose at least ten applicable IDs from the catalog, including at least one from each of types, functions, pointers, control flow and directives. Record enforcement method, analyzer mapping and negative fixtures. Result: ten complete GEP rows.
+\subsection{Lab 6: static analysis validation}
+Run compiler diagnostics, unit tests and a MISRA-capable checker chosen by the project. Build one negative fixture per chosen guideline. Record checker version, exact CLI, checked source sets and coverage limitations. Result: trustworthy diagnostics packet.
+\subsection{Lab 7: deviation simulation}
+Introduce a hypothetical target-specific register mapping in a separate file, then propose and independently review a Required-rule deviation if legally eligible under the adopted category. Avoid introducing it into the host parser's build. Result: approved or rejected deviation record with rationale.
+\subsection{Lab 8: CI/CD integration}
+Run the sample build and test job. Replace the analyzer adapter with a validated vendor command, then run a policy-aware baseline comparison. Demonstrate that missing tools, invalid output and new unapproved findings fail closed. Result: CI trace and evidence snapshots.
+\subsection{Lab 9: release review}
+Create the complete GCS and artifact manifest; verify that no Mandatory violations are outstanding and all Required violations have either been corrected or carry approved eligible deviations. Identify third-party gaps and uncertainties in the release record. Result: reproducible release evidence bundle.
+\section{Build and run}
+\begin{lstlisting}[style=plaincode]
+cmake -S examples -B build \
+  -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build build
+ctest --test-dir build --output-on-failure
+\end{lstlisting}
+\section{How to add real analyzer support}
+The adapter is intentionally vendor-neutral. Select and validate a tool supporting the selected C edition and the 2023 requirements; record its exact checker-to-guideline mapping, run requirements and licensing. Implement a small wrapper that accepts the sample arguments and produces well-formed SARIF 2.1.0, or adapt the CI workflow to the vendor's native reporting. An absent tool must never be silently ignored.
+\section{Useful review and test matrix}
+\begin{tabularx}{\linewidth}{@{}p{.23\linewidth}X@{}}\toprule
+Input case & Expected result and evidence\\\midrule
+Null input or output & Explicit invalid-argument status; no dereference.\\
+Message size 0,1,3 & Reject size; output remains safe fallback.\\
+Command outside set & Unsupported-command status.\\
+Threshold 0 and 100 & Accept documented boundary if requirements permit.\\
+Threshold 101,255 & Out-of-range status.\\
+Valid read command & Return deterministic state snapshot.\\
+Invalid analyzer invocation & Nonzero status and no green merge gate.\\
+Valid SARIF with unapproved new Mandatory finding & Gate fails; reviewer must correct source.\\\bottomrule\end{tabularx}
+\section{Verification limitations}
+The example's unit tests validate functional behavior under a host ABI. They do not prove absence of all UB, timing determinism, lock freedom, correct memory-mapped I/O, conforming vendor libraries, or total guideline coverage. The project should add hardware-in-the-loop and target compiler checks when deployed on embedded platforms.
+
+\end{document}

@@ -1,0 +1,184 @@
+\documentclass[11pt,letterpaper,oneside]{report}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.90in,headheight=15pt]{geometry}
+\usepackage{microtype}
+\usepackage[svgnames,table]{xcolor}
+\usepackage{amsmath,amssymb,booktabs,longtable,tabularx,array}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{lastpage}
+\definecolor{ink}{HTML}{14273C}
+\definecolor{primary}{HTML}{0B5379}
+\definecolor{accent}{HTML}{B66A30}
+\definecolor{pale}{HTML}{F1F5F8}
+\definecolor{codebg}{HTML}{F5F7F8}
+\hypersetup{colorlinks=true,linkcolor=primary,urlcolor=primary,pdftitle={Linux and UNIX System Programming Engineering Suite}}
+\titleformat{\chapter}[display]{\normalfont\LARGE\bfseries\color{ink}}{\color{accent}\large\MakeUppercase{\chaptername}\ \thechapter}{10pt}{}[\vspace{0.4ex}\titlerule]
+\titleformat{\section}{\Large\bfseries\color{primary}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{ink}}{\thesubsection}{0.7em}{}
+\setlist[itemize]{leftmargin=*,topsep=3pt,itemsep=2pt}
+\setlist[enumerate]{leftmargin=*,topsep=3pt,itemsep=3pt}
+\setlength{\parskip}{5pt}
+\setlength{\parindent}{0pt}
+\lstdefinestyle{sysc}{language=C,basicstyle=\ttfamily\footnotesize,backgroundcolor=\color{codebg},keywordstyle=\bfseries\color{primary},commentstyle=\color{ForestGreen},stringstyle=\color{Brown},breaklines=true,showstringspaces=false,tabsize=4,frame=single,rulecolor=\color{LightSteelBlue},columns=fullflexible,keepspaces=true}
+\lstset{style=sysc}
+\newtcolorbox{engineeringnote}[1][]{colback=pale,colframe=primary,boxrule=0.55pt,arc=1.5mm,title=Engineering note,fonttitle=\bfseries,#1}
+\newtcolorbox{modernnote}[1][]{colback=white,colframe=accent,boxrule=0.55pt,arc=1.5mm,title=Modern extension --- not in the 2010 textbook,fonttitle=\bfseries,#1}
+\newcommand{\sys}[1]{\texttt{#1}}
+\pagestyle{fancy}\fancyhf{}\fancyhead[L]{\small\color{ink} Linux / UNIX Engineering Suite}\fancyhead[R]{\small\color{primary}\nouppercase{\leftmark}}\fancyfoot[C]{\small\thepage\ / \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.45pt}
+\setcounter{tocdepth}{1}
+\setlength{\emergencystretch}{2em}
+\begin{document}
+\begin{titlepage}\centering\vspace*{2cm}{\color{primary}\Large ENGINEERING REFERENCE SERIES\par}\vspace{1.25cm}{\color{ink}\Huge\bfseries Networking Engineering Guide\par}\vspace{0.6cm}{\Large POSIX sockets, framing, event loops and resilient services\par}\vspace{2cm}\rule{0.75\textwidth}{1.2pt}\par\vspace{0.55cm}{\large An original companion to Michael Kerrisk\textquotesingle s 2010 text}\par\vspace{0.3cm}{\large Edition 1.0\quad |\quad October 2026}\par\vfill{\small Document 07\quad |\quad pdfLaTeX-compatible standalone source}\par\end{titlepage}
+\tableofcontents\clearpage
+\chapter{Socket layers and correctness}
+A socket describes a communication endpoint; the transport and socket type determine important behavior. TCP provides a reliable ordered byte stream rather than framed messages. UDP preserves datagram boundaries but does not promise reliability, ordering, or congestion-safe application behavior. UNIX-domain sockets provide local process connectivity with additional peer-identity features.
+
+\section{Connection lifecycle}
+\begin{enumerate}
+\item Resolve endpoint or construct a local socket address and select a compatible family.
+\item socket, bind, listen, accept for a passive stream endpoint; socket and connect for an active endpoint.
+\item Establish a protocol version, framing limits, timeouts, authentication and application-level error codes.
+\item read/recv and write/send in loops that preserve partial progress and handle EOF/EINTR/EAGAIN.
+\item Coordinate half-close via shutdown when the protocol allows it.
+\item Drain remaining work, close descriptors and release owned local names.
+\end{enumerate}
+\chapter{Address-family-independent socket engineering}
+\begin{itemize}
+\item Use getaddrinfo with hints, iterate the returned candidates, and call freeaddrinfo.
+\item Use socklen\_t and correct sockaddr structures; avoid hardcoded IPv4-only assumptions for general network software.
+\item Use htons/htonl and reciprocal functions for integral wire-format fields; avoid interpreting C struct padding as protocol bytes.
+\item Consider dual-stack binding defaults and whether IPv6-only settings are explicitly required.
+\item Distinguish hostname resolution errors from syscall errno failures.
+\end{itemize}
+\chapter{Protocol framing and parser security}
+\section{Length-prefixed protocol contract}
+The example protocol uses a 4-byte unsigned big-endian length followed by exactly that many payload bytes. An implementation must read precisely four header bytes, reject lengths above MAX\_FRAME and read exactly the declared payload. It must also reject premature EOF, handle zero-length frames deliberately, and prevent overflow in allocation calculations.
+
+\begin{lstlisting}
+#define MAX_FRAME (1u << 20)
+/* Pseudocode: read_exact() and write_exact() must implement
+   partial-progress, EINTR, EOF and deadline semantics. */
+uint32_t raw = 0;
+read_exact(fd, &raw, sizeof raw, deadline);
+uint32_t len = ntohl(raw);
+if (len > MAX_FRAME) protocol_error();
+read_exact(fd, payload, len, deadline);
+\end{lstlisting}
+\begin{engineeringnote}
+The preceding fragment is intentionally illustrative pseudocode: it is not a compilable program. The complete checked echo program later in this guide is compilable but deliberately omits framing, concurrency, TLS and authentication to keep its failure behavior observable.
+\end{engineeringnote}
+\chapter{Loopback TCP server: checked I/O}
+This small TCP server binds only the local loopback interface, listens for one connection, and echoes all received data. It handles partial sends, EINTR, connection EOF and descriptor cleanup. It is unsuitable as an Internet-facing service: it does not implement authentication, rate limits, timeouts, TLS or multi-client concurrency.
+
+\begin{lstlisting}
+#define _POSIX_C_SOURCE 200809L
+#include <arpa/inet.h>
+#include <errno.h>
+#include <netinet/in.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+int main(void) {
+    signal(SIGPIPE, SIG_IGN); /* demo: production uses sigaction */
+    int s = socket(AF_INET, SOCK_STREAM, 0);
+    if (s == -1) { perror("socket"); return 1; }
+    struct sockaddr_in a = { .sin_family = AF_INET,
+        .sin_port = htons(18443) };
+    a.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    if (bind(s, (struct sockaddr *)&a, sizeof a) != 0 ||
+        listen(s, 4) != 0) { perror("bind/listen"); close(s); return 1; }
+    puts("loopback:18443 listening for one client"); fflush(stdout);
+    int c = accept(s, NULL, NULL);
+    if (c == -1) { perror("accept"); close(s); return 1; }
+    char buf[4096]; int failed = 0;
+    for (;;) {
+        ssize_t n = recv(c, buf, sizeof buf, 0);
+        if (n < 0 && errno == EINTR) continue;
+        if (n < 0) { perror("recv"); failed = 1; break; }
+        if (n == 0) break;
+        size_t sent = 0;
+        while (sent < (size_t)n) {
+            ssize_t w = send(c, buf + sent, (size_t)n - sent, 0);
+            if (w < 0 && errno == EINTR) continue;
+            if (w <= 0) { perror("send"); failed = 1; break; }
+            sent += (size_t)w;
+        }
+        if (failed) break;
+    }
+    close(c); close(s); return failed;
+}
+\end{lstlisting}
+\section{Runbook}
+\begin{lstlisting}
+cc -std=c11 -O2 -g -Wall -Wextra -Wpedantic \
+   examples/loopback_server.c -o loopback_server
+./loopback_server & server=$!
+printf 'ping' | nc -N 127.0.0.1 18443
+wait "$server"
+# If your nc lacks -N, use nc -q 0 or a Python socket test.
+\end{lstlisting}
+\chapter{Server architecture selection}
+\begin{longtable}{p{.19\linewidth}p{.28\linewidth}p{.39\linewidth}}\toprule
+Design & Appropriate context & Operational risks\\\midrule\endhead
+Iterative server & Lab or low-concurrency admin endpoint & One slow client blocks others\\
+Process per connection & Stronger process separation & Startup overhead, reaping and count limits\\
+Thread per connection & Moderate concurrency, blocking APIs & Stacks, lock pressure, runaway thread count\\
+Thread pool & Bounded blocking work & Work queues, fairness and capacity policies\\
+epoll loop & High descriptor counts on Linux & Nonblocking I/O state machine, ET drain discipline\\
+io\_uring & Completion-oriented Linux I/O tasks & Kernel-dependent semantics and memory lifetimes\\
+\bottomrule\end{longtable}\chapter{Nonblocking I/O and epoll}
+In a readiness loop, an event says that an operation may make progress, not that a complete application message has arrived. With edge-triggered epoll, all relevant readiness must be drained until EAGAIN on nonblocking fds, or new edges may not arrive. Robust designs keep independent read and write buffers for each connection and disable read interest under backpressure.
+
+\section{Readiness state machine}
+\begin{enumerate}
+\item ACCEPTING: repeatedly accept until EAGAIN for a nonblocking listening descriptor.
+\item READING\_HEADER: accumulate a bounded fixed-length header.
+\item READING\_BODY: accumulate payload up to declared maximum.
+\item WRITING: flush queued bytes with partial-write accounting.
+\item HALF\_CLOSED: honor incoming EOF and outgoing completion policy.
+\item CLOSED: epoll DEL as needed, release buffers, close descriptor and update metrics.
+\end{enumerate}
+\chapter{Secure transport and local trust}
+\begin{itemize}
+\item Use TLS 1.3 through a maintained, vetted library and validate the server identity; TLS is not performed by the POSIX sockets API.
+\item For local UNIX sockets, consider filesystem permissions, socket-namespace behavior and SO\_PEERCRED on Linux; keep peer-reported identity distinct from kernel-provided credentials.
+\item Ancillary data SCM\_RIGHTS transfers file descriptors; receivers must validate each received descriptor and apply close-on-exec policy.
+\item Do not log entire credentials, secrets or application payloads by default.
+\item Enforce limits for pending handshake connections, message sizes, outstanding bytes and per-client timeouts.
+\end{itemize}
+\chapter{Tracing and performance}
+\section{Minimal debug procedure}
+\begin{lstlisting}
+ss -ltnp                         # observe listening TCP sockets
+strace -f -e trace=network ./loopback_server
+# Reproduce a clean connect, premature EOF, partial transmission,
+# one slow client, client reset and high-connection-churn workload.
+\end{lstlisting}
+\begin{itemize}
+\item Separate application latency from TCP handshake, DNS, TLS and queue time.
+\item Record accept errors, receive timeouts, memory per connection and queued bytes.
+\item Test IPv4 and IPv6 on supported hosts, including address resolution failure and bind conflicts.
+\item Benchmark at least two concurrency models under the same workload before choosing an architecture.
+\end{itemize}
+
+\chapter*{Source and currency notes}
+\addcontentsline{toc}{chapter}{Source and currency notes}
+\textbf{Foundational source:} Michael Kerrisk, \emph{The Linux Programming Interface: A Linux and UNIX System Programming Handbook}, No Starch Press, 2010, ISBN 978-1-59327-220-3. The textbook's chapter titles and start pages organize the study guide; explanations, tasks, and code in this suite are independently authored educational material, not reproductions of the original text or its example programs.
+
+\textbf{Current reference baseline:} The Open Group / IEEE, \emph{POSIX.1-2024, Issue 8}, \url{https://pubs.opengroup.org/onlinepubs/9799919799/}; Linux man-pages project, \url{https://man7.org/linux/man-pages/}; Linux kernel documentation, \url{https://docs.kernel.org/}. For Linux-only extensions consult the relevant per-interface manual pages and kernel documentation for the target kernel, architecture and libc; availability can differ materially.
+
+\textbf{Scope:} This is an engineering study and implementation companion. It does not claim to restate a normative standard or guarantee a specific Linux kernel's behavior. System calls, libc wrappers and higher-level library functions are explicitly distinguished where material.
+\end{document}

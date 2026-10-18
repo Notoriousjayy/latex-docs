@@ -20,11 +20,13 @@ certifications, cloud security, and standards (CIS, OWASP).
 
 | Child | Purpose |
 |---|---|
-| `application-security/` | AppSec fundamentals, learning paths, processes, programs, web-security field guides. |
+| `application-security/` | AppSec fundamentals, learning paths (incl. assessment curricula), assessment suite, processes, programs, web-security field guides. |
 | `certifications/` | CISSP, CISO, GH-500 study plans. |
 | `cloud-security/` | Cloud-computing security user-story sequences. |
 | `github-advanced-security/` | GHAS administration, code scanning (CodeQL), Dependabot, references, secret scanning. |
-| `standards/` | CIS benchmarks; OWASP Top 10 (2025) and API Security Top 10. |
+| `governance-risk-compliance/` | ISMS decision frameworks; SOC 2 Trust Services Criteria engineering suite. |
+| `security-engineering/` | Computer and information security engineering suite (foundations through curriculum). |
+| `standards/` | CIS benchmarks; OWASP Top 10 (2025) and API Security Top 10; ISO/IEC 27000/27001/27002 ISMS engineering suite. |
 
 ## Conventions
 

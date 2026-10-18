@@ -11,13 +11,13 @@ type. The repository builds standalone roots (`.tex` files containing
 |---|---|
 | `architecture/` | Software & enterprise architecture, Views and Beyond, TOGAF, governance, including the [CCoE documentation catalog](architecture/governance/ccoe/readme.md). |
 | `data-systems/` | AI/ML, streaming (Kafka), and other data-platform documentation. |
-| `devops/` | CI/CD, GitHub Actions, GitOps, platform (k8s, nginx), secrets management. |
+| `devops/` | CI/CD, GitHub Actions, GitOps, build systems (CMake, WebAssembly), platform (k8s, nginx), secrets management. |
 | `electronics/` | Self-study electronics (Art of Electronics curriculum). |
 | `game-development/` | Game design documents, animation, asset pipelines, physics engines. |
-| `mathematics/` | Algebra, calculus, geometry — typeset references and study plans. |
+| `mathematics/` | Algebra, calculus, differential equations, geometry — typeset references and study plans. |
 | `personal/` | Personal/finance/gardening reference material. |
-| `programming/` | Language references (C/C++, Java, TypeScript) and web/frontend. |
-| `security/` | AppSec, GHAS, OWASP, certifications, cloud security, CIS standards. |
+| `programming/` | Language references and standards (C/C++ with C23, C++23 and MISRA suites, Python/CPython, ECMAScript, Java, TypeScript), Linux/UNIX system programming, and web/frontend (incl. micro-frontends, Design of Sites). |
+| `security/` | AppSec, GHAS, OWASP, certifications, cloud security, CIS and ISO/IEC 27000 standards, SOC 2 compliance, security engineering. |
 
 ## Conventions
 

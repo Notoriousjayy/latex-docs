@@ -1,0 +1,422 @@
+
+\documentclass[11pt,letterpaper,oneside]{report}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{inconsolata}
+\usepackage{geometry}
+\geometry{margin=0.89in,headheight=16pt,headsep=19pt,footskip=26pt}
+\usepackage{xcolor}
+\definecolor{navy}{HTML}{173758}
+\definecolor{teal}{HTML}{157B89}
+\definecolor{pale}{HTML}{E9F0F3}
+\definecolor{codegray}{HTML}{F5F7F9}
+\definecolor{muted}{HTML}{667785}
+\usepackage{booktabs,longtable,tabularx,array,calc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{upquote}
+\usepackage{xurl}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=navy,urlcolor=teal,bookmarksopen=true,pdfauthor={Software Build Engineering Documentation Suite}}
+\urlstyle{same}
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{2}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlength{\emergencystretch}{3em}
+\setlist[itemize]{leftmargin=*,topsep=4pt,itemsep=2pt}
+\setlist[enumerate]{leftmargin=*,topsep=4pt,itemsep=2pt}
+\titleformat{\chapter}[display]{\normalfont\bfseries\color{navy}}{\fontsize{11}{12}\selectfont CHAPTER \thechapter}{7pt}{\fontsize{23}{28}\selectfont}
+\titlespacing*{\chapter}{0pt}{-6pt}{19pt}
+\titleformat{\section}{\Large\bfseries\color{navy}}{\thesection}{0.65em}{}
+\titleformat{\subsection}{\large\bfseries\color{teal}}{\thesubsection}{0.65em}{}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{muted}{PROFESSIONAL CMAKE ENGINEERING}}
+\fancyhead[R]{\small\textcolor{muted}{\nouppercase{\leftmark}}}
+\fancyfoot[C]{\small\textcolor{muted}{\thepage}}
+\renewcommand{\headrulewidth}{0.3pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\small\thepage}\renewcommand{\headrulewidth}{0pt}}
+\lstdefinelanguage{cmake}{sensitive=false,morekeywords={cmake_minimum_required,project,add_library,add_executable,target_compile_features,target_include_directories,target_link_libraries,target_sources,target_compile_options,target_compile_definitions,target_link_options,add_subdirectory,include,if,else,elseif,endif,foreach,endforeach,function,endfunction,macro,endmacro,set,option,find_package,find_program,add_custom_command,add_custom_target,install,configure_file,configure_package_config_file,write_basic_package_version_file,set_target_properties,set_tests_properties,add_test,message,FetchContent_Declare,FetchContent_MakeAvailable,return,cmake_parse_arguments},morecomment=[l]{\#},morestring=[b]"}
+\lstdefinelanguage{sh}{morekeywords={cmake,ctest,cpack,find,sha256sum,clang-tidy,echo,cp,make,ninja,git},morecomment=[l]{\#},morestring=[b]"}
+\lstdefinelanguage{yaml}{morecomment=[l]{\#},morestring=[b]",morekeywords={name,on,permissions,jobs,steps,uses,run,with,env,matrix,include,if}}
+\lstdefinelanguage{text}{}
+\lstset{basicstyle=\ttfamily\footnotesize,keywordstyle=\color{navy}\bfseries,commentstyle=\color{muted},stringstyle=\color{teal},backgroundcolor=\color{codegray},frame=single,rulecolor=\color{pale},breaklines=true,breakatwhitespace=false,showstringspaces=false,columns=fullflexible,keepspaces=true,tabsize=2,xleftmargin=5pt,xrightmargin=5pt,aboveskip=9pt,belowskip=9pt}
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\passthrough}[1]{#1}
+\providecommand{\real}[1]{#1}
+
+\begin{document}
+\hypersetup{pageanchor=false}\begin{titlepage}
+\color{navy}
+\vspace*{1.15in}
+{\Large\bfseries PROFESSIONAL CMAKE\\[7pt]SOFTWARE BUILD ENGINEERING\par}
+\vspace{0.32in}\noindent\textcolor{teal}{\rule{0.9\linewidth}{2.3pt}}\par
+\vspace{0.45in}
+{\parbox{0.95\textwidth}{\raggedright\fontsize{24}{29}\selectfont\bfseries Modern CMake Implementation Handbook\par}}
+\vspace{0.3in}
+{\Large\color{teal}Runnable multi-target reference project\par}
+\vfill
+{\large DOCUMENT 03 OF 08\par}
+\vspace{0.1in}
+{\small Companion synthesis to Craig Scott, \emph{Professional CMake: A Practical Guide}, 20th Edition (2025).\\
+Original learning/engineering material. Not affiliated with or endorsed by the author.\par}
+\vspace{0.2in}
+{\small 17 October 2026\par}
+\end{titlepage}
+\hypersetup{pageanchor=true}\clearpage\pagenumbering{roman}\tableofcontents\clearpage\pagenumbering{arabic}
+
+\textbf{Goal.} Deliver a multi-target C++ project that builds, tests,
+installs, exports a package, and can be consumed from an independent
+source directory. \textbf{Working artifact:}
+\passthrough{\lstinline!examples/reference-project!} in this suite.
+\textbf{Provenance:} {[}BOOK-GROUNDED{]} target construction, CTest,
+installation, exports and presets relate to Chapters 2--5, 16, 19--20,
+27, 34--35, 40 and 42. {[}ENGINEERING EXTENSION{]} quality gates,
+reproducibility checks and the reference implementation are new.
+
+\chapter{Initial verification}\label{initial-verification}
+
+\begin{lstlisting}[language=sh]
+cmake --version
+cmake -G  # list available generators
+c++ --version
+\end{lstlisting}
+
+Use CMake 3.25 or newer, a functional C++17 compiler and Ninja where
+possible. The demo uses standard-library facilities only; it does not
+download dependencies. Check that a compiler change triggers a
+\textbf{new build directory}, not a silent reuse of an existing cache.
+
+\chapter{Repository layout and component
+ownership}\label{repository-layout-and-component-ownership}
+
+\begin{lstlisting}
+reference-project/
+  CMakeLists.txt
+  CMakePresets.json
+  cmake/BuildSuiteConfig.cmake.in
+  include/bsuite/math.hpp
+  src/math.cpp
+  src/main.cpp
+  tests/math_tests.cpp
+  consumer/CMakeLists.txt
+  consumer/main.cpp
+  .github/workflows/build.yml
+\end{lstlisting}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Component
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Responsibility
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Consumer contract
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\passthrough{\lstinline!bsuite\_core!} & public C++ library, clean
+header boundary & \passthrough{\lstinline!BuildSuite::core!} \\
+\passthrough{\lstinline!bsuite\_cli!} & private CLI behavior and output
+& executable artifact \\
+\passthrough{\lstinline!bsuite\_tests!} & direct assertions on library
+behavior & CTest test \passthrough{\lstinline!core.math!} \\
+\passthrough{\lstinline!BuildSuiteConfig.cmake!} & imports installed
+target definitions &
+\passthrough{\lstinline!find\_package(BuildSuite CONFIG REQUIRED)!} \\
+\passthrough{\lstinline!consumer/!} & independent install validation &
+link only to \passthrough{\lstinline!BuildSuite::core!} \\
+\end{longtable}
+
+\chapter{Stage 1: Configure and build a
+target}\label{stage-1-configure-and-build-a-target}
+
+\begin{lstlisting}[language=sh]
+cd examples/reference-project
+cmake --preset ci-debug
+cmake --build --preset ci-debug -j 4
+\end{lstlisting}
+
+The top-level \passthrough{\lstinline!CMakeLists.txt!} declares a named
+target with a public \passthrough{\lstinline!FILE\_SET HEADERS!}, an
+alias, a CLI and test executable. Public compile features are exported
+as part of the library's consumer contract. The header file set avoids
+hand-maintaining a second installation list. Look at the actual source
+files for authoritative code: the code fragments in this handbook are
+conceptual illustrations.
+
+\begin{lstlisting}
+add_library(bsuite_core STATIC src/math.cpp)
+add_library(BuildSuite::core ALIAS bsuite_core)
+target_compile_features(bsuite_core PUBLIC cxx_std_17)
+target_sources(bsuite_core PUBLIC FILE_SET HEADERS
+  BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  FILES "${CMAKE_CURRENT_SOURCE_DIR}/include/bsuite/math.hpp")
+\end{lstlisting}
+
+\textbf{Verification:}
+\passthrough{\lstinline!cmake --build --preset ci-debug --verbose!}
+should reveal a single compilation of
+\passthrough{\lstinline!math.cpp!}; public includes must be available to
+the CLI and unit tests via the link graph. Do not supply the include
+path separately to each consumer.
+
+\chapter{Stage 2: Define private and propagated
+requirements}\label{stage-2-define-private-and-propagated-requirements}
+
+\begin{lstlisting}
+target_link_libraries(bsuite_cli PRIVATE BuildSuite::core)
+target_link_libraries(bsuite_tests PRIVATE BuildSuite::core)
+\end{lstlisting}
+
+The CLI and test source compilation inherit the library's public include
+directories and required C++ standard. These properties do \textbf{not}
+imply that a runtime shared library is available on all systems. For a
+shared library, also model symbol exports, relocatable loaders and ABI
+compatibility.
+
+\section{When to use each target
+type}\label{when-to-use-each-target-type}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Target
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Use when
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Review question
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\passthrough{\lstinline!STATIC!} & embed object code at link time &
+which downstream libraries must still be linked? \\
+\passthrough{\lstinline!SHARED!} & dynamic-link plugin or SDK
+implementation & what is the visibility and ABI strategy? \\
+\passthrough{\lstinline!MODULE!} & loadable runtime component & which
+host loads it? \\
+\passthrough{\lstinline!INTERFACE!} & header-only contract / options
+aggregation & are there any build sources? \\
+\passthrough{\lstinline!OBJECT!} & share objects inside one build & is
+coupling to build architecture acceptable? \\
+\passthrough{\lstinline!IMPORTED!} & represent externally produced
+binary & is location/architecture version correct? \\
+\passthrough{\lstinline!ALIAS!} & stable namespace inside current build
+& does its real target own installation rules? \\
+\end{longtable}
+
+\chapter{Stage 3: Establish CTest
+behavior}\label{stage-3-establish-ctest-behavior}
+
+\begin{lstlisting}[language=sh]
+ctest --preset ci-debug --output-on-failure
+ctest --test-dir build/ci-debug -N
+\end{lstlisting}
+
+The reference tests assert arithmetic behavior without an external
+framework. A registered test is not automatically a unit test:
+classification follows the executable's dependencies and assertions.
+Tests should be deterministic, independent and fast; add fixtures or
+resource locks for stateful integration tests.
+
+A failing test must return a non-zero exit code; test output alone is
+not sufficient. \passthrough{\lstinline!ctest --output-junit <path>!}
+can export results for CI reporting.
+
+\chapter{Stage 4: Install and export a relocatable
+package}\label{stage-4-install-and-export-a-relocatable-package}
+
+\begin{lstlisting}[language=sh]
+cmake --install build/ci-debug --prefix "$PWD/staging"
+find staging -type f | sort
+\end{lstlisting}
+
+The installed layout should contain library binaries, public headers and
+\passthrough{\lstinline!lib/cmake/BuildSuite!} package metadata
+(platform-specific library directories may vary).
+\passthrough{\lstinline!configure\_package\_config\_file!} and
+\passthrough{\lstinline!write\_basic\_package\_version\_file!} generate
+the package files; \passthrough{\lstinline!install(EXPORT ...)!} records
+target import properties. The package should not reference the original
+source directory.
+
+\begin{lstlisting}
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+install(TARGETS bsuite_core EXPORT BuildSuiteTargets
+  FILE_SET HEADERS DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+)
+install(EXPORT BuildSuiteTargets NAMESPACE BuildSuite::
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/BuildSuite")
+\end{lstlisting}
+
+\textbf{Important:} the full reference project also sets
+\passthrough{\lstinline!EXPORT\_NAME core!} so
+\passthrough{\lstinline!BuildSuite::core!} is the installed name,
+generates the package configuration and version files, and installs
+them. A consumer may only rely on the installed namespace after
+\passthrough{\lstinline!find\_package!}.
+
+\chapter{Stage 5: Build a clean external
+consumer}\label{stage-5-build-a-clean-external-consumer}
+
+\begin{lstlisting}[language=sh]
+cmake -S consumer -B build/consumer -G Ninja \
+  -DCMAKE_PREFIX_PATH="$PWD/staging"
+cmake --build build/consumer
+./build/consumer/bsuite_consumer  # adapt for Windows
+\end{lstlisting}
+
+This is a stronger contract test than linking the CLI in the producer
+build: it verifies that exported targets, header installation and
+package configuration are sufficient. Repeat after copying
+\passthrough{\lstinline!staging!} to a different directory and
+configuring a \textbf{new} consumer build against the relocated prefix.
+
+\chapter{Stage 6: Packages, release metadata and
+validation}\label{stage-6-packages-release-metadata-and-validation}
+
+The demo's CPack configuration builds a TGZ archive. Production packages
+must additionally validate manifest contents, license notices,
+dependency redistribution terms, runtime loader behavior, install/remove
+semantics, signing and operating-system-specific packaging requirements.
+
+\begin{lstlisting}[language=sh]
+cpack --config build/ci-release/CPackConfig.cmake -G TGZ
+\end{lstlisting}
+
+Release validation checks: clean Release configure/build/test; staging
+to a fresh prefix; installed-consumer test; archive extraction and one
+representative smoke test on each supported target OS.
+
+\chapter{Stage 7: Adding third-party dependencies
+safely}\label{stage-7-adding-third-party-dependencies-safely}
+
+Prefer \passthrough{\lstinline!find\_package(SomeLib CONFIG REQUIRED)!}
+for a validated installed package. Prefer imported targets such as
+\passthrough{\lstinline!SomeLib::SomeLib!}; provide their minimum
+versions and compatibility semantics.
+\passthrough{\lstinline!FetchContent!} is useful when source integration
+is intentional, but fetching/building third-party CMake files executes
+their configure logic. The exact revision, checksum and provenance must
+be reviewed.
+
+\begin{lstlisting}
+include(FetchContent)
+FetchContent_Declare(example_dep
+  GIT_REPOSITORY https://example.invalid/approved/repository.git
+  GIT_TAG <pinned-immutable-commit>
+)
+# Example only: replace placeholder; never execute with fake location.
+\end{lstlisting}
+
+\textbf{{[}ENGINEERING EXTENSION{]} Dependency acquisition policy:}
+default to pre-provisioned, verified dependencies for release builds; if
+network access is required, constrain hosts, pin immutable identifiers,
+record SPDX license identifiers, check advisories and verify archived
+checksums. A CMake \passthrough{\lstinline!GIT\_TAG!} name alone is not
+a supply-chain attestation.
+
+\chapter{Stage 8: Diagnostics and
+inspection}\label{stage-8-diagnostics-and-inspection}
+
+\begin{lstlisting}[language=sh]
+cmake --debug-find -S . -B build/ci-debug
+cmake --build build/ci-debug --verbose
+cmake -LAH -N build/ci-debug
+ctest --test-dir build/ci-debug -VV
+\end{lstlisting}
+
+Use \passthrough{\lstinline!CMAKE\_EXPORT\_COMPILE\_COMMANDS=ON!} for
+supported generators and tools such as clang-tidy. A compilation
+database is not a substitute for a faithful build graph when generated
+sources or complex toolchains are involved. Avoid deleting individual
+cache entries at random; clean reconfigure is the default control
+experiment.
+
+\chapter{Stage 9: Portability acceptance
+test}\label{stage-9-portability-acceptance-test}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Case
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Command strategy
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Pass criterion
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Linux Ninja Debug & configure/build/ctest & all tests pass \\
+Linux Ninja Release & separate binary dir, install & all tests pass; no
+build/source paths in installed configs \\
+Windows MSVC & VS multi-config,
+\passthrough{\lstinline!--config Release!} & all tests pass and consumer
+finds library \\
+macOS Clang & Ninja or Xcode & all tests pass and staged relocation
+works \\
+CLI clean state & fresh checkout, no prior cache & no undeclared
+downloads or local dependencies \\
+\end{longtable}
+
+\textbf{Verification boundary:} this suite's automated execution
+validates the environment available during generation; it does not
+demonstrate that Windows, macOS, Qt, Android or embedded targets were
+tested unless their toolchains were explicitly run.
+
+\chapter{Definition of done}\label{definition-of-done}
+
+\begin{itemize}
+\tightlist
+\item[$\square$]
+  Public header reachable \textbf{only through} target usage
+  requirements.
+\item[$\square$]
+  Debug and Release use separate binary trees or an intentional
+  multi-config generator.
+\item[$\square$]
+  CTest test fails on an induced incorrect result, then passes after
+  correction.
+\item[$\square$]
+  Install tree contains no references to source or binary directories.
+\item[$\square$]
+  Independent consumer locates and links
+  \passthrough{\lstinline!BuildSuite::core!}.
+\item[$\square$]
+  Build matrix documents all tested and untested platforms.
+\item[$\square$]
+  CI artifacts include machine-readable test results and immutable
+  source revision.
+\end{itemize}
+
+\chapter{Further reading}\label{further-reading}
+
+Textbook Chapters 4, 16, 19, 27, 34, 35, 40, 42. Official CMake:
+\url{https://cmake.org/cmake/help/latest/guide/importing-exporting/} ;
+\url{https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html} .
+
+\end{document}

@@ -1,0 +1,49 @@
+\documentclass[11pt,letterpaper]{article}
+\input{cmake-wasm-preamble.tex}
+\DocHeader{Native Profile and Portable C++}{SUBNative Profile and Portable C++}{1.0}
+\begin{document}
+\frontmatterdoc
+\section{Native is a first-class deployment target}
+The native build is both a shipping profile and a diagnostic oracle for the portable library. It must not be treated as an unguarded fallback for unresolved WASM dependencies. Keep native-only dependencies isolated in native adapters, with tests that exercise the same domain contract as browser and WASI targets.
+
+\section{Portability hazards}
+\noindent\begin{tabularx}{\linewidth}{p{0.26\linewidth}X}
+\toprule Hazard & Mitigation / test design \\ \midrule
+Pointer width & Fixed-width wire integers; never cast host pointers into serialized data \\
+Endianness & Define canonical network byte order and golden byte vectors \\
+Undefined behavior & Native UBSan/ASan builds; fuzz parsers and boundary functions \\
+Locale/timezone & Make encoding and locale/time assumptions explicit \\
+Threads and atomics & Separate host synchronization primitives; feature-detect support \\
+Filesystem layout & Paths and authority supplied by host adapter; deny traversal \\
+Exceptions/RTTI & Specify SDK support; prefer error values across C ABI \\
+\bottomrule
+\end{tabularx}
+
+\section{Native build and execution}
+\begin{lstlisting}[language=bash,caption={Working native commands}]
+cmake --preset native
+cmake --build --preset native
+ctest --preset native --output-on-failure
+./build/native/portable_cli
+# checksum=10
+\end{lstlisting}
+
+\section{Developer-only diagnostic build}
+Use a separate native output directory and known compiler support for sanitizers; do not ship sanitizer binaries. Depending on compiler and platform, diagnostics may differ.
+\begin{lstlisting}[language=bash,caption={GCC/Clang sanitizer build}]
+cmake -S . -B build/native-asan -G Ninja \
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_CXX_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined'
+cmake --build build/native-asan
+ctest --test-dir build/native-asan --output-on-failure
+\end{lstlisting}
+
+\section{Differential testing discipline}
+For the same versioned vector suite, compare checksums, error categories, encoded messages, boundary handling, and deterministic side effects across native, Emscripten, and WASI. Where APIs differ, normalize into a platform-neutral result record (\texttt{status}, \texttt{output\_digest}, \texttt{error\_category}) before comparing. Performance differences are measured independently; parity does not require identical latency.
+
+\section{ABI management}
+Version exported interfaces separately from implementation versions. For native packages, define compiler/runtime linkage compatibility and supported OS/architecture combinations. For browser bindings, avoid transmitting C++ standard library types through the C boundary. For WASI components, version WIT packages and compatibility rules. A core algorithm change that impacts observable result hashes is a contract change on all targets.
+\accept{Native tests pass under at least one sanitizer configuration and agree with browser/WASI golden results for shared fixtures.}
+\sourceurl{https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html}
+\end{document}

@@ -1,0 +1,58 @@
+\documentclass[11pt,letterpaper]{article}
+\input{cmake-wasm-preamble.tex}
+\DocHeader{WASI Runtime and Component Architecture}{SUBWASI Runtime and Component Architecture}{1.0}
+\begin{document}
+\frontmatterdoc
+\section{Choose the correct WASI deployment unit}
+The reference implementation deliberately targets \textbf{WASI Preview 1 command modules} using \texttt{wasi-sdk-p1.cmake}. Preview 2 and Preview 3 represent different component-model and host capability surfaces. A file ending in \texttt{.wasm} is not proof that it is a Preview 2 component. Treat the imported interface set and component encoding as explicit release metadata.
+
+\noindent\begin{tabularx}{\linewidth}{p{0.23\linewidth}X X}
+\toprule Profile & Primary use & Release verification \\ \midrule
+Preview 1 command & Batch CLI and basic guest standard streams & Wasmtime execution and import inventory \\
+Preview 2 component & Structured services and WIT-defined interoperability & Component validation; host interface contract tests \\
+Preview 3 & Async component model evolution & Explicit opt-in compatibility and lifecycle evaluation \\
+Preview 1 threads & Experimental threading & Runtime feature and concurrency tests \\
+\bottomrule
+\end{tabularx}
+
+\section{Guest-host boundary and least authority}
+A WASI host creates the execution environment. Do not treat isolation as a promise that the guest has no effects: host imports may grant filesystem, clocks, randomness, environment, sockets, or outbound HTTP depending on interface and runtime configuration. Use the minimum grants required to satisfy the app's contract and record them in a deployment policy.
+
+\begin{lstlisting}[language=bash,caption={Preview 1 runtime smoke test}]
+export WASI_SDK_PATH=/opt/wasi-sdk
+cmake --preset wasi-p1
+cmake --build --preset wasi-p1
+ctest --preset wasi-p1
+wasmtime run build/wasi-p1/portable_cli.wasm
+# expected stdout: checksum=10
+\end{lstlisting}
+No filesystem preopens or host networking are required for this reference CLI. The exact Wasmtime resource-limit syntax may change by release and should be validated against its pinned version before creating a production sandbox profile.
+
+\section{Illustrative Preview 2 interface contract}
+This WIT is a \textbf{design artifact}, not an implemented binding in the supplied C++ sample. Generating component bindings and publishing an actual component is a separate work item.
+\begin{lstlisting}[language={},caption={Conceptual WIT world for a transformation service}]
+package acme:checksum@1.0.0;
+
+interface processing {
+  checksum: func(data: list<u8>) -> u32;
+}
+
+world processing-service {
+  export processing;
+}
+\end{lstlisting}
+In a production component pipeline: generate ABI bindings with a compatible WIT tool, compile using a component-aware toolchain, validate with component tooling, and run contract tests against the intended host. Do not assume that the Preview 1 C ABI is directly consumable as WIT.
+
+\section{Runtime acceptance and negative tests}
+\begin{enumerate}
+\item Identify the binary target/encoding and imported interfaces using an inspector.
+\item Run the command against the pinned runtime; validate output, status, and resource accounting.
+\item Attempt access to a path, environment variable, or network endpoint not granted by the host; ensure refusal.
+\item Apply execution time, memory, and fuel/epoch interruption limits using documented runtime controls.
+\item Repeat under malformed input, interrupted execution, and host restart; observe cancellation and cleanup.
+\item Re-run after a runtime security upgrade with explicit compatibility acceptance.
+\end{enumerate}
+\accept{A release cannot be called a component until the WIT/encoding/import manifest and component host tests pass.}
+\sourceurl{https://github.com/WebAssembly/wasi-sdk}
+\sourceurl{https://docs.wasmtime.dev/}
+\end{document}

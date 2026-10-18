@@ -1,0 +1,281 @@
+\documentclass[10pt,letterpaper]{article}
+\input{assessment-curricula-common.tex}
+\hypersetup{colorlinks=true,linkcolor=navy,urlcolor=teal,pdftitle={Software Security Assessment Instructor Guide}}
+\title{\vspace{-1.6cm}\Huge\color{navy}\bfseries Software Security Assessment Instructor Guide\\[8pt]\large\color{teal}Learning operations, lab evidence, safe execution and practical assessment rubrics}
+\author{Software Security Engineering Curriculum | Independent instructional design}
+\date{Version 1.0 | 17 October 2026}
+\begin{document}
+\maketitle
+\begin{center}\small Based on the learning tracks in Dowd, McDonald and Schuh (2007);\
+contemporary topics are separately labeled as instructional extensions.\end{center}
+\begin{insight}\textbf{Audience and ethics.} This curriculum is for authorized software assessment only. All exercises use instructor-owned source, synthetic input, offline captures, or isolated localhost/VM environments. No third-party probing is required.\end{insight}
+\tableofcontents
+\clearpage
+\section{Teaching principles and delivery constraints}
+The teaching sequence is grounded in Chapter 4 of Dowd, McDonald and Schuh: preassessment, plan, work, reflect, document, report and support remediation. Each technical topic is presented as a hypothesis about a violated security invariant to be tested; a tool alert is not a finding in isolation.
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+\item Teach trust assumptions, data/control-flow reconstruction and defensive invariant statements before introducing scanner results.
+\item Use a 4-week shared foundation and a 10-week specialized sequence, ending in 2 weeks of capstone.
+\item Use a default eight-hour week (2 guided, 2 reading, 4 lab). For broad-program adoption, budget lab infrastructure and instructor feedback time separately.
+\item Require consent and strict local network egress controls for fuzzers, intercepting proxies and intentionally vulnerable services.
+\item Instructors must show at least one case where the first tool finding is wrong or unproven, and how code reasoning resolves it.
+\end{itemize}
+\section{Cohort provisioning and security controls}
+\begingroup\footnotesize\setlength\tabcolsep{3pt}
+\begin{longtable}{>{\raggedright\arraybackslash}p{\dimexpr0.130\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.540\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.330\textwidth-6pt\relax}}\toprule
+\textbf{Gate} & \textbf{Procedure} & \textbf{Recorded proof}\\\midrule\endfirsthead
+\toprule \textbf{Gate} & \textbf{Procedure} & \textbf{Recorded proof}\\\midrule\endhead
+L0 Scope & Approve owned fixture hashes, authorized test accounts, excluded hosts/ports and disposal schedule & Scope sheet and signed lab policy\\\midrule
+L1 Isolation & Use VM/rootless containers, loopback bindings or offline packet captures, with non-production credentials & Network exposure log and environment descriptor\\\midrule
+L2 Tool readiness & Pin versions or document tested ranges; identify optional commercial functionality & Toolchain inventory and license check\\\midrule
+L3 Reproducibility & Run baseline smoke tests and ensure insecure vs fixed branches are distinct & Instructor CI record and seed checksums\\\midrule
+L4 Data hygiene & Use synthetic identities and non-sensitive examples; redact tokens in logs & Sanitized submission and retention policy\\\midrule
+L5 Shutdown & Destroy snapshots, invalidate training credentials and close test ports & End-of-cohort disposal checklist\\\midrule
+\bottomrule\end{longtable}\endgroup
+\section{Week-by-week instructor facilitation}
+\begingroup\footnotesize\setlength\tabcolsep{3pt}
+\begin{longtable}{>{\raggedright\arraybackslash}p{\dimexpr0.160\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.450\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.390\textwidth-6pt\relax}}\toprule
+\textbf{Stage} & \textbf{Instructor demonstration} & \textbf{Evidence to collect}\\\midrule\endfirsthead
+\toprule \textbf{Stage} & \textbf{Instructor demonstration} & \textbf{Evidence to collect}\\\midrule\endhead
+Weeks 1--2 & Show policy violation vs coding bug; model actors, assets and boundaries & Policy matrix, DFD and attacker preconditions\\\midrule
+Weeks 3--4 & Audit exposed runtime settings, narrate source/sink flow & Configuration diff, annotated call graph, triage ledger\\\midrule
+Weeks 5--8 & Teach concrete vulnerability classes, model expected failure before tool use & Boundary tests, source trace, patch and midterm practical\\\midrule
+Weeks 9--11 & Teach operating system, protocol, web or packet-specific trust rules & Platform-specific test environment and access controls\\\midrule
+Weeks 12--14 & Run cross-component state and coverage audit; revisit false positives & Independent lab acceptance and peer review\\\midrule
+Weeks 15--16 & Guide scoped capstone audit then patch proof & Final report, review notes, reproducible test and residual-risk presentation\\\midrule
+\bottomrule\end{longtable}\endgroup
+\section{Laboratory authoring specification}
+Each lab is a small, explicit security hypothesis involving one primary weakness. The student should have enough source and harness material to prove or reject it without external scanning. The companion starter fixtures in the delivered package demonstrate a reproducibility baseline; full platform-native teaching targets require instructor review before cohort use.
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+\item Fixture specification: one entry point, modeled adversary, trust boundary, vulnerable branch and a reference correction.
+\item Setup recipe: pinned source revision, OS/tool versions, build/install command, baseline test and safe cleanup.
+\item Adversarial test corpus: valid input, malformed/truncated input, boundary input and a denial control. Additional tests tailored to flaw class.
+\item Student procedure: model behavior, identify code slice, articulate vulnerable assumption, run controlled proof, patch, rerun.
+\item Evidence bundle: command output, observed vs expected table, source links, signed finding statement and residual-risk notes.
+\item Grader oracle: no reliance on a single crash or scanner alert; assess change in security property after remediation.
+\end{itemize}
+\subsection{Reference miniature: input length}
+\begin{lstlisting}[language=C]
+#include <stddef.h>
+#include <stdint.h>
+int accept_frame(const uint8_t *p, size_t actual) {
+    if (!p || actual < 2) return 0;
+    size_t wanted = ((size_t)p[0] << 8) | p[1];
+    if (wanted > 4096 || wanted != actual - 2) return 0;
+    return 1;
+}
+\end{lstlisting}
+Reference checks: 0/1-byte frames fail; a 2-byte zero-length frame succeeds; an 8-byte actual frame declaring 7 payload bytes fails; a maximum permitted 4096-byte payload succeeds only with 4098 total bytes. The correctness of a higher-level protocol also depends on application state and authorization.
+
+\section{Vulnerability evidence record template}
+\begingroup\footnotesize\setlength\tabcolsep{3pt}
+\begin{longtable}{>{\raggedright\arraybackslash}p{\dimexpr0.170\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.360\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.470\textwidth-6pt\relax}}\toprule
+\textbf{Field} & \textbf{Instructor grading question} & \textbf{Acceptable evidence example}\\\midrule\endfirsthead
+\toprule \textbf{Field} & \textbf{Instructor grading question} & \textbf{Acceptable evidence example}\\\midrule\endhead
+Scope & Is this target explicitly authorized? & Pinned local repository commit; permitted hosts enumerated\\\midrule
+Vulnerability claim & What invariant or security policy is violated? & Unauthorized caller can read a different owner's record\\\midrule
+Attack surface & What attacker input or state is controlled? & Specific request parameter and authenticated principal\\\midrule
+Code trace & Where is the missing guard or faulty operation? & File/function/line with call path and data transformation\\\midrule
+Reachability & What preconditions make the path executable? & Controlled test reproducer and described server state\\\midrule
+Impact & Which confidentiality/integrity/availability property fails? & Observed unauthorized disclosure in a synthetic account test\\\midrule
+Remediation & Is the root cause addressed instead of merely hidden? & Per-resource authorization check before data release\\\midrule
+Retest & Can reviewer repeat before and after? & Negative and positive test scripts with recorded output\\\midrule
+Risk / confidence & What is unknown, mitigated or not demonstrated? & Environment caveats and explicit unconfirmed branches\\\midrule
+\bottomrule\end{longtable}\endgroup
+\section{Practical assessment marking guides}
+\begingroup\footnotesize\setlength\tabcolsep{3pt}
+\begin{longtable}{>{\raggedright\arraybackslash}p{\dimexpr0.200\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.140\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.260\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.400\textwidth-6pt\relax}}\toprule
+\textbf{Criterion} & \textbf{0 points} & \textbf{Partial credit} & \textbf{Full-credit behavior}\\\midrule\endfirsthead
+\toprule \textbf{Criterion} & \textbf{0 points} & \textbf{Partial credit} & \textbf{Full-credit behavior}\\\midrule\endhead
+Trace (3) & No executable path & Finds sink but misses input or guard & Exact source->transform->guard->sink path, correct conditions\\\midrule
+Adversary model (2) & None & Speculates without defining principal & Defines control, preconditions and violated trust boundary\\\midrule
+Correction (2) & Hides finding & Mitigation without root-cause fix & Changes invariant to hold on every relevant path\\\midrule
+Reproduction (2) & Scanner screenshot only & Test lacks control/expected result & Reproducible before/after positive and adversarial cases\\\midrule
+Limitations (1) & Overclaims confidence & Mentions uncertainty generically & Names exact assumptions, platform limits and residual risks\\\midrule
+\bottomrule\end{longtable}\endgroup
+\subsection{False-positive calibration}
+Provide at least one code path where a lexical unsafe sink is protected by a correctly implemented, reachable authorization gate or constant-only construction. Require the student to prove the gate and state the conditions under which it could fail. A hypothetical defense is insufficient justification for dismissal.
+
+\subsection{Midterm practical}
+At week 8, allocate two hours for a fresh but comparable fixture. Students receive a small system diagram, trust assumptions, source excerpts and sample tests. Score 10 points using the weekly analytic rubric, rather than ranking students by the number of tool detections.
+
+\subsection{Capstone reviewer checklist}
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+\item Signed scope, system version and assets documented.
+\item At least three testable invariants and boundaries represented.
+\item Each confirmed finding has reproducible steps or logically complete proof.
+\item The patch does not introduce a new privilege, flow or parse ambiguity.
+\item Before/after tests include boundary and non-abuse control cases.
+\item SAST output is classified with supporting code evidence.
+\item Executive summary, technical detail, remediation and residual risk align.
+\end{itemize}
+\section{Required lesson content and delivery choices}
+\subsection{UNIX and Linux Software Security Assessment}
+Recommended platform: local Linux VM or rootless container; gcc/clang, GDB, sanitizers. Languages: C, C++, POSIX shell; optional Rust. Capstone: Audit an intentionally vulnerable local privileged-helper/daemon model; provide a privilege graph, safety patch, and security test evidence.
+
+\begingroup\footnotesize\setlength\tabcolsep{3pt}
+\begin{longtable}{>{\raggedright\arraybackslash}p{\dimexpr0.120\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.440\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.440\textwidth-6pt\relax}}\toprule
+\textbf{Module} & \textbf{Core misconception to test} & \textbf{Primary proof}\\\midrule\endfirsthead
+\toprule \textbf{Module} & \textbf{Core misconception to test} & \textbf{Primary proof}\\\midrule\endhead
+U1 & Treating mitigations as a substitute for a length invariant. & annotated C diff; sanitizer transcript; 3-case test table\\\midrule
+U2 & Checking arithmetic only after overflow already occurred. & conversion lattice; checked-allocation patch; compiler output\\\midrule
+U3 & Assuming pointer nulling alone resolves cross-alias ownership. & control-flow graph; allocation ledger; patched implementation\\\midrule
+U4 & Attempting blacklist sanitization instead of removing the interpreter. & sink inventory; fixed code; metacharacter regression suite\\\midrule
+U5 & Assuming a failed privilege drop succeeded. & privilege-transition state diagram; audit log; test design\\\midrule
+U6 & Assuming path validation and subsequent open refer to the same inode. & race timeline; revised API calls; safety argument\\\midrule
+U7 & Assuming a child process has a clean environment by default. & descriptor inventory; subprocess diff; execution test\\\midrule
+U8 & Checking a pathname but not the authenticated peer identity. & IPC threat model; permission table; test transcript\\\midrule
+U9 & Mistaking absence of an observed race for proof of thread safety. & interleaving trace; fixed program; TSAN evidence\\\midrule
+U10 & Calling non-async-signal-safe functions inside a signal handler. & handler review; hardened unit file; regression log\\\midrule
+\bottomrule\end{longtable}\endgroup
+\subsection{Windows Software Security Assessment}
+Recommended platform: isolated Windows evaluation VM; Visual Studio Build Tools, WinDbg, PowerShell. Languages: C, C++, PowerShell, C\#. Capstone: Assess a deliberately vulnerable Windows service implementing a restricted IPC interface and file operations.
+
+\begingroup\footnotesize\setlength\tabcolsep{3pt}
+\begin{longtable}{>{\raggedright\arraybackslash}p{\dimexpr0.120\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.440\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.440\textwidth-6pt\relax}}\toprule
+\textbf{Module} & \textbf{Core misconception to test} & \textbf{Primary proof}\\\midrule\endfirsthead
+\toprule \textbf{Module} & \textbf{Core misconception to test} & \textbf{Primary proof}\\\midrule\endhead
+W1 & Equating exploit-mitigation deployment with vulnerability elimination. & memory map; corrected code; validation cases\\\midrule
+W2 & Assuming all Windows integer-sized types have the same width. & conversion diagram; regression suite; code diff\\\midrule
+W3 & Treating INVALID\_HANDLE\_VALUE and NULL as interchangeable everywhere. & path coverage table; RAII rewrite; static report\\\midrule
+W4 & Equating text escaping with reliable argument separation. & string transformation map; patched helper; tests\\\midrule
+W5 & Conflating token privilege presence with enabled and authorized access. & ACL matrix; token reasoning; PowerShell verification output\\\midrule
+W6 & Accepting writable directories in a privileged DLL search path. & load trace; ACL before/after; mitigation evidence\\\midrule
+W7 & Assuming a local connection is inherently trusted. & pipe trust diagram; fixed checks; access test\\\midrule
+W8 & Trusting transport authentication as sufficient per-method authorization. & call graph; authorization matrix; test protocol\\\midrule
+W9 & Protecting writes while leaving unsynchronized reads. & interleaving chart; lock protocol; tests\\\midrule
+W10 & Over-claiming WinDbg traces as proof of non-existence of a vulnerability. & consolidated report; test runs; residual-risk memo\\\midrule
+\bottomrule\end{longtable}\endgroup
+\subsection{Modern Web Application Security Assessment}
+Recommended platform: localhost-only web sandbox; Python/Node and SQLite; OWASP ZAP optional. Languages: Python, Java, JavaScript/TypeScript, C\# and SQL. Capstone: Assess a local multi-tenant REST application with authentication, record access, and deployment settings.
+
+\begingroup\footnotesize\setlength\tabcolsep{3pt}
+\begin{longtable}{>{\raggedright\arraybackslash}p{\dimexpr0.120\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.440\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.440\textwidth-6pt\relax}}\toprule
+\textbf{Module} & \textbf{Core misconception to test} & \textbf{Primary proof}\\\midrule\endfirsthead
+\toprule \textbf{Module} & \textbf{Core misconception to test} & \textbf{Primary proof}\\\midrule\endhead
+WEB1 & Using HTML encoding for SQL or shell contexts. & source-to-sink trace; SQL patch; tests\\\midrule
+WEB2 & Checking only for the substring ../ without accounting for canonicalization. & path model; corrected handler; regression suite\\\midrule
+WEB3 & Relying on an in-process lock across multiple service instances. & state machine; concurrent test; patch evidence\\\midrule
+WEB4 & Assuming expired front-end UI state revokes a server token. & session lifecycle diagram; tests; audit findings\\\midrule
+WEB5 & Trusting user-supplied X-Forwarded-For without an authenticated proxy. & trust-boundary diagram; server patch; test cases\\\midrule
+WEB6 & Equating authenticated with authorized. & access matrix; authorization patch; negative tests\\\midrule
+WEB7 & Using a single encoder for HTML text, HTML attributes and URLs. & ASVS mapping; code annotations; test report\\\midrule
+WEB8 & Assuming frameworks automatically neutralize unsafe library calls. & framework comparison; patched handler; regression tests\\\midrule
+WEB9 & Mistaking a valid signature for appropriate token audience/authorization. & token trust map; negative tests; secure API contract\\\midrule
+WEB10 & Claiming CodeQL supports PHP or automatically proves exploitability. & workflow YAML; SARIF excerpt; disposition register\\\midrule
+\bottomrule\end{longtable}\endgroup
+\subsection{Network Application Security Assessment}
+Recommended platform: localhost TCP service; sanitizers and coverage-guided fuzzing; packet fixtures. Languages: C/C++, Python, Go or Rust for selected contrasts. Capstone: Assess a length-prefixed message protocol and a concurrent local server; defend parser and resource invariants.
+
+\begingroup\footnotesize\setlength\tabcolsep{3pt}
+\begin{longtable}{>{\raggedright\arraybackslash}p{\dimexpr0.120\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.440\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.440\textwidth-6pt\relax}}\toprule
+\textbf{Module} & \textbf{Core misconception to test} & \textbf{Primary proof}\\\midrule\endfirsthead
+\toprule \textbf{Module} & \textbf{Core misconception to test} & \textbf{Primary proof}\\\midrule\endhead
+NA1 & Reading the advertised payload length without checking received bytes. & wire format; guard patch; sanitizer log\\\midrule
+NA2 & Treating a fuzzer crash as a validated security finding without root cause. & fuzzer harness; minimized regression corpus; crash report\\\midrule
+NA3 & Multiplying attacker-controlled counts before bounds checking. & parsing table; checked math patch; test transcript\\\midrule
+NA4 & Accepting an invalid transition because an earlier stage was successful. & state transition table; code patch; coverage map\\\midrule
+NA5 & Referencing input-backed slices after releasing the message buffer. & ownership graph; revised structures; test cases\\\midrule
+NA6 & Decoding the same bytes differently across parser layers. & parser invariants; negative corpus; diff\\\midrule
+NA7 & Assuming a shared connection implies serialized handlers. & sequence diagram; synchronization patch; tests\\\midrule
+NA8 & Leaking resources after malformed or abandoned connections. & lifecycle table; timeout test; fixed handler\\\midrule
+NA9 & Accepting duplicate fields with undefined interpretation precedence. & protocol grammar; test oracle; decoder patch\\\midrule
+NA10 & Mistaking permitted syntactic differences for exploitable security divergence. & differential test; protocol report; negative corpus\\\midrule
+\bottomrule\end{longtable}\endgroup
+\subsection{Network Analysis Security Assessment}
+Recommended platform: isolated network namespaces or offline PCAPs; Wireshark, Zeek/Suricata optional. Languages: C, C++, Python; packet-filter expressions. Capstone: Assess a local packet parser, stream-state classifier and firewall decision engine using offline captures.
+
+\begingroup\footnotesize\setlength\tabcolsep{3pt}
+\begin{longtable}{>{\raggedright\arraybackslash}p{\dimexpr0.120\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.440\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.440\textwidth-6pt\relax}}\toprule
+\textbf{Module} & \textbf{Core misconception to test} & \textbf{Primary proof}\\\midrule\endfirsthead
+\toprule \textbf{Module} & \textbf{Core misconception to test} & \textbf{Primary proof}\\\midrule\endhead
+NET1 & Using network length as if all bytes were captured. & parser diff; sanitizer evidence; packet fixtures\\\midrule
+NET2 & Using unchecked offsets generated from untrusted header fields. & offset proof; validated parser; regression tests\\\midrule
+NET3 & Interpreting parse failure as permission to pass traffic. & decision table; patch; denial tests\\\midrule
+NET4 & Inspecting one normalized form while forwarding a different representation. & normalization diagram; tests; parser policy\\\midrule
+NET5 & Allowing expired flow entries to be resurrected unintentionally. & flow-state chart; corrected locking; test log\\\midrule
+NET6 & Assuming IPv4 validation proves correctness for IPv6. & packet parse checklist; sample PCAP; tests\\\midrule
+NET7 & Equating observed packet order with TCP application byte order. & stream diagram; test corpus; policy specification\\\midrule
+NET8 & Assuming a default allow rule is effectively deny-by-default. & rule matrix; simulator tests; corrective rules\\\midrule
+NET9 & Confusing a missing alert with proof that traffic was safe. & inspection path; detection-rule test; findings\\\midrule
+NET10 & Allowing a recursive name parser to traverse outside the message. & decoder tests; telemetry schema; limits memo\\\midrule
+\bottomrule\end{longtable}\endgroup
+\section{Proficiency graduation and remediation policy}
+Require 70/100 overall and a capstone that passes the instructor's evidence-completeness gate. A student who writes an effective patch but cannot state source, reachability and negative control does not yet demonstrate independent assessment competence.
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+\item If foundation checkpoint fails, assign a smaller data-flow exercise before specialization.
+\item If the midterm misclassifies a false positive, require a fresh control-flow proof and oral review.
+\item If capstone test evidence is incomplete, allow a corrected resubmission with revision history.
+\item Distinguish reasonable exploration from confirmed security claims in peer feedback.
+\end{itemize}
+\section{Termly maintenance procedure}
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+\item At each academic term, check official version status for OWASP, NIST, language/compiler tools, Windows/Linux APIs, GitHub and IETF RFCs.
+\item Freeze references, tool versions and fixture commits on the first course day; document critical security changes during the term.
+\item Run instructor regression suites after every fixture change; preserve old fixtures with a clear historical label.
+\item Review all intentional vulnerabilities for containment and clarify whether a behavior is legacy-only.
+\item Do not substitute an AI-generated answer for independently validated executable code or source-grounded conclusions.
+\end{itemize}
+\section{Assessment, proficiency and assurance}
+Assessment weights are consistent across all tracks; successful completion requires at least 70/100 overall, plus no omitted security evidence in the final capstone. Competency mastery is a separate judgment: a passing multiple-choice score alone never certifies independent auditing ability.
+
+\begingroup\footnotesize\setlength\tabcolsep{3pt}
+\begin{longtable}{>{\raggedright\arraybackslash}p{\dimexpr0.220\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.110\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.670\textwidth-6pt\relax}}\toprule
+\textbf{Component} & \textbf{Weight} & \textbf{Measurement}\\\midrule\endfirsthead
+\toprule \textbf{Component} & \textbf{Weight} & \textbf{Measurement}\\\midrule\endhead
+Weekly laboratories & 30\% & Lab notebook, executable negative tests, verifiable artifacts and remediation review\\\midrule
+Source-code auditing & 20\% & Source/sink trace, execution conditions, control evaluation and evidence quality\\\midrule
+Knowledge assessments & 15\% & Short scenarios, design arguments, false-positive differentiation\\\midrule
+Midterm practical & 10\% & Timed code audit in week 8 with independent reproduction\\\midrule
+Capstone & 25\% & Scoped independent analysis, corrections, tests and risk communication\\\midrule
+\bottomrule\end{longtable}\endgroup
+\subsection{Observable proficiency rubric}
+\begingroup\footnotesize\setlength\tabcolsep{3pt}
+\begin{longtable}{>{\raggedright\arraybackslash}p{\dimexpr0.200\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.800\textwidth-6pt\relax}}\toprule
+\textbf{Level} & \textbf{Evidence of competency}\\\midrule\endfirsthead
+\toprule \textbf{Level} & \textbf{Evidence of competency}\\\midrule\endhead
+Foundational & Recognizes a weak boundary with prompting; distinguishes a bug from a security impact.\\\midrule
+Intermediate & Independently traces representative input to sensitive operations and implements a validated fix.\\\midrule
+Advanced & Audits cross-component flow, considers mitigations and exploits prerequisites, and evaluates false positives.\\\midrule
+Professional & Produces reproducible, peer-reviewable evidence; prioritizes risk and demonstrates systemic variant prevention.\\\midrule
+\bottomrule\end{longtable}\endgroup
+\subsection{Finding classification}
+\begingroup\footnotesize\setlength\tabcolsep{3pt}
+\begin{longtable}{>{\raggedright\arraybackslash}p{\dimexpr0.220\textwidth-6pt\relax}>{\raggedright\arraybackslash}p{\dimexpr0.780\textwidth-6pt\relax}}\toprule
+\textbf{Status} & \textbf{Acceptance criteria}\\\midrule\endfirsthead
+\toprule \textbf{Status} & \textbf{Acceptance criteria}\\\midrule\endhead
+Suspected & Potential weakness with insufficient reachability or security impact evidence; explicitly mark as unconfirmed.\\\midrule
+Confirmed & Specific trust violation, reachable attacker conditions and controlled validation or logically sufficient code proof.\\\midrule
+False positive & Demonstrated non-reachability or valid defense, supported with executable evidence and control-flow reasoning.\\\midrule
+Mitigated & Underlying code issue may remain but documented compensating control blocks the defined abuse path; residual risk required.\\\midrule
+Fixed & Root cause is patched, adversarial regression tests pass, and the affected path is analyzed after the change.\\\midrule
+\bottomrule\end{longtable}\endgroup
+Severity is not the same as exploitability or priority: CVSS characterizes severity; EPSS estimates exploitation likelihood for scored CVEs; impact, exposure, business context, and confidence still require expert evaluation. Do not generate fabricated EPSS values for hypothetical educational defects.
+
+\section{References and verified technical resources}
+Status review: 17 October 2026. Stable OWASP ASVS is 5.0.0; the 2025 OWASP Top 10 is released. NIST SP 800-218/SSDF 1.1 is final, while SP 800-218 Rev. 1 / SSDF 1.2 remained listed as draft at review time. Verify moving tool compatibility before deploying laboratories.
+
+\noindent\textbf{Dowd, McDonald, and Schuh. The Art of Software Security Assessment (2007).} Textbook; preface and Chapters 1--18.\par\small\url{https://www.oreilly.com/library/view/the-art-of/0321444426/}\par\normalsize\medskip
+\noindent\textbf{MITRE. CWE: Common Weakness Enumeration.} Weakness descriptions and relationships.\par\small\url{https://cwe.mitre.org/}\par\normalsize\medskip
+\noindent\textbf{NIST. SP 800-218 (SSDF 1.1, final, 2022).} Secure software development activities.\par\small\url{https://csrc.nist.gov/pubs/sp/800/218/final}\par\normalsize\medskip
+\noindent\textbf{NIST. SP 800-218 Rev. 1 (SSDF 1.2, draft as of 2026-10).} Research-only draft; not a replacement for final 1.1.\par\small\url{https://csrc.nist.gov/projects/ssdf/publications}\par\normalsize\medskip
+\noindent\textbf{OWASP. ASVS 5.0.0 (stable).} Verifiable application security requirements.\par\small\url{https://owasp.org/www-project-application-security-verification-standard/}\par\normalsize\medskip
+\noindent\textbf{OWASP. Top 10:2025 (released).} Web risk awareness categories, not a testing checklist.\par\small\url{https://top10.owasp.org/2025/}\par\normalsize\medskip
+\noindent\textbf{OWASP. Web Security Testing Guide (Stable).} Web testing methodologies.\par\small\url{https://wstg.owasp.org/}\par\normalsize\medskip
+\noindent\textbf{OWASP. API Security Top 10:2023.} API risk awareness.\par\small\url{https://owasp.org/API-Security/editions/2023/en/0x00-header/}\par\normalsize\medskip
+\noindent\textbf{GitHub. CodeQL supported languages.} Language coverage and tool limitations.\par\small\url{https://codeql.github.com/docs/codeql-overview/supported-languages-and-frameworks/}\par\normalsize\medskip
+\noindent\textbf{GitHub. CodeQL compiled-language build modes.} CodeQL database production.\par\small\url{https://docs.github.com/en/code-security/concepts/code-scanning/codeql/codeql-for-compiled-languages}\par\normalsize\medskip
+\noindent\textbf{FIRST. CVSS 4.0 specification.} Severity characterization, not a probability of exploitation.\par\small\url{https://www.first.org/cvss/v4.0/specification-document}\par\normalsize\medskip
+\noindent\textbf{FIRST. Exploit Prediction Scoring System.} Exploit prediction and prioritization.\par\small\url{https://www.first.org/epss/}\par\normalsize\medskip
+\noindent\textbf{IETF. RFC 9110 HTTP Semantics.} HTTP behavior shared across versions.\par\small\url{https://www.rfc-editor.org/rfc/rfc9110}\par\normalsize\medskip
+\noindent\textbf{IETF. RFC 9114 HTTP/3.} HTTP/3 mapping over QUIC.\par\small\url{https://www.rfc-editor.org/rfc/rfc9114}\par\normalsize\medskip
+\noindent\textbf{IETF. RFC 9000 QUIC Transport.} QUIC transport behavior.\par\small\url{https://www.rfc-editor.org/rfc/rfc9000}\par\normalsize\medskip
+\noindent\textbf{GitHub. SARIF support for code scanning.} Structured static analysis evidence.\par\small\url{https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/sarif-support-for-code-scanning}\par\normalsize\medskip
+\noindent\textbf{Linux. openat2 manual page.} Directory-relative path resolution controls.\par\small\url{https://man7.org/linux/man-pages/man2/openat2.2.html}\par\normalsize\medskip
+\noindent\textbf{Microsoft. Windows security documentation.} Security descriptors, access tokens, RPC and ACLs.\par\small\url{https://learn.microsoft.com/en-us/windows/security/}\par\normalsize\medskip
+\noindent\textbf{LLVM. AddressSanitizer documentation.} Memory error checking.\par\small\url{https://clang.llvm.org/docs/AddressSanitizer.html}\par\normalsize\medskip
+\noindent\textbf{SEI CERT. Secure Coding Standards.} Implementation standards.\par\small\url{https://wiki.sei.cmu.edu/confluence/display/seccode}\par\normalsize\medskip
+\end{document}

@@ -1,0 +1,313 @@
+\documentclass[11pt]{article}
+\newcommand{\DocNumber}{VOLUME 03}
+\newcommand{\DocTitle}{Modern C++23 Programming Handbook}
+\newcommand{\DocSubtitle}{Applied patterns and hands-on implementation}
+\newcommand{\DocSummary}{Twelve implementable engineering patterns with design contracts, original samples and an integrated capstone lab.}
+\input{cpp23-common-preamble.tex}
+\begin{document}
+\docfront
+\section{Implementation workflow}
+For each pattern, implement the smallest invariant-preserving change, compile with the chosen C++23 toolchain, test its negative cases, run enabled diagnostics and measure performance only after correctness is established.
+
+\small
+\begin{longtable}{@{}p{.18\linewidth}p{.40\linewidth}p{.34\linewidth}@{}}
+\toprule
+\textbf{Stage} & \textbf{Artifact} & \textbf{Exit condition}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Stage} & \textbf{Artifact} & \textbf{Exit condition}\\
+\midrule
+\endhead
+Contract & Interface and invariants & Valid states and error outcomes described\\
+\addlinespace[2pt]
+Prototype & Compiled C++23 implementation & No unreviewed extensions\\
+\addlinespace[2pt]
+Verification & Unit, negative and sanitizer tests & Expected outcomes reproducible\\
+\addlinespace[2pt]
+Integration & Dependency, ABI and build notes & Cross-module behavior evaluated\\
+\addlinespace[2pt]
+Operations & Metrics and rollback path & Regression detection and reversibility\\
+\addlinespace[2pt]
+\bottomrule
+\end{longtable}
+\normalsize
+\section{Project baseline and dependency architecture}
+\anchorref{4--5; 10; 16}
+Establish a build that makes language mode, target triple, standard library, warnings, and dependency versions observable. A standards-conforming program and a reproducible build solve different problems.
+
+\standard{The cited clauses establish the underlying C++ semantics used by this implementation. The higher-level architecture pattern is an engineering interpretation, not an ISO-mandated design.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define preconditions, postconditions and state ownership.
+\item Write a positive test and a meaningful negative/boundary test.
+\item Review exception and cancellation paths.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+cmake_minimum_required(VERSION 3.25)
+project(engineering CXX)
+add_executable(example main.cpp)
+set_target_properties(example PROPERTIES
+    CXX_STANDARD 23 CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+# Probe vendor library features separately.
+\end{lstlisting}
+\practice{Lock toolchains for CI; check the selected implementation rather than assuming full C++23 coverage.}
+\takeaway{Hands-on task: Create a manifest describing compiler, library, flags and verified feature macros.}
+\section{Value types with explicit invariants}
+\anchorref{9; 11}
+Express valid states through constructors and private representation. Value semantics simplify test isolation, caching, and concurrency when mutable shared state is absent.
+
+\standard{The cited clauses establish the underlying C++ semantics used by this implementation. The higher-level architecture pattern is an engineering interpretation, not an ISO-mandated design.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define preconditions, postconditions and state ownership.
+\item Write a positive test and a meaningful negative/boundary test.
+\item Review exception and cancellation paths.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <expected>
+#include <string_view>
+struct Port {
+private:
+    unsigned short value_;
+    explicit Port(unsigned short value) : value_(value) {}
+public:
+    static std::expected<Port, std::string_view> make(int value) {
+        if (value < 1 || value > 65535) return
+            std::unexpected("port out of range");
+        return Port{static_cast<unsigned short>(value)};
+    }
+    unsigned short value() const noexcept { return value_; }
+};
+\end{lstlisting}
+\practice{Use named factory functions when construction can fail; prevent invalid states rather than relying on documentation.}
+\takeaway{Hands-on task: Prove that no public operation can construct an invalid port.}
+\section{RAII and linear resource release}
+\anchorref{6.7; 11; 20; 33}
+Resource acquisition is initialization ties resource release to object lifetime and structured destruction; it is a design idiom enabled by core lifetime rules.
+
+\standard{The cited clauses establish the underlying C++ semantics used by this implementation. The higher-level architecture pattern is an engineering interpretation, not an ISO-mandated design.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define preconditions, postconditions and state ownership.
+\item Write a positive test and a meaningful negative/boundary test.
+\item Review exception and cancellation paths.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <mutex>
+class Counter {
+    mutable std::mutex mu_;
+    int count_{};
+public:
+    void increment() {
+        std::scoped_lock lock{mu_};
+        ++count_;
+    }
+    int get() const {
+        std::scoped_lock lock{mu_};
+        return count_;
+    }
+};
+\end{lstlisting}
+\practice{Use dedicated guard objects even when the protected function currently cannot throw.}
+\takeaway{Hands-on task: Design a failing operation and demonstrate that the lock is released.}
+\section{Borrowing, ownership, and non-owning views}
+\anchorref{6.7; 20; 23; 24}
+Borrowing allows efficient APIs without ownership transfer, but a view can outlive its storage. Document the temporal contract.
+
+\standard{The cited clauses establish the underlying C++ semantics used by this implementation. The higher-level architecture pattern is an engineering interpretation, not an ISO-mandated design.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define preconditions, postconditions and state ownership.
+\item Write a positive test and a meaningful negative/boundary test.
+\item Review exception and cancellation paths.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <string>
+#include <string_view>
+std::string add_prefix(std::string_view input) {
+    std::string result{"id:"};
+    result.append(input);
+    return result; // owns the returned bytes
+}
+\end{lstlisting}
+\practice{Return owned values across asynchronous, persistent or remote boundaries.}
+\takeaway{Hands-on task: Write a compile-and-run regression test for dangling views with sanitizers.}
+\section{Moving values and the rule of zero}
+\anchorref{11.4; 20}
+Avoid manually writing destructor/copy/move members unless the class itself directly manages a non-RAII resource. When move is added, reason about the source and destination states.
+
+\standard{The cited clauses establish the underlying C++ semantics used by this implementation. The higher-level architecture pattern is an engineering interpretation, not an ISO-mandated design.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define preconditions, postconditions and state ownership.
+\item Write a positive test and a meaningful negative/boundary test.
+\item Review exception and cancellation paths.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <string>
+#include <vector>
+struct Job {
+    std::string id;
+    std::vector<int> samples;
+};
+Job make_job() { return {"abc", {1, 2, 3}}; }
+\end{lstlisting}
+\practice{Prefer composition with vector, string and smart pointers so generated special members do the right thing.}
+\takeaway{Hands-on task: Test copy, move, self-assignment (when supported) and exception paths.}
+\section{Explicit interfaces with concepts}
+\anchorref{13; 18}
+Generic code should describe the operations and semantics it requires. Constraints improve diagnosis and overload participation but are not full formal proofs.
+
+\standard{The cited clauses establish the underlying C++ semantics used by this implementation. The higher-level architecture pattern is an engineering interpretation, not an ISO-mandated design.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define preconditions, postconditions and state ownership.
+\item Write a positive test and a meaningful negative/boundary test.
+\item Review exception and cancellation paths.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <concepts>
+template<typename T>
+concept Summable = requires(T a, T b) {
+    { a + b } -> std::same_as<T>;
+};
+template<Summable T>
+T add(T a, T b) { return a + b; }
+\end{lstlisting}
+\practice{Constrain APIs at boundaries; avoid unrelated template instantiation explosions.}
+\takeaway{Hands-on task: Provide both accepted and intentionally rejected types as tests.}
+\section{Error-oriented API design with expected}
+\anchorref{14; 19; 22.8}
+Use expected when a computation naturally returns either a value or a recoverable error. This does not replace exceptions automatically; separate expected errors from programmer contract violations.
+
+\standard{The cited clauses establish the underlying C++ semantics used by this implementation. The higher-level architecture pattern is an engineering interpretation, not an ISO-mandated design.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define preconditions, postconditions and state ownership.
+\item Write a positive test and a meaningful negative/boundary test.
+\item Review exception and cancellation paths.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <expected>
+enum class ParseError { empty, bad_digit };
+std::expected<int, ParseError> digit(char c) {
+    if (c < '0' || c > '9')
+        return std::unexpected(ParseError::bad_digit);
+    return c - '0';
+}
+\end{lstlisting}
+\practice{Design stable, structured error categories rather than string matching.}
+\takeaway{Hands-on task: Specify how caller code propagates and records each error.}
+\section{Range pipelines and complexity budgets}
+\anchorref{24--27}
+Lazy pipelines can cut allocations but may recompute projections or predicates. Iterator category, range ownership and complexity still matter.
+
+\standard{The cited clauses establish the underlying C++ semantics used by this implementation. The higher-level architecture pattern is an engineering interpretation, not an ISO-mandated design.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define preconditions, postconditions and state ownership.
+\item Write a positive test and a meaningful negative/boundary test.
+\item Review exception and cancellation paths.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <ranges>
+#include <vector>
+std::vector<int> values{2, 7, 4, 9};
+auto even_doubled = values
+    | std::views::filter([](int x){ return x % 2 == 0; })
+    | std::views::transform([](int x){ return x * 2; });
+\end{lstlisting}
+\practice{Benchmark on representative input and inspect evaluation frequency.}
+\takeaway{Hands-on task: Count predicate invocations under repeated traversal.}
+\section{Module boundaries and distribution}
+\anchorref{10; 15--16}
+Modules introduce new build dependencies and export/reachability boundaries. A migration should prioritize stable APIs and minimal macro interaction.
+
+\standard{The cited clauses establish the underlying C++ semantics used by this implementation. The higher-level architecture pattern is an engineering interpretation, not an ISO-mandated design.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define preconditions, postconditions and state ownership.
+\item Write a positive test and a meaningful negative/boundary test.
+\item Review exception and cancellation paths.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+// geometry.cppm (interface unit)
+export module geometry;
+export struct Point { double x{}, y{}; };
+export double length2(Point p) {
+    return p.x * p.x + p.y * p.y;
+}
+\end{lstlisting}
+\practice{Maintain a header-based compatibility path if required by your target compilers.}
+\takeaway{Hands-on task: Draw import dependencies and identify build-order cycles.}
+\section{Concurrency ownership and cancellation}
+\anchorref{6.9; 33}
+Safe parallel design needs both synchronization and lifetime control. Relaxed atomics prevent data races on the atomic itself but do not synchronize other objects.
+
+\standard{The cited clauses establish the underlying C++ semantics used by this implementation. The higher-level architecture pattern is an engineering interpretation, not an ISO-mandated design.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define preconditions, postconditions and state ownership.
+\item Write a positive test and a meaningful negative/boundary test.
+\item Review exception and cancellation paths.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <stop_token>
+#include <thread>
+#include <atomic>
+void run(std::stop_token stop, std::atomic<int>& count) {
+    while (!stop.stop_requested()) {
+        count.fetch_add(1, std::memory_order_relaxed);
+        break; // example does bounded work
+    }
+}
+\end{lstlisting}
+\practice{Prefer message passing or immutable data where feasible, and choose jthread when cooperative stop ownership is useful.}
+\takeaway{Hands-on task: Describe the happens-before edges and shutdown order.}
+\section{Testable IO boundary and dependency injection}
+\anchorref{19; 31}
+Separate parsing, business rules and infrastructure adapters so deterministic logic can be tested without filesystem or network state.
+
+\standard{The cited clauses establish the underlying C++ semantics used by this implementation. The higher-level architecture pattern is an engineering interpretation, not an ISO-mandated design.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define preconditions, postconditions and state ownership.
+\item Write a positive test and a meaningful negative/boundary test.
+\item Review exception and cancellation paths.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <istream>
+#include <expected>
+enum class ReadError { unavailable, invalid };
+std::expected<int, ReadError> read_number(std::istream& input) {
+    int value{};
+    if (!(input >> value)) return
+        std::unexpected(ReadError::invalid);
+    return value;
+}
+\end{lstlisting}
+\practice{Represent IO failure distinctly from malformed input, and make effectful dependencies explicit.}
+\takeaway{Hands-on task: Inject malformed and truncated input and assert exact error codes.}
+\section{Performance and allocation discipline}
+\anchorref{20; 24--27}
+Complexity promises are contractual but a fast asymptotic algorithm is not automatically fastest for a given cache or data distribution.
+
+\standard{The cited clauses establish the underlying C++ semantics used by this implementation. The higher-level architecture pattern is an engineering interpretation, not an ISO-mandated design.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Define preconditions, postconditions and state ownership.
+\item Write a positive test and a meaningful negative/boundary test.
+\item Review exception and cancellation paths.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <vector>
+void build_ids(std::vector<int>& ids, int n) {
+    ids.clear();
+    if (n > 0) ids.reserve(static_cast<std::size_t>(n));
+    for (int i = 0; i < n; ++i) ids.push_back(i);
+}
+\end{lstlisting}
+\practice{Start with a workload model, optimize only after measurement, and retain a correctness oracle.}
+\takeaway{Hands-on task: Measure allocations and p95 latency separately from total throughput.}
+\section{Integrated lab: bounded job processor}
+Build a library that accepts job records, validates their identifiers and sizes, processes a range of jobs, and returns per-job expected results. Keep parsing, core transformation and output separate. Extend the implementation to run jobs with jthread and stop\_token only after the serial version is verified.
+
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Input contract: bounded record count, bounded sizes, explicit encoding, reject malformed jobs.
+\item Type contract: opaque validated IDs; no raw owning pointer in the public API.
+\item Failure contract: structured expected error for invalid input; exception-safety guarantee for allocation failures.
+\item Concurrency contract: define queue ownership and safe stopping before adding threads.
+\item Verification: property tests, AddressSanitizer/UndefinedBehaviorSanitizer, ThreadSanitizer in separate builds, and a benchmark.
+\end{itemize}
+\docend
+\end{document}

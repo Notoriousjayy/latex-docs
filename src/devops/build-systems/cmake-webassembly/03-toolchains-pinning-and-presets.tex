@@ -1,0 +1,69 @@
+\documentclass[11pt,letterpaper]{article}
+\input{cmake-wasm-preamble.tex}
+\DocHeader{Toolchains, Presets and Reproducibility}{SUBToolchains, Presets and Reproducibility}{1.0}
+\begin{document}
+\frontmatterdoc
+\section{Toolchain selection happens before compiler detection}
+The \texttt{CMAKE\_TOOLCHAIN\_FILE} variable is a configuration input. CMake caches compilers and ABI detection results in its binary directory. Emscripten's \texttt{emcmake} wrapper supplies its toolchain file; the reference uses \texttt{CMakePresets.json} to make the choice explicit. The WASI SDK provides distinct files for Preview 1, Preview 2, Preview 3, and experimental Preview 1 threads.
+
+\section{Verified 17 October 2026 example baseline}
+\noindent\begin{tabularx}{\linewidth}{p{0.29\linewidth}p{0.20\linewidth}X}
+\toprule Component & Pinned exemplar & Release management action \\ \midrule
+Emscripten SDK & 5.0.2 & Install named SDK release, preserve metadata and checksums \\
+WASI SDK & 34 & Install 34 and explicitly use \texttt{wasi-sdk-p1.cmake} \\
+Wasmtime & 49.0.3 & Pin a runtime release and reconcile security advisories \\
+CMake & 3.23 minimum & Record actual tool version; CI runner choice matters \\
+Host OS & Ubuntu 24.04 example & Prefer immutable runner/image digest for release builds \\
+\bottomrule
+\end{tabularx}
+These are reference pins, \emph{not} an assertion of byte-for-byte reproducibility: the example CI still fetches changing installer revisions and third-party action tags. A production release pipeline must pin source commits, action SHAs, package digests, and the build image.
+
+\section{Presets file and toolchain identity}
+\lstinputlisting[language={},caption={Three baseline configure presets; Preview 2 is deliberately separate}]{../reference/CMakePresets.json}
+
+\begin{lstlisting}[language=bash,caption={Repeatable local invocations}]
+cmake --preset native
+cmake --build --preset native
+ctest --preset native
+
+# After sourcing emsdk_env.sh:
+cmake --preset emscripten
+cmake --build --preset emscripten
+ctest --preset emscripten
+
+# After setting WASI_SDK_PATH and installing wasmtime:
+cmake --preset wasi-p1
+cmake --build --preset wasi-p1
+ctest --preset wasi-p1
+\end{lstlisting}
+
+\section{Dependency reproducibility tiers}
+\begin{enumerate}
+\item \textbf{Declared}: versions recorded in a manifest but without artifact hashes.
+\item \textbf{Resolved}: versions, target triples, flags, and transitive dependencies locked.
+\item \textbf{Authenticated}: resolved archives checked against trusted signed digests or provenance.
+\item \textbf{Reproducible}: hermetic inputs, normalized paths/timestamps, deterministic archives, and independent rebuild comparison.
+\end{enumerate}
+Disallow \texttt{latest}, floating branch refs, unreviewed \texttt{FetchContent} URLs, and untrusted network downloads in a production promotion job. Keep host and guest dependency graphs separate and produce one SBOM per platform artifact.
+
+\section{Cross-compilation diagnostics}
+Inspect the configured toolchain and imported package locations:
+\begin{lstlisting}[language=bash]
+cmake -LAH -N build/native
+# Inspect CMAKE_CXX_COMPILER, CMAKE_SYSTEM_NAME,
+# and CMAKE_FIND_ROOT_PATH.
+\end{lstlisting} In WASI configurations, host tools should come from the host PATH while linked libraries/includes come from the target sysroot. Never force a host executable into a cross-target \texttt{try\_run} test: use compile-only tests, a genuine target runtime, or an explicit cached result with an audit note.
+
+\section{Upgrade playbook}
+\begin{enumerate}
+\item Open an SDK upgrade ADR specifying feature changes, CVEs, and compatibility risks.
+\item Update the version manifest and immutable binary/download digests together.
+\item Rebuild all three profiles from clean directories, including all dependencies.
+\item Compare unit vectors, expected imports/exports, size, and runtime performance.
+\item Review attestation metadata, then promote the pinned baseline in one version-control change.
+\end{enumerate}
+\accept{The pipeline can reconstruct which source revision, SDK, sysroot, runtime, build flags, and transitive libraries produced each release asset.}
+\sourceurl{https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html}
+\sourceurl{https://github.com/WebAssembly/wasi-sdk}
+\sourceurl{https://github.com/emscripten-core/emsdk}
+\end{document}

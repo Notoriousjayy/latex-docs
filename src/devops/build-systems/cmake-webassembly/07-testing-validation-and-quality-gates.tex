@@ -1,0 +1,57 @@
+\documentclass[11pt,letterpaper]{article}
+\input{cmake-wasm-preamble.tex}
+\DocHeader{Unit, Integration and Runtime Validation}{SUBUnit, Integration and Runtime Validation}{1.0}
+\begin{document}
+\frontmatterdoc
+\section{Cross-platform verification model}
+Testing must distinguish algorithm correctness from host integration. Native CTest validates shared core logic, Node-driven Emscripten tests validate generated glue and C ABI, browser E2E validates actual Web APIs, and Wasmtime-driven CTest validates WASI runtime execution. Passing Node tests does not prove browser compatibility.
+
+\noindent\begin{tabularx}{\linewidth}{p{0.17\linewidth}p{0.32\linewidth}X}
+\toprule Stage & Tool/example & Required evidence \\ \midrule
+Unit & CTest executable in each profile & Golden vectors, invalid arguments, deterministic outcomes \\
+ABI smoke & Node + generated ES module & Export names, factory initialization, data marshalling \\
+Browser E2E & Playwright/real browser in adopter project & Loading under deployed headers, worker isolation if enabled \\
+WASI integration & Wasmtime CLI + CTest & Exit code, stdout, imports, denied host capabilities \\
+Native diagnostics & ASan/UBSan plus debugger & No known memory/UB violation on covered paths \\
+Fuzz/property & Native fuzz target, replay failures on WASM & Input corpus, seed, crash triage, parity of output \\
+Supply-chain & SHA checks, digest/provenance verifier & Publisher identity and digest verified \\
+\bottomrule
+\end{tabularx}
+
+\section{Reference test registration}
+\lstinputlisting[language=C++,caption={Portable unit vectors with failure exit codes}]{../reference/tests/core_tests.cpp}
+\lstinputlisting[language=Java,caption={Generated bridge exercised under Node}]{../reference/tests/browser_smoke.mjs}
+
+\section{Test data and contract strategy}
+\begin{enumerate}
+\item Maintain versioned byte fixtures: empty, singleton, random fixed seed, high-bit bytes, maximum accepted buffer, and oversized input.
+\item Record expected integers in an independent fixture (not computed from the implementation being tested).
+\item Expand with fuzz minimization artifacts and negative data such as malformed UTF-8 and truncated binary payloads when those formats are introduced.
+\item Validate that the same compiled module is loadable in the application browser and the deployment CDN URL path (including CSP and cache behavior).
+\item Test graceful failure when an SDK, runtime, or imported host function is missing.
+\end{enumerate}
+
+\section{Release acceptance gates}
+\begin{longtable}{p{0.16\linewidth}p{0.55\linewidth}p{0.21\linewidth}}
+\toprule Gate & Measurement & Owner \\ \midrule \endhead
+G1 & All target configure/build steps pass from clean caches & Build engineer \\
+G2 & Required unit and integration tests pass on supported runtimes & QA/owner \\
+G3 & Real browser E2E passes with production-like security headers & Web owner \\
+G4 & WASI import and authority inventory matches runtime policy & Host owner \\
+G5 & Memory/fuzz/security checks have no unresolved blocking findings & AppSec \\
+G6 & Artifact manifests, hashes, signatures/provenance verified & Release engineer \\
+G7 & Size/startup/throughput regressions within approved budgets & Performance owner \\
+\bottomrule
+\end{longtable}
+
+\section{Failure injection exercises}
+\begin{enumerate}
+\item Delete a required \texttt{.wasm} companion asset: initialization must fail clearly.
+\item Replace the binary with a non-WASM file: magic/inventory validation must fail.
+\item Request a buffer beyond the public bound: it must fail without allocation.
+\item Change an exported symbol: Node integration must fail, demonstrating ABI coverage.
+\item Disable Wasmtime availability: build can succeed, but the release gate must not mark WASI runtime tests complete.
+\end{enumerate}
+\accept{CI preserves test logs and fails release promotion if any platform-specific mandatory stage is skipped.}
+\sourceurl{https://cmake.org/cmake/help/latest/prop_tgt/CROSSCOMPILING_EMULATOR.html}
+\end{document}

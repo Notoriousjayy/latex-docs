@@ -1,0 +1,52 @@
+\documentclass[11pt,letterpaper]{article}
+\input{cmake-wasm-preamble.tex}
+\DocHeader{Browser Interoperability and Memory}{SUBBrowser Interoperability and Memory}{1.0}
+\begin{document}
+\frontmatterdoc
+\section{Boundary selection}
+A small C ABI is an appropriate default for raw bytes, fixed-width numbers, and relatively stable exported contracts. Use Embind for idiomatic C++ classes and richer object graphs only after deciding its ownership, conversion overhead, and generated API stability requirements. Emscripten \texttt{MODULARIZE} wraps the runtime in an asynchronous factory; \texttt{EXPORT\_ES6} enables an ECMAScript module shape. Do not assume these settings make a module independent of JavaScript.
+
+\section{Data marshalling contract}
+\noindent\begin{tabularx}{\linewidth}{p{0.22\linewidth}X X}
+\toprule Type & Recommended C boundary & JavaScript adapter behavior \\ \midrule
+Bytes & \texttt{uint8\_t*} + \texttt{uint32\_t len} & Validate \texttt{Uint8Array}; allocate, copy, invoke, release \\
+Integer & Fixed-width integer & Validate bounds and signedness; guard JS Number precision \\
+UTF-8 string & Pointer + byte length & Encode/decode UTF-8; do not assume terminator \\
+Opaque object & Integer handle + explicit release & Reject expired handles; declare borrow/own semantics \\
+Error & Status code + bounded diagnostics & Map status to JS exception without leaking secrets \\
+\bottomrule
+\end{tabularx}
+Never pass an untrusted \texttt{byteLength} directly to a native function without a maximum; do not keep pointers alive after returning from a function unless the public contract explicitly creates a long-lived handle.
+
+\section{C ABI implementation}
+\lstinputlisting[language=C++,caption={Bounded export methods and symmetric allocator}]{../reference/browser/bridge.cpp}
+
+\section{JavaScript wrapper with scoped ownership}
+\lstinputlisting[language=Java,caption={Safe allocate/copy/call/free wrapper}]{../reference/web/client.mjs}
+The wrapper invokes \texttt{malloc} before retrieving \texttt{HEAPU8}: a memory growth operation may detach or replace previously held typed-array views. A stale view should never be cached across calls, asynchronous boundaries, or memory growth. The \texttt{finally} branch ensures that the guest allocation is freed even if marshalling throws.
+
+\section{Browser lifecycle and security}
+\begin{enumerate}
+\item Require correct MIME type (\texttt{application/wasm}) and HTTPS for deployed modules.
+\item Apply a narrow Content Security Policy compatible with the module instantiation model; do not disable the policy merely to unblock compilation.
+\item When browser threads are enabled, plan cross-origin isolation with compatible \path{Cross-Origin-Opener-Policy} and \path{Cross-Origin-Embedder-Policy}; isolate this in a separate deployment profile.
+\item Serve JS and WASM artifacts from the same release manifest; do not mix versions through CDN caches.
+\item Handle asynchronous initialization failures, rejected imports, aborted instances, and retry policy.
+\item Limit wasm heap growth and size quotas; \texttt{MAXIMUM\_MEMORY} constrains linear memory but is not a host resource quota.
+\end{enumerate}
+
+\section{Memory model tests}
+\noindent\begin{tabularx}{\linewidth}{p{0.28\linewidth}X}
+\toprule Test & Expected outcome \\ \midrule
+Empty buffer & Returns checksum 0 without allocation \\
+Maximum accepted buffer & Succeeds within the 8 MiB policy if resources permit \\
+One byte above maximum & JS range exception; guest rejects same size if invoked directly \\
+Repeated requests & No unbounded heap growth from leaked allocations \\
+Injected exception after allocation & \texttt{finally} releases the buffer \\
+Changed memory backing store & New \texttt{HEAPU8} view is retrieved after allocation \\
+\bottomrule
+\end{tabularx}
+\accept{Browser tests cover numerical parity, invalid buffers, initialization failures, ownership leaks, and redeployment mismatches.}
+\sourceurl{https://emscripten.org/docs/tools_reference/settings_reference.html}
+\sourceurl{https://emscripten.org/docs/porting/connecting_cpp_and_javascript/embind.html}
+\end{document}

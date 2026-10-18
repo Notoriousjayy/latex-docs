@@ -1,0 +1,340 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[sfdefault]{sourcesanspro}
+\usepackage{inconsolata}
+\usepackage[margin=0.84in,headheight=15pt]{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs,longtable,tabularx,array}
+\usepackage{enumitem}
+\usepackage{fancyhdr,lastpage}
+\usepackage[most]{tcolorbox}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{amsmath,amssymb}
+\usepackage{multicol}
+\definecolor{navy}{HTML}{15324C}
+\definecolor{teal}{HTML}{087E83}
+\definecolor{slate}{HTML}{536879}
+\definecolor{paper}{HTML}{F2F6F8}
+\definecolor{warm}{HTML}{E8F4F3}
+\hypersetup{colorlinks=true,urlcolor=teal,linkcolor=navy,pdfauthor={Software Engineering Reference Suite},pdfsubject={MISRA C++:2023 engineering guidance}}
+\titleformat{\section}{\Large\bfseries\color{navy}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{teal}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{navy}}{\thesubsubsection}{0.5em}{}
+\setlist[itemize]{leftmargin=*,topsep=2pt,itemsep=2pt}
+\setlist[enumerate]{leftmargin=*,topsep=2pt,itemsep=3pt}
+\setlength{\parskip}{5pt}
+\setlength{\parindent}{0pt}
+\setlength{\emergencystretch}{2em}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{slate}MISRA C++:2023 Engineering Suite}
+\fancyhead[R]{\small\color{slate}\nouppercase{\leftmark}}
+\fancyfoot[L]{\scriptsize\color{slate}Independent engineering guidance; see licensed source}
+\fancyfoot[R]{\scriptsize\color{slate}\thepage\ / \pageref{LastPage}}
+\newtcolorbox{sourcebox}{colback=paper,colframe=navy!30,boxrule=0.45pt,arc=1.6pt,breakable}
+\newtcolorbox{practicebox}{colback=warm,colframe=teal!40,boxrule=0.45pt,arc=1.6pt,breakable}
+\newcommand{\SourceNote}[1]{\begin{sourcebox}\textbf{SOURCE BASIS / NORMATIVE POINTER}\quad #1\end{sourcebox}}
+\newcommand{\PracticeNote}[1]{\begin{practicebox}\textbf{ENGINEERING RECOMMENDATION / NOT MISRA TEXT}\quad #1\end{practicebox}}
+\newcommand{\Record}[1]{\textsf{\bfseries #1}}
+\lstdefinestyle{cppsuite}{language=C++,basicstyle=\ttfamily\footnotesize,keywordstyle=\color{navy}\bfseries,commentstyle=\color{slate},stringstyle=\color{teal},breaklines=true,breakatwhitespace=true,columns=fullflexible,frame=single,framerule=0.3pt,rulecolor=\color{navy!35},backgroundcolor=\color{paper},showstringspaces=false,tabsize=2,xleftmargin=0.5em,xrightmargin=0.5em,aboveskip=4pt,belowskip=4pt}
+\lstset{style=cppsuite}
+\newcommand{\SuiteTitle}[3]{%
+\begin{titlepage}\thispagestyle{empty}
+\vspace*{1.5cm}
+{\color{teal}\rule{2.4cm}{2pt}}\par\vspace{1cm}
+{\Huge\bfseries\color{navy}MISRA C++:2023\\[0.4em]#1}\par\vspace{0.7cm}
+{\Large\color{slate}#2}\par\vspace{1.2cm}
+\begin{sourcebox}\textbf{Source baseline:} MISRA C++:2023, Guidelines for the use of C++17 in critical systems, October 2023 (user-supplied licensed copy). This is an independent companion, not an official MISRA publication, rule replacement, certified checker, or claim of project compliance.\end{sourcebox}
+\vfill{\large\color{navy}Technical edition \textbullet\ 16 October 2026}\par\smallskip
+{\small\color{slate}#3}\par\end{titlepage}
+\tableofcontents\clearpage
+}
+\newcommand{\StandardsBoundary}{%
+\section*{How to read normative status}\addcontentsline{toc}{section}{How to read normative status}
+\textbf{Normative source:} the licensed MISRA C++:2023 guideline text, including any applicable \emph{Amplification} and \emph{Exception}. A guideline \emph{headline} alone is not a complete compliance test. The source's Section~3 defines classifications, categories, decidability, analysis scope, and applicability.\par
+\textbf{Independent guidance:} all review questions, programming patterns, lifecycle processes, sample thresholds, ownership assignments, controls, and CI configurations in this suite are \emph{engineering recommendations}, not statements issued by MISRA.\par
+\textbf{Critical limitation:} no individual example is asserted compliant with the whole standard. For formal compliance claims, follow the applicable edition of \emph{MISRA Compliance} as the source itself instructs, with a documented compliance plan and supporting evidence.\par
+}
+
+\begin{document}
+\SuiteTitle{C++17 Technical Reference}{Language mechanics, design hazards, and review heuristics}{Volume 04 / Technical Concepts}
+\StandardsBoundary
+
+\section{Safe C++17 subset engineering model}
+A critical-system coding standard constrains language latitude so that intent, execution semantics, analyzer conclusions and code review are more predictable. MISRA C++:2023 targets C++17 explicitly; extensions to different language editions require documented analysis and may need further restrictions. This guide complements, rather than modifies, the source rules.
+
+Use four layers: (1) language rule adherence, (2) resource/exception design contracts, (3) compiler and ABI assumptions, and (4) system assurance evidence. Passing one layer does not establish the others.
+
+
+\section{Language semantics, undefined behavior, and object lifetime}
+The source distinguishes undefined, unspecified, implementation-defined, conditionally-supported and no-diagnostic-required behavior. The review question is not merely whether a compiler emits a warning. Identify the behavior class, determine which conditions can trigger it, and avoid or constrain the construct.
+
+Lifetime reviews should address stack addresses escaping, temporary/reference bindings, invalid iterators, use-after-move, destruction order and transfer of ownership. Source anchors: Rule 6.8.1, Rule 6.8.2, Rule 6.8.3, Rule 8.7.1, Rule 11.6.2 and Rule 28.6.3.
+
+\begin{lstlisting}[caption={Lifetime-aware C++17 design pattern}]
+#include <array>
+#include <cstdint>
+std::array<std::uint16_t, 3U> read_samples() {
+  std::array<std::uint16_t, 3U> samples{{1U, 2U, 3U}};
+  return samples; // Value semantics, no escape of a local address.
+}
+\end{lstlisting}
+
+\section{Boolean, integer and pointer conversions}
+Avoid implicit conversion chains whose meaning relies on promotion, signedness, narrow destination ranges or implicit truthiness. For C++17, explicitly encode a predicate and compare only semantically compatible quantities. Named casts are not blanket permission: each MISRA cast rule controls a different class of conversions.
+
+Priority reading: Rules 7.0.1--7.0.6, 7.11.1--7.11.3 and 8.2.1--8.2.9. Record exact source/destination types and avoid presuming platform widths.
+
+\begin{lstlisting}[caption={Explicit predicate and type intent}]
+#include <cstdint>
+bool temperature_high(std::int32_t value) {
+  return value > 40;
+}
+\end{lstlisting}
+
+\section{Expressions, control flow, and data-flow anomalies}
+Control-flow analysis establishes reachability, may/must facts and path conditions. Data-flow analysis derives variable definitions and reads, including DU (defined, never observed), DD (overwritten before observation), and UR (read before definition). The MISRA source supplies special semantic qualifications: standard CFG intuition does not replace its amplification.
+
+Review the distinction between Rule 0.0.1 (reachability), Rule 0.0.2 (invariant conditions), Rule 0.1.1 (unnecessary writes), Rule 0.1.2 (returned values), Rule 9.4.2 (switch structure), and Rule 11.6.2 (uninitialized read).
+
+
+\section{Linkage, translation units, and the one-definition rule}
+A single translation unit cannot prove declarations match across a linked program. Capture the actual compilation database, generated headers, preprocessor symbols and target configurations; map cross-unit symbol declarations into an ODR/linkage review. Source anchors include Rules 6.2.1--6.2.4 and 6.5.1--6.5.2.
+
+A compilation database is evidence of tool invocation coverage, not proof every linked program variant was analyzed. Track variants separately and reconcile all target objects.
+
+
+\section{Class design, special members, templates, and dispatch}
+Critical C++ class reviews cover explicit constructors, base/derived invariants, dynamic dispatch, overrides, copy/move operations, self-assignment and initialization order. Relevant source anchors: Rules 13.3.1--13.3.4; Rules 15.0.1--15.1.5; Dir 15.8.1; and Rule 17.8.1.
+
+Use an ownership table per class with constructor contracts, destructor side effects, copy policy, move policy, exception policy and virtual dispatch assumptions. A project-wide ban on all templates or all exceptions is not an inherent restatement of MISRA C++:2023.
+
+
+\section{Preprocessing and build variants}
+Preprocessor restrictions affect not only readability but also what code actually exists after preprocessing. For each product variant, record include paths, macro definitions and generated files. The source generally applies guidelines to preprocessed translation units, subject to exceptions, and evaluates fully instantiated templates unless otherwise specified.
+
+Check Rules 19.0.1--19.6.1 and Section 3.7 for preprocessing applicability; analyze separate conditional compilation variants whenever the configuration alters executable behavior.
+
+
+\section{Standard-library facilities and runtime environment}
+\small\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{p{0.24\linewidth}p{0.31\linewidth}p{0.34\linewidth}}
+\toprule
+Domain & Source anchors & Practical design questions\\ \midrule
+\endfirsthead
+\toprule
+Domain & Source anchors & Practical design questions\\ \midrule
+\endhead
+Memory & 21.6.1--21.6.5, 23.11.1 & Does ownership use RAII? Is allocation permitted by product policy?\\
+C library and strings & 21.2.1--21.2.4, 24.5.1--24.5.2 & Can an interface be replaced with type-safe, bounds-aware semantics?\\
+Locale and global state & 25.5.1--25.5.3 & Who owns returned pointers and mutable state? Are calls ordered safely?\\
+Containers and algorithms & 26.3.1, 28.3.1, 28.6.1--28.6.4 & Are ranges valid? Are move-from and erase-remove semantics handled?\\
+I/O & 30.0.1--30.0.2 & What is the permitted I/O abstraction on the target?\\
+\bottomrule
+\end{longtable}
+\normalsize
+
+\section{A principled finding adjudication model}
+\begin{enumerate}
+\item Identify the exact guideline ID and edition; do not equate arbitrary CWE or tool-warning IDs with MISRA findings.
+\item Read all applicable normative amplification and source exceptions.
+\item Reproduce with exact build macros, language dialect and translation-unit/system context.
+\item If the rule is undecidable, distinguish conservative potential paths from feasible violating paths; retain the argument.
+\item Classify as violation, compliant-by-source-exception, analyzer false positive, unresolved uncertainty, or out of applicable source scope.
+\item Resolve or formally document actual violations according to category; retain reproducible evidence.
+\end{enumerate}
+
+\section{Source coverage and limits}
+This document is a technical companion organized by C++ concepts, not a substitute for each of the 179 normative sections. The complete identifier catalog and study prompts are in Volumes 02 and 03. The independently authored code fixtures in Volume 05 address selected high-value guidelines and do not imply those are the only significant ones.
+
+
+\section{Section-by-section engineering review playbook}
+This cross-reference preserves the source's C++ Standard-aligned topic order while supplying independent verification questions. Every action below is an engineering recommendation. The normative rule detail remains in the licensed source and in the complete rule index of Volume 02.
+
+
+\subsection{Section 0: Data flow, reachability, and preconditions}
+The source deals with unreachable code, invariants, unused writes, ignored returns, unused declarations and floating-point/precondition directives. Inspect both CFG reachability and interprocedural dependence rather than interpreting warning counts as correctness.
+
+\textbf{Evidence checklist:} For each representative function: CFG, def-use chain, output observation, conditional compilation variant and declared precondition contract.
+
+\textbf{Source anchors:} Rule 0.0.1, Rule 0.0.2, Rule 0.1.1, Rule 0.1.2, Rule 0.2.1, Rule 0.2.2, Rule 0.2.3, Rule 0.2.4, Dir 0.3.1, Dir 0.3.2.
+
+\subsection{Section 4: Standard-conforming execution}
+Record the exact ISO C++17 language mode, compiler flags and any accepted implementation extensions. Audit assumptions involving unspecified sequencing and implementation choices under the source-guideline requirements.
+
+\textbf{Evidence checklist:} Compiler/target manifest; two evaluation-order experiments where justified; tool waiver analysis for nonstandard modes.
+
+\textbf{Source anchors:} Rule 4.1.1, Rule 4.1.2, Rule 4.1.3, Rule 4.6.1.
+
+\subsection{Section 5: Tokenization and lexical constraints}
+Inspect comments, escape sequences, identifiers and literal suffixes at preprocessing-token level. Deliberately include ambiguous lexical examples in lint regression tests rather than relying solely on human visual inspection.
+
+\textbf{Evidence checklist:} Lexer/parser fixture corpus, source encoding declaration and naming-convention review decisions.
+
+\textbf{Source anchors:} Rule 5.0.1, Rule 5.7.1, Dir 5.7.2, Rule 5.7.3, Rule 5.10.1, Rule 5.13.1, Rule 5.13.2, Rule 5.13.3, Rule 5.13.4, Rule 5.13.5, Rule 5.13.6, Rule 5.13.7.
+
+\subsection{Section 6: Basic concepts, linkage, and lifetime}
+Model object lifetimes, initialization/destruction points, shadowing, class name lookup and the one-definition rule. Validate external entities across all linked translation units rather than only all source files in a directory.
+
+\textbf{Evidence checklist:} Link-map, ODR symbol inventory, object lifetime diagrams and validated generated-header manifests.
+
+\textbf{Source anchors:} Rule 6.0.1, Rule 6.0.2, Rule 6.0.3, Rule 6.0.4, Rule 6.2.1, Rule 6.2.2, Rule 6.2.3, Rule 6.2.4, Rule 6.4.1, Rule 6.4.2, Rule 6.4.3, Rule 6.5.1, Rule 6.5.2, Rule 6.7.1, Rule 6.7.2, Rule 6.8.1, Rule 6.8.2, Rule 6.8.3, Rule 6.8.4, Rule 6.9.1, Rule 6.9.2.
+
+\subsection{Section 7: Implicit conversions and pointer decay}
+Calculate each expression's original type, usual arithmetic conversions and destination type. Discuss numeric domain/range and use logical comparisons rather than implicit conversion between a numeric type and bool.
+
+\textbf{Evidence checklist:} Type facts (source and destination), boundary tests and rule-aware diagnostics for array decay and null-pointer constants.
+
+\textbf{Source anchors:} Rule 7.0.1, Rule 7.0.2, Rule 7.0.3, Rule 7.0.4, Rule 7.0.5, Rule 7.0.6, Rule 7.11.1, Rule 7.11.2, Rule 7.11.3.
+
+\subsection{Section 8: Expression operators, casting, and pointer arithmetic}
+Determine the validity of each cast category and the provenance of pointer operands. Analyze overload resolution, side effects and calls to prevent surprising expression behavior.
+
+\textbf{Evidence checklist:} AST review notes, cast occurrence inventory, call graph for recursion restrictions and alias analysis rationale.
+
+\textbf{Source anchors:} Rule 8.0.1, Rule 8.1.1, Rule 8.1.2, Rule 8.2.1, Rule 8.2.2, Rule 8.2.3, Rule 8.2.4, Rule 8.2.5, Rule 8.2.6, Rule 8.2.7, Rule 8.2.8, Rule 8.2.9, Rule 8.2.10, Rule 8.2.11, Rule 8.3.1, Rule 8.3.2, Rule 8.7.1, Rule 8.7.2, Rule 8.9.1, Rule 8.14.1, Rule 8.18.1, Rule 8.18.2, Rule 8.19.1, Rule 8.20.1.
+
+\subsection{Section 9: Structured control flow}
+Check braces, branch completeness, switch forms, goto label placement and complete returns. Extend CFG review to constant conditions, loops and noreturn declarations and confirm the source's applicability rules.
+
+\textbf{Evidence checklist:} Path-exit report, CFG snapshots and review checklist for every revised control-flow construct.
+
+\textbf{Source anchors:} Rule 9.2.1, Rule 9.3.1, Rule 9.4.1, Rule 9.4.2, Rule 9.5.1, Rule 9.5.2, Rule 9.6.1, Rule 9.6.2, Rule 9.6.3, Rule 9.6.4, Rule 9.6.5.
+
+\subsection{Section 10: Declarations and type specifications}
+Review explicit enum underlying types, scoped namespace designs, asm restrictions and volatile usage. Avoid interpreting volatile as general thread synchronization.
+
+\textbf{Evidence checklist:} Declaration API register, type ABI assumptions, assembly exception investigation and compiler configuration evidence.
+
+\textbf{Source anchors:} Rule 10.0.1, Rule 10.1.1, Rule 10.1.2, Rule 10.2.1, Rule 10.2.2, Rule 10.2.3, Rule 10.3.1, Rule 10.4.1.
+
+\subsection{Section 11: Declarators and definite initialization}
+Record every object's initialization site and read sites. Distinguish array and pointer design choices from runtime memory safety evidence; maintain path-sensitive uninitialized-state proof for critical variables.
+
+\textbf{Evidence checklist:} Definite-assignment proofs, constructor initialization maps and pointer-indirection design review.
+
+\textbf{Source anchors:} Rule 11.3.1, Rule 11.3.2, Rule 11.6.1, Rule 11.6.2, Rule 11.6.3.
+
+\subsection{Section 12: Classes, bit fields, and alternatives to unions}
+Prefer clear representation of variant state and layout. Evaluate any platform-dependent bit-field representation and avoid claiming that a std::variant migration solves unrelated ABI concerns.
+
+\textbf{Evidence checklist:} Layout/ABI review, state-tag contracts and serialization compatibility test plan.
+
+\textbf{Source anchors:} Rule 12.2.1, Rule 12.2.2, Rule 12.2.3, Rule 12.3.1.
+
+\subsection{Section 13: Virtual inheritance and polymorphic interfaces}
+Trace every virtual dispatch edge, override specifier and default argument. Verify that hierarchy design does not introduce dual-path inheritance or mismatched assumptions across declarations.
+
+\textbf{Evidence checklist:} Class hierarchy diagrams, override matrix and cross-translation-unit declaration consistency checks.
+
+\textbf{Source anchors:} Rule 13.1.1, Rule 13.1.2, Rule 13.3.1, Rule 13.3.2, Rule 13.3.3, Rule 13.3.4.
+
+\subsection{Section 14: Access and encapsulation}
+Analyze visibility of stored state, invariants and public interface restrictions. Document intentionally exposed state in externally imposed ABI structures before deciding on a redesign.
+
+\textbf{Evidence checklist:} Class invariant and access-level rationale including safety interface boundaries.
+
+\textbf{Source anchors:} Rule 14.1.1.
+
+\subsection{Section 15: Special members, initialization and assignment}
+Document defaulting, deletion and custom implementation of copy/move operations. Review constructor conversion behavior, initialization-order invariants, self-assignment and destructor side effects.
+
+\textbf{Evidence checklist:} Rule-of-five matrix, alias/self-assignment tests, move-state tests and exception safety statement.
+
+\textbf{Source anchors:} Rule 15.0.1, Rule 15.0.2, Rule 15.1.1, Rule 15.1.2, Rule 15.1.3, Rule 15.1.4, Rule 15.1.5, Dir 15.8.1.
+
+\subsection{Section 16: Overloaded operator expectations}
+Inspect implicit short-circuit assumptions and symmetrical operator behavior. Replace surprising overloaded operators with named operations when needed; verify all overload sets consistently.
+
+\textbf{Evidence checklist:} Operator inventory, representative overload-resolution examples and API client tests.
+
+\textbf{Source anchors:} Rule 16.5.1, Rule 16.5.2, Rule 16.6.1.
+
+\subsection{Section 17: Template definition and instantiation boundaries}
+Inspect template specialization requirements and build configuration-specific instantiations. The source's general template applicability is to fully instantiated templates unless specified otherwise; ensure covered instantiations match the product.
+
+\textbf{Evidence checklist:} Instantiation matrix, explicit specialization inventory and cross-variant compile evidence.
+
+\textbf{Source anchors:} Rule 17.8.1.
+
+\subsection{Section 18: Exceptions, handlers and termination}
+Describe the exception model supported by the target product, including noexcept behavior and constructor/destructor function-try-blocks. Ensure the handler, propagation and termination analyses match the normative source conditions.
+
+\textbf{Evidence checklist:} Exception flow graph, handler coverage, termination-case tests and externally imposed error policy.
+
+\textbf{Source anchors:} Rule 18.1.1, Rule 18.1.2, Rule 18.3.1, Rule 18.3.2, Rule 18.3.3, Rule 18.4.1, Rule 18.5.1, Rule 18.5.2.
+
+\subsection{Section 19: Preprocessor and header hygiene}
+Identify macros, directives, header inclusions and conditional compilation definitions for all shipping variants. The post-preprocessing applicability rule must be interpreted with its qualifications, not as permission to ignore alternative configurations.
+
+\textbf{Evidence checklist:} Preprocessor command log, macro registry, include topology and multiple-inclusion regression test.
+
+\textbf{Source anchors:} Rule 19.0.1, Rule 19.0.2, Rule 19.0.3, Rule 19.0.4, Rule 19.1.1, Rule 19.1.2, Rule 19.1.3, Rule 19.2.1, Rule 19.2.2, Rule 19.2.3, Rule 19.3.1, Rule 19.3.2, Rule 19.3.3, Rule 19.3.4, Rule 19.3.5, Rule 19.6.1.
+
+\subsection{Section 21: Language support functions and dynamic storage}
+Distinguish resource allocation permission from the ownership requirement; an advisory against dynamic memory and required rules for its safe use can apply together. Check C library functions, global allocation operators and runtime support APIs against target environment.
+
+\textbf{Evidence checklist:} Allocation policy, ownership graph, global new/delete inventory and runtime API replacement rationale.
+
+\textbf{Source anchors:} Rule 21.2.1, Rule 21.2.2, Rule 21.2.3, Rule 21.2.4, Rule 21.6.1, Rule 21.6.2, Rule 21.6.3, Rule 21.6.4, Rule 21.6.5, Rule 21.10.1, Rule 21.10.2, Rule 21.10.3.
+
+\subsection{Section 22: Assertions and errno discipline}
+Assertions should not replace production error handling. Ensure any errno-dependent API checks use prescribed lifecycle patterns and that the analyzer correctly interprets side effects.
+
+\textbf{Evidence checklist:} API error handling specifications, errno test cases and assertion regression reviews.
+
+\textbf{Source anchors:} Rule 22.3.1, Rule 22.4.1.
+
+\subsection{Section 23: Ownership factories for smart pointers}
+Trace creator, owner and deleter of each dynamic object; review direct raw-pointer smart-pointer construction against its source guideline. Check ownership boundaries where foreign C APIs supply opaque handles.
+
+\textbf{Evidence checklist:} Factory-construction inventory and resource-ownership test evidence.
+
+\textbf{Source anchors:} Rule 23.11.1.
+
+\subsection{Section 24: String and memory operation facilities}
+Inventory legacy C string, character and raw memory functions. Use safer data abstractions where consistent with target constraints and test any unavoidable boundaries to externally defined interfaces.
+
+\textbf{Evidence checklist:} Restricted API grep/AST inventory, input-boundary test suite and ABI conversion review.
+
+\textbf{Source anchors:} Rule 24.5.1, Rule 24.5.2.
+
+\subsection{Section 25: Locale, persistent state and library-returned pointers}
+Treat library-returned pointers and shared locale state as lifetime/aliasing concerns. Review intervening calls and read-only usage per the relevant Mandatory guidelines.
+
+\textbf{Evidence checklist:} Call order trace, wrapper contracts and evidence of no modification or invalid reuse of library data.
+
+\textbf{Source anchors:} Rule 25.5.1, Rule 25.5.2, Rule 25.5.3.
+
+\subsection{Section 26: Container representation and specialization}
+Examine the specialization of vector<bool>, especially its proxy-reference semantics, and choose a representation supporting the required element operations.
+
+\textbf{Evidence checklist:} Container type inventory, indexing/iterator tests and performance/footprint assessment.
+
+\textbf{Source anchors:} Rule 26.3.1.
+
+\subsection{Section 28: Algorithms, side effects, and move semantics}
+Check predicate purity as specified, forwarding/move contracts, moved-from object handling and consumption of algorithm results. A syntactic call to std::remove does not itself remove elements from a container.
+
+\textbf{Evidence checklist:} Predicate side-effect review, post-move state matrix, iterator invalidation and erase-remove regression.
+
+\textbf{Source anchors:} Rule 28.3.1, Rule 28.6.1, Rule 28.6.2, Rule 28.6.3, Rule 28.6.4.
+
+\subsection{Section 30: Streams and I/O state}
+Use an I/O API compatible with the product runtime. Map C library I/O restrictions to interfaces and validate read/write sequencing rules for shared file streams when applicable.
+
+\textbf{Evidence checklist:} I/O dependency table, stream state transition tests and target-specific timing/error behavior.
+
+\textbf{Source anchors:} Rule 30.0.1, Rule 30.0.2.
+
+\section{Review escalation and contradictions}
+If a local coding guide appears to disagree with a source rule, first check applicability and exception wording; do not silently invert rule categories or infer missing allowances. Record the issue, consult the original MISRA publication and authorized interpretive material, obtain designated reviewer resolution, and revise project process or guidance with a traceable change.
+
+Separately classify rules on language semantics and enterprise policy. An organization may enforce stricter requirements (such as allocation budgets, exception bans or code-format conventions), but those belong to a documented project profile rather than ascribed verbatim to MISRA C++:2023.
+
+
+\end{document}

@@ -1,0 +1,368 @@
+\documentclass[11pt]{article}
+\newcommand{\DocNumber}{VOLUME 04}
+\newcommand{\DocTitle}{C++23 Feature and Compatibility Guide}
+\newcommand{\DocSubtitle}{New facilities, behavior changes and migration}
+\newcommand{\DocSummary}{Twenty feature migration cards, Annex C-oriented compatibility hazards, and portable adoption gates.}
+\input{cpp23-common-preamble.tex}
+\begin{document}
+\docfront
+\section{Migration policy}
+The seventh edition is C++23 as published in October 2024. Its informative Annex C is the correct starting point for source compatibility analysis with the 2020, 2017, 2014, 2011 and earlier editions. Annex D identifies retained compatibility features. Neither annex is a promise that all historical programs remain well-formed.
+
+\small
+\begin{longtable}{@{}p{.25\linewidth}p{.69\linewidth}@{}}
+\toprule
+\textbf{Classification} & \textbf{Review action}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Classification} & \textbf{Review action}\\
+\midrule
+\endhead
+Added facility & Probe compiler and standard-library implementation, including feature macros.\\
+\addlinespace[2pt]
+Changed semantics & Run regression tests and review affected clauses even if compilation succeeds.\\
+\addlinespace[2pt]
+Deprecated compatibility & Replace where beneficial; retain only with documented policy.\\
+\addlinespace[2pt]
+Implementation-dependent & Capture vendor, version, target and library documentation.\\
+\addlinespace[2pt]
+Defect/quality correction & Do not infer source compatibility from the edition number.\\
+\addlinespace[2pt]
+\bottomrule
+\end{longtable}
+\normalsize
+\section{Explicit object parameter (deducing this)}
+\anchorref{9.3.4.6; Foreword}
+\textbf{Change class:} new in C++23.\quad \textbf{Capability probe:} \_\_cpp\_explicit\_this\_parameter.
+
+Reduces duplicated cv/ref-qualified member overloads; explicit object syntax has constraints on eligible functions.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 9.3.4.6; Foreword. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+struct Vector2 {
+  double x, y;
+  double norm2(this const Vector2& self) {
+    return self.x*self.x + self.y*self.y;
+  }
+};
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{Multiple parameters in operator[]}
+\anchorref{7.6.1.2; Annex C.1.3}
+\textbf{Change class:} new in C++23.\quad \textbf{Capability probe:} \_\_cpp\_multidimensional\_subscript.
+
+The meaning of unparenthesized comma syntax inside a subscript changes; audit custom numeric tensor operators.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 7.6.1.2; Annex C.1.3. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+struct Grid {
+  constexpr int operator[](int row, int col) const { return row*10+col; }
+};
+static_assert(Grid{}[2,3] == 23);
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{auto(x) and auto\{x\} casts}
+\anchorref{7.6.1.3; Foreword}
+\textbf{Change class:} new in C++23.\quad \textbf{Capability probe:} \_\_cpp\_auto\_cast.
+
+Decay-copy syntax provides a concise value materialization form; do not confuse with reference preservation.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 7.6.1.3; Foreword. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+void demonstrate_copy() {
+  int n = 9;
+  auto copy = auto(n);
+  copy = 5; // n stays 9
+}
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{if consteval}
+\anchorref{8.5.2; 9.2.6}
+\textbf{Change class:} new in C++23.\quad \textbf{Capability probe:} \_\_cpp\_if\_consteval.
+
+Choose compile-time and runtime branches in functions with constant-evaluation-sensitive operations.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 8.5.2; 9.2.6. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+constexpr int f(int x) {
+  if consteval { return x * x; }
+  else { return x + x; }
+}
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{Preprocessor elifdef and elifndef}
+\anchorref{15.2; Foreword}
+\textbf{Change class:} new in C++23.\quad \textbf{Capability probe:} \_\_cpp\_elifdef.
+
+A spelling simplification for conditional preprocessing, not a feature capability guarantee.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 15.2; Foreword. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+#if defined(USE_FAST)
+int mode = 1;
+#elifdef USE_SAFE
+int mode = 2;
+#else
+int mode = 0;
+#endif
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{Unicode identifier and literal changes}
+\anchorref{5.3; 5.10; Annex C.1.2}
+\textbf{Change class:} behavior change.\quad \textbf{Capability probe:} n/a: audit source.
+
+Unicode identifier admissibility/normalization changed; mixed-encoding string literal concatenation is restricted.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 5.3; 5.10; Annex C.1.2. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+// Audit UTF-8 filenames/identifiers and mixed-prefix literals.
+// Prefer ordinary portable identifiers in distributed libraries.
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{Range-for lifetime extension}
+\anchorref{8.6.5; 6.7.7; Annex C.1.4}
+\textbf{Change class:} behavior change.\quad \textbf{Capability probe:} n/a: semantic regression.
+
+Certain temporaries in the range-for initializer now persist to the end of the loop. Do not assume that every nested borrowed object is rescued.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 8.6.5; 6.7.7; Annex C.1.4. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+#include <vector>
+void traverse() {
+  for (int x : std::vector{1, 2, 3}) {
+    (void)x;
+  }
+}
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{Move-eligible return expressions}
+\anchorref{7.5.5.2; Annex C.1.3}
+\textbf{Change class:} behavior change.\quad \textbf{Capability probe:} n/a: overload regression.
+
+Move-eligible names can be treated as xvalues in return expressions; decltype(auto) may produce a different reference type.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 7.5.5.2; Annex C.1.3. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+// Audit decltype(auto) returns of named rvalue references.
+// Prefer explicit return types at interfaces.
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{assume attribute}
+\anchorref{9.12; Foreword}
+\textbf{Change class:} new in C++23.\quad \textbf{Capability probe:} \_\_has\_cpp\_attribute(assume).
+
+A false assumption can invalidate the defined-behavior argument; it is not a runtime bounds check.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 9.12; Foreword. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+void handle(int x) {
+  [[assume(x >= 0)]];
+  (void)x;
+}
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{std::expected}
+\anchorref{22.8}
+\textbf{Change class:} new library facility.\quad \textbf{Capability probe:} \_\_cpp\_lib\_expected.
+
+Represent recoverable value/error alternatives, with explicit caller handling.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 22.8. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+#include <expected>
+void inspect_result() {
+  std::expected<int, int> result = 12;
+  if (result) { int v = *result; (void)v; }
+}
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{std::print and std::println}
+\anchorref{31.7.4}
+\textbf{Change class:} new library facility.\quad \textbf{Capability probe:} \_\_cpp\_lib\_print.
+
+Convenient formatted output requires the new print header and compatible library implementation.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 31.7.4. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+#include <print>
+void report(int id) { std::println("id={}", id); }
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{std::flat\_map and std::flat\_set}
+\anchorref{24.6.4--24.6.5}
+\textbf{Change class:} new library facility.\quad \textbf{Capability probe:} \_\_cpp\_lib\_flat\_map / \_\_cpp\_lib\_flat\_set.
+
+Flat adaptors provide associative interfaces backed by sequence storage; evaluate iterator invalidation and insertion cost.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 24.6.4--24.6.5. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+#include <flat_map>
+std::flat_map<int, int> counts{{1, 5}, {3, 8}};
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{std::mdspan}
+\anchorref{24.7.3}
+\textbf{Change class:} new library facility.\quad \textbf{Capability probe:} \_\_cpp\_lib\_mdspan.
+
+Multidimensional non-owning view; extents/layout/accessor are part of the contract.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 24.7.3. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+#include <mdspan>
+int values[6]{};
+std::mdspan<int, std::extents<std::size_t, 2, 3>> m(values);
+m[1, 2] = 42;
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{std::generator}
+\anchorref{26.8.2}
+\textbf{Change class:} new library facility.\quad \textbf{Capability probe:} \_\_cpp\_lib\_generator.
+
+Coroutine-based sequence generation introduces suspension and borrowing concerns.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 26.8.2. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+#include <generator>
+std::generator<int> sequence() {
+    co_yield 1;
+    co_yield 2;
+}
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{std::ranges::to}
+\anchorref{26.5}
+\textbf{Change class:} new library facility.\quad \textbf{Capability probe:} \_\_cpp\_lib\_ranges\_to\_container.
+
+Materialize a range as a target container; make allocation and conversion cost explicit.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 26.5. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+#include <ranges>
+#include <vector>
+auto v = std::views::iota(1, 5)
+       | std::ranges::to<std::vector>();
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{std::stacktrace}
+\anchorref{19.6}
+\textbf{Change class:} new library facility.\quad \textbf{Capability probe:} \_\_cpp\_lib\_stacktrace.
+
+Capture diagnostic stack information, subject to implementation and environment constraints.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 19.6. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+#include <stacktrace>
+// auto trace = std::stacktrace::current();
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{Standard library named modules}
+\anchorref{10; 16.4.2; Foreword}
+\textbf{Change class:} new library interface.\quad \textbf{Capability probe:} compiler + library build probe.
+
+import std is a normative facility; how a compiler builds/provides the module is toolchain-specific.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 10; 16.4.2; Foreword. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+// import std;
+// int main() { std::vector<int> v{1,2}; }
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{std::spanstream}
+\anchorref{31.9}
+\textbf{Change class:} new library facility.\quad \textbf{Capability probe:} \_\_cpp\_lib\_spanstream.
+
+Streams over caller-provided contiguous buffers introduce a clear storage lifetime contract.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 31.9. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+#include <spanstream>
+#include <array>
+std::array<char, 64> buf{};
+std::ospanstream out{buf};
+out << 42;
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{Extended floating point}
+\anchorref{17.4; Foreword}
+\textbf{Change class:} new language/library support.\quad \textbf{Capability probe:} \_\_STDCPP\_FLOAT*\_T\_\_ where supported.
+
+Portable deployment requires confirming which extended floating point types are supported.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 17.4; Foreword. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+// Check <stdfloat> availability and implementation types
+// before selecting fixed-precision interchange formats.
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{byteswap and modern bit utilities}
+\anchorref{22.15}
+\textbf{Change class:} new C++23 addition.\quad \textbf{Capability probe:} \_\_cpp\_lib\_byteswap.
+
+Byte swapping is a value transform; serialization still needs explicit endianness and width contracts.
+
+\standard{The 2024 standard documents the relevant language/library behavior at 22.15. Check exact conditions before relying on the summarized feature.}
+\begin{lstlisting}[language=C++]
+#include <bit>
+#include <cstdint>
+static_assert(std::byteswap(std::uint16_t{0x1234}) == 0x3412);
+\end{lstlisting}
+\practice{Migration gate: run a representative compile test, at least one semantic regression test, and a fallback decision for unsupported vendor configurations.}
+\section{Known compatibility risk inventory}
+\small
+\begin{longtable}{@{}p{.18\linewidth}p{.40\linewidth}p{.34\linewidth}@{}}
+\toprule
+\textbf{Source change} & \textbf{Typical failure mode} & \textbf{Mitigation}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Source change} & \textbf{Typical failure mode} & \textbf{Mitigation}\\
+\midrule
+\endhead
+Unicode identifier restrictions & Identifier no longer well-formed & Normalize / rename; verify build tools\\
+\addlinespace[2pt]
+Implicit move / return category & decltype(auto) or overload change & Pin interfaces and add compile assertions\\
+\addlinespace[2pt]
+Comma in subscript & Different parsing / invalid operator & Parenthesize comma expression or use new multi-parameter overload\\
+\addlinespace[2pt]
+Range-for initializer lifetime & Destructor executes later & Review resource guards and iterables\\
+\addlinespace[2pt]
+UTF-8 array initialization & New viable overload / ambiguity & Explicitly select type and encoding\\
+\addlinespace[2pt]
+Format argument checking & Compile-time rejection & Correct format contract and type\\
+\addlinespace[2pt]
+New standard headers & Header-name collision with project files & Namespace project headers and adjust include paths\\
+\addlinespace[2pt]
+allocator\_traits specialization & Ill-formed with no diagnostic required & Remove prohibited specializations\\
+\addlinespace[2pt]
+\bottomrule
+\end{longtable}
+\normalsize
+\section{Feature adoption worksheet}
+\small
+\begin{longtable}{@{}p{.25\linewidth}p{.69\linewidth}@{}}
+\toprule
+\textbf{Decision} & \textbf{Required evidence}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Decision} & \textbf{Required evidence}\\
+\midrule
+\endhead
+Source baseline & Language dialect flag and extensions policy\\
+\addlinespace[2pt]
+Parser and compiler & Compiler name/version/target and conformance bugs\\
+\addlinespace[2pt]
+Standard library & Implementation identity and relevant feature macros\\
+\addlinespace[2pt]
+Build mode & Hosted/freestanding, modules support, exceptions and RTTI policy\\
+\addlinespace[2pt]
+Runtime & Supported OS/ABI, deployment image and CPU capabilities\\
+\addlinespace[2pt]
+Gate & Compile tests, behavior tests, roll-back condition\\
+\addlinespace[2pt]
+\bottomrule
+\end{longtable}
+\normalsize
+\docend
+\end{document}

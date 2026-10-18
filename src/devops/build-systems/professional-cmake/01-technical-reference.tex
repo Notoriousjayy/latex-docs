@@ -1,0 +1,618 @@
+
+\documentclass[11pt,letterpaper,oneside]{report}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{inconsolata}
+\usepackage{geometry}
+\geometry{margin=0.89in,headheight=16pt,headsep=19pt,footskip=26pt}
+\usepackage{xcolor}
+\definecolor{navy}{HTML}{173758}
+\definecolor{teal}{HTML}{157B89}
+\definecolor{pale}{HTML}{E9F0F3}
+\definecolor{codegray}{HTML}{F5F7F9}
+\definecolor{muted}{HTML}{667785}
+\usepackage{booktabs,longtable,tabularx,array,calc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{upquote}
+\usepackage{xurl}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=navy,urlcolor=teal,bookmarksopen=true,pdfauthor={Software Build Engineering Documentation Suite}}
+\urlstyle{same}
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{2}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlength{\emergencystretch}{3em}
+\setlist[itemize]{leftmargin=*,topsep=4pt,itemsep=2pt}
+\setlist[enumerate]{leftmargin=*,topsep=4pt,itemsep=2pt}
+\titleformat{\chapter}[display]{\normalfont\bfseries\color{navy}}{\fontsize{11}{12}\selectfont CHAPTER \thechapter}{7pt}{\fontsize{23}{28}\selectfont}
+\titlespacing*{\chapter}{0pt}{-6pt}{19pt}
+\titleformat{\section}{\Large\bfseries\color{navy}}{\thesection}{0.65em}{}
+\titleformat{\subsection}{\large\bfseries\color{teal}}{\thesubsection}{0.65em}{}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{muted}{PROFESSIONAL CMAKE ENGINEERING}}
+\fancyhead[R]{\small\textcolor{muted}{\nouppercase{\leftmark}}}
+\fancyfoot[C]{\small\textcolor{muted}{\thepage}}
+\renewcommand{\headrulewidth}{0.3pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\small\thepage}\renewcommand{\headrulewidth}{0pt}}
+\lstdefinelanguage{cmake}{sensitive=false,morekeywords={cmake_minimum_required,project,add_library,add_executable,target_compile_features,target_include_directories,target_link_libraries,target_sources,target_compile_options,target_compile_definitions,target_link_options,add_subdirectory,include,if,else,elseif,endif,foreach,endforeach,function,endfunction,macro,endmacro,set,option,find_package,find_program,add_custom_command,add_custom_target,install,configure_file,configure_package_config_file,write_basic_package_version_file,set_target_properties,set_tests_properties,add_test,message,FetchContent_Declare,FetchContent_MakeAvailable,return,cmake_parse_arguments},morecomment=[l]{\#},morestring=[b]"}
+\lstdefinelanguage{sh}{morekeywords={cmake,ctest,cpack,find,sha256sum,clang-tidy,echo,cp,make,ninja,git},morecomment=[l]{\#},morestring=[b]"}
+\lstdefinelanguage{yaml}{morecomment=[l]{\#},morestring=[b]",morekeywords={name,on,permissions,jobs,steps,uses,run,with,env,matrix,include,if}}
+\lstdefinelanguage{text}{}
+\lstset{basicstyle=\ttfamily\footnotesize,keywordstyle=\color{navy}\bfseries,commentstyle=\color{muted},stringstyle=\color{teal},backgroundcolor=\color{codegray},frame=single,rulecolor=\color{pale},breaklines=true,breakatwhitespace=false,showstringspaces=false,columns=fullflexible,keepspaces=true,tabsize=2,xleftmargin=5pt,xrightmargin=5pt,aboveskip=9pt,belowskip=9pt}
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\passthrough}[1]{#1}
+\providecommand{\real}[1]{#1}
+
+\begin{document}
+\hypersetup{pageanchor=false}\begin{titlepage}
+\color{navy}
+\vspace*{1.15in}
+{\Large\bfseries PROFESSIONAL CMAKE\\[7pt]SOFTWARE BUILD ENGINEERING\par}
+\vspace{0.32in}\noindent\textcolor{teal}{\rule{0.9\linewidth}{2.3pt}}\par
+\vspace{0.45in}
+{\parbox{0.95\textwidth}{\raggedright\fontsize{24}{29}\selectfont\bfseries CMake Technical Reference\par}}
+\vspace{0.3in}
+{\Large\color{teal}Commands, target model, packages, diagnostics\par}
+\vfill
+{\large DOCUMENT 01 OF 08\par}
+\vspace{0.1in}
+{\small Companion synthesis to Craig Scott, \emph{Professional CMake: A Practical Guide}, 20th Edition (2025).\\
+Original learning/engineering material. Not affiliated with or endorsed by the author.\par}
+\vspace{0.2in}
+{\small 17 October 2026\par}
+\end{titlepage}
+\hypersetup{pageanchor=true}\clearpage\pagenumbering{roman}\tableofcontents\clearpage\pagenumbering{arabic}
+
+\textbf{Purpose.} A precise, operational reference for configuring,
+generating, building, testing, installing, and packaging target-based
+CMake projects. \textbf{Baseline:} examples target CMake 3.25+ and C++17
+unless noted. \textbf{Source scope:} the terminology and subject
+taxonomy follow Parts I--VII of Craig Scott's \emph{Professional CMake},
+20th ed.~This manual is an original synthesis, not a transcript or
+substitute for the reference.
+
+\chapter{The system model and
+invariants}\label{the-system-model-and-invariants}
+
+\textbf{{[}BOOK-GROUNDED{]}} Treat the CMake suite as a lifecycle: CMake
+configures and generates the native build graph, the generated build
+tool executes compilation and linking, CTest schedules tests, and CPack
+creates distributions. Source trees contain declarative
+\passthrough{\lstinline!CMakeLists.txt!} files; separate binary trees
+contain \passthrough{\lstinline!CMakeCache.txt!}, generated rules,
+intermediary objects and final artifacts. This separation allows several
+configurations of the same source tree.
+
+\textbf{{[}ENGINEERING EXTENSION{]}} Treat the generated build graph as
+an architecture artifact: every production target has a named owner,
+public interface, build-time dependency closure, tested configuration
+matrix, install contract and security policy. Configuration is not a
+secure trust boundary; execute third-party CMake code only in a
+controlled environment.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Phase
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Entry point
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Inputs
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence / expected result
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Configure & \passthrough{\lstinline!cmake -S . -B build -G Ninja!} &
+\passthrough{\lstinline!CMakeLists.txt!}, presets, toolchain, cache &
+resolved toolchain and target definitions \\
+Generate & included in \passthrough{\lstinline!cmake -S ...!} &
+configured target model & native build graph and generator files \\
+Build & \passthrough{\lstinline!cmake --build build --parallel!} & build
+graph, compiler, dependencies & binaries, libraries, generated assets \\
+Test &
+\passthrough{\lstinline!ctest --test-dir build --output-on-failure!} &
+registered tests & pass/fail outcomes; optional JUnit XML \\
+Install &
+\passthrough{\lstinline!cmake --install build --prefix staging!} &
+install rules & versioned/relocatable SDK or executable layout \\
+Package &
+\passthrough{\lstinline!cpack --config build/CPackConfig.cmake!} & CPack
+metadata, staged install contract & distributable archives/installers \\
+\end{longtable}
+
+\section{Minimum reproducible CMake
+project}\label{minimum-reproducible-cmake-project}
+
+\begin{lstlisting}
+cmake_minimum_required(VERSION 3.25)
+project(Example VERSION 1.2.0 LANGUAGES CXX)
+add_executable(example src/main.cpp)
+target_compile_features(example PRIVATE cxx_std_17)
+\end{lstlisting}
+
+\begin{lstlisting}[language=sh]
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build build --parallel 4
+\end{lstlisting}
+
+\textbf{Invariant.} \passthrough{\lstinline!CMAKE\_BUILD\_TYPE!} applies
+to single-configuration generators such as Ninja; multi-configuration
+generators choose configurations at build time with
+\passthrough{\lstinline!--config Debug!}.
+
+\chapter{Target graph semantics}\label{target-graph-semantics}
+
+\textbf{{[}BOOK-GROUNDED{]}} Prefer target properties and commands over
+global compilation settings. Use \passthrough{\lstinline!add\_library!},
+\passthrough{\lstinline!add\_executable!},
+\passthrough{\lstinline!target\_link\_libraries!},
+\passthrough{\lstinline!target\_include\_directories!},
+\passthrough{\lstinline!target\_compile\_definitions!},
+\passthrough{\lstinline!target\_compile\_features!} and
+\passthrough{\lstinline!target\_compile\_options!} to describe a
+target's requirements.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2143}}
+  >{\centering\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2857}}
+  >{\centering\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2857}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2143}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Scope
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Applies to target's own compilation
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Propagates to consumers
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Typical use
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\passthrough{\lstinline!PRIVATE!} & Yes & No & implementation-only
+dependency \\
+\passthrough{\lstinline!INTERFACE!} & No & Yes & header-only API usage
+requirement \\
+\passthrough{\lstinline!PUBLIC!} & Yes & Yes & required public API
+dependency \\
+\end{longtable}
+
+\begin{lstlisting}
+add_library(parser STATIC src/parser.cpp)
+target_compile_features(parser PUBLIC cxx_std_17)
+target_include_directories(parser PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+)
+add_executable(driver src/main.cpp)
+target_link_libraries(driver PRIVATE parser)
+\end{lstlisting}
+
+The public interface propagates through links to consumer targets. Link
+named targets or imported targets rather than hard-coded paths where
+possible. \passthrough{\lstinline!ALIAS!} targets provide consistent
+names; \passthrough{\lstinline!IMPORTED!} targets represent externally
+built artifacts. \passthrough{\lstinline!INTERFACE!} libraries
+communicate usage requirements without producing a compiled library;
+\passthrough{\lstinline!OBJECT!} libraries provide compiled object reuse
+but require deliberate graph design.
+
+\section{Generator expressions}\label{generator-expressions}
+
+Generator expressions such as \passthrough{\lstinline!$<CONFIG:Debug>!},
+\passthrough{\lstinline!$<COMPILE\_LANGUAGE:CXX>!} and
+\passthrough{\lstinline!$<BUILD\_INTERFACE:...>!} are evaluated in
+supported generate/build/install contexts, not as ordinary CMake
+variables. The target consuming a generator expression influences its
+meaning.
+
+\begin{lstlisting}
+target_compile_definitions(parser PRIVATE
+  $<$<CONFIG:Debug>:PARSER_DIAGNOSTICS=1>
+)
+target_compile_options(parser PRIVATE
+  $<$<AND:$<CXX_COMPILER_ID:GNU,Clang>,$<CONFIG:Debug>>:-Wall>
+)
+\end{lstlisting}
+
+\textbf{Caution.} Avoid quoting a list-producing generator expression
+incorrectly; preserve related option groups with
+\passthrough{\lstinline!SHELL:!} where applicable. Test generated
+commands rather than assuming a variable's configure-time value predicts
+the final command line.
+
+\chapter{CMake language fundamentals}\label{cmake-language-fundamentals}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Construct
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Meaning and failure mode
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Practical rule
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Normal variable & lexical / directory / function scope; can shadow cache
+entries & keep implementation variables narrow \\
+Cache variable & persistent across reconfiguration & expose intended
+user controls with \passthrough{\lstinline!option()!} or typed cache
+values \\
+Environment variable & supplied by parent process; not portable state
+management & use explicit build presets/toolchain settings for stable
+inputs \\
+\passthrough{\lstinline!function()!} & introduces variable scope &
+prefer for reusable functions \\
+\passthrough{\lstinline!macro()!} & expands in caller's scope & avoid
+unless caller-scope behavior is intended \\
+\passthrough{\lstinline!include()!} & runs file in current scope & use
+for modules of reusable logic \\
+\passthrough{\lstinline!add\_subdirectory()!} & enters a subdirectory
+with its own directory scope & organize target ownership by subsystem \\
+\passthrough{\lstinline!set\_property!} /
+\passthrough{\lstinline!set\_target\_properties!} & modifies global,
+directory or target metadata & prefer target-level contract \\
+\passthrough{\lstinline!cmake\_policy!} & selects behavior introduced in
+particular versions & advance minimum version deliberately; test policy
+transitions \\
+\end{longtable}
+
+CMake lists are semicolon-delimited strings. Quoting, escaping and
+forwarding \passthrough{\lstinline!ARGN!} can change argument
+boundaries. Use \passthrough{\lstinline!cmake\_parse\_arguments!} for
+named parameters and test paths with spaces and empty values.
+
+\begin{lstlisting}
+function(add_checked_tool name)
+  cmake_parse_arguments(ARG "" "SOURCE" "LIBRARIES" ${ARGN})
+  if(NOT ARG_SOURCE)
+    message(FATAL_ERROR "SOURCE is required")
+  endif()
+  add_executable(${name} "${ARG_SOURCE}")
+  target_link_libraries(${name} PRIVATE ${ARG_LIBRARIES})
+endfunction()
+\end{lstlisting}
+
+\chapter{Variables and control flow}\label{variables-and-control-flow}
+
+A reproducible configuration should have a declared input interface,
+sensible defaults, \passthrough{\lstinline!message(STATUS ...)!}
+diagnostics and intentionally limited cache exposure. Use
+\passthrough{\lstinline!if!}, \passthrough{\lstinline!foreach!},
+\passthrough{\lstinline!while!}, \passthrough{\lstinline!block!} and
+\passthrough{\lstinline!return!} for configuration logic, never for
+runtime business logic.
+
+\begin{lstlisting}
+option(BSUITE_BUILD_TESTING "Build test programs" ON)
+if(BSUITE_BUILD_TESTING)
+  include(CTest)
+  if(BUILD_TESTING)
+    add_subdirectory(tests)
+  endif()
+endif()
+\end{lstlisting}
+
+\textbf{Decision point.} Use \passthrough{\lstinline!option!} for
+user-tunable booleans. Use a target property for per-target state. Use a
+preset for developer/CI configurations. Use a toolchain file for
+cross-compilation and compiler selection. Do not set compilers inside
+\passthrough{\lstinline!CMakeLists.txt!} after
+\passthrough{\lstinline!project()!}.
+
+\chapter{Files, custom tasks and generated
+artifacts}\label{files-custom-tasks-and-generated-artifacts}
+
+\textbf{{[}BOOK-GROUNDED{]}} Prefer explicit source lists, a
+deterministic code-generation command and correct
+\passthrough{\lstinline!OUTPUT!}/\passthrough{\lstinline!DEPENDS!}
+edges. \passthrough{\lstinline!add\_custom\_command(OUTPUT ...)!}
+describes generated files;
+\passthrough{\lstinline!add\_custom\_target()!} creates a named
+orchestration node.
+
+\begin{lstlisting}
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/version.h"
+  COMMAND "${CMAKE_COMMAND}" -E make_directory
+          "${CMAKE_CURRENT_BINARY_DIR}/generated"
+  COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+          "${CMAKE_CURRENT_SOURCE_DIR}/templates/version.h"
+          "${CMAKE_CURRENT_BINARY_DIR}/generated/version.h"
+  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/templates/version.h"
+  VERBATIM
+)
+\end{lstlisting}
+
+Generated outputs must be enumerated and associated with the target that
+needs them. Avoid writing into the source tree during builds and avoid
+timestamps as proof of correctness. For C++20 module support, validate
+compiler, CMake and generator compatibility before adopting a module
+file set.
+
+\chapter{Language and toolchains}\label{language-and-toolchains}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Dimension
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Default consideration
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Diagnostic
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+C / C++ standard &
+\passthrough{\lstinline!target\_compile\_features(... cxx\_std\_17)!} or
+explicit standard properties & inspect compile commands \\
+Language enablement &
+\passthrough{\lstinline!project(... LANGUAGES C CXX)!} & compiler
+detection at first configure \\
+Cross-compile target & \passthrough{\lstinline!CMAKE\_SYSTEM\_NAME!},
+processor, compiler, sysroot &
+\passthrough{\lstinline!cmake -LAH -N build!} and toolchain log \\
+Architecture & toolchain and target-specific settings & inspect produced
+binary with platform tools \\
+Compiler options & target-local and language/config-scoped & verify
+MSVC/GCC/Clang flags separately \\
+Link options & \passthrough{\lstinline!target\_link\_options()!} &
+verify actual linker invocation \\
+\end{longtable}
+
+\textbf{Anti-patterns:} unconditional
+\passthrough{\lstinline!-march=native!} in release artifacts, globally
+forcing \passthrough{\lstinline!-Werror!} on dependencies, mutating
+\passthrough{\lstinline!CMAKE\_CXX\_FLAGS!} across project
+subdirectories and assuming Unix filesystem semantics on Windows.
+
+\chapter{External dependencies}\label{external-dependencies}
+
+\textbf{{[}BOOK-GROUNDED{]}} Four architectural paths carry different
+risk: \passthrough{\lstinline!find\_package!} finds installed
+configurations, \passthrough{\lstinline!FetchContent!} makes source
+available for the main build, \passthrough{\lstinline!ExternalProject!}
+orchestrates separate external builds, and dependency providers allow
+the caller to intercept some acquisition requests.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Method
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Ownership
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Best suited to
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Major risk
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\passthrough{\lstinline!find\_package(... CONFIG REQUIRED)!} & consuming
+project & prebuilt, validated SDKs & implicit host search path or wrong
+package \\
+\passthrough{\lstinline!FetchContent!} & configure stage / same build &
+vetted source with CMake targets & untrusted configure-time code;
+unpinned revision \\
+\passthrough{\lstinline!ExternalProject!} & superbuild &
+incompatible/independent builds & delayed build-time failures, install
+contracts \\
+dependency provider & developer / organization & policy-controlled
+dependencies & hidden host-level policy and environment drift \\
+\end{longtable}
+
+Pin dependency revisions by immutable identifiers, record origin and
+license, and test behavior offline. With
+\passthrough{\lstinline!FetchContent!}, caching or a lock policy is an
+\textbf{extension} layered on CMake, not an automatic security property
+of the command.
+
+\chapter{Testing and analysis}\label{testing-and-analysis}
+
+CTest tests are registered with
+\passthrough{\lstinline!add\_test(NAME ... COMMAND ...)!};
+\passthrough{\lstinline!ctest!} schedules selection, parallel execution,
+fixtures, resources and reporting. For named test executables, CMake can
+substitute their build artifact paths. Distinguish test
+\emph{assertions} in the program from test \emph{scheduling} via CTest.
+
+\begin{lstlisting}
+include(CTest)
+if(BUILD_TESTING)
+  add_executable(parser_tests tests/parser_tests.cpp)
+  target_link_libraries(parser_tests PRIVATE parser)
+  add_test(NAME parser.unit COMMAND parser_tests)
+  set_tests_properties(parser.unit PROPERTIES LABELS "unit;smoke" TIMEOUT 20)
+endif()
+\end{lstlisting}
+
+\begin{lstlisting}[language=sh]
+ctest --test-dir build -L unit --output-on-failure --output-junit build/junit.xml
+\end{lstlisting}
+
+Static analysis integrations may use
+\passthrough{\lstinline!CMAKE\_CXX\_CLANG\_TIDY!},
+\passthrough{\lstinline!CMAKE\_CXX\_CPPCHECK!} and compilation
+databases. Sanitizers are compiler/linker instrumentation, not CTest
+engines. Coverage tools vary with LLVM versus GCC toolchains; measure
+coverage of the test binary, not a claim of fault-detection adequacy.
+
+\chapter{Installation, exported targets and
+packaging}\label{installation-exported-targets-and-packaging}
+
+Installable libraries should publish a relocatable package config with
+an exported namespace, a version file and public header paths. The
+included reference project demonstrates
+\passthrough{\lstinline!GNUInstallDirs!},
+\passthrough{\lstinline!FILE\_SET HEADERS!},
+\passthrough{\lstinline!install(EXPORT ...)!},
+\passthrough{\lstinline!configure\_package\_config\_file!} and
+\passthrough{\lstinline!write\_basic\_package\_version\_file!}.
+
+\begin{lstlisting}
+include(GNUInstallDirs)
+install(TARGETS parser EXPORT parserTargets
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+)
+install(EXPORT parserTargets NAMESPACE Parser::
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/Parser")
+\end{lstlisting}
+
+This snippet is illustrative: a consumable package also requires a
+package configuration file, correct header installation and dependency
+discovery. Never hard-code source/build machine absolute paths into an
+installed export. CPack consumes installation rules; it does not
+determine whether runtime dependencies, ABI compatibility, security
+fixes or licenses have been handled.
+
+\chapter{Presets and diagnostics}\label{presets-and-diagnostics}
+
+The checked-in \passthrough{\lstinline!CMakePresets.json!} should
+express supported configurations; a local, untracked
+\passthrough{\lstinline!CMakeUserPresets.json!} expresses per-developer
+choices. The latter is not an appropriate place to commit secrets. Use
+\passthrough{\lstinline!--preset!} for configure,
+\passthrough{\lstinline!--build --preset!} for build, and
+\passthrough{\lstinline!ctest --preset!} for test; workflow presets can
+compose stages.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Command
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Question answered
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\passthrough{\lstinline!cmake --list-presets!} & what configurations are
+available? \\
+\passthrough{\lstinline!cmake --debug-find -S . -B build!} & why was a
+package/path chosen? \\
+\passthrough{\lstinline!cmake --trace-expand -S . -B build!} & which
+CMake calls executed with expanded arguments? \\
+\passthrough{\lstinline!cmake --build build --verbose!} & which compiler
+and linker commands ran? \\
+\passthrough{\lstinline!cmake -LAH -N build!} & which cached settings
+exist? \\
+\passthrough{\lstinline!cmake --graphviz=targets.dot build!} & what
+dependencies are present at the CMake target level? \\
+\end{longtable}
+
+\chapter{Failure-mode playbook}\label{failure-mode-playbook}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Symptom
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Likely cause
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Structured investigation
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+stale build after compiler switch & compiler recorded in prior cache &
+create a fresh binary directory \\
+missing public header in consumer & broken usage requirements & inspect
+export/installed include paths \\
+headers found locally but not after install & source paths leaked into
+install interface & build a clean consumer with only install prefix \\
+static library links on one OS only & omitted transitive dependencies /
+system libraries & inspect link closure per platform \\
+tests pass locally, fail in CI & runtime path, fixture, environment or
+parallel race & reproduce exact preset and
+\passthrough{\lstinline!ctest -VV!} \\
+CMake unexpectedly fetches code &
+\passthrough{\lstinline!FetchContent!}/provider policy not controlled &
+trace acquisition and review offline build \\
+multi-config uses wrong optimization &
+\passthrough{\lstinline!CMAKE\_BUILD\_TYPE!} relied upon & use
+\passthrough{\lstinline!--config!} / build preset configuration \\
+\end{longtable}
+
+\chapter{Normative engineering
+checklist}\label{normative-engineering-checklist}
+
+\begin{itemize}
+\tightlist
+\item[$\square$]
+  Pin and document minimum CMake version, compiler requirements and
+  generators.
+\item[$\square$]
+  Keep source trees free of build outputs; configure distinct build
+  directories.
+\item[$\square$]
+  Model all public dependencies through usage requirements.
+\item[$\square$]
+  Have at least one clean, installed-consumer smoke test.
+\item[$\square$]
+  Execute CTest with deterministic selections and machine-readable
+  results.
+\item[$\square$]
+  Document toolchain constraints, package provenance and build
+  reproducibility limits.
+\item[$\square$]
+  Run static analysis and runtime instrumentation in complementary CI
+  jobs.
+\item[$\square$]
+  Review every new external dependency and CMake configuration script as
+  executable code.
+\end{itemize}
+
+\chapter{Reference anchors}\label{reference-anchors}
+
+\textbf{Textbook:} Parts I--VII, especially Chapters 4, 10--11, 16--20,
+24, 27--33, 34--43. \textbf{Official documentation:}
+\url{https://cmake.org/cmake/help/latest/} ;
+\url{https://cmake.org/cmake/help/latest/guide/importing-exporting/} .
+\textbf{Boundary:} the compliance and software-supply-chain
+recommendations in this guide are engineering extensions, not CMake
+requirements.
+
+\end{document}

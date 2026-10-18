@@ -1,0 +1,131 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage{ad42010-suite}
+\begin{document}
+\DocFront{06}{Practical Architecture Modeling}{UML, C4, PlantUML, security views and automated checks}{An implementation-focused laboratory showing how contemporary diagrams and engineering evidence can populate 2022 architecture description views without treating a notation as a substitute for the required metadata.}
+\InterpretationKey
+\section{Model-first does not mean diagram-only}
+\begin{Requirement}\FlagReq{} Architecture views must follow their governing viewpoints and contain view components; model-based components identify governing model kinds, whereas non-model components require legends. The standard prescribes neither a particular notation nor authoring tool. \Source{1, 6.6--6.8}\end{Requirement}
+\begin{Guidance}Think of C4, UML and PlantUML as possible \emph{representation resources}; define their roles locally as model kinds, modelling-language specifications or tools. Map an actual diagram to a named architecture view, specify the viewpoint governing that view and record the concerns addressed. A generic PNG file is insufficient provenance by itself.\end{Guidance}
+\section{Notation selection and architecture purpose}
+\begin{longtable}{p{0.22\linewidth}p{0.24\linewidth}p{0.38\linewidth}}\toprule\textbf{Resource}&\textbf{Useful EoI aspect}&\textbf{Appropriate application / caveat}\\\midrule\endhead
+C4 system context&Structural / environment&Shows the EoI and external actors/systems; adopt a specific context viewpoint and legend.\\
+C4 container&Structural / functional&Shows deployable/application-level divisions; a ``container'' is not a 42010 view component.\\
+C4 component&Structural / functional&Clarifies responsibilities inside one container; not the same as AD view components.\\
+UML component diagram&Structural / interfaces&Explicit contracts and dependencies; specify stereotype and port conventions.\\
+UML sequence diagram&Behavioural&Message order, alternatives and timeout behaviour for selected scenarios.\\
+UML activity diagram&Functional / behavioural&Paths, conditions, concurrent work and swimlane responsibility.\\
+UML state machine&Behavioural&States, guards, transitions and exceptional outcomes.\\
+BPMN collaboration&Business process / organizational&Process and cross-party interactions; map tasks to technical design only where justified.\\
+Data-flow / threat model&Informational / trust&Sources, sinks, boundaries and mitigations; record threat vocabulary and analytical assumptions.\\
+Deployment model&Physical / structural&Allocation of runtime units to nodes and environments; map conceptual to actual configuration.\\\bottomrule\end{longtable}
+\begin{Guidance}A tool may render one or several model kinds. The modelling conventions and analytical procedures belong in controlled specifications; PlantUML is not in itself an architecture viewpoint. Any implementation-specific diagram dialect needs explicit syntax/semantics assumptions.\end{Guidance}
+\section{Worked example: a service architecture baseline}
+\begin{Worked}\textbf{AD} \texttt{AD-PAYMENTS/1.0}. \textbf{EoI} \texttt{PAY-SVC}. \textbf{Purpose} review integration resilience and sensitive-data handling.\par
+\textbf{Concerns} \texttt{CN-01}: which external parties can reach the service? \texttt{CN-02}: which calls cross a security boundary? \texttt{CN-03}: how are failures completed or retried? \texttt{CN-04}: who recovers a stalled transaction?\par
+\textbf{Views} \texttt{VW-CXT-01/1} governed by \texttt{VP-CXT/1}; \texttt{VW-SEC-01/1} governed by \texttt{VP-SEC/1}; \texttt{VW-FUN-01/1} governed by \texttt{VP-FUN/1}; \texttt{VW-OPS-01/1} governed by \texttt{VP-OPS/1}.\par
+\textbf{Components} \texttt{VC-CXT-01} graph, \texttt{VC-FUN-01} interaction sequence, \texttt{VC-SEC-01} trust/asset table, \texttt{VC-OPS-01} narrative runbook. The narrative receives a legend; the diagram model kinds receive their own controlled specifications.\end{Worked}
+\section{Laboratory 1: EoI context with PlantUML}
+\textbf{Objective}: produce an original context view component with a known EoI boundary, a typed interface set and identified external stakeholders.\par
+\begin{lstlisting}[caption={Example only: examples/01-context.puml}]
+@startuml
+skinparam componentStyle rectangle
+actor "Customer" as Customer
+rectangle "Payment Service [EoI]" as PaySvc
+rectangle "Identity Provider" as IdP
+rectangle "Payment Provider" as PSP
+Customer --> PaySvc : Submit / query payment
+PaySvc --> IdP : Validate identity
+PaySvc --> PSP : Authorize / capture
+note bottom of PaySvc
+  EoI: PAY-SVC
+  AD element: VC-CXT-01
+  Governing model kind: MK-CONTEXT/1
+end note
+@enduml
+\end{lstlisting}
+\textbf{Representation contract (local)}: rectangles designate named logical entities; arrows represent high-level integration relationships, not necessarily packet directions; labels are interaction purposes. \textbf{Viewpoint}: \texttt{VP-CXT/1}. \textbf{Concern coverage}: \texttt{CN-01} and part of \texttt{CN-02}.\par
+\textbf{Validation exercise}: compare the external nodes with the API/service inventory. Report missing dependencies as \texttt{INC-*} and unknown interfaces as issues, not as inferred fact.\par
+\section{Laboratory 2: UML-style interaction model}
+\begin{lstlisting}[caption={Example only: examples/02-payment-sequence.puml}]
+@startuml
+actor Client
+participant "Payment API" as API
+queue "Durable Queue" as Queue
+participant "Payment Worker" as Worker
+participant "Provider" as PSP
+Client -> API : POST /payments (idempotency key)
+API -> Queue : publish accepted command
+API --> Client : 202 Accepted + transaction ID
+Queue -> Worker : deliver command
+Worker -> PSP : authorize(transaction)
+alt provider responds
+    PSP --> Worker : success / decline
+    Worker -> Queue : acknowledge + publish status
+else timeout / unavailable
+    Worker -> Queue : retry policy / dead-letter
+end
+@enduml
+\end{lstlisting}
+\textbf{Governance}: \texttt{VC-FUN-01/1}, \texttt{MK-SEQUENCE/1}, \texttt{VP-FUN/1}. \textbf{Framed and addressed concerns}: completion/retry \texttt{CN-03}; external provider behaviour in \texttt{CN-02}. \textbf{Known issues}: threshold and recovery semantics must be confirmed with approved requirements; this drawing does not settle them.\par
+\textbf{View method (original)}: start from a named user scenario; add negative branches; trace each message to an interface or event-contract ID; review timeouts, duplicates, side effects, actor ownership and compensating actions.\par
+\section{Laboratory 3: trust-boundary component}
+\begin{longtable}{p{0.21\linewidth}p{0.32\linewidth}p{0.33\linewidth}}\toprule\textbf{Element}&\textbf{Trust/control interpretation}&\textbf{Evidence still needed}\\\midrule\endhead
+Client to API&Untrusted-to-service boundary; authentication and authorization concerns.&Identity model; enforcement ownership; negative tests.\\
+API to queue&Durable message handoff; sensitive metadata and replay concern.&Encryption/key handling; broker access policy; idempotence evidence.\\
+Worker to provider&External provider dependency; integrity and exposure concerns.&Credential management; outbound control; retry safety.\\
+Status update&Potential leakage and confused-deputy concern.&Object-level authorization rules; status event schema.\\\bottomrule\end{longtable}
+\begin{Guidance}Treat this table as \texttt{VC-SEC-01}, a non-model narrative/table component with legend \texttt{LG-SEC-TABLE/1}. In this legend ``concern'' denotes a proposed issue to assess, not an observed vulnerability; ``evidence'' means a record to obtain. Threat classifications such as STRIDE, CWE and OWASP are optional specialist extensions external to ISO/IEC/IEEE 42010.\end{Guidance}
+\section{Laboratory 4: operational recovery narrative}
+\begin{Worked}\textbf{Component}: \texttt{VC-OPS-01/1}, governed by \texttt{LG-OPS-NARR/1} from Document 03. \textbf{View}: \texttt{VW-OPS-01/1}.\par
+\textbf{Trigger}: transaction remains pending beyond the operational alert threshold \texttt{[TBD]}. \textbf{First response}: verify worker queue depth and provider health; identify duplicate-safe retry rules. \textbf{Escalation owner}: \texttt{[TBD]}. \textbf{Stop criterion}: consistent status is observable and reconciled to authoritative payment records. \textbf{Known issue}: alert threshold unapproved; \texttt{INC-OPS-01}.\end{Worked}
+\section{Bridging C4 descriptions to views and model kinds}
+\begin{longtable}{p{0.24\linewidth}p{0.34\linewidth}p{0.28\linewidth}}\toprule\textbf{C4 resource}&\textbf{Proposed AD use}&\textbf{What must be added}\\\midrule\endhead
+System context diagram&Component in a context/integration architecture view&Viewpoint, EoI, concerns, perspective mapping, version and legend/model-kind conventions.\\
+Container diagram&Component in deployment or structural architecture view&Define ``container'', environment, service identity and allocations; record any cross-view relation.\\
+Component diagram&Component in logical design architecture view&Specify component meaning, interface semantics, scope and governing conventions.\\
+Dynamic diagram&Component in behavioural architecture view&Scenario purpose, error cases, message legend and linkage to contracts.\\
+Deployment diagram&Component in allocation architecture view&Environment, runtime nodes, failure domains, deployed artifact mapping.\\\bottomrule\end{longtable}
+\begin{Guidance}C4 terminology is not automatically equivalent to the 42010 vocabulary. For example, a C4 \emph{component} is an architectural building block in a software design; a 42010 \emph{architecture view component} is an identifiable portion of an AD. Record a deliberate mapping, not a one-to-one substitution.\end{Guidance}
+\section{Automation and repository structure}
+\begin{lstlisting}[caption={Illustrative architecture documentation layout}]
+architecture/
+  ad/manifest.yaml              # EoI, purpose, baselines
+  registry/stakeholders.yaml
+  registry/perspectives.yaml
+  registry/concerns.yaml
+  registry/aspects.yaml
+  viewpoints/                   # VP specifications
+  model-kinds/                  # MK and legend specs
+  views/                        # view manifests
+  components/                   # PlantUML, narratives, etc.
+  correspondence/methods.yaml
+  correspondence/relations.yaml
+  decisions/                    # essential ADRs
+  issues/                       # known inconsistencies
+  evidence/                     # validation results
+\end{lstlisting}
+\subsection{Validation stages}
+\begin{enumerate}
+\item \textbf{Parse and schema-check}: verify IDs, types, dates, revisions and URIs; reject unrecognized references.
+\item \textbf{Perform structural trace checks}: evaluate the concern--viewpoint--view path and mandatory metadata joins.
+\item \textbf{Build components}: render diagrams and test for syntactic errors, preserving source hash and renderer version.
+\item \textbf{Apply correspondence methods}: run documented predicates on pinned inventory and AD baselines.
+\item \textbf{Review semantics}: a human reviewer assesses whether the view actually addresses the concern and records inconsistencies or omissions.
+\item \textbf{Freeze evidence}: publish hashes, build logs, reviewer and version identifiers with the approved AD revision.
+\end{enumerate}
+\begin{Guidance}Use CI for repeatable checks; do not confuse CI success with a conforming AD. Even a perfectly rendered diagram might omit a fundamental stakeholder, misrepresent the EoI or fail to answer an important concern. Build instructions should explicitly require pdfLaTeX only for the present suite, but this is a repository-local compilation rule and not a requirement of the standard.\end{Guidance}
+\section{Security engineering evidence as view components}
+Evidence from CodeQL, GitHub code scanning, secret-scanning triage, dependency inventories or DAST can \emph{inform} a security viewpoint when the AD's concerns and scope warrant it. A SARIF artifact or alert count is neither inherently an architecture view nor architecture evidence on its own. Identify source, snapshot, applicability and interpretation, and document a method by which an architectural claim can be assessed.\par
+\begin{Worked}\textbf{Concern}: ``Does every internet-facing ingress route to an identified authorization boundary?'' \textbf{Potential evidence}: interface inventory and route definitions, backed by code-level validation. \textbf{View component}: access-control flow model with interface IDs and an accompanying gap list. \textbf{Correspondence method}: match ingress interfaces with recorded enforcement points and named owners. Static-analysis results are supplemental evidence, not a substitute for the model or review.\end{Worked}
+\section{Laboratory acceptance criteria}
+\begin{itemize}
+\item Each generated figure has stable ID, revision, governing model kind and source reference.
+\item Each figure belongs to a named architecture view governed by an identified architecture viewpoint.
+\item Concern, stakeholder perspective and aspect coverage are explicit rather than assumed from titles.
+\item Non-model narratives have legends; model-based components use documented conventions.
+\item Cross-figure inconsistencies are registered, not quietly normalized.
+\item Essential decisions include rationale and links to the affected AD elements.
+\item Validation artifacts distinguish automated structural checks from human semantic judgment.
+\end{itemize}
+\LegalFooter
+\end{document}

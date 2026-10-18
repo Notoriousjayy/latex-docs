@@ -1,0 +1,289 @@
+\documentclass[11pt,letterpaper]{article}
+% This source is intentionally restricted to pdfLaTeX.
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{textcomp}
+\usepackage{lmodern}
+\usepackage[margin=0.82in,top=0.94in,bottom=0.91in,headheight=18pt]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage[table]{xcolor}
+\definecolor{DeepNavy}{HTML}{14283F}
+\definecolor{Teal}{HTML}{0A747C}
+\definecolor{Gold}{HTML}{C78F36}
+\definecolor{Slate}{HTML}{536477}
+\definecolor{Pale}{HTML}{F4F7FA}
+\definecolor{CodeEdge}{HTML}{D4DFE9}
+\usepackage{microtype}
+\usepackage{parskip}
+\setlength{\parskip}{0.47em}
+\usepackage{titlesec}
+\titleformat{\section}{\normalfont\Large\bfseries\color{DeepNavy}}{\thesection}{0.62em}{}
+\titlespacing*{\section}{0pt}{2.0ex plus .7ex minus .2ex}{0.75ex}
+\titleformat{\subsection}{\normalfont\large\bfseries\color{Teal}}{\thesubsection}{0.6em}{}
+\usepackage{longtable,booktabs,array,calc}
+\renewcommand{\arraystretch}{1.22}
+\AtBeginEnvironment{longtable}{\small}
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+\usepackage{listings}
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\lstdefinestyle{suitecode}{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,breakatwhitespace=false,
+  columns=fullflexible,keepspaces=true,showstringspaces=false,
+  frame=single,rulecolor=\color{CodeEdge},
+  backgroundcolor=\color{Pale},
+  keywordstyle=\color{Teal}\bfseries,
+  commentstyle=\color{Slate}\itshape,
+  stringstyle=\color{DeepNavy},
+  xleftmargin=5pt,xrightmargin=5pt,
+  framexleftmargin=5pt,framexrightmargin=5pt,
+  aboveskip=0.85em,belowskip=0.95em,
+  tabsize=2
+}
+\lstset{style=suitecode}
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=1.6em,itemsep=2pt,topsep=3pt}
+\setlist[enumerate]{leftmargin=1.8em,itemsep=2pt,topsep=3pt}
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\newcommand{\passthrough}[1]{#1}
+\usepackage{xurl}
+\usepackage[colorlinks=true,linkcolor=Teal,urlcolor=Teal,citecolor=Teal,pdfborder={0 0 0}]{hyperref}
+\urlstyle{same}
+\usepackage{fancyhdr,lastpage}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize\sffamily\color{Slate} ECMA-262:2025 \textbullet{} Engineering Documentation}
+\fancyhead[R]{\footnotesize\sffamily\color{Slate} 16th Edition}
+\fancyfoot[L]{\footnotesize\sffamily\color{Slate} Independent technical companion}
+\fancyfoot[R]{\footnotesize\sffamily\color{Slate}\thepage\ / \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.35pt}
+\renewcommand{\footrulewidth}{0pt}
+\setlength{\emergencystretch}{3em}
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{2}
+\begin{document}
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{2.8cm}
+{\color{Gold}\rule{18mm}{3pt}}\par\vspace{18mm}
+{\sffamily\Large\bfseries\color{Teal} SOFTWARE ENGINEERING DOCUMENTATION SUITE}\par
+\vspace{8mm}
+{\sffamily\huge\bfseries\color{DeepNavy} ECMAScript 2025 }\par
+\vspace{4mm}
+{\sffamily\fontsize{24}{29}\selectfont\bfseries\color{DeepNavy} Runtime and Execution Model }\par
+\vspace{10mm}
+{\large\color{Slate} Realms, jobs, agents and the memory model }\par
+\vspace{16mm}
+{\color{Teal}\rule{\textwidth}{0.8pt}}\par
+\vfill
+{\sffamily\color{Slate}\large ECMA-262:2025 \textbullet{} 16th Edition \textbullet{} June 2025}\par
+\vspace{3mm}
+{\sffamily\color{Slate} October 2026 \textbullet{} Document 4 of 8}\par
+\vspace{3mm}
+{\small\color{Slate} Original engineering companion. The uploaded ECMA-262:2025 specification remains the authoritative source.}\par
+\end{titlepage}
+\pagenumbering{arabic}
+\tableofcontents
+\clearpage
+\section{Runtime model and vocabulary}\label{runtime-model-and-vocabulary}
+
+ECMA-262:2025 does not specify one particular virtual machine implementation, optimizer, garbage collector, or browser event loop. It specifies observable language semantics using execution contexts, environments, realms, jobs, agents, and a shared-memory model. This technical reference maps those abstractions to architectural reasoning without asserting that all engines implement the internals literally.
+
+\textbf{{[}SPEC{]}} = ECMA-262-defined; \textbf{{[}HOST{]}} = host integration; \textbf{{[}MODEL{]}} = explanatory mental model or engineering guidance. Principal sources: clauses 5--10, 15--16, 25--29 and Annex D.
+
+\section{Execution lifecycle and conceptual layers}\label{execution-lifecycle-and-conceptual-layers}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Layer
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Standard artifact
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Responsibility
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Not specified here
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Source input & Source Text / grammar (11--12) & recognizes tokens, syntax, early errors & file discovery and editor behavior \\
+Static semantics & syntax-directed operations (8) & binding lists, contains, early errors & engine AST representation \\
+Script/module representation & Script and Module Records (16) & instantiate/link/evaluate language code & host filesystem/URL resolution \\
+Context & Execution Context (9.4) & running function/script/module evaluation & OS thread allocation \\
+Environment & Environment Records (9.1) & mapping identifier bindings & physical stack layout \\
+Realm & Realm Records (9.3) & associated intrinsics and global state & iframe creation details \\
+Jobs & Job abstract closures (9.5) & serialized execution work items & browser task loop schedule \\
+Agent & Agent model (9.6--9.8) & independent execution participation & web workers API \\
+\end{longtable}
+
+\section{Environment records and identifier resolution}\label{environment-records-and-identifier-resolution}
+
+\textbf{{[}SPEC{]}} Declarative, object, function, global, and module environment records support different binding operations. \passthrough{\lstinline!ResolveBinding!}/\passthrough{\lstinline!GetIdentifierReference!} follow environment chains. Lexical declarations create bindings before initialization; uninitialized access results in a \passthrough{\lstinline!ReferenceError!}. \passthrough{\lstinline!var!} and lexical declarations have different instantiation procedures.
+
+\begin{lstlisting}
+function createAccumulator(seed) {
+  let total = seed;
+  return step => (total += step);  // captures environment binding
+}
+const add = createAccumulator(10);
+console.assert(add(2) === 12);
+console.assert(add(3) === 15);
+\end{lstlisting}
+
+\textbf{{[}MODEL{]}} Draw a closure as a function object associated with an outer lexical environment, not as a frozen copy of current variable values. In debugger traces distinguish creation time, initialization time, and evaluation time.
+
+\section{Realms and intrinsics}\label{realms-and-intrinsics}
+
+\textbf{{[}SPEC{]}} A realm encapsulates a set of intrinsic objects and global environment associations. Constructing instances from another realm can affect identity tests and \passthrough{\lstinline!instanceof!}, even if the same source-level constructor name appears (9.3, 19--20). Cross-realm equality and object brands should be reviewed when exchanging objects between contexts.
+
+\begin{lstlisting}
+// Cross-realm conceptual example; creating the second realm is HOST-specific.
+// Object.prototype.toString / Array.isArray often provide better
+// diagnostics than assuming a local Array constructor owns every array.
+export function requireArray(value) {
+  if (!Array.isArray(value)) throw new TypeError('expected array');
+  return value;
+}
+\end{lstlisting}
+
+\section{Completion records and propagation}\label{completion-records-and-propagation}
+
+\textbf{{[}SPEC{]}} Algorithms describe a \passthrough{\lstinline!normal!}, \passthrough{\lstinline!throw!}, \passthrough{\lstinline!return!}, \passthrough{\lstinline!break!}, or \passthrough{\lstinline!continue!} completion where relevant; completion records carry type/value/target (5.2 and 6.2). \passthrough{\lstinline!?!} propagates abrupt completion; \passthrough{\lstinline"!"} unwraps a completion expected to be normal. In application terms, explicit \passthrough{\lstinline!return!}, thrown exception, or iterator termination have different semantics; do not flatten them into one success/failure Boolean.
+
+\textbf{Trace template:} algorithm name; input state; each abstract operation called; user-callable hooks; normal path; abrupt path; final observable outcome. Include all conditional steps even if the chosen example takes only one branch.
+
+\section{Ordinary and exotic object methods}\label{ordinary-and-exotic-object-methods}
+
+\textbf{{[}SPEC{]}} Objects support essential internal methods such as \passthrough{\lstinline![[Get]]!}, \passthrough{\lstinline![[Set]]!}, \passthrough{\lstinline![[GetOwnProperty]]!}, \passthrough{\lstinline![[DefineOwnProperty]]!}, \passthrough{\lstinline![[OwnPropertyKeys]]!}, and \passthrough{\lstinline![[Call]]!} for callable objects (10). Ordinary methods implement default behavior; exotic objects, including proxies and arrays, modify rules. Proxy traps are constrained by invariants.
+
+\begin{lstlisting}
+const observed = [];
+const proxy = new Proxy({ x: 1 }, {
+  get(target, prop, receiver) {
+    observed.push(String(prop));
+    return Reflect.get(target, prop, receiver);
+  }
+});
+console.assert(proxy.x === 1);
+console.assert(observed.join(',') === 'x');
+\end{lstlisting}
+
+\textbf{{[}MODEL{]}} Accessor getters and proxy traps are potential reentrancy points. A supposedly read-only validation step can invoke user-defined code; capture snapshots before sensitive decisions if consistency is required.
+
+\section{Script and module instantiation}\label{script-and-module-instantiation}
+
+\textbf{{[}SPEC{]}} Scripts and source text modules have distinct parse goals, records, and instantiation/evaluation procedures (16). Module imports are live bindings. A module graph must be resolved and linked; module evaluation may be asynchronous owing to top-level \passthrough{\lstinline!await!}. Dynamic import can return a promise whose fulfillment depends on host loading plus language evaluation.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Concern
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+ECMA-262 part
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Host responsibility
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Grammar / module statements & 16.2 & none for valid syntax \\
+Imports and module requests & 16.2 & map specifiers to modules \\
+Import attributes / JSON modules & 16.2 & supported keys / resource retrieval \\
+\passthrough{\lstinline!import.meta!} fields & 16.2 and Annex D & populate host-specific metadata \\
+Executable module graph & 16.2 & load and supply requested modules \\
+Top-level \passthrough{\lstinline!await!} & 16.2 & integrate resulting jobs into host schedule \\
+\end{longtable}
+
+\section{Promise jobs and asynchronous execution}\label{promise-jobs-and-asynchronous-execution}
+
+\textbf{{[}SPEC{]}} Promise objects have pending/fulfilled/rejected state, reaction records, resolution procedures, and jobs for reaction execution (27.2). \passthrough{\lstinline!.then!} reactions are not called inline during \passthrough{\lstinline!.then!}; a pending fulfillment schedules work through host hooks described in 9.5. Promise states are not equivalent to whether the underlying host operation has been canceled.
+
+\begin{lstlisting}
+const order = [];
+const promise = Promise.resolve('ready');
+promise.then(() => order.push('then'));
+order.push('sync');
+await promise;
+console.assert(order[0] === 'sync');
+console.assert(order[1] === 'then');
+\end{lstlisting}
+
+\textbf{{[}HOST{]}} Browser microtask checkpoints, timers, input events, and Node-specific phases are host policy. Avoid claiming ECMA-262 specifies the full ordering between timer callbacks and I/O callbacks. \textbf{{[}MODEL{]}} Distinguish promise reaction jobs from event-loop phases; a diagram of one environment is not a universal language guarantee.
+
+\section{Generators and async iteration}\label{generators-and-async-iteration}
+
+\textbf{{[}SPEC{]}} Generators hold suspended execution states; \passthrough{\lstinline!yield!}, \passthrough{\lstinline!.next!}, \passthrough{\lstinline!.throw!}, and \passthrough{\lstinline!.return!} control reentry (15, 27). \passthrough{\lstinline!for...of!} and \passthrough{\lstinline!for await...of!} interact with iterator close semantics. ECMAScript 2025 Iterator helper objects compose iterator operations; downstream early termination can trigger upstream closure.
+
+\begin{lstlisting}
+function* ids() {
+  try { yield 1; yield 2; yield 3; }
+  finally { console.log('iterator cleanup'); }
+}
+for (const id of ids()) {
+  if (id === 1) break;  // executes generator's finally
+}
+\end{lstlisting}
+
+\textbf{{[}MODEL{]}} Diagram an iterator lifecycle with Created, Suspended, Executing, and Completed states; specify what happens when iteration throws or breaks. Avoid assuming all iterator adaptors behave like generators without inspection.
+
+\section{Agents, clusters, and shared memory}\label{agents-clusters-and-shared-memory}
+
+\textbf{{[}SPEC{]}} Agents and agent clusters appear in 9.6--9.8; shared memory and \passthrough{\lstinline!Atomics!} are defined in 25 and memory-model constraints in 29. A \emph{data race} concept is relevant to shared typed-array memory; not every concurrent access is automatically forbidden, but guarantees differ based on atomicity and ordering. Shared-memory programming should use explicit synchronization protocols.
+
+\begin{lstlisting}
+// Host is responsible for sharing buffer with a second agent.
+const shared = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT);
+const flags = new Int32Array(shared);
+Atomics.store(flags, 0, 1);
+console.assert(Atomics.load(flags, 0) === 1);
+\end{lstlisting}
+
+\textbf{{[}HOST{]}} Workers, shared-memory capability policy, posting messages, and OS thread realization are not fully defined by ECMA-262. \textbf{{[}MODEL{]}} For production shared-memory systems, state an invariant, a synchronization design, and a happens-before argument; test on multiple architectures.
+
+\section{Garbage collection, WeakRef, and finalization}\label{garbage-collection-weakref-and-finalization}
+
+\textbf{{[}SPEC{]}} \passthrough{\lstinline!WeakRef!} and \passthrough{\lstinline!FinalizationRegistry!} are for optional observation of reachability; their callbacks or dereferences cannot be used to demand deterministic cleanup. Clause 9.9 describes processing constraints, and clause 26 specifies the interfaces. \textbf{{[}MODEL{]}} Use explicit disposal or host-resource close methods for critical file handles, locks, or sensitive buffers, not finalizers.
+
+\section{Runtime incident-analysis playbook}\label{runtime-incident-analysis-playbook}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Reproduce:} record engine build, host, code source type (script/module), and flags.
+\item
+  \textbf{Classify:} parser/early error, reference resolution, object property operation, module linkage, promise job, or host I/O.
+\item
+  \textbf{Trace:} map each observable step to an abstract operation or named host hook.
+\item
+  \textbf{Probe:} create discriminating unit tests for alternate execution paths and error completions.
+\item
+  \textbf{Contain:} isolate changing global objects/prototypes, plugin hooks, and shared memory.
+\item
+  \textbf{Conclude:} separate a language-conformance issue from implementation bug, host policy, or application defect.
+\end{enumerate}
+
+\section{Review questions and architecture deliverables}\label{review-questions-and-architecture-deliverables}
+
+Explain the distinctions among environment, execution context, realm, job, agent, and host. Trace an async function that throws synchronously before its first \passthrough{\lstinline!await!}; describe the returned promise's rejection. Sketch module evaluation with a circular import and identify live bindings. Demonstrate a proxy trap violating an internal-method invariant. Specify atomic and nonatomic access paths for a shared flag.
+
+\textbf{Suggested deliverables:} execution-sequence diagram, module dependency graph with async edges, binding lifetime diagram, resource-closure test case, and race-analysis checklist.
+
+\section{Source basis}\label{source-basis}
+
+ECMA-262:2025, 16th edition, sections 5--10, 15--16, 25--29, Annex D (uploaded original). Concepts marked \textbf{{[}MODEL{]}} are explanatory and not claimed as required implementation architecture.
+
+\end{document}

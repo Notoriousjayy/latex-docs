@@ -1,0 +1,69 @@
+\documentclass[11pt,letterpaper]{article}
+\input{cmake-wasm-preamble.tex}
+\DocHeader{CMake Target Engineering}{SUBCMake Target Engineering}{1.0}
+\begin{document}
+\frontmatterdoc
+\section{Targets are the unit of engineering}
+Use \texttt{add\_library} for core code and \texttt{add\_executable} for deployment adapters. Prefer the target-scoped commands below over global flags.
+\begin{lstlisting}[language={}]
+target_include_directories(...)
+target_compile_features(...)
+target_compile_options(...)
+target_link_options(...)
+\end{lstlisting} \texttt{PUBLIC} requirements propagate to dependents; \texttt{PRIVATE} requirements remain on the owner; \texttt{INTERFACE} carries requirements without compiling source.
+
+\section{Reference build graph}
+\begin{lstlisting}[language={},caption={Target dependency topology}]
+portable_core [STATIC]         (platform-independent implementation)
+    ^           ^         ^
+    |           |         |
+portable_cli  portable_unit  portable_browser [Emscripten only]
+    |           |         |
+native/WASI  CTest/runner  .mjs + .wasm + web/client.mjs
+\end{lstlisting}
+The archive produced for \texttt{portable\_core} is \emph{not} portable binary code. Each toolchain must compile its own library objects. Exported alias \texttt{portable::core} prevents consumers from needing to know the physical static-library filename.
+
+\section{Source example: canonical CMake project}
+\lstinputlisting[language={},caption={Runnable reference build definition},basicstyle=\ttfamily\scriptsize]{../reference/CMakeLists.txt}
+
+\section{Target-based policy}
+\begin{enumerate}
+\item Declare language requirements at the target boundary (\texttt{cxx\_std\_17} in the reference).
+\item Attach exports and \texttt{--no-entry} to the browser adapter only.
+\item Set \texttt{.wasm} suffix for the WASI command targets explicitly; test actual output filenames.
+\item Enable CTest through \texttt{include(CTest)} and only register runnable tests when the relevant host interpreter is available.
+\item For imported dependencies, use \texttt{find\_package(... CONFIG REQUIRED)} and link imported targets; do not link host \texttt{.a} or \texttt{.so} files into a WASM configuration.
+\end{enumerate}
+
+\section{Dependency management choices}
+\noindent\begin{tabularx}{\linewidth}{p{0.23\linewidth}X X}
+\toprule Strategy & Good fit & Required controls \\ \midrule
+System package / \texttt{find\_package} & Controlled sysroot or native build image & Version range, target triple, exported targets, metadata snapshot \\
+\texttt{FetchContent} with commit & Small audited source dependency & Immutable commit, source hash or trusted upstream, dependency license review \\
+Package manager manifest & Many versioned external libraries & Lock/baseline, per-triplet artifacts, mirror, network policy \\
+Vendored source & Restricted/air-gapped products & Provenance, update procedure, license, patch ownership \\
+\bottomrule
+\end{tabularx}
+The optional \texttt{PORTABLE\_USE\_FMT} flag intentionally fails on missing \texttt{fmt 11} compatibility rather than quietly downloading dependencies during configuration. In a real project, build the third-party library once \emph{per target triple} and archive its SBOM and associated licenses.
+
+\section{Build interfaces and install policy}
+\begin{lstlisting}[language={},caption={Pattern for an installable core library}]
+include(GNUInstallDirs)
+install(TARGETS portable_core EXPORT PortableTargets
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(EXPORT PortableTargets NAMESPACE portable::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Portable)
+\end{lstlisting}
+This is an \emph{optional extension}; a consumable package also needs a generated \texttt{Config.cmake} and version file. Native and WASM packages must be published to separate target-specific registries or indexes.
+
+\section{Common failure modes}
+\begin{itemize}
+\item Host library found during cross-compile: set package root modes in toolchain and inspect imported target paths.
+\item Undefined symbols in browser glue: ensure the function has C linkage and an explicit supported export mechanism.
+\item CMake cache retains old toolchain: remove the build directory and reconfigure from the preset.
+\item Native-only API in domain core: introduce a port interface and a stub/fake test implementation.
+\end{itemize}
+\accept{An isolated clean build produces portable core, platform entrypoints, and test binaries without changing the shared source tree.}
+\sourceurl{https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html}
+\end{document}

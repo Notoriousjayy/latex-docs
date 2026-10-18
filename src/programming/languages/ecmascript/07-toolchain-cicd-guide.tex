@@ -1,0 +1,360 @@
+\documentclass[11pt,letterpaper]{article}
+% This source is intentionally restricted to pdfLaTeX.
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{textcomp}
+\usepackage{lmodern}
+\usepackage[margin=0.82in,top=0.94in,bottom=0.91in,headheight=18pt]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage[table]{xcolor}
+\definecolor{DeepNavy}{HTML}{14283F}
+\definecolor{Teal}{HTML}{0A747C}
+\definecolor{Gold}{HTML}{C78F36}
+\definecolor{Slate}{HTML}{536477}
+\definecolor{Pale}{HTML}{F4F7FA}
+\definecolor{CodeEdge}{HTML}{D4DFE9}
+\usepackage{microtype}
+\usepackage{parskip}
+\setlength{\parskip}{0.47em}
+\usepackage{titlesec}
+\titleformat{\section}{\normalfont\Large\bfseries\color{DeepNavy}}{\thesection}{0.62em}{}
+\titlespacing*{\section}{0pt}{2.0ex plus .7ex minus .2ex}{0.75ex}
+\titleformat{\subsection}{\normalfont\large\bfseries\color{Teal}}{\thesubsection}{0.6em}{}
+\usepackage{longtable,booktabs,array,calc}
+\renewcommand{\arraystretch}{1.22}
+\AtBeginEnvironment{longtable}{\small}
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+\usepackage{listings}
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\lstdefinestyle{suitecode}{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,breakatwhitespace=false,
+  columns=fullflexible,keepspaces=true,showstringspaces=false,
+  frame=single,rulecolor=\color{CodeEdge},
+  backgroundcolor=\color{Pale},
+  keywordstyle=\color{Teal}\bfseries,
+  commentstyle=\color{Slate}\itshape,
+  stringstyle=\color{DeepNavy},
+  xleftmargin=5pt,xrightmargin=5pt,
+  framexleftmargin=5pt,framexrightmargin=5pt,
+  aboveskip=0.85em,belowskip=0.95em,
+  tabsize=2
+}
+\lstset{style=suitecode}
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=1.6em,itemsep=2pt,topsep=3pt}
+\setlist[enumerate]{leftmargin=1.8em,itemsep=2pt,topsep=3pt}
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\newcommand{\passthrough}[1]{#1}
+\usepackage{xurl}
+\usepackage[colorlinks=true,linkcolor=Teal,urlcolor=Teal,citecolor=Teal,pdfborder={0 0 0}]{hyperref}
+\urlstyle{same}
+\usepackage{fancyhdr,lastpage}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize\sffamily\color{Slate} ECMA-262:2025 \textbullet{} Engineering Documentation}
+\fancyhead[R]{\footnotesize\sffamily\color{Slate} 16th Edition}
+\fancyfoot[L]{\footnotesize\sffamily\color{Slate} Independent technical companion}
+\fancyfoot[R]{\footnotesize\sffamily\color{Slate}\thepage\ / \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.35pt}
+\renewcommand{\footrulewidth}{0pt}
+\setlength{\emergencystretch}{3em}
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{2}
+\begin{document}
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{2.8cm}
+{\color{Gold}\rule{18mm}{3pt}}\par\vspace{18mm}
+{\sffamily\Large\bfseries\color{Teal} SOFTWARE ENGINEERING DOCUMENTATION SUITE}\par
+\vspace{8mm}
+{\sffamily\huge\bfseries\color{DeepNavy} ECMAScript 2025 }\par
+\vspace{4mm}
+{\sffamily\fontsize{24}{29}\selectfont\bfseries\color{DeepNavy} Toolchain and CI/CD Guide }\par
+\vspace{10mm}
+{\large\color{Slate} ESM, verification, security and release }\par
+\vspace{16mm}
+{\color{Teal}\rule{\textwidth}{0.8pt}}\par
+\vfill
+{\sffamily\color{Slate}\large ECMA-262:2025 \textbullet{} 16th Edition \textbullet{} June 2025}\par
+\vspace{3mm}
+{\sffamily\color{Slate} October 2026 \textbullet{} Document 7 of 8}\par
+\vspace{3mm}
+{\small\color{Slate} Original engineering companion. The uploaded ECMA-262:2025 specification remains the authoritative source.}\par
+\end{titlepage}
+\pagenumbering{arabic}
+\tableofcontents
+\clearpage
+\section{Toolchain architecture and ownership}\label{toolchain-architecture-and-ownership}
+
+This operational guide adds \emph{nonnormative} engineering procedures around an ECMAScript 2025 codebase. ECMA-262 specifies language syntax and semantics but not package managers, GitHub Actions, Node.js module resolution details, TypeScript, browser bundling, lint rules, SAST, SCA, or deployment controls. \textbf{{[}SPEC{]}} labels language clauses, \textbf{{[}HOST{]}} labels runtime behavior, and \textbf{{[}OPS{]}} labels implementation choices.
+
+\textbf{Target design:} ESM-first source; reproducible dependency graph; deterministic tests; static analysis; dependency and secret scanning; target-runtime compatibility jobs; artifact integrity and least-privilege publication.
+
+\section{Reference repository layout}\label{reference-repository-layout}
+
+\begin{lstlisting}
+project/
+  src/
+    index.mjs
+    domain/
+      validate.mjs
+  test/
+    validate.test.mjs
+  docs/
+    behavior-contract.md
+  eslint.config.mjs
+  package.json
+  package-lock.json
+  .github/workflows/verify.yml
+\end{lstlisting}
+
+\textbf{{[}OPS{]}} Use explicit artifact and dependency version pinning appropriate to security posture. Use one module convention within a package. Include a \passthrough{\lstinline!README!} specifying supported Node/browser engines and required ECMAScript 2025 features.
+
+\section{Package and engine configuration}\label{package-and-engine-configuration}
+
+\begin{lstlisting}
+{
+  "name": "ecmascript-2025-reference",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "node --test",
+    "check": "npm run lint && npm test"
+  },
+  "devDependencies": { "eslint": "^9.0.0" }
+}
+\end{lstlisting}
+
+\textbf{{[}HOST{]}} This version declaration is an example, not proof that every listed Node release implements all ECMAScript 2025 features. Validate actual API availability and semantics in the selected, supported runtime versions before setting engine range, and adopt an exact project policy for compatibility. A lockfile and \passthrough{\lstinline!npm ci!} require the host/npm toolchain, not ECMA-262.
+
+\section{Linting and static guardrails}\label{linting-and-static-guardrails}
+
+\begin{lstlisting}
+// eslint.config.mjs -- illustrative flat config
+export default [{
+  files: ['**/*.js', '**/*.mjs'],
+  languageOptions: { ecmaVersion: 2025, sourceType: 'module' },
+  rules: {
+    'no-eval': 'error',
+    'no-implied-eval': 'error',
+    'no-new-func': 'error',
+    'eqeqeq': ['error', 'always'],
+    'no-prototype-builtins': 'error',
+    'no-unsafe-finally': 'error',
+    'no-unreachable': 'error'
+  }
+}];
+\end{lstlisting}
+
+\textbf{{[}OPS{]}} Treat the example as a starting policy, not as the only valid configuration. ESLint's configured language version controls parsing expectations; it does not polyfill missing runtime features. Additional vulnerability detection should examine prototype pollution, dynamic regex, input-to-eval flows, SSRF, request smuggling in host libraries, and authorization logic according to real dataflow.
+
+\section{TypeScript interoperability}\label{typescript-interoperability}
+
+\textbf{{[}OPS{]}} TypeScript can improve static API contracts, but it is a separate language/toolchain. Its compiler \passthrough{\lstinline!target!} and \passthrough{\lstinline!lib!} settings govern emitted syntax and ambient declarations; neither ensures that an engine supplies a particular ECMAScript built-in. Prefer build-time type checking plus runtime validation at external ingress.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Dimension
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+TypeScript/compiler action
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Actual requirement
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Syntax & transpile unsupported syntax where possible & test emitted JS in target runtime \\
+Built-ins & select type declarations & feature support/polyfill where lawful \\
+Security & catch selected type errors & runtime validation, authorization, SAST \\
+Modules & emit ESM / map resolution & consistent package and host behavior \\
+\end{longtable}
+
+\textbf{{[}HOST{]}} Import attributes and JSON module loading are host-sensitive; test compiled and uncompiled programs instead of assuming a TypeScript configuration implies portable module resolution.
+
+\section{Unit and integration testing}\label{unit-and-integration-testing}
+
+\begin{lstlisting}
+// src/domain/validate.mjs
+export function safePort(value) {
+  if (!Number.isInteger(value) || value <= 0 || value > 65535)
+    throw new RangeError('invalid port');
+  return value;
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+// test/validate.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { safePort } from '../src/domain/validate.mjs';
+
+test('accepts valid port', () => assert.equal(safePort(443), 443));
+test('rejects out of range', () => {
+  assert.throws(() => safePort(65536), RangeError);
+});
+\end{lstlisting}
+
+\textbf{{[}OPS{]}} Run fast deterministic unit tests on every pull request; run differential/host integration suites for supported environments; execute targeted security and conformance tests on release candidates. Tests should assert \passthrough{\lstinline!Promise.try!}, Iterator helper, Set, regex escape, and Float16 behavior when these features form a product requirement.
+
+\section{CI pipeline: pull-request verification}\label{ci-pipeline-pull-request-verification}
+
+The following GitHub Actions workflow is an \textbf{illustrative template}, not a guarantee of support for all runners, actions, or dependencies at a future time. Review pinning policy, runner image changes, and action versions before production deployment.
+
+\begin{lstlisting}
+name: verify
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['24']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+\end{lstlisting}
+
+\textbf{{[}OPS{]}} In hardened production workflows pin third-party actions to reviewed immutable commit SHAs, document update ownership, use minimal default token permissions, avoid untrusted pull-request secrets, and retain evidence. This YAML only implements build, lint, and test; add separately governed CodeQL, dependency review, secret scanning, and provenance stages as applicable.
+
+\section{GitHub Advanced Security and analysis integration}\label{github-advanced-security-and-analysis-integration}
+
+\textbf{{[}OPS{]}} GHAS provides operational mechanisms outside ECMA-262. Configure code scanning with an appropriate supported JavaScript/TypeScript CodeQL pack and workflow, review high-impact dataflow alerts, enable secret scanning where licensed/supported, and evaluate dependency alerts and dependency review in the host repository. Preserve both \textbf{severity} and \textbf{exploitability evidence}; a theoretical language edge case is not proof of reachability.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Control
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Suggested pull-request gate
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Syntax/lint & ESLint results & fail for configured errors \\
+Tests & Node/browser unit results & fail on regressions \\
+SAST & CodeQL alert triage & block on organizational threshold \\
+Supply chain & lockfile, SCA, dependency review & block on policy-violating changes \\
+Secrets & scanning alerts, credential validation & revoke exposed live secrets \\
+Runtime support & feature matrix per engine & fail required unsupported features \\
+\end{longtable}
+
+\section{Dependency integrity and deployment}\label{dependency-integrity-and-deployment}
+
+\textbf{{[}OPS{]}} Require code owners for security-critical boundaries; review lockfile drift, transient install scripts, package provenance, signing and release artifacts, and privileges of postinstall/build tasks. Generate an SBOM if organization policy requires. Avoid dumping environment variables or credentials into builds/logs. Separate CI identity from deploy identity with narrowly scoped permissions and auditable approvals.
+
+\section{Compatibility and ECMAScript 2025 feature gates}\label{compatibility-and-ecmascript-2025-feature-gates}
+
+\begin{lstlisting}
+export function inspectES2025() {
+  return {
+    iterator: typeof Iterator === 'function' &&
+      typeof Iterator.from === 'function',
+    setAlgebra: typeof Set.prototype.intersection === 'function',
+    regexpEscape: typeof RegExp.escape === 'function',
+    promiseTry: typeof Promise.try === 'function',
+    float16: typeof Float16Array === 'function' &&
+      typeof Math.f16round === 'function',
+  };
+}
+\end{lstlisting}
+
+\textbf{{[}OPS{]}} Feature detection is only a readiness screen. Execute behavior tests as well. JSON import attributes cannot be safely verified solely by referencing a property; use a separate module fixture in each target host. Scoped regex modifiers require syntax parsing tests.
+
+\section{Incident response and rollback}\label{incident-response-and-rollback}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Freeze runtime version, dependency tree, and deployed commit for a reproducible incident snapshot.
+\item
+  Determine whether the defect is language behavior, host semantics, build transform, dependency logic, or policy configuration.
+\item
+  Create a minimized test to reproduce and preserve security impact without exposing sensitive payloads.
+\item
+  Remediate with regression coverage; select rolling, canary, or feature-flag rollout appropriate to risk.
+\item
+  Roll back affected artifact and rotate compromised credentials if indicated.
+\item
+  Capture an exception record for any temporarily waived gate with owner, deadline, compensating control, and evidence.
+\end{enumerate}
+
+\section{Delivery scorecard}\label{delivery-scorecard}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Control family
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Required artifact
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Completion condition
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Versioning & engines policy + locked dependencies & reproducible clean install \\
+Static quality & ESLint configuration & all enforced rules pass \\
+Language correctness & unit + feature tests & ECMA-262-relevant behavior passes \\
+Host portability & compatibility matrix & each supported host evaluated \\
+Security & SAST, SCA, secret policies & risk-based gates established \\
+Release & artifact provenance and rollback playbook & release can be audited and recovered \\
+\end{longtable}
+
+\section{Operational checklist}\label{operational-checklist}
+
+\begin{itemize}
+\tightlist
+\item[$\square$]
+  Distinguish language edition from host engine version.
+\item[$\square$]
+  Verify module format, imports, import attributes, and JSON loading per host.
+\item[$\square$]
+  Pin package dependencies and reviewed action SHAs where required.
+\item[$\square$]
+  Gate pull requests with tests, lint, security scanning, and policy reviews.
+\item[$\square$]
+  Keep organizational credentials out of untrusted pull-request jobs.
+\item[$\square$]
+  Preserve immutable logs/evidence and make rollback executable.
+\item[$\square$]
+  Revisit 2025 built-in feature support on every target runtime upgrade.
+\end{itemize}
+
+\section{Sources and external references}\label{sources-and-external-references}
+
+\textbf{Normative language baseline:} ECMA-262:2025, clauses 2, 12--16, 17--29, Annex D (user-supplied original). \textbf{Nonnormative operational documentation:} Node test runner https://nodejs.org/api/test.html ; ESLint flat configuration https://eslint.org/docs/latest/use/configure/configuration-files ; GitHub Actions https://docs.github.com/actions ; CodeQL https://codeql.github.com/docs/ ; GitHub Advanced Security https://docs.github.com/en/code-security . Verify exact current product support before operational use.
+
+\end{document}

@@ -1,0 +1,303 @@
+\documentclass[11pt]{article}
+\newcommand{\DocNumber}{VOLUME 01}
+\newcommand{\DocTitle}{C++23 Language Technical Reference}
+\newcommand{\DocSubtitle}{Core-language semantics, clauses 1--15}
+\newcommand{\DocSummary}{A concept-first technical reference with stable-name locators, diagnostic categories, and original code examples.}
+\input{cpp23-common-preamble.tex}
+\begin{document}
+\docfront
+\section{Reader contract and semantic status}
+This is a clause-indexed interpretive reference for the core language, not a substitute for exact grammar, diagnostic obligations, or implementation documentation. Terms such as well-formed, ill-formed, undefined behavior, unspecified behavior, and implementation-defined behavior must not be conflated.
+
+\small
+\begin{longtable}{@{}p{.18\linewidth}p{.40\linewidth}p{.34\linewidth}@{}}
+\toprule
+\textbf{Classification} & \textbf{Meaning for analysis} & \textbf{Verification route}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Classification} & \textbf{Meaning for analysis} & \textbf{Verification route}\\
+\midrule
+\endhead
+Ill-formed, diagnosable & A conforming implementation must issue at least one diagnostic for a diagnosable violation. & 4.1.1; compiler diagnostics\\
+\addlinespace[2pt]
+Ill-formed, no diagnostic required & No reliable compiler rejection obligation; avoid constructions dependent on such ambiguities. & 4.1.1; relevant clause\\
+\addlinespace[2pt]
+Undefined behavior & The standard imposes no behavioral requirements for the affected execution. & Clause 3; 6.9; specific operation\\
+\addlinespace[2pt]
+Unspecified behavior & One of the allowed possibilities may occur, and which one need not be documented. & Clause 3; specific operation\\
+\addlinespace[2pt]
+Implementation-defined behavior & Choice must be documented by the implementation. & 4.1.2; implementation manual\\
+\addlinespace[2pt]
+Conditionally-supported & An implementation may elect not to support the construct; absence must be documented. & 4.1.1\\
+\addlinespace[2pt]
+\bottomrule
+\end{longtable}
+\normalsize
+\section{Translation units, preprocessing and program structure}
+\anchorref{4; 5.1--5.4; 15}
+One source file is not the whole program. Translation phases, preprocessing, module/header importation, linkage, and the one-definition rule collectively determine program meaning.
+
+\standard{The standard defines translation, linkage and diagnostic constraints independently of any particular compiler invocation. Header names and preprocessing tokens do not map one-to-one onto a build system.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Model translation units explicitly; document macro-visible interfaces.
+\item Prefer intentional header or module interfaces over broad transitive inclusion.
+\item Review ODR-sensitive inline definitions across configurations.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+// api.hpp
+#pragma once
+int normalize(int value);
+// api.cpp
+#include "api.hpp"
+int normalize(int value) { return value < 0 ? 0 : value; }
+\end{lstlisting}
+\practice{Treat build reproducibility, generated headers and feature flags as part of the semantic input.}
+\takeaway{How could two compilation configurations silently violate the one-definition rule?}
+\section{Names, scope, lookup and linkage}
+\anchorref{6.2--6.6 [basic.def] [basic.scope] [basic.lookup]}
+A declaration introduces or redeclares entities; lookup determines which declarations are visible, and linkage determines whether names can denote the same entity across translation units.
+
+\standard{Lookup, scope, overload sets, and the one-definition rule interact. Argument-dependent lookup may consider associated namespaces and classes beyond ordinary unqualified lookup.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Use explicit namespaces to represent ownership.
+\item Avoid accidental ADL via unconstrained generic operator overloads.
+\item Constrain public declarations and test multiple translation units.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+namespace domain {
+struct Key { int value; };
+constexpr bool operator==(Key a, Key b) { return a.value == b.value; }
+}
+static_assert(domain::Key{3} == domain::Key{3});
+\end{lstlisting}
+\takeaway{When does unqualified lookup differ from argument-dependent lookup?}
+\section{Object model, storage duration and lifetime}
+\anchorref{6.7 [basic.memobj] [basic.life]}
+An object has a type, storage, and a lifetime. Acquiring storage alone does not license arbitrary typed access; lifetime start and end rules, union active members, and transparent replacement require care.
+
+\standard{Lifetime, pointer validity, dynamic storage duration, and object representation are separate normative concepts. Access outside a permitted lifetime can have undefined behavior.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Make ownership and borrowing explicit at API boundaries.
+\item Prefer automatic lifetime and standard containers over untyped storage.
+\item Use special lifetime-management facilities only where their preconditions are met.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <memory>
+struct Record { int id; };
+std::unique_ptr<Record> make_record(int id) {
+    return std::make_unique<Record>(Record{id});
+}
+\end{lstlisting}
+\takeaway{Why is a pointer value alone insufficient evidence that its referent is alive?}
+\section{Types, cv qualification, pointers and references}
+\anchorref{6.8; 7.3; 9.3}
+Fundamental and compound types participate in conversions and overload resolution. A reference is not a general-purpose nullable owner, and top-level const differs from const of a referenced object.
+
+\standard{Type identity, cv qualification, reference binding, and conversions are governed by distinct rules; volatile is not a threading synchronization primitive.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Use const to express non-mutation of the observable interface.
+\item Use a pointer when absence is allowed; use references for required objects.
+\item Make signed/unsigned crossings reviewable.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <cstddef>
+void inspect(const int& value);
+void maybe_inspect(const int* value) {
+    if (value != nullptr) inspect(*value);
+}
+\end{lstlisting}
+\takeaway{Can a const-qualified pointer modify the object through a different alias?}
+\section{Expressions, value categories and sequencing}
+\anchorref{7.1--7.6; 6.9}
+Expressions have types and value categories; conversions, temporary materialization, overloads and sequencing jointly determine evaluations and lifetime.
+
+\standard{Not all operand evaluations are sequenced left-to-right. Separate indeterminately sequenced operations from unsequenced conflicting modifications; side-effect freedom is often the simplest invariant.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Do not rely on argument evaluation order without a guarantee.
+\item Use named intermediates at boundary checks and state mutations.
+\item Audit overloaded operators for hidden side effects.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <vector>
+int next_value();
+void consume(int, int);
+void safe_call() {
+    const int first = next_value();
+    const int second = next_value();
+    consume(first, second); // explicit call order
+}
+\end{lstlisting}
+\takeaway{What exactly does the comma operator guarantee that a comma separating arguments does not?}
+\section{Constant evaluation and compile-time constraints}
+\anchorref{7.7; 9.2.6 [dcl.constexpr]}
+Constant expressions can reject invalid computations during translation; constexpr, consteval, and constinit have different roles.
+
+\standard{Constant-evaluation rules restrict permissible operations and observable outcomes; constinit requires static/thread storage initialization to be static but does not imply constness.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Use static\_assert for numeric and type invariants.
+\item Keep consteval functions small and diagnostic-oriented.
+\item Reserve constinit for initialization-order guarantees where appropriate.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+consteval int square(int x) { return x * x; }
+constexpr int capacity = square(8);
+static_assert(capacity == 64);
+constinit int global_count = 0;
+\end{lstlisting}
+\takeaway{Why is a constexpr variable not interchangeable with a constinit variable?}
+\section{Declarations, initialization and structured bindings}
+\anchorref{9 [dcl] [dcl.init]}
+Initialization syntax can select different constructors and narrow conversions differently. Structured bindings introduce names whose reference and lifetime rules depend on their initializer.
+
+\standard{Copy-, direct-, and list-initialization are not semantically interchangeable; narrowing restrictions apply to list-initialization.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Prefer braces when their initializer-list semantics are intended.
+\item Audit implicit conversion constructors and overloaded initializer-list constructors.
+\item Use explicit references when mutation of a bound object matters.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <utility>
+struct Bounds { int lo; int hi; };
+constexpr Bounds b{2, 9};
+static_assert(b.lo < b.hi);
+auto [first, second] = std::pair{1, 2};
+\end{lstlisting}
+\takeaway{When does using braces choose a different overload than parentheses?}
+\section{Functions, overload resolution and conversions}
+\anchorref{9.5; 12}
+Function viability, conversions, constraints, templates, and partial ordering drive call resolution. Default arguments and virtual dispatch do not obey the same selection model.
+
+\standard{Overload resolution defines candidate/viable/best functions. A change in conversion ranking can change a previously valid call even when all overloads remain available.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Test overload resolution using static assertions and compile-negative cases.
+\item Avoid large implicit-conversion surfaces in public APIs.
+\item Define exception guarantees at function boundaries.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+void emit(int);
+void emit(double);
+void caller() {
+    emit(12);    // exact match
+    emit(12.0);  // exact match
+}
+\end{lstlisting}
+\takeaway{Why can adding a new overload make a previously well-formed call ambiguous?}
+\section{Class invariants, construction and inheritance}
+\anchorref{11}
+Classes support data encapsulation, special member functions, inheritance, access control and object initialization. Prefer invariants rather than merely grouping mutable members.
+
+\standard{Base/derived construction and destruction have specified ordering; virtual dispatch during construction or destruction has phase-specific behavior.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Represent ownership with members that already express it.
+\item Use override and final where they clarify interfaces.
+\item Maintain invariants across construction, move, assignment and destruction.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <vector>
+class Buffer {
+    std::vector<unsigned char> bytes_;
+public:
+    explicit Buffer(std::size_t n) : bytes_(n) {}
+    std::size_t size() const noexcept { return bytes_.size(); }
+};
+\end{lstlisting}
+\takeaway{What invariant must hold after a move operation on your class?}
+\section{Templates, constraints and two-phase lookup}
+\anchorref{13; 18 [temp] [temp.constr]}
+Templates are declarations of families of entities. Deduction, instantiation, name resolution and constraints must be analyzed separately.
+
+\standard{A satisfied syntactic concept is not necessarily modeled if semantic requirements are violated. Some template errors are ill-formed with no diagnostic required.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Name public concepts after semantic capabilities rather than syntax alone.
+\item Test representative types, including intentionally invalid ones.
+\item Inspect dependency of names used in templates.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <concepts>
+template<std::integral T>
+constexpr T clamp_nonnegative(T x) { return x < 0 ? T{0} : x; }
+static_assert(clamp_nonnegative(-4) == 0);
+\end{lstlisting}
+\takeaway{What does a requires-expression check, and what does it not prove?}
+\section{Modules and interface reachability}
+\anchorref{10 [module]}
+Module units, named modules, imports, exports, global module fragments and reachability establish interfaces beyond the conventional header model.
+
+\standard{The grammar and visibility rules are normative; compiler build ordering, BMI artifacts and command lines are implementation-specific.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Establish a dependency graph and build exported interfaces first.
+\item Document macro-to-module migration concerns.
+\item Use feature-gated module trials until the selected vendor is confirmed.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+// math.ixx (illustrative module interface)
+export module math;
+export int double_value(int x) { return 2 * x; }
+// consumer.cpp
+// import math;
+// int main() { return double_value(5) != 10; }
+\end{lstlisting}
+\takeaway{Why can exporting a declaration differ from making it reachable?}
+\section{Lambdas, explicit object parameters and callable objects}
+\anchorref{7.5.5; 9.3.4.6}
+C++23 supports an explicit object parameter for suitable non-static member functions, allowing generic forms of the object argument. Lambdas capture by value/reference subject to lifetime and mutability constraints.
+
+\standard{Capture initialization, closure lifetime, and explicit-object syntax are governed by the core language; an explicit object parameter is not an implicit this pointer.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Prefer value capture for detached asynchronous tasks, after considering object cost.
+\item Avoid capturing temporaries by reference when callbacks may outlive them.
+\item Use explicit-object functions when they simplify cv/ref overload duplication.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+struct Counter {
+    int value{};
+    constexpr int read(this const Counter& self) { return self.value; }
+};
+static_assert(Counter{7}.read() == 7);
+\end{lstlisting}
+\takeaway{Which compiler feature test should you evaluate before deploying this syntax?}
+\section{Exceptions, unwinding and noexcept}
+\anchorref{14}
+Exception propagation interacts with destructors, construction, exception specifications and the termination model.
+
+\standard{An exception leaving a noexcept(true) function causes termination. Exception safety is a library/client design property, not a guarantee inferred from noexcept on every operation.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Use RAII for cleanup on every exit path.
+\item Specify basic or strong exception guarantees where needed.
+\item Avoid exceptions escaping destructors during unwinding.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+#include <mutex>
+void update(std::mutex& mx, int& shared) {
+    std::lock_guard<std::mutex> lk{mx};
+    ++shared; // lock released on normal and exceptional exit
+}
+\end{lstlisting}
+\takeaway{Why is a noexcept annotation on a function not equivalent to a proof of exception safety?}
+\section{Coroutines and suspension-point ownership}
+\anchorref{9.5.4; 17.12; 26.8}
+Coroutines transform control flow around promise objects, coroutine state and suspension. Library generators are one consumer of this core facility.
+
+\standard{The coroutine machinery and awaitable protocol are specified, but the safety of references stored across suspension points depends on user code and lifetime.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Treat each suspend point as a potential reentrancy and lifetime boundary.
+\item Avoid retaining borrowed stack references across independently scheduled operations.
+\item Test cancellation/destruction at every suspension state.
+\end{itemize}
+\begin{lstlisting}[language=C++]
+// Coroutine lifetime checklist (pseudocode):
+// 1. Who owns the coroutine handle/frame?
+// 2. Does each referenced object outlive every suspension?
+// 3. What destroys the frame on success, error, and cancellation?
+\end{lstlisting}
+\takeaway{What state survives suspension and who releases it?}
+\section{Core-language review checklist}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item Identify lifetime owner, storage duration and aliasing assumptions for each exported API.
+\item Trace each template error to substitution, viability or a hard diagnostic.
+\item Review the same program across multiple translation units and optimization modes.
+\item Record which properties are guaranteed, implementation-defined, unspecified or outside the standard.
+\end{itemize}
+\docend
+\end{document}

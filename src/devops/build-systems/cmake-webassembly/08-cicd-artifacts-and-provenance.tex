@@ -1,0 +1,55 @@
+\documentclass[11pt,letterpaper]{article}
+\input{cmake-wasm-preamble.tex}
+\DocHeader{DevSecOps and CI/CD Engineering}{SUBDevSecOps and CI/CD Engineering}{1.0}
+\begin{document}
+\frontmatterdoc
+\section{Workflow topology}
+The build matrix runs native, Emscripten, and WASI Preview 1 in independent jobs with separate configure directories. Each job executes registered tests, inventories expected assets, rejects missing WebAssembly binaries, packages version-specific assets, and uploads an artifact. On a trusted \texttt{main} push, a separate privileged job downloads generated archives and issues provenance attestations.
+
+\section{GitHub Actions reference workflow}
+\lstinputlisting[language={},basicstyle=\ttfamily\scriptsize,caption={Build/test/package plus trusted-release provenance}]{../reference/.github/workflows/build-matrix.yml}
+
+\section{Artifact integrity tiers}
+\begin{enumerate}
+\item \textbf{Format verification:} check WASM binary magic, expected adapter files, and nonempty sizes. This does not prove runtime compatibility.
+\item \textbf{Cryptographic digest:} compute SHA-256 on bytes and publish a manifest. The verifier must receive expected hashes through a trusted channel.
+\item \textbf{Attested provenance:} sign statements binding subject digest to trusted workflow/commit context. Verify the \emph{identity} and signature, not only signature validity.
+\item \textbf{Deployment authorization:} require trusted branch/tag, approvals, complete tests, policy review, and artifact immutability before promotion.
+\end{enumerate}
+\lstinputlisting[language=Python,basicstyle=\ttfamily\scriptsize,caption={Artifact checks and checksum manifest generator}]{../reference/scripts/verify_artifacts.py}
+
+\section{SBOM and vulnerability posture}
+Generate a per-target SBOM (e.g., SPDX or CycloneDX) capturing the core package, statically linked dependencies, Emscripten/WASI sysroot libraries, build tools, and any JavaScript packages. Document which entries are runtime components versus build-only dependencies. Enrich CVE/GHSA findings with exploitability context, reachable imports/exports, and known-fixed version information. A native SBOM does not automatically describe a WASI or Emscripten artifact.
+
+\section{Supply-chain threat controls}
+\noindent\begin{tabularx}{\linewidth}{p{0.24\linewidth}X}
+\toprule Threat & Required mitigation \\ \midrule
+Untrusted pull request & Read-only build token; release attestation only on trusted branch \\
+Compromised action tag & Pin full reviewed Git commit SHA; audit update PRs \\
+Package substitution & Use trusted registry and verify checksum/signature \\
+Poisoned cache & Segregate caches by SDK/profile; never trust unreviewed write-access cache \\
+Tampered artifact & Compare trusted digest and signed provenance, then deploy exact asset \\
+Version-skewed web bundle & Pair module and JS glue in the same signed release manifest \\
+\bottomrule
+\end{tabularx}
+
+\section{Artifact verification operator procedure}
+\begin{lstlisting}[language=bash,caption={Illustrative post-download checks}]
+sha256sum -c SHA256SUMS.txt  # if trusted sums are distributed
+# Replace ORG/REPO with your actual authorized provenance identity.
+gh attestation verify release-assets/package-native.tar.gz -R ORG/REPO
+\end{lstlisting}
+The reference produces \texttt{SHA256SUMS.json}; the textual \texttt{SHA256SUMS.txt} above is an \emph{optional independent release format}, not produced by the supplied script. Verify attestation issuer/workflow identity and repository policy in addition to the digest. Private repository support depends on the GitHub plan.
+
+\section{Hardening backlog before production}
+\begin{itemize}
+\item Pin all GitHub Actions references to full-length commit SHAs; replace floating tags in the example.
+\item Pin emsdk installer commit and download checksums; the sample pins the SDK release but not installer bytes.
+\item Add actual browser E2E automation and component-model jobs if those are release targets.
+\item Add policy-as-code to block incomplete test matrices, missing SBOM, and unresolved high-impact security findings.
+\item Release through protected tags/environments, with signed deployment records and rollback rehearsals.
+\end{itemize}
+\accept{Every deployed asset has a verified digest, provenance statement, SBOM, test evidence, and a rollback reference.}
+\sourceurl{https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations}
+\sourceurl{https://github.com/actions/attest}
+\end{document}

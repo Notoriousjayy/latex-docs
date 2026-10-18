@@ -1,0 +1,409 @@
+\documentclass[10pt,letterpaper]{article}
+\input{misra-c-style.tex}
+\title{\vspace{-2.3em}\color{DeepNavy}\Huge\bfseries C Code Pattern Atlas\\[0.45em]\large\normalfont\color{Teal} Problematic and preferred patterns with verification exercises}
+\author{Independent Software Engineering Reference Series}
+\date{Edition 1.0 \quad | \quad October 2026}
+\begin{document}
+\maketitle
+\vspace{-0.4em}
+\begin{center}\color{Slate}\rule{0.83\linewidth}{0.4pt}\end{center}
+\DocNotes
+\tableofcontents
+\newpage
+
+\section{Reading and validating the examples}
+Each pair isolates a teaching issue. ``Problematic'' indicates a defect or risk with respect to the cited guideline; it does not assert the snippet violates \emph{only} that guideline. ``Preferred'' illustrates one aspect of a safer pattern but is not a complete MISRA-compliant program. Supporting configuration, declarations, project context, and all other applicable guidelines still require review. Some bad examples intentionally exhibit undefined behavior and must \textbf{never} be executed in production.
+\subsection{Unsigned literal intent}
+\TrainingTag{Cross-reference: Rule 7.2}
+\subsubsection*{Problematic}
+\begin{lstlisting}[style=engineerc]
+#include <stdint.h>
+uint32_t mask = 0x80000000; /* type depends on model */
+\end{lstlisting}
+\subsubsection*{Preferred pattern}
+\begin{lstlisting}[style=engineerc]
+#include <stdint.h>
+uint32_t mask = UINT32_C(0x80000000);
+\end{lstlisting}
+\textbf{Engineering reasoning.} Integer literal type depends on suffix and target integer widths. The fixed-width macro makes the intended integer type visible; check that the macro invocation meets its own constraints.
+
+\textbf{Verification exercise.} Compile under the target ABI and inspect the diagnostic mappings for Rule 7.2 and Rule 7.5.
+
+\subsection{Automatic storage initialization}
+\TrainingTag{Cross-reference: Rule 9.1}
+\subsubsection*{Problematic}
+\begin{lstlisting}[style=engineerc]
+uint16_t scale(uint16_t input)
+{
+    uint16_t factor;
+    if (input > 10U) { factor = 2U; }
+    return (uint16_t)(input * factor); /* may be unset */
+}
+\end{lstlisting}
+\subsubsection*{Preferred pattern}
+\begin{lstlisting}[style=engineerc]
+uint16_t scale(uint16_t input)
+{
+    uint16_t factor = 1U;
+    if (input > 10U) { factor = 2U; }
+    return (uint16_t)(input * factor);
+}
+\end{lstlisting}
+\textbf{Engineering reasoning.} The second version initializes the local on every control-flow path. Product requirements must still bound the multiplication result and justify the narrowing conversion.
+
+\textbf{Verification exercise.} Add zero, 10, 11 and maximum-input tests; statically analyze every path.
+
+\subsection{Narrowing essential types}
+\TrainingTag{Cross-reference: Rule 10.3; Rule 10.8}
+\subsubsection*{Problematic}
+\begin{lstlisting}[style=engineerc]
+uint32_t sensor = 70000U;
+uint16_t sample = sensor; /* narrowing */
+\end{lstlisting}
+\subsubsection*{Preferred pattern}
+\begin{lstlisting}[style=engineerc]
+uint32_t sensor = 70000U;
+uint16_t sample = 0U;
+if (sensor <= UINT16_MAX)
+{
+    sample = (uint16_t)sensor;
+}
+else
+{
+    /* reject sample and report range error */
+}
+\end{lstlisting}
+\textbf{Engineering reasoning.} An explicit guard plus intentional cast makes the range assumption auditable, but the final policy for rejecting values belongs to the function contract.
+
+\textbf{Verification exercise.} Prove the guard dominates the cast and test both sides of UINT16\_MAX.
+
+\subsection{Pointee qualifiers}
+\TrainingTag{Cross-reference: Rule 11.8}
+\subsubsection*{Problematic}
+\begin{lstlisting}[style=engineerc]
+void update(const uint32_t *register_value)
+{
+    uint32_t *p = (uint32_t *)register_value;
+    *p = 3U;
+}
+\end{lstlisting}
+\subsubsection*{Preferred pattern}
+\begin{lstlisting}[style=engineerc]
+uint32_t read_value(const uint32_t *register_value)
+{
+    return *register_value; /* read-only contract */
+}
+\end{lstlisting}
+\textbf{Engineering reasoning.} Casting away const erases the caller-visible immutability guarantee. If a device register is writable, describe that capability directly in its interface instead.
+
+\textbf{Verification exercise.} Search for casts that remove const, volatile or atomic qualifiers.
+
+\subsection{Array indexing and pointer bounds}
+\TrainingTag{Cross-reference: Rule 18.1; Dir 4.1}
+\subsubsection*{Problematic}
+\begin{lstlisting}[style=engineerc]
+uint8_t read_at(const uint8_t *data, size_t index)
+{
+    return data[index]; /* caller supplied no length */
+}
+\end{lstlisting}
+\subsubsection*{Preferred pattern}
+\begin{lstlisting}[style=engineerc]
+bool read_at(const uint8_t *data, size_t n,
+             size_t index, uint8_t *out)
+{
+    bool ok = false;
+    if ((data != NULL) && (out != NULL) && (index < n))
+    {
+        *out = data[index];
+        ok = true;
+    }
+    return ok;
+}
+\end{lstlisting}
+\textbf{Engineering reasoning.} A bounds argument plus validation keeps access within the declared valid extent if the caller provides an accurate buffer length. The contract still requires proof that n is valid for data.
+
+\textbf{Verification exercise.} Try n=0, index=n-1 and index=n; add static assumptions for pointer provenance.
+
+\subsection{Order-dependent expression effects}
+\TrainingTag{Cross-reference: Rule 13.2; Rule 13.3}
+\subsubsection*{Problematic}
+\begin{lstlisting}[style=engineerc]
+uint32_t i = 1U;
+uint32_t x = i++ + i; /* unsequenced modification/read */
+\end{lstlisting}
+\subsubsection*{Preferred pattern}
+\begin{lstlisting}[style=engineerc]
+uint32_t i = 1U;
+uint32_t before = i;
+i = i + 1U;
+uint32_t x = before + i;
+\end{lstlisting}
+\textbf{Engineering reasoning.} Separating state changes from value calculations makes sequencing and intent explicit. Check overflow bounds on the increment separately.
+
+\textbf{Verification exercise.} Review each increment or decrement for unrelated reads or effects in the same full expression.
+
+\subsection{Logical short-circuit with side effect}
+\TrainingTag{Cross-reference: Rule 13.5}
+\subsubsection*{Problematic}
+\begin{lstlisting}[style=engineerc]
+bool permit(bool ready)
+{
+    return ready && clear_fault_flag(); /* mutates state */
+}
+\end{lstlisting}
+\subsubsection*{Preferred pattern}
+\begin{lstlisting}[style=engineerc]
+bool permit(bool ready)
+{
+    bool cleared = false;
+    if (ready)
+    {
+        cleared = clear_fault_flag();
+    }
+    return cleared;
+}
+\end{lstlisting}
+\textbf{Engineering reasoning.} Mutation on the right side of a short-circuit operator is hard to reason about. Explicit control flow expresses when the mutation is intended.
+
+\textbf{Verification exercise.} Add a test that the fault-clear function is not invoked when ready is false.
+
+\subsection{Boolean control expression}
+\TrainingTag{Cross-reference: Rule 14.4}
+\subsubsection*{Problematic}
+\begin{lstlisting}[style=engineerc]
+uint32_t alarms = get_alarm_count();
+if (alarms) { activate_buzzer(); }
+\end{lstlisting}
+\subsubsection*{Preferred pattern}
+\begin{lstlisting}[style=engineerc]
+uint32_t alarms = get_alarm_count();
+if (alarms != 0U) { activate_buzzer(); }
+\end{lstlisting}
+\textbf{Engineering reasoning.} Make the predicate evaluate to an essentially Boolean value rather than relying on integer truthiness.
+
+\textbf{Verification exercise.} Flag bare integer predicates and ensure comparison types agree.
+
+\subsection{Switch fallback}
+\TrainingTag{Cross-reference: Rule 16.4; Rule 16.3}
+\subsubsection*{Problematic}
+\begin{lstlisting}[style=engineerc]
+switch (mode)
+{
+    case MODE_OFF: stop_motor(); break;
+    case MODE_ON:  start_motor(); break;
+}
+\end{lstlisting}
+\subsubsection*{Preferred pattern}
+\begin{lstlisting}[style=engineerc]
+switch (mode)
+{
+    case MODE_OFF: stop_motor(); break;
+    case MODE_ON:  start_motor(); break;
+    default:       enter_safe_state(); break;
+}
+\end{lstlisting}
+\textbf{Engineering reasoning.} The explicit default makes out-of-range values a deliberate safety case. Also check switch structure, clauses and type constraints.
+
+\textbf{Verification exercise.} Test a corrupted mode value and prove the safe-state branch is reached.
+
+\subsection{Error return handling}
+\TrainingTag{Cross-reference: Dir 4.7; Rule 17.7}
+\subsubsection*{Problematic}
+\begin{lstlisting}[style=engineerc]
+(void)driver_write(frame); /* status discarded */
+\end{lstlisting}
+\subsubsection*{Preferred pattern}
+\begin{lstlisting}[style=engineerc]
+driver_status_t status = driver_write(frame);
+if (status != DRIVER_OK)
+{
+    record_driver_failure(status);
+    enter_safe_state();
+}
+\end{lstlisting}
+\textbf{Engineering reasoning.} Casting a meaningful status to void does not satisfy the directive to check error information. Exact handling must be established by the API contract.
+
+\textbf{Verification exercise.} Fault-inject all documented return statuses and assert error recovery.
+
+\subsection{Dynamic allocation policy}
+\TrainingTag{Cross-reference: Dir 4.12; Rule 21.3}
+\subsubsection*{Problematic}
+\begin{lstlisting}[style=engineerc]
+uint8_t *packet = malloc(packet_length);
+/* allocation and lifetime are dynamic */
+\end{lstlisting}
+\subsubsection*{Preferred pattern}
+\begin{lstlisting}[style=engineerc]
+#define PACKET_CAPACITY (256U)
+static uint8_t packet[PACKET_CAPACITY];
+/* validate packet_length <= PACKET_CAPACITY before use */
+\end{lstlisting}
+\textbf{Engineering reasoning.} A project-controlled bounded storage allocation avoids dependence on heap exhaustion and fragmentation; static storage must still be concurrency-safe and sized correctly.
+
+\textbf{Verification exercise.} Verify there are no calls to the prohibited library allocators and that capacity checks precede reads/writes.
+
+\subsection{Macro parameter precedence}
+\TrainingTag{Cross-reference: Rule 20.7; Dir 4.9}
+\subsubsection*{Problematic}
+\begin{lstlisting}[style=engineerc]
+#define DOUBLE_SUM(x) 2U * x
+uint32_t a = DOUBLE_SUM(3U + 1U);
+\end{lstlisting}
+\subsubsection*{Preferred pattern}
+\begin{lstlisting}[style=engineerc]
+static inline uint32_t double_value(uint32_t x)
+{
+    return x * 2U;
+}
+uint32_t a = double_value(3U + 1U);
+\end{lstlisting}
+\textbf{Engineering reasoning.} Functions provide type-checked argument evaluation and a simpler review surface. The expression still needs a documented numeric range.
+
+\textbf{Verification exercise.} Expand the original macro and inspect the actual precedence; audit overflow contracts.
+
+\subsection{Public linkage discipline}
+\TrainingTag{Cross-reference: Rule 8.4; Rule 8.8}
+\subsubsection*{Problematic}
+\begin{lstlisting}[style=engineerc]
+int32_t calibration_count = 0; /* global by default */
+\end{lstlisting}
+\subsubsection*{Preferred pattern}
+\begin{lstlisting}[style=engineerc]
+/* Internal module state */
+static int32_t calibration_count = 0;
+/* Public definitions belong behind an external declaration. */
+\end{lstlisting}
+\textbf{Engineering reasoning.} Limit linkage to the smallest necessary scope and ensure any external definition has a compatible visible declaration.
+
+\textbf{Verification exercise.} Inspect the link map and symbol table; compare external declarations across translation units.
+
+\subsection{String parsing and bounds}
+\TrainingTag{Cross-reference: Dir 4.14; Rule 21.17}
+\subsubsection*{Problematic}
+\begin{lstlisting}[style=engineerc]
+void receive(const char *incoming)
+{
+    char buffer[8];
+    strcpy(buffer, incoming); /* no length proof */
+}
+\end{lstlisting}
+\subsubsection*{Preferred pattern}
+\begin{lstlisting}[style=engineerc]
+bool receive(const char *incoming, size_t n)
+{
+    bool ok = false;
+    static char buffer[8];
+    if ((incoming != NULL) && (n < sizeof buffer))
+    {
+        for (size_t i = 0U; i < n; ++i)
+        {
+            buffer[i] = incoming[i];
+        }
+        buffer[n] = '\0';
+        ok = true;
+    }
+    return ok;
+}
+\end{lstlisting}
+\textbf{Engineering reasoning.} This bounded-copy illustration assumes incoming designates at least n readable bytes. The input length must come from an independently validated transport contract.
+
+\textbf{Verification exercise.} Exercise n=0, 7, 8; fuzz length metadata and check memory safety.
+
+\subsection{Resource lifecycle}
+\TrainingTag{Cross-reference: Rule 22.1; Rule 22.6}
+\subsubsection*{Problematic}
+\begin{lstlisting}[style=engineerc]
+FILE *f = fopen("status.log", "r");
+if (f != NULL) { return 0; } /* stream leaked */
+\end{lstlisting}
+\subsubsection*{Preferred pattern}
+\begin{lstlisting}[style=engineerc]
+FILE *f = fopen("status.log", "r");
+if (f != NULL)
+{
+    int close_status = fclose(f);
+    f = NULL;
+    if (close_status != 0) { /* report failure */ }
+}
+\end{lstlisting}
+\textbf{Engineering reasoning.} For projects permitting hosted I/O, release acquired resources along all paths. The preferred fragment is for lifecycle instruction; Rule 21.6 can separately forbid standard I/O in the chosen profile.
+
+\textbf{Verification exercise.} Inspect early returns, error paths and permitted APIs; use a resource ownership table.
+
+\subsection{Thread-shared state}
+\TrainingTag{Cross-reference: Dir 5.1; Dir 5.2}
+\subsubsection*{Problematic}
+\begin{lstlisting}[style=engineerc]
+/* Shared across C11 threads; read and write unsynchronized */
+static uint32_t total = 0U;
+int worker(void *arg) { total++; return 0; }
+\end{lstlisting}
+\subsubsection*{Preferred pattern}
+\begin{lstlisting}[style=engineerc]
+#include <stdatomic.h>
+static atomic_uint total = ATOMIC_VAR_INIT(0U);
+int worker(void *arg)
+{
+    (void)arg;
+    (void)atomic_fetch_add_explicit(
+        &total, 1U, memory_order_seq_cst);
+    return 0;
+}
+\end{lstlisting}
+\textbf{Engineering reasoning.} The atomic demonstration addresses a race on the counter, but full C11 threading analysis must still review allowed operations, initialization, resource lifetime and sequential-consistency constraints.
+
+\textbf{Verification exercise.} Run repeated stress tests and an approved thread checker; inspect data paths not covered by atomic accesses.
+
+\subsection{Generic selection and side effects}
+\TrainingTag{Cross-reference: Rule 23.7; Rule 23.2}
+\subsubsection*{Problematic}
+\begin{lstlisting}[style=engineerc]
+#define SELECT_AND_DOUBLE(x) \
+    _Generic((x), int: ((x) + (x)), default: 0)
+int k = 1;
+int result = SELECT_AND_DOUBLE(k++); /* repeated effects */
+\end{lstlisting}
+\subsubsection*{Preferred pattern}
+\begin{lstlisting}[style=engineerc]
+static int doubled_int(int x) { return x + x; }
+#define SELECT_AND_DOUBLE(x) \
+    _Generic((x), int: doubled_int, default: doubled_int)(x)
+int k = 1;
+int result = SELECT_AND_DOUBLE(k++);
+\end{lstlisting}
+\textbf{Engineering reasoning.} \_Generic controlling expressions are not evaluated, but selected association expressions can evaluate macro arguments; using a selected function limits the value evaluation to one call.
+
+\textbf{Verification exercise.} Inspect preprocessed output for every supported type and count side effects.
+
+\subsection{Shifts and operand widths}
+\TrainingTag{Cross-reference: Rule 12.2}
+\subsubsection*{Problematic}
+\begin{lstlisting}[style=engineerc]
+uint32_t shift(uint32_t v, uint32_t count)
+{
+    return v << count; /* count may be too large */
+}
+\end{lstlisting}
+\subsubsection*{Preferred pattern}
+\begin{lstlisting}[style=engineerc]
+bool shift(uint32_t v, uint32_t count, uint32_t *out)
+{
+    bool ok = false;
+    if ((out != NULL) && (count < 32U))
+    {
+        *out = v << count;
+        ok = true;
+    }
+    return ok;
+}
+\end{lstlisting}
+\textbf{Engineering reasoning.} The illustrative guard assumes uint32\_t has exactly 32 value bits. The target type model must support this assumption; shift-result policy may need additional overflow guards.
+
+\textbf{Verification exercise.} Test edge shift counts and prove that the source type is exactly the expected width.
+
+
+\section{Cross-cutting example review}
+For every example: identify all applicable rules, examine implementation-dependent assumptions, run compile-time diagnostics and static checks, exercise boundaries in unit tests, and create a requirements link. An isolated snippet cannot prove entire-system conformance, particularly for system-scope or undecidable guidelines.
+
+\end{document}

@@ -1,0 +1,108 @@
+\documentclass[11pt]{article}
+\newcommand{\DocTitle}{Security, Accessibility and Quality Gates}
+\newcommand{\DocSubtitle}{WCAG, OWASP, web performance, privacy and observability}
+\newcommand{\DocID}{DOS-04}
+\input{design-of-sites-style.tex}
+\begin{document}
+\MakeFront
+\section{Scope and traceability}
+
+\Provenance
+\begin{groundedbox}Source pattern families B (accessibility), E (trust), F/H (transactions), J (search), K (navigation), L (performance) and M (mobile) are verified in [B1]. The contemporary standard-based test obligations are new extensions.\end{groundedbox}
+\textbf{Assurance model.} Map each user journey to an accessibility conformance claim, security control, performance budget, privacy obligation, observability signal and incident response owner. Automated checks are necessary but insufficient for usable and secure services.
+
+\section{Accessibility: WCAG 2.2 AA and APG}
+
+\textbf{Scope.} WCAG 2.2 is a W3C Recommendation. Target Level AA for defined routes and application states, documenting exceptions and remediation dates; this is a \emph{project target}, not an automatic legal conclusion [S1--S2].
+\begin{tabularx}{\linewidth}{@{}p{30mm}p{34mm}XX@{}}\toprule
+Journey/Pattern & Requirement focus & Automated probe & Manual evidence\\\midrule
+Navigation B9/K2/K6 & Keyboard, focus order, labels, landmarks & Axe rule scan; route check & Keyboard and screen-reader navigation\\
+Forms H10/H11 & Labels, errors, help, predictable focus & Label associations & Invalid entry and recovery\\
+Dialogs H6 & Focus containment and return & ARIA rule scan & Escape and open/close behavior\\
+Search J2/J3 & Results changes announced meaningfully & Role/name checks & Search with AT and keyboard\\
+Responsive I/M & Reflow, zoom, touch and orientation & Viewport snapshots & 400\% zoom and touch review\\
+Content D/C & Hierarchy and clear text & Heading outline & Comprehension and reading order\\
+\bottomrule\end{tabularx}
+\textbf{Specific WCAG 2.2 additions to review:} Focus Not Obscured (2.4.11 AA), Dragging Movements (2.5.7 AA), Target Size Minimum (2.5.8 AA), Consistent Help (3.2.6 A), Redundant Entry (3.3.7 A), Accessible Authentication Minimum (3.3.8 AA). Applicability depends on the actual interface.
+\begin{decisionbox}Use native HTML controls first. ARIA supplements semantics; it does not repair a broken interaction model. Automated passing percentages are not a conformance statement.\end{decisionbox}
+
+\section{Application security and privacy}
+
+\textbf{Standards.} Use the stable ASVS 5.0.0 release for verifiable requirements; use OWASP Top 10:2025 for awareness and threat prioritization. Avoid presenting the Top 10 alone as a complete verification specification [S4--S6].
+\begin{longtable}{@{}p{23mm}p{40mm}p{47mm}p{34mm}@{}}\toprule
+Pattern family & Abuse case & Defensive design & Test evidence\\\midrule\endhead
+E/H identity & Account takeover, session fixation & Strong auth, rotation, revocation, secure cookies & Session lifecycle tests\\
+F/G commerce & Price manipulation, duplicate charge & Server authority, idempotent order state & Replay and tamper tests\\
+J search & Unauthorized record in results & Authorization filtering per result and snippet & Cross-tenant query test\\
+D content & Stored XSS, unsafe CMS privileges & Context-safe rendering, publishing RBAC & Content injection tests\\
+G community & Review spam and manipulation & Provenance, rate limits, reporting & Abuse simulation\\
+E privacy & Consent bypass, excessive collection & Purpose limitation, policy enforcement & Opt-out and deletion checks\\
+M location & Precise geolocation leakage & Contextual prompt, minimize/expire data & Denial/revocation test\\
+\bottomrule\end{longtable}
+\textbf{Protected session example (illustrative).}
+\begin{lstlisting}[language={}]
+Set-Cookie: __Host-session=<opaque>; Path=/; Secure;
+            HttpOnly; SameSite=Lax
+# Server responsibilities:
+# 1. Validate session and authorization on each request.
+# 2. Rotate on privilege changes and authentication.
+# 3. Revoke on logout; enforce idle/absolute expirations.
+# 4. Protect state changes against CSRF where applicable.
+\end{lstlisting}
+\textbf{Caution.} The cookie flags do not replace anti-CSRF, object authorization, rate limits or secure backend handling [S12].
+
+\section{Performance and experience budgets}
+
+\begin{modernbox}
+Published ``good'' Core Web Vitals field thresholds are LCP $\leq 2.5\,\mathrm{s}$, INP $\leq 200\,\mathrm{ms}$, and CLS $\leq 0.1$, measured at the 75th percentile by relevant mobile/desktop segment [S10]. Apply these as goals with ongoing field sampling; do not confuse lab emulation with user experience evidence.
+\end{modernbox}
+\begin{tabularx}{\linewidth}{@{}p{30mm}p{40mm}XX@{}}\toprule
+Primary signal & Likely pattern links & Investigation & Improvement class\\\midrule
+LCP & C1, I2, L2, L6 & Critical request path, image/hero priority & Streaming, cache, image sizing\\
+INP & H9, H11, K2, M2 & Main-thread long tasks & Code splitting, scheduler, simpler UI\\
+CLS & D2, I1, I4, L2 & Unreserved image/slot space & Intrinsic size and aspect-ratio\\
+API latency & F3/F6/J3 & Trace spans by operation & Cache, query/index and service tuning\\
+Conversion & F1, H1, E1 & Segments and per-step failures & Simplification and recoverability\\
+\bottomrule\end{tabularx}
+\begin{decisionbox}Historical ``reduce the number of files'' advice (L1) cannot be copied unchanged: under HTTP/2 and HTTP/3, bytes, compression, priority, dependency chains and caching often matter more than raw request count. Measure before optimizing.
+\end{decisionbox}
+
+\section{Observability and trace discipline}
+
+\textbf{Proposed service level indicators:} successful checkout initiation/completion; valid search result delivery; login success excluding expected user mistakes; p95 API latency; payment-provider recovery; accessibility incidents; and p75 Core Web Vitals.
+\begin{enumerate}
+\item Propagate trace context through edge, BFF and dependent services with bounded trust and sane sampling.
+\item Standardize HTTP span attributes with OpenTelemetry semantic conventions, recording server errors and external-dependency failures [S9].
+\item Keep product journey identifiers low cardinality; never attach user email, tokens, raw queries containing personal data or payment information to traces.
+\item Correlate service metrics with field web metrics without using covert tracking identifiers.
+\item Run an outage game day: search unavailable, authentication degraded and payment webhook repeated/delayed.
+\end{enumerate}
+
+\section{CI/CD quality gate matrix}
+
+\begin{longtable}{@{}p{30mm}p{42mm}p{41mm}p{29mm}@{}}\toprule
+Stage & Required signal & Failure handling & Pattern links\\\midrule\endhead
+Source review & Lint, typecheck, secret scan, SAST & Block actionable high risk & D/E/F/H\\
+Build & SBOM, dependencies, reproducible artifact & Policy-based gating & L/F/G\\
+Component & Semantic, keyboard, state tests & Reject inaccessible regressions & B/H/K/M\\
+Contract & OpenAPI compatibility; authz negative tests & Prevent unsafe API drift & F/J/E\\
+E2E & Top user journey and failure paths & Block critical task breakage & A/C/F/H\\
+Preproduction & DAST, manual threat review, performance smoke & Triage and explicit exception & E/L\\
+Production & RUM, tracing, alerts, canary & Rollback and incident response & All\\
+\bottomrule\end{longtable}
+\textit{Tune severity thresholds and acceptable exceptions to organizational policy; do not blindly block all releases on informational alerts.}
+
+\section{Test case examples}
+
+\textbf{TC-A11Y-H10-01: Form error recovery.} Given a blank required address field, when the user submits, then the error is perceivable, associated with the field, keyboard reachable and removable through correction.
+
+\textbf{TC-SEC-G7-02: Order history authorization.} Given users A and B and an order owned by B, when A requests that order by identifier through API or UI, then the response discloses no B-specific data and records an appropriate security event.
+
+\textbf{TC-PERF-L6-03: Mobile field measurements.} Given at least a statistically defensible sample of actual mobile visits, verify p75 LCP, INP and CLS against the published goals; investigate device and network outliers.
+
+\textbf{TC-PRIV-D4-04: Consent withdrawal.} Given personalization enabled, when a user revokes consent, then subsequent targeting uses the nonpersonalized path and related retained data follows the documented deletion/retention policy.
+
+
+\clearpage
+\input{design-of-sites-references.tex}
+\end{document}

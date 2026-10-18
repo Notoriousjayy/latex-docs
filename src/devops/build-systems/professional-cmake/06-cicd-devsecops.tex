@@ -1,0 +1,459 @@
+
+\documentclass[11pt,letterpaper,oneside]{report}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{inconsolata}
+\usepackage{geometry}
+\geometry{margin=0.89in,headheight=16pt,headsep=19pt,footskip=26pt}
+\usepackage{xcolor}
+\definecolor{navy}{HTML}{173758}
+\definecolor{teal}{HTML}{157B89}
+\definecolor{pale}{HTML}{E9F0F3}
+\definecolor{codegray}{HTML}{F5F7F9}
+\definecolor{muted}{HTML}{667785}
+\usepackage{booktabs,longtable,tabularx,array,calc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{upquote}
+\usepackage{xurl}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=navy,urlcolor=teal,bookmarksopen=true,pdfauthor={Software Build Engineering Documentation Suite}}
+\urlstyle{same}
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{2}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlength{\emergencystretch}{3em}
+\setlist[itemize]{leftmargin=*,topsep=4pt,itemsep=2pt}
+\setlist[enumerate]{leftmargin=*,topsep=4pt,itemsep=2pt}
+\titleformat{\chapter}[display]{\normalfont\bfseries\color{navy}}{\fontsize{11}{12}\selectfont CHAPTER \thechapter}{7pt}{\fontsize{23}{28}\selectfont}
+\titlespacing*{\chapter}{0pt}{-6pt}{19pt}
+\titleformat{\section}{\Large\bfseries\color{navy}}{\thesection}{0.65em}{}
+\titleformat{\subsection}{\large\bfseries\color{teal}}{\thesubsection}{0.65em}{}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{muted}{PROFESSIONAL CMAKE ENGINEERING}}
+\fancyhead[R]{\small\textcolor{muted}{\nouppercase{\leftmark}}}
+\fancyfoot[C]{\small\textcolor{muted}{\thepage}}
+\renewcommand{\headrulewidth}{0.3pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\small\thepage}\renewcommand{\headrulewidth}{0pt}}
+\lstdefinelanguage{cmake}{sensitive=false,morekeywords={cmake_minimum_required,project,add_library,add_executable,target_compile_features,target_include_directories,target_link_libraries,target_sources,target_compile_options,target_compile_definitions,target_link_options,add_subdirectory,include,if,else,elseif,endif,foreach,endforeach,function,endfunction,macro,endmacro,set,option,find_package,find_program,add_custom_command,add_custom_target,install,configure_file,configure_package_config_file,write_basic_package_version_file,set_target_properties,set_tests_properties,add_test,message,FetchContent_Declare,FetchContent_MakeAvailable,return,cmake_parse_arguments},morecomment=[l]{\#},morestring=[b]"}
+\lstdefinelanguage{sh}{morekeywords={cmake,ctest,cpack,find,sha256sum,clang-tidy,echo,cp,make,ninja,git},morecomment=[l]{\#},morestring=[b]"}
+\lstdefinelanguage{yaml}{morecomment=[l]{\#},morestring=[b]",morekeywords={name,on,permissions,jobs,steps,uses,run,with,env,matrix,include,if}}
+\lstdefinelanguage{text}{}
+\lstset{basicstyle=\ttfamily\footnotesize,keywordstyle=\color{navy}\bfseries,commentstyle=\color{muted},stringstyle=\color{teal},backgroundcolor=\color{codegray},frame=single,rulecolor=\color{pale},breaklines=true,breakatwhitespace=false,showstringspaces=false,columns=fullflexible,keepspaces=true,tabsize=2,xleftmargin=5pt,xrightmargin=5pt,aboveskip=9pt,belowskip=9pt}
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\passthrough}[1]{#1}
+\providecommand{\real}[1]{#1}
+
+\begin{document}
+\hypersetup{pageanchor=false}\begin{titlepage}
+\color{navy}
+\vspace*{1.15in}
+{\Large\bfseries PROFESSIONAL CMAKE\\[7pt]SOFTWARE BUILD ENGINEERING\par}
+\vspace{0.32in}\noindent\textcolor{teal}{\rule{0.9\linewidth}{2.3pt}}\par
+\vspace{0.45in}
+{\parbox{0.95\textwidth}{\raggedright\fontsize{24}{29}\selectfont\bfseries CI/CD and DevSecOps Integration\par}}
+\vspace{0.3in}
+{\Large\color{teal}Build provenance, GitHub Actions, CodeQL\par}
+\vfill
+{\large DOCUMENT 06 OF 08\par}
+\vspace{0.1in}
+{\small Companion synthesis to Craig Scott, \emph{Professional CMake: A Practical Guide}, 20th Edition (2025).\\
+Original learning/engineering material. Not affiliated with or endorsed by the author.\par}
+\vspace{0.2in}
+{\small 17 October 2026\par}
+\end{titlepage}
+\hypersetup{pageanchor=true}\clearpage\pagenumbering{roman}\tableofcontents\clearpage\pagenumbering{arabic}
+
+\textbf{Purpose.} Connect CMake, CTest and CPack to a least-privilege
+software delivery pipeline with measurable release controls.
+\textbf{{[}BOOK-GROUNDED{]}} presets, package creation, static/dynamic
+analysis and cross-platform builds are grounded in Chapters 24, 26--33,
+35--37 and 42. \textbf{{[}ENGINEERING EXTENSION{]}} GitHub Actions
+workflow policy, dependency governance, CodeQL, SBOM,
+provenance/attestation, signing and organizational change controls are
+extensions, not CMake features.
+
+\chapter{Delivery pipeline and separation of
+duties}\label{delivery-pipeline-and-separation-of-duties}
+
+\begin{lstlisting}
+      Pull Request        Protected Branch          Release Candidate
+          |                      |                        |
+          v                      v                        v
+  lint / configure / test -> full OS/compiler matrix -> stage + consume
+          |                      |                        |
+      static analysis      dynamic analyzers         package & manifest
+          |                      |                        |
+      code scanning       dependency inventory      sign + attest + publish
+          |                      |                        |
+          +-------------- evidence + policy gates --------+
+\end{lstlisting}
+
+\textbf{Trust boundary:} source checkout, build scripts, package
+managers, action dependencies, CMake providers, compilers and test
+programs are executable inputs. Running them on a privileged release
+runner grants code execution. Keep untrusted PR builds separate from
+credentials and protected publishing environments.
+
+\chapter{Pipeline stages and evidence
+contracts}\label{pipeline-stages-and-evidence-contracts}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+ID
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Stage
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Required output
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Security constraint
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+CI-01 & checkout and bootstrap & immutable commit SHA, versions &
+pinned, reviewed action and toolchain provenance \\
+CI-02 & configure & CMake cache/configuration logs & safe external
+dependency policy; no secrets printed \\
+CI-03 & compile/link & binaries and full compiler diagnostics &
+consistent compiler, linker and sanitizer variants \\
+CI-04 & execute CTest & machine-readable JUnit results & resource
+isolation and non-prod credentials \\
+CI-05 & static analysis & findings and coverage inventory & documented
+analysis scope, no silent skip \\
+CI-06 & stage + consumer & relocatable SDK and consumer result & no
+source/build path leak \\
+CI-07 & package & archive, manifest, checksums & deterministic input and
+artifact review \\
+CI-08 & attest/publish & provenance, signatures, registry coordinates &
+protected environment; least-privilege OIDC \\
+\end{longtable}
+
+\chapter{Repository workflow example}\label{repository-workflow-example}
+
+The included reference project contains
+\passthrough{\lstinline!.github/workflows/build.yml!}. This standalone
+illustration assumes Ubuntu, macOS and Windows runners have recent
+CMake, Ninja and C++ compilers; real enterprise workflows pin versions
+and validate that the runner images satisfy prerequisites.
+
+\begin{lstlisting}
+name: cmake-verify
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake --preset ci-debug
+      - name: Build
+        run: cmake --build --preset ci-debug --parallel 2
+      - name: Test
+        run: ctest --preset ci-debug --output-on-failure
+\end{lstlisting}
+
+\textbf{Important:} runner labels and action tags are moving inputs. For
+a hardened deployment, pin GitHub Actions to audited commit SHAs,
+explicitly install/verify CMake/Ninja versions, and restrict
+\passthrough{\lstinline!pull\_request\_target!} usage. This example is
+instructional, not a security-hardened production workflow.
+
+\chapter{Consistency between local and CI
+builds}\label{consistency-between-local-and-ci-builds}
+
+The same \passthrough{\lstinline!ci-debug!} or
+\passthrough{\lstinline!ci-release!} preset should drive local
+engineering and CI. Avoid YAML-specific compiler flags that diverge from
+the preset. If CI requires additional settings, create a documented CI
+variant rather than silently mutating defaults. Build caching can
+accelerate development but must never be trusted as proof of source or
+artifact integrity.
+
+\begin{lstlisting}[language=sh]
+cmake --preset ci-release
+cmake --build --preset ci-release --parallel 4
+ctest --preset ci-release --output-on-failure
+cmake --install build/ci-release --prefix /tmp/buildsuite-install
+\end{lstlisting}
+
+\chapter{CodeQL C/C++ scanning
+extension}\label{codeql-cc-scanning-extension}
+
+As documented by GitHub, C/C++ supports \passthrough{\lstinline!none!},
+\passthrough{\lstinline!autobuild!} and \passthrough{\lstinline!manual!}
+build modes; exact availability and semantics depend on GitHub
+product/version. If generated sources or custom configurations are
+important, explicitly analyze whether \passthrough{\lstinline!none!} or
+\passthrough{\lstinline!autobuild!} covers the relevant translation
+units. A manual-build advanced-setup approach can invoke the same CMake
+preset that CI uses.
+
+\begin{lstlisting}
+# Selected fragment for a separate code-scanning job:
+permissions:
+  contents: read
+  security-events: write
+steps:
+  - uses: actions/checkout@v4
+  - uses: github/codeql-action/init@v4
+    with:
+      languages: c-cpp
+      build-mode: manual
+  - run: cmake --preset ci-debug
+  - run: cmake --build --preset ci-debug
+  - uses: github/codeql-action/analyze@v4
+\end{lstlisting}
+
+\textbf{Governance:} Code scanning and build verification are distinct
+controls. When policy requires scan-before-merge, ensure the required
+analysis check belongs to the change's commit/PR head and the target's
+branch protection rule. A scan after merging does not validate pre-merge
+control effectiveness.
+
+\chapter{Third-party dependency and source acquisition
+controls}\label{third-party-dependency-and-source-acquisition-controls}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Acquisition
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Technical advantage
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Policy requirement
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\passthrough{\lstinline!find\_package(CONFIG)!} & uses supplied package
+binary and imported target metadata & approved package prefix, exact
+version, provenance \\
+\passthrough{\lstinline!FetchContent!} & integrates dependency targets
+in normal build & immutable source revision and code review; network
+restrictions \\
+\passthrough{\lstinline!ExternalProject!} & isolates independent
+configure/build workflows & artifact handoff, checksum and ownership \\
+vcpkg/Conan/package manager & centralized resolution / binary caching &
+version lockfiles, mirrors, verified metadata \\
+vendored source & fixed repository revision & licensing, update
+ownership, recursive scan \\
+\end{longtable}
+
+\textbf{Control requirement:} capture an inventory including name,
+version or commit, source location, license, declared direct/transitive
+status, runtime distribution relevance and vulnerability advisory
+mapping. Produce an SPDX or CycloneDX SBOM with an appropriate
+\textbf{external} tool and verify its completeness; CMake itself does
+not certify an SBOM.
+
+\section{Dependency exception record}\label{dependency-exception-record}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Field
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence to record
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Exception ID and owner & ticket, accountable engineering team \\
+Dependency coordinate & repository / package URL and immutable
+version \\
+Why necessary & functionality, competing alternatives, build impact \\
+Security posture & advisories, active exploitation if known,
+compensating controls \\
+License & SPDX expression and distribution obligations \\
+Approval expiry & trigger for re-evaluation and planned removal \\
+\end{longtable}
+
+\chapter{Software bill of materials, provenance and artifact
+integrity}\label{software-bill-of-materials-provenance-and-artifact-integrity}
+
+\textbf{{[}ENGINEERING EXTENSION{]}} CMake can generate install
+manifests and archives but does not establish cryptographic artifact
+origin by itself. An enterprise release pipeline should collect: source
+revision, build workflow identity, resolved dependencies,
+compiler/toolchain metadata, tests and scan results, artifact hashes and
+policy decisions. Sign final artifacts or issue attestations with
+organization-managed identity; verify before promotion.
+
+Threat coverage:
+
+\begin{itemize}
+\tightlist
+\item
+  \emph{Dependency confusion / package substitution:} constrain sources
+  and verify immutable artifacts.
+\item
+  \emph{Compromised CI action / script:} pin reviewable versions, limit
+  permissions, separate privileged jobs.
+\item
+  \emph{Toolchain tampering:} use audited toolchain images and record
+  provenance.
+\item
+  \emph{Secret exposure:} inject only into protected publish jobs, not
+  configure/test of untrusted PRs.
+\item
+  \emph{Artifact substitution:} hash, attest/sign and verify registry
+  artifacts at deployment.
+\item
+  \emph{Malicious test fixtures:} sandbox tests and restrict outbound
+  network and filesystem access.
+\end{itemize}
+
+\chapter{SLSA-style capability
+roadmap}\label{slsa-style-capability-roadmap}
+
+The following maturity model is \textbf{inspired by} supply-chain
+assurance practice, not a claim of formal SLSA compliance:
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Level
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Build characteristics
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Promotion criterion
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+0: ad hoc & local developer binaries & no unattended release \\
+1: repeatable & declared presets, automated build/test &
+machine-readable evidence \\
+2: controlled & protected CI, versioned toolchains, dependency inventory
+& risk-based gates \\
+3: verifiable & isolated builder, signed provenance and manifest &
+verification in staging \\
+4: defended & policy-controlled dependencies, continuous validation,
+exception management & auditable change and release records \\
+\end{longtable}
+
+Formal compliance with a specific SLSA version requires checking its
+published requirements separately.
+
+\chapter{Release manifest and reproducibility
+measurement}\label{release-manifest-and-reproducibility-measurement}
+
+Record each build's configuration and environment without claiming
+bit-for-bit identical results until tested. Sources of nondeterminism
+include timestamps, filesystem paths, locale, archive ordering,
+randomness, incremental object reuse and toolchain versions. A
+reproducibility experiment should produce two independent clean builds
+from the same inputs, compare artifact hashes and investigate
+differences using structured binary-diff tooling.
+
+\begin{lstlisting}[language=sh]
+sha256sum path/to/release-artifact.tar.gz
+# Repeat after a second isolated clean build.
+\end{lstlisting}
+
+Hash equality in one scenario does not prove resilience against a
+malicious compiler or compromised package repository.
+
+\chapter{Release promotion checklist}\label{release-promotion-checklist}
+
+\begin{itemize}
+\tightlist
+\item[$\square$]
+  Branch protection requires all declared build, test and security
+  statuses.
+\item[$\square$]
+  CI uses declared presets, compiler versions and separate Debug/Release
+  builds.
+\item[$\square$]
+  Required static and dynamic analysis jobs did not silently skip
+  checks.
+\item[$\square$]
+  CodeQL mode and coverage are documented for compiled languages.
+\item[$\square$]
+  Dependencies are pinned, inventoried, licensed and reviewed.
+\item[$\square$]
+  A clean installed consumer validates relocatability and compatibility.
+\item[$\square$]
+  Packages are scanned; manifests and hashes have been retained.
+\item[$\square$]
+  Publish permissions are isolated from untrusted builds and PRs.
+\item[$\square$]
+  Final artifacts are signed/attested as required by organizational
+  policy.
+\item[$\square$]
+  Rollback version and supply-chain incident response owner are known.
+\end{itemize}
+
+\chapter{Incident / failing build
+response}\label{incident-failing-build-response}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Preserve failing run IDs, logs, build matrix and commit state.
+\item
+  Quarantine any potentially compromised artifact; suspend promotion.
+\item
+  Compare dependency versions and toolchain identity against approved
+  baseline.
+\item
+  Re-run in an isolated runner with controlled network access.
+\item
+  Determine whether incident is configure-time execution, dependency
+  drift, faulty source, infrastructure or policy gap.
+\item
+  Record causal finding, rebuild trusted artifacts and reconcile
+  SBOM/provenance.
+\item
+  Restore release flow only after independent validation and documented
+  approval.
+\end{enumerate}
+
+\chapter{Official references}\label{official-references}
+
+CMake:
+\url{https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html} ;
+\url{https://cmake.org/cmake/help/latest/manual/cpack.1.html} . GitHub
+CodeQL:
+\url{https://docs.github.com/en/code-security/concepts/code-scanning/codeql/codeql-for-compiled-languages}
+. GitHub Actions: \url{https://docs.github.com/en/actions} . SPDX:
+\url{https://spdx.dev/} ; CycloneDX: \url{https://cyclonedx.org/} ;
+SLSA: \url{https://slsa.dev/} . Revalidate versions and exact
+capabilities when implementing a real production pipeline.
+
+\end{document}

@@ -1,0 +1,225 @@
+\documentclass[11pt,letterpaper,oneside]{report}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.90in,headheight=15pt]{geometry}
+\usepackage{microtype}
+\usepackage[svgnames,table]{xcolor}
+\usepackage{amsmath,amssymb,booktabs,longtable,tabularx,array}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{lastpage}
+\definecolor{ink}{HTML}{14273C}
+\definecolor{primary}{HTML}{0B5379}
+\definecolor{accent}{HTML}{B66A30}
+\definecolor{pale}{HTML}{F1F5F8}
+\definecolor{codebg}{HTML}{F5F7F8}
+\hypersetup{colorlinks=true,linkcolor=primary,urlcolor=primary,pdftitle={Linux and UNIX System Programming Engineering Suite}}
+\titleformat{\chapter}[display]{\normalfont\LARGE\bfseries\color{ink}}{\color{accent}\large\MakeUppercase{\chaptername}\ \thechapter}{10pt}{}[\vspace{0.4ex}\titlerule]
+\titleformat{\section}{\Large\bfseries\color{primary}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{ink}}{\thesubsection}{0.7em}{}
+\setlist[itemize]{leftmargin=*,topsep=3pt,itemsep=2pt}
+\setlist[enumerate]{leftmargin=*,topsep=3pt,itemsep=3pt}
+\setlength{\parskip}{5pt}
+\setlength{\parindent}{0pt}
+\lstdefinestyle{sysc}{language=C,basicstyle=\ttfamily\footnotesize,backgroundcolor=\color{codebg},keywordstyle=\bfseries\color{primary},commentstyle=\color{ForestGreen},stringstyle=\color{Brown},breaklines=true,showstringspaces=false,tabsize=4,frame=single,rulecolor=\color{LightSteelBlue},columns=fullflexible,keepspaces=true}
+\lstset{style=sysc}
+\newtcolorbox{engineeringnote}[1][]{colback=pale,colframe=primary,boxrule=0.55pt,arc=1.5mm,title=Engineering note,fonttitle=\bfseries,#1}
+\newtcolorbox{modernnote}[1][]{colback=white,colframe=accent,boxrule=0.55pt,arc=1.5mm,title=Modern extension --- not in the 2010 textbook,fonttitle=\bfseries,#1}
+\newcommand{\sys}[1]{\texttt{#1}}
+\pagestyle{fancy}\fancyhf{}\fancyhead[L]{\small\color{ink} Linux / UNIX Engineering Suite}\fancyhead[R]{\small\color{primary}\nouppercase{\leftmark}}\fancyfoot[C]{\small\thepage\ / \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.45pt}
+\setcounter{tocdepth}{1}
+\setlength{\emergencystretch}{2em}
+\begin{document}
+\begin{titlepage}\centering\vspace*{2cm}{\color{primary}\Large ENGINEERING REFERENCE SERIES\par}\vspace{1.25cm}{\color{ink}\Huge\bfseries Secure Systems Programming Guide\par}\vspace{0.6cm}{\Large Threat modeling, privilege boundaries and defense in depth\par}\vspace{2cm}\rule{0.75\textwidth}{1.2pt}\par\vspace{0.55cm}{\large An original companion to Michael Kerrisk\textquotesingle s 2010 text}\par\vspace{0.3cm}{\large Edition 1.0\quad |\quad October 2026}\par\vfill{\small Document 05\quad |\quad pdfLaTeX-compatible standalone source}\par\end{titlepage}
+\tableofcontents\clearpage
+\chapter{Scope and threat model}
+Threats cross process, file, privilege, IPC and network boundaries. This guide builds upon textbook Chapters 8--9, 15--18, 20--22, 27, 37--39, 43 and 56--63. Security advice here is engineering guidance; the original textbook predates the Linux-only mechanisms grouped in the modern extension sections.
+
+\section{Assets, principals, entry points and decisions}
+\begin{longtable}{p{.20\linewidth}p{.32\linewidth}p{.37\linewidth}}\toprule
+Boundary & Attacker-controlled surface & Defensive invariant\\\midrule\endhead
+Filesystem & pathnames, symlinks, mount view, permissions & Authorize an opened object, not a stale pathname\\
+Launch & arguments, environment, CWD, inherited descriptors & Explicit executable and environment, CLOEXEC by default\\
+Privilege & UID/GID and capability transitions & Reduce privileges before processing untrusted input\\
+Memory & lengths, allocations, offsets, mapped regions & Overflow checks, bounds, lifetime and initialization\\
+IPC & shared mappings, queues and local socket peers & Verify identity and protocol state, restrict object permissions\\
+Network & byte streams, framing, connection counts, timeouts & Bound parsing, resource use and wait time\\
+Signals & async callbacks and race-prone control flow & Signal-safe handler operations and managed waits\\
+\bottomrule\end{longtable}\section{Misuse-case taxonomy}
+\begin{itemize}
+\item Unauthorized file read through symlink replacement or directory race
+\item Command execution through shell interpolation or polluted PATH/LD\_* environment
+\item Privilege retention when application code no longer needs elevated rights
+\item Out-of-bounds access from untrusted lengths, integer overflow, and unsafe C string functions
+\item Resource exhaustion through unbounded file descriptors, processes, threads, queues or network frames
+\item Privilege confusion when process identity, container identity and peer credentials are assumed equivalent
+\end{itemize}
+\chapter{Files and race-resistant operations}
+\section{Path resolution protocol}
+\begin{enumerate}
+\item Acquire a trusted directory handle where possible; document how it was established.
+\item Open relative to the trusted handle, choosing O\_CLOEXEC and leaf O\_NOFOLLOW when applicable.
+\item Use fstat on the descriptor to inspect the actual object; do not substitute access() plus open().
+\item For stronger Linux resolution constraints evaluate openat2 with RESOLVE\_BENEATH, RESOLVE\_IN\_ROOT, or relevant restrictive flags; verify unsupported-kernel handling.
+\item Apply size, type, ownership and permission rules after opening, considering hard-link and mount semantics.
+\item Keep the descriptor stable for use; define cleanup and file replacement behavior.
+\end{enumerate}
+O\_NOFOLLOW restricts only a particular final symlink case. It does not provide a comprehensive solution for untrusted directory ancestors, magic links, mount traversals or filesystem changes. The needed protection depends on the attacker and path model.
+
+\begin{lstlisting}
+#define _POSIX_C_SOURCE 200809L
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+/* Caller must already hold a trustworthy directory fd.
+   This prevents symlinks at the final component, but not all
+   possible traversal across attacker-controlled parents. */
+static int read_regular_leaf(int dirfd, const char *leaf) {
+    int fd = openat(dirfd, leaf, O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
+    if (fd < 0) return -1;
+    struct stat st;
+    if (fstat(fd, &st) < 0) {
+        int saved = errno;
+        close(fd);
+        errno = saved;
+        return -1;
+    }
+    if (!S_ISREG(st.st_mode)) {
+        close(fd);
+        errno = EINVAL;
+        return -1;
+    }
+    char c;
+    ssize_t n = read(fd, &c, 1);
+    int saved = errno;
+    close(fd);
+    errno = saved;
+    return n >= 0 ? 0 : -1;
+}
+int main(void) {
+    int dir = open(".", O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    if (dir < 0) { perror("open dir"); return 1; }
+    int rc = read_regular_leaf(dir, "input.txt");
+    if (rc < 0) perror("read_regular_leaf");
+    close(dir); return rc < 0;
+}
+\end{lstlisting}
+\section{Temporary and durable files}
+\begin{itemize}
+\item Avoid constructing predictable names and avoid world-writable scratch locations without a deliberate trust model.
+\item Use mkstemp or suitably constrained platform APIs, restrictive initial modes, exclusive creation and directory-fd operations.
+\item Treat fsync of file data and directory entries separately when crash-consistency is an explicit requirement.
+\item Do not blindly delete a pathname after concurrent attacker-controlled replacement; prefer scoped ownership of temporary directories.
+\end{itemize}
+\chapter{Privileged process lifecycle}
+Use a narrowly privileged broker, early privilege reduction, or capabilities when the platform and threat model permit. Distinguish real, effective and saved IDs and supplementary groups. Dropping effective UID alone can leave a recoverable privilege path; the exact call and order matter.
+
+\section{Launching untrusted work}
+\begin{itemize}
+\item Do not use system(), popen(), or shell-string construction on untrusted data.
+\item Specify absolute executable path where practical, sanitized environment and explicit argv.
+\item Set close-on-exec at acquisition time to avoid races with concurrent fork and exec.
+\item Apply process limits and file-descriptor closures before work starts.
+\item Log process exit statuses, timeouts and resource failures without exposing secrets.
+\end{itemize}
+\section{Privilege review checklist}
+\begin{enumerate}
+\item Why is elevation needed at all? Is a broker or system service interface available?
+\item What exactly can the child open, create, connect to and execute?
+\item Can the process regain IDs or capabilities after dropping them?
+\item Are dynamic libraries and plugin search paths trusted?
+\item How are failures reported without revealing sensitive credentials or content?
+\end{enumerate}
+\chapter{Signals, concurrency and memory safety}
+Async signal handlers may invoke only functions permitted by the applicable standard. A robust application typically blocks designated signals in all threads and receives them in a dedicated thread using sigwait; use self-pipe or signal descriptors where appropriate. Ordinary shared variables are not synchronization just because a signal handler modifies them.
+
+\begin{itemize}
+\item Use pthread mutexes and condition variables to protect invariants; do not use unsynchronized volatile state as a substitute for atomic or locking guarantees.
+\item Validate length multiplication before allocating: count > SIZE\_MAX / element\_size indicates overflow.
+\item Clean secrets from memory where possible, but recognize compiler optimization and swap or core-dump limitations; use platform primitives where applicable.
+\item Treat mmap regions as shared, private or file-backed according to explicit mapping semantics; avoid sharing process pointers across remapped address spaces.
+\item Constrain queue capacities and thread counts to prevent denial of service.
+\end{itemize}
+\chapter{Modern Linux containment layers}
+\section{no\_new\_privs}
+Prevent certain future privilege gains across exec; often a prerequisite for unprivileged seccomp filter installation.
+
+\begin{modernnote}
+No substitute for per-resource authorization.
+\end{modernnote}
+\section{seccomp-bpf}
+Filter system call entry points using kernel mediation; test architecture, permitted actions, and exact syscall numbers.
+
+\begin{modernnote}
+Syscall filtering does not understand higher-level file or network policy; wrapper calls can change.
+\end{modernnote}
+\section{Landlock}
+Confine selected file-system and other accessible operations via a ruleset subject to ABI support.
+
+\begin{modernnote}
+ABI-version checks and inherited rules require careful setup.
+\end{modernnote}
+\section{Namespaces}
+Change views of PID, user, mount, network and IPC resources, often used in container implementations.
+
+\begin{modernnote}
+Not automatically a security barrier; user-namespace rules and mount composition are delicate.
+\end{modernnote}
+\section{cgroup v2}
+Enforce hierarchical CPU, memory, I/O and PID limits to reduce resource-exhaustion blast radius.
+
+\begin{modernnote}
+A resource controller does not enforce per-operation trust decisions.
+\end{modernnote}
+\section{Linux capabilities}
+Grant subsets of historically root-gated operations; reason about bounding, inheritable, ambient, permitted and effective sets.
+
+\begin{modernnote}
+Capabilities are privileges, not sandbox features by themselves.
+\end{modernnote}
+\chapter{Network attack surface and observability}
+\begin{itemize}
+\item Define accepted address families and bind addresses; demos bind loopback to avoid exposing unauthenticated services.
+\item Implement maximum frame sizes and budgets for concurrent connections, unread bytes and pending writes.
+\item Use a vetted TLS implementation for encrypted and authenticated network transport; raw sockets do not provide TLS.
+\item Restrict sensitive logs: include request IDs, timing, errno categories and peer context without secrets.
+\item Test malformed packets, truncated frames, slow clients, EOF during headers and repeated connection churn.
+\end{itemize}
+\chapter{Security assurance worksheet}
+\begin{longtable}{p{.18\linewidth}p{.73\linewidth}}\toprule
+Control & Objective verification\\\midrule\endhead
+Path safety & Symlink swap race harness, untrusted parent-directory test, alternate mount scenario\\
+Privileges & Before/after credential and capability snapshots, negative permission checks\\
+Process launch & Fuzzed argv/env and executable failure tests, file descriptor inheritance inspection\\
+Resource bounds & File count, thread count, memory and CPU stress with graceful failure\\
+Memory & ASan/UBSan, hardening flags and input corpus regression\\
+Protocol & Truncation, invalid length, replay/out-of-order and timeout cases\\
+Containment & Allowed behavior still works; blocked behavior fails as intended on target kernel\\
+\bottomrule\end{longtable}\section{Example risk register}
+\begin{longtable}{p{.12\linewidth}p{.29\linewidth}p{.26\linewidth}p{.22\linewidth}}\toprule
+ID & Failure mode & Mitigation & Proof\\\midrule\endhead
+SYS-01 & Path-swap read & Dirfd anchoring and controlled resolution & Race harness\\
+SYS-02 & Child execution injection & argv/env, no shell & Adversarial arguments\\
+SYS-03 & Unbounded connections & Per-peer and global quotas & Load test\\
+SYS-04 & Privilege survives startup & Permanent drop + verify & Credential assertions\\
+SYS-05 & Data corruption on crash & Sync/rename protocol & Crash tests on target FS\\
+\bottomrule\end{longtable}
+\chapter*{Source and currency notes}
+\addcontentsline{toc}{chapter}{Source and currency notes}
+\textbf{Foundational source:} Michael Kerrisk, \emph{The Linux Programming Interface: A Linux and UNIX System Programming Handbook}, No Starch Press, 2010, ISBN 978-1-59327-220-3. The textbook's chapter titles and start pages organize the study guide; explanations, tasks, and code in this suite are independently authored educational material, not reproductions of the original text or its example programs.
+
+\textbf{Current reference baseline:} The Open Group / IEEE, \emph{POSIX.1-2024, Issue 8}, \url{https://pubs.opengroup.org/onlinepubs/9799919799/}; Linux man-pages project, \url{https://man7.org/linux/man-pages/}; Linux kernel documentation, \url{https://docs.kernel.org/}. For Linux-only extensions consult the relevant per-interface manual pages and kernel documentation for the target kernel, architecture and libc; availability can differ materially.
+
+\textbf{Scope:} This is an engineering study and implementation companion. It does not claim to restate a normative standard or guarantee a specific Linux kernel's behavior. System calls, libc wrappers and higher-level library functions are explicitly distinguished where material.
+\end{document}

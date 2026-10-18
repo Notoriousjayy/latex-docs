@@ -1,0 +1,466 @@
+
+\documentclass[11pt,letterpaper,oneside]{report}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{inconsolata}
+\usepackage{geometry}
+\geometry{margin=0.89in,headheight=16pt,headsep=19pt,footskip=26pt}
+\usepackage{xcolor}
+\definecolor{navy}{HTML}{173758}
+\definecolor{teal}{HTML}{157B89}
+\definecolor{pale}{HTML}{E9F0F3}
+\definecolor{codegray}{HTML}{F5F7F9}
+\definecolor{muted}{HTML}{667785}
+\usepackage{booktabs,longtable,tabularx,array,calc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{upquote}
+\usepackage{xurl}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=navy,urlcolor=teal,bookmarksopen=true,pdfauthor={Software Build Engineering Documentation Suite}}
+\urlstyle{same}
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{2}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlength{\emergencystretch}{3em}
+\setlist[itemize]{leftmargin=*,topsep=4pt,itemsep=2pt}
+\setlist[enumerate]{leftmargin=*,topsep=4pt,itemsep=2pt}
+\titleformat{\chapter}[display]{\normalfont\bfseries\color{navy}}{\fontsize{11}{12}\selectfont CHAPTER \thechapter}{7pt}{\fontsize{23}{28}\selectfont}
+\titlespacing*{\chapter}{0pt}{-6pt}{19pt}
+\titleformat{\section}{\Large\bfseries\color{navy}}{\thesection}{0.65em}{}
+\titleformat{\subsection}{\large\bfseries\color{teal}}{\thesubsection}{0.65em}{}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{muted}{PROFESSIONAL CMAKE ENGINEERING}}
+\fancyhead[R]{\small\textcolor{muted}{\nouppercase{\leftmark}}}
+\fancyfoot[C]{\small\textcolor{muted}{\thepage}}
+\renewcommand{\headrulewidth}{0.3pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\small\thepage}\renewcommand{\headrulewidth}{0pt}}
+\lstdefinelanguage{cmake}{sensitive=false,morekeywords={cmake_minimum_required,project,add_library,add_executable,target_compile_features,target_include_directories,target_link_libraries,target_sources,target_compile_options,target_compile_definitions,target_link_options,add_subdirectory,include,if,else,elseif,endif,foreach,endforeach,function,endfunction,macro,endmacro,set,option,find_package,find_program,add_custom_command,add_custom_target,install,configure_file,configure_package_config_file,write_basic_package_version_file,set_target_properties,set_tests_properties,add_test,message,FetchContent_Declare,FetchContent_MakeAvailable,return,cmake_parse_arguments},morecomment=[l]{\#},morestring=[b]"}
+\lstdefinelanguage{sh}{morekeywords={cmake,ctest,cpack,find,sha256sum,clang-tidy,echo,cp,make,ninja,git},morecomment=[l]{\#},morestring=[b]"}
+\lstdefinelanguage{yaml}{morecomment=[l]{\#},morestring=[b]",morekeywords={name,on,permissions,jobs,steps,uses,run,with,env,matrix,include,if}}
+\lstdefinelanguage{text}{}
+\lstset{basicstyle=\ttfamily\footnotesize,keywordstyle=\color{navy}\bfseries,commentstyle=\color{muted},stringstyle=\color{teal},backgroundcolor=\color{codegray},frame=single,rulecolor=\color{pale},breaklines=true,breakatwhitespace=false,showstringspaces=false,columns=fullflexible,keepspaces=true,tabsize=2,xleftmargin=5pt,xrightmargin=5pt,aboveskip=9pt,belowskip=9pt}
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\passthrough}[1]{#1}
+\providecommand{\real}[1]{#1}
+
+\begin{document}
+\hypersetup{pageanchor=false}\begin{titlepage}
+\color{navy}
+\vspace*{1.15in}
+{\Large\bfseries PROFESSIONAL CMAKE\\[7pt]SOFTWARE BUILD ENGINEERING\par}
+\vspace{0.32in}\noindent\textcolor{teal}{\rule{0.9\linewidth}{2.3pt}}\par
+\vspace{0.45in}
+{\parbox{0.95\textwidth}{\raggedright\fontsize{24}{29}\selectfont\bfseries Testing and Quality Engineering\par}}
+\vspace{0.3in}
+{\Large\color{teal}CTest, analysis, sanitizers, risk-based gates\par}
+\vfill
+{\large DOCUMENT 05 OF 08\par}
+\vspace{0.1in}
+{\small Companion synthesis to Craig Scott, \emph{Professional CMake: A Practical Guide}, 20th Edition (2025).\\
+Original learning/engineering material. Not affiliated with or endorsed by the author.\par}
+\vspace{0.2in}
+{\small 17 October 2026\par}
+\end{titlepage}
+\hypersetup{pageanchor=true}\clearpage\pagenumbering{roman}\tableofcontents\clearpage\pagenumbering{arabic}
+
+\textbf{Mission.} Design an evidence-driven validation program in which
+build configuration, compiler instrumentation, tests and
+installed-package verification are separate, auditable capabilities.
+\textbf{{[}BOOK-GROUNDED{]}} Testing Fundamentals, Test Resources and
+Constraints, Build and Test Mode, Test Frameworks, CDash Integration,
+Static Code Analysis and Dynamic Code Analysis correspond to Chapters
+27--33. \textbf{{[}ENGINEERING EXTENSION{]}} release gates, test
+selection policies, coverage risk decisions, CI orchestration and AppSec
+triage are new recommendations.
+
+\chapter{Test architecture}\label{test-architecture}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Test level
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Scope
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Execution
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Core purpose
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Unit & local function/class behavior & compiled test executable invoked
+by CTest & behavior correctness in narrow scope \\
+Component & service/library target and stub dependencies & CTest +
+fixture & interface invariants and error handling \\
+Integration & multiple targets or external subsystem & isolated
+environment, ports/resources & contract and resource compatibility \\
+Installed consumer & target from clean exported package & distinct CMake
+configure/build/test & install/export correctness \\
+System / smoke & executable in deployment-like environment & external
+test harness or CTest & startup and representative user path \\
+Dynamic analysis & instrumented test path & ASan/UBSan/TSan, Valgrind
+where supported & memory, race and UB defects \\
+\end{longtable}
+
+\textbf{Rule:} CTest schedules an executable and interprets its result;
+it does not create assertions in your production code. A successful test
+run proves only that the exercised assertions passed under the selected
+environment.
+
+\chapter{Registering deterministic
+tests}\label{registering-deterministic-tests}
+
+\begin{lstlisting}
+include(CTest)
+if(BUILD_TESTING)
+  add_executable(core_tests tests/math_tests.cpp)
+  target_link_libraries(core_tests PRIVATE BuildSuite::core)
+  add_test(NAME core.math COMMAND core_tests)
+  set_tests_properties(core.math PROPERTIES
+    TIMEOUT 15
+    LABELS "unit;core;smoke"
+  )
+endif()
+\end{lstlisting}
+
+\begin{lstlisting}[language=sh]
+cmake --preset ci-debug
+cmake --build --preset ci-debug
+ctest --preset ci-debug --output-on-failure
+ctest --test-dir build/ci-debug -L smoke --output-junit build/junit.xml
+\end{lstlisting}
+
+Record the CMake, CTest, compiler and test binary versions, selected
+preset and git revision. Do not make a test depend on its execution
+order unless that ordering is an explicit fixture relationship. Tests
+with shared directories, ports or services need resource isolation.
+
+\chapter{Resource and fixture
+orchestration}\label{resource-and-fixture-orchestration}
+
+CTest supports \passthrough{\lstinline!FIXTURES\_SETUP!},
+\passthrough{\lstinline!FIXTURES\_REQUIRED!},
+\passthrough{\lstinline!FIXTURES\_CLEANUP!},
+\passthrough{\lstinline!RESOURCE\_LOCK!} and processor or
+resource-allocation properties. A fixture models set-up/cleanup around
+dependent tests; a resource lock serializes access to a named resource.
+
+\begin{lstlisting}
+add_test(NAME db.setup COMMAND db_fixture --start)
+add_test(NAME db.query COMMAND query_fixture --check)
+add_test(NAME db.cleanup COMMAND db_fixture --stop)
+set_tests_properties(db.setup PROPERTIES FIXTURES_SETUP db)
+set_tests_properties(db.query PROPERTIES FIXTURES_REQUIRED db RESOURCE_LOCK database)
+set_tests_properties(db.cleanup PROPERTIES FIXTURES_CLEANUP db)
+\end{lstlisting}
+
+The
+\passthrough{\lstinline!db\_fixture!}/\passthrough{\lstinline!query\_fixture!}
+commands above are illustrative placeholders, not included executables.
+Real suites should make cleanup robust after failed set-up, assign
+unique namespaces to parallel jobs and use CI service containers or
+dedicated ephemeral test infrastructure where necessary.
+
+\chapter{Negative tests and failure
+injection}\label{negative-tests-and-failure-injection}
+
+A negative test asserts that an invalid configuration fails \textbf{for
+the expected reason}, rather than merely returning a nonzero exit. For
+configure tests, invoke CMake in a temporary binary directory with a
+purposely invalid option and inspect a stable diagnostic. For API code,
+test edge cases, overflow, invalid input, resource starvation and
+cancellation.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Scenario
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Input
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Expected observation
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Misleading observation
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Bad API argument & invalid value & domain-specific error/exception &
+crash or unrelated fatal assertion \\
+Missing required package & empty controlled prefix & intentional
+configure error & finds unrelated host package \\
+Sanitizer canary & controlled invalid memory access & sanitizer process
+failure with report & silently passes because instrumentation missing \\
+Missing exported header & independent project & configure/compile fails
+until fixed & local include directories conceal defect \\
+\end{longtable}
+
+For temporary canaries, isolate into a non-release test fixture and
+avoid undefined behavior in production test binaries.
+
+\chapter{Static analysis pipeline}\label{static-analysis-pipeline}
+
+The book covers clang-tidy, cppcheck, cpplint and Include What You Use.
+These tools are not interchangeable; choose checks based on coding
+standard, defect patterns, compiler representation and acceptable
+false-positive rates. An external security scanner such as CodeQL
+complements these rather than replacing them.
+
+\begin{lstlisting}[language=sh]
+cmake -S . -B build/analyze -G Ninja \
+  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build build/analyze
+# If clang-tidy is installed:
+clang-tidy -p build/analyze src/math.cpp
+\end{lstlisting}
+
+\begin{lstlisting}
+find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+if(CLANG_TIDY_EXE)
+  set_property(TARGET bsuite_core PROPERTY
+    CXX_CLANG_TIDY "${CLANG_TIDY_EXE}")
+endif()
+\end{lstlisting}
+
+\textbf{Decision:} avoid silently skipping mandatory analysis in CI. If
+a tool is required, fail early with a precise diagnostic. A compilation
+database is generator-dependent; verify that the analysis sees generated
+sources and the same feature defines as the real build.
+
+\chapter{Dynamic analysis and
+sanitizers}\label{dynamic-analysis-and-sanitizers}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Instrument
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Examples discovered
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Constraints
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+AddressSanitizer & use-after-free, bounds violations & compiler runtime
+needed; platform support varies \\
+UndefinedBehaviorSanitizer & selected undefined operations & not
+exhaustive; runtime defaults vary \\
+ThreadSanitizer & many data races & incompatible with some other
+sanitizers and platforms \\
+MemorySanitizer & some uninitialized memory uses & usually needs
+compatible instrumented dependency closure \\
+Coverage & execution of instrumented paths & does not imply absence of
+defects \\
+\end{longtable}
+
+Illustrative GCC/Clang target-local debug profile:
+
+\begin{lstlisting}
+option(ENABLE_ASAN_UBSAN "Enable ASan and UBSan" OFF)
+if(ENABLE_ASAN_UBSAN AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  target_compile_options(bsuite_core PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+  target_link_options(bsuite_core PRIVATE -fsanitize=address,undefined)
+  # Apply compatible instrumentation to final executable/test link targets too.
+endif()
+\end{lstlisting}
+
+Because static libraries do not do a final link, sanitizer link flags
+must reach executable/shared-library link steps. Distinct instrumented
+build directories prevent cache and object contamination; check
+third-party dependency compatibility and runtime library availability.
+
+\chapter{Coverage methodology}\label{coverage-methodology}
+
+Choose a compatible compiler + coverage toolchain combination. For
+GNU-family toolchains, gcov-oriented flags/tooling are common; for
+Clang, LLVM's source-based coverage is appropriate when enabled for all
+relevant source objects. Capturing a \passthrough{\lstinline!.profraw!}
+file alone is not a human-readable report.
+
+\textbf{{[}ENGINEERING EXTENSION{]}} Coverage dimensions:
+
+\begin{itemize}
+\tightlist
+\item
+  Line coverage: exercised source lines / instrumented eligible source
+  lines.
+\item
+  Branch coverage: exercised branch outcomes / instrumented branch
+  outcomes.
+\item
+  Change-based coverage: modified lines exercised in representative
+  tests.
+\item
+  Risk-weighted coverage: critical parser, allocator, privilege-handling
+  and boundary logic get stronger test expectations than trivial
+  wrappers.
+\end{itemize}
+
+A high number can conceal missing edge cases and specification errors.
+Combine coverage with mutation tests and input generation where
+criticality warrants the cost.
+
+\chapter{CodeQL and secure SDLC
+extension}\label{codeql-and-secure-sdlc-extension}
+
+\textbf{{[}ENGINEERING EXTENSION{]}} GitHub CodeQL supports build modes
+for compiled languages; as of the referenced GitHub documentation, C/C++
+can use \passthrough{\lstinline!none!},
+\passthrough{\lstinline!autobuild!} or \passthrough{\lstinline!manual!}
+modes. Manual mode makes explicit build commands available to extraction
+and is worth evaluating for generated-source-heavy projects. Do not
+claim that CodeQL always requires a build or that
+\passthrough{\lstinline!none!} necessarily misses all relevant source.
+See
+\url{https://docs.github.com/en/code-security/concepts/code-scanning/codeql/codeql-for-compiled-languages}
+.
+
+Capture code scanning alerts and triage by exploitability and developer
+ownership. Associate the verified fix with an independently scanned
+change, not just a post-merge status. Run CodeQL in an appropriately
+configured workflow; it is \textbf{not} a native CMake command.
+
+\chapter{Quality-gate control matrix}\label{quality-gate-control-matrix}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Gate ID
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Event
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Required evidence
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Failure action
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+QG-01 & PR / merge request & clean configure, compile, unit test & block
+merge \\
+QG-02 & PR / merge request & formatting and mandatory static checks &
+fix or approved, time-bounded exception \\
+QG-03 & protected branch & ASan/UBSan suite & open prioritized defect;
+prevent release \\
+QG-04 & release candidate & installed-consumer test + relocation & block
+package publishing \\
+QG-05 & release candidate & dependency inventory, advisory policy and
+licenses & resolve or risk-accept in recorded exception \\
+QG-06 & release candidate & platform matrix + signed provenance /
+manifest & block promotion if mandatory matrix incomplete \\
+\end{longtable}
+
+Thresholds are organization-defined; these gates are an implementation
+proposal, not book requirements. Security gates must handle tool
+unavailability explicitly and must avoid uploading private source or
+credentials to untrusted services.
+
+\chapter{Test failures: structured
+triage}\label{test-failures-structured-triage}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Reproduce} using the failing revision, toolchain, preset and
+  generator.
+\item
+  \textbf{Localize} to configure, compile, link, test assertion,
+  environment, install or package phase.
+\item
+  \textbf{Collect} compiler command, CMake trace/find diagnostics and
+  \passthrough{\lstinline!ctest -VV!} as relevant.
+\item
+  \textbf{Discriminate} product defect from analyzer false positive,
+  flaky infrastructure or unsupported platform.
+\item
+  \textbf{Fix} in target graph or source, add a focused regression,
+  rerun relevant cross-platform paths.
+\item
+  \textbf{Record} evidence, owner, severity, affected versions and
+  release disposition.
+\end{enumerate}
+
+\chapter{Metrics and dashboard}\label{metrics-and-dashboard}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Metric
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Numerator / denominator
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Interpretation caveat
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+First-pass test rate & passing first runs / total first runs & test mix
+changes invalidate easy trends \\
+Flake rate & non-deterministic failures / repeated identical runs &
+environment drift can masquerade as flakiness \\
+Test duration P95 & 95th percentile wall time & report by suite and
+runner class \\
+Escape rate & post-release verified defects / released changes & depends
+on reporting completeness \\
+Analysis coverage & targets scanned / eligible targets & tool invocation
+does not establish defect-detection sensitivity \\
+Build matrix completion & verified required jobs / required jobs &
+unsupported runners must remain visible as gaps \\
+\end{longtable}
+
+\chapter{Hands-on practical
+assessments}\label{hands-on-practical-assessments}
+
+\textbf{Lab 1:} add a valid and invalid arithmetic test, demonstrate
+CTest handling. \textbf{Lab 2:} run two tests with a shared lock and
+compare to uncontrolled execution. \textbf{Lab 3:} produce a
+compiler-warning report and resolve a real target-owned warning.
+\textbf{Lab 4:} isolate an ASan canary in its own Debug profile.
+\textbf{Lab 5:} configure a clean installed consumer and demonstrate
+failure after deliberately deleting an exported header.
+
+\chapter{Final sign-off}\label{final-sign-off}
+
+A product is test-ready when its tests are deterministic, failures
+return meaningful nonzero exit statuses, required instrumentation is not
+silently disabled, environment assumptions are recorded, and a clean
+external consumer can build from installed artifacts. Test pass counts
+without scope, versions and failure evidence do not satisfy release
+readiness.
+
+\end{document}
