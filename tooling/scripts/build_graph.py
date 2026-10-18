@@ -313,9 +313,23 @@ def build_graph(
     )
 
 
+def _normalize_changed_path(changed_path: str) -> str:
+    """Normalize a Git-reported path without corrupting dotfile prefixes.
+
+    ``str.lstrip("./")`` removes every leading ``.`` and ``/`` character, which
+    turns ``.github/actions/...`` into ``github/actions/...`` and silently
+    defeats global-dependency prefix matching. Only a literal ``./`` prefix is
+    removed here.
+    """
+    normalized = changed_path.strip().replace("\\", "/")
+    while normalized.startswith("./"):
+        normalized = normalized[2:]
+    return normalized
+
+
 def is_global_change(changed_path: str) -> bool:
     """Whether a changed path forces every root to be considered affected."""
-    normalized = changed_path.strip().replace("\\", "/").lstrip("./")
+    normalized = _normalize_changed_path(changed_path)
     if not normalized:
         return False
     if normalized in GLOBAL_DEPENDENCY_FILES:
@@ -357,7 +371,7 @@ def select_affected(
 
     Correctness rule: when in doubt, include.
     """
-    normalized = [path.strip().replace("\\", "/").lstrip("./") for path in changed_paths]
+    normalized = [_normalize_changed_path(path) for path in changed_paths]
     normalized = [path for path in normalized if path]
 
     if any(is_global_change(path) for path in normalized):
