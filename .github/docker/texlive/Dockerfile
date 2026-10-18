@@ -22,6 +22,7 @@ RUN apt-get update \
         texlive-latex-extra \
         texlive-fonts-recommended \
         texlive-fonts-extra \
+        cm-super \
         texlive-pictures \
         texlive-science \
         texlive-bibtex-extra \

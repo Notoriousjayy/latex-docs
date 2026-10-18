@@ -124,6 +124,20 @@ class ChangeDetectionTests(WorkspaceTestCase):
         self.assertTrue(build_graph.is_global_change("Makefile"))
         self.assertFalse(build_graph.is_global_change("README.md"))
 
+    def test_dotfile_prefixed_toolchain_change_is_global(self) -> None:
+        """Paths beginning with a dot must survive normalization: lstrip("./")
+        used to turn .github/actions/... into github/actions/..., so a
+        toolchain-only commit planned zero roots (run 39167674020)."""
+        self.assertTrue(build_graph.is_global_change(".github/actions/setup-latex/action.yml"))
+        self.assertTrue(build_graph.is_global_change("./.github/actions/setup-latex/action.yml"))
+        self.assertTrue(build_graph.is_global_change(".github/workflows/_build-latex.yml"))
+        self.assertTrue(build_graph.is_global_change(".latexmkrc"))
+        selected, reason = build_graph.select_affected(
+            self.graph, [".github/actions/setup-latex/action.yml"]
+        )
+        self.assertEqual("global", reason)
+        self.assertEqual(3, len(selected))
+
     def test_unrelated_file_selects_nothing(self) -> None:
         self.assertEqual([], self.select("README.md"))
         self.assertEqual([], self.select("docs/notes.md"))
