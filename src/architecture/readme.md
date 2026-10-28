@@ -1,54 +1,55 @@
 # Architecture
 
-Software and enterprise architecture documentation: viewpoint
-frameworks, governance, patterns, systems engineering, and TOGAF
-adoption material.
+Architecture descriptions, cloud reference architectures, architectural decisions, governance artifacts, diagrams, and learning material. The library contains reusable models and templates; it does not designate any template as an approved production architecture.
 
-## Scope
+## Explore the collection
 
-**Belongs here:**
-- Architectural-viewpoint documentation (Views and Beyond, ISO/IEC/IEEE 42010, RUP, DoDAF).
-- Enterprise framework material (TOGAF ADM, viewpoint mappings).
-- Governance frameworks at the architectural layer (cloud governance, control frameworks).
-- Architectural patterns (build-system facades, etc.).
+| Area | What it contains | Sources |
+|---|---|---:|
+| [`cloud/`](cloud/) | Cloud concepts, architecture/diagram sets and an engineering suite. | 27 |
+| [`decisions/`](decisions/) | Generic and specialized ADR templates with review governance. | 11 |
+| [`diagramming/`](diagramming/) | Guides and conventions for architecture diagramming. | 1 |
+| [`diagrams/`](diagrams/) | Cross-cutting diagrams and architectural model assets. | 0 |
+| [`enterprise/`](enterprise/) | Enterprise architecture, business operations, and IT service management. | 15 |
+| [`examples/`](examples/) | Worked architecture examples. | 1 |
+| [`governance/`](governance/) | Cloud Center of Excellence artifacts and governance. | 62 |
+| [`learning/`](learning/) | Architecture study material and learning roadmaps. | 1 |
+| [`patterns/`](patterns/) | Reusable architecture patterns. | 5 |
+| [`standards/`](standards/) | ISO/IEC/IEEE 42010 architecture-description guidance. | 7 |
+| [`style-system/`](style-system/) | Architecture styling and documentation standards. | 12 |
+| [`systems-engineering/`](systems-engineering/) | Systems engineering perspectives. | 1 |
+| [`togaf/`](togaf/) | TOGAF material and guidance. | 5 |
+| [`uml/`](uml/) | UML notation material and reference diagrams. | 1 |
+| [`views-and-beyond/`](views-and-beyond/) | Viewpoint methodology, style catalogs and view packets. | 37 |
 
-**Does not belong here:**
-- AppSec process flows — see `../security/application-security/processes/`.
-- CI/CD pipeline details — see `../devops/ci-cd/`.
-- Code-level patterns and language idioms — see `../programming/`.
-
-## Contents
-
-| Child | Purpose |
-|---|---|
-| `decisions/` | Central generic and specialized ADR templates, review governance, and ISO/IEC/IEEE 42010 decision traceability. See [ADR library](./decisions/readme.md). |
-| `governance/` | Cloud governance and control frameworks; the [CCoE project management and governance suite](./governance/ccoe/readme.md). |
-| `patterns/` | Architectural patterns (build-system facade, etc.). |
-| `systems-engineering/` | Systems-engineering perspective on software architecture. |
-| `togaf/` | TOGAF ADM user stories and overviews. |
-| `views-and-beyond/` | The largest subtree — Views and Beyond methodology, style catalogs, framework mappings. See child readme. |
-| `diagrams/` | Cross-cutting architecture diagrams not owned by any single document. |
-| `architecture-description-index.md` | ISO/IEC/IEEE 42010:2022-aligned AD index for the diagram corpus: stakeholders, viewpoints, model kinds, traceability, correspondence methods, decisions and the requirement-to-evidence register. |
-
-## Conventions
-
-- Diagrams co-locate with the document that owns them, except in
-  `diagrams/` (cross-cutting only).
-- Style catalogs sit under `views-and-beyond/style-catalogs/<aspect>/<style>-style/`.
-- Framework mappings are named `mapping-to-<framework>.tex`.
-
-## Building
+## Build and validate
 
 ```bash
+make preflight
 make build-category-architecture
+make list-roots
 ```
+
+The category command discovers standalone LaTeX roots and builds them with the shared pdfLaTeX toolchain. To stage PDFs under `public/pdfs/`, use `make publish` from the repository root. The commands above describe the supported interface; they do not imply that every root has been compiled in this change.
+
+## Using this collection
+
+- Begin with the [architecture-description index](architecture-description-index.md) to understand diagram provenance and view/concern traceability.
+
+- Use [ADRs](decisions/readme.md) for trade-offs and design rationale; use [architecture descriptions](standards/iso-iec-ieee-42010/) for stakeholder concerns, views and correspondences.
+
+- Consult the [CCoE suite](governance/ccoe/readme.md) for governance templates and project-control records.
+
+## Maintenance and scope
+
+- An ADR template is not an accepted decision; sign-off must occur in an adopting project.
+
+- Do not confuse a rendered PlantUML diagram with validated UML semantics or standards conformance.
+
+- Keep individual diagrams with their source documents unless they are explicitly shared across projects.
 
 ## Related
 
-- [Architecture Decision Record library](./decisions/readme.md) — templates for cloud, security, data, APIs, delivery, resilience, observability, software structure, and AI.
+- [Views and Beyond](views-and-beyond/readme.md)
 
-- `../readme.md`
-- `views-and-beyond/readme.md`
-- Upstream: *Documenting Software Architectures: Views and Beyond* (Clements et al., 2nd ed.).
-
-
+- [Repository source catalog](../readme.md)

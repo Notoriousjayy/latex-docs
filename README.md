@@ -1,271 +1,95 @@
-# latex-docs
+# LaTeX Documentation Library
 
-A categorized LaTeX document library organized under `src/` with kebab-case
-directory naming. The repository is **source-first**: PDFs and LaTeX build
-artifacts are generated locally/CI and are not committed.
+A source-controlled engineering documentation library covering software architecture, cybersecurity, DevOps, programming, mathematics, electronics, business operations, and structured learning. **LaTeX source is authoritative**; generated PDFs are build products, not the canonical editing format.
 
-All documents share a single canonical house style supplied by
-`tooling/latex/style.sty` through semantic modules in
-`tooling/styles/latex/`.
+## Start here
 
----
+| Goal | Entry point |
+|---|---|
+| Find a topic or project | [Source catalog](src/readme.md) |
+| Review architectural choices | [ADR template library](src/architecture/decisions/readme.md) |
+| Understand architecture governance | [CCoE governance suite](src/architecture/governance/ccoe/readme.md) |
+| Browse structured study notes | [Cornell Notes collections](src/cornell-notes/README.md) |
+| Author diagrams consistently | [PlantUML style framework](tooling/plantuml/README.md) |
+| Inspect the implementation of the build | [Build helper](tooling/scripts/latex_build.py) and [Makefile](Makefile) |
 
-## Repository layout
+## Repository map
 
-- `src/` — all LaTeX sources, grouped by domain (`security/`,
-  `architecture/`, `devops/`, `data-systems/`, `programming/`,
-  `mathematics/`, `game-development/`, `electronics/`, `personal/`, …).
-- [CCoE governance catalog](src/architecture/governance/ccoe/readme.md) —
-  process-group inventory, editable template links, governance relationships,
-  and outstanding source gaps.
-- `src/common/` — shared helpers (e.g., CI-safe macros).
-- `tooling/latex/` — shared style and preamble:
-  - `style.sty` — the canonical house style inherited by semantic
-    modules.
-  - `common-preamble.tex` — legacy include retained for backwards
-    compatibility.
-- `tooling/styles/latex/` — semantic document modules. Root
-  documents load exactly one module (for example,
-  `\usepackage{technical-design-spec}` or
-  `\usepackage{cornell-notes}`), and that module inherits the
-  canonical house style via `base.sty`.
-- `tooling/scripts/` — utility scripts.
-- `.github/workflows/` — CI / publishing workflows.
+`src/` organizes the documents by domain; `tooling/` contains style modules, scripts, and manifests; `tests/` checks build, styles, collections, and diagrams; `.github/workflows/` defines validation, publishing, and release automation. [Browse every domain](src/readme.md), including business analysis, startups, and technical writing.
 
-> GitHub Actions only executes workflows placed under
-> `.github/workflows/`. A root-level file such as
-> `github-workflows-build-latex.yml` is reference material; copy it under
-> `.github/workflows/` to activate it.
+## Quick start
 
----
-
-## House Style and Semantic Modules
-
-`tooling/latex/style.sty` is loaded once per document by the active
-semantic module and owns
-every shared concern: page geometry, fonts and microtypography, tables
-and lists, the colour palette (Navy / Steel / Teal / Brick over neutral
-backgrounds), tcolorbox callouts, hyperlinks, code rendering, and
-document metadata. Documents should not redefine these — the
-standardiser strips duplicate `\usepackage`, callout-box, and
-helper-macro definitions during normalization.
-
-### Public API
-
-#### Metadata (value-emitter macros)
-
-In any document preamble, after loading one semantic module:
-
-```latex
-\usepackage{cornell-notes}
-\renewcommand{\DocTitle}{Cloud Governance \& Control Framework}
-\renewcommand{\DocSubtitle}{Views \& Beyond Documentation Package}
-\renewcommand{\DocVersion}{v0.1}
-\renewcommand{\DocStatus}{Draft}
-\renewcommand{\DocOwner}{Cloud Platform \& Governance Team}
-\renewcommand{\DocAuthor}{Jordan Suber}
-\renewcommand{\DocDate}{\today}
-\renewcommand{\DocSummary}{One-paragraph statement of purpose.}
-```
-
-There are also convenience setters: `\setDocTitle{...}`,
-`\setDocVersion{...}`, etc. Either form works.
-
-#### Title block / front matter
-
-```latex
-\begin{document}
-\makedoctocpage   % renders title block + summary box + ToC + \clearpage
-% --- body starts here ---
-```
-
-Or, if you only want pieces:
-
-```latex
-\makedoctitle      % centred title + subtitle + meta line
-\makedocsummary    % "Purpose" box, suppressed when \DocSummary is empty
-```
-
-Cornell-note documents also use the standard LaTeX title API explicitly:
-
-```latex
-	itle{...}
-\author{...}
-\date{...}
-\begin{document}
-\maketitle
-```
-
-The `cornell-notes` module specializes the visual rendering of
-`\maketitle`. The legacy `\makecornelltitle` command is compatibility-only.
-
-#### Named callouts
-
-The five callout environments are pre-defined; the optional argument is
-the title (matching the convention used throughout this repo):
-
-```latex
-\begin{notebox}[Discovery Indicators]      ... \end{notebox}
-\begin{tipbox}[Key Discovery Point]        ... \end{tipbox}
-\begin{warnbox}[Important]                 ... \end{warnbox}
-\begin{infobox}[Architectural View Types]  ... \end{infobox}
-\begin{viewbox} ... \end{viewbox}          % quiet, no title bar
-```
-
-Defaults are sensible: `\begin{notebox}` with no argument titles the box
-"Note", and so on.
-
-#### Helper macros
-
-- `\safeincludegraphics[opts]{path}` — silently no-ops if the file is
-  missing, so CI does not fail on a sketch in progress.
-- `\cmark` / `\xmark` — checkmark / cross glyphs in palette colours.
-- `\kbd{Ctrl+C}`, `\filename{config.yaml}`, `\cmd{git rebase}` —
-  typeset their arguments in a small monospace face.
-
-#### Code rendering (minted only)
-
-The shared style requires `minted` and shell escape for all code rendering.
-
-- `minted` is the only supported backend for code blocks and inline code.
-- `listings` is not used in the repository and is not a supported fallback.
-- The canonical build path is the shared helper in [tooling/scripts/latex_build.py](tooling/scripts/latex_build.py) via [Makefile](Makefile) and the CI workflow.
-
----
-
-## Build model
-
-The repository builds **standalone documents** ("roots") — every
-`src/**/*.tex` file containing `\documentclass`. The `Makefile`
-auto-discovers these and builds each in its own leaf directory (PDFs and
-caches sit alongside their source under `src/`).
-
-### TEXINPUTS resolution
-
-Because the Makefile `cd`s into each leaf directory before invoking
-`latexmk`, the repo-root `latexmkrc` is **not** auto-loaded. The
-Makefile instead exports
-
-```make
-TEXINPUTS := $(abspath tooling/latex)//:$(TEXINPUTS)
-```
-
-so the shared `style.sty` is found via `kpsewhich`. If you
-invoke `latexmk` directly from the repo root, prepend the same path
-manually:
+From the repository root, install Python 3, `latexmk`, a pdfLaTeX-capable TeX Live distribution with the packages used by the corpus, Pygments for `minted`, and Java/Graphviz for PlantUML rendering. The CI configuration is the practical reference for a compatible toolchain.
 
 ```bash
-export TEXINPUTS="$(pwd)/tooling/latex//:$TEXINPUTS"
-latexmk -pdf -shell-escape -interaction=nonstopmode src/some/path/foo.tex
-```
-
----
-
-## Building locally
-
-### Prerequisites
-
-- `latexmk`
-- TeX Live: `texlive-latex-recommended texlive-latex-extra
-  texlive-fonts-recommended texlive-fonts-extra texlive-pictures
-  texlive-science texlive-bibtex-extra biber python3-pygments`
-
-### Common commands
-
-```bash
-make list-roots                       # show every buildable .tex
-make list-categories                  # categories with document counts
-make build-all                        # serial build of every root
-make build-parallel JOBS=8            # parallel build
-make build-category-architecture      # one category
-make build-changed BASE_REF=HEAD~1 HEAD_REF=HEAD
-make publish                          # publish canonical PDFs/logs under public/
-make clean                            # drop aux files, keep PDFs
-make distclean                        # drop aux files and PDFs
-```
-
-### GitHub automation contract
-
-GitHub Actions now delegates build execution to the repository-owned interface:
-
-- the reusable workflow calls the canonical Make targets;
-- the Makefile delegates to the Python helper in tooling/scripts/latex_build.py;
-- the build script owns root discovery, changed-file analysis, latexmk execution, logging, cleanup, and canonical output layout.
-
-The canonical changed-build CLI is `python3 tooling/scripts/latex_build.py build-changed --base <sha> --head <sha>`. The Makefile variables `BASE_REF` and `HEAD_REF` map to those flags.
-
-This keeps CI, Pages, and release workflows aligned with the same public contract used locally.
-
-### Build one document
-
-```bash
-cd src/architecture/governance
-latexmk -pdf -shell-escape -interaction=nonstopmode -halt-on-error \
-        -file-line-error cloud-governance-control-framework.tex
-```
-
-`TEXINPUTS` from the Makefile is inherited if you invoke through `make`;
-otherwise export it as shown above.
-
----
-
-## CI / publishing
-
-### CI build (artifacts) — `.github/workflows/latex-ci.yml`
-
-Installs the TeX toolchain (with fonts/science/biber/pygments), runs
-`make build-all`, collects PDFs under `src/`, uploads as a workflow
-artifact preserving the `src/` folder structure.
-
-### GitHub Pages — `.github/workflows/latex-pages.yml`
-
-Builds roots, stages PDFs into a `site/` directory, generates an HTML
-index, deploys to Pages.
-
-### Releases — `.github/workflows/latex-release.yml`
-
-Trigger: tags matching `v*`. Builds all roots, packages collected PDFs
-into `release/latex-pdfs.zip`, publishes a GitHub Release with the zip
-attached.
-
----
-
-## Conventions
-
-- Kebab-case directories and filenames (lowercase + hyphens, no spaces).
-- Document assets (images, etc.) live next to the document that uses
-  them.
-- Every root opens with a standardized banner comment naming the file's
-  repo-relative path and the house-style version.
-- PDFs and LaTeX build artifacts are git-ignored.
-
----
-
-## Maintaining the house style
-
-Changes to `tooling/latex/style.sty` must keep ALL existing
-documents compiling cleanly under `latexmk -pdf -shell-escape` with no
-new warnings. The style file uses `\providecommand`, `\providecolor`,
-`\PassOptionsToPackage`, and `\@ifundefined` guards throughout so it is
-safe to load atop legacy preambles.
-
-Public macro names (`\DocTitle`, `\makedoctocpage`, `\notebox`, `\kbd`,
-`\safeincludegraphics`, `\cmark`, …) are part of the contract — they
-must stay backwards-compatible. Add new names; do not rename existing
-ones.
-
----
-
-## Finding content
-
-For browsing by domain, start under `src/`. For "buildable" documents
-specifically:
-
-```bash
+make help
+make list-categories
 make list-roots
+make preflight
+make build-category-architecture
+make build-parallel JOBS=4
+make render-plantuml
 ```
 
-That list is the authoritative set of standalone PDFs the automation
-expects to build.
+Root discovery is based on `.tex` files under `src/` that declare `\documentclass`. Not every `.tex` is a standalone root: included fragments and templates may depend on another document. A category build writes by default beside the source roots; **publishing** explicitly stages PDFs and logs under `public/pdfs/` and `public/logs/`.
 
+### Build and publish commands
 
+| Command | Effect |
+|---|---|
+| `make preflight` | Check the repository's pdfLaTeX-only policy before compiling. |
+| `make build-all` | Compile every discovered root serially. |
+| `make build-parallel JOBS=4` | Compile roots concurrently. |
+| `make build-category-<domain>` | Build one top-level `src/` domain. |
+| `make build-changed BASE_REF=<sha> HEAD_REF=<sha>` | Build roots affected by the specified Git comparison. |
+| `make plan PLAN_MODE=changed` | Create a build plan for sharded CI work. |
+| `make verify-corpus PLAN=<plan.json>` | Verify published PDF coverage against a plan. |
+| `make publish` / `make publish-parallel JOBS=4` | Build and stage a complete PDF corpus under `public/pdfs/`. |
+| `make clean` / `make distclean` | Remove build artifacts; `distclean` also removes generated PDFs. |
+
+### Building a single document
+
+The supported helper sets `TEXINPUTS` for both the core house style and the semantic modules, then invokes `latexmk` with `-pdf`, strict error flags and shell escape. Prefer a category/changed build. When invoking `latexmk` manually, provide the required style search paths and an appropriate working directory.
+
+```bash
+export TEXINPUTS="$(pwd)/tooling/latex//:$(pwd)/tooling/styles/latex//:${TEXINPUTS:-}"
+cd src/architecture/decisions
+latexmk -pdf -shell-escape -interaction=nonstopmode -halt-on-error -file-line-error adr-lifecycle-and-review-guide.tex
+```
+
+## Authoring standards
+
+- **One semantic module per root.** Load an appropriate concrete package from [`tooling/styles/latex/`](tooling/styles/latex/) (for example, `technical-design-spec` or `cornell-notes`). These inherit the canonical house style in [`tooling/latex/style.sty`](tooling/latex/style.sty).
+
+- **Metadata is explicit.** Use the document title, subtitle, version, status, owner and summary macros supported by the selected module; do not recreate shared title pages, callouts, typography or palette definitions locally.
+
+- **Keep evidence distinct from templates.** Blank ADRs, governance forms and study material are reusable sources; they do not represent approved project decisions, operational evidence or independent certification.
+
+- **Use predictable names and paths.** Prefer lowercase kebab-case for newly authored sources. Preserve intentional legacy paths rather than renaming files during a documentation-only revision.
+
+- **Keep diagrams source-controlled.** Maintain `.puml` beside their owning material where practical. Reuse the [shared PlantUML framework](tooling/plantuml/README.md), validate syntax and review rendered output.
+
+- **Protect provenance and privacy.** The repository is public. Review sensitive, personal, licensed and third-party material before publication; source documents are not automatically public-distribution clearances.
+
+## CI, Pages and releases
+
+| Workflow | Trigger | Purpose |
+|---|---|---|
+| [LaTeX CI](.github/workflows/latex-ci.yml) | Pull requests affecting sources/tooling; manual dispatch | Validate affected roots through the shared build workflow. |
+| [GitHub Pages](.github/workflows/latex-pages.yml) | `main` changes, manual dispatch and weekly scheduled full verification | Build/verify the corpus, stage its PDF and raster artifacts, publish Pages. |
+| [LaTeX release](.github/workflows/latex-release.yml) | Published releases; manual dispatch | Reuse a verified matching artifact where available, otherwise rebuild and package PDFs. |
+
+These workflows delegate compilation to [the reusable build workflow](.github/workflows/_build-latex.yml). Only YAML files within `.github/workflows/` run as GitHub Actions workflows; the root-level `github-workflows-build-latex.yml` is not activated automatically. Build success must be confirmed from workflow runs, not inferred from the presence of source files.
+
+## Contributing and quality checks
+
+Before opening a pull request: check the source path, add or update the closest README, verify relative links, document prerequisites, avoid claiming untested builds, and run the relevant tests and checks. For broad source or style changes, run the full build and examine generated PDFs, diagram outputs and build summaries.
+
+```bash
+git diff --check
+python3 -m unittest discover -s tests
+make preflight
+make build-category-security
+```
+
+**Repository navigation:** [Source index](src/readme.md) · [Architecture](src/architecture/readme.md) · [Security](src/security/readme.md) · [Programming](src/programming/readme.md) · [DevOps](src/devops/readme.md)

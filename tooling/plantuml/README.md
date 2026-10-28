@@ -1,6 +1,6 @@
 # PlantUML Style Framework (UML + C4)
 
-One presentation system for every first-party diagram in this repository.
+The canonical rendering and presentation system for first-party UML and C4 diagrams. This is an implementation and style contract; a clean render alone does not demonstrate UML semantic correctness or ISO/IEC/IEEE 42010 conformance.
 Four layers share the work, and the framework keeps them distinct:
 
 | Layer | Role here |
@@ -12,6 +12,17 @@ Four layers share the work, and the framework keeps them distinct:
 | House style (this framework) | typography, colour *roles*, spacing, labels, legends, output behaviour. Project conventions, applied identically to UML and C4 views. |
 
 ---
+
+## Quick start
+
+From the repository root, use the canonical renderer and linter:
+
+```bash
+make render-plantuml
+python3 tooling/scripts/plantuml_lint.py
+```
+
+The renderer uses the version and checksum in [`tooling/manifests/plantuml.json`](../manifests/plantuml.json). Select one appropriate leaf style module for the diagram type, then review its notation and rendered output. Local palette overrides and `skinparam` declarations are not part of the current style contract; see the hierarchy and extension rules below.
 
 ## 1. Design overview
 

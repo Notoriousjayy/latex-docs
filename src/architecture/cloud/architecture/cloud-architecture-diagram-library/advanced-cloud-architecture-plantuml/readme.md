@@ -1,59 +1,37 @@
-# Advanced Cloud Architecture - PlantUML Diagram Set
+# Advanced Cloud Architectures — PlantUML
 
-## Purpose
+14 chapter-oriented diagrams representing thirteen advanced cloud architecture patterns and a case study. These are interpretations of Chapter 14 rather than provider-specific system designs.
 
-This diagram set provides original PlantUML representations of the thirteen advanced cloud architectures and the case study described in **Chapter 14: Advanced Cloud Architectures**. Each diagram captures the architecture's purpose, primary actors, mechanisms, and runtime flow as described in the source. The diagrams are intentionally faithful to the source's terminology and stated mechanisms; no external technologies, vendor names, or unstated implementation details are introduced.
+## Actual diagram sources
 
-## Source Document
+| Source | Topic |
+|---|---|
+| [14-01-hypervisor-clustering-heartbeat.puml](diagrams/14-01-hypervisor-clustering-heartbeat.puml) | Hypervisor clustering |
+| [14-02-virtual-server-clustering-structural.puml](diagrams/14-02-virtual-server-clustering-structural.puml) | Virtual server clustering |
+| [14-03-load-balanced-virtual-server-instances.puml](diagrams/14-03-load-balanced-virtual-server-instances.puml) | Load-balanced virtual servers |
+| [14-04-nondisruptive-service-relocation.puml](diagrams/14-04-nondisruptive-service-relocation.puml) | Service relocation |
+| [14-05-zero-downtime-active-failover-group.puml](diagrams/14-05-zero-downtime-active-failover-group.puml) | Zero downtime |
+| [14-06-cloud-balancing-cross-cloud-routing.puml](diagrams/14-06-cloud-balancing-cross-cloud-routing.puml) | Cloud balancing |
+| [14-07-resilient-disaster-recovery-premises.puml](diagrams/14-07-resilient-disaster-recovery-premises.puml) | Disaster recovery |
+| [14-08-distributed-data-sovereignty-region.puml](diagrams/14-08-distributed-data-sovereignty-region.puml) | Data sovereignty |
+| [14-09-resource-reservation-borrow-reclaim.puml](diagrams/14-09-resource-reservation-borrow-reclaim.puml) | Resource reservation |
+| [14-10-dynamic-failure-detection-recovery.puml](diagrams/14-10-dynamic-failure-detection-recovery.puml) | Failure detection and recovery |
+| [14-11-rapid-provisioning-engine-sequence-18.puml](diagrams/14-11-rapid-provisioning-engine-sequence-18.puml) | Rapid provisioning |
+| [14-12-storage-workload-mgmt-lun-migration.puml](diagrams/14-12-storage-workload-mgmt-lun-migration.puml) | Storage workload management |
+| [14-13-virtual-private-cloud-dedicated-slice.puml](diagrams/14-13-virtual-private-cloud-dedicated-slice.puml) | Virtual private cloud |
+| [14-14-case-study-innovartus-role-player-cloud.puml](diagrams/14-14-case-study-innovartus-role-player-cloud.puml) | Case study |
 
-- File: `14_Chapter_14_Advanced_Cloud_Architectures.pdf`
-- Chapter: 14, Sections 14.1 - 14.14
+## Review and render
 
-## Diagram Inventory
+Identify the architectural question, read the relevant source section, inspect the diagram and compare rendered output with the intent of the model. Retain optional mechanisms as optional, and record assumptions explicitly.
 
-| # | File | Architecture | Diagram Type |
-|---|---|---|---|
-| 01 | `01_hypervisor_clustering.puml` | Hypervisor Clustering | Sequence |
-| 02 | `02_virtual_server_clustering.puml` | Virtual Server Clustering | Deployment |
-| 03 | `03_load_balanced_virtual_server_instances.puml` | Load-Balanced Virtual Server Instances | Sequence |
-| 04 | `04_nondisruptive_service_relocation.puml` | Nondisruptive Service Relocation | Sequence |
-| 05 | `05_zero_downtime.puml` | Zero Downtime | Deployment |
-| 06 | `06_cloud_balancing.puml` | Cloud Balancing | Component |
-| 07 | `07_resilient_disaster_recovery.puml` | Resilient Disaster Recovery | Deployment |
-| 08 | `08_distributed_data_sovereignty.puml` | Distributed Data Sovereignty | Deployment |
-| 09 | `09_resource_reservation.puml` | Resource Reservation | Activity |
-| 10 | `10_dynamic_failure_detection_and_recovery.puml` | Dynamic Failure Detection and Recovery | Activity |
-| 11 | `11_rapid_provisioning.puml` | Rapid Provisioning | Sequence |
-| 12 | `12_storage_workload_management.puml` | Storage Workload Management | Sequence |
-| 13 | `13_virtual_private_cloud.puml` | Virtual Private Cloud | Deployment |
-| 14 | `14_case_study_example.puml` | Case Study (Innovartus Cloud Balancing) | Component |
+```bash
+make render-plantuml
+python3 tooling/scripts/plantuml_lint.py
+```
 
-## Compiling
+The sources are under `diagrams/`, with rendered formats nearby. Historic [per-file compilation notes](validation/compile-commands.md) contain some former filenames; use the actual linked `.puml` names above and the canonical repository renderer. A clean render does not prove real-world resilience or cloud security.
 
-See `validation/compile-commands.md`. In short:
+## Related
 
-    # Run from the repository root.
-    make render-plantuml
-
-Each `.puml` file is self-contained and compiles independently. No `!include` directives are used.
-
-## Validation
-
-The full set is validated through the repository renderer, which downloads and checksums the pinned PlantUML version from `tooling/manifests/plantuml.json`.
-
-## Ambiguity Notes
-
-Where the source describes qualitative behavior without naming a specific component, that behavior is represented in the diagram with a labelled note. Specific examples:
-
-- **14.4 Nondisruptive Service Relocation** - The source defines two virtual-server migration modes (local/non-shared storage vs. shared remote storage). Both are represented in a single note rather than as separate flow branches because the source does not give different overall sequencing for them.
-- **14.6 Cloud Balancing** - The source notes that resource replication "may need" to be incorporated when manual cross-cloud synchronization is not possible. This conditional is preserved as a note.
-- **14.10 Dynamic Failure Detection and Recovery** - The four recovery steps shown follow the example policy in Figure 14.25 verbatim. The number and content of steps are policy-driven and may vary in practice; the diagram preserves the exact policy from the source.
-- **14.11 Rapid Provisioning** - The numbered sequence follows the 18-step description in the source. The "deployment engine" is treated as a function of the rapid provisioning engine, consistent with the source's narrative.
-- **14.13 Virtual Private Cloud** - The source mentions a dedicated physical link as an alternative to VPN; this is preserved as a note.
-
-## Originality
-
-These diagrams are original PlantUML interpretations based only on the source document. They are not visual reproductions of the figures in the chapter. They preserve the source's terminology, stated mechanisms, sequence logic, and stated constraints (including the explicit conflict between Nondisruptive Service Relocation and the direct I/O access architecture). They add no inferred implementation technologies (no AWS, Azure, GCP, Kubernetes, Terraform, ServiceNow, or any other tooling).
-
-
-
+[Parent diagram library](../readme.md)

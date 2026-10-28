@@ -1,49 +1,45 @@
 # DevOps
 
-Continuous delivery, version control, GitHub Actions, GitOps,
-platform-engineering targets, and secrets management.
+Guides and reference material for build engineering, CI/CD, GitHub Actions, GitOps, delivery pipelines, operations, platforms and secrets management.
 
-## Scope
+## Explore the collection
 
-**Belongs here:**
-- CI/CD pipeline content, including GitHub Actions.
-- SDLC, version-control, and GitHub-platform foundations.
-- Platform targets (Kubernetes, Nginx).
-- Secrets-management runbooks (HashiCorp Vault).
+| Area | What it contains | Sources |
+|---|---|---:|
+| [`build-systems/`](build-systems/) | Build systems, CMake and related tooling. | 19 |
+| [`ci-cd/`](ci-cd/) | Pipeline architecture and delivery practice. | 5 |
+| [`foundations/`](foundations/) | Version control, SDLC fundamentals and Git usage. | 5 |
+| [`github-actions/`](github-actions/) | Workflow design, actions and GitHub automation. | 12 |
+| [`gitops/`](gitops/) | GitOps architecture and patterns. | 1 |
+| [`platform/`](platform/) | Kubernetes, Nginx, platform and repository operations. | 20 |
+| [`secrets-management/`](secrets-management/) | Secret lifecycle, vaults and operational processes. | 5 |
 
-**Does not belong here:**
-- AppSec gates inside CI — see `../security/application-security/`.
-- GHAS-specific operational content — see `../security/github-advanced-security/`.
-
-## Contents
-
-| Child | Purpose |
-|---|---|
-| `ci-cd/` | CI/CD fundamentals, pipelines, and cross-cutting CI diagrams. |
-| `foundations/` | SDLC fundamentals, Git, and base GitHub literacy. |
-| `github-actions/` | GitHub Actions guides, workflow attribute references, custom actions. |
-| `gitops/` | GitOps stack blueprints. |
-| `platform/` | GitHub-platform hygiene, Kubernetes user stories, Nginx cookbooks. |
-| `secrets-management/` | HashiCorp Vault primers and runbooks. |
-
-## Conventions
-
-- Workflow guides live under `github-actions/`; pipeline architecture
-  lives under `ci-cd/pipelines/`. Don't mix the two.
-- Cross-cutting CI diagrams (used by multiple roots) live in
-  `ci-cd/diagrams/`; per-document diagrams co-locate.
-
-## Building
+## Build and validate
 
 ```bash
+make preflight
 make build-category-devops
+make list-roots
 ```
+
+The category command discovers standalone LaTeX roots and builds them with the shared pdfLaTeX toolchain. To stage PDFs under `public/pdfs/`, use `make publish` from the repository root. The commands above describe the supported interface; they do not imply that every root has been compiled in this change.
+
+## Using this collection
+
+- Start with `foundations/` for concepts, `ci-cd/` for delivery architecture, and `github-actions/` for platform-specific workflow syntax.
+
+- Use repository-owned [Make targets](../../Makefile) as the operational entry point for building these LaTeX documents.
+
+- Cross-reference [security workflows](../security/readme.md) when discussing code scanning, dependency findings and secret scanning.
+
+## Maintenance and scope
+
+- An illustrative CI/CD pipeline is not a deployed pipeline; identify integrations and secrets before adapting it.
+
+- Never commit credentials, tokens, kubeconfigs or real environment data.
+
+- Use principle-of-least-privilege examples and document deployment prerequisites and rollback boundaries.
 
 ## Related
 
-- `../readme.md`
-- `../security/github-advanced-security/` (CI security gates).
-- `../../tooling/plantuml/config.puml` (shared PlantUML config).
-
-
-
+- [Source catalog](../readme.md)

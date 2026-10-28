@@ -1,44 +1,37 @@
 # Data Systems
 
-Data-platform documentation — AI/ML, streaming, and other system-level
-data infrastructure topics. Currently sparse; structured in anticipation
-of growth.
+Technical references and study material for data-centric platforms and infrastructure, including AI/ML, streaming and networked data systems. Scope reflects the current files; it is not a claim of an operational data platform.
 
-## Scope
+## Explore the collection
 
-**Belongs here:**
-- LLM adoption and AI/ML system stories (`ai-ml/llm/`).
-- Streaming-platform material (`streaming/kafka/`).
-- Future: warehouses, lakes, lineage, contracts.
+| Area | What it contains | Sources |
+|---|---|---:|
+| [`ai-ml/`](ai-ml/) | LLM and machine-learning adoption guidance. | 3 |
+| [`networking/`](networking/) | Data-network concepts and networking-related references. | 1 |
+| [`streaming/`](streaming/) | Event streaming and Kafka architecture. | 1 |
 
-**Does not belong here:**
-- Application-level data persistence patterns — see `../architecture/views-and-beyond/style-catalogs/module/data-model-style/`.
-- Database security topics — see `../security/`.
-
-## Contents
-
-| Child | Purpose |
-|---|---|
-| `ai-ml/llm/` | LLM adoption user stories and AI/ML platform docs. |
-| `streaming/kafka/` | Kafka adoption and platform user stories. |
-
-## Conventions
-
-- New AI/ML topics get their own folder under `ai-ml/<topic>/`.
-- New streaming systems get their own folder under `streaming/<system>/`.
-- Singleton folders are fine; this domain is intentionally
-  forward-structured.
-
-## Building
+## Build and validate
 
 ```bash
+make preflight
 make build-category-data-systems
+make list-roots
 ```
+
+The category command discovers standalone LaTeX roots and builds them with the shared pdfLaTeX toolchain. To stage PDFs under `public/pdfs/`, use `make publish` from the repository root. The commands above describe the supported interface; they do not imply that every root has been compiled in this change.
+
+## Using this collection
+
+- Identify the target platform, assumptions and data flow before adopting an example.
+
+- Relate persistence and integration choices to the [architecture ADR collection](../architecture/decisions/readme.md).
+
+## Maintenance and scope
+
+- Capture data sensitivity, ownership, consistency, lineage and retention as explicit design considerations.
+
+- Keep speculative future platform areas out of the inventory until source documents exist.
 
 ## Related
 
-- `../readme.md`
-- Future expansion targets: warehouses, OLAP, data contracts.
-
-
-
+- [Source catalog](../readme.md)

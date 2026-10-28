@@ -1,47 +1,40 @@
 # Game Development
 
-Game-engine and game-design documentation. Strong overlap with the
-solo-authored AetherForge Engine project (C/C++, SDL3, OpenGL ES 3.0,
-WebGL 2.0) — engine-internal docs live in the engine repository; this
-folder hosts cross-cutting and study-plan material.
+Cross-engine game-development references for design, game AI, animation, content pipelines, graphics, patterns and physical simulation. Engine-specific implementation code belongs in the owning software project.
 
-## Scope
+## Explore
 
-**Belongs here:**
-- Game-design documents (GDDs) and the GDD template.
-- Animation and asset-pipeline notes.
-- Physics-engine gap analyses and study plans.
-- Cross-engine pipeline blueprints (AI-assisted asset generation, etc.).
-
-**Does not belong here:**
-- AetherForge Engine internal API documentation (lives in the engine repo).
-- WebAssembly build-system docs — see `../programming/languages/c-cpp/wasm/`.
-
-## Contents
-
-| Child | Purpose |
+| Area | Material |
 |---|---|
-| `animation/` | Computer animation user stories. |
-| `asset-pipelines/` | AI-assisted 3D model and sprite pipelines. |
-| `design-documents/` | GDD overview document and template (`templates/`). |
-| `physics-engines/` | Physics-engine gap analyses. |
+| [AI](ai/) | Game AI algorithms and pseudocode. |
+| [Animation](animation/) | Animation study plan. |
+| [Asset pipelines](asset-pipelines/) | Sprite and 3D model generation workflows. |
+| [Design documents](design-documents/) | GDD source templates and examples. |
+| [Graphics](graphics/) | Computer graphics principles. |
+| [Patterns](patterns/) | Game programming pattern catalogs. |
+| [Physics engines](physics-engines/) | Collision, fluid simulation and engineering gap analysis. |
 
-## Conventions
+## Starting points
 
-- The GDD template (`design-documents/templates/gdd-template.tex`)
-  is the starting point for new GDDs; copy it before customizing.
-- Asset-pipeline write-ups end with `-pipeline.tex`.
+- [Game Design Document template](design-documents/templates/game-design-document-gdd-template.tex) for design scope, mechanics and requirements.
+- [Game programming pattern catalog](patterns/game-programming-pattern-catalog.tex) for implementation trade-offs.
+- [Real-time collision detection](physics-engines/real-time-collision-detection-algorithms.tex) for math, numerical assumptions and example algorithms.
 
-## Building
+## Build
 
 ```bash
+make preflight
 make build-category-game-development
 ```
 
+These targets compile the documentation, not a game runtime or asset-pipeline executable.
+
+## Contribution guidance
+
+- Specify tool versions and asset licenses in pipeline documents.
+- Differentiate pseudocode from measured or tested algorithms.
+- Record reproducibility conditions and failure cases for physics and simulation models.
+
 ## Related
 
-- `../readme.md`
-- `../programming/languages/c-cpp/` for engine-language references.
-
-
-
+[Programming](../programming/readme.md) · [Mathematics](../mathematics/readme.md)

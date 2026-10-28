@@ -1,39 +1,51 @@
-# Software Security Assessment
+# Software Security Assessment — Cornell Notes
 
-This collection provides Cornell-format study and audit reference notes for software security assessment. The originating publication is intentionally unnamed.
+Eighteen Cornell-format learning documents covering assessment theory, implementation-level vulnerabilities, operating-system protection, networking and web applications. The originating publication is not identified here; no unverified attribution is implied.
 
-## Topic Groups
+## Chapter inventory
 
-- Assessment foundations: Chapters 1-4
-- Implementation security: Chapters 5-8
-- Platform security: Chapters 9-13
-- Network and web security: Chapters 14-18
+| Topic | Document |
+|---|---|
+| assessment-foundations | [01-vulnerability-fundamentals-cornell-notes.tex](assessment-foundations/01-vulnerability-fundamentals-cornell-notes.tex) |
+| assessment-foundations | [02-design-review-cornell-notes.tex](assessment-foundations/02-design-review-cornell-notes.tex) |
+| assessment-foundations | [03-operational-review-cornell-notes.tex](assessment-foundations/03-operational-review-cornell-notes.tex) |
+| assessment-foundations | [04-application-review-process-cornell-notes.tex](assessment-foundations/04-application-review-process-cornell-notes.tex) |
+| implementation-security | [05-memory-corruption-cornell-notes.tex](implementation-security/05-memory-corruption-cornell-notes.tex) |
+| implementation-security | [06-c-language-issues-cornell-notes.tex](implementation-security/06-c-language-issues-cornell-notes.tex) |
+| implementation-security | [07-program-building-blocks-cornell-notes.tex](implementation-security/07-program-building-blocks-cornell-notes.tex) |
+| implementation-security | [08-strings-metacharacters-cornell-notes.tex](implementation-security/08-strings-metacharacters-cornell-notes.tex) |
+| network-and-web-security | [14-network-protocols-cornell-notes.tex](network-and-web-security/14-network-protocols-cornell-notes.tex) |
+| network-and-web-security | [15-firewalls-cornell-notes.tex](network-and-web-security/15-firewalls-cornell-notes.tex) |
+| network-and-web-security | [16-network-app-protocols-cornell-notes.tex](network-and-web-security/16-network-app-protocols-cornell-notes.tex) |
+| network-and-web-security | [17-web-applications-cornell-notes.tex](network-and-web-security/17-web-applications-cornell-notes.tex) |
+| network-and-web-security | [18-web-technologies-cornell-notes.tex](network-and-web-security/18-web-technologies-cornell-notes.tex) |
+| platform-security | [09-unix-privileges-files-cornell-notes.tex](platform-security/09-unix-privileges-files-cornell-notes.tex) |
+| platform-security | [10-unix-processes-cornell-notes.tex](platform-security/10-unix-processes-cornell-notes.tex) |
+| platform-security | [11-windows-objects-filesystem-cornell-notes.tex](platform-security/11-windows-objects-filesystem-cornell-notes.tex) |
+| platform-security | [12-windows-ipc-cornell-notes.tex](platform-security/12-windows-ipc-cornell-notes.tex) |
+| platform-security | [13-synchronization-state-cornell-notes.tex](platform-security/13-synchronization-state-cornell-notes.tex) |
 
-## Ordered Manifest
+## Study progression
 
-The 18 canonical source paths and their source-relative PDF paths are listed below.
+- **1–4 — Assessment foundations:** vulnerability identification, design review, operations and review planning.
+- **5–8 — Implementation security:** memory corruption, C-language concerns, program building blocks and text data.
+- **9–13 — Platform security:** Unix/Windows privileges, objects, processes and synchronization.
+- **14–18 — Network and web:** protocols, firewalls, application protocols and web technologies.
 
-1. `assessment-foundations/01-vulnerability-fundamentals-cornell-notes.tex` -> `public/pdfs/cornell-notes/security/application-security/software-security-assessment/assessment-foundations/01-vulnerability-fundamentals-cornell-notes.pdf`
-2. `assessment-foundations/02-design-review-cornell-notes.tex` -> `public/pdfs/cornell-notes/security/application-security/software-security-assessment/assessment-foundations/02-design-review-cornell-notes.pdf`
-3. `assessment-foundations/03-operational-review-cornell-notes.tex` -> `public/pdfs/cornell-notes/security/application-security/software-security-assessment/assessment-foundations/03-operational-review-cornell-notes.pdf`
-4. `assessment-foundations/04-application-review-process-cornell-notes.tex` -> `public/pdfs/cornell-notes/security/application-security/software-security-assessment/assessment-foundations/04-application-review-process-cornell-notes.pdf`
-5. `implementation-security/05-memory-corruption-cornell-notes.tex` -> `public/pdfs/cornell-notes/security/application-security/software-security-assessment/implementation-security/05-memory-corruption-cornell-notes.pdf`
-6. `implementation-security/06-c-language-issues-cornell-notes.tex` -> `public/pdfs/cornell-notes/security/application-security/software-security-assessment/implementation-security/06-c-language-issues-cornell-notes.pdf`
-7. `implementation-security/07-program-building-blocks-cornell-notes.tex` -> `public/pdfs/cornell-notes/security/application-security/software-security-assessment/implementation-security/07-program-building-blocks-cornell-notes.pdf`
-8. `implementation-security/08-strings-metacharacters-cornell-notes.tex` -> `public/pdfs/cornell-notes/security/application-security/software-security-assessment/implementation-security/08-strings-metacharacters-cornell-notes.pdf`
-9. `platform-security/09-unix-privileges-files-cornell-notes.tex` -> `public/pdfs/cornell-notes/security/application-security/software-security-assessment/platform-security/09-unix-privileges-files-cornell-notes.pdf`
-10. `platform-security/10-unix-processes-cornell-notes.tex` -> `public/pdfs/cornell-notes/security/application-security/software-security-assessment/platform-security/10-unix-processes-cornell-notes.pdf`
-11. `platform-security/11-windows-objects-filesystem-cornell-notes.tex` -> `public/pdfs/cornell-notes/security/application-security/software-security-assessment/platform-security/11-windows-objects-filesystem-cornell-notes.pdf`
-12. `platform-security/12-windows-ipc-cornell-notes.tex` -> `public/pdfs/cornell-notes/security/application-security/software-security-assessment/platform-security/12-windows-ipc-cornell-notes.pdf`
-13. `platform-security/13-synchronization-state-cornell-notes.tex` -> `public/pdfs/cornell-notes/security/application-security/software-security-assessment/platform-security/13-synchronization-state-cornell-notes.pdf`
-14. `network-and-web-security/14-network-protocols-cornell-notes.tex` -> `public/pdfs/cornell-notes/security/application-security/software-security-assessment/network-and-web-security/14-network-protocols-cornell-notes.pdf`
-15. `network-and-web-security/15-firewalls-cornell-notes.tex` -> `public/pdfs/cornell-notes/security/application-security/software-security-assessment/network-and-web-security/15-firewalls-cornell-notes.pdf`
-16. `network-and-web-security/16-network-app-protocols-cornell-notes.tex` -> `public/pdfs/cornell-notes/security/application-security/software-security-assessment/network-and-web-security/16-network-app-protocols-cornell-notes.pdf`
-17. `network-and-web-security/17-web-applications-cornell-notes.tex` -> `public/pdfs/cornell-notes/security/application-security/software-security-assessment/network-and-web-security/17-web-applications-cornell-notes.pdf`
-18. `network-and-web-security/18-web-technologies-cornell-notes.tex` -> `public/pdfs/cornell-notes/security/application-security/software-security-assessment/network-and-web-security/18-web-technologies-cornell-notes.pdf`
+## Build and validation
 
-## Commands
+```bash
+make preflight
+make build-category-cornell-notes
+python3 -m unittest tests.test_software_security_assessment_collection -v
+```
 
-- `make list-roots`
-- `python3 tooling/scripts/style_migration.py --validate`
-- `python3 tooling/scripts/latex_build.py build-category --category cornell-notes`
+Publishing stages these sources under `public/pdfs/cornell-notes/security/application-security/software-security-assessment/` with matching subfolders. Passing a structural test or compiling a PDF is not a live application security assessment.
+
+## Maintenance
+
+Preserve the 18 source names and topic grouping, make assumptions and source provenance explicit, and obtain authorization before adapting material into real testing.
+
+## Related
+
+[Cornell catalog](../../../README.md) · [Application Security](../../../../security/application-security/readme.md)

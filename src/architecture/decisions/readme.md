@@ -1,10 +1,10 @@
-# Architecture Decision Records
+# Architecture Decision Record (ADR) Library
 
-Central **source-first ADR template library** for `latex-docs`. This is a catalog of
-**unfilled, reusable templates**, not a register of accepted architecture decisions.
-Documents are individually compilable PDFLaTeX roots using the repository's
-`technical-design-spec` semantic style (which already provides ADR status
-badges and context/decision/consequence macros).
+Source-first **blank ADR templates** and review guidance. This is not a register of adopted decisions. Documents are independently compilable pdfLaTeX roots using the `technical-design-spec` semantic module.
+
+## Start here
+
+Use the [generic template](templates/adr-generic-template.tex) by default; select a specialized template only when it materially improves the evidence or controls captured. The adopting project retains approval authority and a unique, immutable decision ID.
 
 ## Templates
 
@@ -68,15 +68,14 @@ approval, not merely a merge or a colored status badge.
 From the repository root:
 
 ```bash
+make preflight
 make list-roots
 make build-category-architecture
 # Or use the same canonical helper for this path:
 python3 tooling/scripts/latex_build.py build-category architecture
 ```
 
-PDFs and LaTeX build artifacts must not be committed. All root files use one
-semantic module, `\\usepackage{technical-design-spec}`, which inherits the
-house style. Existing \\LaTeX{} sources elsewhere in the corpus are unchanged.
+PDFs and LaTeX build artifacts must not be committed. The roots use the shared `technical-design-spec` semantic module. Use `make publish` for the full staged PDF corpus; the category command otherwise uses source-adjacent output.
 
 ## Traceability model
 
