@@ -1,10 +1,10 @@
-# Specialized Cloud Architectures - PlantUML Diagram Set
+# Specialized Cloud Architectures — PlantUML
 
-This package contains a complete set of PlantUML diagrams for the sixteen
-specialized cloud architectures described in Chapter 15, *Specialized Cloud
-Architectures*. Each diagram is built directly from the source document and
-follows a consistent, professional style suitable for technical reference,
-review, and reuse.
+This collection contains **16 specialized cloud architecture diagrams plus an index**, based on Chapter 15. They are conceptual models and not production-validated cloud implementations.
+
+## Start here
+
+Review the chapter section, select the corresponding `.puml` source and inspect its rendered output. The [parent diagram library](../readme.md) describes integration and validation.
 
 ## Contents
 
@@ -28,6 +28,10 @@ review, and reuse.
 | 16 | `16-federated-cloud-application.puml`                 | Federated Cloud Application                                   | Deployment                            | Application services are placed across clouds where each placement is most advantageous.                 | 15.16          |
 |    | `00-specialized-cloud-architectures-index.puml`          | Index / overview                                              | Grouping diagram                      | Groups all 16 architectures by major concern (storage access, tiering & migration, network capacity & resilience, distributed processing, abstraction & federation). | Ch. 15 |
 
+## Source and output layout
+
+The tracked sources are in this folder. Generated representations are co-located under `png/`, `svg/` and `jpg/`; modify the `.puml` source first.
+
 ## Style and conventions
 
 All diagrams share a single visual style:
@@ -47,6 +51,7 @@ Every file is a complete, self-contained PlantUML document delimited by
 ```
 # Run from the repository root.
 make render-plantuml
+python3 tooling/scripts/plantuml_lint.py
 ```
 
 The repository renderer uses the checksummed PlantUML version in
