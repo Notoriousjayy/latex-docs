@@ -1,9 +1,10 @@
-# Cloud Center of Excellence Governance
+# Cloud Center of Excellence (CCoE) Governance
 
-This directory contains the Cloud Center of Excellence (CCoE) project
-management and governance suite: the master guide plus independently
-compilable, editable source templates organized by process group. These are
-operational governance documents, not Cornell Notes.
+A reusable governance suite containing a master guide and 58 numbered, editable LaTeX forms across project-management process groups. The forms are reference and working artifacts, **not evidence of completed decisions or approvals**.
+
+## Start here
+
+Read the [master governance guide](ccoe-master-governance-guide.tex) for process relationships and tailoring. Select a source form from the numbered catalog, identify the actual owner and approver, and link populated records to project evidence. Use the [ADR library](../../decisions/readme.md) when a decision has architectural significance.
 
 ## Process groups and inventory
 
@@ -131,13 +132,10 @@ Run the preflight and build the Architecture category with:
 ```bash
 make preflight
 make build-category-architecture
+make publish    # optional: stage complete PDFs under public/pdfs/
 ```
 
-The category build emits PDFs under `public/pdfs/architecture/`, preserving
-the `governance/ccoe/` directory hierarchy. The reusable GitHub Actions build
-uses the same discovery and build helper; the Pages index is generated from
-PDF paths, so these governance documents remain in the Architecture category
-and are not classified as Cornell Notes.
+`make build-category-architecture` uses the source-adjacent output model by default. `make publish` stages the full PDF corpus under `public/pdfs/architecture/governance/ccoe/`. The verified corpus feeds the Pages workflow. These are Architecture documents, not Cornell Notes; a successful build is not project approval.
 
 ## Outstanding source gaps
 

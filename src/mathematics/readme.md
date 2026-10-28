@@ -1,45 +1,36 @@
 # Mathematics
 
-Typeset mathematics references and study plans. Most documents are
-companion material to algorithmic implementations maintained in
-sibling C/C++ projects.
+Formal and applied mathematics references, workbooks and study plans spanning algebra, calculus, differential equations, computational geometry and mathematical proofs.
 
-## Scope
+## Areas
 
-**Belongs here:**
-- Algebra, calculus, and geometry user-story sequences.
-- Study plans for algorithm-heavy texts (e.g., O'Rourke's *Computational Geometry in C*).
-- Matrix/polynomial operation references that benefit from LaTeX typesetting.
-
-**Does not belong here:**
-- Implementation code — those live in domain-specific C/C++ libraries.
-- Numerical-recipes implementations — separate project.
-
-## Contents
-
-| Child | Purpose |
+| Area | Topics |
 |---|---|
-| `algebra/` | Matrix and polynomial operations; data structures in C/C++. |
-| `calculus/` | Handbook-of-calculus user stories. |
-| `geometry/` | Computational-geometry user stories and study plans. |
+| [Algebra](algebra/) | Matrices, polynomials and C/C++ representations. |
+| [Calculus](calculus/) | Study sequences, application workbooks and solutions. |
+| [Differential equations](differential-equations/) | ODEs, PDEs, dynamics, scientific computing and exercises. |
+| [Geometry](geometry/) | Computational geometry algorithms, polygons and study plans. |
+| [Proofs](proofs/) | Proof techniques and structured mathematical reasoning. |
 
-## Conventions
+## Learning routes
 
-- User-story sequences end with `-user-stories.tex`.
-- Study plans end with `-study-plan.tex`.
-- Companion data-structure notes end with `-data-structures-in-c-and-cpp.tex`.
+- **Engineering models:** calculus → differential equations → numerical methods and applications.
+- **Algorithmic geometry:** algebra → proof techniques → geometry and data structures.
+- **Proof-based study:** definitions → propositions → examples and counterexamples.
 
-## Building
+## Build
 
 ```bash
+make preflight
 make build-category-mathematics
 ```
 
+Building the PDF sources does not constitute executable verification of every included algorithm or numerical method.
+
+## Documentation conventions
+
+State assumptions, definitions, mathematical domains, physical units where applicable, convergence conditions and any implementation limitations. Attribute textbook material precisely and separate derivations from illustrative pseudocode.
+
 ## Related
 
-- `../readme.md`
-- `../programming/languages/c-cpp/` (implementation companions).
-- Upstream: O'Rourke, *Computational Geometry in C*; *Handbook of Discrete and Computational Geometry*, 3rd ed.
-
-
-
+[Programming](../programming/readme.md) · [Source catalog](../readme.md)
