@@ -21,6 +21,7 @@ adoption material.
 
 | Child | Purpose |
 |---|---|
+| `decisions/` | Central generic and specialized ADR templates, review governance, and ISO/IEC/IEEE 42010 decision traceability. See [ADR library](./decisions/readme.md). |
 | `governance/` | Cloud governance and control frameworks; the [CCoE project management and governance suite](./governance/ccoe/readme.md). |
 | `patterns/` | Architectural patterns (build-system facade, etc.). |
 | `systems-engineering/` | Systems-engineering perspective on software architecture. |
@@ -43,6 +44,8 @@ make build-category-architecture
 ```
 
 ## Related
+
+- [Architecture Decision Record library](./decisions/readme.md) — templates for cloud, security, data, APIs, delivery, resilience, observability, software structure, and AI.
 
 - `../readme.md`
 - `views-and-beyond/readme.md`
