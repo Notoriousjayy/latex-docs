@@ -1,69 +1,71 @@
-# src/
+# Source Catalog
 
-LaTeX document sources, organized by domain. Every top-level folder is a
-domain; within a domain, content is grouped by subdomain or by document
-type. The repository builds standalone roots (`.tex` files containing
-`\documentclass`); the `Makefile` discovers them automatically.
+All authored documents live under `src/`, grouped by subject and then by project or artifact type. The folders are **source collections**, not necessarily standalone applications or deployable products. Use the closest domain README for scope and navigation.
 
 ## Domains
 
-| Folder | Contents |
+| Domain | Focus |
+
 |---|---|
-| `architecture/` | Software & enterprise architecture, Views and Beyond, TOGAF, governance, including the [CCoE documentation catalog](architecture/governance/ccoe/readme.md). |
-| `data-systems/` | AI/ML, streaming (Kafka), and other data-platform documentation. |
-| `devops/` | CI/CD, GitHub Actions, GitOps, build systems (CMake, WebAssembly), platform (k8s, nginx), secrets management. |
-| `electronics/` | Self-study electronics (Art of Electronics curriculum). |
-| `game-development/` | Game design documents, animation, asset pipelines, physics engines. |
-| `mathematics/` | Algebra, calculus, differential equations, geometry — typeset references and study plans. |
-| `personal/` | Personal/finance/gardening reference material. |
-| `programming/` | Language references and standards (C/C++ with C23, C++23 and MISRA suites, Python/CPython, ECMAScript, Java, TypeScript), Linux/UNIX system programming, and web/frontend (incl. micro-frontends, Design of Sites). |
-| `security/` | AppSec, GHAS, OWASP, certifications, cloud security, CIS and ISO/IEC 27000 standards, SOC 2 compliance, security engineering. |
 
-## Conventions
+| [`architecture/`](architecture/readme.md) | Architecture descriptions, patterns, cloud, governance, ADRs and TOGAF. |
 
-- **Naming:** lowercase kebab-case for every folder and file. See
-  `RESTRUCTURE-PROPOSAL.md` §6 for the full rules.
-- **House style:** every root document loads exactly one semantic module
-  from `tooling/styles/latex/` (for example,
-  `\usepackage{technical-design-spec}` or
-  `\usepackage{cornell-notes}`), and that module inherits the
-  canonical house style in `tooling/latex/style.sty`.
-- **Diagrams:** PlantUML co-locates with the document that owns it.
-  Cross-cutting PlantUML config lives in `tooling/plantuml/`.
-- **Generated artifacts:** PDFs and LaTeX aux files are git-ignored;
-  CI publishes built PDFs under `public/`.
+| [`business-analysis/`](business-analysis/readme.md) | BABOK-aligned business analysis and implementation artifacts. |
 
-## Building
+| [`cornell-notes/`](cornell-notes/README.md) | Chapter-oriented Cornell Notes across technical disciplines. |
+
+| [`data-systems/`](data-systems/readme.md) | AI/ML, networking and event-streaming systems. |
+
+| [`devops/`](devops/readme.md) | Delivery engineering, platform operations, build systems and secrets management. |
+
+| [`documentation/`](documentation/readme.md) | Letterhead and technical-writing templates/guides. |
+
+| [`electronics/`](electronics/readme.md) | Electronic circuits and single-board-computer studies. |
+
+| [`game-development/`](game-development/readme.md) | Game-engine concepts, pipelines, physics and design. |
+
+| [`mathematics/`](mathematics/readme.md) | Algebra, calculus, differential equations, geometry and proofs. |
+
+| [`personal/`](personal/readme.md) | Personal reference sources; review sensitivity before publishing. |
+
+| [`programming/`](programming/readme.md) | Algorithms, compilers, programming languages and systems programming. |
+
+| [`security/`](security/readme.md) | AppSec, cloud security, GHAS, GRC and security standards. |
+
+| [`startups/`](startups/readme.md) | Startup operating plans, security, finance and reusable templates. |
+
+| [`templates/`](templates/) | Shared source templates for architecture artifacts. |
+
+## Find or build a document
+
+Use `make list-roots` to enumerate compilable root documents and `make list-categories` to inspect supported domain names. Root discovery checks for `\documentclass`; helper files without it are not built independently.
 
 ```bash
-make list-roots                       # show every buildable .tex
-make build-all                        # serial build of every root
-make build-parallel JOBS=8            # parallel build
-make build-category-architecture      # one category
+make list-roots
+make list-categories
+make preflight
+make build-category-programming
+make publish
 ```
 
-For a single document, see the parent `readme.md` of its folder.
+Ordinary builds default to source-adjacent output; `make publish` stages a complete PDF corpus in `public/pdfs/`. See the [repository README](../README.md) for dependencies, outputs and CI behavior.
 
-## Document-type taxonomy
+## Organizing new material
 
-Within a domain, when ≥ 2 documents share a type, group them under one of
-the following folder names:
+- Put the document in the most specific existing domain and project directory; avoid creating parallel copies of a topic.
 
-| Folder | Use for |
-|---|---|
-| `fundamentals/` | Introductory and foundational explainers. |
-| `references/` | Cheatsheets, indexes, cataloged rules. |
-| `runbooks/` | SOPs, triage workflows, playbooks. |
-| `study-plans/` | Curricula, ordered user-story sequences. |
-| `templates/` | Reusable starting points (not meant to compile alone). |
+- Prefer source-first LaTeX files with lowercase kebab-case names. Use the appropriate shared semantic module rather than a bespoke visual system.
 
-Singletons live at the domain or subdomain root. The taxonomy is a
-convention, not a mandate.
+- Add a project README when a new subtree has multiple deliverables, a non-obvious reading sequence, external dependencies or special validation steps.
+
+- Treat `fundamentals/`, `references/`, `runbooks/`, `study-plans/`, and `templates/` as useful conventions, not mandatory or exhaustive folders.
+
+- Keep diagrams, examples, provenance and related evidence close to the material that owns them. Distinguish project-specific decisions from reusable templates.
 
 ## Related
 
-- `../readme.md` — repository top-level readme.
-- `../tooling/latex/style.sty` — house style.
-- `../RESTRUCTURE-PROPOSAL.md` — restructuring rationale.
+- [Repository overview](../README.md)
 
+- [Architecture Decision Records](architecture/decisions/readme.md)
 
+- [Shared PlantUML system](../tooling/plantuml/README.md)

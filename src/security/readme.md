@@ -1,54 +1,49 @@
 # Security
 
-The largest documentation domain: AppSec, GitHub Advanced Security,
-certifications, cloud security, and standards (CIS, OWASP).
+Security engineering references, assessment workflows, standards mappings, learning plans and operational runbooks. Start with the workflow or control family relevant to the problem; these documents are not claims of product compliance or a deployed security program.
 
-## Scope
+## Explore the collection
 
-**Belongs here:**
-- Application-security programs, processes, and field guides.
-- GHAS operational SOPs, runbooks, and cheatsheets.
-- Certification study plans (CISSP, CCSP, CISO, GH-500).
-- Cloud-security user-story sequences.
-- Standards mappings (CIS benchmarks, OWASP Top 10 / API Top 10).
+| Area | What it contains | Sources |
+|---|---|---:|
+| [`application-security/`](application-security/) | Application assessments, vulnerabilities, DAST/SAST, program processes and field guides. | 65 |
+| [`certifications/`](certifications/) | Role- and certification-oriented study material. | 3 |
+| [`cloud-security/`](cloud-security/) | Cloud security engineering and cloud security curricula. | 2 |
+| [`enterprise-security/`](enterprise-security/) | Enterprise security architecture and operations. | 1 |
+| [`github-advanced-security/`](github-advanced-security/) | Code scanning, dependency alerts, secret scanning and GHAS operations. | 36 |
+| [`governance-risk-compliance/`](governance-risk-compliance/) | ISMS, risk and SOC 2 control engineering. | 10 |
+| [`infrastructure-security/`](infrastructure-security/) | Infrastructure protection and hardening. | 1 |
+| [`security-engineering/`](security-engineering/) | General security engineering methods and references. | 8 |
+| [`standards/`](standards/) | CIS, OWASP, ISO/IEC 27000-family and related standards material. | 24 |
 
-**Does not belong here:**
-- General CI/CD content — see `../devops/`.
-- Language-level secure-coding rules — see `../programming/languages/<lang>/secure-coding/`.
-
-## Contents
-
-| Child | Purpose |
-|---|---|
-| `application-security/` | AppSec fundamentals, learning paths (incl. assessment curricula), assessment suite, processes, programs, web-security field guides. |
-| `certifications/` | CISSP, CISO, GH-500 study plans. |
-| `cloud-security/` | Cloud-computing security user-story sequences. |
-| `github-advanced-security/` | GHAS administration, code scanning (CodeQL), Dependabot, references, secret scanning. |
-| `governance-risk-compliance/` | ISMS decision frameworks; SOC 2 Trust Services Criteria engineering suite. |
-| `security-engineering/` | Computer and information security engineering suite (foundations through curriculum). |
-| `standards/` | CIS benchmarks; OWASP Top 10 (2025) and API Security Top 10; ISO/IEC 27000/27001/27002 ISMS engineering suite. |
-
-## Conventions
-
-- **Triage SOPs** end with `-triage-sop.tex`.
-- **Closure runbooks** end with `-runbook.tex` or `-playbook.tex`.
-- **Cheatsheets** live in the relevant `references/` folder, never
-  alongside the operational SOP they reference.
-- **Field guides** live under `web-security/<vuln-class>/field-guides/<short-slug>/field-guide.tex`.
-- **Process diagrams** for AppSec sit in
-  `application-security/processes/appsec-process-diagrams/`.
-
-## Building
+## Build and validate
 
 ```bash
+make preflight
 make build-category-security
+make list-roots
 ```
+
+The category command discovers standalone LaTeX roots and builds them with the shared pdfLaTeX toolchain. To stage PDFs under `public/pdfs/`, use `make publish` from the repository root. The commands above describe the supported interface; they do not imply that every root has been compiled in this change.
+
+## Using this collection
+
+- Use the [AppSec process diagrams](application-security/processes/appsec-process-diagrams/readme.md) as cross-tool workflow references, not evidence that a named integration is deployed.
+
+- Distinguish vulnerability identification, validation, prioritization, remediation and exception approval in operational playbooks.
+
+- For architecture-level trade-offs, start with [security and privacy ADR templates](../architecture/decisions/readme.md).
+
+## Maintenance and scope
+
+- Verify dated standards, product features and benchmark versions against authoritative publications before operational use.
+
+- Do not store real credentials, incident details, customer identifiers or sensitive assessments in this public repository.
+
+- Link rules and procedures to actual evidence; avoid presenting guidance as certification or audit attestation.
 
 ## Related
 
-- `../readme.md`
-- `../programming/languages/c-cpp/standards/misra/` for MISRA rules.
-- `../programming/languages/java/secure-coding/` for Oracle CERT rules.
+- [DevOps delivery and platform documentation](../devops/readme.md)
 
-
-
+- [Source catalog](../readme.md)

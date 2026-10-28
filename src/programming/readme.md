@@ -1,44 +1,45 @@
 # Programming
 
-Programming-language references, language-standards documentation, and
-web/frontend study plans.
+Programming-language, algorithm, compiler, concurrency, UNIX/Linux systems programming and web engineering references. Documents favor technical explanation and source-driven learning; executable code is maintained in its owning software repository when applicable.
 
-## Scope
+## Explore the collection
 
-**Belongs here:**
-- Language-specific guides (C/C++, Java, TypeScript).
-- Language-standard references (MISRA C:2023, MISRA C++:2023, Oracle Secure Coding for Java).
-- Web/frontend study plans and design-pattern user stories.
+| Area | What it contains | Sources |
+|---|---|---:|
+| [`algorithms/`](algorithms/) | Algorithm design, analysis and implementation guidance. | 7 |
+| [`compilers/`](compilers/) | Compiler architecture and language implementation. | 2 |
+| [`concurrency/`](concurrency/) | Concurrency design and synchronization. | 1 |
+| [`languages/`](languages/) | C/C++, Java, Python, TypeScript and other language- and standards-specific references. | 72 |
+| [`linux-unix-system-programming/`](linux-unix-system-programming/) | C/POSIX systems programming guides, labs and runbooks. | 9 |
+| [`literate-programming/`](literate-programming/) | Literate-programming practices and references. | 4 |
+| [`web/`](web/) | Front-end, micro-frontends, and web architecture. | 25 |
 
-**Does not belong here:**
-- AppSec language coverage — see `../security/application-security/`.
-- CI/CD pipeline configuration — see `../devops/`.
-
-## Contents
-
-| Child | Purpose |
-|---|---|
-| `languages/c-cpp/` | C/C++ guides, embedded OOP, MISRA standards, WebAssembly. |
-| `languages/java/` | Secure coding guidelines and Oracle catalog. |
-| `languages/typescript/` | Effective TypeScript and cookbook user stories. |
-| `web/frontend/` | Site-design study plans, micro-frontends, project-board UX. |
-
-## Conventions
-
-- Standards documents live under `<language>/standards/<standard>/`.
-- Naming is strictly kebab-case; underscores and CamelCase are not allowed
-  (the migration script enforces this on Phase 3).
-
-## Building
+## Build and validate
 
 ```bash
+make preflight
 make build-category-programming
+make list-roots
 ```
+
+The category command discovers standalone LaTeX roots and builds them with the shared pdfLaTeX toolchain. To stage PDFs under `public/pdfs/`, use `make publish` from the repository root. The commands above describe the supported interface; they do not imply that every root has been compiled in this change.
+
+## Using this collection
+
+- Locate language-specific standards under `languages/` and consult the precise referenced edition before applying a rule.
+
+- Use the systems programming collection for syscall semantics, processes, threads, files and networking.
+
+- Separate documentation examples from tested implementation artifacts; do not assume sample code has been compiled.
+
+## Maintenance and scope
+
+- Prefer standards- and edition-specific terminology over unqualified statements about all language versions.
+
+- Preserve upstream attribution and distinguish normative requirements from local recommendations.
 
 ## Related
 
-- `../readme.md`
-- `../security/standards/owasp/` for application-layer rules.
+- [Security standards and application security](../security/readme.md)
 
-
-
+- [Source catalog](../readme.md)
