@@ -113,6 +113,36 @@ runs:
         chmod -R u+rw "$cache_dir"
         echo "Cached $(find "$cache_dir" -maxdepth 1 -name '*.deb' -type f | wc -l) .deb archive(s)"
 
+    # TeX Live 2025 + Python 3.14 on Ubuntu 26.04 broke minted 3's
+    # latexminted entry point. An installed .sty or pygmentize alone is not
+    # proof that code highlighting works. Compile a real minted environment
+    # before starting a sharded corpus build (also works with minted v2).
+    - name: Smoke test minted syntax highlighting
+      shell: bash
+      run: |
+        set -euo pipefail
+        scratch="$(mktemp -d)"
+        trap 'rm -rf "$scratch"' EXIT
+        cat > "$scratch/minted-smoke.tex" <<'TEX'
+        \documentclass{article}
+        \usepackage{minted}
+        \begin{document}
+        \begin{minted}{python}
+        print("CI minted smoke test")
+        \end{minted}
+        \end{document}
+        TEX
+        if ! (cd "$scratch" && pdflatex -shell-escape -interaction=nonstopmode -halt-on-error minted-smoke.tex >minted-smoke.stdout.txt 2>&1); then
+          echo "::error::minted cannot execute its Python highlighting backend with this TeX/Python toolchain."
+          tail -80 "$scratch/minted-smoke.stdout.txt"
+          exit 1
+        fi
+        test -s "$scratch/minted-smoke.pdf" || {
+          echo "::error::minted smoke test did not produce a PDF."
+          exit 1
+        }
+        echo "minted syntax highlighting verified"
+
     - name: Verify toolchain
       id: verify
       shell: bash
