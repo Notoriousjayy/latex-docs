@@ -1,37 +1,41 @@
-# AppSec PlantUML Process Set (Preserved + Extended)
+# Application Security Process Diagrams
 
-This bundle contains a **preserved** set of AppSec process diagrams, extended to include:
+Thirteen source-controlled PlantUML workflows for secure SDLC integration, application onboarding, security testing and vulnerability management. Named tools are **reference integrations**, not claims of currently deployed automation or control effectiveness.
 
-- **SonarQube** quality + security gates
-- A **non-compliant application** handling process
-- A **16-gate CI/CD pipeline overlay** that crosswalks AppSec processes/tools to each gate
-- **Application Code (AppCode)** as the correlation key across repos, tools, and ticketing
+## Diagram inventory
 
-## How to render
+| Diagram source | Process |
+|---|---|
+| [01-app-onboarding-coverage-plan.puml](01-app-onboarding-coverage-plan.puml) | Onboarding and coverage plan |
+| [02-homegrown-ci-sec-gates-shift-left.puml](02-homegrown-ci-sec-gates-shift-left.puml) | Shift-left CI security gates |
+| [03-static-analysis-ghas-coverity-sonarqube.puml](03-static-analysis-ghas-coverity-sonarqube.puml) | SAST analysis and triage |
+| [04-sca-dependency-vuln-mgmt-ghas-trivy.puml](04-sca-dependency-vuln-mgmt-ghas-trivy.puml) | SCA and dependency vulnerability management |
+| [05-secret-scanning-response-ghas.puml](05-secret-scanning-response-ghas.puml) | Secret scanning and response |
+| [06-container-iac-scanning-trivy.puml](06-container-iac-scanning-trivy.puml) | Container, IaC and SBOM scanning |
+| [07-dast-lifecycle-rapid7-insightappsec.puml](07-dast-lifecycle-rapid7-insightappsec.puml) | DAST lifecycle and InsightAppSec |
+| [08-iast-verified-vulns-seeker.puml](08-iast-verified-vulns-seeker.puml) | IAST and verified findings |
+| [09-unified-vuln-mgmt-lifecycle-all-sources.puml](09-unified-vuln-mgmt-lifecycle-all-sources.puml) | Unified vulnerability-management lifecycle |
+| [10-cots-saas-vuln-mgmt-vendor-led-fixes.puml](10-cots-saas-vuln-mgmt-vendor-led-fixes.puml) | Vendor-managed COTS/SaaS remediation |
+| [11-sonarqube-quality-sec-gate-pr-main.puml](11-sonarqube-quality-sec-gate-pr-main.puml) | SonarQube quality and security gates |
+| [12-non-compliant-app-handling-coverage-slas.puml](12-non-compliant-app-handling-coverage-slas.puml) | Non-compliant application handling |
+| [13-16-gate-ci-cd-pipeline-appsec-overlay.puml](13-16-gate-ci-cd-pipeline-appsec-overlay.puml) | Sixteen-gate CI/CD AppSec overlay |
 
-Use any PlantUML renderer (CLI or IDE plugin). Each `.puml` is standalone and directly includes its semantic stylesheet from `tooling/styles/plantuml/`.
+## Render and validate
 
-## Diagrams
+```bash
+make render-plantuml
+python3 tooling/scripts/plantuml_lint.py
+```
 
-1. `01-application-onboarding.puml` — App onboarding + coverage plan (AppCode)
-2. `02-homegrown-ci-security-gates.puml` — Homegrown CI security gates (SonarQube + GHAS + Trivy)
-3. `03-sast-analysis-and-triage.puml` — Static analysis triage (GHAS + Coverity + SonarQube)
-4. `04-sca-dependency-vuln-management.puml` — SCA/dependencies (GHAS + Trivy SBOM)
-5. `05-secret-scanning-response.puml` — Secret response (GHAS)
-6. `06-container-iac-scanning-trivy.puml` — Container/IaC/SBOM (Trivy)
-7. `07-dast-insightappsec.puml` — DAST lifecycle (InsightAppSec)
-8. `08-iast-seeker-verified.puml` — IAST verified findings (Seeker)
-9. `09-vulnerability-management-lifecycle.puml` — Unified vulnerability lifecycle (all sources)
-10. `10-cots-saas-vendor-vuln-management.puml` — Vendor-led remediation (COTS/SaaS)
-11. `11-sonarqube-quality-security-gate.puml` — SonarQube quality/security gate
-12. `12-non-compliant-application-handling.puml` — Non-compliant handling + enforcement
-13. `13-16-gate-cicd-appsec-overlay.puml` — 16-gate CI/CD pipeline AppSec overlay
+Run from the repository root. Source `.puml` files are in this directory; rendered images are organized in `png/`, `svg/` and `jpg/`. Apply [the shared PlantUML framework](../../../../../tooling/plantuml/README.md) when extending a workflow.
 
-## Conventions
+## Interpretation
 
-- **Left-to-right** flow, limited palette, clear partitions, labeled decisions
-- **AppCode** is referenced in every process where ownership/correlation matters
-- Gates are marked with the `<<gate>>` stereotype for consistent highlighting
+- **AppCode** is the conceptual correlation identifier for application ownership, repositories, security findings and tickets.
+- Security gates represent decisions. Define evidence, policy owners, exceptions and enforcement scope when adapting them.
+- Verify vendor functionality and license conditions for the target environment before implementation.
+- Do not publish credentials, customer findings or live incident evidence in the diagrams.
 
+## Related
 
-
+[Application Security](../../readme.md)
