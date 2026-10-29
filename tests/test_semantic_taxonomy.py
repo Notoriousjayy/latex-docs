@@ -65,7 +65,7 @@ class SemanticTaxonomyTests(unittest.TestCase):
         self.assertTrue(variants.issubset(set(physical)), "registered Blank missing")
         self.assertEqual(sorted(registered), sorted(set(physical) - variants),
                          "canonical metadata is stale or incomplete")
-        self.assertEqual(1054, len(set(physical) - variants))
+        self.assertEqual(1055, len(set(physical) - variants))
 
     def test_unique_document_ids_and_classification_evidence(self):
         ids = [entry["id"] for entry in self.entries]
