@@ -51,7 +51,3 @@
 - [Professional CMake: Cross-Platform Builds and Performance](../src/devops/build-systems/professional-cmake/07-cross-platform-performance.tex) — CMake cross-platform builds and benchmarking · **reviewed**
 - [GitHub Repository Setup Guide](../src/devops/platform/github/quick-start-checklist.tex) — GitHub repository/community workflow setup · **reviewed**
 - [ECMAScript Testing and Conformance Guide](../src/programming/languages/ecmascript/06-testing-conformance-guide.tex) — ECMAScript conformance and testing · **reviewed**
-
-## Governed paired variants
-
-The [Template–Blank Pair Catalog](template-blank-pairs.md) lists reviewed Template–Blank links, the review queue, and pairing validation rules. Existing provisional catalog entries remain provisional until their embedded instruments have been individually classified.
