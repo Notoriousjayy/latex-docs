@@ -34,6 +34,11 @@ Architecture descriptions and architecture decision records are distinct documen
 | ARCH-42010-CONFORMANCE-WORKBOOK | architecture-conformance-workbook | [Template](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment.tex) | [Blank](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment-blank.tex) |
 | SEC-APPSEC-REVIEW-WORKBOOK | application-security-assessment-workbook | [Template](../src/security/application-security/processes/application-review-analysis-template.tex) | [Blank](../src/security/application-security/processes/application-review-analysis-blank.tex) |
 
+| ARCH-GHA-DISCOVERY-AD | architecture-description | [Template](../src/architecture/templates/github-actions-architecture-discovery-ad-template.tex) | [Blank](../src/architecture/templates/github-actions-architecture-discovery-ad-blank.tex) |
+| ARCH-GHA-DISCOVERY-VIEWPOINT | architecture-viewpoint | [Template](../src/architecture/templates/github-actions-architecture-discovery-viewpoint-template.tex) | [Blank](../src/architecture/templates/github-actions-architecture-discovery-viewpoint-blank.tex) |
+| ARCH-GHA-DISCOVERY-IMPLEMENTATION | discovery-implementation-workbook | [Template](../src/architecture/workbooks/github-actions-architecture-discovery-implementation-workbook-template.tex) | [Blank](../src/architecture/workbooks/github-actions-architecture-discovery-implementation-workbook-blank.tex) |
+| ARCH-GHA-DISCOVERY-EVIDENCE | discovery-evidence-workbook | [Template](../src/architecture/workbooks/github-actions-architecture-discovery-evidence-workbook-template.tex) | [Blank](../src/architecture/workbooks/github-actions-architecture-discovery-evidence-workbook-blank.tex) |
+
 ## Priority review queue
 
 The following are **not yet paired or classified to completion**. Original documents remain unchanged.

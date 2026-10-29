@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## architecture (194)
+## architecture (199)
 
 - [cloud architecture diagram library index](../src/architecture/cloud/architecture/cloud-architecture-diagram-library-index.tex) — cloud/architecture · **provisional**
 - [self hosting cloud architecture reference](../src/architecture/cloud/architecture/self-hosting-cloud-architecture-reference.tex) — cloud/architecture · **provisional**
@@ -149,9 +149,12 @@
 - [applying iso iec ieee 42010 2022 enterprise](../src/architecture/technical-documents/applying-iso-iec-ieee-42010-2022-enterprise.tex) — architecture · **provisional**
 - [architecture definition and description](../src/architecture/technical-documents/architecture-definition-and-description.tex) — architecture · **provisional**
 - [c4 plantuml technical guide](../src/architecture/technical-documents/c4-plantuml-technical-guide.tex) — architecture · **provisional**
+- [GitHub Actions Architecture Discovery at Enterprise Scale](../src/architecture/technical-documents/github-actions-architecture-discovery-enterprise-scale.tex) — github-actions/enterprise-discovery · **reviewed**
 - [iso iec ieee 42010 2022 clean handout](../src/architecture/technical-documents/iso-iec-ieee-42010-2022-clean-handout.tex) — architecture · **provisional**
 - [Architecture Description Template (ISO/IEC/IEEE 42010)](../src/architecture/templates/42010-ad-template-polished.tex) — architecture description authoring template · **reviewed**
 - [42010 vp template polished](../src/architecture/templates/42010-vp-template-polished.tex) — architecture · **provisional**
+- [GitHub Actions Discovery Architecture Description Template](../src/architecture/templates/github-actions-architecture-discovery-ad-template.tex) — github-actions/enterprise-discovery · **reviewed**
+- [Architecture Discovery Evidence Viewpoint Specification Template](../src/architecture/templates/github-actions-architecture-discovery-viewpoint-template.tex) — github-actions/enterprise-discovery · **reviewed**
 - [viewpoint section](../src/architecture/templates/viewpoint-section.tex) — architecture · **provisional**
 - [viewpoint template polished](../src/architecture/templates/viewpoint-template-polished.tex) — architecture · **provisional**
 - [document authoring template guide detailed](../src/architecture/togaf/document-authoring-template-guide-detailed.tex) — togaf · **provisional**
@@ -197,6 +200,8 @@
 - [software architecture documentation playbook](../src/architecture/views-and-beyond/view-packets/software-architecture-documentation-playbook.tex) — views and beyond/view packets · **provisional**
 - [stakeholder and their documentation needs](../src/architecture/views-and-beyond/view-packets/stakeholder-and-their-documentation-needs.tex) — views and beyond/view packets · **provisional**
 - [supporting development](../src/architecture/views-and-beyond/view-packets/supporting-development.tex) — views and beyond/view packets · **provisional**
+- [Enterprise Architecture Discovery Evidence and Validation Workbook Template](../src/architecture/workbooks/github-actions-architecture-discovery-evidence-workbook-template.tex) — github-actions/enterprise-discovery · **reviewed**
+- [Enterprise Architecture Discovery Implementation Workbook Template](../src/architecture/workbooks/github-actions-architecture-discovery-implementation-workbook-template.tex) — github-actions/enterprise-discovery · **reviewed**
 - [software architecture learning curriculum](../src/architecture/workbooks/software-architecture-learning-curriculum.tex) — architecture · **provisional**
 
 ## business-analysis (69)

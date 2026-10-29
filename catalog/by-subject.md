@@ -1534,6 +1534,14 @@
 - [triage sop github advanced sec ghas](../src/security/github-advanced-security/secret-scanning/triage-sop-github-advanced-sec-ghas.tex) — github advanced security/secret scanning · **provisional**
 - [viewing filtering alerts](../src/security/github-advanced-security/secret-scanning/viewing-filtering-alerts.tex) — github advanced security/secret scanning · **provisional**
 
+## github-actions/enterprise-discovery (5)
+
+- [GitHub Actions Architecture Discovery at Enterprise Scale](../src/architecture/technical-documents/github-actions-architecture-discovery-enterprise-scale.tex) — github-actions/enterprise-discovery · **reviewed**
+- [GitHub Actions Discovery Architecture Description Template](../src/architecture/templates/github-actions-architecture-discovery-ad-template.tex) — github-actions/enterprise-discovery · **reviewed**
+- [Architecture Discovery Evidence Viewpoint Specification Template](../src/architecture/templates/github-actions-architecture-discovery-viewpoint-template.tex) — github-actions/enterprise-discovery · **reviewed**
+- [Enterprise Architecture Discovery Evidence and Validation Workbook Template](../src/architecture/workbooks/github-actions-architecture-discovery-evidence-workbook-template.tex) — github-actions/enterprise-discovery · **reviewed**
+- [Enterprise Architecture Discovery Implementation Workbook Template](../src/architecture/workbooks/github-actions-architecture-discovery-implementation-workbook-template.tex) — github-actions/enterprise-discovery · **reviewed**
+
 ## go secure coding (1)
 
 - [GO secure coding standard](../src/programming/languages/go/secure-coding-standard-go.tex) — go secure coding · **reviewed**
