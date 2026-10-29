@@ -14,7 +14,7 @@ Architecture descriptions, ADRs, viewpoints, patterns, and governance belong her
 
 | Collection | Use it for | LaTeX sources |
 |---|---|---:|
-| [Technical documents](technical-documents/README.md) | Design guides, engineering references and explanatory technical material | 4 |
+| [Technical documents](technical-documents/README.md) | Design guides, engineering references and explanatory technical material | 5 |
 | [Templates](templates/README.md) | Reusable structured starting points and document forms | 4 |
 | [Workbooks and exercises](workbooks/README.md) | Practice, exercises, checklists and worked activities | 1 |
 
