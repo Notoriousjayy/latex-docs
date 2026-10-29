@@ -7,6 +7,8 @@ A source-controlled engineering documentation library covering software architec
 | Goal | Entry point |
 |---|---|
 | Find a topic or project | [Source catalog](src/README.md) |
+| Browse reusable templates, workbooks, scorecards or user stories | [Discovery catalog](catalog/README.md) |
+| Find secure coding standards by language | [Programming language guide](src/programming/languages/README.md) |
 | Review architectural choices | [ADR template library](src/architecture/decisions/readme.md) |
 | Understand architecture governance | [CCoE governance suite](src/architecture/governance/ccoe/readme.md) |
 | Browse structured study notes | [Cornell Notes collections](src/cornell-notes/README.md) |
@@ -14,6 +16,9 @@ A source-controlled engineering documentation library covering software architec
 | Inspect the implementation of the build | [Build helper](tooling/scripts/latex_build.py) and [Makefile](Makefile) |
 
 ## Repository map
+
+The [multidimensional discovery catalog](catalog/README.md) provides links by subject, domain and artifact type; it does not duplicate documents. The catalog manifest clearly distinguishes inspected content from provisional path-derived classifications.
+
 
 `src/` organizes the documents by domain; `tooling/` contains style modules, scripts, and manifests; `tests/` checks build, styles, collections, and diagrams; `.github/workflows/` defines validation, publishing, and release automation. [Browse every domain](src/README.md), including business analysis, startups, and technical writing.
 

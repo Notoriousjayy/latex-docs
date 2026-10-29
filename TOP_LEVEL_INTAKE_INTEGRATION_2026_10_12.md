@@ -248,3 +248,8 @@ compiler contract:
 ## Subsequent location change (2026-10-29)
 
 The four architecture-description and viewpoint template sources cited in the original duplicate-resolution record were subsequently relocated without changing their content to `src/architecture/templates/`. This note preserves the historical location used during the October 12 intake and identifies the current authoritative location. The live duplicate-verification mappings and the intake manifest's `canonical_path` values have been updated accordingly.
+
+
+## Semantic taxonomy relocation (2026-10-29)
+
+The twelve language-specific `secure-coding-standard-*.tex` baselines were subsequently relocated from `src/security/application-security/secure-coding/` into their respective `src/programming/languages/<language>/` collections. This historical report retains the original intake paths for provenance; the live intake manifest and migration script point to the canonical current paths. See `tooling/reports/semantic-taxonomy-2026-10-29/` for the new crosswalk.

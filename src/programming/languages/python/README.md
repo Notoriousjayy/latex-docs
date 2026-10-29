@@ -15,6 +15,8 @@ Source files for **python** within the **programming** domain. This is a navigat
 | [`07-testing-security-performance.tex`](07-testing-security-performance.tex) | LaTeX source |
 | [`08-engineering-curriculum-laboratory.tex`](08-engineering-curriculum-laboratory.tex) | LaTeX source |
 
+| [`secure-coding-standard-python.tex`](secure-coding-standard-python.tex) | Language-specific secure coding and CodeQL/SSDLC controls |
+
 ## Navigation
 
 See the [programming index](../../README.md) for the parent collection and related material.

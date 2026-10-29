@@ -39,6 +39,8 @@ make list-roots
 
 The category command discovers standalone LaTeX roots and builds them with the shared pdfLaTeX toolchain. To stage PDFs under `public/pdfs/`, use `make publish` from the repository root. The commands above describe the supported interface; they do not imply that every root has been compiled in this change.
 
+For **language-specific secure coding standards**, start with the [Programming languages index](languages/README.md). This links C, C++, Java, Python, JavaScript, TypeScript and other language baselines without duplicating their source files.
+
 ## Recommended navigation
 
 - Locate language-specific standards under `languages/` and consult the precise referenced edition before applying a rule.

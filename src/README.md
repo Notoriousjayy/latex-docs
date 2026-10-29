@@ -2,13 +2,16 @@
 
 ## Overview
 
-All authored documents live under `src/`, grouped by subject and then by project or artifact type. The folders are **source collections**, not necessarily standalone applications or deployable products. Use the closest domain README for scope and navigation.
+Authored documents live under `src/`, grouped by coherent technical subject and domain. Artifact types are searchable through the central catalog without forcing extra nesting. The folders are **source collections**, not necessarily standalone applications or deployable products. Use the closest domain README for scope and navigation.
 
 ## Scope and boundaries
 
 This catalog describes authored technical sources, not independent products or deployed systems. Choose the **authoritative technical domain** for a source; use cross-links for related readers rather than duplicate files. All immediate domains have a canonical `README.md`.
 
 ## Find documents by type
+
+For repository-wide artifact discovery, use the [central document catalogs](../catalog/README.md): [user stories](../catalog/user-stories.md), [templates](../catalog/templates.md), [workbooks](../catalog/workbooks.md), [scorecards](../catalog/scorecards.md), and [checklists](../catalog/checklists.md). These are index views pointing back to each document's authoritative technical home.
+
 
 Within each **technical domain**, use the artifact-type index where available:
 
@@ -53,7 +56,6 @@ For coherent multi-file suites, standards clauses, book chapters and diagram set
 
 | [`startups/`](startups/README.md) | Startup operating plans, security, finance and reusable templates. |
 
-| [`templates/`](architecture/templates/) | Shared source templates for architecture artifacts. |
 
 ## Recommended navigation
 

@@ -19,6 +19,8 @@ Source files for **github actions** within the **devops** domain. This is a navi
 | [`workflows-github-actions-hands-cheat-sheet.tex`](workflows-github-actions-hands-cheat-sheet.tex) | LaTeX source |
 | [`workflows-patterns-drop-recipes.tex`](workflows-patterns-drop-recipes.tex) | LaTeX source |
 
+| [`user-stories-by-chapter-ci-cd-github-actions.tex`](user-stories-by-chapter-ci-cd-github-actions.tex) | User stories and chapter-based delivery workflow exercises |
+
 ## Navigation
 
 See the [devops index](../README.md) for the parent collection and related material.
