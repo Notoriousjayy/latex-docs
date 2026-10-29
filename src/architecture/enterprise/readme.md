@@ -26,4 +26,4 @@ These commands compile documentation, not enterprise systems.
 
 ## Related
 
-[Architecture catalog](../readme.md) · [Startup documents](../../startups/readme.md)
+[Architecture catalog](../README.md) · [Startup documents](../../startups/README.md)

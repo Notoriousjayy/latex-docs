@@ -37,4 +37,4 @@ Do not execute testing outside an authorized scope or include customer vulnerabi
 
 ## Related
 
-[Security catalog](../readme.md) · [DevOps](../../devops/readme.md)
+[Security catalog](../README.md) · [DevOps](../../devops/README.md)

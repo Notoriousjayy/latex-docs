@@ -31,4 +31,4 @@ These commands compile LaTeX references; they do not change GitHub settings or r
 
 ## Related
 
-[Security catalog](../readme.md) · [DevOps](../../devops/readme.md)
+[Security catalog](../README.md) · [DevOps](../../devops/README.md)

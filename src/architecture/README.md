@@ -1,12 +1,19 @@
 # Architecture
 
+## Overview
+
 Architecture descriptions, cloud reference architectures, architectural decisions, governance artifacts, diagrams, and learning material. The library contains reusable models and templates; it does not designate any template as an approved production architecture.
 
-## Explore the collection
+## Scope and boundaries
+
+Architecture descriptions, ADRs, viewpoints, patterns, and governance belong here. Security operations belong in [Security](../security/README.md); implementation pipelines belong in [DevOps](../devops/README.md). Templates for architecture descriptions are distinct from ADR templates.
+
+## Directory map and documentation catalog
 
 | Area | What it contains | Sources |
 |---|---|---:|
 | [`cloud/`](cloud/) | Cloud concepts, architecture/diagram sets and an engineering suite. | 27 |
+| [`templates/`](templates/) | ISO/IEC/IEEE 42010 architecture-description and viewpoint templates (3 standalone sources, 1 fragment). | 3 |
 | [`decisions/`](decisions/) | Generic and specialized ADR templates with review governance. | 11 |
 | [`diagramming/`](diagramming/) | Guides and conventions for architecture diagramming. | 1 |
 | [`diagrams/`](diagrams/) | Cross-cutting diagrams and architectural model assets. | 0 |
@@ -32,7 +39,7 @@ make list-roots
 
 The category command discovers standalone LaTeX roots and builds them with the shared pdfLaTeX toolchain. To stage PDFs under `public/pdfs/`, use `make publish` from the repository root. The commands above describe the supported interface; they do not imply that every root has been compiled in this change.
 
-## Using this collection
+## Recommended navigation
 
 - Begin with the [architecture-description index](architecture-description-index.md) to understand diagram provenance and view/concern traceability.
 
@@ -40,7 +47,7 @@ The category command discovers standalone LaTeX roots and builds them with the s
 
 - Consult the [CCoE suite](governance/ccoe/readme.md) for governance templates and project-control records.
 
-## Maintenance and scope
+## Maintenance conventions
 
 - An ADR template is not an accepted decision; sign-off must occur in an adopting project.
 
@@ -48,8 +55,8 @@ The category command discovers standalone LaTeX roots and builds them with the s
 
 - Keep individual diagrams with their source documents unless they are explicitly shared across projects.
 
-## Related
+## Related domains
 
 - [Views and Beyond](views-and-beyond/readme.md)
 
-- [Repository source catalog](../readme.md)
+- [Repository source catalog](../README.md)

@@ -42,4 +42,4 @@ Run from the repository root. `make publish` stages generated PDFs under `public
 
 ## Related
 
-[Enterprise architecture](../readme.md) · [Startup sources](../../../startups/readme.md)
+[Enterprise architecture](../readme.md) · [Startup sources](../../../startups/README.md)

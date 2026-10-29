@@ -68,7 +68,7 @@ MODEL_KINDS = {
     "c4/deployment": ("C4 deployment view", "C4 model: deployment diagram"),
 }
 
-# Collection -> (subject kind, viewpoint id) per src/architecture/readme.md (AD index).
+# Collection -> (subject kind, viewpoint id) per src/architecture/README.md (AD index).
 COLLECTION_RULES = (
     ("src/architecture/views-and-beyond/", "reference pattern (Views and Beyond style catalogue)", "VP-STYLE-CATALOG"),
     ("src/architecture/cloud/", "reference pattern (cloud architecture library)", "VP-CLOUD-PATTERN"),

@@ -6,7 +6,7 @@ A source-controlled engineering documentation library covering software architec
 
 | Goal | Entry point |
 |---|---|
-| Find a topic or project | [Source catalog](src/readme.md) |
+| Find a topic or project | [Source catalog](src/README.md) |
 | Review architectural choices | [ADR template library](src/architecture/decisions/readme.md) |
 | Understand architecture governance | [CCoE governance suite](src/architecture/governance/ccoe/readme.md) |
 | Browse structured study notes | [Cornell Notes collections](src/cornell-notes/README.md) |
@@ -15,7 +15,7 @@ A source-controlled engineering documentation library covering software architec
 
 ## Repository map
 
-`src/` organizes the documents by domain; `tooling/` contains style modules, scripts, and manifests; `tests/` checks build, styles, collections, and diagrams; `.github/workflows/` defines validation, publishing, and release automation. [Browse every domain](src/readme.md), including business analysis, startups, and technical writing.
+`src/` organizes the documents by domain; `tooling/` contains style modules, scripts, and manifests; `tests/` checks build, styles, collections, and diagrams; `.github/workflows/` defines validation, publishing, and release automation. [Browse every domain](src/README.md), including business analysis, startups, and technical writing.
 
 ## Quick start
 
@@ -92,4 +92,4 @@ make preflight
 make build-category-security
 ```
 
-**Repository navigation:** [Source index](src/readme.md) · [Architecture](src/architecture/readme.md) · [Security](src/security/readme.md) · [Programming](src/programming/readme.md) · [DevOps](src/devops/readme.md)
+**Repository navigation:** [Source index](src/README.md) · [Architecture](src/architecture/README.md) · [Security](src/security/README.md) · [Programming](src/programming/README.md) · [DevOps](src/devops/README.md)
