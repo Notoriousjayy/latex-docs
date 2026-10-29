@@ -46,25 +46,21 @@ class EnterpriseDiscoverySuiteTests(unittest.TestCase):
             with self.subTest(item=item["id"]):
                 template = (ROOT / item["template"]).read_text(encoding="utf-8")
                 blank = (ROOT / item["blank"]).read_text(encoding="utf-8")
-                self.assertIn(r"\\documentclass", template)
-                self.assertIn(r"\\documentclass", blank)
-                self.assertIn(r"\\end{document}", blank)
+                self.assertIn(r"\documentclass", template)
+                self.assertIn(r"\documentclass", blank)
+                self.assertIn(r"\end{document}", blank)
                 self.assertNotEqual(template, blank)
                 self.assertEqual([], printable_bracket_prompts(blank))
                 self.assertNotIn("[To complete]", blank)
                 self.assertNotIn("[TODO]", blank)
-                self.assertIn(r"\\rule", blank)
+                self.assertIn(r"\rule", blank)
 
     def test_suite_navigation_exists(self):
         page = ROOT / "src/architecture/github-actions-discovery-suite.md"
         text = page.read_text(encoding="utf-8")
-        for item in IDS:
-            with self.subTest(item=item):
-                self.assertTrue(any(
-                    part in text for part in (
-                        "AD Blank", "Viewpoint Blank", "Implementation Blank", "Evidence Blank"
-                    )
-                ))
+        for label in ("AD Blank", "Viewpoint Blank", "Implementation Blank", "Evidence Blank"):
+            with self.subTest(label=label):
+                self.assertIn(label, text)
 
 
 if __name__ == "__main__":
