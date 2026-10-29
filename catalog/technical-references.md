@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (550)
+## Primary technical references (551)
 
 - [cloud architecture diagram library index](../src/architecture/cloud/architecture/cloud-architecture-diagram-library-index.tex) — cloud/architecture · **provisional**
 - [self hosting cloud architecture reference](../src/architecture/cloud/architecture/self-hosting-cloud-architecture-reference.tex) — cloud/architecture · **provisional**
@@ -114,6 +114,7 @@
 - [tile binner test plan](../src/architecture/style-system/examples/tile-binner-test-plan.tex) — style system/examples · **provisional**
 - [modular latex style module architecture](../src/architecture/style-system/modular-latex-style-module-architecture.tex) — style system · **provisional**
 - [systems engineering and software architecture](../src/architecture/systems-engineering/systems-engineering-and-software-architecture.tex) — systems engineering · **provisional**
+- [architecture decisions descriptions and viewpoint specifications](../src/architecture/technical-documents/adr-ad-viewpoint-governance-handout.tex) — architecture · **reviewed**
 - [applying iso iec ieee 42010 2022 enterprise](../src/architecture/technical-documents/applying-iso-iec-ieee-42010-2022-enterprise.tex) — architecture · **provisional**
 - [architecture definition and description](../src/architecture/technical-documents/architecture-definition-and-description.tex) — architecture · **provisional**
 - [c4 plantuml technical guide](../src/architecture/technical-documents/c4-plantuml-technical-guide.tex) — architecture · **provisional**
