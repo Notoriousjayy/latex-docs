@@ -22,6 +22,7 @@ TYPES = {
     "template", "workbook", "scorecard", "checklist", "user-stories",
     "study-guide", "study-notes", "laboratory", "assessment",
     "policy-standard", "decision-record", "architecture-document",
+    "business-plan", "latex-fragment",
 }
 
 RELOCATED = {
@@ -81,6 +82,8 @@ class SemanticTaxonomyTests(unittest.TestCase):
                 else:
                     reviewed += 1
                     self.assertTrue(entry["summary"])
+                    if entry["primary_type"] == "latex-fragment":
+                        self.assertIs(entry["standalone_latex"], False)
         self.assertEqual(reviewed, self.inventory["reviewed_items"])
 
     def test_language_specific_secure_coding_colocation(self):

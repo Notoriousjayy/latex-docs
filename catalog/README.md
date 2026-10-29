@@ -1,36 +1,33 @@
 # Documentation Discovery Catalog
 
-Search by domain, subject, and reusable artifact type. Each source is maintained in one canonical physical location; these indexes are navigational views, not duplicate documents.
+Find documents by **domain**, **subject**, or **artifact type** without duplicating LaTeX sources. This catalog is generated from the content-review manifest.
 
-**Catalog policy:** Every link resolves to its single authoritative source. Sources labeled **provisional** have not yet received a complete semantic review; titles there may be filename-derived. Content-search mentions do not establish that a document is itself a reusable artifact.
+## Browse
 
-| View | Purpose |
-|---|---|
-| [By domain](by-domain.md) | Every tracked LaTeX source in its primary domain |
-| [By subject](by-subject.md) | Subject collection groupings |
-| [By document type](by-document-type.md) | Full source index grouped by inferred primary type |
-| [User Stories](user-stories.md) | 17 primary/likely sources; 25 additional content mentions |
-| [Templates](templates.md) | 46 primary/likely sources |
-| [Workbooks](workbooks.md) | 9 primary/likely sources; 14 additional content mentions |
-| [Scorecards](scorecards.md) | 0 primary/likely sources; 42 additional content mentions |
-| [Checklists](checklists.md) | 10 primary/likely sources |
-| [Technical References](technical-references.md) | 585 primary/likely sources |
+| Catalog | Number of primary sources |
+|---|---:|
+| [By domain](by-domain.md) | 1054 |
+| [By subject](by-subject.md) | 1054 |
+| [By document type](by-document-type.md) | 1054 |
+| [User Stories](user-stories.md) | 17 |
+| [Reusable Templates](templates.md) | 40 |
+| [Workbooks and Exercises](workbooks.md) | 9 |
+| [Checklists](checklists.md) | 9 |
+| [Technical References](technical-references.md) | 550 |
+| [Assessments](assessments.md) | 11 |
+| [Operational Runbooks](runbooks.md) | 0 |
+| [Study Guides](study-guides.md) | 46 |
+| [Handbooks](handbooks.md) | 4 |
+| [Business Plans](business-plans.md) | 2 |
+| [Architecture Documents](architecture-documents.md) | 1 |
+| [LaTeX Source Fragments](source-fragments.md) | 1 |
+| [Scorecards and embedded evaluation tools](scorecards.md) | 0 standalone verified; embedded examples listed |
+| [Secure coding by language](secure-coding.md) | Language-specific and cross-domain guidance |
 
-## Additional artifact indexes
+## Provenance and maintenance
 
-- [Secure coding by language](secure-coding.md)
-- [Assessments](assessments.md)
-- [Runbooks](runbooks.md)
-- [Study guides](study-guides.md)
+**Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Secure coding and cross-domain navigation
+**52 of 1054** LaTeX sources have targeted semantic content review; **1002** remain provisional. A reference that merely contains a checklist, workbook section, or scorecard does not automatically have that primary type. Non-standalone LaTeX fragments have their own classification and are not regular documents.
 
-[Language-specific secure coding standards](../src/programming/languages/README.md) · [Security assessment](../src/security/application-security/readme.md) · [GHAS cross-language references](../src/security/github-advanced-security/readme.md)
-
-## Provenance and status
-
-The source inventory contains **1054 tracked `.tex` files**, of which **23** have targeted content review recorded in the manifest. All other type and subject fields are explicitly **provisional**, based on paths and titles; a complete manual semantic review is outstanding. A keyword match inside a source is useful for discovery but does not prove artifact purpose. The repository build process has not been used to validate every document in this catalog.
-
-## Maintenance
-
-When sources move, update the canonical manifest and regenerate catalog links. Do not copy source files into this folder. Preserve leaf READMEs, document provenance and LaTeX compilation roots.
+After modifying the inventory, regenerate the indexes with `python3 tooling/scripts/build_semantic_catalogs.py --write`; CI checks that the committed catalogs match the manifest. Update the relevant domain README for substantive source relocations.

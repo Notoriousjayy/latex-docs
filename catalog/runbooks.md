@@ -1,8 +1,7 @@
-# Runbooks
+# Operational Runbooks
 
-This index links to likely runbook documents. **Provisional classifications must be validated against actual contents before relocation or reuse.**
+**Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-| Domain | Document | Subject | Review |
-|---|---|---|---|
+## Primary operational runbooks (0)
 
-[Catalog home](README.md)
+No primary sources currently classified in this category.

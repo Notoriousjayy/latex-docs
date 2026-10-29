@@ -84,6 +84,8 @@ def main() -> int:
     for item in inventory["sources"]:
         entry = extract(item)
         evidence.append(entry)
+        if isinstance(item.get("standalone_latex"), bool) and (entry["documentclass"] != item["standalone_latex"]):
+            mismatches.append(item["path"] + ": standalone flag disagrees with source")
         if entry["git_blob_sha"] != item["blob_sha"]:
             mismatches.append(item["path"])
 
