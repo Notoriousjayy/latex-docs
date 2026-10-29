@@ -53,13 +53,17 @@ The category command discovers standalone LaTeX roots and builds them with the s
 
 - Begin with the [architecture-description index](architecture-description-index.md) to understand diagram provenance and view/concern traceability.
 
-- Use [ADRs](decisions/readme.md) for trade-offs and design rationale; use [architecture descriptions](standards/iso-iec-ieee-42010/) for stakeholder concerns, views and correspondences.
+- Use [ADRs](decisions/readme.md) for trade-offs and decision rationale; use [architecture descriptions](templates/README.md) to express the architecture of an entity of interest; and use [architecture viewpoint specifications](templates/README.md) for reusable conventions that govern views.
+
+- Read the [ADR vs. AD vs. Viewpoint technical handout](technical-documents/adr-ad-viewpoint-governance-handout.tex) for authoritative terminology, lifecycle rules, traceability examples, and a semantic classification of unresolved architecture forms.
 
 - Consult the [CCoE suite](governance/ccoe/readme.md) for governance templates and project-control records.
 
 ## Maintenance conventions
 
 - An ADR template is not an accepted decision; sign-off must occur in an adopting project.
+
+- ADRs, ADs and viewpoint specifications are separate artifact families. Reusable forms need a Template and a printable Blank; authoring guides, completed examples and non-standalone source fragments do not receive artificial Blank duplicates.
 
 - Do not confuse a rendered PlantUML diagram with validated UML semantics or standards conformance.
 
