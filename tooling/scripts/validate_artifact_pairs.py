@@ -16,7 +16,7 @@ HEADING = re.compile(r"\\(?:section|subsection|subsubsection)\*?\{([^}]+)\}")
 
 # TeX command options such as \item[Title] or \begin{description}[style=...]
 # describe structure; the bracket marks are not actually printed.
-TEX_OPTION = re.compile(r"\\(?:item|begin\{[^{}\n]+\})\s*\[[^\]\n]*\]")
+TEX_OPTION = re.compile(r"\\(?:[A-Za-z@]+\*?|begin\{[^{}\n]+\})\s*\[[^\]\n]*\]")
 VISIBLE_BRACKET = re.compile(r"\[[^\]\n]*[A-Za-z][^\]\n]*\]")
 EMPTY_BRACKET = re.compile(r"\[\s*\]")
 
