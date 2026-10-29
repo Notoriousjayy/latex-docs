@@ -1,1 +1,10 @@
-# Blank\n\nSource collection within the User Stories and Agile Requirements Engineering suite.\nSee [the collection guide](../../README.md) for context and build instructions.\n\n## LaTeX sources\n\n- [`acceptance-readiness-scorecard-blank.tex`](acceptance-readiness-scorecard-blank.tex)\n- [`backlog-health-scorecard-blank.tex`](backlog-health-scorecard-blank.tex)\n- [`invest-quality-scorecard-blank.tex`](invest-quality-scorecard-blank.tex)\n
+# Blank
+
+Source collection within the User Stories and Agile Requirements Engineering suite.
+See [the collection guide](../../README.md) for context and build instructions.
+
+## LaTeX sources
+
+- [`acceptance-readiness-scorecard-blank.tex`](acceptance-readiness-scorecard-blank.tex)
+- [`backlog-health-scorecard-blank.tex`](backlog-health-scorecard-blank.tex)
+- [`invest-quality-scorecard-blank.tex`](invest-quality-scorecard-blank.tex)

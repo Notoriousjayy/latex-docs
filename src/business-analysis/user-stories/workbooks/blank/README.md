@@ -1,1 +1,11 @@
-# Blank\n\nSource collection within the User Stories and Agile Requirements Engineering suite.\nSee [the collection guide](../../README.md) for context and build instructions.\n\n## LaTeX sources\n\n- [`acceptance-testing-workbook-blank.tex`](acceptance-testing-workbook-blank.tex)\n- [`release-planning-workbook-blank.tex`](release-planning-workbook-blank.tex)\n- [`role-and-discovery-workbook-blank.tex`](role-and-discovery-workbook-blank.tex)\n- [`story-refinement-workbook-blank.tex`](story-refinement-workbook-blank.tex)\n
+# Blank
+
+Source collection within the User Stories and Agile Requirements Engineering suite.
+See [the collection guide](../../README.md) for context and build instructions.
+
+## LaTeX sources
+
+- [`acceptance-testing-workbook-blank.tex`](acceptance-testing-workbook-blank.tex)
+- [`release-planning-workbook-blank.tex`](release-planning-workbook-blank.tex)
+- [`role-and-discovery-workbook-blank.tex`](role-and-discovery-workbook-blank.tex)
+- [`story-refinement-workbook-blank.tex`](story-refinement-workbook-blank.tex)

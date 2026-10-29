@@ -1,1 +1,19 @@
-# Templates\n\nSource collection within the User Stories and Agile Requirements Engineering suite.\nSee [the collection guide](../README.md) for context and build instructions.\n\n## LaTeX sources\n\n- [`acceptance-criteria-template.tex`](acceptance-criteria-template.tex)\n- [`backlog-item-template.tex`](backlog-item-template.tex)\n- [`change-impact-template.tex`](change-impact-template.tex)\n- [`defect-and-regression-template.tex`](defect-and-regression-template.tex)\n- [`elicitation-session-template.tex`](elicitation-session-template.tex)\n- [`epic-story-slicing-template.tex`](epic-story-slicing-template.tex)\n- [`iteration-plan-template.tex`](iteration-plan-template.tex)\n- [`nonfunctional-constraint-template.tex`](nonfunctional-constraint-template.tex)\n- [`product-outcome-template.tex`](product-outcome-template.tex)\n- [`release-plan-template.tex`](release-plan-template.tex)\n- [`role-model-persona-template.tex`](role-model-persona-template.tex)\n- [`user-story-card-template.tex`](user-story-card-template.tex)\n
+# Templates
+
+Source collection within the User Stories and Agile Requirements Engineering suite.
+See [the collection guide](../README.md) for context and build instructions.
+
+## LaTeX sources
+
+- [`acceptance-criteria-template.tex`](acceptance-criteria-template.tex)
+- [`backlog-item-template.tex`](backlog-item-template.tex)
+- [`change-impact-template.tex`](change-impact-template.tex)
+- [`defect-and-regression-template.tex`](defect-and-regression-template.tex)
+- [`elicitation-session-template.tex`](elicitation-session-template.tex)
+- [`epic-story-slicing-template.tex`](epic-story-slicing-template.tex)
+- [`iteration-plan-template.tex`](iteration-plan-template.tex)
+- [`nonfunctional-constraint-template.tex`](nonfunctional-constraint-template.tex)
+- [`product-outcome-template.tex`](product-outcome-template.tex)
+- [`release-plan-template.tex`](release-plan-template.tex)
+- [`role-model-persona-template.tex`](role-model-persona-template.tex)
+- [`user-story-card-template.tex`](user-story-card-template.tex)

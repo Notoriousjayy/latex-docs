@@ -1,1 +1,10 @@
-# Technical Reference\n\nSource collection within the User Stories and Agile Requirements Engineering suite.\nSee [the collection guide](../README.md) for context and build instructions.\n\n## LaTeX sources\n\n- [`acceptance-testing-engineering-handbook.tex`](acceptance-testing-engineering-handbook.tex)\n- [`traceability-governance-handbook.tex`](traceability-governance-handbook.tex)\n- [`user-stories-engineering-reference.tex`](user-stories-engineering-reference.tex)\n
+# Technical Reference
+
+Source collection within the User Stories and Agile Requirements Engineering suite.
+See [the collection guide](../README.md) for context and build instructions.
+
+## LaTeX sources
+
+- [`acceptance-testing-engineering-handbook.tex`](acceptance-testing-engineering-handbook.tex)
+- [`traceability-governance-handbook.tex`](traceability-governance-handbook.tex)
+- [`user-stories-engineering-reference.tex`](user-stories-engineering-reference.tex)

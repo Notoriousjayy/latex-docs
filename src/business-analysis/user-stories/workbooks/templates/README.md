@@ -1,1 +1,11 @@
-# Templates\n\nSource collection within the User Stories and Agile Requirements Engineering suite.\nSee [the collection guide](../../README.md) for context and build instructions.\n\n## LaTeX sources\n\n- [`acceptance-testing-workbook-template.tex`](acceptance-testing-workbook-template.tex)\n- [`release-planning-workbook-template.tex`](release-planning-workbook-template.tex)\n- [`role-and-discovery-workbook-template.tex`](role-and-discovery-workbook-template.tex)\n- [`story-refinement-workbook-template.tex`](story-refinement-workbook-template.tex)\n
+# Templates
+
+Source collection within the User Stories and Agile Requirements Engineering suite.
+See [the collection guide](../../README.md) for context and build instructions.
+
+## LaTeX sources
+
+- [`acceptance-testing-workbook-template.tex`](acceptance-testing-workbook-template.tex)
+- [`release-planning-workbook-template.tex`](release-planning-workbook-template.tex)
+- [`role-and-discovery-workbook-template.tex`](role-and-discovery-workbook-template.tex)
+- [`story-refinement-workbook-template.tex`](story-refinement-workbook-template.tex)

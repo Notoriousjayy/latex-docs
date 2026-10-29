@@ -1,1 +1,28 @@
-# Study Guides\n\nSource collection within the User Stories and Agile Requirements Engineering suite.\nSee [the collection guide](../README.md) for context and build instructions.\n\n## LaTeX sources\n\n- [`01-an-overview.tex`](01-an-overview.tex)\n- [`02-writing-stories.tex`](02-writing-stories.tex)\n- [`03-user-role-modeling.tex`](03-user-role-modeling.tex)\n- [`04-gathering-stories.tex`](04-gathering-stories.tex)\n- [`05-working-with-user-proxies.tex`](05-working-with-user-proxies.tex)\n- [`06-acceptance-testing-user-stories.tex`](06-acceptance-testing-user-stories.tex)\n- [`07-guidelines-for-good-stories.tex`](07-guidelines-for-good-stories.tex)\n- [`08-estimating-user-stories.tex`](08-estimating-user-stories.tex)\n- [`09-planning-a-release.tex`](09-planning-a-release.tex)\n- [`10-planning-an-iteration.tex`](10-planning-an-iteration.tex)\n- [`11-measuring-and-monitoring-velocity.tex`](11-measuring-and-monitoring-velocity.tex)\n- [`12-what-stories-are-not.tex`](12-what-stories-are-not.tex)\n- [`13-why-user-stories.tex`](13-why-user-stories.tex)\n- [`14-a-catalog-of-story-smells.tex`](14-a-catalog-of-story-smells.tex)\n- [`15-using-stories-with-scrum.tex`](15-using-stories-with-scrum.tex)\n- [`16-additional-topics.tex`](16-additional-topics.tex)\n- [`17-the-user-roles.tex`](17-the-user-roles.tex)\n- [`18-the-stories.tex`](18-the-stories.tex)\n- [`19-estimating-the-stories.tex`](19-estimating-the-stories.tex)\n- [`20-the-release-plan.tex`](20-the-release-plan.tex)\n- [`21-the-acceptance-tests.tex`](21-the-acceptance-tests.tex)\n
+# Study Guides
+
+Source collection within the User Stories and Agile Requirements Engineering suite.
+See [the collection guide](../README.md) for context and build instructions.
+
+## LaTeX sources
+
+- [`01-an-overview.tex`](01-an-overview.tex)
+- [`02-writing-stories.tex`](02-writing-stories.tex)
+- [`03-user-role-modeling.tex`](03-user-role-modeling.tex)
+- [`04-gathering-stories.tex`](04-gathering-stories.tex)
+- [`05-working-with-user-proxies.tex`](05-working-with-user-proxies.tex)
+- [`06-acceptance-testing-user-stories.tex`](06-acceptance-testing-user-stories.tex)
+- [`07-guidelines-for-good-stories.tex`](07-guidelines-for-good-stories.tex)
+- [`08-estimating-user-stories.tex`](08-estimating-user-stories.tex)
+- [`09-planning-a-release.tex`](09-planning-a-release.tex)
+- [`10-planning-an-iteration.tex`](10-planning-an-iteration.tex)
+- [`11-measuring-and-monitoring-velocity.tex`](11-measuring-and-monitoring-velocity.tex)
+- [`12-what-stories-are-not.tex`](12-what-stories-are-not.tex)
+- [`13-why-user-stories.tex`](13-why-user-stories.tex)
+- [`14-a-catalog-of-story-smells.tex`](14-a-catalog-of-story-smells.tex)
+- [`15-using-stories-with-scrum.tex`](15-using-stories-with-scrum.tex)
+- [`16-additional-topics.tex`](16-additional-topics.tex)
+- [`17-the-user-roles.tex`](17-the-user-roles.tex)
+- [`18-the-stories.tex`](18-the-stories.tex)
+- [`19-estimating-the-stories.tex`](19-estimating-the-stories.tex)
+- [`20-the-release-plan.tex`](20-the-release-plan.tex)
+- [`21-the-acceptance-tests.tex`](21-the-acceptance-tests.tex)
