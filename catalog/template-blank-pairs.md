@@ -4,6 +4,10 @@
 
 **Template:** authoritative authoring instructions, evaluation methodology and section definitions. **Blank:** separate unfilled copy used to begin a real assessment or decision. A Blank never demonstrates that a review was completed or approved.
 
+### Print-ready Blank contract
+
+A **Blank is a printable working form**, not a second instructional template. No bracketed response prompts (`[To complete]`, `[TODO]`, or examples) are permitted in the rendered PDF. Each entry has an empty writing line or response area; evaluation criteria, field labels, rubric definitions and unchecked boxes remain. Bracketed strings used solely for LaTeX syntax (such as package options or description-list labels) are allowed in source because the brackets are not printed. Templates may retain authoring prompts. The validator enforces this rendered-text distinction for registered Blanks, and CI compiles every LaTeX root.
+
 Architecture descriptions and architecture decision records are distinct document types. Completed examples, answer keys and technical references are preserved.
 
 ## Registered pairs
