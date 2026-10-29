@@ -24,6 +24,8 @@ An original, book-grounded LaTeX learning and implementation library based on Mi
 
 Open `curriculum/prerequisite-based-learning-curriculum.tex` and its chapter crosswalk to choose a learning path. For practical adoption, start with `technical-reference/user-stories-engineering-reference.tex`, then copy any annotated template to learn how it should be completed. Print the matching file in `blank-forms/` or `workbooks/blank/` for an empty working sheet. Do not print an annotated template expecting it to be blank.
 
+**Repository integration:** This collection is indexed in the root discovery catalog. Pair registrations live in `tooling/manifests/reusable-artifact-pairs.json`; the canonical document inventory excludes registered derivative blanks, which are governed separately.
+
 ## Build and validate
 
 Use the repository-root build toolchain (not a nested Makefile):
