@@ -30,6 +30,8 @@ def printable_bracket_prompts(source: str) -> list[str]:
     body = source.split(r"\begin{document}", 1)[-1]
     body = "\n".join(line.split("%", 1)[0] for line in body.splitlines())
     body = TEX_OPTION.sub("", body)
+    # In TeX a line-break followed by [8pt] is spacing syntax, not printed text.
+    body = re.sub(r"\\\\\[[^\]\n]*\]", "", body)
     return [match.group(0) for match in VISIBLE_BRACKET.finditer(body)] + [
         match.group(0) for match in EMPTY_BRACKET.finditer(body)
     ]
