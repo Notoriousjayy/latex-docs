@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 CATALOG = ROOT / "catalog"
 MANIFEST = ROOT / "tooling" / "manifests" / "semantic-document-inventory.json"
+PAIR_MANIFEST = ROOT / "tooling" / "manifests" / "reusable-artifact-pairs.json"
 
 TYPES = {
     "technical-reference", "implementation-guide", "handbook", "runbook",
@@ -59,8 +60,12 @@ class SemanticTaxonomyTests(unittest.TestCase):
         registered = [entry["path"] for entry in self.entries]
         self.assertEqual(len(registered), len(set(registered)), "duplicate canonical paths")
         physical = sorted(path.relative_to(ROOT).as_posix() for path in SRC.rglob("*.tex"))
-        self.assertEqual(sorted(registered), physical, "metadata is stale or incomplete")
-        self.assertEqual(1054, len(physical))
+        managed = json.loads(PAIR_MANIFEST.read_text(encoding="utf-8"))
+        variants = {pair["blank"] for pair in managed["pairs"]}
+        self.assertTrue(variants.issubset(set(physical)), "registered Blank missing")
+        self.assertEqual(sorted(registered), sorted(set(physical) - variants),
+                         "canonical metadata is stale or incomplete")
+        self.assertEqual(1054, len(set(physical) - variants))
 
     def test_unique_document_ids_and_classification_evidence(self):
         ids = [entry["id"] for entry in self.entries]
