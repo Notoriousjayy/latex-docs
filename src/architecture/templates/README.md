@@ -32,3 +32,13 @@ Keep template sources colocated with the architecture domain. Do not turn templa
 ## Related domains
 
 [Architecture](../README.md) · [ADR templates](../decisions/readme.md) · [Source catalog](../../README.md)
+
+## Template–Blank variants
+
+Use the Template when authoring or adapting a reusable form. Use the Blank to start an unfilled instance; do not treat its unfilled placeholders as completed evidence. Existing examples and instructor material are preserved separately.
+
+| Template | Blank |
+|---|---|
+| [42010-ad-template-polished.tex](42010-ad-template-polished.tex) | [42010-ad-blank.tex](42010-ad-blank.tex) |
+
+See [pair catalog](../../../catalog/template-blank-pairs.md) for governance and remaining review items.
