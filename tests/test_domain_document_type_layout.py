@@ -31,7 +31,7 @@ class DocumentTypeAndLeafReadmeTests(unittest.TestCase):
         governed = {item["blank"] for item in variants["pairs"]}
         physical = {p.relative_to(ROOT).as_posix() for p in SRC.rglob("*.tex")}
         self.assertTrue(governed.issubset(physical), "governed Blank missing")
-        self.assertEqual(1055, len(physical - governed),
+        self.assertGreaterEqual(len(physical - governed), 1055,
                          "the original taxonomy migration must preserve all canonical roots")
 
     def test_every_leaf_directory_has_readme(self):

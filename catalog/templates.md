@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (71)
+## Primary reusable templates (59)
 
 - [Architecture Documentation Templates](../src/architecture/cloud/engineering-suite/05-architecture-documentation-templates.tex) — cloud architecture documentation forms · **reviewed**
 - [Cloud Security Reference Templates](../src/architecture/cloud/engineering-suite/06-security-governance-templates.tex) — cloud security governance forms · **reviewed**
@@ -30,18 +30,6 @@
 - [TOGAF User Stories (Day in the Life)](../src/architecture/togaf/togaf-user-stories-day-in-the-life.tex) — TOGAF user story scaffold · **reviewed**
 - [Viewpoint Template](../src/architecture/views-and-beyond/advanced-concepts/viewpoint-template.tex) — software architecture viewpoint specification · **reviewed**
 - [babok v3 requirements traceability templates](../src/business-analysis/templates/babok-v3-requirements-traceability-templates.tex) — business analysis · **provisional**
-- [acceptance criteria blank](../src/business-analysis/user-stories/blank-forms/acceptance-criteria-blank.tex) — agile requirements / user stories · **provisional**
-- [backlog item blank](../src/business-analysis/user-stories/blank-forms/backlog-item-blank.tex) — agile requirements / user stories · **provisional**
-- [change impact blank](../src/business-analysis/user-stories/blank-forms/change-impact-blank.tex) — agile requirements / user stories · **provisional**
-- [defect and regression blank](../src/business-analysis/user-stories/blank-forms/defect-and-regression-blank.tex) — agile requirements / user stories · **provisional**
-- [elicitation session blank](../src/business-analysis/user-stories/blank-forms/elicitation-session-blank.tex) — agile requirements / user stories · **provisional**
-- [epic story slicing blank](../src/business-analysis/user-stories/blank-forms/epic-story-slicing-blank.tex) — agile requirements / user stories · **provisional**
-- [iteration plan blank](../src/business-analysis/user-stories/blank-forms/iteration-plan-blank.tex) — agile requirements / user stories · **provisional**
-- [nonfunctional constraint blank](../src/business-analysis/user-stories/blank-forms/nonfunctional-constraint-blank.tex) — agile requirements / user stories · **provisional**
-- [product outcome blank](../src/business-analysis/user-stories/blank-forms/product-outcome-blank.tex) — agile requirements / user stories · **provisional**
-- [release plan blank](../src/business-analysis/user-stories/blank-forms/release-plan-blank.tex) — agile requirements / user stories · **provisional**
-- [role model persona blank](../src/business-analysis/user-stories/blank-forms/role-model-persona-blank.tex) — agile requirements / user stories · **provisional**
-- [user story card blank](../src/business-analysis/user-stories/blank-forms/user-story-card-blank.tex) — agile requirements / user stories · **provisional**
 - [acceptance readiness scorecard template](../src/business-analysis/user-stories/scorecards/templates/acceptance-readiness-scorecard-template.tex) — agile requirements / user stories · **provisional**
 - [backlog health scorecard template](../src/business-analysis/user-stories/scorecards/templates/backlog-health-scorecard-template.tex) — agile requirements / user stories · **provisional**
 - [invest quality scorecard template](../src/business-analysis/user-stories/scorecards/templates/invest-quality-scorecard-template.tex) — agile requirements / user stories · **provisional**

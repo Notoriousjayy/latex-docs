@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary workbooks and exercises (22)
+## Primary workbooks and exercises (18)
 
 - [ISO/IEC/IEEE 42010 Conformance Assessment Workbook](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment.tex) — ISO/IEC/IEEE 42010 conformance evidence · **reviewed**
 - [lab 01 discover real user roles](../src/business-analysis/user-stories/laboratories/lab-01-discover-real-user-roles.tex) — agile requirements / user stories · **provisional**
@@ -14,10 +14,6 @@
 - [lab 07 negotiate a release plan](../src/business-analysis/user-stories/laboratories/lab-07-negotiate-a-release-plan.tex) — agile requirements / user stories · **provisional**
 - [lab 08 run change impact and governance](../src/business-analysis/user-stories/laboratories/lab-08-run-change-impact-and-governance.tex) — agile requirements / user stories · **provisional**
 - [lab 09 capstone deliver a story led release](../src/business-analysis/user-stories/laboratories/lab-09-capstone-deliver-a-story-led-release.tex) — agile requirements / user stories · **provisional**
-- [acceptance testing workbook blank](../src/business-analysis/user-stories/workbooks/blank/acceptance-testing-workbook-blank.tex) — agile requirements / user stories · **provisional**
-- [release planning workbook blank](../src/business-analysis/user-stories/workbooks/blank/release-planning-workbook-blank.tex) — agile requirements / user stories · **provisional**
-- [role and discovery workbook blank](../src/business-analysis/user-stories/workbooks/blank/role-and-discovery-workbook-blank.tex) — agile requirements / user stories · **provisional**
-- [story refinement workbook blank](../src/business-analysis/user-stories/workbooks/blank/story-refinement-workbook-blank.tex) — agile requirements / user stories · **provisional**
 - [calculus applications companion workbook](../src/mathematics/workbooks/calculus-applications-companion-workbook.tex) — mathematics · **provisional**
 - [calculus applications workbook solutions](../src/mathematics/workbooks/calculus-applications-workbook-solutions.tex) — mathematics · **provisional**
 - [differential equations curriculum problem workbook](../src/mathematics/workbooks/differential-equations-curriculum-problem-workbook.tex) — mathematics · **provisional**

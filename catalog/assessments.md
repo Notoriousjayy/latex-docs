@@ -2,13 +2,10 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary assessments (14)
+## Primary assessments (11)
 
 - [3 5 quality audit](../src/architecture/governance/ccoe/execution/3-5-quality-audit.tex) — ccoe/execution · **provisional**
 - [2 33 probability and impact assessment](../src/architecture/governance/ccoe/planning/2-33-probability-and-impact-assessment.tex) — ccoe/planning · **provisional**
-- [acceptance readiness scorecard blank](../src/business-analysis/user-stories/scorecards/blank/acceptance-readiness-scorecard-blank.tex) — agile requirements / user stories · **provisional**
-- [backlog health scorecard blank](../src/business-analysis/user-stories/scorecards/blank/backlog-health-scorecard-blank.tex) — agile requirements / user stories · **provisional**
-- [invest quality scorecard blank](../src/business-analysis/user-stories/scorecards/blank/invest-quality-scorecard-blank.tex) — agile requirements / user stories · **provisional**
 - [physics engine gap analysis production library](../src/game-development/physics-engines/physics-engine-gap-analysis-production-library.tex) — physics engines · **provisional**
 - [03 manual code auditing](../src/security/application-security/assessment/03-manual-code-auditing.tex) — application security/assessment · **provisional**
 - [06 assessment procedures](../src/security/application-security/assessment/06-assessment-procedures.tex) — application security/assessment · **provisional**

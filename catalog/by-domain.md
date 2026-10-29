@@ -199,7 +199,7 @@
 - [supporting development](../src/architecture/views-and-beyond/view-packets/supporting-development.tex) — views and beyond/view packets · **provisional**
 - [software architecture learning curriculum](../src/architecture/workbooks/software-architecture-learning-curriculum.tex) — architecture · **provisional**
 
-## business-analysis (88)
+## business-analysis (69)
 
 - [agile requirements babok alignment handout](../src/business-analysis/babok/agile-requirements-babok-alignment-handout.tex) — babok · **provisional**
 - [BABOK v3 50 Techniques Catalog](../src/business-analysis/babok/babok-v3-50-techniques-catalog.tex) — BABOK techniques · **reviewed**
@@ -208,18 +208,6 @@
 - [babok v3 technical guide](../src/business-analysis/babok/babok-v3-technical-guide.tex) — babok · **provisional**
 - [babok v3 cornell chapter notes](../src/business-analysis/study-notes/babok-v3-cornell-chapter-notes.tex) — business analysis · **provisional**
 - [babok v3 requirements traceability templates](../src/business-analysis/templates/babok-v3-requirements-traceability-templates.tex) — business analysis · **provisional**
-- [acceptance criteria blank](../src/business-analysis/user-stories/blank-forms/acceptance-criteria-blank.tex) — agile requirements / user stories · **provisional**
-- [backlog item blank](../src/business-analysis/user-stories/blank-forms/backlog-item-blank.tex) — agile requirements / user stories · **provisional**
-- [change impact blank](../src/business-analysis/user-stories/blank-forms/change-impact-blank.tex) — agile requirements / user stories · **provisional**
-- [defect and regression blank](../src/business-analysis/user-stories/blank-forms/defect-and-regression-blank.tex) — agile requirements / user stories · **provisional**
-- [elicitation session blank](../src/business-analysis/user-stories/blank-forms/elicitation-session-blank.tex) — agile requirements / user stories · **provisional**
-- [epic story slicing blank](../src/business-analysis/user-stories/blank-forms/epic-story-slicing-blank.tex) — agile requirements / user stories · **provisional**
-- [iteration plan blank](../src/business-analysis/user-stories/blank-forms/iteration-plan-blank.tex) — agile requirements / user stories · **provisional**
-- [nonfunctional constraint blank](../src/business-analysis/user-stories/blank-forms/nonfunctional-constraint-blank.tex) — agile requirements / user stories · **provisional**
-- [product outcome blank](../src/business-analysis/user-stories/blank-forms/product-outcome-blank.tex) — agile requirements / user stories · **provisional**
-- [release plan blank](../src/business-analysis/user-stories/blank-forms/release-plan-blank.tex) — agile requirements / user stories · **provisional**
-- [role model persona blank](../src/business-analysis/user-stories/blank-forms/role-model-persona-blank.tex) — agile requirements / user stories · **provisional**
-- [user story card blank](../src/business-analysis/user-stories/blank-forms/user-story-card-blank.tex) — agile requirements / user stories · **provisional**
 - [chapter to operations crosswalk](../src/business-analysis/user-stories/curriculum/chapter-to-operations-crosswalk.tex) — agile requirements / user stories · **provisional**
 - [prerequisite based learning curriculum](../src/business-analysis/user-stories/curriculum/prerequisite-based-learning-curriculum.tex) — agile requirements / user stories · **provisional**
 - [lab 01 discover real user roles](../src/business-analysis/user-stories/laboratories/lab-01-discover-real-user-roles.tex) — agile requirements / user stories · **provisional**
@@ -237,9 +225,6 @@
 - [requirements change control](../src/business-analysis/user-stories/procedures/requirements-change-control.tex) — agile requirements / user stories · **provisional**
 - [story refinement and readiness](../src/business-analysis/user-stories/procedures/story-refinement-and-readiness.tex) — agile requirements / user stories · **provisional**
 - [source and methodology notes](../src/business-analysis/user-stories/references/source-and-methodology-notes.tex) — agile requirements / user stories · **provisional**
-- [acceptance readiness scorecard blank](../src/business-analysis/user-stories/scorecards/blank/acceptance-readiness-scorecard-blank.tex) — agile requirements / user stories · **provisional**
-- [backlog health scorecard blank](../src/business-analysis/user-stories/scorecards/blank/backlog-health-scorecard-blank.tex) — agile requirements / user stories · **provisional**
-- [invest quality scorecard blank](../src/business-analysis/user-stories/scorecards/blank/invest-quality-scorecard-blank.tex) — agile requirements / user stories · **provisional**
 - [acceptance readiness scorecard template](../src/business-analysis/user-stories/scorecards/templates/acceptance-readiness-scorecard-template.tex) — agile requirements / user stories · **provisional**
 - [backlog health scorecard template](../src/business-analysis/user-stories/scorecards/templates/backlog-health-scorecard-template.tex) — agile requirements / user stories · **provisional**
 - [invest quality scorecard template](../src/business-analysis/user-stories/scorecards/templates/invest-quality-scorecard-template.tex) — agile requirements / user stories · **provisional**
@@ -280,10 +265,6 @@
 - [release plan template](../src/business-analysis/user-stories/templates/release-plan-template.tex) — agile requirements / user stories · **provisional**
 - [role model persona template](../src/business-analysis/user-stories/templates/role-model-persona-template.tex) — agile requirements / user stories · **provisional**
 - [user story card template](../src/business-analysis/user-stories/templates/user-story-card-template.tex) — agile requirements / user stories · **provisional**
-- [acceptance testing workbook blank](../src/business-analysis/user-stories/workbooks/blank/acceptance-testing-workbook-blank.tex) — agile requirements / user stories · **provisional**
-- [release planning workbook blank](../src/business-analysis/user-stories/workbooks/blank/release-planning-workbook-blank.tex) — agile requirements / user stories · **provisional**
-- [role and discovery workbook blank](../src/business-analysis/user-stories/workbooks/blank/role-and-discovery-workbook-blank.tex) — agile requirements / user stories · **provisional**
-- [story refinement workbook blank](../src/business-analysis/user-stories/workbooks/blank/story-refinement-workbook-blank.tex) — agile requirements / user stories · **provisional**
 - [acceptance testing workbook template](../src/business-analysis/user-stories/workbooks/templates/acceptance-testing-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [release planning workbook template](../src/business-analysis/user-stories/workbooks/templates/release-planning-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [role and discovery workbook template](../src/business-analysis/user-stories/workbooks/templates/role-and-discovery-workbook-template.tex) — agile requirements / user stories · **provisional**
