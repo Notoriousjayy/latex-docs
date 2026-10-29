@@ -1,0 +1,83 @@
+name: One-Time User Stories Integration
+
+on:
+  push:
+    branches:
+      - feat/user-stories-agile-requirements-suite-20261029
+    paths:
+      - 'tooling/import-staging/user-stories/**'
+      - '.github/workflows/import-user-stories-once.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    if: github.repository == 'Notoriousjayy/latex-docs'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 1
+      - name: Materialize source and prepare import archive
+        run: |
+          python3 - <<'PY'
+          import base64, bz2, zipfile
+          from pathlib import Path
+
+          staging = Path('tooling/import-staging/user-stories')
+          chunks = [staging / f'seg{i:02}.b64' for i in range(9)]
+          assert all(p.is_file() for p in chunks), 'Missing source segment'
+          encoded = ''.join(p.read_text(encoding='ascii').strip() for p in chunks)
+          assert len(encoded) == 40152, f'Unexpected source length: {len(encoded)}'
+          script = bz2.decompress(base64.b64decode(encoded)).decode('utf-8')
+          assert "ROOT=Path('src/business-analysis/user-stories').resolve()" in script
+          exec(compile(script, 'original_suite_generator.py', 'exec'), {'__name__':'__main__'})
+          src = Path('src/business-analysis/user-stories')
+          all_roots = [p for p in src.rglob('*.tex') if p.parent.name != 'shared']
+          assert len(all_roots) == 79, f'Expected 79 roots, got {len(all_roots)}'
+          with zipfile.ZipFile('/tmp/user-stories-source-import.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
+              for f in src.rglob('*'):
+                  if f.is_file() and f.suffix in ('.tex', '.md', '.json'):
+                      archive.write(f, 'user_stories_agile_requirements_suite/' + f.relative_to(src).as_posix())
+          importer = bz2.decompress(base64.b64decode((staging/'importer.b64').read_text(encoding='ascii'))).decode('utf-8')
+          Path('/tmp/import_user_stories_suite.py').write_text(importer, encoding='utf-8')
+          PY
+      - name: Integrate catalog, templates, source navigation
+        run: |
+          python3 /tmp/import_user_stories_suite.py /tmp/user-stories-source-import.zip
+          python3 tooling/scripts/build_semantic_catalogs.py --check
+          python3 tooling/scripts/validate_artifact_pairs.py
+          python3 tooling/scripts/latex_build.py preflight
+      - name: Normalize collection instructions
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path('src/business-analysis/user-stories')
+          readme = root/'README.md'
+          text = readme.read_text(encoding='utf-8')
+          start = text.index('## Build\n')
+          end = text.index('## Naming and template/blank guarantee\n')
+          replacement = (
+              '## Build and validate\n\n'
+              'Use the repository-root build toolchain (not a nested Makefile):\n\n'
+              '```bash\nmake preflight\nmake build-category-business-analysis\n'
+              'python3 tooling/scripts/validate_artifact_pairs.py\n```\n\n'
+              'The standalone LaTeX documents use a local shared preamble and the '
+              'repository pdfLaTeX runner discovers every document root. Generated '
+              'PDFs are build artifacts and are not committed as source.\n\n'
+          )
+          readme.write_text(text[:start] + replacement + text[end:], encoding='utf-8')
+          (root/'Makefile').unlink(missing_ok=True)
+          PY
+      - name: Commit source files and retire one-time transfer
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm -r tooling/import-staging/user-stories .github/workflows/import-user-stories-once.yml
+          git add src/business-analysis/user-stories src/business-analysis/README.md README.md catalog tooling/manifests/semantic-document-inventory.json tooling/manifests/reusable-artifact-pairs.json tooling/scripts/validate_artifact_pairs.py
+          git status --short
+          git commit -m 'docs(business-analysis): integrate user stories engineering suite and catalogs'
+          git push origin HEAD:feat/user-stories-agile-requirements-suite-20261029
