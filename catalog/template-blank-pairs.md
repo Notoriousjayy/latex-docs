@@ -10,6 +10,10 @@ A **Blank is a printable working form**, not a second instructional template. No
 
 Architecture descriptions and architecture decision records are distinct document types. Completed examples, answer keys and technical references are preserved.
 
+## Enterprise discovery implementation suite
+
+[GitHub Actions Architecture Discovery suite](../src/architecture/github-actions-discovery-suite.md) includes an unchanged technical reference, a project-specific Architecture Description and Viewpoint Specification, and two phase/evidence workbooks. The four paired guided Templates and print-ready Blanks are listed above. Unlike an architecture description, an ADR records one bounded decision; unlike an architecture view, a viewpoint specification defines reusable construction and interpretation conventions.
+
 ## Registered pairs
 
 | Logical ID | Family | Template | Blank |

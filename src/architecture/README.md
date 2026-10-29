@@ -49,6 +49,10 @@ make list-roots
 
 The category command discovers standalone LaTeX roots and builds them with the shared pdfLaTeX toolchain. To stage PDFs under `public/pdfs/`, use `make publish` from the repository root. The commands above describe the supported interface; they do not imply that every root has been compiled in this change.
 
+## Enterprise GitHub Actions architecture discovery
+
+See the [enterprise architecture discovery suite](github-actions-discovery-suite.md) for the uploaded technical reference and its four project-specific Template–Blank pairs: Architecture Description, evidence viewpoint, implementation workbook, and evidence/validation workbook. The Blank copies are printable and contain empty writing lines rather than bracketed prompts. Use separate ADRs for consequential design decisions.
+
 ## Recommended navigation
 
 - Begin with the [architecture-description index](architecture-description-index.md) to understand diagram provenance and view/concern traceability.

@@ -13,6 +13,15 @@ Reusable ISO/IEC/IEEE 42010-aligned architecture-description and viewpoint autho
 | [Viewpoint specification worksheet](viewpoint-template-polished.tex) | Canonical standalone reusable viewpoint specification Template; printable Blank is outstanding |
 | [Viewpoint section fragment](viewpoint-section.tex) | **Non-standalone** fragment for inclusion by a compatible host document |
 
+## GitHub Actions architecture discovery Template–Blank pairs
+
+| Artifact | Guided Template | Printable Blank |
+|---|---|---|
+| Architecture Description | [AD Template](github-actions-architecture-discovery-ad-template.tex) | [AD Blank](github-actions-architecture-discovery-ad-blank.tex) |
+| Architecture Viewpoint Specification | [Viewpoint Template](github-actions-architecture-discovery-viewpoint-template.tex) | [Viewpoint Blank](github-actions-architecture-discovery-viewpoint-blank.tex) |
+
+[Suite landing page](../github-actions-discovery-suite.md) · [Reference methodology](../technical-documents/github-actions-architecture-discovery-enterprise-scale.tex) · [Workbooks](../workbooks/README.md)
+
 ## Three distinct document families
 
 - **Architecture Description (AD)**: a versioned description of the architecture of an entity of interest, with stakeholder concerns and governed views.

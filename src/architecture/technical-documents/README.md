@@ -12,6 +12,8 @@ Source files for **technical documents** within the **architecture** domain. Thi
 | [`iso-iec-ieee-42010-2022-clean-handout.tex`](iso-iec-ieee-42010-2022-clean-handout.tex) | LaTeX source |
 | [`adr-ad-viewpoint-governance-handout.tex`](adr-ad-viewpoint-governance-handout.tex) | Technical handout: ADR, AD and viewpoint distinctions, classification, traceability, and governance |
 
+| [`github-actions-architecture-discovery-enterprise-scale.tex`](github-actions-architecture-discovery-enterprise-scale.tex) | Original uploaded LaTeX source: enterprise GitHub Actions architecture discovery methodology |
+
 ## Navigation
 
 See the [architecture index](../README.md) for the parent collection and related material.
