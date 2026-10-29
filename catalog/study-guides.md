@@ -2,10 +2,31 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary study guides (46)
+## Primary study guides (67)
 
 - [02 cloud architecture curriculum](../src/architecture/cloud/engineering-suite/02-cloud-architecture-curriculum.tex) — cloud/engineering suite · **provisional**
 - [software architecture learning curriculum](../src/architecture/workbooks/software-architecture-learning-curriculum.tex) — architecture · **provisional**
+- [01 an overview](../src/business-analysis/user-stories/study-guides/01-an-overview.tex) — agile requirements / user stories · **provisional**
+- [02 writing stories](../src/business-analysis/user-stories/study-guides/02-writing-stories.tex) — agile requirements / user stories · **provisional**
+- [03 user role modeling](../src/business-analysis/user-stories/study-guides/03-user-role-modeling.tex) — agile requirements / user stories · **provisional**
+- [04 gathering stories](../src/business-analysis/user-stories/study-guides/04-gathering-stories.tex) — agile requirements / user stories · **provisional**
+- [05 working with user proxies](../src/business-analysis/user-stories/study-guides/05-working-with-user-proxies.tex) — agile requirements / user stories · **provisional**
+- [06 acceptance testing user stories](../src/business-analysis/user-stories/study-guides/06-acceptance-testing-user-stories.tex) — agile requirements / user stories · **provisional**
+- [07 guidelines for good stories](../src/business-analysis/user-stories/study-guides/07-guidelines-for-good-stories.tex) — agile requirements / user stories · **provisional**
+- [08 estimating user stories](../src/business-analysis/user-stories/study-guides/08-estimating-user-stories.tex) — agile requirements / user stories · **provisional**
+- [09 planning a release](../src/business-analysis/user-stories/study-guides/09-planning-a-release.tex) — agile requirements / user stories · **provisional**
+- [10 planning an iteration](../src/business-analysis/user-stories/study-guides/10-planning-an-iteration.tex) — agile requirements / user stories · **provisional**
+- [11 measuring and monitoring velocity](../src/business-analysis/user-stories/study-guides/11-measuring-and-monitoring-velocity.tex) — agile requirements / user stories · **provisional**
+- [12 what stories are not](../src/business-analysis/user-stories/study-guides/12-what-stories-are-not.tex) — agile requirements / user stories · **provisional**
+- [13 why user stories](../src/business-analysis/user-stories/study-guides/13-why-user-stories.tex) — agile requirements / user stories · **provisional**
+- [14 a catalog of story smells](../src/business-analysis/user-stories/study-guides/14-a-catalog-of-story-smells.tex) — agile requirements / user stories · **provisional**
+- [15 using stories with scrum](../src/business-analysis/user-stories/study-guides/15-using-stories-with-scrum.tex) — agile requirements / user stories · **provisional**
+- [16 additional topics](../src/business-analysis/user-stories/study-guides/16-additional-topics.tex) — agile requirements / user stories · **provisional**
+- [17 the user roles](../src/business-analysis/user-stories/study-guides/17-the-user-roles.tex) — agile requirements / user stories · **provisional**
+- [18 the stories](../src/business-analysis/user-stories/study-guides/18-the-stories.tex) — agile requirements / user stories · **provisional**
+- [19 estimating the stories](../src/business-analysis/user-stories/study-guides/19-estimating-the-stories.tex) — agile requirements / user stories · **provisional**
+- [20 the release plan](../src/business-analysis/user-stories/study-guides/20-the-release-plan.tex) — agile requirements / user stories · **provisional**
+- [21 the acceptance tests](../src/business-analysis/user-stories/study-guides/21-the-acceptance-tests.tex) — agile requirements / user stories · **provisional**
 - [02 chapter study guides](../src/devops/build-systems/professional-cmake/02-chapter-study-guides.tex) — build systems/professional cmake · **provisional**
 - [08 prerequisite curriculum](../src/devops/build-systems/professional-cmake/08-prerequisite-curriculum.tex) — build systems/professional cmake · **provisional**
 - [study plan nginx cookbook 3rd edition story](../src/devops/platform/nginx/study-plan-nginx-cookbook-3rd-edition-story.tex) — platform/nginx · **provisional**

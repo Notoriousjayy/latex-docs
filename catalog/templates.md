@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (40)
+## Primary reusable templates (59)
 
 - [Architecture Documentation Templates](../src/architecture/cloud/engineering-suite/05-architecture-documentation-templates.tex) — cloud architecture documentation forms · **reviewed**
 - [Cloud Security Reference Templates](../src/architecture/cloud/engineering-suite/06-security-governance-templates.tex) — cloud security governance forms · **reviewed**
@@ -30,6 +30,25 @@
 - [TOGAF User Stories (Day in the Life)](../src/architecture/togaf/togaf-user-stories-day-in-the-life.tex) — TOGAF user story scaffold · **reviewed**
 - [Viewpoint Template](../src/architecture/views-and-beyond/advanced-concepts/viewpoint-template.tex) — software architecture viewpoint specification · **reviewed**
 - [babok v3 requirements traceability templates](../src/business-analysis/templates/babok-v3-requirements-traceability-templates.tex) — business analysis · **provisional**
+- [acceptance readiness scorecard template](../src/business-analysis/user-stories/scorecards/templates/acceptance-readiness-scorecard-template.tex) — agile requirements / user stories · **provisional**
+- [backlog health scorecard template](../src/business-analysis/user-stories/scorecards/templates/backlog-health-scorecard-template.tex) — agile requirements / user stories · **provisional**
+- [invest quality scorecard template](../src/business-analysis/user-stories/scorecards/templates/invest-quality-scorecard-template.tex) — agile requirements / user stories · **provisional**
+- [acceptance criteria template](../src/business-analysis/user-stories/templates/acceptance-criteria-template.tex) — agile requirements / user stories · **provisional**
+- [backlog item template](../src/business-analysis/user-stories/templates/backlog-item-template.tex) — agile requirements / user stories · **provisional**
+- [change impact template](../src/business-analysis/user-stories/templates/change-impact-template.tex) — agile requirements / user stories · **provisional**
+- [defect and regression template](../src/business-analysis/user-stories/templates/defect-and-regression-template.tex) — agile requirements / user stories · **provisional**
+- [elicitation session template](../src/business-analysis/user-stories/templates/elicitation-session-template.tex) — agile requirements / user stories · **provisional**
+- [epic story slicing template](../src/business-analysis/user-stories/templates/epic-story-slicing-template.tex) — agile requirements / user stories · **provisional**
+- [iteration plan template](../src/business-analysis/user-stories/templates/iteration-plan-template.tex) — agile requirements / user stories · **provisional**
+- [nonfunctional constraint template](../src/business-analysis/user-stories/templates/nonfunctional-constraint-template.tex) — agile requirements / user stories · **provisional**
+- [product outcome template](../src/business-analysis/user-stories/templates/product-outcome-template.tex) — agile requirements / user stories · **provisional**
+- [release plan template](../src/business-analysis/user-stories/templates/release-plan-template.tex) — agile requirements / user stories · **provisional**
+- [role model persona template](../src/business-analysis/user-stories/templates/role-model-persona-template.tex) — agile requirements / user stories · **provisional**
+- [user story card template](../src/business-analysis/user-stories/templates/user-story-card-template.tex) — agile requirements / user stories · **provisional**
+- [acceptance testing workbook template](../src/business-analysis/user-stories/workbooks/templates/acceptance-testing-workbook-template.tex) — agile requirements / user stories · **provisional**
+- [release planning workbook template](../src/business-analysis/user-stories/workbooks/templates/release-planning-workbook-template.tex) — agile requirements / user stories · **provisional**
+- [role and discovery workbook template](../src/business-analysis/user-stories/workbooks/templates/role-and-discovery-workbook-template.tex) — agile requirements / user stories · **provisional**
+- [story refinement workbook template](../src/business-analysis/user-stories/workbooks/templates/story-refinement-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [collaborating your community github templates](../src/devops/platform/github/collaborating-your-community-github-templates.tex) — platform/github · **provisional**
 - [Business Letterhead Template](../src/documentation/templates/letterhead-template.tex) — letterhead and correspondence · **reviewed**
 - [game design document gdd template](../src/game-development/templates/game-design-document-gdd-template.tex) — game development · **provisional**

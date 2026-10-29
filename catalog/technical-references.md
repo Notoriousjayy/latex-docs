@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (551)
+## Primary technical references (559)
 
 - [cloud architecture diagram library index](../src/architecture/cloud/architecture/cloud-architecture-diagram-library-index.tex) — cloud/architecture · **provisional**
 - [self hosting cloud architecture reference](../src/architecture/cloud/architecture/self-hosting-cloud-architecture-reference.tex) — cloud/architecture · **provisional**
@@ -165,6 +165,14 @@
 - [babok v3 knowledge areas and tasks](../src/business-analysis/babok/babok-v3-knowledge-areas-and-tasks.tex) — babok · **provisional**
 - [babok v3 technical guide](../src/business-analysis/babok/babok-v3-technical-guide.tex) — babok · **provisional**
 - [babok v3 cornell chapter notes](../src/business-analysis/study-notes/babok-v3-cornell-chapter-notes.tex) — business analysis · **provisional**
+- [chapter to operations crosswalk](../src/business-analysis/user-stories/curriculum/chapter-to-operations-crosswalk.tex) — agile requirements / user stories · **provisional**
+- [prerequisite based learning curriculum](../src/business-analysis/user-stories/curriculum/prerequisite-based-learning-curriculum.tex) — agile requirements / user stories · **provisional**
+- [acceptance and quality governance](../src/business-analysis/user-stories/procedures/acceptance-and-quality-governance.tex) — agile requirements / user stories · **provisional**
+- [backlog intake and triage](../src/business-analysis/user-stories/procedures/backlog-intake-and-triage.tex) — agile requirements / user stories · **provisional**
+- [release and iteration control](../src/business-analysis/user-stories/procedures/release-and-iteration-control.tex) — agile requirements / user stories · **provisional**
+- [requirements change control](../src/business-analysis/user-stories/procedures/requirements-change-control.tex) — agile requirements / user stories · **provisional**
+- [story refinement and readiness](../src/business-analysis/user-stories/procedures/story-refinement-and-readiness.tex) — agile requirements / user stories · **provisional**
+- [source and methodology notes](../src/business-analysis/user-stories/references/source-and-methodology-notes.tex) — agile requirements / user stories · **provisional**
 - [03 understanding cloud computing notes](../src/cornell-notes/architecture/cloud-computing/03-understanding-cloud-computing-notes.tex) — architecture/cloud computing · **provisional**
 - [04 fundamental concepts and models notes](../src/cornell-notes/architecture/cloud-computing/04-fundamental-concepts-and-models-notes.tex) — architecture/cloud computing · **provisional**
 - [05 cloud enabling technology notes](../src/cornell-notes/architecture/cloud-computing/05-cloud-enabling-technology-notes.tex) — architecture/cloud computing · **provisional**
