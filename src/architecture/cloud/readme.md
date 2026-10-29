@@ -33,4 +33,4 @@ Check IAM boundaries, regional constraints, data handling, network segmentation,
 
 ## Related
 
-[Architecture](../readme.md) · [Cloud security](../../security/cloud-security/)
+[Architecture](../README.md) · [Cloud security](../../security/cloud-security/)

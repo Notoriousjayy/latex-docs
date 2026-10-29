@@ -1,8 +1,14 @@
 # Programming
 
+## Overview
+
 Programming-language, algorithm, compiler, concurrency, UNIX/Linux systems programming and web engineering references. Documents favor technical explanation and source-driven learning; executable code is maintained in its owning software repository when applicable.
 
-## Explore the collection
+## Scope and boundaries
+
+Use this domain for algorithms, languages, concurrency, compilers, and systems/web development. General security processes belong in [Security](../security/README.md), and delivery workflows in [DevOps](../devops/README.md).
+
+## Directory map and documentation catalog
 
 | Area | What it contains | Sources |
 |---|---|---:|
@@ -24,7 +30,7 @@ make list-roots
 
 The category command discovers standalone LaTeX roots and builds them with the shared pdfLaTeX toolchain. To stage PDFs under `public/pdfs/`, use `make publish` from the repository root. The commands above describe the supported interface; they do not imply that every root has been compiled in this change.
 
-## Using this collection
+## Recommended navigation
 
 - Locate language-specific standards under `languages/` and consult the precise referenced edition before applying a rule.
 
@@ -32,14 +38,14 @@ The category command discovers standalone LaTeX roots and builds them with the s
 
 - Separate documentation examples from tested implementation artifacts; do not assume sample code has been compiled.
 
-## Maintenance and scope
+## Maintenance conventions
 
 - Prefer standards- and edition-specific terminology over unqualified statements about all language versions.
 
 - Preserve upstream attribution and distinguish normative requirements from local recommendations.
 
-## Related
+## Related domains
 
-- [Security standards and application security](../security/readme.md)
+- [Security standards and application security](../security/README.md)
 
-- [Source catalog](../readme.md)
+- [Source catalog](../README.md)

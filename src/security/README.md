@@ -1,8 +1,14 @@
 # Security
 
+## Overview
+
 Security engineering references, assessment workflows, standards mappings, learning plans and operational runbooks. Start with the workflow or control family relevant to the problem; these documents are not claims of product compliance or a deployed security program.
 
-## Explore the collection
+## Scope and boundaries
+
+Use this domain for AppSec, security architecture, security programs, standards, and security operations. Software design decisions belong in [Architecture](../architecture/README.md), while delivery automation belongs in [DevOps](../devops/README.md).
+
+## Directory map and documentation catalog
 
 | Area | What it contains | Sources |
 |---|---|---:|
@@ -26,7 +32,7 @@ make list-roots
 
 The category command discovers standalone LaTeX roots and builds them with the shared pdfLaTeX toolchain. To stage PDFs under `public/pdfs/`, use `make publish` from the repository root. The commands above describe the supported interface; they do not imply that every root has been compiled in this change.
 
-## Using this collection
+## Recommended navigation
 
 - Use the [AppSec process diagrams](application-security/processes/appsec-process-diagrams/readme.md) as cross-tool workflow references, not evidence that a named integration is deployed.
 
@@ -34,7 +40,7 @@ The category command discovers standalone LaTeX roots and builds them with the s
 
 - For architecture-level trade-offs, start with [security and privacy ADR templates](../architecture/decisions/readme.md).
 
-## Maintenance and scope
+## Maintenance conventions
 
 - Verify dated standards, product features and benchmark versions against authoritative publications before operational use.
 
@@ -42,8 +48,8 @@ The category command discovers standalone LaTeX roots and builds them with the s
 
 - Link rules and procedures to actual evidence; avoid presenting guidance as certification or audit attestation.
 
-## Related
+## Related domains
 
-- [DevOps delivery and platform documentation](../devops/readme.md)
+- [DevOps delivery and platform documentation](../devops/README.md)
 
-- [Source catalog](../readme.md)
+- [Source catalog](../README.md)

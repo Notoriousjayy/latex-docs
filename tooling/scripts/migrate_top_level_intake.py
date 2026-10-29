@@ -34,13 +34,13 @@ MANIFEST_PATH = ROOT / "tooling" / "manifests" / "top-level-document-intake.json
 # Mapping tables
 # ---------------------------------------------------------------------------
 
-# Byte-identical duplicates of files already integrated under src/ by commit
+# Byte-identical duplicates of files integrated under src/ by commit
 # 499cef81 ("Integrates new documents"). Verified with cmp before recording.
 DUPLICATES_OF_EXISTING = {
-    "42010-ad-template-polished.tex": "src/templates/architecture/42010-ad-template-polished.tex",
-    "42010-vp-template-polished.tex": "src/templates/architecture/42010-vp-template-polished.tex",
-    "viewpoint-section.tex": "src/templates/architecture/viewpoint-section.tex",
-    "viewpoint-template-polished.tex": "src/templates/architecture/viewpoint-template-polished.tex",
+    "42010-ad-template-polished.tex": "src/architecture/templates/42010-ad-template-polished.tex",
+    "42010-vp-template-polished.tex": "src/architecture/templates/42010-vp-template-polished.tex",
+    "viewpoint-section.tex": "src/architecture/templates/viewpoint-section.tex",
+    "viewpoint-template-polished.tex": "src/architecture/templates/viewpoint-template-polished.tex",
 }
 
 # Content-equivalent duplicate: template.tex differs from

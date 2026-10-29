@@ -31,4 +31,4 @@ The Make targets compile LaTeX documents, not the C examples. Verify examples an
 
 ## Related
 
-[Programming catalog](../readme.md) · [Security catalog](../../security/readme.md)
+[Programming catalog](../README.md) · [Security catalog](../../security/README.md)

@@ -1,8 +1,14 @@
 # Cornell Notes Collections
 
+## Overview
+
 A **426-document, source-first** technical learning library using the shared `cornell-notes` LaTeX semantic module. Collections are organized by discipline, then by chapter or topic. Source counts are from the current Git tree, not a claim that every PDF was recently compiled.
 
-## Find a collection
+## Scope and boundaries
+
+Keep the chapter, clause, book, and standard hierarchy where it carries source traceability. Hands-on implementation guides belong in their technical domains; this domain owns structured learning notes.
+
+## Directory map and documentation catalog
 
 | Subject | Source roots | Browse |
 |---|---|---|
@@ -22,14 +28,14 @@ A **426-document, source-first** technical learning library using the shared `co
 | Security: cybersecurity reference | 104 | [security/cybersecurity-reference/](security/cybersecurity-reference) |
 | Security: software security assessment | 18 | [security/application-security/software-security-assessment/](security/application-security/software-security-assessment) |
 
-## Reading and study workflow
+## Recommended navigation
 
 1. Select a discipline and begin with its foundational chapter or stated prerequisite sequence.
 2. Review the learning objectives; answer the Cornell cues and self-checks before consulting summaries.
 3. Cross-reference official standards, current technical documentation or the appropriate textbook edition.
 4. Revise the LaTeX source and recompile the affected document; avoid editing generated PDFs.
 
-## Build
+## Build and validate
 
 ```bash
 make list-roots
@@ -47,6 +53,10 @@ Run from the repository root. The category build uses source-adjacent output by 
 - PDF compilation checks typesetting, not factual or technical correctness.
 - Specialized guidance: [Cybersecurity Reference](security/cybersecurity-reference/README.md) and [Software Security Assessment](security/application-security/software-security-assessment/readme.md).
 
-## Related
+## Maintenance conventions
 
-[Source catalog](../readme.md)
+Keep one authoritative source per artifact, prefer shallow subject-based directories, and add a directory index only when a collection merits one. Preserve LaTeX dependencies, attribution, and existing source provenance when moving files.
+
+## Related domains
+
+[Source catalog](../README.md)

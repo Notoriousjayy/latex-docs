@@ -243,3 +243,8 @@ compiler contract:
   orchestrator no longer honours them and `tooling/scripts/latex_build.py
   preflight` (also run by `make plan`) rejects any active fontspec/
   unicode-math/engine-magic construct. See `tests/test_pdflatex_policy.py`.
+
+
+## Subsequent location change (2026-10-29)
+
+The four architecture-description and viewpoint template sources cited in the original duplicate-resolution record were subsequently relocated without changing their content to `src/architecture/templates/`. This note preserves the historical location used during the October 12 intake and identifies the current authoritative location. The live duplicate-verification mappings and the intake manifest's `canonical_path` values have been updated accordingly.

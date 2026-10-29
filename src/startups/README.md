@@ -1,8 +1,14 @@
 # Startup and Small Business Operations
 
+## Overview
+
 Reusable source material for startup planning, finance, operational design, security, product opportunities and business support. These files are planning aids and examples, not a registered business's completed records.
 
-## Explore the collection
+## Scope and boundaries
+
+Business formation, operating models, venture planning, and company-specific engineering/business artifacts belong here. General BABOK methods belong in [Business Analysis](../business-analysis/README.md); reusable architecture patterns belong in [Architecture](../architecture/README.md).
+
+## Directory map and documentation catalog
 
 | Area | What it contains | Sources |
 |---|---|---:|
@@ -26,18 +32,18 @@ make list-roots
 
 The category command discovers standalone LaTeX roots and builds them with the shared pdfLaTeX toolchain. To stage PDFs under `public/pdfs/`, use `make publish` from the repository root. The commands above describe the supported interface; they do not imply that every root has been compiled in this change.
 
-## Using this collection
+## Recommended navigation
 
 - Choose the business model first, then assemble the relevant planning, operating and security material.
 
-- Pair business requirements with [business analysis](../business-analysis/readme.md) and architectural controls with the [enterprise business operations collection](../architecture/enterprise/business-operations/readme.md).
+- Pair business requirements with [business analysis](../business-analysis/README.md) and architectural controls with the [enterprise business operations collection](../architecture/enterprise/business-operations/readme.md).
 
-## Maintenance and scope
+## Maintenance conventions
 
 - Do not present examples or templates as legal, accounting or regulatory approval.
 
 - Remove sample identities and sensitive financial information before public publication.
 
-## Related
+## Related domains
 
-- [Source catalog](../readme.md)
+- [Source catalog](../README.md)

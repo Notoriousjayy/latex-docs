@@ -37,4 +37,4 @@ The source-to-destination history is recorded in [the intake manifest](../../../
 
 ## Related
 
-[Cornell catalog](../../README.md) · [Security collection](../../../security/readme.md)
+[Cornell catalog](../../README.md) · [Security collection](../../../security/README.md)
