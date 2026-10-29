@@ -62,7 +62,7 @@ class ArchitectureArtifactTaxonomyTests(unittest.TestCase):
         self.assertIn(HANDOUT.name, architecture_index)
 
     def test_no_conformance_claim_for_templates(self):
-        self.assertIn("not additional ISO requirements",
+        self.assertIn("not prescribed by ISO 42010",
                       self.manifest["classification_policy"]["policy_note"])
 
 
