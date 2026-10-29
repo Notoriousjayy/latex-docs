@@ -1,0 +1,1 @@
+# Shared\n\nSource collection within the User Stories and Agile Requirements Engineering suite.\nSee [the collection guide](../README.md) for context and build instructions.\n\n## LaTeX sources\n\n- [`preamble.tex`](preamble.tex)\n

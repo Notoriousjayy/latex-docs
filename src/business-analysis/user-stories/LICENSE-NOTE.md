@@ -1,0 +1,1 @@
+Original supplementary educational documentation. The referenced 2004 book remains copyrighted by its publisher. This package does not redistribute the source book. Adapt these original templates to local policy and applicable licenses.

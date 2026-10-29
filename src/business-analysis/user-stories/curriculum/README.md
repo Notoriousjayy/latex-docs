@@ -1,0 +1,1 @@
+# Curriculum\n\nSource collection within the User Stories and Agile Requirements Engineering suite.\nSee [the collection guide](../README.md) for context and build instructions.\n\n## LaTeX sources\n\n- [`chapter-to-operations-crosswalk.tex`](chapter-to-operations-crosswalk.tex)\n- [`prerequisite-based-learning-curriculum.tex`](prerequisite-based-learning-curriculum.tex)\n

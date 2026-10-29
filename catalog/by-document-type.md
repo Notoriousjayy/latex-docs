@@ -6,10 +6,13 @@
 
 - [Open-Source Enterprise Security Platform: Reference Architecture and Tool Strategy](../src/security/technical-documents/open-source-enterprise-security-platform.tex) — enterprise security platform architecture · **reviewed**
 
-## assessment (11)
+## assessment (14)
 
 - [3 5 quality audit](../src/architecture/governance/ccoe/execution/3-5-quality-audit.tex) — ccoe/execution · **provisional**
 - [2 33 probability and impact assessment](../src/architecture/governance/ccoe/planning/2-33-probability-and-impact-assessment.tex) — ccoe/planning · **provisional**
+- [acceptance readiness scorecard blank](../src/business-analysis/user-stories/scorecards/blank/acceptance-readiness-scorecard-blank.tex) — agile requirements / user stories · **provisional**
+- [backlog health scorecard blank](../src/business-analysis/user-stories/scorecards/blank/backlog-health-scorecard-blank.tex) — agile requirements / user stories · **provisional**
+- [invest quality scorecard blank](../src/business-analysis/user-stories/scorecards/blank/invest-quality-scorecard-blank.tex) — agile requirements / user stories · **provisional**
 - [physics engine gap analysis production library](../src/game-development/physics-engines/physics-engine-gap-analysis-production-library.tex) — physics engines · **provisional**
 - [03 manual code auditing](../src/security/application-security/assessment/03-manual-code-auditing.tex) — application security/assessment · **provisional**
 - [06 assessment procedures](../src/security/application-security/assessment/06-assessment-procedures.tex) — application security/assessment · **provisional**
@@ -41,8 +44,11 @@
 
 - [adr lifecycle and review guide](../src/architecture/decisions/adr-lifecycle-and-review-guide.tex) — decisions · **provisional**
 
-## handbook (4)
+## handbook (7)
 
+- [acceptance testing engineering handbook](../src/business-analysis/user-stories/technical-reference/acceptance-testing-engineering-handbook.tex) — agile requirements / user stories · **provisional**
+- [traceability governance handbook](../src/business-analysis/user-stories/technical-reference/traceability-governance-handbook.tex) — agile requirements / user stories · **provisional**
+- [user stories engineering reference](../src/business-analysis/user-stories/technical-reference/user-stories-engineering-reference.tex) — agile requirements / user stories · **provisional**
 - [03 quantitative valuation handbook](../src/personal/finance/investment-valuation/03-quantitative-valuation-handbook.tex) — finance/investment valuation · **provisional**
 - [05 secure programming handbook](../src/programming/languages/c-cpp/standards/c23/05-secure-programming-handbook.tex) — standards/c23 · **provisional**
 - [Python Testing, Security and Performance Handbook](../src/programming/languages/python/07-testing-security-performance.tex) — Python testing, security, and performance engineering · **reviewed**
@@ -74,8 +80,9 @@
 - [07 hands on implementation handbook](../src/security/security-engineering/07-hands-on-implementation-handbook.tex) — security engineering · **provisional**
 - [03 control implementation catalog](../src/security/standards/iso-27000/03-control-implementation-catalog.tex) — standards/iso 27000 · **provisional**
 
-## latex-fragment (1)
+## latex-fragment (2)
 
+- [preamble](../src/business-analysis/user-stories/shared/preamble.tex) — agile requirements / user stories · **provisional** · non-standalone
 - [Assessment Curricula Shared Preamble](../src/security/application-security/learning/assessment-curricula/assessment-curricula-common.tex) — shared LaTeX preamble for AppSec curricula · **reviewed** · non-standalone
 
 ## policy-standard (16)
@@ -97,10 +104,31 @@
 - [closure playbook standard operating procedure](../src/security/application-security/processes/avit-seeker/closure-playbook-standard-operating-procedure.tex) — processes/avit seeker · **provisional**
 - [secure workflow standard github actions](../src/security/github-advanced-security/references/secure-workflow-standard-github-actions.tex) — github advanced security/references · **provisional**
 
-## study-guide (46)
+## study-guide (67)
 
 - [02 cloud architecture curriculum](../src/architecture/cloud/engineering-suite/02-cloud-architecture-curriculum.tex) — cloud/engineering suite · **provisional**
 - [software architecture learning curriculum](../src/architecture/workbooks/software-architecture-learning-curriculum.tex) — architecture · **provisional**
+- [01 an overview](../src/business-analysis/user-stories/study-guides/01-an-overview.tex) — agile requirements / user stories · **provisional**
+- [02 writing stories](../src/business-analysis/user-stories/study-guides/02-writing-stories.tex) — agile requirements / user stories · **provisional**
+- [03 user role modeling](../src/business-analysis/user-stories/study-guides/03-user-role-modeling.tex) — agile requirements / user stories · **provisional**
+- [04 gathering stories](../src/business-analysis/user-stories/study-guides/04-gathering-stories.tex) — agile requirements / user stories · **provisional**
+- [05 working with user proxies](../src/business-analysis/user-stories/study-guides/05-working-with-user-proxies.tex) — agile requirements / user stories · **provisional**
+- [06 acceptance testing user stories](../src/business-analysis/user-stories/study-guides/06-acceptance-testing-user-stories.tex) — agile requirements / user stories · **provisional**
+- [07 guidelines for good stories](../src/business-analysis/user-stories/study-guides/07-guidelines-for-good-stories.tex) — agile requirements / user stories · **provisional**
+- [08 estimating user stories](../src/business-analysis/user-stories/study-guides/08-estimating-user-stories.tex) — agile requirements / user stories · **provisional**
+- [09 planning a release](../src/business-analysis/user-stories/study-guides/09-planning-a-release.tex) — agile requirements / user stories · **provisional**
+- [10 planning an iteration](../src/business-analysis/user-stories/study-guides/10-planning-an-iteration.tex) — agile requirements / user stories · **provisional**
+- [11 measuring and monitoring velocity](../src/business-analysis/user-stories/study-guides/11-measuring-and-monitoring-velocity.tex) — agile requirements / user stories · **provisional**
+- [12 what stories are not](../src/business-analysis/user-stories/study-guides/12-what-stories-are-not.tex) — agile requirements / user stories · **provisional**
+- [13 why user stories](../src/business-analysis/user-stories/study-guides/13-why-user-stories.tex) — agile requirements / user stories · **provisional**
+- [14 a catalog of story smells](../src/business-analysis/user-stories/study-guides/14-a-catalog-of-story-smells.tex) — agile requirements / user stories · **provisional**
+- [15 using stories with scrum](../src/business-analysis/user-stories/study-guides/15-using-stories-with-scrum.tex) — agile requirements / user stories · **provisional**
+- [16 additional topics](../src/business-analysis/user-stories/study-guides/16-additional-topics.tex) — agile requirements / user stories · **provisional**
+- [17 the user roles](../src/business-analysis/user-stories/study-guides/17-the-user-roles.tex) — agile requirements / user stories · **provisional**
+- [18 the stories](../src/business-analysis/user-stories/study-guides/18-the-stories.tex) — agile requirements / user stories · **provisional**
+- [19 estimating the stories](../src/business-analysis/user-stories/study-guides/19-estimating-the-stories.tex) — agile requirements / user stories · **provisional**
+- [20 the release plan](../src/business-analysis/user-stories/study-guides/20-the-release-plan.tex) — agile requirements / user stories · **provisional**
+- [21 the acceptance tests](../src/business-analysis/user-stories/study-guides/21-the-acceptance-tests.tex) — agile requirements / user stories · **provisional**
 - [02 chapter study guides](../src/devops/build-systems/professional-cmake/02-chapter-study-guides.tex) — build systems/professional cmake · **provisional**
 - [08 prerequisite curriculum](../src/devops/build-systems/professional-cmake/08-prerequisite-curriculum.tex) — build systems/professional cmake · **provisional**
 - [study plan nginx cookbook 3rd edition story](../src/devops/platform/nginx/study-plan-nginx-cookbook-3rd-edition-story.tex) — platform/nginx · **provisional**
@@ -473,7 +501,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (551)
+## technical-reference (559)
 
 - [cloud architecture diagram library index](../src/architecture/cloud/architecture/cloud-architecture-diagram-library-index.tex) — cloud/architecture · **provisional**
 - [self hosting cloud architecture reference](../src/architecture/cloud/architecture/self-hosting-cloud-architecture-reference.tex) — cloud/architecture · **provisional**
@@ -636,6 +664,14 @@
 - [babok v3 knowledge areas and tasks](../src/business-analysis/babok/babok-v3-knowledge-areas-and-tasks.tex) — babok · **provisional**
 - [babok v3 technical guide](../src/business-analysis/babok/babok-v3-technical-guide.tex) — babok · **provisional**
 - [babok v3 cornell chapter notes](../src/business-analysis/study-notes/babok-v3-cornell-chapter-notes.tex) — business analysis · **provisional**
+- [chapter to operations crosswalk](../src/business-analysis/user-stories/curriculum/chapter-to-operations-crosswalk.tex) — agile requirements / user stories · **provisional**
+- [prerequisite based learning curriculum](../src/business-analysis/user-stories/curriculum/prerequisite-based-learning-curriculum.tex) — agile requirements / user stories · **provisional**
+- [acceptance and quality governance](../src/business-analysis/user-stories/procedures/acceptance-and-quality-governance.tex) — agile requirements / user stories · **provisional**
+- [backlog intake and triage](../src/business-analysis/user-stories/procedures/backlog-intake-and-triage.tex) — agile requirements / user stories · **provisional**
+- [release and iteration control](../src/business-analysis/user-stories/procedures/release-and-iteration-control.tex) — agile requirements / user stories · **provisional**
+- [requirements change control](../src/business-analysis/user-stories/procedures/requirements-change-control.tex) — agile requirements / user stories · **provisional**
+- [story refinement and readiness](../src/business-analysis/user-stories/procedures/story-refinement-and-readiness.tex) — agile requirements / user stories · **provisional**
+- [source and methodology notes](../src/business-analysis/user-stories/references/source-and-methodology-notes.tex) — agile requirements / user stories · **provisional**
 - [03 understanding cloud computing notes](../src/cornell-notes/architecture/cloud-computing/03-understanding-cloud-computing-notes.tex) — architecture/cloud computing · **provisional**
 - [04 fundamental concepts and models notes](../src/cornell-notes/architecture/cloud-computing/04-fundamental-concepts-and-models-notes.tex) — architecture/cloud computing · **provisional**
 - [05 cloud enabling technology notes](../src/cornell-notes/architecture/cloud-computing/05-cloud-enabling-technology-notes.tex) — architecture/cloud computing · **provisional**
@@ -1027,7 +1063,7 @@
 - [immediate founder focus](../src/startups/media/fast-animation-channels/immediate-founder-focus.tex) — media/fast animation channels · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## template (40)
+## template (71)
 
 - [Architecture Documentation Templates](../src/architecture/cloud/engineering-suite/05-architecture-documentation-templates.tex) — cloud architecture documentation forms · **reviewed**
 - [Cloud Security Reference Templates](../src/architecture/cloud/engineering-suite/06-security-governance-templates.tex) — cloud security governance forms · **reviewed**
@@ -1055,6 +1091,37 @@
 - [TOGAF User Stories (Day in the Life)](../src/architecture/togaf/togaf-user-stories-day-in-the-life.tex) — TOGAF user story scaffold · **reviewed**
 - [Viewpoint Template](../src/architecture/views-and-beyond/advanced-concepts/viewpoint-template.tex) — software architecture viewpoint specification · **reviewed**
 - [babok v3 requirements traceability templates](../src/business-analysis/templates/babok-v3-requirements-traceability-templates.tex) — business analysis · **provisional**
+- [acceptance criteria blank](../src/business-analysis/user-stories/blank-forms/acceptance-criteria-blank.tex) — agile requirements / user stories · **provisional**
+- [backlog item blank](../src/business-analysis/user-stories/blank-forms/backlog-item-blank.tex) — agile requirements / user stories · **provisional**
+- [change impact blank](../src/business-analysis/user-stories/blank-forms/change-impact-blank.tex) — agile requirements / user stories · **provisional**
+- [defect and regression blank](../src/business-analysis/user-stories/blank-forms/defect-and-regression-blank.tex) — agile requirements / user stories · **provisional**
+- [elicitation session blank](../src/business-analysis/user-stories/blank-forms/elicitation-session-blank.tex) — agile requirements / user stories · **provisional**
+- [epic story slicing blank](../src/business-analysis/user-stories/blank-forms/epic-story-slicing-blank.tex) — agile requirements / user stories · **provisional**
+- [iteration plan blank](../src/business-analysis/user-stories/blank-forms/iteration-plan-blank.tex) — agile requirements / user stories · **provisional**
+- [nonfunctional constraint blank](../src/business-analysis/user-stories/blank-forms/nonfunctional-constraint-blank.tex) — agile requirements / user stories · **provisional**
+- [product outcome blank](../src/business-analysis/user-stories/blank-forms/product-outcome-blank.tex) — agile requirements / user stories · **provisional**
+- [release plan blank](../src/business-analysis/user-stories/blank-forms/release-plan-blank.tex) — agile requirements / user stories · **provisional**
+- [role model persona blank](../src/business-analysis/user-stories/blank-forms/role-model-persona-blank.tex) — agile requirements / user stories · **provisional**
+- [user story card blank](../src/business-analysis/user-stories/blank-forms/user-story-card-blank.tex) — agile requirements / user stories · **provisional**
+- [acceptance readiness scorecard template](../src/business-analysis/user-stories/scorecards/templates/acceptance-readiness-scorecard-template.tex) — agile requirements / user stories · **provisional**
+- [backlog health scorecard template](../src/business-analysis/user-stories/scorecards/templates/backlog-health-scorecard-template.tex) — agile requirements / user stories · **provisional**
+- [invest quality scorecard template](../src/business-analysis/user-stories/scorecards/templates/invest-quality-scorecard-template.tex) — agile requirements / user stories · **provisional**
+- [acceptance criteria template](../src/business-analysis/user-stories/templates/acceptance-criteria-template.tex) — agile requirements / user stories · **provisional**
+- [backlog item template](../src/business-analysis/user-stories/templates/backlog-item-template.tex) — agile requirements / user stories · **provisional**
+- [change impact template](../src/business-analysis/user-stories/templates/change-impact-template.tex) — agile requirements / user stories · **provisional**
+- [defect and regression template](../src/business-analysis/user-stories/templates/defect-and-regression-template.tex) — agile requirements / user stories · **provisional**
+- [elicitation session template](../src/business-analysis/user-stories/templates/elicitation-session-template.tex) — agile requirements / user stories · **provisional**
+- [epic story slicing template](../src/business-analysis/user-stories/templates/epic-story-slicing-template.tex) — agile requirements / user stories · **provisional**
+- [iteration plan template](../src/business-analysis/user-stories/templates/iteration-plan-template.tex) — agile requirements / user stories · **provisional**
+- [nonfunctional constraint template](../src/business-analysis/user-stories/templates/nonfunctional-constraint-template.tex) — agile requirements / user stories · **provisional**
+- [product outcome template](../src/business-analysis/user-stories/templates/product-outcome-template.tex) — agile requirements / user stories · **provisional**
+- [release plan template](../src/business-analysis/user-stories/templates/release-plan-template.tex) — agile requirements / user stories · **provisional**
+- [role model persona template](../src/business-analysis/user-stories/templates/role-model-persona-template.tex) — agile requirements / user stories · **provisional**
+- [user story card template](../src/business-analysis/user-stories/templates/user-story-card-template.tex) — agile requirements / user stories · **provisional**
+- [acceptance testing workbook template](../src/business-analysis/user-stories/workbooks/templates/acceptance-testing-workbook-template.tex) — agile requirements / user stories · **provisional**
+- [release planning workbook template](../src/business-analysis/user-stories/workbooks/templates/release-planning-workbook-template.tex) — agile requirements / user stories · **provisional**
+- [role and discovery workbook template](../src/business-analysis/user-stories/workbooks/templates/role-and-discovery-workbook-template.tex) — agile requirements / user stories · **provisional**
+- [story refinement workbook template](../src/business-analysis/user-stories/workbooks/templates/story-refinement-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [collaborating your community github templates](../src/devops/platform/github/collaborating-your-community-github-templates.tex) — platform/github · **provisional**
 - [Business Letterhead Template](../src/documentation/templates/letterhead-template.tex) — letterhead and correspondence · **reviewed**
 - [game design document gdd template](../src/game-development/templates/game-design-document-gdd-template.tex) — game development · **provisional**
@@ -1090,9 +1157,22 @@
 - [study plan user stories github advanced sec](../src/security/github-advanced-security/administration/study-plan-user-stories-github-advanced-sec.tex) — github advanced security/administration · **provisional**
 - [study plan owasp api sec top 10 user stories](../src/security/standards/owasp/study-plan-owasp-api-sec-top-10-user-stories.tex) — standards/owasp · **provisional**
 
-## workbook (9)
+## workbook (22)
 
 - [ISO/IEC/IEEE 42010 Conformance Assessment Workbook](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment.tex) — ISO/IEC/IEEE 42010 conformance evidence · **reviewed**
+- [lab 01 discover real user roles](../src/business-analysis/user-stories/laboratories/lab-01-discover-real-user-roles.tex) — agile requirements / user stories · **provisional**
+- [lab 02 write and assess user stories](../src/business-analysis/user-stories/laboratories/lab-02-write-and-assess-user-stories.tex) — agile requirements / user stories · **provisional**
+- [lab 03 slice a full workflow vertically](../src/business-analysis/user-stories/laboratories/lab-03-slice-a-full-workflow-vertically.tex) — agile requirements / user stories · **provisional**
+- [lab 04 run a story writing workshop](../src/business-analysis/user-stories/laboratories/lab-04-run-a-story-writing-workshop.tex) — agile requirements / user stories · **provisional**
+- [lab 05 specify acceptance tests](../src/business-analysis/user-stories/laboratories/lab-05-specify-acceptance-tests.tex) — agile requirements / user stories · **provisional**
+- [lab 06 estimate and plan an iteration](../src/business-analysis/user-stories/laboratories/lab-06-estimate-and-plan-an-iteration.tex) — agile requirements / user stories · **provisional**
+- [lab 07 negotiate a release plan](../src/business-analysis/user-stories/laboratories/lab-07-negotiate-a-release-plan.tex) — agile requirements / user stories · **provisional**
+- [lab 08 run change impact and governance](../src/business-analysis/user-stories/laboratories/lab-08-run-change-impact-and-governance.tex) — agile requirements / user stories · **provisional**
+- [lab 09 capstone deliver a story led release](../src/business-analysis/user-stories/laboratories/lab-09-capstone-deliver-a-story-led-release.tex) — agile requirements / user stories · **provisional**
+- [acceptance testing workbook blank](../src/business-analysis/user-stories/workbooks/blank/acceptance-testing-workbook-blank.tex) — agile requirements / user stories · **provisional**
+- [release planning workbook blank](../src/business-analysis/user-stories/workbooks/blank/release-planning-workbook-blank.tex) — agile requirements / user stories · **provisional**
+- [role and discovery workbook blank](../src/business-analysis/user-stories/workbooks/blank/role-and-discovery-workbook-blank.tex) — agile requirements / user stories · **provisional**
+- [story refinement workbook blank](../src/business-analysis/user-stories/workbooks/blank/story-refinement-workbook-blank.tex) — agile requirements / user stories · **provisional**
 - [calculus applications companion workbook](../src/mathematics/workbooks/calculus-applications-companion-workbook.tex) — mathematics · **provisional**
 - [calculus applications workbook solutions](../src/mathematics/workbooks/calculus-applications-workbook-solutions.tex) — mathematics · **provisional**
 - [differential equations curriculum problem workbook](../src/mathematics/workbooks/differential-equations-curriculum-problem-workbook.tex) — mathematics · **provisional**

@@ -98,3 +98,7 @@ make build-category-security
 ```
 
 **Repository navigation:** [Source index](src/README.md) · [Architecture](src/architecture/README.md) · [Security](src/security/README.md) · [Programming](src/programming/README.md) · [DevOps](src/devops/README.md)
+
+## Agile requirements and user stories
+
+Explore the [User Stories and Agile Requirements Engineering suite](src/business-analysis/user-stories/README.md), with matching template/blank pairs and a chapter-to-operations curriculum.

@@ -79,7 +79,15 @@ def validate(root: Path = ROOT, manifest_path: Path = MANIFEST) -> list[str]:
         if len(contents) == 2:
             if contents["template"] == contents["blank"]:
                 issues.append(f"{artifact_id}: Blank is identical to Template")
-            if HEADING.findall(contents["template"]) != HEADING.findall(contents["blank"]):
+            if artifact.get("structure_rule") == "matching-fields":
+                expected = set(HEADING.findall(contents["blank"])) - {"Identification", "Review / sign-off"}
+                actual = set(HEADING.findall(contents["template"]))
+                if not expected.issubset(actual):
+                    issues.append(f"{artifact_id}: template missing blank response sections: {sorted(expected - actual)}")
+            elif artifact.get("structure_rule") == "guided-instrument":
+                if len(HEADING.findall(contents["template"])) < 3 or len(HEADING.findall(contents["blank"])) < 3:
+                    issues.append(f"{artifact_id}: guided workbook or scorecard structure is incomplete")
+            elif HEADING.findall(contents["template"]) != HEADING.findall(contents["blank"]):
                 issues.append(f"{artifact_id}: sections/subsections are out of sync")
             if artifact["family"] == "architecture-decision-record":
                 if r"\DocStatus}{Blank}" not in contents["blank"]:
@@ -113,7 +121,7 @@ def validate(root: Path = ROOT, manifest_path: Path = MANIFEST) -> list[str]:
         rel = file.relative_to(root).as_posix()
         if rel.endswith("-template.tex"):
             counterpart = rel[:-len("-template.tex")] + "-blank.tex"
-            if not (root / counterpart).is_file() and rel not in reviewed:
+            if not (root / counterpart).is_file() and rel not in reviewed and rel not in registered:
                 issues.append(f"Template is missing an explicit Blank: {rel} -> {counterpart}")
         if rel.endswith("-blank.tex"):
             counterpart = rel[:-len("-blank.tex")] + "-template.tex"

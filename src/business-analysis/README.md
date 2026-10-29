@@ -54,3 +54,7 @@ The category command discovers standalone LaTeX roots and builds them with the s
 - [Architecture collection](../architecture/README.md)
 
 - [Source catalog](../README.md)
+
+## User stories and agile requirements engineering
+
+The [User Stories Applied documentation suite](user-stories/README.md) contains 79 LaTeX roots: technical references, all 21 chapter guides, guided templates and printable blank forms, workbooks, scorecards, operating procedures, laboratories and a prerequisite-based curriculum. It is an independent 2004-book-grounded learning and implementation collection, not an edition of BABOK.
