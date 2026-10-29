@@ -23,3 +23,13 @@ See the [architecture index](../../README.md) for the parent collection and rela
 Preserve original titles, citations, styles, and any LaTeX input paths. Place new files here only when they match this collection's purpose.
 
 Build/validate using the repository's supported LaTeX tooling; do not treat this index as evidence that all documents have compiled.
+
+## Governed Template–Blank pair: ISO/IEC/IEEE 42010 conformance evidence workbook
+
+| Authoring Template | Fillable Blank |
+|---|---|
+| [07-conformance-assessment.tex](07-conformance-assessment.tex) | [07-conformance-assessment-blank.tex](07-conformance-assessment-blank.tex) |
+
+The Template retains audit-method guidance and caveats. The Blank retains all control identifiers, clause mappings, check questions, outcome interpretations, and evidence fields but removes template-only explanatory guidance. Neither file is a formal conformance attestation.
+
+See the [Template–Blank Pair Catalog](../../../../catalog/template-blank-pairs.md) for the audit and additional variants.
