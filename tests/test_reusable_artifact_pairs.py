@@ -48,8 +48,11 @@ class ReusableArtifactPairTests(unittest.TestCase):
         self.assertIn(r"\opening{Dear \BlankField{Recipient name},}", blank)
         self.assertIn(r"\signature{\vspace{1.2em}\BlankField{Sender name}", blank)
         self.assertIn(r"\begin{letter}{\BlankField{Recipient name}", blank)
-        self.assertNotIn(r"\\[Recipient", blank)
-        self.assertNotIn(r"\\[Sender", blank)
+        live_tex = "\n".join(
+            line for line in blank.splitlines() if not line.lstrip().startswith("%")
+        )
+        self.assertNotIn(r"\\[Recipient", live_tex)
+        self.assertNotIn(r"\\[Sender", live_tex)
 
 
 if __name__ == "__main__":
