@@ -8,6 +8,19 @@ All authored documents live under `src/`, grouped by subject and then by project
 
 This catalog describes authored technical sources, not independent products or deployed systems. Choose the **authoritative technical domain** for a source; use cross-links for related readers rather than duplicate files. All immediate domains have a canonical `README.md`.
 
+## Find documents by type
+
+Within each **technical domain**, use the artifact-type index where available:
+
+| Type | Contains |
+|---|---|
+| `technical-documents/` | Engineering guides, architecture references and explanatory documents |
+| `templates/` | Reusable blank structures and authoring forms |
+| `workbooks/` | Exercises, checklists and guided practice |
+| `study-guides/`, `study-notes/` | Learning paths and structured notes |
+
+For coherent multi-file suites, standards clauses, book chapters and diagram sets, the **subject collection remains together** rather than being split by file type. The [Cornell Notes](cornell-notes/README.md) collection is currently a distinct source-format library; a cross-domain migration would require a separate dependency and reference review. Each terminal/leaf directory contains a dedicated README index.
+
 ## Directory map and documentation catalog
 
 | Domain | Focus |

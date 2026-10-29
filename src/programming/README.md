@@ -10,15 +10,24 @@ Use this domain for algorithms, languages, concurrency, compilers, and systems/w
 
 ## Directory map and documentation catalog
 
-| Area | What it contains | Sources |
+### Document types
+
+| Collection | Use it for | LaTeX sources |
 |---|---|---:|
-| [`algorithms/`](algorithms/) | Algorithm design, analysis and implementation guidance. | 7 |
-| [`compilers/`](compilers/) | Compiler architecture and language implementation. | 2 |
-| [`concurrency/`](concurrency/) | Concurrency design and synchronization. | 1 |
-| [`languages/`](languages/) | C/C++, Java, Python, TypeScript and other language- and standards-specific references. | 72 |
-| [`linux-unix-system-programming/`](linux-unix-system-programming/) | C/POSIX systems programming guides, labs and runbooks. | 9 |
-| [`literate-programming/`](literate-programming/) | Literate-programming practices and references. | 4 |
-| [`web/`](web/) | Front-end, micro-frontends, and web architecture. | 25 |
+| [Technical documents](technical-documents/README.md) | Design guides, engineering references and explanatory technical material | 3 |
+
+### Subject collections and preserved suites
+
+These collections retain topic, standard, chapter, governance or diagram boundaries where splitting would increase navigation cost or disrupt related sources.
+
+| Collection | Contents | LaTeX sources |
+|---|---|---:|
+| [algorithms](algorithms/README.md) | Algorithm design, analysis and implementation guidance. | 7 |
+| [languages](languages/) | C/C++, Java, Python, TypeScript and other language- and standards-specific references. | 72 |
+| [linux unix system programming](linux-unix-system-programming/) | C/POSIX systems programming guides, labs and runbooks. | 9 |
+| [literate programming](literate-programming/) | Literate-programming practices and references. | 4 |
+| [web](web/) | Front-end, micro-frontends, and web architecture. | 25 |
+
 
 ## Build and validate
 

@@ -10,13 +10,23 @@ Personal educational/reference sources belong here; this public repository is no
 
 ## Directory map and documentation catalog
 
-| Area | Material |
-|---|---|
-| [Career](career/) | Meeting preparation and career-related handouts. |
-| [E-books](ebooks/) | DRM-free e-book conversion guidance. |
-| [Finance](finance/) | CD strategies, investment analysis and valuation guides. |
-| [Fitness](fitness/) | Exercise and equipment references. |
-| [Gardening](gardening/) | Aquaponics, sunlight and growing guides. |
+### Document types
+
+| Collection | Use it for | LaTeX sources |
+|---|---|---:|
+| [Technical documents](technical-documents/README.md) | Design guides, engineering references and explanatory technical material | 1 |
+
+### Subject collections and preserved suites
+
+These collections retain topic, standard, chapter, governance or diagram boundaries where splitting would increase navigation cost or disrupt related sources.
+
+| Collection | Contents | LaTeX sources |
+|---|---|---:|
+| [career](career/README.md) | Meeting preparation and career-related handouts. | 3 |
+| [finance](finance/) | CD strategies, investment analysis and valuation guides. | 16 |
+| [fitness](fitness/README.md) | Exercise and equipment references. | 2 |
+| [gardening](gardening/README.md) | Aquaponics, sunlight and growing guides. | 2 |
+
 
 ## Recommended navigation
 

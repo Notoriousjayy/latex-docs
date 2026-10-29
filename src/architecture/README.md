@@ -10,24 +10,34 @@ Architecture descriptions, ADRs, viewpoints, patterns, and governance belong her
 
 ## Directory map and documentation catalog
 
-| Area | What it contains | Sources |
+### Document types
+
+| Collection | Use it for | LaTeX sources |
 |---|---|---:|
-| [`cloud/`](cloud/) | Cloud concepts, architecture/diagram sets and an engineering suite. | 27 |
-| [`templates/`](templates/) | ISO/IEC/IEEE 42010 architecture-description and viewpoint templates (3 standalone sources, 1 fragment). | 3 |
-| [`decisions/`](decisions/) | Generic and specialized ADR templates with review governance. | 11 |
-| [`diagramming/`](diagramming/) | Guides and conventions for architecture diagramming. | 1 |
-| [`diagrams/`](diagrams/) | Cross-cutting diagrams and architectural model assets. | 0 |
-| [`enterprise/`](enterprise/) | Enterprise architecture, business operations, and IT service management. | 15 |
-| [`examples/`](examples/) | Worked architecture examples. | 1 |
-| [`governance/`](governance/) | Cloud Center of Excellence artifacts and governance. | 62 |
-| [`learning/`](learning/) | Architecture study material and learning roadmaps. | 1 |
-| [`patterns/`](patterns/) | Reusable architecture patterns. | 5 |
-| [`standards/`](standards/) | ISO/IEC/IEEE 42010 architecture-description guidance. | 7 |
-| [`style-system/`](style-system/) | Architecture styling and documentation standards. | 12 |
-| [`systems-engineering/`](systems-engineering/) | Systems engineering perspectives. | 1 |
-| [`togaf/`](togaf/) | TOGAF material and guidance. | 5 |
-| [`uml/`](uml/) | UML notation material and reference diagrams. | 1 |
-| [`views-and-beyond/`](views-and-beyond/) | Viewpoint methodology, style catalogs and view packets. | 37 |
+| [Technical documents](technical-documents/README.md) | Design guides, engineering references and explanatory technical material | 4 |
+| [Templates](templates/README.md) | Reusable structured starting points and document forms | 4 |
+| [Workbooks and exercises](workbooks/README.md) | Practice, exercises, checklists and worked activities | 1 |
+
+### Subject collections and preserved suites
+
+These collections retain topic, standard, chapter, governance or diagram boundaries where splitting would increase navigation cost or disrupt related sources.
+
+| Collection | Contents | LaTeX sources |
+|---|---|---:|
+| [cloud](cloud/) | Cloud concepts, architecture/diagram sets and an engineering suite. | 27 |
+| [decisions](decisions/) | Generic and specialized ADR templates with review governance. | 11 |
+| [diagrams](diagrams/) | Cross-cutting diagrams and architectural model assets. | 0 |
+| [enterprise](enterprise/) | Enterprise architecture, business operations, and IT service management. | 15 |
+| [examples](examples/README.md) | Worked architecture examples. | 1 |
+| [governance](governance/) | Cloud Center of Excellence artifacts and governance. | 62 |
+| [patterns](patterns/README.md) | Reusable architecture patterns. | 5 |
+| [standards](standards/) | ISO/IEC/IEEE 42010 architecture-description guidance. | 7 |
+| [style system](style-system/) | Architecture styling and documentation standards. | 12 |
+| [systems engineering](systems-engineering/README.md) | Systems engineering perspectives. | 1 |
+| [togaf](togaf/README.md) | TOGAF material and guidance. | 5 |
+| [uml](uml/) | UML notation material and reference diagrams. | 1 |
+| [views and beyond](views-and-beyond/) | Viewpoint methodology, style catalogs and view packets. | 37 |
+
 
 ## Build and validate
 

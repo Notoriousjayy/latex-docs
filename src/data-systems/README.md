@@ -10,11 +10,13 @@ This domain covers data platforms, streaming and AI/ML systems. Place domain-ind
 
 ## Directory map and documentation catalog
 
-| Area | What it contains | Sources |
+### Document types
+
+| Collection | Use it for | LaTeX sources |
 |---|---|---:|
-| [`ai-ml/`](ai-ml/) | LLM and machine-learning adoption guidance. | 3 |
-| [`networking/`](networking/) | Data-network concepts and networking-related references. | 1 |
-| [`streaming/`](streaming/) | Event streaming and Kafka architecture. | 1 |
+| [Technical documents](technical-documents/README.md) | Design guides, engineering references and explanatory technical material | 3 |
+| [Workbooks and exercises](workbooks/README.md) | Practice, exercises, checklists and worked activities | 2 |
+
 
 ## Build and validate
 

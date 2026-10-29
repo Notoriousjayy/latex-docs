@@ -10,10 +10,13 @@ Use this domain for document composition, technical writing, and reusable presen
 
 ## Directory map and documentation catalog
 
-| Area | What it contains | Sources |
+### Document types
+
+| Collection | Use it for | LaTeX sources |
 |---|---|---:|
-| [`letterhead/`](letterhead/) | Reusable letterhead and branded document examples. | 4 |
-| [`technical-writing/`](technical-writing/) | Technical-writing methodology and guidance. | 1 |
+| [Technical documents](technical-documents/README.md) | Design guides, engineering references and explanatory technical material | 4 |
+| [Templates](templates/README.md) | Reusable structured starting points and document forms | 1 |
+
 
 ## Build and validate
 

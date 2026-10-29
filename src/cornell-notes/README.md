@@ -10,6 +10,21 @@ Keep the chapter, clause, book, and standard hierarchy where it carries source t
 
 ## Directory map and documentation catalog
 
+### Subject collections and preserved suites
+
+These collections retain topic, standard, chapter, governance or diagram boundaries where splitting would increase navigation cost or disrupt related sources.
+
+| Collection | Contents | LaTeX sources |
+|---|---|---:|
+| [architecture](architecture/) | Cohesive subject or source collection | 133 |
+| [computer science](computer-science/) | Cohesive subject or source collection | 71 |
+| [electronics](electronics/) | Cohesive subject or source collection | 15 |
+| [mathematics](mathematics/) | Cohesive subject or source collection | 36 |
+| [programming](programming/) | Cohesive subject or source collection | 41 |
+| [security](security/) | Cohesive subject or source collection | 130 |
+
+**Preserved learning collection:** the Cornell Notes tree is currently a cross-discipline study-note corpus with source-driven chapter and standards hierarchies. It remains intact to protect curriculum cross-references; the individual disciplines are linked through their domain indexes. Its existing subject navigation follows.
+
 | Subject | Source roots | Browse |
 |---|---|---|
 | Architecture: cloud computing | 18 | [architecture/cloud-computing/](architecture/cloud-computing) |

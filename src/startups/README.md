@@ -10,17 +10,27 @@ Business formation, operating models, venture planning, and company-specific eng
 
 ## Directory map and documentation catalog
 
-| Area | What it contains | Sources |
+### Document types
+
+| Collection | Use it for | LaTeX sources |
 |---|---|---:|
-| [`cleaning-services/`](cleaning-services/) | Service-business planning and operating artifacts. | 4 |
-| [`curricula/`](curricula/) | Learning and training plans for entrepreneurship. | 1 |
-| [`finance/`](finance/) | Financial models and small-business planning guidance. | 2 |
-| [`game-development/`](game-development/) | Game-industry startup and product work. | 2 |
-| [`iot/`](iot/) | IoT business and implementation concepts. | 1 |
-| [`media/`](media/) | Media business planning and production operations. | 3 |
-| [`security/`](security/) | Security controls and startup governance. | 2 |
-| [`support/`](support/) | Operational support and service documentation. | 1 |
-| [`templates/`](templates/) | Reusable startup and small-business document templates. | 2 |
+| [Technical documents](technical-documents/README.md) | Design guides, engineering references and explanatory technical material | 1 |
+| [Templates](templates/README.md) | Reusable structured starting points and document forms | 2 |
+| [Workbooks and exercises](workbooks/README.md) | Practice, exercises, checklists and worked activities | 1 |
+
+### Subject collections and preserved suites
+
+These collections retain topic, standard, chapter, governance or diagram boundaries where splitting would increase navigation cost or disrupt related sources.
+
+| Collection | Contents | LaTeX sources |
+|---|---|---:|
+| [cleaning services](cleaning-services/README.md) | Service-business planning and operating artifacts. | 4 |
+| [finance](finance/README.md) | Financial models and small-business planning guidance. | 2 |
+| [game development](game-development/README.md) | Game-industry startup and product work. | 2 |
+| [iot](iot/) | IoT business and implementation concepts. | 1 |
+| [media](media/) | Media business planning and production operations. | 3 |
+| [security](security/) | Security controls and startup governance. | 2 |
+
 
 ## Build and validate
 

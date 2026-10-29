@@ -10,17 +10,26 @@ Use this domain for AppSec, security architecture, security programs, standards,
 
 ## Directory map and documentation catalog
 
-| Area | What it contains | Sources |
+### Document types
+
+| Collection | Use it for | LaTeX sources |
 |---|---|---:|
-| [`application-security/`](application-security/) | Application assessments, vulnerabilities, DAST/SAST, program processes and field guides. | 65 |
-| [`certifications/`](certifications/) | Role- and certification-oriented study material. | 3 |
-| [`cloud-security/`](cloud-security/) | Cloud security engineering and cloud security curricula. | 2 |
-| [`enterprise-security/`](enterprise-security/) | Enterprise security architecture and operations. | 1 |
-| [`github-advanced-security/`](github-advanced-security/) | Code scanning, dependency alerts, secret scanning and GHAS operations. | 36 |
-| [`governance-risk-compliance/`](governance-risk-compliance/) | ISMS, risk and SOC 2 control engineering. | 10 |
-| [`infrastructure-security/`](infrastructure-security/) | Infrastructure protection and hardening. | 1 |
-| [`security-engineering/`](security-engineering/) | General security engineering methods and references. | 8 |
-| [`standards/`](standards/) | CIS, OWASP, ISO/IEC 27000-family and related standards material. | 24 |
+| [Technical documents](technical-documents/README.md) | Design guides, engineering references and explanatory technical material | 2 |
+
+### Subject collections and preserved suites
+
+These collections retain topic, standard, chapter, governance or diagram boundaries where splitting would increase navigation cost or disrupt related sources.
+
+| Collection | Contents | LaTeX sources |
+|---|---|---:|
+| [application security](application-security/) | Application assessments, vulnerabilities, DAST/SAST, program processes and field guides. | 65 |
+| [certifications](certifications/) | Role- and certification-oriented study material. | 3 |
+| [cloud security](cloud-security/README.md) | Cloud security engineering and cloud security curricula. | 2 |
+| [github advanced security](github-advanced-security/) | Code scanning, dependency alerts, secret scanning and GHAS operations. | 36 |
+| [governance risk compliance](governance-risk-compliance/) | ISMS, risk and SOC 2 control engineering. | 10 |
+| [security engineering](security-engineering/README.md) | General security engineering methods and references. | 8 |
+| [standards](standards/) | CIS, OWASP, ISO/IEC 27000-family and related standards material. | 24 |
+
 
 ## Build and validate
 

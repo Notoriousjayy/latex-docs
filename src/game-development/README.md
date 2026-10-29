@@ -10,19 +10,29 @@ Use this domain for game-engineering principles, design documents, graphics, ani
 
 ## Directory map and documentation catalog
 
-| Area | Material |
-|---|---|
-| [AI](ai/) | Game AI algorithms and pseudocode. |
-| [Animation](animation/) | Animation study plan. |
-| [Asset pipelines](asset-pipelines/) | Sprite and 3D model generation workflows. |
-| [Design documents](design-documents/) | GDD source templates and examples. |
-| [Graphics](graphics/) | Computer graphics principles. |
-| [Patterns](patterns/) | Game programming pattern catalogs. |
-| [Physics engines](physics-engines/) | Collision, fluid simulation and engineering gap analysis. |
+### Document types
+
+| Collection | Use it for | LaTeX sources |
+|---|---|---:|
+| [Templates](templates/README.md) | Reusable structured starting points and document forms | 2 |
+| [Study guides](study-guides/README.md) | Study plans, curricula and guided reading | 1 |
+
+### Subject collections and preserved suites
+
+These collections retain topic, standard, chapter, governance or diagram boundaries where splitting would increase navigation cost or disrupt related sources.
+
+| Collection | Contents | LaTeX sources |
+|---|---|---:|
+| [ai](ai/README.md) | Game AI algorithms and pseudocode. | 1 |
+| [asset pipelines](asset-pipelines/README.md) | Sprite and 3D model generation workflows. | 2 |
+| [graphics](graphics/README.md) | Computer graphics principles. | 1 |
+| [patterns](patterns/README.md) | Game programming pattern catalogs. | 2 |
+| [physics engines](physics-engines/README.md) | Collision, fluid simulation and engineering gap analysis. | 4 |
+
 
 ## Recommended navigation
 
-- [Game Design Document template](design-documents/templates/game-design-document-gdd-template.tex) for design scope, mechanics and requirements.
+- [Game Design Document template](templates/game-design-document-gdd-template.tex) for design scope, mechanics and requirements.
 - [Game programming pattern catalog](patterns/game-programming-pattern-catalog.tex) for implementation trade-offs.
 - [Real-time collision detection](physics-engines/real-time-collision-detection-algorithms.tex) for math, numerical assumptions and example algorithms.
 

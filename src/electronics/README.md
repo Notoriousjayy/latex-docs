@@ -10,11 +10,14 @@ Electronic circuits, laboratory learning, and embedded hardware integration belo
 
 ## Directory map and documentation catalog
 
-| Source | Purpose |
-|---|---|
-| [The Art of Electronics curriculum](the-art-of-electronics-curriculum.tex) | Theory and prerequisite-ordered study. |
-| [X-Chapters laboratory course](the-art-of-electronics-x-chapters-lab-course.tex) | Hands-on reinforcement and measurement practice. |
-| [Orange Pi Zero engineering guide](orange-pi-zero-engineering-guide.tex) | Single-board computing and systems integration. |
+### Document types
+
+| Collection | Use it for | LaTeX sources |
+|---|---|---:|
+| [Technical documents](technical-documents/README.md) | Design guides, engineering references and explanatory technical material | 1 |
+| [Workbooks and exercises](workbooks/README.md) | Practice, exercises, checklists and worked activities | 1 |
+| [Study guides](study-guides/README.md) | Study plans, curricula and guided reading | 1 |
+
 
 ## Recommended navigation
 
