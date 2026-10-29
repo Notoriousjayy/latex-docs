@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Scan the COMPLETE source of every tracked LaTeX document for audit evidence.
+"""Scan canonical LaTeX sources and validate the separately governed Blank set.
 
-This is a mechanical full-text inspection, NOT a substitute for content-level
-semantic interpretation by an engineer. It never assigns unverified summaries.
+The canonical semantic inventory tracks original document roots; a separate
+explicit pairing manifest governs derivative Blank variants. This is mechanical
+full-text evidence, NOT a substitute for subject-matter semantic review.
 """
 from __future__ import annotations
 
@@ -17,6 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
 MANIFEST = ROOT / "tooling/manifests/semantic-document-inventory.json"
+PAIR_MANIFEST = ROOT / "tooling/manifests/reusable-artifact-pairs.json"
 
 HEADINGS = re.compile(r"\\(?:part|chapter|section|subsection)\*?\{([^{}\n]{1,220})\}")
 DOC_TITLE = re.compile(r"\\(?:title|coverpage)\s*\{([^{}\n]{1,250})\}")
@@ -71,7 +73,17 @@ def main() -> int:
 
     inventory = json.loads(MANIFEST.read_text(encoding="utf-8"))
     indexed = {item["path"]: item for item in inventory["sources"]}
-    current = {p.relative_to(ROOT).as_posix() for p in SRC.rglob("*.tex")}
+    physical = {p.relative_to(ROOT).as_posix() for p in SRC.rglob("*.tex")}
+    paired = json.loads(PAIR_MANIFEST.read_text(encoding="utf-8"))
+    derivative_blanks = {record["blank"] for record in paired["pairs"]}
+    # Missing variants must fail; only explicit, existing derivatives are omitted
+    # from the canonical-source inventory. Every derivative is checked in the
+    # independent Template–Blank validator and tested by its own CI workflow.
+    missing_blanks = sorted(derivative_blanks - physical)
+    if missing_blanks:
+        print(json.dumps({"error": "missing governed blanks", "paths": missing_blanks}, indent=2))
+        return 1
+    current = physical - derivative_blanks
     if current != set(indexed):
         missing = sorted(current - set(indexed))
         stale = sorted(set(indexed) - current)
@@ -91,6 +103,8 @@ def main() -> int:
 
     summary = {
         "files_scanned": len(evidence),
+        "managed_blank_variants": len(derivative_blanks),
+        "total_latex_roots": len(physical),
         "bytes_scanned": sum(e["bytes_scanned"] for e in evidence),
         "documentclass_files": sum(e["documentclass"] for e in evidence),
         "title_candidates_found": sum(bool(e["title_candidates"]) for e in evidence),
