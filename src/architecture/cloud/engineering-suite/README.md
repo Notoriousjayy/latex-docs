@@ -23,3 +23,13 @@ See the [cloud index](../readme.md) for the parent collection and related materi
 Preserve original titles, citations, styles, and any LaTeX input paths. Place new files here only when they match this collection's purpose.
 
 Build/validate using the repository's supported LaTeX tooling; do not treat this index as evidence that all documents have compiled.
+
+## Governed Template–Blank pair: FinOps, service-assurance and continuity scorecard
+
+| Authoring Template | Fillable Blank |
+|---|---|
+| [07-finops-sla-templates.tex](07-finops-sla-templates.tex) | [07-finops-sla-blank.tex](07-finops-sla-blank.tex) |
+
+The Blank retains F01–F07 assessment forms, including F06 continuity restoration criteria and the RPO/RTO evidence check, while removing the numerical demonstration. Use the Template for costing and measurement context; an unassessed score is not a pass.
+
+See the [Template–Blank Pair Catalog](../../../../catalog/template-blank-pairs.md) for the audit and additional variants.
