@@ -14,6 +14,10 @@ Source files for **engineering suite** within the **architecture** domain. This 
 | [`06-security-governance-templates.tex`](06-security-governance-templates.tex) | LaTeX source |
 | [`07-finops-sla-templates.tex`](07-finops-sla-templates.tex) | LaTeX source |
 
+## Composite artifact classification
+
+[`05-architecture-documentation-templates.tex`](05-architecture-documentation-templates.tex) contains distinct T01--T08 instruments (context, decision, quality attributes, mechanisms, ADR, recovery, review and traceability). [`06-security-governance-templates.tex`](06-security-governance-templates.tex) contains distinct S01--S08 security governance forms. Neither complete document should be automatically classified as an AD or ADR. Classify and pair extracted instruments independently. See the [architecture artifact handout](../../technical-documents/adr-ad-viewpoint-governance-handout.tex).
+
 ## Navigation
 
 See the [cloud index](../readme.md) for the parent collection and related material.
