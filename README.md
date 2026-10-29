@@ -7,7 +7,7 @@ A source-controlled engineering documentation library covering software architec
 | Goal | Entry point |
 |---|---|
 | Find a topic or project | [Source catalog](src/README.md) |
-| Browse reusable templates, workbooks, scorecards or user stories | [Discovery catalog](catalog/README.md) |
+| Browse reusable templates, workbooks, scorecards or user stories | [Discovery catalog](catalog/README.md) and [Template–Blank pair catalog](catalog/template-blank-pairs.md) |
 | Find secure coding standards by language | [Programming language guide](src/programming/languages/README.md) |
 | Review architectural choices | [ADR template library](src/architecture/decisions/readme.md) |
 | Understand architecture governance | [CCoE governance suite](src/architecture/governance/ccoe/readme.md) |
