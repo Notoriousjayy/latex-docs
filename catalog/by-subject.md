@@ -306,8 +306,9 @@
 - [introduction and conventions](../src/security/application-security/programs/introduction-and-conventions.tex) — application security/programs · **provisional**
 - [introduction to programs and systems](../src/security/application-security/programs/introduction-to-programs-and-systems.tex) — application security/programs · **provisional**
 
-## architecture (8)
+## architecture (9)
 
+- [architecture decisions descriptions and viewpoint specifications](../src/architecture/technical-documents/adr-ad-viewpoint-governance-handout.tex) — architecture · **reviewed**
 - [applying iso iec ieee 42010 2022 enterprise](../src/architecture/technical-documents/applying-iso-iec-ieee-42010-2022-enterprise.tex) — architecture · **provisional**
 - [architecture definition and description](../src/architecture/technical-documents/architecture-definition-and-description.tex) — architecture · **provisional**
 - [c4 plantuml technical guide](../src/architecture/technical-documents/c4-plantuml-technical-guide.tex) — architecture · **provisional**
