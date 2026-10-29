@@ -14,6 +14,10 @@ Engineering references for application-security assessment, software auditing, D
 | [Learning](learning/) | Learning paths and course selection. |
 | [Processes](processes/) | Program processes and [PlantUML diagrams](processes/appsec-process-diagrams/readme.md). |
 
+## Language-specific secure coding standards
+
+The standards previously stored beneath this AppSec collection now live with their actual programming languages. See the [secure coding guide by language](../../programming/languages/README.md) and the [cross-language GHAS secure coding catalog](../github-advanced-security/references/ghas-secure-coding-standards-handout.tex). Keep language-neutral secure SDLC assessment controls here.
+
 ## Operational sequence
 
 1. Establish authorization, target coverage, risk ownership and testing constraints.

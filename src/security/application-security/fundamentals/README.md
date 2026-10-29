@@ -8,7 +8,10 @@ Source files for **fundamentals** within the **security** domain. This is a navi
 |---|---|
 | [`user-stories-app-sec-program-guide-compact.tex`](user-stories-app-sec-program-guide-compact.tex) | LaTeX source |
 | [`user-stories-app-sec-program-guide.tex`](user-stories-app-sec-program-guide.tex) | LaTeX source |
-| [`user-stories-by-chapter-ci-cd-github-actions.tex`](user-stories-by-chapter-ci-cd-github-actions.tex) | LaTeX source |
+
+## Related collections
+
+[CI/CD and GitHub Actions user-story workbook](../../../devops/github-actions/user-stories-by-chapter-ci-cd-github-actions.tex) now belongs with its implementation subject.
 
 ## Navigation
 

@@ -41,6 +41,8 @@ make list-roots
 
 The category command discovers standalone LaTeX roots and builds them with the shared pdfLaTeX toolchain. To stage PDFs under `public/pdfs/`, use `make publish` from the repository root. The commands above describe the supported interface; they do not imply that every root has been compiled in this change.
 
+Language-specific secure coding standards are maintained under [Programming languages](../programming/languages/README.md), while AppSec assessment methodologies and GHAS enforcement references remain in this domain.
+
 ## Recommended navigation
 
 - Use the [AppSec process diagrams](application-security/processes/appsec-process-diagrams/readme.md) as cross-tool workflow references, not evidence that a named integration is deployed.

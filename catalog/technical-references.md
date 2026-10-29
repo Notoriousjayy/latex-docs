@@ -1,0 +1,560 @@
+# Technical References
+
+**Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
+
+## Primary technical references (550)
+
+- [cloud architecture diagram library index](../src/architecture/cloud/architecture/cloud-architecture-diagram-library-index.tex) — cloud/architecture · **provisional**
+- [self hosting cloud architecture reference](../src/architecture/cloud/architecture/self-hosting-cloud-architecture-reference.tex) — cloud/architecture · **provisional**
+- [ch01 introduction](../src/architecture/cloud/concepts-technology-architecture/ch01-introduction.tex) — cloud/concepts technology architecture · **provisional**
+- [ch02 case study background](../src/architecture/cloud/concepts-technology-architecture/ch02-case-study-background.tex) — cloud/concepts technology architecture · **provisional**
+- [ch03 understanding cloud computing](../src/architecture/cloud/concepts-technology-architecture/ch03-understanding-cloud-computing.tex) — cloud/concepts technology architecture · **provisional**
+- [ch04 fundamental concepts and models](../src/architecture/cloud/concepts-technology-architecture/ch04-fundamental-concepts-and-models.tex) — cloud/concepts technology architecture · **provisional**
+- [ch05 cloud enabling technology](../src/architecture/cloud/concepts-technology-architecture/ch05-cloud-enabling-technology.tex) — cloud/concepts technology architecture · **provisional**
+- [ch06 understanding containerization](../src/architecture/cloud/concepts-technology-architecture/ch06-understanding-containerization.tex) — cloud/concepts technology architecture · **provisional**
+- [ch07 cloud security and cybersecurity](../src/architecture/cloud/concepts-technology-architecture/ch07-cloud-security-and-cybersecurity.tex) — cloud/concepts technology architecture · **provisional**
+- [ch08 cloud infrastructure mechanisms](../src/architecture/cloud/concepts-technology-architecture/ch08-cloud-infrastructure-mechanisms.tex) — cloud/concepts technology architecture · **provisional**
+- [ch09 specialized cloud mechanisms](../src/architecture/cloud/concepts-technology-architecture/ch09-specialized-cloud-mechanisms.tex) — cloud/concepts technology architecture · **provisional**
+- [ch10 access oriented security mechanisms](../src/architecture/cloud/concepts-technology-architecture/ch10-access-oriented-security-mechanisms.tex) — cloud/concepts technology architecture · **provisional**
+- [ch11 data oriented security mechanisms](../src/architecture/cloud/concepts-technology-architecture/ch11-data-oriented-security-mechanisms.tex) — cloud/concepts technology architecture · **provisional**
+- [ch12 cloud management mechanisms](../src/architecture/cloud/concepts-technology-architecture/ch12-cloud-management-mechanisms.tex) — cloud/concepts technology architecture · **provisional**
+- [ch13 fundamental cloud architectures](../src/architecture/cloud/concepts-technology-architecture/ch13-fundamental-cloud-architectures.tex) — cloud/concepts technology architecture · **provisional**
+- [ch14 advanced cloud architectures](../src/architecture/cloud/concepts-technology-architecture/ch14-advanced-cloud-architectures.tex) — cloud/concepts technology architecture · **provisional**
+- [ch15 specialized cloud architectures](../src/architecture/cloud/concepts-technology-architecture/ch15-specialized-cloud-architectures.tex) — cloud/concepts technology architecture · **provisional**
+- [ch16 cloud delivery model considerations](../src/architecture/cloud/concepts-technology-architecture/ch16-cloud-delivery-model-considerations.tex) — cloud/concepts technology architecture · **provisional**
+- [ch17 cost metrics and pricing models](../src/architecture/cloud/concepts-technology-architecture/ch17-cost-metrics-and-pricing-models.tex) — cloud/concepts technology architecture · **provisional**
+- [ch18 service quality metrics and slas](../src/architecture/cloud/concepts-technology-architecture/ch18-service-quality-metrics-and-slas.tex) — cloud/concepts technology architecture · **provisional**
+- [01 cloud engineering guide](../src/architecture/cloud/engineering-suite/01-cloud-engineering-guide.tex) — cloud/engineering suite · **provisional**
+- [03 cloud mechanisms catalog](../src/architecture/cloud/engineering-suite/03-cloud-mechanisms-catalog.tex) — cloud/engineering suite · **provisional**
+- [04 cloud architecture catalog](../src/architecture/cloud/engineering-suite/04-cloud-architecture-catalog.tex) — cloud/engineering suite · **provisional**
+- [administration and it security system](../src/architecture/enterprise/business-operations/small-business-core-systems/administration-and-it-security-system.tex) — business operations/small business core systems · **provisional**
+- [financial management system](../src/architecture/enterprise/business-operations/small-business-core-systems/financial-management-system.tex) — business operations/small business core systems · **provisional**
+- [hr and people management system](../src/architecture/enterprise/business-operations/small-business-core-systems/hr-and-people-management-system.tex) — business operations/small business core systems · **provisional**
+- [kpi and continuous improvement layer](../src/architecture/enterprise/business-operations/small-business-core-systems/kpi-and-continuous-improvement-layer.tex) — business operations/small business core systems · **provisional**
+- [leadership and strategy system](../src/architecture/enterprise/business-operations/small-business-core-systems/leadership-and-strategy-system.tex) — business operations/small business core systems · **provisional**
+- [marketing and lead generation system](../src/architecture/enterprise/business-operations/small-business-core-systems/marketing-and-lead-generation-system.tex) — business operations/small business core systems · **provisional**
+- [operations and fulfillment system](../src/architecture/enterprise/business-operations/small-business-core-systems/operations-and-fulfillment-system.tex) — business operations/small business core systems · **provisional**
+- [sales and lead conversion system](../src/architecture/enterprise/business-operations/small-business-core-systems/sales-and-lead-conversion-system.tex) — business operations/small business core systems · **provisional**
+- [small business core systems operating model](../src/architecture/enterprise/business-operations/small-business-core-systems/small-business-core-systems-operating-model.tex) — business operations/small business core systems · **provisional**
+- [sop and tooling layer guide](../src/architecture/enterprise/business-operations/small-business-core-systems/sop-and-tooling-layer-guide.tex) — business operations/small business core systems · **provisional**
+- [integr arch guide itam cmdb synchronization](../src/architecture/enterprise/itsm-cmdb/glpi-itop/integr-arch-guide-itam-cmdb-synchronization.tex) — itsm cmdb/glpi itop · **provisional**
+- [integr handout itam cmdb operating pattern](../src/architecture/enterprise/itsm-cmdb/glpi-itop/integr-handout-itam-cmdb-operating-pattern.tex) — itsm cmdb/glpi itop · **provisional**
+- [plus itop itam cmdb itsm comparison table tool](../src/architecture/enterprise/itsm-cmdb/glpi-itop/plus-itop-itam-cmdb-itsm-comparison-table-tool.tex) — itsm cmdb/glpi itop · **provisional**
+- [shems architecture description](../src/architecture/examples/shems-architecture-description.tex) — examples · **provisional**
+- [ccoe master governance guide](../src/architecture/governance/ccoe/ccoe-master-governance-guide.tex) — governance/ccoe · **provisional**
+- [5 2 contract close out](../src/architecture/governance/ccoe/closure/5-2-contract-close-out.tex) — ccoe/closure · **provisional**
+- [5 3 project or phase close out](../src/architecture/governance/ccoe/closure/5-3-project-or-phase-close-out.tex) — ccoe/closure · **provisional**
+- [5 4 lessons learned](../src/architecture/governance/ccoe/closure/5-4-lessons-learned.tex) — ccoe/closure · **provisional**
+- [3 1 team member status report](../src/architecture/governance/ccoe/execution/3-1-team-member-status-report.tex) — ccoe/execution · **provisional**
+- [3 10 issue log](../src/architecture/governance/ccoe/execution/3-10-issue-log.tex) — ccoe/execution · **provisional**
+- [3 2 change request](../src/architecture/governance/ccoe/execution/3-2-change-request.tex) — ccoe/execution · **provisional**
+- [3 3 change log](../src/architecture/governance/ccoe/execution/3-3-change-log.tex) — ccoe/execution · **provisional**
+- [3 4 decision log](../src/architecture/governance/ccoe/execution/3-4-decision-log.tex) — ccoe/execution · **provisional**
+- [3 6 team directory](../src/architecture/governance/ccoe/execution/3-6-team-directory.tex) — ccoe/execution · **provisional**
+- [3 7 team operating agreement](../src/architecture/governance/ccoe/execution/3-7-team-operating-agreement.tex) — ccoe/execution · **provisional**
+- [1 1 project charter](../src/architecture/governance/ccoe/initiation/1-1-project-charter.tex) — ccoe/initiation · **provisional**
+- [1 2 stakeholder register](../src/architecture/governance/ccoe/initiation/1-2-stakeholder-register.tex) — ccoe/initiation · **provisional**
+- [1 3 stakeholder analysis matrix](../src/architecture/governance/ccoe/initiation/1-3-stakeholder-analysis-matrix.tex) — ccoe/initiation · **provisional**
+- [4 2 variance analysis](../src/architecture/governance/ccoe/monitoring-and-control/4-2-variance-analysis.tex) — ccoe/monitoring and control · **provisional**
+- [2 1 project management plan](../src/architecture/governance/ccoe/planning/2-1-project-management-plan.tex) — ccoe/planning · **provisional**
+- [2 10 schedule management plan](../src/architecture/governance/ccoe/planning/2-10-schedule-management-plan.tex) — ccoe/planning · **provisional**
+- [2 11 activity list](../src/architecture/governance/ccoe/planning/2-11-activity-list.tex) — ccoe/planning · **provisional**
+- [2 12 activity attributes](../src/architecture/governance/ccoe/planning/2-12-activity-attributes.tex) — ccoe/planning · **provisional**
+- [2 13 milestone list](../src/architecture/governance/ccoe/planning/2-13-milestone-list.tex) — ccoe/planning · **provisional**
+- [2 14 network diagram](../src/architecture/governance/ccoe/planning/2-14-network-diagram.tex) — ccoe/planning · **provisional**
+- [2 15 activity resource requirements](../src/architecture/governance/ccoe/planning/2-15-activity-resource-requirements.tex) — ccoe/planning · **provisional**
+- [2 16 resource breakdown structure](../src/architecture/governance/ccoe/planning/2-16-resource-breakdown-structure.tex) — ccoe/planning · **provisional**
+- [2 17 activity duration estimates](../src/architecture/governance/ccoe/planning/2-17-activity-duration-estimates.tex) — ccoe/planning · **provisional**
+- [2 19 project schedule](../src/architecture/governance/ccoe/planning/2-19-project-schedule.tex) — ccoe/planning · **provisional**
+- [2 2 scope management plan](../src/architecture/governance/ccoe/planning/2-2-scope-management-plan.tex) — ccoe/planning · **provisional**
+- [2 20 cost management plan](../src/architecture/governance/ccoe/planning/2-20-cost-management-plan.tex) — ccoe/planning · **provisional**
+- [2 21 activity cost estimates](../src/architecture/governance/ccoe/planning/2-21-activity-cost-estimates.tex) — ccoe/planning · **provisional**
+- [2 23 cost baseline](../src/architecture/governance/ccoe/planning/2-23-cost-baseline.tex) — ccoe/planning · **provisional**
+- [2 24 quality management plan](../src/architecture/governance/ccoe/planning/2-24-quality-management-plan.tex) — ccoe/planning · **provisional**
+- [2 25 quality metrics](../src/architecture/governance/ccoe/planning/2-25-quality-metrics.tex) — ccoe/planning · **provisional**
+- [2 26 process improvement plan](../src/architecture/governance/ccoe/planning/2-26-process-improvement-plan.tex) — ccoe/planning · **provisional**
+- [2 27 responsibility assignment matrix](../src/architecture/governance/ccoe/planning/2-27-responsibility-assignment-matrix.tex) — ccoe/planning · **provisional**
+- [2 28 roles and responsibilities](../src/architecture/governance/ccoe/planning/2-28-roles-and-responsibilities.tex) — ccoe/planning · **provisional**
+- [2 29 human resource management plan](../src/architecture/governance/ccoe/planning/2-29-human-resource-management-plan.tex) — ccoe/planning · **provisional**
+- [2 3 requirements management plan](../src/architecture/governance/ccoe/planning/2-3-requirements-management-plan.tex) — ccoe/planning · **provisional**
+- [2 30 communications management plan](../src/architecture/governance/ccoe/planning/2-30-communications-management-plan.tex) — ccoe/planning · **provisional**
+- [2 31 risk management plan](../src/architecture/governance/ccoe/planning/2-31-risk-management-plan.tex) — ccoe/planning · **provisional**
+- [2 32 risk register](../src/architecture/governance/ccoe/planning/2-32-risk-register.tex) — ccoe/planning · **provisional**
+- [2 34 probability and impact matrix](../src/architecture/governance/ccoe/planning/2-34-probability-and-impact-matrix.tex) — ccoe/planning · **provisional**
+- [2 35 risk data sheet](../src/architecture/governance/ccoe/planning/2-35-risk-data-sheet.tex) — ccoe/planning · **provisional**
+- [2 36 procurement management plan](../src/architecture/governance/ccoe/planning/2-36-procurement-management-plan.tex) — ccoe/planning · **provisional**
+- [2 37 source selection criteria](../src/architecture/governance/ccoe/planning/2-37-source-selection-criteria.tex) — ccoe/planning · **provisional**
+- [2 38 stakeholder management plan](../src/architecture/governance/ccoe/planning/2-38-stakeholder-management-plan.tex) — ccoe/planning · **provisional**
+- [2 39 change management plan](../src/architecture/governance/ccoe/planning/2-39-change-management-plan.tex) — ccoe/planning · **provisional**
+- [2 4 requirements documentation](../src/architecture/governance/ccoe/planning/2-4-requirements-documentation.tex) — ccoe/planning · **provisional**
+- [2 5 requirements traceability matrix](../src/architecture/governance/ccoe/planning/2-5-requirements-traceability-matrix.tex) — ccoe/planning · **provisional**
+- [2 6 project scope statement](../src/architecture/governance/ccoe/planning/2-6-project-scope-statement.tex) — ccoe/planning · **provisional**
+- [2 7 assumption and constraint log](../src/architecture/governance/ccoe/planning/2-7-assumption-and-constraint-log.tex) — ccoe/planning · **provisional**
+- [2 8 work breakdown structure](../src/architecture/governance/ccoe/planning/2-8-work-breakdown-structure.tex) — ccoe/planning · **provisional**
+- [2 9 wbs dictionary](../src/architecture/governance/ccoe/planning/2-9-wbs-dictionary.tex) — ccoe/planning · **provisional**
+- [confluence space structure directory rationale](../src/architecture/governance/confluence-space-structure-directory-rationale.tex) — governance · **provisional**
+- [document control](../src/architecture/governance/document-control.tex) — governance · **provisional**
+- [file naming conventions practical handout](../src/architecture/governance/file-naming-conventions-practical-handout.tex) — governance · **provisional**
+- [build system facade pattern](../src/architecture/patterns/build-system-facade-pattern.tex) — patterns · **provisional**
+- [design patterns algorithms pseudocode handout](../src/architecture/patterns/design-patterns-algorithms-pseudocode-handout.tex) — patterns · **provisional**
+- [distributed systems algorithms pseudocode](../src/architecture/patterns/distributed-systems-algorithms-pseudocode.tex) — patterns · **provisional**
+- [enterprise app arch algorithms pseudocode](../src/architecture/patterns/enterprise-app-arch-algorithms-pseudocode.tex) — patterns · **provisional**
+- [enterprise integr patterns algorithms](../src/architecture/patterns/enterprise-integr-patterns-algorithms.tex) — patterns · **provisional**
+- [01 foundations](../src/architecture/standards/iso-iec-ieee-42010/01-foundations.tex) — standards/iso iec ieee 42010 · **provisional**
+- [03 viewpoints model kinds](../src/architecture/standards/iso-iec-ieee-42010/03-viewpoints-model-kinds.tex) — standards/iso iec ieee 42010 · **provisional**
+- [04 framework language](../src/architecture/standards/iso-iec-ieee-42010/04-framework-language.tex) — standards/iso iec ieee 42010 · **provisional**
+- [05 correspondence decisions](../src/architecture/standards/iso-iec-ieee-42010/05-correspondence-decisions.tex) — standards/iso iec ieee 42010 · **provisional**
+- [aetherforge engine quick start guide](../src/architecture/style-system/examples/aetherforge-engine-quick-start-guide.tex) — style system/examples · **provisional**
+- [aetherforge render pipeline design](../src/architecture/style-system/examples/aetherforge-render-pipeline-design.tex) — style system/examples · **provisional**
+- [financial invoice](../src/architecture/style-system/examples/financial-invoice.tex) — style system/examples · **provisional**
+- [master services agreement](../src/architecture/style-system/examples/master-services-agreement.tex) — style system/examples · **provisional**
+- [personal certificate](../src/architecture/style-system/examples/personal-certificate.tex) — style system/examples · **provisional**
+- [Q3 Documentation Platform Steering — Minutes (Style Example)](../src/architecture/style-system/examples/q3-documentation-platform-steering-minutes.tex) — LaTeX business-administrative style example · **reviewed**
+- [senior documentation engineer](../src/architecture/style-system/examples/senior-documentation-engineer.tex) — style system/examples · **provisional**
+- [tile binner test plan](../src/architecture/style-system/examples/tile-binner-test-plan.tex) — style system/examples · **provisional**
+- [modular latex style module architecture](../src/architecture/style-system/modular-latex-style-module-architecture.tex) — style system · **provisional**
+- [systems engineering and software architecture](../src/architecture/systems-engineering/systems-engineering-and-software-architecture.tex) — systems engineering · **provisional**
+- [applying iso iec ieee 42010 2022 enterprise](../src/architecture/technical-documents/applying-iso-iec-ieee-42010-2022-enterprise.tex) — architecture · **provisional**
+- [architecture definition and description](../src/architecture/technical-documents/architecture-definition-and-description.tex) — architecture · **provisional**
+- [c4 plantuml technical guide](../src/architecture/technical-documents/c4-plantuml-technical-guide.tex) — architecture · **provisional**
+- [iso iec ieee 42010 2022 clean handout](../src/architecture/technical-documents/iso-iec-ieee-42010-2022-clean-handout.tex) — architecture · **provisional**
+- [viewpoint section](../src/architecture/templates/viewpoint-section.tex) — architecture · **provisional**
+- [document authoring template guide detailed](../src/architecture/togaf/document-authoring-template-guide-detailed.tex) — togaf · **provisional**
+- [document authoring template guide](../src/architecture/togaf/document-authoring-template-guide.tex) — togaf · **provisional**
+- [iso 42010 togaf views beyond layered strategy](../src/architecture/togaf/iso-42010-togaf-views-beyond-layered-strategy.tex) — togaf · **provisional**
+- [iso iec ieee 42010 2022 togaf concise handout](../src/architecture/togaf/iso-iec-ieee-42010-2022-togaf-concise-handout.tex) — togaf · **provisional**
+- [2 5 1 diagram types classification handout](../src/architecture/uml/2-5-1-diagram-types-classification-handout.tex) — uml · **provisional**
+- [spectrum of style specializations](../src/architecture/views-and-beyond/advanced-concepts/spectrum-of-style-specializations.tex) — views and beyond/advanced concepts · **provisional**
+- [variation points](../src/architecture/views-and-beyond/advanced-concepts/variation-points.tex) — views and beyond/advanced concepts · **provisional**
+- [how the two approaches fit together](../src/architecture/views-and-beyond/framework-mappings/how-the-two-approaches-fit-together.tex) — views and beyond/framework mappings · **provisional**
+- [integrating rozanski woods views beyond guide](../src/architecture/views-and-beyond/framework-mappings/integrating-rozanski-woods-views-beyond-guide.tex) — views and beyond/framework mappings · **provisional**
+- [integrating rozanski woods views beyond](../src/architecture/views-and-beyond/framework-mappings/integrating-rozanski-woods-views-beyond.tex) — views and beyond/framework mappings · **provisional**
+- [iso 42010 information requirements views](../src/architecture/views-and-beyond/framework-mappings/iso-42010-information-requirements-views.tex) — views and beyond/framework mappings · **provisional**
+- [mapping iso iec ieee 42010 2022 sei views](../src/architecture/views-and-beyond/framework-mappings/mapping-iso-iec-ieee-42010-2022-sei-views.tex) — views and beyond/framework mappings · **provisional**
+- [relating views and beyond to rup](../src/architecture/views-and-beyond/framework-mappings/relating-views-and-beyond-to-rup.tex) — views and beyond/framework mappings · **provisional**
+- [software arch docs integrating dodaf views](../src/architecture/views-and-beyond/framework-mappings/software-arch-docs-integrating-dodaf-views.tex) — views and beyond/framework mappings · **provisional**
+- [arch docs review project phases](../src/architecture/views-and-beyond/fundamentals/arch-docs-review-project-phases.tex) — views and beyond/fundamentals · **provisional**
+- [architecture overview for](../src/architecture/views-and-beyond/fundamentals/architecture-overview-for.tex) — views and beyond/fundamentals · **provisional**
+- [sei software arch docs handout views](../src/architecture/views-and-beyond/fundamentals/sei-software-arch-docs-handout-views.tex) — views and beyond/fundamentals · **provisional**
+- [stakeholders and their documentation needs](../src/architecture/views-and-beyond/fundamentals/stakeholders-and-their-documentation-needs.tex) — views and beyond/fundamentals · **provisional**
+- [system name arch docs beyond views](../src/architecture/views-and-beyond/fundamentals/system-name-arch-docs-beyond-views.tex) — views and beyond/fundamentals · **provisional**
+- [architectural style ref mapping](../src/architecture/views-and-beyond/style-catalogs/allocation/deployment-style/architectural-style-ref-mapping.tex) — allocation/deployment style · **provisional**
+- [architectural style ref mapping software](../src/architecture/views-and-beyond/style-catalogs/allocation/install-style/architectural-style-ref-mapping-software.tex) — allocation/install style · **provisional**
+- [architectural views ref](../src/architecture/views-and-beyond/style-catalogs/component-and-connector/component-and-connector-views/architectural-views-ref.tex) — component and connector/component and connector views · **provisional**
+- [architectural style ref crosscutting](../src/architecture/views-and-beyond/style-catalogs/module/aspects-style/architectural-style-ref-crosscutting.tex) — module/aspects style · **provisional**
+- [architectural style ref system](../src/architecture/views-and-beyond/style-catalogs/module/decomposition-style/architectural-style-ref-system.tex) — module/decomposition style · **provisional**
+- [architectural style ref](../src/architecture/views-and-beyond/style-catalogs/module/generalization-style/architectural-style-ref.tex) — module/generalization style · **provisional**
+- [architectural style ref hierarchical](../src/architecture/views-and-beyond/style-catalogs/module/layered-style/architectural-style-ref-hierarchical.tex) — module/layered style · **provisional**
+- [builder viewpoint](../src/architecture/views-and-beyond/view-packets/builder-viewpoint.tex) — views and beyond/view packets · **provisional**
+- [context viewpoint](../src/architecture/views-and-beyond/view-packets/context-viewpoint.tex) — views and beyond/view packets · **provisional**
+- [designer viewpoint](../src/architecture/views-and-beyond/view-packets/designer-viewpoint.tex) — views and beyond/view packets · **provisional**
+- [development viewpoint](../src/architecture/views-and-beyond/view-packets/development-viewpoint.tex) — views and beyond/view packets · **provisional**
+- [information viewpoint](../src/architecture/views-and-beyond/view-packets/information-viewpoint.tex) — views and beyond/view packets · **provisional**
+- [logical viewpoint](../src/architecture/views-and-beyond/view-packets/logical-viewpoint.tex) — views and beyond/view packets · **provisional**
+- [operational viewpoint](../src/architecture/views-and-beyond/view-packets/operational-viewpoint.tex) — views and beyond/view packets · **provisional**
+- [owner viewpoint](../src/architecture/views-and-beyond/view-packets/owner-viewpoint.tex) — views and beyond/view packets · **provisional**
+- [planner viewpoint](../src/architecture/views-and-beyond/view-packets/planner-viewpoint.tex) — views and beyond/view packets · **provisional**
+- [process viewpoint](../src/architecture/views-and-beyond/view-packets/process-viewpoint.tex) — views and beyond/view packets · **provisional**
+- [software architecture documentation playbook](../src/architecture/views-and-beyond/view-packets/software-architecture-documentation-playbook.tex) — views and beyond/view packets · **provisional**
+- [stakeholder and their documentation needs](../src/architecture/views-and-beyond/view-packets/stakeholder-and-their-documentation-needs.tex) — views and beyond/view packets · **provisional**
+- [supporting development](../src/architecture/views-and-beyond/view-packets/supporting-development.tex) — views and beyond/view packets · **provisional**
+- [agile requirements babok alignment handout](../src/business-analysis/babok/agile-requirements-babok-alignment-handout.tex) — babok · **provisional**
+- [BABOK v3 50 Techniques Catalog](../src/business-analysis/babok/babok-v3-50-techniques-catalog.tex) — BABOK techniques · **reviewed**
+- [babok v3 appsec agile uml bpmn ea crosswalk](../src/business-analysis/babok/babok-v3-appsec-agile-uml-bpmn-ea-crosswalk.tex) — babok · **provisional**
+- [babok v3 knowledge areas and tasks](../src/business-analysis/babok/babok-v3-knowledge-areas-and-tasks.tex) — babok · **provisional**
+- [babok v3 technical guide](../src/business-analysis/babok/babok-v3-technical-guide.tex) — babok · **provisional**
+- [babok v3 cornell chapter notes](../src/business-analysis/study-notes/babok-v3-cornell-chapter-notes.tex) — business analysis · **provisional**
+- [03 understanding cloud computing notes](../src/cornell-notes/architecture/cloud-computing/03-understanding-cloud-computing-notes.tex) — architecture/cloud computing · **provisional**
+- [04 fundamental concepts and models notes](../src/cornell-notes/architecture/cloud-computing/04-fundamental-concepts-and-models-notes.tex) — architecture/cloud computing · **provisional**
+- [05 cloud enabling technology notes](../src/cornell-notes/architecture/cloud-computing/05-cloud-enabling-technology-notes.tex) — architecture/cloud computing · **provisional**
+- [06 understanding containerization notes](../src/cornell-notes/architecture/cloud-computing/06-understanding-containerization-notes.tex) — architecture/cloud computing · **provisional**
+- [07 cloud security and cybersecurity notes](../src/cornell-notes/architecture/cloud-computing/07-cloud-security-and-cybersecurity-notes.tex) — architecture/cloud computing · **provisional**
+- [08 cloud infrastructure mechanisms notes](../src/cornell-notes/architecture/cloud-computing/08-cloud-infrastructure-mechanisms-notes.tex) — architecture/cloud computing · **provisional**
+- [09 specialized cloud mechanisms notes](../src/cornell-notes/architecture/cloud-computing/09-specialized-cloud-mechanisms-notes.tex) — architecture/cloud computing · **provisional**
+- [10 access oriented security mechanisms notes](../src/cornell-notes/architecture/cloud-computing/10-access-oriented-security-mechanisms-notes.tex) — architecture/cloud computing · **provisional**
+- [11 data oriented security mechanisms notes](../src/cornell-notes/architecture/cloud-computing/11-data-oriented-security-mechanisms-notes.tex) — architecture/cloud computing · **provisional**
+- [12 cloud management mechanisms notes](../src/cornell-notes/architecture/cloud-computing/12-cloud-management-mechanisms-notes.tex) — architecture/cloud computing · **provisional**
+- [13 fundamental cloud architectures notes](../src/cornell-notes/architecture/cloud-computing/13-fundamental-cloud-architectures-notes.tex) — architecture/cloud computing · **provisional**
+- [14 advanced cloud architectures notes](../src/cornell-notes/architecture/cloud-computing/14-advanced-cloud-architectures-notes.tex) — architecture/cloud computing · **provisional**
+- [15 specialized cloud architectures notes](../src/cornell-notes/architecture/cloud-computing/15-specialized-cloud-architectures-notes.tex) — architecture/cloud computing · **provisional**
+- [16 cloud delivery model considerations notes](../src/cornell-notes/architecture/cloud-computing/16-cloud-delivery-model-considerations-notes.tex) — architecture/cloud computing · **provisional**
+- [17 cost metrics and pricing models notes](../src/cornell-notes/architecture/cloud-computing/17-cost-metrics-and-pricing-models-notes.tex) — architecture/cloud computing · **provisional**
+- [18 service quality metrics slas notes](../src/cornell-notes/architecture/cloud-computing/18-service-quality-metrics-slas-notes.tex) — architecture/cloud computing · **provisional**
+- [ch17 renumbering rows and columns of an array notes](../src/cornell-notes/computer-science/combinatorial-algorithms/array-reindexing/ch17-renumbering-rows-and-columns-of-an-array-notes.tex) — combinatorial algorithms/array reindexing · **provisional**
+- [ch27 backtrack method notes](../src/cornell-notes/computer-science/combinatorial-algorithms/backtracking/ch27-backtrack-method-notes.tex) — combinatorial algorithms/backtracking · **provisional**
+- [ch05 next composition of n into k parts notes](../src/cornell-notes/computer-science/combinatorial-algorithms/compositions/ch05-next-composition-of-n-into-k-parts-notes.tex) — combinatorial algorithms/compositions · **provisional**
+- [ch06 random composition of n into k parts notes](../src/cornell-notes/computer-science/combinatorial-algorithms/compositions/ch06-random-composition-of-n-into-k-parts-notes.tex) — combinatorial algorithms/compositions · **provisional**
+- [ch13 general combinatorial family algorithms notes](../src/cornell-notes/computer-science/combinatorial-algorithms/general-frameworks/ch13-general-combinatorial-family-algorithms-notes.tex) — combinatorial algorithms/general frameworks · **provisional**
+- [ch18 spanning forest of a graph notes](../src/cornell-notes/computer-science/combinatorial-algorithms/graph-algorithms/ch18-spanning-forest-of-a-graph-notes.tex) — combinatorial algorithms/graph algorithms · **provisional**
+- [ch20 chromatic polynomial of a graph notes](../src/cornell-notes/computer-science/combinatorial-algorithms/graph-algorithms/ch20-chromatic-polynomial-of-a-graph-notes.tex) — combinatorial algorithms/graph algorithms · **provisional**
+- [ch22 network flows notes](../src/cornell-notes/computer-science/combinatorial-algorithms/graph-algorithms/ch22-network-flows-notes.tex) — combinatorial algorithms/graph algorithms · **provisional**
+- [ch09 next partition of integer n notes](../src/cornell-notes/computer-science/combinatorial-algorithms/integer-partitions/ch09-next-partition-of-integer-n-notes.tex) — combinatorial algorithms/integer partitions · **provisional**
+- [ch10 random partition of an integer n notes](../src/cornell-notes/computer-science/combinatorial-algorithms/integer-partitions/ch10-random-partition-of-an-integer-n-notes.tex) — combinatorial algorithms/integer partitions · **provisional**
+- [ch23 permanent function notes](../src/cornell-notes/computer-science/combinatorial-algorithms/matrix-and-array-algorithms/ch23-permanent-function-notes.tex) — combinatorial algorithms/matrix and array algorithms · **provisional**
+- [ch24 invert a triangular array notes](../src/cornell-notes/computer-science/combinatorial-algorithms/matrix-and-array-algorithms/ch24-invert-a-triangular-array-notes.tex) — combinatorial algorithms/matrix and array algorithms · **provisional**
+- [ch25 triangular numbering in partially ordered sets notes](../src/cornell-notes/computer-science/combinatorial-algorithms/partially-ordered-sets/ch25-triangular-numbering-in-partially-ordered-sets-notes.tex) — combinatorial algorithms/partially ordered sets · **provisional**
+- [ch26 mobius function notes](../src/cornell-notes/computer-science/combinatorial-algorithms/partially-ordered-sets/ch26-mobius-function-notes.tex) — combinatorial algorithms/partially ordered sets · **provisional**
+- [ch07 next permutation of n letters notes](../src/cornell-notes/computer-science/combinatorial-algorithms/permutations/ch07-next-permutation-of-n-letters-notes.tex) — combinatorial algorithms/permutations · **provisional**
+- [ch08 random permutation of n letters notes](../src/cornell-notes/computer-science/combinatorial-algorithms/permutations/ch08-random-permutation-of-n-letters-notes.tex) — combinatorial algorithms/permutations · **provisional**
+- [ch16 cycle structure of a permutation notes](../src/cornell-notes/computer-science/combinatorial-algorithms/permutations/ch16-cycle-structure-of-a-permutation-notes.tex) — combinatorial algorithms/permutations · **provisional**
+- [ch21 composition of power series notes](../src/cornell-notes/computer-science/combinatorial-algorithms/polynomial-algorithms/ch21-composition-of-power-series-notes.tex) — combinatorial algorithms/polynomial algorithms · **provisional**
+- [ch11 next partition of an n set notes](../src/cornell-notes/computer-science/combinatorial-algorithms/set-partitions/ch11-next-partition-of-an-n-set-notes.tex) — combinatorial algorithms/set partitions · **provisional**
+- [ch12 random partition of an n set notes](../src/cornell-notes/computer-science/combinatorial-algorithms/set-partitions/ch12-random-partition-of-an-n-set-notes.tex) — combinatorial algorithms/set partitions · **provisional**
+- [ch15 sorting notes](../src/cornell-notes/computer-science/combinatorial-algorithms/sorting/ch15-sorting-notes.tex) — combinatorial algorithms/sorting · **provisional**
+- [ch01 next subset of an n set notes](../src/cornell-notes/computer-science/combinatorial-algorithms/subset-generation/ch01-next-subset-of-an-n-set-notes.tex) — combinatorial algorithms/subset generation · **provisional**
+- [ch02 random subset of an n set notes](../src/cornell-notes/computer-science/combinatorial-algorithms/subset-generation/ch02-random-subset-of-an-n-set-notes.tex) — combinatorial algorithms/subset generation · **provisional**
+- [ch03 next k subset of an n set notes](../src/cornell-notes/computer-science/combinatorial-algorithms/subset-generation/ch03-next-k-subset-of-an-n-set-notes.tex) — combinatorial algorithms/subset generation · **provisional**
+- [ch04 random k subset of an n set notes](../src/cornell-notes/computer-science/combinatorial-algorithms/subset-generation/ch04-random-k-subset-of-an-n-set-notes.tex) — combinatorial algorithms/subset generation · **provisional**
+- [ch28 labeled trees notes](../src/cornell-notes/computer-science/combinatorial-algorithms/tree-algorithms/ch28-labeled-trees-notes.tex) — combinatorial algorithms/tree algorithms · **provisional**
+- [ch29 random unlabeled rooted trees notes](../src/cornell-notes/computer-science/combinatorial-algorithms/tree-algorithms/ch29-random-unlabeled-rooted-trees-notes.tex) — combinatorial algorithms/tree algorithms · **provisional**
+- [ch30 tree of minimal length notes](../src/cornell-notes/computer-science/combinatorial-algorithms/tree-algorithms/ch30-tree-of-minimal-length-notes.tex) — combinatorial algorithms/tree algorithms · **provisional**
+- [ch14 young tableaux notes](../src/cornell-notes/computer-science/combinatorial-algorithms/young-tableaux/ch14-young-tableaux-notes.tex) — combinatorial algorithms/young tableaux · **provisional**
+- [ch15 sequence database search notes](../src/cornell-notes/computer-science/string-algorithms/computational-genomics/ch15-sequence-database-search-notes.tex) — string algorithms/computational genomics · **provisional**
+- [ch16 mapping sequencing superstrings notes](../src/cornell-notes/computer-science/string-algorithms/computational-genomics/ch16-mapping-sequencing-superstrings-notes.tex) — string algorithms/computational genomics · **provisional**
+- [ch17 strings evolutionary trees notes](../src/cornell-notes/computer-science/string-algorithms/computational-genomics/ch17-strings-evolutionary-trees-notes.tex) — string algorithms/computational genomics · **provisional**
+- [ch18 frameshifts genes dna computing notes](../src/cornell-notes/computer-science/string-algorithms/computational-genomics/ch18-frameshifts-genes-dna-computing-notes.tex) — string algorithms/computational genomics · **provisional**
+- [ch19 genome rearrangements notes](../src/cornell-notes/computer-science/string-algorithms/computational-genomics/ch19-genome-rearrangements-notes.tex) — string algorithms/computational genomics · **provisional**
+- [ch01 exact matching basics notes](../src/cornell-notes/computer-science/string-algorithms/exact-matching/ch01-exact-matching-basics-notes.tex) — string algorithms/exact matching · **provisional**
+- [ch02 classical exact matching notes](../src/cornell-notes/computer-science/string-algorithms/exact-matching/ch02-classical-exact-matching-notes.tex) — string algorithms/exact matching · **provisional**
+- [ch03 advanced exact matching notes](../src/cornell-notes/computer-science/string-algorithms/exact-matching/ch03-advanced-exact-matching-notes.tex) — string algorithms/exact matching · **provisional**
+- [ch04 seminumerical matching notes](../src/cornell-notes/computer-science/string-algorithms/exact-matching/ch04-seminumerical-matching-notes.tex) — string algorithms/exact matching · **provisional**
+- [ch10 sequence comparison biology notes](../src/cornell-notes/computer-science/string-algorithms/sequence-alignment/ch10-sequence-comparison-biology-notes.tex) — string algorithms/sequence alignment · **provisional**
+- [ch11 edits alignments dp notes](../src/cornell-notes/computer-science/string-algorithms/sequence-alignment/ch11-edits-alignments-dp-notes.tex) — string algorithms/sequence alignment · **provisional**
+- [ch12 refined alignment algorithms notes](../src/cornell-notes/computer-science/string-algorithms/sequence-alignment/ch12-refined-alignment-algorithms-notes.tex) — string algorithms/sequence alignment · **provisional**
+- [ch13 extended alignment problems notes](../src/cornell-notes/computer-science/string-algorithms/sequence-alignment/ch13-extended-alignment-problems-notes.tex) — string algorithms/sequence alignment · **provisional**
+- [ch14 multiple sequence alignment notes](../src/cornell-notes/computer-science/string-algorithms/sequence-alignment/ch14-multiple-sequence-alignment-notes.tex) — string algorithms/sequence alignment · **provisional**
+- [ch05 suffix tree basics notes](../src/cornell-notes/computer-science/string-algorithms/suffix-structures/ch05-suffix-tree-basics-notes.tex) — string algorithms/suffix structures · **provisional**
+- [ch06 suffix tree construction notes](../src/cornell-notes/computer-science/string-algorithms/suffix-structures/ch06-suffix-tree-construction-notes.tex) — string algorithms/suffix structures · **provisional**
+- [ch07 suffix tree applications notes](../src/cornell-notes/computer-science/string-algorithms/suffix-structures/ch07-suffix-tree-applications-notes.tex) — string algorithms/suffix structures · **provisional**
+- [ch08 lowest common ancestor notes](../src/cornell-notes/computer-science/string-algorithms/suffix-structures/ch08-lowest-common-ancestor-notes.tex) — string algorithms/suffix structures · **provisional**
+- [ch09 advanced suffix applications notes](../src/cornell-notes/computer-science/string-algorithms/suffix-structures/ch09-advanced-suffix-applications-notes.tex) — string algorithms/suffix structures · **provisional**
+- [ch04 operational amplifiers notes](../src/cornell-notes/electronics/electronic-circuits/analog-circuits/ch04-operational-amplifiers-notes.tex) — electronic circuits/analog circuits · **provisional**
+- [ch05 precision circuits notes](../src/cornell-notes/electronics/electronic-circuits/analog-circuits/ch05-precision-circuits-notes.tex) — electronic circuits/analog circuits · **provisional**
+- [ch06 filters notes](../src/cornell-notes/electronics/electronic-circuits/analog-circuits/ch06-filters-notes.tex) — electronic circuits/analog circuits · **provisional**
+- [ch07 oscillators and timers notes](../src/cornell-notes/electronics/electronic-circuits/analog-circuits/ch07-oscillators-and-timers-notes.tex) — electronic circuits/analog circuits · **provisional**
+- [ch08 low noise techniques notes](../src/cornell-notes/electronics/electronic-circuits/analog-circuits/ch08-low-noise-techniques-notes.tex) — electronic circuits/analog circuits · **provisional**
+- [ch10 digital logic notes](../src/cornell-notes/electronics/electronic-circuits/digital-logic-and-interfaces/ch10-digital-logic-notes.tex) — electronic circuits/digital logic and interfaces · **provisional**
+- [ch11 programmable logic devices notes](../src/cornell-notes/electronics/electronic-circuits/digital-logic-and-interfaces/ch11-programmable-logic-devices-notes.tex) — electronic circuits/digital logic and interfaces · **provisional**
+- [ch12 logic interfacing notes](../src/cornell-notes/electronics/electronic-circuits/digital-logic-and-interfaces/ch12-logic-interfacing-notes.tex) — electronic circuits/digital logic and interfaces · **provisional**
+- [ch14 computers controllers and data links notes](../src/cornell-notes/electronics/electronic-circuits/embedded-systems/ch14-computers-controllers-and-data-links-notes.tex) — electronic circuits/embedded systems · **provisional**
+- [ch15 microcontrollers notes](../src/cornell-notes/electronics/electronic-circuits/embedded-systems/ch15-microcontrollers-notes.tex) — electronic circuits/embedded systems · **provisional**
+- [ch01 foundations notes](../src/cornell-notes/electronics/electronic-circuits/foundations/ch01-foundations-notes.tex) — electronic circuits/foundations · **provisional**
+- [ch13 digital meets analog notes](../src/cornell-notes/electronics/electronic-circuits/mixed-signal-systems/ch13-digital-meets-analog-notes.tex) — electronic circuits/mixed signal systems · **provisional**
+- [ch09 voltage regulation and power conversion notes](../src/cornell-notes/electronics/electronic-circuits/power-electronics/ch09-voltage-regulation-and-power-conversion-notes.tex) — electronic circuits/power electronics · **provisional**
+- [ch02 bipolar transistors notes](../src/cornell-notes/electronics/electronic-circuits/semiconductor-devices/ch02-bipolar-transistors-notes.tex) — electronic circuits/semiconductor devices · **provisional**
+- [ch03 field effect transistors notes](../src/cornell-notes/electronics/electronic-circuits/semiconductor-devices/ch03-field-effect-transistors-notes.tex) — electronic circuits/semiconductor devices · **provisional**
+- [03 applications of differentiation notes](../src/cornell-notes/mathematics/calculus/03-applications-of-differentiation-notes.tex) — mathematics/calculus · **provisional**
+- [13 functions of several variables notes](../src/cornell-notes/mathematics/calculus/13-functions-of-several-variables-notes.tex) — mathematics/calculus · **provisional**
+- [ch21 computational geometry notes](../src/cornell-notes/mathematics/numerical-methods/computational-geometry/ch21-computational-geometry-notes.tex) — numerical methods/computational geometry · **provisional**
+- [ch17 ordinary differential equations notes](../src/cornell-notes/mathematics/numerical-methods/differential-and-integral-equations/ch17-ordinary-differential-equations-notes.tex) — numerical methods/differential and integral equations · **provisional**
+- [ch18 boundary value problems notes](../src/cornell-notes/mathematics/numerical-methods/differential-and-integral-equations/ch18-boundary-value-problems-notes.tex) — numerical methods/differential and integral equations · **provisional**
+- [ch19 integral equations notes](../src/cornell-notes/mathematics/numerical-methods/differential-and-integral-equations/ch19-integral-equations-notes.tex) — numerical methods/differential and integral equations · **provisional**
+- [ch20 partial differential equations notes](../src/cornell-notes/mathematics/numerical-methods/differential-and-integral-equations/ch20-partial-differential-equations-notes.tex) — numerical methods/differential and integral equations · **provisional**
+- [ch01 preliminaries notes](../src/cornell-notes/mathematics/numerical-methods/foundations/ch01-preliminaries-notes.tex) — numerical methods/foundations · **provisional**
+- [ch12 fft notes](../src/cornell-notes/mathematics/numerical-methods/fourier-and-spectral-methods/ch12-fft-notes.tex) — numerical methods/fourier and spectral methods · **provisional**
+- [ch13 spectral applications notes](../src/cornell-notes/mathematics/numerical-methods/fourier-and-spectral-methods/ch13-spectral-applications-notes.tex) — numerical methods/fourier and spectral methods · **provisional**
+- [ch22 general algorithms notes](../src/cornell-notes/mathematics/numerical-methods/general-algorithms/ch22-general-algorithms-notes.tex) — numerical methods/general algorithms · **provisional**
+- [ch03 interpolation notes](../src/cornell-notes/mathematics/numerical-methods/interpolation-integration-and-functions/ch03-interpolation-notes.tex) — numerical methods/interpolation integration and functions · **provisional**
+- [ch04 integration notes](../src/cornell-notes/mathematics/numerical-methods/interpolation-integration-and-functions/ch04-integration-notes.tex) — numerical methods/interpolation integration and functions · **provisional**
+- [ch05 function evaluation notes](../src/cornell-notes/mathematics/numerical-methods/interpolation-integration-and-functions/ch05-function-evaluation-notes.tex) — numerical methods/interpolation integration and functions · **provisional**
+- [ch06 special functions notes](../src/cornell-notes/mathematics/numerical-methods/interpolation-integration-and-functions/ch06-special-functions-notes.tex) — numerical methods/interpolation integration and functions · **provisional**
+- [ch02 linear equations notes](../src/cornell-notes/mathematics/numerical-methods/linear-algebra/ch02-linear-equations-notes.tex) — numerical methods/linear algebra · **provisional**
+- [ch11 eigensystems notes](../src/cornell-notes/mathematics/numerical-methods/linear-algebra/ch11-eigensystems-notes.tex) — numerical methods/linear algebra · **provisional**
+- [ch07 random numbers notes](../src/cornell-notes/mathematics/numerical-methods/randomization-and-ordering/ch07-random-numbers-notes.tex) — numerical methods/randomization and ordering · **provisional**
+- [ch08 sorting selection notes](../src/cornell-notes/mathematics/numerical-methods/randomization-and-ordering/ch08-sorting-selection-notes.tex) — numerical methods/randomization and ordering · **provisional**
+- [ch09 root finding notes](../src/cornell-notes/mathematics/numerical-methods/root-finding-and-optimization/ch09-root-finding-notes.tex) — numerical methods/root finding and optimization · **provisional**
+- [ch10 optimization notes](../src/cornell-notes/mathematics/numerical-methods/root-finding-and-optimization/ch10-optimization-notes.tex) — numerical methods/root finding and optimization · **provisional**
+- [ch14 statistical description notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch14-statistical-description-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
+- [ch15 data modeling notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch15-data-modeling-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
+- [ch16 classification inference notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch16-classification-inference-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
+- [agentic architecture handout](../src/data-systems/technical-documents/agentic-architecture-handout.tex) — data systems · **provisional**
+- [computer networks algorithms pseudocode](../src/data-systems/technical-documents/computer-networks-algorithms-pseudocode.tex) — data systems · **provisional**
+- [llm api engineering reference](../src/data-systems/technical-documents/llm-api-engineering-reference.tex) — data systems · **provisional**
+- [01 architecture and adrs](../src/devops/build-systems/cmake-webassembly/01-architecture-and-adrs.tex) — build systems/cmake webassembly · **provisional**
+- [02 cmake targets and dependencies](../src/devops/build-systems/cmake-webassembly/02-cmake-targets-and-dependencies.tex) — build systems/cmake webassembly · **provisional**
+- [03 toolchains pinning and presets](../src/devops/build-systems/cmake-webassembly/03-toolchains-pinning-and-presets.tex) — build systems/cmake webassembly · **provisional**
+- [04 browser js cpp and memory](../src/devops/build-systems/cmake-webassembly/04-browser-js-cpp-and-memory.tex) — build systems/cmake webassembly · **provisional**
+- [05 wasi runtime and components](../src/devops/build-systems/cmake-webassembly/05-wasi-runtime-and-components.tex) — build systems/cmake webassembly · **provisional**
+- [06 native portability and diagnostics](../src/devops/build-systems/cmake-webassembly/06-native-portability-and-diagnostics.tex) — build systems/cmake webassembly · **provisional**
+- [07 testing validation and quality gates](../src/devops/build-systems/cmake-webassembly/07-testing-validation-and-quality-gates.tex) — build systems/cmake webassembly · **provisional**
+- [08 cicd artifacts and provenance](../src/devops/build-systems/cmake-webassembly/08-cicd-artifacts-and-provenance.tex) — build systems/cmake webassembly · **provisional**
+- [09 webassembly security controls](../src/devops/build-systems/cmake-webassembly/09-webassembly-security-controls.tex) — build systems/cmake webassembly · **provisional**
+- [cmake wasm preamble](../src/devops/build-systems/cmake-webassembly/cmake-wasm-preamble.tex) — build systems/cmake webassembly · **provisional**
+- [01 technical reference](../src/devops/build-systems/professional-cmake/01-technical-reference.tex) — build systems/professional cmake · **provisional**
+- [04 build architecture and patterns](../src/devops/build-systems/professional-cmake/04-build-architecture-and-patterns.tex) — build systems/professional cmake · **provisional**
+- [05 testing quality engineering](../src/devops/build-systems/professional-cmake/05-testing-quality-engineering.tex) — build systems/professional cmake · **provisional**
+- [06 cicd devsecops](../src/devops/build-systems/professional-cmake/06-cicd-devsecops.tex) — build systems/professional cmake · **provisional**
+- [Professional CMake: Cross-Platform Builds and Performance](../src/devops/build-systems/professional-cmake/07-cross-platform-performance.tex) — CMake cross-platform builds and benchmarking · **reviewed**
+- [continuous integr toolkit github first minted](../src/devops/ci-cd/fundamentals/continuous-integr-toolkit-github-first-minted.tex) — ci cd/fundamentals · **provisional**
+- [github devsecops ci foundation handout](../src/devops/ci-cd/fundamentals/github-devsecops-ci-foundation-handout.tex) — ci cd/fundamentals · **provisional**
+- [release engineering quick start](../src/devops/ci-cd/fundamentals/release-engineering-quick-start.tex) — ci cd/fundamentals · **provisional**
+- [pre read briefing](../src/devops/ci-cd/pre-read-briefing.tex) — ci cd · **provisional**
+- [gamified devops security learning guide](../src/devops/foundations/gamified-devops-security-learning-guide.tex) — foundations · **provisional**
+- [learning objectives](../src/devops/foundations/sdlc/learning-objectives.tex) — foundations/sdlc · **provisional**
+- [sdlc template usage guide](../src/devops/foundations/sdlc/sdlc-template-usage-guide.tex) — foundations/sdlc · **provisional**
+- [git practical study sheet](../src/devops/foundations/version-control/git-practical-study-sheet.tex) — foundations/version control · **provisional**
+- [advanced github actions very cheat sheet](../src/devops/github-actions/advanced-github-actions-very-cheat-sheet.tex) — github actions · **provisional**
+- [ci cd starter github actions and ghcr](../src/devops/github-actions/ci-cd-starter-github-actions-and-ghcr.tex) — github actions · **provisional**
+- [custom action challenge drop starter actually](../src/devops/github-actions/custom-action-challenge-drop-starter-actually.tex) — github actions · **provisional**
+- [github actions practical cheat sheet](../src/devops/github-actions/github-actions-practical-cheat-sheet.tex) — github actions · **provisional**
+- [job execution controls ref](../src/devops/github-actions/job-execution-controls-ref.tex) — github actions · **provisional**
+- [minimal github actions wasm c game playbook](../src/devops/github-actions/minimal-github-actions-wasm-c-game-playbook.tex) — github actions · **provisional**
+- [minimal github actions wasm c game](../src/devops/github-actions/minimal-github-actions-wasm-c-game.tex) — github actions · **provisional**
+- [quick ref workflow action attributes](../src/devops/github-actions/quick-ref-workflow-action-attributes.tex) — github actions · **provisional**
+- [quick start using marketplace custom actions](../src/devops/github-actions/quick-start-using-marketplace-custom-actions.tex) — github actions · **provisional**
+- [using github actions inputs env secrets](../src/devops/github-actions/using-github-actions-inputs-env-secrets.tex) — github actions · **provisional**
+- [workflows github actions hands cheat sheet](../src/devops/github-actions/workflows-github-actions-hands-cheat-sheet.tex) — github actions · **provisional**
+- [workflows patterns drop recipes](../src/devops/github-actions/workflows-patterns-drop-recipes.tex) — github actions · **provisional**
+- [suitecrm self hosting operations handout](../src/devops/platform/business-applications/suitecrm/suitecrm-self-hosting-operations-handout.tex) — business applications/suitecrm · **provisional**
+- [github quick rules](../src/devops/platform/github/github-quick-rules.tex) — platform/github · **provisional**
+- [github releases practical quick reference](../src/devops/platform/github/github-releases-practical-quick-reference.tex) — platform/github · **provisional**
+- [authentik self hosting architecture guide](../src/devops/platform/identity/authentik/authentik-self-hosting-architecture-guide.tex) — identity/authentik · **provisional**
+- [authentik self hosting full latex handout](../src/devops/platform/identity/authentik/authentik-self-hosting-full-latex-handout.tex) — identity/authentik · **provisional**
+- [kubernetes cloud architecture technical guide](../src/devops/platform/kubernetes/kubernetes-cloud-architecture-technical-guide.tex) — platform/kubernetes · **provisional**
+- [kubernetes from first principles](../src/devops/platform/kubernetes/kubernetes-from-first-principles.tex) — platform/kubernetes · **provisional**
+- [workflow phases overview](../src/devops/platform/kubernetes/workflow-phases-overview.tex) — platform/kubernetes · **provisional**
+- [comparison matrix scope](../src/devops/platform/orchestration/open-source-deployment-orchestration/comparison-matrix-scope.tex) — orchestration/open source deployment orchestration · **provisional**
+- [tools citation clean classification handout](../src/devops/platform/orchestration/open-source-deployment-orchestration/tools-citation-clean-classification-handout.tex) — orchestration/open source deployment orchestration · **provisional**
+- [production style integrations hands cheat](../src/devops/secrets-management/hashicorp-vault/production-style-integrations-hands-cheat.tex) — secrets management/hashicorp vault · **provisional**
+- [secrets access primer guide](../src/devops/secrets-management/hashicorp-vault/secrets-access-primer-guide.tex) — secrets management/hashicorp vault · **provisional**
+- [vault dev server hands on cheat sheet](../src/devops/secrets-management/hashicorp-vault/vault-dev-server-hands-on-cheat-sheet.tex) — secrets management/hashicorp vault · **provisional**
+- [vault http api with postman quickstart](../src/devops/secrets-management/hashicorp-vault/vault-http-api-with-postman-quickstart.tex) — secrets management/hashicorp vault · **provisional**
+- [vault secure introduction cheat sheet](../src/devops/secrets-management/hashicorp-vault/vault-secure-introduction-cheat-sheet.tex) — secrets management/hashicorp vault · **provisional**
+- [gitops stack blueprint reference architecture](../src/devops/technical-documents/gitops-stack-blueprint-reference-architecture.tex) — devops · **provisional**
+- [key uses of letterhead](../src/documentation/technical-documents/key-uses-of-letterhead.tex) — documentation · **provisional**
+- [required identity elements](../src/documentation/technical-documents/required-identity-elements.tex) — documentation · **provisional**
+- [typography and color](../src/documentation/technical-documents/typography-and-color.tex) — documentation · **provisional**
+- [what are technical documents](../src/documentation/technical-documents/what-are-technical-documents.tex) — documentation · **provisional**
+- [orange pi zero engineering guide](../src/electronics/technical-documents/orange-pi-zero-engineering-guide.tex) — electronics · **provisional**
+- [the art of electronics x chapters lab course](../src/electronics/workbooks/the-art-of-electronics-x-chapters-lab-course.tex) — electronics · **provisional**
+- [ai for games algorithms pseudocode handout](../src/game-development/ai/ai-for-games-algorithms-pseudocode-handout.tex) — ai · **provisional**
+- [ai assisted sprite generation pipeline](../src/game-development/asset-pipelines/ai-assisted-sprite-generation-pipeline.tex) — asset pipelines · **provisional**
+- [ai driven 3d model generation technical games](../src/game-development/asset-pipelines/ai-driven-3d-model-generation-technical-games.tex) — asset pipelines · **provisional**
+- [computer graphics principles practice](../src/game-development/graphics/computer-graphics-principles-practice.tex) — graphics · **provisional**
+- [game programming pattern catalog](../src/game-development/patterns/game-programming-pattern-catalog.tex) — patterns · **provisional**
+- [game programming patterns algorithms](../src/game-development/patterns/game-programming-patterns-algorithms.tex) — patterns · **provisional**
+- [fluid simulation algorithms pseudocode handout](../src/game-development/physics-engines/fluid-simulation-algorithms-pseudocode-handout.tex) — physics engines · **provisional**
+- [game physics algorithms pseudocode handout](../src/game-development/physics-engines/game-physics-algorithms-pseudocode-handout.tex) — physics engines · **provisional**
+- [real time collision detection algorithms](../src/game-development/physics-engines/real-time-collision-detection-algorithms.tex) — physics engines · **provisional**
+- [how matrices polynomials relate algebraic ops](../src/mathematics/algebra/how-matrices-polynomials-relate-algebraic-ops.tex) — algebra · **provisional**
+- [polynomial data structures in c and cpp](../src/mathematics/algebra/polynomial-data-structures-in-c-and-cpp.tex) — algebra · **provisional**
+- [01 mathematical foundations](../src/mathematics/differential-equations/01-mathematical-foundations.tex) — differential equations · **provisional**
+- [02 ode technical reference](../src/mathematics/differential-equations/02-ode-technical-reference.tex) — differential equations · **provisional**
+- [03 analytical methods](../src/mathematics/differential-equations/03-analytical-methods.tex) — differential equations · **provisional**
+- [04 numerical scientific computing](../src/mathematics/differential-equations/04-numerical-scientific-computing.tex) — differential equations · **provisional**
+- [05 linear dynamical systems](../src/mathematics/differential-equations/05-linear-dynamical-systems.tex) — differential equations · **provisional**
+- [06 pde boundary value problems](../src/mathematics/differential-equations/06-pde-boundary-value-problems.tex) — differential equations · **provisional**
+- [07 engineering applications](../src/mathematics/differential-equations/07-engineering-applications.tex) — differential equations · **provisional**
+- [computational geometry c algorithms pseudocode](../src/mathematics/geometry/computational-geometry-c-algorithms-pseudocode.tex) — geometry · **provisional**
+- [point vs vertex handout](../src/mathematics/geometry/point-vs-vertex-handout.tex) — geometry · **provisional**
+- [polygon data structures c plus header impl](../src/mathematics/geometry/polygon-data-structures-c-plus-header-impl.tex) — geometry · **provisional**
+- [mathematical techniques proofs complete](../src/mathematics/proofs/mathematical-techniques-proofs-complete.tex) — proofs · **provisional**
+- [mathematical techniques proofs modular](../src/mathematics/proofs/mathematical-techniques-proofs-modular.tex) — proofs · **provisional**
+- [franchise sales director meeting handout](../src/personal/career/franchise-sales-director-meeting-handout.tex) — career · **provisional**
+- [jan pro franchise sales director meeting](../src/personal/career/jan-pro-franchise-sales-director-meeting.tex) — career · **provisional**
+- [jan pro jordan candidate tailored handout](../src/personal/career/jan-pro-jordan-candidate-tailored-handout.tex) — career · **provisional**
+- [build a 4 year cd ladder to reach 100 000](../src/personal/finance/build-a-4-year-cd-ladder-to-reach-100-000.tex) — finance · **provisional**
+- [how to invest in certificates of deposit cds](../src/personal/finance/how-to-invest-in-certificates-of-deposit-cds.tex) — finance · **provisional**
+- [01 intelligent investor technical guide](../src/personal/finance/intelligent-investor/01-intelligent-investor-technical-guide.tex) — finance/intelligent investor · **provisional**
+- [02 cornell chapter notes](../src/personal/finance/intelligent-investor/02-cornell-chapter-notes.tex) — finance/intelligent investor · **provisional**
+- [04 defensive enterprising playbooks](../src/personal/finance/intelligent-investor/04-defensive-enterprising-playbooks.tex) — finance/intelligent investor · **provisional**
+- [06 modern brokerage portfolio framework](../src/personal/finance/intelligent-investor/06-modern-brokerage-portfolio-framework.tex) — finance/intelligent investor · **provisional**
+- [01 technical reference](../src/personal/finance/investment-valuation/01-technical-reference.tex) — finance/investment valuation · **provisional**
+- [05 due diligence procedures](../src/personal/finance/investment-valuation/05-due-diligence-procedures.tex) — finance/investment valuation · **provisional**
+- [06 portfolio risk framework](../src/personal/finance/investment-valuation/06-portfolio-risk-framework.tex) — finance/investment valuation · **provisional**
+- [open source financial tools handout](../src/personal/finance/open-source-financial-tools-handout.tex) — finance · **provisional**
+- [jordan suber precor 240i stretching handout](../src/personal/fitness/jordan-suber-precor-240i-stretching-handout.tex) — fitness · **provisional**
+- [jordan treadmill hard conditioning handout](../src/personal/fitness/jordan-treadmill-hard-conditioning-handout.tex) — fitness · **provisional**
+- [beginner aquaponics handout](../src/personal/gardening/beginner-aquaponics-handout.tex) — gardening · **provisional**
+- [tools measure direct sunlight guide gardeners](../src/personal/gardening/tools-measure-direct-sunlight-guide-gardeners.tex) — gardening · **provisional**
+- [calibre drm free ebook to pdf workflow handout](../src/personal/technical-documents/calibre-drm-free-ebook-to-pdf-workflow-handout.tex) — personal · **provisional**
+- [algorithm analysis patterns mathematics](../src/programming/algorithms/algorithm-analysis-patterns-mathematics.tex) — algorithms · **provisional**
+- [combinatorial algorithms pseudocode handout](../src/programming/algorithms/combinatorial-algorithms-pseudocode-handout.tex) — algorithms · **provisional**
+- [employee scheduling algorithms handout](../src/programming/algorithms/employee-scheduling-algorithms-handout.tex) — algorithms · **provisional**
+- [numerical recipes algorithms pseudocode](../src/programming/algorithms/numerical-recipes-algorithms-pseudocode.tex) — algorithms · **provisional**
+- [stanford graphbase algorithms pseudocode](../src/programming/algorithms/stanford-graphbase-algorithms-pseudocode.tex) — algorithms · **provisional**
+- [strings trees sequences pseudocode handout](../src/programming/algorithms/strings-trees-sequences-pseudocode-handout.tex) — algorithms · **provisional**
+- [benefits simulating object oriented](../src/programming/languages/c-cpp/benefits-simulating-object-oriented.tex) — languages/c cpp · **provisional**
+- [object oriented programming ansi c algorithms](../src/programming/languages/c-cpp/object-oriented-programming-ansi-c-algorithms.tex) — languages/c cpp · **provisional**
+- [point vs vertex c composition handout](../src/programming/languages/c-cpp/point-vs-vertex-c-composition-handout.tex) — languages/c cpp · **provisional**
+- [01 language technical reference](../src/programming/languages/c-cpp/standards/c23/01-language-technical-reference.tex) — standards/c23 · **provisional**
+- [03 c17 to c23 migration guide](../src/programming/languages/c-cpp/standards/c23/03-c17-to-c23-migration-guide.tex) — standards/c23 · **provisional**
+- [01 language reference](../src/programming/languages/c-cpp/standards/cpp23/01-language-reference.tex) — standards/cpp23 · **provisional**
+- [02 library reference](../src/programming/languages/c-cpp/standards/cpp23/02-library-reference.tex) — standards/cpp23 · **provisional**
+- [04 features compatibility](../src/programming/languages/c-cpp/standards/cpp23/04-features-compatibility.tex) — standards/cpp23 · **provisional**
+- [05 secure engineering](../src/programming/languages/c-cpp/standards/cpp23/05-secure-engineering.tex) — standards/cpp23 · **provisional**
+- [06 testing quality](../src/programming/languages/c-cpp/standards/cpp23/06-testing-quality.tex) — standards/cpp23 · **provisional**
+- [cpp23 common preamble](../src/programming/languages/c-cpp/standards/cpp23/cpp23-common-preamble.tex) — standards/cpp23 · **provisional**
+- [00 suite overview](../src/programming/languages/c-cpp/standards/misra-c-2023/00-suite-overview.tex) — standards/misra c 2023 · **provisional**
+- [01 guideline catalog](../src/programming/languages/c-cpp/standards/misra-c-2023/01-guideline-catalog.tex) — standards/misra c 2023 · **provisional**
+- [02 compliant noncompliant examples](../src/programming/languages/c-cpp/standards/misra-c-2023/02-compliant-noncompliant-examples.tex) — standards/misra c 2023 · **provisional**
+- [03 static analysis guide](../src/programming/languages/c-cpp/standards/misra-c-2023/03-static-analysis-guide.tex) — standards/misra c 2023 · **provisional**
+- [04 compliance procedures](../src/programming/languages/c-cpp/standards/misra-c-2023/04-compliance-procedures.tex) — standards/misra c 2023 · **provisional**
+- [05 deviation management](../src/programming/languages/c-cpp/standards/misra-c-2023/05-deviation-management.tex) — standards/misra c 2023 · **provisional**
+- [06 ci cd integration](../src/programming/languages/c-cpp/standards/misra-c-2023/06-ci-cd-integration.tex) — standards/misra c 2023 · **provisional**
+- [08 technical reference](../src/programming/languages/c-cpp/standards/misra-c-2023/08-technical-reference.tex) — standards/misra c 2023 · **provisional**
+- [misra c style](../src/programming/languages/c-cpp/standards/misra-c-2023/misra-c-style.tex) — standards/misra c 2023 · **provisional**
+- [01 program orientation and adoption](../src/programming/languages/c-cpp/standards/misra-cpp-2023/01-program-orientation-and-adoption.tex) — standards/misra cpp 2023 · **provisional**
+- [02 guideline catalog traceability](../src/programming/languages/c-cpp/standards/misra-cpp-2023/02-guideline-catalog-traceability.tex) — standards/misra cpp 2023 · **provisional**
+- [04 cpp17 technical reference](../src/programming/languages/c-cpp/standards/misra-cpp-2023/04-cpp17-technical-reference.tex) — standards/misra cpp 2023 · **provisional**
+- [05 compliant noncompliant examples](../src/programming/languages/c-cpp/standards/misra-cpp-2023/05-compliant-noncompliant-examples.tex) — standards/misra cpp 2023 · **provisional**
+- [06 static analysis tool assurance](../src/programming/languages/c-cpp/standards/misra-cpp-2023/06-static-analysis-tool-assurance.tex) — standards/misra cpp 2023 · **provisional**
+- [07 compliance assurance procedures](../src/programming/languages/c-cpp/standards/misra-cpp-2023/07-compliance-assurance-procedures.tex) — standards/misra cpp 2023 · **provisional**
+- [08 deviation disposition management](../src/programming/languages/c-cpp/standards/misra-cpp-2023/08-deviation-disposition-management.tex) — standards/misra cpp 2023 · **provisional**
+- [09 cicd integration github actions](../src/programming/languages/c-cpp/standards/misra-cpp-2023/09-cicd-integration-github-actions.tex) — standards/misra cpp 2023 · **provisional**
+- [c 2023 c 17 guidelines paraphrased headlines](../src/programming/languages/c-cpp/standards/misra/c-2023-c-17-guidelines-paraphrased-headlines.tex) — standards/misra · **provisional**
+- [misra c 2023 extracted directives and rules](../src/programming/languages/c-cpp/standards/misra/misra-c-2023-extracted-directives-and-rules.tex) — standards/misra · **provisional**
+- [understanding misra c compliance requirements](../src/programming/languages/c-cpp/standards/misra/understanding-misra-c-compliance-requirements.tex) — standards/misra · **provisional**
+- [vector vs dynamic array c cpp handout](../src/programming/languages/c-cpp/vector-vs-dynamic-array-c-cpp-handout.tex) — languages/c cpp · **provisional**
+- [compiling c lexer to webassembly guide](../src/programming/languages/c-cpp/wasm/compiling-c-lexer-to-webassembly-guide.tex) — c cpp/wasm · **provisional**
+- [01 language reference](../src/programming/languages/ecmascript/01-language-reference.tex) — languages/ecmascript · **provisional**
+- [04 runtime execution model](../src/programming/languages/ecmascript/04-runtime-execution-model.tex) — languages/ecmascript · **provisional**
+- [05 secure coding guide](../src/programming/languages/ecmascript/05-secure-coding-guide.tex) — languages/ecmascript · **provisional**
+- [07 toolchain cicd guide](../src/programming/languages/ecmascript/07-toolchain-cicd-guide.tex) — languages/ecmascript · **provisional**
+- [document conventions](../src/programming/languages/java/secure-coding/document-conventions.tex) — languages/java · **provisional**
+- [rule catalog cert oracle secure coding](../src/programming/languages/java/secure-coding/rule-catalog-cert-oracle-secure-coding.tex) — languages/java · **provisional**
+- [01 language technical reference](../src/programming/languages/python/01-language-technical-reference.tex) — languages/python · **provisional**
+- [03 interpreter architecture](../src/programming/languages/python/03-interpreter-architecture.tex) — languages/python · **provisional**
+- [04 compiler execution pipeline](../src/programming/languages/python/04-compiler-execution-pipeline.tex) — languages/python · **provisional**
+- [05 memory management concurrency](../src/programming/languages/python/05-memory-management-concurrency.tex) — languages/python · **provisional**
+- [06 c api extension engineering](../src/programming/languages/python/06-c-api-extension-engineering.tex) — languages/python · **provisional**
+- [typescript template usage guide](../src/programming/languages/typescript/typescript-template-usage-guide.tex) — languages/typescript · **provisional**
+- [01 technical reference](../src/programming/linux-unix-system-programming/01-technical-reference.tex) — linux unix system programming · **provisional**
+- [04 system call api reference](../src/programming/linux-unix-system-programming/04-system-call-api-reference.tex) — linux unix system programming · **provisional**
+- [05 secure systems programming](../src/programming/linux-unix-system-programming/05-secure-systems-programming.tex) — linux unix system programming · **provisional**
+- [07 networking engineering guide](../src/programming/linux-unix-system-programming/07-networking-engineering-guide.tex) — linux unix system programming · **provisional**
+- [cweb literate programming getting started](../src/programming/literate-programming/cweb-literate-programming-getting-started.tex) — literate programming · **provisional**
+- [tex program algorithms pseudocode handout](../src/programming/literate-programming/latex/tex-program-algorithms-pseudocode-handout.tex) — literate programming/latex · **provisional**
+- [texbook systematic analysis handout](../src/programming/literate-programming/latex/texbook-systematic-analysis-handout.tex) — literate programming/latex · **provisional**
+- [web literate programming handout](../src/programming/literate-programming/web-literate-programming-handout.tex) — literate programming · **provisional**
+- [engineering compiler algorithms pseudocode](../src/programming/technical-documents/engineering-compiler-algorithms-pseudocode.tex) — programming · **provisional**
+- [parsing techniques algorithms pseudocode](../src/programming/technical-documents/parsing-techniques-algorithms-pseudocode.tex) — programming · **provisional**
+- [synchronization object scoreboard](../src/programming/technical-documents/synchronization-object-scoreboard.tex) — programming · **provisional**
+- [01 foundations methodology](../src/programming/web/design-of-sites/01-foundations-methodology.tex) — web/design of sites · **provisional**
+- [02 complete pattern catalog](../src/programming/web/design-of-sites/02-complete-pattern-catalog.tex) — web/design of sites · **provisional**
+- [03 architecture crosswalk](../src/programming/web/design-of-sites/03-architecture-crosswalk.tex) — web/design of sites · **provisional**
+- [04 quality security accessibility](../src/programming/web/design-of-sites/04-quality-security-accessibility.tex) — web/design of sites · **provisional**
+- [08 migration blueprint](../src/programming/web/design-of-sites/08-migration-blueprint.tex) — web/design of sites · **provisional**
+- [09 source provenance](../src/programming/web/design-of-sites/09-source-provenance.tex) — web/design of sites · **provisional**
+- [design of sites references](../src/programming/web/design-of-sites/design-of-sites-references.tex) — web/design of sites · **provisional**
+- [design of sites style](../src/programming/web/design-of-sites/design-of-sites-style.tex) — web/design of sites · **provisional**
+- [dynamic project mgmt board micro frontends](../src/programming/web/frontend/dynamic-project-mgmt-board-micro-frontends.tex) — web/frontend · **provisional**
+- [http headers reference](../src/programming/web/http-headers-reference.tex) — web · **provisional**
+- [http request metadata technical guide](../src/programming/web/http-request-metadata-technical-guide.tex) — web · **provisional**
+- [01 technical reference](../src/programming/web/micro-frontends/01-technical-reference.tex) — web/micro frontends · **provisional**
+- [03 architecture decision framework](../src/programming/web/micro-frontends/03-architecture-decision-framework.tex) — web/micro frontends · **provisional**
+- [05 devsecops cicd](../src/programming/web/micro-frontends/05-devsecops-cicd.tex) — web/micro frontends · **provisional**
+- [06 migration playbook](../src/programming/web/micro-frontends/06-migration-playbook.tex) — web/micro frontends · **provisional**
+- [01 security foundations](../src/security/application-security/assessment/01-security-foundations.tex) — application security/assessment · **provisional**
+- [02 vulnerability taxonomy](../src/security/application-security/assessment/02-vulnerability-taxonomy.tex) — application security/assessment · **provisional**
+- [04 static analysis algorithms](../src/security/application-security/assessment/04-static-analysis-algorithms.tex) — application security/assessment · **provisional**
+- [Secure coding assessment chapter](../src/security/application-security/assessment/05-secure-coding.tex) — cross-language AppSec assessment · **reviewed**
+- [Code Audit Strategy Catalog](../src/security/application-security/auditing/code-audit-strategy-catalog.tex) — application security audit strategies · **reviewed**
+- [Code Audit Techniques Catalog](../src/security/application-security/auditing/code-audit-techniques-catalog.tex) — application security code-audit techniques · **reviewed**
+- [textual data string vulnerabilities catalog](../src/security/application-security/auditing/textual-data-string-vulnerabilities-catalog.tex) — application security/auditing · **provisional**
+- [burp suite appsec engineering guide](../src/security/application-security/dast/burp-suite/burp-suite-appsec-engineering-guide.tex) — dast/burp suite · **provisional**
+- [architecture objective](../src/security/application-security/dast/gauntlt/architecture-objective.tex) — dast/gauntlt · **provisional**
+- [governance and authorization](../src/security/application-security/dast/gauntlt/governance-and-authorization.tex) — dast/gauntlt · **provisional**
+- [selection guidance](../src/security/application-security/dast/gauntlt/selection-guidance.tex) — dast/gauntlt · **provisional**
+- [what gauntlt is](../src/security/application-security/dast/gauntlt/what-gauntlt-is.tex) — dast/gauntlt · **provisional**
+- [rapid7 insightappsec operations guide](../src/security/application-security/dast/rapid7-insightappsec/rapid7-insightappsec-operations-guide.tex) — dast/rapid7 insightappsec · **provisional**
+- [core concepts](../src/security/application-security/dast/zap/core-concepts.tex) — dast/zap · **provisional**
+- [what dongtai provides](../src/security/application-security/iast/dongtai/what-dongtai-provides.tex) — iast/dongtai · **provisional**
+- [appsec certification selection brief](../src/security/application-security/learning/appsec-certification-selection-brief.tex) — application security/learning · **provisional**
+- [appsec course priority sequence aligned](../src/security/application-security/learning/appsec-course-priority-sequence-aligned.tex) — application security/learning · **provisional**
+- [instructor guide](../src/security/application-security/learning/assessment-curricula/instructor-guide.tex) — learning/assessment curricula · **provisional**
+- [cybersecurity and appsec resource catalog](../src/security/application-security/learning/cybersecurity-and-appsec-resource-catalog.tex) — application security/learning · **provisional**
+- [offsec certifications ranked appsec relevance](../src/security/application-security/learning/offsec-certifications-ranked-appsec-relevance.tex) — application security/learning · **provisional**
+- [oswe burp suite companion](../src/security/application-security/learning/oswe/oswe-burp-suite-companion.tex) — learning/oswe · **provisional**
+- [thinking in systems](../src/security/application-security/learning/thinking-in-systems.tex) — application security/learning · **provisional**
+- [confluence enterprise appsec ops stack handout](../src/security/application-security/operations-stack/confluence-enterprise-appsec-ops-stack-handout.tex) — application security/operations stack · **provisional**
+- [enterprise appsec operations stack handout](../src/security/application-security/operations-stack/enterprise-appsec-operations-stack-handout.tex) — application security/operations stack · **provisional**
+- [pentagi technical handout](../src/security/application-security/pentesting/pentagi-technical-handout.tex) — application security/pentesting · **provisional**
+- [gate appsec process mapping](../src/security/application-security/processes/gate-appsec-process-mapping.tex) — application security/processes · **provisional**
+- [modeling appsec processes systems service](../src/security/application-security/processes/modeling-appsec-processes-systems-service.tex) — application security/processes · **provisional**
+- [setting sec policies github operating guide](../src/security/application-security/processes/setting-sec-policies-github-operating-guide.tex) — application security/processes · **provisional**
+- [building a modern application security program](../src/security/application-security/programs/building-a-modern-application-security-program.tex) — application security/programs · **provisional**
+- [document metadata](../src/security/application-security/programs/document-metadata.tex) — application security/programs · **provisional**
+- [introduction and conventions](../src/security/application-security/programs/introduction-and-conventions.tex) — application security/programs · **provisional**
+- [introduction to programs and systems](../src/security/application-security/programs/introduction-to-programs-and-systems.tex) — application security/programs · **provisional**
+- [field guide user id controlled request](../src/security/application-security/web-security/broken-access-control/field-guides/user-id-param-password-disclosure/field-guide-user-id-controlled-request.tex) — field guides/user id param password disclosure · **provisional**
+- [broken access control study](../src/security/application-security/web-security/broken-access-control/notes/broken-access-control-study.tex) — broken access control/notes · **provisional**
+- [guide file path traversal directory traversal](../src/security/application-security/web-security/path-traversal/field-guides/guide-file-path-traversal-directory-traversal.tex) — path traversal/field guides · **provisional**
+- [how to use this document](../src/security/certifications/ciso/how-to-use-this-document.tex) — certifications/ciso · **provisional**
+- [section i introduction ch 1 5 expanded](../src/security/cloud-security/section-i-introduction-ch-1-5-expanded.tex) — cloud security · **provisional**
+- [section i introduction ch 1 5](../src/security/cloud-security/section-i-introduction-ch-1-5.tex) — cloud security · **provisional**
+- [automating review github advanced sec alert](../src/security/github-advanced-security/administration/automating-review-github-advanced-sec-alert.tex) — github advanced security/administration · **provisional**
+- [github advanced sec ghas its role 16 gate ci](../src/security/github-advanced-security/administration/github-advanced-sec-ghas-its-role-16-gate-ci.tex) — github advanced security/administration · **provisional**
+- [github advanced sec ghas sop markdown](../src/security/github-advanced-security/administration/github-advanced-sec-ghas-sop-markdown.tex) — github advanced security/administration · **provisional**
+- [github advanced security ghas best practices](../src/security/github-advanced-security/administration/github-advanced-security-ghas-best-practices.tex) — github advanced security/administration · **provisional**
+- [overview github advanced sec ghas](../src/security/github-advanced-security/administration/overview-github-advanced-sec-ghas.tex) — github advanced security/administration · **provisional**
+- [purpose and outcomes](../src/security/github-advanced-security/administration/purpose-and-outcomes.tex) — github advanced security/administration · **provisional**
+- [applying codeql scanning exam oriented guide](../src/security/github-advanced-security/code-scanning/applying-codeql-scanning-exam-oriented-guide.tex) — github advanced security/code scanning · **provisional**
+- [codeql capabilities exam ready cheat sheet](../src/security/github-advanced-security/code-scanning/codeql-capabilities-exam-ready-cheat-sheet.tex) — github advanced security/code scanning · **provisional**
+- [external scanning sarif upload categories](../src/security/github-advanced-security/code-scanning/external-scanning-sarif-upload-categories.tex) — github advanced security/code scanning · **provisional**
+- [github code scanning quickstart codeql plus](../src/security/github-advanced-security/code-scanning/github-code-scanning-quickstart-codeql-plus.tex) — github advanced security/code scanning · **provisional**
+- [how to use this sop](../src/security/github-advanced-security/code-scanning/how-to-use-this-sop.tex) — github advanced security/code scanning · **provisional**
+- [dependabot section 1 overview](../src/security/github-advanced-security/dependabot/dependabot-section-1-overview.tex) — github advanced security/dependabot · **provisional**
+- [center code scanning codeql one page cheat](../src/security/github-advanced-security/references/center-code-scanning-codeql-one-page-cheat.tex) — github advanced security/references · **provisional**
+- [code scanning in the sdlc shift left](../src/security/github-advanced-security/references/code-scanning-in-the-sdlc-shift-left.tex) — github advanced security/references · **provisional**
+- [dependabot alerts workflows hands cheatsheet](../src/security/github-advanced-security/references/dependabot-alerts-workflows-hands-cheatsheet.tex) — github advanced security/references · **provisional**
+- [dependency graph](../src/security/github-advanced-security/references/dependency-graph.tex) — github advanced security/references · **provisional**
+- [ghas codeql secure coding crosswalk](../src/security/github-advanced-security/references/ghas-codeql-secure-coding-crosswalk.tex) — github advanced security/references · **provisional**
+- [ghas dependabot cheatsheet](../src/security/github-advanced-security/references/ghas-dependabot-cheatsheet.tex) — github advanced security/references · **provisional**
+- [GHAS Supported-Language Secure Coding Standards Catalog](../src/security/github-advanced-security/references/ghas-secure-coding-standards-handout.tex) — cross-language secure coding GHAS · **reviewed**
+- [key concepts](../src/security/github-advanced-security/references/key-concepts.tex) — github advanced security/references · **provisional**
+- [when scans run](../src/security/github-advanced-security/references/when-scans-run.tex) — github advanced security/references · **provisional**
+- [enable secret scanning](../src/security/github-advanced-security/secret-scanning/enable-secret-scanning.tex) — github advanced security/secret scanning · **provisional**
+- [github advanced sec ghas secret scanning](../src/security/github-advanced-security/secret-scanning/github-advanced-sec-ghas-secret-scanning.tex) — github advanced security/secret scanning · **provisional**
+- [github secret scanning public leak response](../src/security/github-advanced-security/secret-scanning/github-secret-scanning-public-leak-response.tex) — github advanced security/secret scanning · **provisional**
+- [notification decision matrix monitoring secret](../src/security/github-advanced-security/secret-scanning/notification-decision-matrix-monitoring-secret.tex) — github advanced security/secret scanning · **provisional**
+- [role scope access matrix metrics custom](../src/security/github-advanced-security/secret-scanning/role-scope-access-matrix-metrics-custom.tex) — github advanced security/secret scanning · **provisional**
+- [scope and roles](../src/security/github-advanced-security/secret-scanning/scope-and-roles.tex) — github advanced security/secret scanning · **provisional**
+- [secret scanning triage sequence](../src/security/github-advanced-security/secret-scanning/secret-scanning-triage-sequence.tex) — github advanced security/secret scanning · **provisional**
+- [triage sop github advanced sec ghas](../src/security/github-advanced-security/secret-scanning/triage-sop-github-advanced-sec-ghas.tex) — github advanced security/secret scanning · **provisional**
+- [viewing filtering alerts](../src/security/github-advanced-security/secret-scanning/viewing-filtering-alerts.tex) — github advanced security/secret scanning · **provisional**
+- [isms build buy hybrid framework](../src/security/governance-risk-compliance/isms-build-buy-hybrid-framework.tex) — governance risk compliance · **provisional**
+- [01 tsc technical reference](../src/security/governance-risk-compliance/soc2/01-tsc-technical-reference.tex) — governance risk compliance/soc2 · **provisional**
+- [05 control evidence traceability](../src/security/governance-risk-compliance/soc2/05-control-evidence-traceability.tex) — governance risk compliance/soc2 · **provisional**
+- [06 devsecops appsec mapping](../src/security/governance-risk-compliance/soc2/06-devsecops-appsec-mapping.tex) — governance risk compliance/soc2 · **provisional**
+- [what docker deploys](../src/security/governance-risk-compliance/what-docker-deploys.tex) — governance risk compliance · **provisional**
+- [01 security foundations threat modeling](../src/security/security-engineering/01-security-foundations-threat-modeling.tex) — security engineering · **provisional**
+- [02 secure architecture engineering](../src/security/security-engineering/02-secure-architecture-engineering.tex) — security engineering · **provisional**
+- [03 governance risk and resilience](../src/security/security-engineering/03-governance-risk-and-resilience.tex) — security engineering · **provisional**
+- [04 network cloud defense operations](../src/security/security-engineering/04-network-cloud-defense-operations.tex) — security engineering · **provisional**
+- [05 cryptography identity privacy](../src/security/security-engineering/05-cryptography-identity-privacy.tex) — security engineering · **provisional**
+- [organizing automating cis benchmarks strategy](../src/security/standards/cis/organizing-automating-cis-benchmarks-strategy.tex) — standards/cis · **provisional**
+- [01 isms foundations vocabulary](../src/security/standards/iso-27000/01-isms-foundations-vocabulary.tex) — standards/iso 27000 · **provisional**
+- [02 governance risk management](../src/security/standards/iso-27000/02-governance-risk-management.tex) — standards/iso 27000 · **provisional**
+- [05 security architecture engineering](../src/security/standards/iso-27000/05-security-architecture-engineering.tex) — standards/iso 27000 · **provisional**
+- [06 application security sdlc](../src/security/standards/iso-27000/06-application-security-sdlc.tex) — standards/iso 27000 · **provisional**
+- [09 cloud devsecops automation](../src/security/standards/iso-27000/09-cloud-devsecops-automation.tex) — standards/iso 27000 · **provisional**
+- [isms 27000 style](../src/security/standards/iso-27000/isms-27000-style.tex) — standards/iso 27000 · **provisional**
+- [a01 2025 broken access control](../src/security/standards/owasp/a01-2025-broken-access-control.tex) — standards/owasp · **provisional**
+- [a02 2025 security misconfiguration](../src/security/standards/owasp/a02-2025-security-misconfiguration.tex) — standards/owasp · **provisional**
+- [a03 2025 software supply chain failures](../src/security/standards/owasp/a03-2025-software-supply-chain-failures.tex) — standards/owasp · **provisional**
+- [a04 2025 cryptographic failures](../src/security/standards/owasp/a04-2025-cryptographic-failures.tex) — standards/owasp · **provisional**
+- [a05 2025 injection](../src/security/standards/owasp/a05-2025-injection.tex) — standards/owasp · **provisional**
+- [a06 2025 insecure design](../src/security/standards/owasp/a06-2025-insecure-design.tex) — standards/owasp · **provisional**
+- [a07 2025 authentication failures](../src/security/standards/owasp/a07-2025-authentication-failures.tex) — standards/owasp · **provisional**
+- [a08 2025 software or data integrity failures](../src/security/standards/owasp/a08-2025-software-or-data-integrity-failures.tex) — standards/owasp · **provisional**
+- [a09 2025 sec logging alerting failures](../src/security/standards/owasp/a09-2025-sec-logging-alerting-failures.tex) — standards/owasp · **provisional**
+- [a10 2025 mishandling of exceptional conditions](../src/security/standards/owasp/a10-2025-mishandling-of-exceptional-conditions.tex) — standards/owasp · **provisional**
+- [api sec top 10 2023 edition compiled](../src/security/standards/owasp/api-sec-top-10-2023-edition-compiled.tex) — standards/owasp · **provisional**
+- [trivy scope and objectives](../src/security/technical-documents/trivy-scope-and-objectives.tex) — security · **provisional**
+- [budget cleaning supply catalog](../src/startups/cleaning-services/budget-cleaning-supply-catalog.tex) — cleaning services · **provisional**
+- [jan pro atlanta pre purchase roadmap](../src/startups/cleaning-services/jan-pro-atlanta-pre-purchase-roadmap.tex) — cleaning services · **provisional**
+- [residential cleaning operations guide](../src/startups/cleaning-services/residential-cleaning-operations-guide.tex) — cleaning services · **provisional**
+- [business snapshot](../src/startups/finance/business-snapshot.tex) — finance · **provisional**
+- [finance startup plan](../src/startups/finance/finance-startup-plan.tex) — finance · **provisional**
+- [aetherforge sba roadmap](../src/startups/game-development/aetherforge-sba-roadmap.tex) — game development · **provisional**
+- [game development startup plan](../src/startups/game-development/game-development-startup-plan.tex) — game development · **provisional**
+- [sbm startup roadmap](../src/startups/iot/smart-building-manager/sbm-startup-roadmap.tex) — iot/smart building manager · **provisional**
+- [fast animation channels programming](../src/startups/media/fast-animation-channels/fast-animation-channels-programming.tex) — media/fast animation channels · **provisional**
+- [fast animation channels startup plan](../src/startups/media/fast-animation-channels/fast-animation-channels-startup-plan.tex) — media/fast animation channels · **provisional**
+- [immediate founder focus](../src/startups/media/fast-animation-channels/immediate-founder-focus.tex) — media/fast animation channels · **provisional**
+- [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
+
+## Related reviewed sources with secondary technical references content (1)
+
+- [Object-Oriented Programming in ANSI C: Rules and Practical Checklists](../src/programming/languages/c-cpp/object-oriented-programming-ansi-c-checklists.tex) — ANSI C object-oriented programming checklists · **reviewed**

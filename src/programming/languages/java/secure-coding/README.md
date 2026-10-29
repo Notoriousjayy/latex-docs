@@ -1,4 +1,4 @@
-# Secure coding
+# Java secure coding and rule catalogs
 
 Source files for **secure coding** within the **programming** domain. This is a navigational index; descriptive labels below are derived from filenames, not substitutes for the documents' content.
 
@@ -8,6 +8,8 @@ Source files for **secure coding** within the **programming** domain. This is a 
 |---|---|
 | [`document-conventions.tex`](document-conventions.tex) | LaTeX source |
 | [`rule-catalog-cert-oracle-secure-coding.tex`](rule-catalog-cert-oracle-secure-coding.tex) | LaTeX source |
+
+| [`secure-coding-standard-java.tex`](secure-coding-standard-java.tex) | Language-specific secure coding and CodeQL/SSDLC controls |
 
 ## Navigation
 

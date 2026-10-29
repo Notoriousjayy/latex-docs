@@ -15,6 +15,8 @@ Source files for **ecmascript** within the **programming** domain. This is a nav
 | [`07-toolchain-cicd-guide.tex`](07-toolchain-cicd-guide.tex) | LaTeX source |
 | [`08-engineering-curriculum.tex`](08-engineering-curriculum.tex) | LaTeX source |
 
+| [`secure-coding-standard-javascript.tex`](secure-coding-standard-javascript.tex) | Language-specific secure coding and CodeQL/SSDLC controls |
+
 ## Navigation
 
 See the [programming index](../../README.md) for the parent collection and related material.

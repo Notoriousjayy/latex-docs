@@ -1,0 +1,20 @@
+# Workbooks and Exercises
+
+**Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
+
+## Primary workbooks and exercises (9)
+
+- [ISO/IEC/IEEE 42010 Conformance Assessment Workbook](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment.tex) — ISO/IEC/IEEE 42010 conformance evidence · **reviewed**
+- [calculus applications companion workbook](../src/mathematics/workbooks/calculus-applications-companion-workbook.tex) — mathematics · **provisional**
+- [calculus applications workbook solutions](../src/mathematics/workbooks/calculus-applications-workbook-solutions.tex) — mathematics · **provisional**
+- [differential equations curriculum problem workbook](../src/mathematics/workbooks/differential-equations-curriculum-problem-workbook.tex) — mathematics · **provisional**
+- [Financial Modeling: Applied Exercises and Answer Keys](../src/personal/finance/investment-valuation/04-financial-modeling-exercises.tex) — financial modeling exercises · **reviewed**
+- [Desk-Check for Algorithms Workbook](../src/programming/algorithms/desk-check-algorithm-workbook.tex) — algorithm desk checking · **reviewed**
+- [08 hands on laboratories](../src/programming/linux-unix-system-programming/08-hands-on-laboratories.tex) — linux unix system programming · **provisional**
+- [07 hands on labs](../src/programming/web/micro-frontends/07-hands-on-labs.tex) — web/micro frontends · **provisional**
+- [07 hands on labs](../src/security/application-security/assessment/07-hands-on-labs.tex) — application security/assessment · **provisional**
+
+## Related reviewed sources with secondary workbooks and exercises content (2)
+
+- [Duration Estimating Worksheet — Working Form](../src/architecture/governance/ccoe/planning/2-18-duration-estimating-worksheet.tex) — CCoE duration estimate worksheet · **reviewed**
+- [CPython Engineering Curriculum and Laboratory](../src/programming/languages/python/08-engineering-curriculum-laboratory.tex) — CPython engineering curriculum · **reviewed**

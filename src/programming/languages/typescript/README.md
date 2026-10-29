@@ -9,6 +9,8 @@ Source files for **typescript** within the **programming** domain. This is a nav
 | [`typescript-cookbook-user-stories-study-plan.tex`](typescript-cookbook-user-stories-study-plan.tex) | LaTeX source |
 | [`typescript-template-usage-guide.tex`](typescript-template-usage-guide.tex) | LaTeX source |
 
+| [`secure-coding-standard-typescript.tex`](secure-coding-standard-typescript.tex) | Language-specific secure coding and CodeQL/SSDLC controls |
+
 ## Navigation
 
 See the [programming index](../../README.md) for the parent collection and related material.
