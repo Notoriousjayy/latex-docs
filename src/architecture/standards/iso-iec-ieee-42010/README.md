@@ -14,6 +14,10 @@ Source files for **iso iec ieee 42010** within the **architecture** domain. This
 | [`06-modeling-implementation.tex`](06-modeling-implementation.tex) | LaTeX source |
 | [`07-conformance-assessment.tex`](07-conformance-assessment.tex) | LaTeX source |
 
+## Composite document classification
+
+[`02-ad-templates.tex`](02-ad-templates.tex) is a coherent architecture-description **register suite** with illustrative records. It is not one Architecture Decision Record even though it includes an architecture decision-and-rationale register. Preserve coverage and identifiers when extracting forms or creating a print-ready companion. See the [architecture artifact handout](../../technical-documents/adr-ad-viewpoint-governance-handout.tex).
+
 ## Navigation
 
 See the [architecture index](../../README.md) for the parent collection and related material.
