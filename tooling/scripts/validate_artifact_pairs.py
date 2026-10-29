@@ -14,6 +14,40 @@ ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "tooling/manifests/reusable-artifact-pairs.json"
 HEADING = re.compile(r"\\(?:section|subsection|subsubsection)\*?\{([^}]+)\}")
 
+# TeX command options such as \item[Title] or \begin{description}[style=...]
+# describe structure; the bracket marks are not actually printed.
+TEX_OPTION = re.compile(r"\\(?:[A-Za-z@]+\*?|begin\{[^{}\n]+\})\s*\[[^\]\n]*\]")
+VISIBLE_BRACKET = re.compile(r"\[[^\]\n]*[A-Za-z][^\]\n]*\]")
+EMPTY_BRACKET = re.compile(r"\[\s*\]")
+
+
+def printable_bracket_prompts(source: str) -> list[str]:
+    """Identify literal bracketed text that would be visible in the PDF body.
+
+    This deliberately excludes TeX option syntax and comments. Rendering macros
+    that generate bracketed fields are handled separately by the macro guards.
+    """
+    body = source.split(r"\begin{document}", 1)[-1]
+    body = "\n".join(line.split("%", 1)[0] for line in body.splitlines())
+    body = TEX_OPTION.sub("", body)
+    # In TeX a line-break followed by [8pt] is spacing syntax, not printed text.
+    body = re.sub(r"\\\\\[[^\]\n]*\]", "", body)
+    return [match.group(0) for match in VISIBLE_BRACKET.finditer(body)] + [
+        match.group(0) for match in EMPTY_BRACKET.finditer(body)
+    ]
+
+
+def bracket_rendering_macros(source: str) -> list[str]:
+    """Guard against helper macros reintroducing visible bracketed prompts."""
+    return [
+        match.group(0)
+        for match in re.finditer(
+            r"\\(?:emph|textit|textbf|texttt)\s*\{\s*\[(?:#\d+|[A-Za-z][^\]]*)\]",
+            source,
+        )
+    ]
+
+
 
 def validate(root: Path = ROOT, manifest_path: Path = MANIFEST) -> list[str]:
     data = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -50,8 +84,25 @@ def validate(root: Path = ROOT, manifest_path: Path = MANIFEST) -> list[str]:
             if artifact["family"] == "architecture-decision-record":
                 if r"\DocStatus}{Blank}" not in contents["blank"]:
                     issues.append(f"{artifact_id}: Blank has incorrect document status")
-                if r"\emph{[To complete]}" not in contents["blank"]:
-                    issues.append(f"{artifact_id}: Blank has no unfilled response fields")
+                if r"\newcommand{\BlankResponse}" not in contents["blank"]:
+                    issues.append(f"{artifact_id}: Blank has no writable response rules")
+
+        if "blank" in contents:
+            blank = contents["blank"]
+            visible = printable_bracket_prompts(blank)
+            generators = bracket_rendering_macros(blank)
+            if visible:
+                issues.append(
+                    f"{artifact_id}: printable bracketed placeholder(s) in Blank: "
+                    + ", ".join(visible[:5])
+                )
+            if generators:
+                issues.append(
+                    f"{artifact_id}: macro still prints bracketed words: "
+                    + ", ".join(generators[:5])
+                )
+            if "[To complete]" in blank or "[TODO]" in blank:
+                issues.append(f"{artifact_id}: unremoved placeholder token in Blank")
 
         leaf = (root / artifact["blank"]).parent
         if not any((leaf / name).exists() for name in ("README.md", "readme.md")):

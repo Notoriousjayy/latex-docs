@@ -3,7 +3,9 @@ import json
 import unittest
 from pathlib import Path
 
-from tooling.scripts.validate_artifact_pairs import validate
+from tooling.scripts.validate_artifact_pairs import (
+    bracket_rendering_macros, printable_bracket_prompts, validate,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -44,7 +46,7 @@ class ReusableArtifactPairTests(unittest.TestCase):
         blank = (ROOT / "src/documentation/templates/letterhead-blank.tex").read_text(
             encoding="utf-8"
         )
-        self.assertIn(r"\newcommand{\BlankField}[1]{\textit{[#1]}}", blank)
+        self.assertIn(r"\newcommand{\BlankField}[1]{\rule{1.15in}{0.4pt}}", blank)
         self.assertIn(r"\opening{Dear \BlankField{Recipient name},}", blank)
         self.assertIn(r"\signature{\vspace{1.2em}\BlankField{Sender name}", blank)
         self.assertIn(r"\begin{letter}{\BlankField{Recipient name}", blank)
@@ -53,6 +55,34 @@ class ReusableArtifactPairTests(unittest.TestCase):
         )
         self.assertNotIn(r"\\[Recipient", live_tex)
         self.assertNotIn(r"\\[Sender", live_tex)
+
+
+    def test_every_printable_blank_has_no_bracketed_words(self):
+        data = json.loads(
+            (ROOT / "tooling/manifests/reusable-artifact-pairs.json").read_text(encoding="utf-8")
+        )
+        for pair in data["pairs"]:
+            source = (ROOT / pair["blank"]).read_text(encoding="utf-8")
+            with self.subTest(artifact=pair["id"]):
+                self.assertEqual([], printable_bracket_prompts(source))
+                self.assertEqual([], bracket_rendering_macros(source))
+                self.assertNotIn("[To complete]", source)
+                self.assertNotIn("[TODO]", source)
+
+    def test_placeholder_detector_distinguishes_tex_options_from_printed_text(self):
+        options = r"""
+\documentclass[11pt]{article}
+\begin{document}
+\begin{description}[leftmargin=3cm]
+\item[Decision title:] \rule[-0.4em]{0pt}{2em}
+\end{description}
+\end{document}
+"""
+        self.assertEqual([], printable_bracket_prompts(options))
+        example = r"\begin{document}" + "\n" + r"\textit{[To complete]}" + "\n"
+        self.assertEqual(["[To complete]"], printable_bracket_prompts(example))
+        generated = r"\newcommand{\placeholder}[1]{\textit{[#1]}}"
+        self.assertTrue(bracket_rendering_macros(generated))
 
 
 if __name__ == "__main__":
