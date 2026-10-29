@@ -31,7 +31,3 @@ Find documents by **domain**, **subject**, or **artifact type** without duplicat
 **52 of 1054** LaTeX sources have targeted semantic content review; **1002** remain provisional. A reference that merely contains a checklist, workbook section, or scorecard does not automatically have that primary type. Non-standalone LaTeX fragments have their own classification and are not regular documents.
 
 After modifying the inventory, regenerate the indexes with `python3 tooling/scripts/build_semantic_catalogs.py --write`; CI checks that the committed catalogs match the manifest. Update the relevant domain README for substantive source relocations.
-
-## Template–Blank variants
-
-Use the [Template–Blank Pair Catalog](template-blank-pairs.md) to find a governed authoring Template, its separately fillable Blank, and documented exceptions. Unresolved assessment, scorecard, and workbook instruments are explicitly listed for semantic review.
