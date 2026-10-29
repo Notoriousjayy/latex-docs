@@ -1,10 +1,10 @@
 # Architecture Decision Record (ADR) Library
 
-Source-first **blank ADR templates** and review guidance. This is not a register of adopted decisions. Documents are independently compilable pdfLaTeX roots using the `technical-design-spec` semantic module.
+Source-first **ADR authoring Templates, fillable Blank variants,** and review guidance. This is not a register of adopted decisions. Documents are independently compilable pdfLaTeX roots using the `technical-design-spec` semantic module.
 
 ## Start here
 
-Use the [generic template](templates/adr-generic-template.tex) by default; select a specialized template only when it materially improves the evidence or controls captured. The adopting project retains approval authority and a unique, immutable decision ID.
+Use the [generic Blank](templates/adr-generic-blank.tex) for a new decision, consulting the [generic authoring Template](templates/adr-generic-template.tex) for instructions; select a specialized template only when it materially improves the evidence or controls captured. The adopting project retains approval authority and a unique, immutable decision ID.
 
 ## Templates
 
@@ -40,7 +40,7 @@ lifecycle, reviewers, supersession, evidence, traceability, and decision rights.
 
 ## Authoring workflow
 
-1. Copy the generic template, or one specialty only when it changes the
+1. Copy the generic Blank, or one specialty Blank only when it changes the
    evidence needed; do **not** create multiple ADRs for the same decision.
 2. Assign an immutable ID in the adopting project's own register and name
    the new document `docs/adr/0001-short-title.tex` (or its established AD
