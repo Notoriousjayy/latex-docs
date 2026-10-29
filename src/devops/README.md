@@ -10,15 +10,25 @@ Use this domain for build/release automation, platform operations, GitOps, and s
 
 ## Directory map and documentation catalog
 
-| Area | What it contains | Sources |
+### Document types
+
+| Collection | Use it for | LaTeX sources |
 |---|---|---:|
-| [`build-systems/`](build-systems/) | Build systems, CMake and related tooling. | 19 |
-| [`ci-cd/`](ci-cd/) | Pipeline architecture and delivery practice. | 5 |
-| [`foundations/`](foundations/) | Version control, SDLC fundamentals and Git usage. | 5 |
-| [`github-actions/`](github-actions/) | Workflow design, actions and GitHub automation. | 12 |
-| [`gitops/`](gitops/) | GitOps architecture and patterns. | 1 |
-| [`platform/`](platform/) | Kubernetes, Nginx, platform and repository operations. | 20 |
-| [`secrets-management/`](secrets-management/) | Secret lifecycle, vaults and operational processes. | 5 |
+| [Technical documents](technical-documents/README.md) | Design guides, engineering references and explanatory technical material | 1 |
+
+### Subject collections and preserved suites
+
+These collections retain topic, standard, chapter, governance or diagram boundaries where splitting would increase navigation cost or disrupt related sources.
+
+| Collection | Contents | LaTeX sources |
+|---|---|---:|
+| [build systems](build-systems/) | Build systems, CMake and related tooling. | 19 |
+| [ci cd](ci-cd/) | Pipeline architecture and delivery practice. | 5 |
+| [foundations](foundations/) | Version control, SDLC fundamentals and Git usage. | 5 |
+| [github actions](github-actions/README.md) | Workflow design, actions and GitHub automation. | 12 |
+| [platform](platform/) | Kubernetes, Nginx, platform and repository operations. | 20 |
+| [secrets management](secrets-management/) | Secret lifecycle, vaults and operational processes. | 5 |
+
 
 ## Build and validate
 

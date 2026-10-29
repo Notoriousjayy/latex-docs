@@ -14,10 +14,10 @@ MOVED_TEX = {
     "src/templates/architecture/viewpoint-section.tex": "src/architecture/templates/viewpoint-section.tex",
     "src/templates/architecture/viewpoint-template-polished.tex": "src/architecture/templates/viewpoint-template-polished.tex",
     "src/architecture/examples/shems/shems-architecture-description.tex": "src/architecture/examples/shems-architecture-description.tex",
-    "src/data-systems/streaming/kafka/how-write-effective-user-stories-quick-guide.tex": "src/data-systems/streaming/kafka-study-plan-user-stories.tex",
-    "src/security/infrastructure-security/vulnerability-management/trivy/trivy-scope-and-objectives.tex": "src/security/infrastructure-security/trivy-scope-and-objectives.tex",
-    "src/startups/curricula/quality/minimum-checklist.tex": "src/startups/curricula/minimum-curriculum-quality-checklist.tex",
-    "src/startups/support/sba/top-3-nearby-options.tex": "src/startups/support/sba-local-assistance-intake.tex",
+    "src/data-systems/streaming/kafka/how-write-effective-user-stories-quick-guide.tex": "src/data-systems/workbooks/kafka-study-plan-user-stories.tex",
+    "src/security/infrastructure-security/vulnerability-management/trivy/trivy-scope-and-objectives.tex": "src/security/technical-documents/trivy-scope-and-objectives.tex",
+    "src/startups/curricula/quality/minimum-checklist.tex": "src/startups/workbooks/minimum-curriculum-quality-checklist.tex",
+    "src/startups/support/sba/top-3-nearby-options.tex": "src/startups/technical-documents/sba-local-assistance-intake.tex",
 }
 
 
