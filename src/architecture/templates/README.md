@@ -9,9 +9,17 @@ Reusable ISO/IEC/IEEE 42010-aligned architecture-description and viewpoint autho
 | Source | Purpose |
 |---|---|
 | [Architecture description template](42010-ad-template-polished.tex) | Full architecture description with stakeholder concerns, views and evidence fields |
-| [Architecture viewpoint template](42010-vp-template-polished.tex) | Reusable viewpoint definition |
-| [Viewpoint template (working edition)](viewpoint-template-polished.tex) | Alternate standalone viewpoint authoring form |
+| [Viewpoint authoring guide](42010-vp-template-polished.tex) | Guide with specification outline and worked illustrative viewpoint; not a separate approved specification |
+| [Viewpoint specification worksheet](viewpoint-template-polished.tex) | Canonical standalone reusable viewpoint specification Template; printable Blank is outstanding |
 | [Viewpoint section fragment](viewpoint-section.tex) | **Non-standalone** fragment for inclusion by a compatible host document |
+
+## Three distinct document families
+
+- **Architecture Description (AD)**: a versioned description of the architecture of an entity of interest, with stakeholder concerns and governed views.
+- **Architecture Decision Record (ADR)**: a bounded consequential choice, context, alternatives, rationale and consequences; accepted project decisions are not library templates.
+- **Architecture Viewpoint Specification (AVS)**: reusable conventions, model kinds and methods for creating and interpreting views; not a view of one particular system.
+
+The [classification handout](../technical-documents/adr-ad-viewpoint-governance-handout.tex) reviews remaining viewpoint sources and the composite AD and cloud/security form suites. The [pair manifest](../../../tooling/manifests/reusable-artifact-pairs.json) distinguishes resolved pairs from missing form companions and guide-only artifacts. The legacy completed viewpoint pair lives in `views-and-beyond/advanced-concepts/`.
 
 ## Scope and boundaries
 
