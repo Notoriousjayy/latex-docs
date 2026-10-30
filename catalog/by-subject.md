@@ -167,18 +167,6 @@
 
 - [Desk-Check for Algorithms Workbook](../src/programming/algorithms/desk-check-algorithm-workbook.tex) — algorithm desk checking · **reviewed**
 
-## algorithm engineering / blank (9)
-
-- [Algorithm Design Scorecard Blank](../src/programming/algorithms/algorithm-engineering/blank/algorithm-design-scorecard-blank.tex) — algorithm engineering / blank · **provisional**
-- [Arithmetic And Numerical Accuracy Workbook Blank](../src/programming/algorithms/algorithm-engineering/blank/arithmetic-and-numerical-accuracy-workbook-blank.tex) — algorithm engineering / blank · **provisional**
-- [Asymptotic And Proof Workbook Blank](../src/programming/algorithms/algorithm-engineering/blank/asymptotic-and-proof-workbook-blank.tex) — algorithm engineering / blank · **provisional**
-- [Benchmark Run Sheet Blank](../src/programming/algorithms/algorithm-engineering/blank/benchmark-run-sheet-blank.tex) — algorithm engineering / blank · **provisional**
-- [Combinatorics And Constraints Workbook Blank](../src/programming/algorithms/algorithm-engineering/blank/combinatorics-and-constraints-workbook-blank.tex) — algorithm engineering / blank · **provisional**
-- [Laboratory Assessment Blank](../src/programming/algorithms/algorithm-engineering/blank/laboratory-assessment-blank.tex) — algorithm engineering / blank · **provisional**
-- [Learning Progress Tracker Blank](../src/programming/algorithms/algorithm-engineering/blank/learning-progress-tracker-blank.tex) — algorithm engineering / blank · **provisional**
-- [Mathematical Proof Review Blank](../src/programming/algorithms/algorithm-engineering/blank/mathematical-proof-review-blank.tex) — algorithm engineering / blank · **provisional**
-- [Randomness And Statistics Workbook Blank](../src/programming/algorithms/algorithm-engineering/blank/randomness-and-statistics-workbook-blank.tex) — algorithm engineering / blank · **provisional**
-
 ## algorithm engineering / curricula (2)
 
 - [Competency And Portfolio Matrix](../src/programming/algorithms/algorithm-engineering/curricula/competency-and-portfolio-matrix.tex) — algorithm engineering / curricula · **provisional**

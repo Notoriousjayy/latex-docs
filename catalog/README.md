@@ -6,9 +6,9 @@ Find documents by **domain**, **subject**, or **artifact type** without duplicat
 
 | Catalog | Number of primary sources |
 |---|---:|
-| [By domain](by-domain.md) | 1156 |
-| [By subject](by-subject.md) | 1156 |
-| [By document type](by-document-type.md) | 1156 |
+| [By domain](by-domain.md) | 1147 |
+| [By subject](by-subject.md) | 1147 |
+| [By document type](by-document-type.md) | 1147 |
 | [User Stories](user-stories.md) | 17 |
 | [Reusable Templates](templates.md) | 66 |
 | [Workbooks and Exercises](workbooks.md) | 24 |
@@ -28,6 +28,6 @@ Find documents by **domain**, **subject**, or **artifact type** without duplicat
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-**59 of 1156** LaTeX sources have targeted semantic content review; **1097** remain provisional. A reference that merely contains a checklist, workbook section, or scorecard does not automatically have that primary type. Non-standalone LaTeX fragments have their own classification and are not regular documents.
+**59 of 1147** LaTeX sources have targeted semantic content review; **1088** remain provisional. A reference that merely contains a checklist, workbook section, or scorecard does not automatically have that primary type. Non-standalone LaTeX fragments have their own classification and are not regular documents.
 
 After modifying the inventory, regenerate the indexes with `python3 tooling/scripts/build_semantic_catalogs.py --write`; CI checks that the committed catalogs match the manifest. Update the relevant domain README for substantive source relocations.
