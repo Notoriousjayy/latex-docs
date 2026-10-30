@@ -72,3 +72,19 @@ Use the [audit report](../tooling/reports/template-blank-audit-2026-10-29.md) fo
 - 10 documented priority review items; more embedded artifacts may exist.
 - Original standalone source count: 1,054 `.tex` documents. No explicitly named `-blank.tex` files existed at baseline.
 - Repository-wide 100% completion has **not** been established.
+
+## Algorithm Engineering registered pairs
+
+The nine Algorithm Engineering forms below have print-ready Blank companions and are registered in the machine-readable governance manifest.
+
+| Logical ID | Family | Template | Blank |
+|---|---|---|---|
+| PROG-ALGO-ALGORITHM_DESIGN_SCORECARD_TEMPLATE | algorithm-assessment | [algorithm-design-scorecard-template.tex](../src/programming/algorithms/algorithm-engineering/templates/algorithm-design-scorecard-template.tex) | [algorithm-design-scorecard-blank.tex](../src/programming/algorithms/algorithm-engineering/blank/algorithm-design-scorecard-blank.tex) |
+| PROG-ALGO-BENCHMARK_RUN_SHEET_TEMPLATE | algorithm-assessment | [benchmark-run-sheet-template.tex](../src/programming/algorithms/algorithm-engineering/templates/benchmark-run-sheet-template.tex) | [benchmark-run-sheet-blank.tex](../src/programming/algorithms/algorithm-engineering/blank/benchmark-run-sheet-blank.tex) |
+| PROG-ALGO-LABORATORY_ASSESSMENT_TEMPLATE | algorithm-assessment | [laboratory-assessment-template.tex](../src/programming/algorithms/algorithm-engineering/templates/laboratory-assessment-template.tex) | [laboratory-assessment-blank.tex](../src/programming/algorithms/algorithm-engineering/blank/laboratory-assessment-blank.tex) |
+| PROG-ALGO-LEARNING_PROGRESS_TRACKER_TEMPLATE | algorithm-assessment | [learning-progress-tracker-template.tex](../src/programming/algorithms/algorithm-engineering/templates/learning-progress-tracker-template.tex) | [learning-progress-tracker-blank.tex](../src/programming/algorithms/algorithm-engineering/blank/learning-progress-tracker-blank.tex) |
+| PROG-ALGO-MATHEMATICAL_PROOF_REVIEW_TEMPLATE | algorithm-assessment | [mathematical-proof-review-template.tex](../src/programming/algorithms/algorithm-engineering/templates/mathematical-proof-review-template.tex) | [mathematical-proof-review-blank.tex](../src/programming/algorithms/algorithm-engineering/blank/mathematical-proof-review-blank.tex) |
+| PROG-ALGO-ARITHMETIC_AND_NUMERICAL_ACCURACY_WORKBOOK | algorithm-analysis-workbook | [arithmetic-and-numerical-accuracy-workbook.tex](../src/programming/algorithms/algorithm-engineering/workbooks/arithmetic-and-numerical-accuracy-workbook.tex) | [arithmetic-and-numerical-accuracy-workbook-blank.tex](../src/programming/algorithms/algorithm-engineering/blank/arithmetic-and-numerical-accuracy-workbook-blank.tex) |
+| PROG-ALGO-ASYMPTOTIC_AND_PROOF_WORKBOOK | algorithm-analysis-workbook | [asymptotic-and-proof-workbook.tex](../src/programming/algorithms/algorithm-engineering/workbooks/asymptotic-and-proof-workbook.tex) | [asymptotic-and-proof-workbook-blank.tex](../src/programming/algorithms/algorithm-engineering/blank/asymptotic-and-proof-workbook-blank.tex) |
+| PROG-ALGO-COMBINATORICS_AND_CONSTRAINTS_WORKBOOK | algorithm-analysis-workbook | [combinatorics-and-constraints-workbook.tex](../src/programming/algorithms/algorithm-engineering/workbooks/combinatorics-and-constraints-workbook.tex) | [combinatorics-and-constraints-workbook-blank.tex](../src/programming/algorithms/algorithm-engineering/blank/combinatorics-and-constraints-workbook-blank.tex) |
+| PROG-ALGO-RANDOMNESS_AND_STATISTICS_WORKBOOK | algorithm-analysis-workbook | [randomness-and-statistics-workbook.tex](../src/programming/algorithms/algorithm-engineering/workbooks/randomness-and-statistics-workbook.tex) | [randomness-and-statistics-workbook-blank.tex](../src/programming/algorithms/algorithm-engineering/blank/randomness-and-statistics-workbook-blank.tex) |

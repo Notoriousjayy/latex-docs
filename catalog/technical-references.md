@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (561)
+## Primary technical references (564)
 
 - [cloud architecture diagram library index](../src/architecture/cloud/architecture/cloud-architecture-diagram-library-index.tex) — cloud/architecture · **provisional**
 - [self hosting cloud architecture reference](../src/architecture/cloud/architecture/self-hosting-cloud-architecture-reference.tex) — cloud/architecture · **provisional**
@@ -380,6 +380,9 @@
 - [tools measure direct sunlight guide gardeners](../src/personal/gardening/tools-measure-direct-sunlight-guide-gardeners.tex) — gardening · **provisional**
 - [calibre drm free ebook to pdf workflow handout](../src/personal/technical-documents/calibre-drm-free-ebook-to-pdf-workflow-handout.tex) — personal · **provisional**
 - [algorithm analysis patterns mathematics](../src/programming/algorithms/algorithm-analysis-patterns-mathematics.tex) — algorithms · **provisional**
+- [Algorithm Engineering Technical Reference](../src/programming/algorithms/algorithm-engineering/technical-references/algorithm-engineering-technical-reference.tex) — algorithm engineering / technical references · **provisional**
+- [Proof And Complexity Field Guide](../src/programming/algorithms/algorithm-engineering/technical-references/proof-and-complexity-field-guide.tex) — algorithm engineering / technical references · **provisional**
+- [Volume And Section Crosswalk](../src/programming/algorithms/algorithm-engineering/technical-references/volume-and-section-crosswalk.tex) — algorithm engineering / technical references · **provisional**
 - [combinatorial algorithms pseudocode handout](../src/programming/algorithms/combinatorial-algorithms-pseudocode-handout.tex) — algorithms · **provisional**
 - [employee scheduling algorithms handout](../src/programming/algorithms/employee-scheduling-algorithms-handout.tex) — algorithms · **provisional**
 - [numerical recipes algorithms pseudocode](../src/programming/algorithms/numerical-recipes-algorithms-pseudocode.tex) — algorithms · **provisional**

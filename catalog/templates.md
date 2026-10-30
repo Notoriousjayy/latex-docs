@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (61)
+## Primary reusable templates (66)
 
 - [Architecture Documentation Templates](../src/architecture/cloud/engineering-suite/05-architecture-documentation-templates.tex) — cloud architecture documentation forms · **reviewed**
 - [Cloud Security Reference Templates](../src/architecture/cloud/engineering-suite/06-security-governance-templates.tex) — cloud security governance forms · **reviewed**
@@ -57,6 +57,11 @@
 - [game design document template](../src/game-development/templates/game-design-document-template.tex) — game development · **provisional**
 - [03 framework and formulas](../src/personal/finance/intelligent-investor/03-framework-and-formulas.tex) — finance/intelligent investor · **provisional**
 - [05 valuation margin of safety worksheets](../src/personal/finance/intelligent-investor/05-valuation-margin-of-safety-worksheets.tex) — finance/intelligent investor · **provisional**
+- [Algorithm Design Scorecard Template](../src/programming/algorithms/algorithm-engineering/templates/algorithm-design-scorecard-template.tex) — algorithm engineering / templates · **provisional**
+- [Benchmark Run Sheet Template](../src/programming/algorithms/algorithm-engineering/templates/benchmark-run-sheet-template.tex) — algorithm engineering / templates · **provisional**
+- [Laboratory Assessment Template](../src/programming/algorithms/algorithm-engineering/templates/laboratory-assessment-template.tex) — algorithm engineering / templates · **provisional**
+- [Learning Progress Tracker Template](../src/programming/algorithms/algorithm-engineering/templates/learning-progress-tracker-template.tex) — algorithm engineering / templates · **provisional**
+- [Mathematical Proof Review Template](../src/programming/algorithms/algorithm-engineering/templates/mathematical-proof-review-template.tex) — algorithm engineering / templates · **provisional**
 - [07 compiler conformance verification](../src/programming/languages/c-cpp/standards/c23/07-compiler-conformance-verification.tex) — standards/c23 · **provisional**
 - [11 forms and records](../src/programming/languages/c-cpp/standards/misra-c-2023/11-forms-and-records.tex) — standards/misra c 2023 · **provisional**
 - [12 audit templates evidence forms](../src/programming/languages/c-cpp/standards/misra-cpp-2023/12-audit-templates-evidence-forms.tex) — standards/misra cpp 2023 · **provisional**
