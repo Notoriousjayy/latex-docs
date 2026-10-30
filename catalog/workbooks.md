@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary workbooks and exercises (125)
+## Primary workbooks and exercises (148)
 
 - [concern view evidence template](../src/architecture/c4-model/documentation-suite/workbooks/concern-view-evidence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
 - [cross view correspondence template](../src/architecture/c4-model/documentation-suite/workbooks/cross-view-correspondence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
@@ -15,6 +15,29 @@
 - [requirement view traceability template](../src/architecture/views-and-beyond/documentation-engineering-suite/workbooks/Requirement_View_Traceability_Template.tex) — views-and-beyond/documentation-engineering-suite/workbooks · **provisional**
 - [Enterprise Architecture Discovery Evidence and Validation Workbook Template](../src/architecture/workbooks/github-actions-architecture-discovery-evidence-workbook-template.tex) — github-actions/enterprise-discovery · **reviewed**
 - [Enterprise Architecture Discovery Implementation Workbook Template](../src/architecture/workbooks/github-actions-architecture-discovery-implementation-workbook-template.tex) — github-actions/enterprise-discovery · **reviewed**
+- [amendments two degrees](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/amendments-two-degrees.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [ballot election](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/ballot-election.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [bylaws amendment](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/bylaws-amendment.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [committee referral](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/committee-referral.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [convening a valid meeting](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/convening-a-valid-meeting.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [convention credentials](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/convention-credentials.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [disciplinary fairness](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/disciplinary-fairness.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [main motion lifecycle](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/main-motion-lifecycle.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [minutes review](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/minutes-review.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [motions of precedence](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/motions-of-precedence.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [point of order appeal](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/point-of-order-appeal.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [quorum loss](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/quorum-loss.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [special and electronic meeting](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/special-and-electronic-meeting.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [urgent tabling and recovery](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/urgent-tabling-and-recovery.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [voting denominator](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/voting-denominator.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [amendment wording template](../src/business-analysis/parliamentary-procedure-and-governance/workbooks/templates/amendment-wording-template.tex) — parliamentary-procedure-and-governance/workbooks/templates · **provisional**
+- [bylaws change impact template](../src/business-analysis/parliamentary-procedure-and-governance/workbooks/templates/bylaws-change-impact-template.tex) — parliamentary-procedure-and-governance/workbooks/templates · **provisional**
+- [chair procedural scenario template](../src/business-analysis/parliamentary-procedure-and-governance/workbooks/templates/chair-procedural-scenario-template.tex) — parliamentary-procedure-and-governance/workbooks/templates · **provisional**
+- [committee report traceability template](../src/business-analysis/parliamentary-procedure-and-governance/workbooks/templates/committee-report-traceability-template.tex) — parliamentary-procedure-and-governance/workbooks/templates · **provisional**
+- [meeting validity and agenda template](../src/business-analysis/parliamentary-procedure-and-governance/workbooks/templates/meeting-validity-and-agenda-template.tex) — parliamentary-procedure-and-governance/workbooks/templates · **provisional**
+- [motion classification template](../src/business-analysis/parliamentary-procedure-and-governance/workbooks/templates/motion-classification-template.tex) — parliamentary-procedure-and-governance/workbooks/templates · **provisional**
+- [nominations and ballots template](../src/business-analysis/parliamentary-procedure-and-governance/workbooks/templates/nominations-and-ballots-template.tex) — parliamentary-procedure-and-governance/workbooks/templates · **provisional**
+- [vote threshold calculator template](../src/business-analysis/parliamentary-procedure-and-governance/workbooks/templates/vote-threshold-calculator-template.tex) — parliamentary-procedure-and-governance/workbooks/templates · **provisional**
 - [lab 01 discover real user roles](../src/business-analysis/user-stories/laboratories/lab-01-discover-real-user-roles.tex) — agile requirements / user stories · **provisional**
 - [lab 02 write and assess user stories](../src/business-analysis/user-stories/laboratories/lab-02-write-and-assess-user-stories.tex) — agile requirements / user stories · **provisional**
 - [lab 03 slice a full workflow vertically](../src/business-analysis/user-stories/laboratories/lab-03-slice-a-full-workflow-vertically.tex) — agile requirements / user stories · **provisional**

@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (183)
+## Primary reusable templates (200)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -49,6 +49,23 @@
 - [component interface record template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Component_Interface_Record_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
 - [quality attribute scenario template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Quality_Attribute_Scenario_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
 - [stakeholder concern register template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Stakeholder_Concern_Register_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
+- [action and decision register template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/action-and-decision-register-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [amendment stack register template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/amendment-stack-register-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [ballot election tellers report template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/ballot-election-tellers-report-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [bylaws amendment control register template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/bylaws-amendment-control-register-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [committee charter and delegation template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/committee-charter-and-delegation-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [committee report and recommendations template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/committee-report-and-recommendations-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [confidential disciplinary case intake template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/confidential-disciplinary-case-intake-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [electronic meeting readiness template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/electronic-meeting-readiness-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [meeting agenda template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/meeting-agenda-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [meeting minutes template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/meeting-minutes-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [meeting notice and call template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/meeting-notice-and-call-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [motion intake and disposition template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/motion-intake-and-disposition-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [officer transition and vacancy template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/officer-transition-and-vacancy-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [point of order and appeal template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/point-of-order-and-appeal-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [quorum and attendance template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/quorum-and-attendance-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [unanimous consent log template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/unanimous-consent-log-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [vote tally and announcement template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/vote-tally-and-announcement-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
 - [babok v3 requirements traceability templates](../src/business-analysis/templates/babok-v3-requirements-traceability-templates.tex) — business analysis · **provisional**
 - [acceptance readiness scorecard template](../src/business-analysis/user-stories/scorecards/templates/acceptance-readiness-scorecard-template.tex) — agile requirements / user stories · **provisional**
 - [backlog health scorecard template](../src/business-analysis/user-stories/scorecards/templates/backlog-health-scorecard-template.tex) — agile requirements / user stories · **provisional**

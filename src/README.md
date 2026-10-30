@@ -32,7 +32,7 @@ For coherent multi-file suites, standards clauses, book chapters and diagram set
 
 | [`architecture/`](architecture/README.md) | Architecture descriptions, patterns, cloud, governance, ADRs and TOGAF. |
 
-| [`business-analysis/`](business-analysis/README.md) | BABOK-aligned business analysis and implementation artifacts. |
+| [`business-analysis/`](business-analysis/README.md) | BABOK-aligned business analysis, parliamentary procedure, organizational governance and implementation artifacts. |
 
 | [`cornell-notes/`](cornell-notes/README.md) | Chapter-oriented Cornell Notes across technical disciplines. |
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-BABOK-oriented business-analysis source material and templates. The current collection is organized under `babok/` and emphasizes traceable requirements, analysis activities and stakeholder outcomes.
+Business-analysis, governance and procedural decision documentation. The domain includes BABOK-oriented requirements engineering, user stories, and an independently authored parliamentary procedure and organizational governance suite.
 
 ## Scope and boundaries
 
@@ -25,6 +25,7 @@ These collections retain topic, standard, chapter, governance or diagram boundar
 | Collection | Contents | LaTeX sources |
 |---|---|---:|
 | [babok](babok/README.md) | BABOK-related engineering and analysis references. | 5 |
+| [parliamentary-procedure-and-governance](parliamentary-procedure-and-governance/README.md) | RONR 12th-edition study guides, 12-module curriculum, decision matrices, meeting SOPs, laboratories, and 31 printable Template–Blank pairs. | 166 |
 
 
 ## Build and validate
@@ -58,3 +59,7 @@ The category command discovers standalone LaTeX roots and builds them with the s
 ## User stories and agile requirements engineering
 
 The [User Stories Applied documentation suite](user-stories/README.md) contains 79 LaTeX roots: technical references, all 21 chapter guides, guided templates and printable blank forms, workbooks, scorecards, operating procedures, laboratories and a prerequisite-based curriculum. It is an independent 2004-book-grounded learning and implementation collection, not an edition of BABOK.
+
+## Parliamentary procedure and meeting governance
+
+The [Parliamentary Procedure, Organizational Governance, and Meeting Administration suite](parliamentary-procedure-and-governance/README.md) covers RONR (12th ed.) sections 1–63 with original study guides and controlled working records. The source manual is not redistributed. Follow local governing instruments and applicable law; parliamentary materials are not legal advice.

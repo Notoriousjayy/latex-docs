@@ -6,6 +6,7 @@ A source-controlled engineering documentation library covering software architec
 
 | Goal | Entry point |
 |---|---|
+| Learn parliamentary procedure and organizational meeting governance | [Parliamentary procedure suite](src/business-analysis/parliamentary-procedure-and-governance/README.md) |
 | Learn animation timing and game animation engineering | [Animation Timing suite](src/game-development/animation-timing/README.md) |
 | Study CI, build engineering and DevSecOps | [Continuous Integration and CI/CD Engineering suite](src/devops/ci-cd/continuous-integration-engineering/README.md) |
 | Assess data governance standards and controls | [Enterprise Data Governance Standards Reference](src/data-systems/enterprise-data-governance/standards-and-frameworks/README.md) |
