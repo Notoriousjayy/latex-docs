@@ -1,0 +1,42 @@
+name: Terraform validate (no AWS credentials)
+
+on:
+  pull_request:
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform-validate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [dev, test, prod]
+    steps:
+      - name: Checkout (immutable action ref)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      # Pin this to a verified full commit SHA before adopting as a production control.
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v4.0.1
+        with:
+          terraform_version: '1.10.5'
+          terraform_wrapper: false
+      - name: Check formatting
+        run: terraform fmt -check -recursive terraform/
+      - name: Validate ${{ matrix.environment }} without remote backend
+        working-directory: terraform/environments/${{ matrix.environment }}
+        run: |
+          terraform init -backend=false -input=false -lockfile=readonly
+          terraform validate -no-color
+
+# Add an organization-controlled, pinned Checkov/Trivy or OPA policy gate,
+# secret scanning, and required checks through GitHub rulesets. This sample
+# verifies syntax/structure only; it is NOT a complete security scan.

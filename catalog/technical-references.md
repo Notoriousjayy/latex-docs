@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (567)
+## Primary technical references (568)
 
 - [cloud architecture diagram library index](../src/architecture/cloud/architecture/cloud-architecture-diagram-library-index.tex) — cloud/architecture · **provisional**
 - [self hosting cloud architecture reference](../src/architecture/cloud/architecture/self-hosting-cloud-architecture-reference.tex) — cloud/architecture · **provisional**
@@ -27,6 +27,7 @@
 - [01 cloud engineering guide](../src/architecture/cloud/engineering-suite/01-cloud-engineering-guide.tex) — cloud/engineering suite · **provisional**
 - [03 cloud mechanisms catalog](../src/architecture/cloud/engineering-suite/03-cloud-mechanisms-catalog.tex) — cloud/engineering suite · **provisional**
 - [04 cloud architecture catalog](../src/architecture/cloud/engineering-suite/04-cloud-architecture-catalog.tex) — cloud/engineering suite · **provisional**
+- [Secure AWS Terraform Repository and Deployment Architecture Standard](../src/architecture/cloud/secure-aws-terraform-repository-deployment/standard/aws-terraform-repository-deployment-standard.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [administration and it security system](../src/architecture/enterprise/business-operations/small-business-core-systems/administration-and-it-security-system.tex) — business operations/small business core systems · **provisional**
 - [financial management system](../src/architecture/enterprise/business-operations/small-business-core-systems/financial-management-system.tex) — business operations/small business core systems · **provisional**
 - [hr and people management system](../src/architecture/enterprise/business-operations/small-business-core-systems/hr-and-people-management-system.tex) — business operations/small business core systems · **provisional**

@@ -1097,6 +1097,16 @@
 - [03 cloud mechanisms catalog](../src/architecture/cloud/engineering-suite/03-cloud-mechanisms-catalog.tex) — cloud/engineering suite · **provisional**
 - [04 cloud architecture catalog](../src/architecture/cloud/engineering-suite/04-cloud-architecture-catalog.tex) — cloud/engineering suite · **provisional**
 
+## cloud/secure-aws-terraform-repository-deployment (7)
+
+- [ADR-0001: Application-aligned repository ownership](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0001.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
+- [ADR-0002: Multi-account workload and environment isolation](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0002.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
+- [ADR-0003: Terraform state isolation and locking](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0003.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
+- [ADR-0004: GitHub Actions OIDC authorization](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0004.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
+- [ADR-0005: Terraform module provenance and promotion](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0005.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
+- [ADR-0006: Separate validation and deployment trust](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0006.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
+- [Secure AWS Terraform Repository and Deployment Architecture Standard](../src/architecture/cloud/secure-aws-terraform-repository-deployment/standard/aws-terraform-repository-deployment-standard.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
+
 ## combinatorial algorithms/array reindexing (1)
 
 - [ch17 renumbering rows and columns of an array notes](../src/cornell-notes/computer-science/combinatorial-algorithms/array-reindexing/ch17-renumbering-rows-and-columns-of-an-array-notes.tex) — combinatorial algorithms/array reindexing · **provisional**

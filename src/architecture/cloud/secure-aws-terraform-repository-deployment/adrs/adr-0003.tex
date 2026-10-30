@@ -1,0 +1,41 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.88in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,microtype,enumitem,xcolor}
+\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
+\definecolor{Navy}{HTML}{172C45}
+\begin{document}
+\begin{center}
+{\LARGE\bfseries\color{Navy} ADR-0003: Terraform state isolation and locking }\\[4mm]
+\textbf{Status: Proposed} \quad | \quad 29 October 2026 \quad | \quad Owner: Architecture Governance
+\end{center}
+\hrule
+\section*{Context}
+Terraform state and saved plans can contain sensitive resource attributes. A shared read/write backend multiplies lateral-movement and accidental change risks.
+\section*{Decision}
+Independent S3 state per environment with object locking and strict permissions.
+\begin{enumerate}[leftmargin=*]
+\item Use an independently protected S3 state backend per account/environment, with unique object keys.
+\item Enable encryption, access restrictions, versioning, public-access block, and TLS-only policy.
+\item Use S3 use\_lockfile=true for supported Terraform versions; grant DeleteObject on .tflock only.
+\item Keep backend bootstrap and emergency recovery separate from application deployment roles.
+\end{enumerate}
+\section*{Alternatives considered}
+\begin{itemize}[leftmargin=*]
+\item Local state in Git or shared build artifacts: rejected.
+\item One global S3 bucket with broad write permission: rejected.
+\item DynamoDB-based state locking: legacy/deprecated; migration only.
+\end{itemize}
+\section*{Consequences}
+\begin{itemize}[leftmargin=*]
+\item Additional bootstrap and recovery procedures are required.
+\item Strong confidentiality and update-integrity properties support automated deployment.
+\end{itemize}
+\section*{Verification and review triggers}
+\begin{enumerate}[leftmargin=*]
+\item Prove dev cannot GetObject prod state.
+\item Simulate lock conflicts and recovery from a versioned object.
+\end{enumerate}
+\section*{Decision review}
+Review at each quarterly architecture governance checkpoint or whenever organization, cloud, Terraform or GitHub platform constraints materially change. Exceptions require recorded owner, approval and expiration.
+\end{document}

@@ -10,6 +10,8 @@ Vendor-neutral cloud-computing references, design guidance and diagrams. The col
 | [Cloud engineering suite](engineering-suite/) | Seven engineering, learning, governance, documentation and FinOps guides. |
 | [Architecture and diagram library](architecture/) | Diagram sets, architecture index and self-hosting cloud references. |
 
+| [Secure AWS Terraform repository and deployment architecture](secure-aws-terraform-repository-deployment/README.md) | AWS multi-account governance, Terraform deployment roles/state, trust diagrams, six ADRs, and reference workflows. |
+
 ## Suggested use
 
 1. Start with `concepts-technology-architecture/` for definitions, mechanisms and service-model assumptions.

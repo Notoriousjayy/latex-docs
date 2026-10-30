@@ -40,6 +40,10 @@ make list-roots
 
 The category command discovers standalone LaTeX roots and builds them with the shared pdfLaTeX toolchain. To stage PDFs under `public/pdfs/`, use `make publish` from the repository root. The commands above describe the supported interface; they do not imply that every root has been compiled in this change.
 
+## AWS deployment architecture cross-reference
+
+Use the [Secure AWS Terraform architecture standard](../architecture/cloud/secure-aws-terraform-repository-deployment/README.md) for OIDC-based Terraform deployments, state isolation, and platform security controls. Example workflows are documentation assets, not active CI for this repository.
+
 ## Recommended navigation
 
 - Start with `foundations/` for concepts, `ci-cd/` for delivery architecture, and `github-actions/` for platform-specific workflow syntax.
