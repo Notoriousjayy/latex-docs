@@ -2559,11 +2559,16 @@ def render_plantuml(
                 cwd=str(work_dir),
                 env=env,
                 check=False,
-                stdout=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-            detail = (proc.stderr or b"").decode("utf-8", errors="ignore").strip().splitlines()
-            batch_reason = detail[-1] if detail else "renderer failed"
+            # Preserve PlantUML's actual syntax diagnostics in failed batch logs.
+            # With -failfast2 a single bad diagram cancels every output in the batch;
+            # the last stderr line alone often says only "No diagram found".
+            detail = ((proc.stdout or b"") + b"\n" + (proc.stderr or b"")).decode(
+                "utf-8", errors="ignore"
+            ).strip().splitlines()
+            batch_reason = " | ".join(detail[-20:]) if detail else "renderer failed"
 
             for name in names:
                 source = work_dir / name
