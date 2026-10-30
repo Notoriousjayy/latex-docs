@@ -1110,7 +1110,7 @@
 - [07 hands on labs](../src/programming/web/micro-frontends/07-hands-on-labs.tex) — web/micro frontends · **provisional**
 - [08 learning curriculum](../src/programming/web/micro-frontends/08-learning-curriculum.tex) — web/micro frontends · **provisional**
 
-## security (137)
+## security (170)
 
 - [01 security foundations](../src/security/application-security/assessment/01-security-foundations.tex) — application security/assessment · **provisional**
 - [02 vulnerability taxonomy](../src/security/application-security/assessment/02-vulnerability-taxonomy.tex) — application security/assessment · **provisional**
@@ -1161,6 +1161,39 @@
 - [document metadata](../src/security/application-security/programs/document-metadata.tex) — application security/programs · **provisional**
 - [introduction and conventions](../src/security/application-security/programs/introduction-and-conventions.tex) — application security/programs · **provisional**
 - [introduction to programs and systems](../src/security/application-security/programs/introduction-to-programs-and-systems.tex) — application security/programs · **provisional**
+- [Sast Workflow Threat Model](../src/security/application-security/sast/ci-cd/sast-workflow-threat-model.tex) — application-security/sast · **provisional**
+- [Secure Sast Ci Cd Integration](../src/security/application-security/sast/ci-cd/secure-sast-ci-cd-integration.tex) — application-security/sast · **provisional**
+- [Prerequisite Based Sast Curriculum](../src/security/application-security/sast/curriculum/prerequisite-based-sast-curriculum.tex) — application-security/sast · **provisional**
+- [C And Cpp Secure Coding Laboratory](../src/security/application-security/sast/labs/c-and-cpp-secure-coding-laboratory.tex) — application-security/sast · **provisional**
+- [Java Secure Coding Laboratory](../src/security/application-security/sast/labs/java-secure-coding-laboratory.tex) — application-security/sast · **provisional**
+- [Python Secure Coding Laboratory](../src/security/application-security/sast/labs/python-secure-coding-laboratory.tex) — application-security/sast · **provisional**
+- [Sast Program Assessment Template](../src/security/application-security/sast/scorecards/sast-program-assessment-template.tex) — application-security/sast · **provisional**
+- [Sast Release Gate Template](../src/security/application-security/sast/scorecards/sast-release-gate-template.tex) — application-security/sast · **provisional**
+- [Cfg Dataflow And Taint Exercise](../src/security/application-security/sast/static-analysis/cfg-dataflow-and-taint-exercise.tex) — application-security/sast · **provisional**
+- [Custom Rule Engineering Exercise](../src/security/application-security/sast/static-analysis/custom-rule-engineering-exercise.tex) — application-security/sast · **provisional**
+- [Sarif Normalization And Evidence Exercise](../src/security/application-security/sast/static-analysis/sarif-normalization-and-evidence-exercise.tex) — application-security/sast · **provisional**
+- [Chapter 01 The Software Security Problem](../src/security/application-security/sast/study-guides/chapter-01-the-software-security-problem.tex) — application-security/sast · **provisional**
+- [Chapter 02 Introduction To Static Analysis](../src/security/application-security/sast/study-guides/chapter-02-introduction-to-static-analysis.tex) — application-security/sast · **provisional**
+- [Chapter 03 Static Analysis As Part Of The Code Review Process](../src/security/application-security/sast/study-guides/chapter-03-static-analysis-as-part-of-the-code-review-process.tex) — application-security/sast · **provisional**
+- [Chapter 04 Static Analysis Internals](../src/security/application-security/sast/study-guides/chapter-04-static-analysis-internals.tex) — application-security/sast · **provisional**
+- [Chapter 05 Handling Input](../src/security/application-security/sast/study-guides/chapter-05-handling-input.tex) — application-security/sast · **provisional**
+- [Chapter 06 Buffer Overflow](../src/security/application-security/sast/study-guides/chapter-06-buffer-overflow.tex) — application-security/sast · **provisional**
+- [Chapter 07 Bride Of Buffer Overflow](../src/security/application-security/sast/study-guides/chapter-07-bride-of-buffer-overflow.tex) — application-security/sast · **provisional**
+- [Chapter 08 Errors And Exceptions](../src/security/application-security/sast/study-guides/chapter-08-errors-and-exceptions.tex) — application-security/sast · **provisional**
+- [Chapter 09 Web Applications](../src/security/application-security/sast/study-guides/chapter-09-web-applications.tex) — application-security/sast · **provisional**
+- [Chapter 10 Xml And Web Services](../src/security/application-security/sast/study-guides/chapter-10-xml-and-web-services.tex) — application-security/sast · **provisional**
+- [Chapter 11 Privacy And Secrets](../src/security/application-security/sast/study-guides/chapter-11-privacy-and-secrets.tex) — application-security/sast · **provisional**
+- [Chapter 12 Privileged Programs](../src/security/application-security/sast/study-guides/chapter-12-privileged-programs.tex) — application-security/sast · **provisional**
+- [Chapter 13 Source Code Analysis Exercises For Java](../src/security/application-security/sast/study-guides/chapter-13-source-code-analysis-exercises-for-java.tex) — application-security/sast · **provisional**
+- [Chapter 14 Source Code Analysis Exercises For C](../src/security/application-security/sast/study-guides/chapter-14-source-code-analysis-exercises-for-c.tex) — application-security/sast · **provisional**
+- [Secure Programming And Sast Engineering Reference](../src/security/application-security/sast/technical-reference/secure-programming-and-sast-engineering-reference.tex) — application-security/sast · **provisional**
+- [Custom Rule Specification Template](../src/security/application-security/sast/templates/custom-rule-specification-template.tex) — application-security/sast · **provisional**
+- [Risk Exception Record Template](../src/security/application-security/sast/templates/risk-exception-record-template.tex) — application-security/sast · **provisional**
+- [Sast Review Plan Template](../src/security/application-security/sast/templates/sast-review-plan-template.tex) — application-security/sast · **provisional**
+- [Lab Evidence Template](../src/security/application-security/sast/workbooks/lab-evidence-template.tex) — application-security/sast · **provisional**
+- [Remediation Traceability Template](../src/security/application-security/sast/workbooks/remediation-traceability-template.tex) — application-security/sast · **provisional**
+- [Scan Baseline Template](../src/security/application-security/sast/workbooks/scan-baseline-template.tex) — application-security/sast · **provisional**
+- [Vulnerability Triage Template](../src/security/application-security/sast/workbooks/vulnerability-triage-template.tex) — application-security/sast · **provisional**
 - [field guide user id controlled request](../src/security/application-security/web-security/broken-access-control/field-guides/user-id-param-password-disclosure/field-guide-user-id-controlled-request.tex) — field guides/user id param password disclosure · **provisional**
 - [broken access control study](../src/security/application-security/web-security/broken-access-control/notes/broken-access-control-study.tex) — broken access control/notes · **provisional**
 - [guide file path traversal directory traversal](../src/security/application-security/web-security/path-traversal/field-guides/guide-file-path-traversal-directory-traversal.tex) — path traversal/field guides · **provisional**

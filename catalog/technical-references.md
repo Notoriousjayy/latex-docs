@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (583)
+## Primary technical references (586)
 
 - [cloud architecture diagram library index](../src/architecture/cloud/architecture/cloud-architecture-diagram-library-index.tex) — cloud/architecture · **provisional**
 - [self hosting cloud architecture reference](../src/architecture/cloud/architecture/self-hosting-cloud-architecture-reference.tex) — cloud/architecture · **provisional**
@@ -510,6 +510,9 @@
 - [document metadata](../src/security/application-security/programs/document-metadata.tex) — application security/programs · **provisional**
 - [introduction and conventions](../src/security/application-security/programs/introduction-and-conventions.tex) — application security/programs · **provisional**
 - [introduction to programs and systems](../src/security/application-security/programs/introduction-to-programs-and-systems.tex) — application security/programs · **provisional**
+- [Sast Workflow Threat Model](../src/security/application-security/sast/ci-cd/sast-workflow-threat-model.tex) — application-security/sast · **provisional**
+- [Secure Sast Ci Cd Integration](../src/security/application-security/sast/ci-cd/secure-sast-ci-cd-integration.tex) — application-security/sast · **provisional**
+- [Secure Programming And Sast Engineering Reference](../src/security/application-security/sast/technical-reference/secure-programming-and-sast-engineering-reference.tex) — application-security/sast · **provisional**
 - [field guide user id controlled request](../src/security/application-security/web-security/broken-access-control/field-guides/user-id-param-password-disclosure/field-guide-user-id-controlled-request.tex) — field guides/user id param password disclosure · **provisional**
 - [broken access control study](../src/security/application-security/web-security/broken-access-control/notes/broken-access-control-study.tex) — broken access control/notes · **provisional**
 - [guide file path traversal directory traversal](../src/security/application-security/web-security/path-traversal/field-guides/guide-file-path-traversal-directory-traversal.tex) — path traversal/field guides · **provisional**

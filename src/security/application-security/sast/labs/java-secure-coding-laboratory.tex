@@ -1,0 +1,82 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[margin=0.78in,headheight=17pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern,microtype,parskip}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor,booktabs,longtable,tabularx,array,enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr,lastpage,titlesec,hyperref,listings}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric}
+\definecolor{navy}{HTML}{17324D}
+\definecolor{bluegray}{HTML}{43657D}
+\definecolor{lightblue}{HTML}{EAF2F8}
+\definecolor{linegray}{HTML}{CBD5DF}
+\definecolor{softgray}{HTML}{F3F5F7}
+\definecolor{accent}{HTML}{8E3B46}
+\hypersetup{colorlinks=true,linkcolor=navy,urlcolor=bluegray,pdfborder={0 0 0}}
+\urlstyle{same}
+\titleformat{\section}{\Large\bfseries\color{navy}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{bluegray}}{\thesubsection}{0.5em}{}
+\setlist[itemize]{leftmargin=*,itemsep=3pt,topsep=3pt}
+\setlist[enumerate]{leftmargin=*,itemsep=3pt,topsep=3pt}
+\setlength{\emergencystretch}{3em}
+\renewcommand{\arraystretch}{1.22}
+\setlength{\tabcolsep}{4pt}
+\pagestyle{fancy}\fancyhf{}
+\lhead{Secure Programming \& SAST Engineering}
+\rhead{Engineering Documentation Suite}
+\cfoot{\thepage\ / \pageref{LastPage}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\checkbox}{\(\square\)}
+\newcommand{\blankline}{\noindent\rule{\linewidth}{0.35pt}\par\vspace{4pt}}
+\newcommand{\writearea}[1]{\par\begin{tcolorbox}[colback=white,colframe=linegray,boxrule=0.5pt,height=#1,sharp corners]\mbox{}\end{tcolorbox}\par}
+\newtcolorbox{focusbox}[1]{colback=lightblue,colframe=bluegray,title=\textbf{#1},fonttitle=\bfseries,breakable}
+\newtcolorbox{warnbox}[1]{colback=softgray,colframe=accent,title=\textbf{#1},fonttitle=\bfseries,breakable}
+\lstset{basicstyle=\ttfamily\footnotesize,breaklines=true,frame=single,rulecolor=\color{linegray},backgroundcolor=\color{softgray},showstringspaces=false,columns=fullflexible,keepspaces=true,upquote=true}
+
+\begin{document}
+\begin{titlepage}
+\vspace*{1.0in}
+{\color{bluegray}\Large Hands-on laboratory}\\[1.0em]
+{\color{navy}\Huge\bfseries Java Secure Coding Laboratory}\\[0.7em]
+{\Large SQL query boundaries, path confinement and deterministic SAST validation}\\[2.0em]
+\rule{\linewidth}{1.0pt}
+\vfill
+\textbf{Source discipline:} Book-derived foundations are identified separately from current engineering extensions.\\
+\textbf{Edition:} 29 October 2026
+\end{titlepage}
+\tableofcontents
+\clearpage
+\section{Objective and environment}
+Implement and verify secure input handling, database parameterization, path controls and resource cleanup in Java 17 or later. Use an isolated directory and an ephemeral local database; do not connect examples to production systems. Tool selection: \texttt{javac}, a unit-test runner, and a currently supported SAST analyzer.
+\section{Exercise J1: SQL injection as a source-to-sink flow}
+\textbf{Anti-pattern for inspection only:}
+\begin{lstlisting}[language=Java]
+String sql = "SELECT id FROM users WHERE email = '" + email + "'";
+// sink: database statement execution
+\end{lstlisting}
+\textbf{Required correction:}
+\begin{lstlisting}[language=Java]
+try (PreparedStatement ps = conn.prepareStatement(
+         "SELECT id FROM users WHERE email = ?")) {
+    ps.setString(1, email);
+    try (ResultSet rs = ps.executeQuery()) {
+        // consume values without generating SQL text from email
+    }
+}
+\end{lstlisting}
+\textbf{Assertions:} benign strings retain their literal meaning; apostrophes and SQL-shaped payloads never change the statement structure; resources close on success and exception paths. \textbf{Taint model:} HTTP user input \(\rightarrow\) controller \(\rightarrow\) SQL API. Parameter binding is the context-specific control.
+\section{Exercise J2: Path confinement}
+Use the companion \texttt{examples/java/PathGuard.java} as a starting point. Test relative paths, an absolute path, parent traversal, and paths that normalize outside a configured root. Record symbolic-link and race-related residual risks for a hostile filesystem. Do not claim prechecking a path prevents symlink swaps; for untrusted writers, use stronger OS-level or capability-oriented designs.
+\section{Exercise J3: Review and scan}
+\begin{enumerate}
+\item Pin the scan revision. Record JDK, build tool and SAST version.
+\item Confirm a vulnerable fixture is located and the proposed secure implementation is not inaccurately flagged.
+\item Generate a report and record rule ID, source, sink, trace and confidence.
+\item Fix in a separate revision; rerun negative tests and scan; link before/after commits.
+\end{enumerate}
+\section{Deliverables and pass criteria}
+Lab evidence form; tests for ordinary and adversarial inputs; SAST results with at least one explained false-positive candidate; remediation traceability. Pass only when SQL structure is immutable, path checks have a documented filesystem threat model, and failure-path resources close correctly.
+\end{document}

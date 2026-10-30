@@ -1,0 +1,35 @@
+# Example only, not placed in .github/workflows/ by this suite.
+# Read-only PR analysis: no SARIF upload or secrets.
+name: example-sast-semgrep
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install maintained scanner version
+        run: python -m pip install 'semgrep>=1,<2'
+        # Production: pin vetted exact version and integrity where appropriate.
+      - name: Scan and retain diagnostic JSON
+        run: |
+          semgrep scan --config auto --json --output semgrep-results.json .
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: semgrep-diagnostic
+          path: semgrep-results.json
+          if-no-files-found: warn
+          retention-days: 7
+# For SARIF output: use semgrep scan --config ... --sarif --output results.sarif
+# Review data classification before artifact uploads; avoid sensitive code evidence.

@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (80)
+## Primary reusable templates (85)
 
 - [Architecture Documentation Templates](../src/architecture/cloud/engineering-suite/05-architecture-documentation-templates.tex) — cloud architecture documentation forms · **reviewed**
 - [Cloud Security Reference Templates](../src/architecture/cloud/engineering-suite/06-security-governance-templates.tex) — cloud security governance forms · **reviewed**
@@ -81,6 +81,11 @@
 - [12 audit templates evidence forms](../src/programming/languages/c-cpp/standards/misra-cpp-2023/12-audit-templates-evidence-forms.tex) — standards/misra cpp 2023 · **provisional**
 - [07 practitioner templates](../src/programming/web/design-of-sites/07-practitioner-templates.tex) — web/design of sites · **provisional**
 - [Application Review Analysis Template](../src/security/application-security/processes/application-review-analysis-template.tex) — application security review · **reviewed**
+- [Sast Program Assessment Template](../src/security/application-security/sast/scorecards/sast-program-assessment-template.tex) — application-security/sast · **provisional**
+- [Sast Release Gate Template](../src/security/application-security/sast/scorecards/sast-release-gate-template.tex) — application-security/sast · **provisional**
+- [Custom Rule Specification Template](../src/security/application-security/sast/templates/custom-rule-specification-template.tex) — application-security/sast · **provisional**
+- [Risk Exception Record Template](../src/security/application-security/sast/templates/risk-exception-record-template.tex) — application-security/sast · **provisional**
+- [Sast Review Plan Template](../src/security/application-security/sast/templates/sast-review-plan-template.tex) — application-security/sast · **provisional**
 - [08 compliance templates traceability](../src/security/standards/iso-27000/08-compliance-templates-traceability.tex) — standards/iso 27000 · **provisional**
 - [startup plan template worksheet](../src/startups/templates/startup-plan-template-worksheet.tex) — startups · **provisional**
 - [Startup Plan Template](../src/startups/templates/startup-plan-template.tex) — startup operating plan form · **reviewed**

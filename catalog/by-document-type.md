@@ -129,7 +129,7 @@
 - [Algorithm Verification And Review Procedure](../src/programming/algorithms/algorithm-engineering/procedures/algorithm-verification-and-review-procedure.tex) — algorithm engineering / procedures · **provisional**
 - [Reproducible Benchmarking Procedure](../src/programming/algorithms/algorithm-engineering/procedures/reproducible-benchmarking-procedure.tex) — algorithm engineering / procedures · **provisional**
 
-## study-guide (99)
+## study-guide (114)
 
 - [02 cloud architecture curriculum](../src/architecture/cloud/engineering-suite/02-cloud-architecture-curriculum.tex) — cloud/engineering suite · **provisional**
 - [prerequisite based architecture documentation curriculum](../src/architecture/views-and-beyond/documentation-engineering-suite/curriculum/Prerequisite_Based_Architecture_Documentation_Curriculum.tex) — views-and-beyond/documentation-engineering-suite/curriculum · **provisional**
@@ -222,6 +222,21 @@
 - [web application curriculum](../src/security/application-security/learning/assessment-curricula/web-application-curriculum.tex) — learning/assessment curricula · **provisional**
 - [windows curriculum](../src/security/application-security/learning/assessment-curricula/windows-curriculum.tex) — learning/assessment curricula · **provisional**
 - [oswe curriculum](../src/security/application-security/learning/oswe/oswe-curriculum.tex) — learning/oswe · **provisional**
+- [Prerequisite Based Sast Curriculum](../src/security/application-security/sast/curriculum/prerequisite-based-sast-curriculum.tex) — application-security/sast · **provisional**
+- [Chapter 01 The Software Security Problem](../src/security/application-security/sast/study-guides/chapter-01-the-software-security-problem.tex) — application-security/sast · **provisional**
+- [Chapter 02 Introduction To Static Analysis](../src/security/application-security/sast/study-guides/chapter-02-introduction-to-static-analysis.tex) — application-security/sast · **provisional**
+- [Chapter 03 Static Analysis As Part Of The Code Review Process](../src/security/application-security/sast/study-guides/chapter-03-static-analysis-as-part-of-the-code-review-process.tex) — application-security/sast · **provisional**
+- [Chapter 04 Static Analysis Internals](../src/security/application-security/sast/study-guides/chapter-04-static-analysis-internals.tex) — application-security/sast · **provisional**
+- [Chapter 05 Handling Input](../src/security/application-security/sast/study-guides/chapter-05-handling-input.tex) — application-security/sast · **provisional**
+- [Chapter 06 Buffer Overflow](../src/security/application-security/sast/study-guides/chapter-06-buffer-overflow.tex) — application-security/sast · **provisional**
+- [Chapter 07 Bride Of Buffer Overflow](../src/security/application-security/sast/study-guides/chapter-07-bride-of-buffer-overflow.tex) — application-security/sast · **provisional**
+- [Chapter 08 Errors And Exceptions](../src/security/application-security/sast/study-guides/chapter-08-errors-and-exceptions.tex) — application-security/sast · **provisional**
+- [Chapter 09 Web Applications](../src/security/application-security/sast/study-guides/chapter-09-web-applications.tex) — application-security/sast · **provisional**
+- [Chapter 10 Xml And Web Services](../src/security/application-security/sast/study-guides/chapter-10-xml-and-web-services.tex) — application-security/sast · **provisional**
+- [Chapter 11 Privacy And Secrets](../src/security/application-security/sast/study-guides/chapter-11-privacy-and-secrets.tex) — application-security/sast · **provisional**
+- [Chapter 12 Privileged Programs](../src/security/application-security/sast/study-guides/chapter-12-privileged-programs.tex) — application-security/sast · **provisional**
+- [Chapter 13 Source Code Analysis Exercises For Java](../src/security/application-security/sast/study-guides/chapter-13-source-code-analysis-exercises-for-java.tex) — application-security/sast · **provisional**
+- [Chapter 14 Source Code Analysis Exercises For C](../src/security/application-security/sast/study-guides/chapter-14-source-code-analysis-exercises-for-c.tex) — application-security/sast · **provisional**
 - [study plan isc 2 cissp cbk ref 6th ed user](../src/security/certifications/cissp/study-plan-isc-2-cissp-cbk-ref-6th-ed-user.tex) — certifications/cissp · **provisional**
 - [precision study plan final 72 hour plan retake](../src/security/certifications/gh-500/precision-study-plan-final-72-hour-plan-retake.tex) — certifications/gh 500 · **provisional**
 - [02 criterion study guide](../src/security/governance-risk-compliance/soc2/02-criterion-study-guide.tex) — governance risk compliance/soc2 · **provisional**
@@ -558,7 +573,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (583)
+## technical-reference (586)
 
 - [cloud architecture diagram library index](../src/architecture/cloud/architecture/cloud-architecture-diagram-library-index.tex) — cloud/architecture · **provisional**
 - [self hosting cloud architecture reference](../src/architecture/cloud/architecture/self-hosting-cloud-architecture-reference.tex) — cloud/architecture · **provisional**
@@ -1066,6 +1081,9 @@
 - [document metadata](../src/security/application-security/programs/document-metadata.tex) — application security/programs · **provisional**
 - [introduction and conventions](../src/security/application-security/programs/introduction-and-conventions.tex) — application security/programs · **provisional**
 - [introduction to programs and systems](../src/security/application-security/programs/introduction-to-programs-and-systems.tex) — application security/programs · **provisional**
+- [Sast Workflow Threat Model](../src/security/application-security/sast/ci-cd/sast-workflow-threat-model.tex) — application-security/sast · **provisional**
+- [Secure Sast Ci Cd Integration](../src/security/application-security/sast/ci-cd/secure-sast-ci-cd-integration.tex) — application-security/sast · **provisional**
+- [Secure Programming And Sast Engineering Reference](../src/security/application-security/sast/technical-reference/secure-programming-and-sast-engineering-reference.tex) — application-security/sast · **provisional**
 - [field guide user id controlled request](../src/security/application-security/web-security/broken-access-control/field-guides/user-id-param-password-disclosure/field-guide-user-id-controlled-request.tex) — field guides/user id param password disclosure · **provisional**
 - [broken access control study](../src/security/application-security/web-security/broken-access-control/notes/broken-access-control-study.tex) — broken access control/notes · **provisional**
 - [guide file path traversal directory traversal](../src/security/application-security/web-security/path-traversal/field-guides/guide-file-path-traversal-directory-traversal.tex) — path traversal/field guides · **provisional**
@@ -1144,7 +1162,7 @@
 - [immediate founder focus](../src/startups/media/fast-animation-channels/immediate-founder-focus.tex) — media/fast animation channels · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## template (80)
+## template (85)
 
 - [Architecture Documentation Templates](../src/architecture/cloud/engineering-suite/05-architecture-documentation-templates.tex) — cloud architecture documentation forms · **reviewed**
 - [Cloud Security Reference Templates](../src/architecture/cloud/engineering-suite/06-security-governance-templates.tex) — cloud security governance forms · **reviewed**
@@ -1223,6 +1241,11 @@
 - [12 audit templates evidence forms](../src/programming/languages/c-cpp/standards/misra-cpp-2023/12-audit-templates-evidence-forms.tex) — standards/misra cpp 2023 · **provisional**
 - [07 practitioner templates](../src/programming/web/design-of-sites/07-practitioner-templates.tex) — web/design of sites · **provisional**
 - [Application Review Analysis Template](../src/security/application-security/processes/application-review-analysis-template.tex) — application security review · **reviewed**
+- [Sast Program Assessment Template](../src/security/application-security/sast/scorecards/sast-program-assessment-template.tex) — application-security/sast · **provisional**
+- [Sast Release Gate Template](../src/security/application-security/sast/scorecards/sast-release-gate-template.tex) — application-security/sast · **provisional**
+- [Custom Rule Specification Template](../src/security/application-security/sast/templates/custom-rule-specification-template.tex) — application-security/sast · **provisional**
+- [Risk Exception Record Template](../src/security/application-security/sast/templates/risk-exception-record-template.tex) — application-security/sast · **provisional**
+- [Sast Review Plan Template](../src/security/application-security/sast/templates/sast-review-plan-template.tex) — application-security/sast · **provisional**
 - [08 compliance templates traceability](../src/security/standards/iso-27000/08-compliance-templates-traceability.tex) — standards/iso 27000 · **provisional**
 - [startup plan template worksheet](../src/startups/templates/startup-plan-template-worksheet.tex) — startups · **provisional**
 - [Startup Plan Template](../src/startups/templates/startup-plan-template.tex) — startup operating plan form · **reviewed**
@@ -1247,7 +1270,7 @@
 - [study plan user stories github advanced sec](../src/security/github-advanced-security/administration/study-plan-user-stories-github-advanced-sec.tex) — github advanced security/administration · **provisional**
 - [study plan owasp api sec top 10 user stories](../src/security/standards/owasp/study-plan-owasp-api-sec-top-10-user-stories.tex) — standards/owasp · **provisional**
 
-## workbook (33)
+## workbook (43)
 
 - [ISO/IEC/IEEE 42010 Conformance Assessment Workbook](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment.tex) — ISO/IEC/IEEE 42010 conformance evidence · **reviewed**
 - [architecture review findings template](../src/architecture/views-and-beyond/documentation-engineering-suite/workbooks/Architecture_Review_Findings_Template.tex) — views-and-beyond/documentation-engineering-suite/workbooks · **provisional**
@@ -1282,4 +1305,14 @@
 - [08 hands on laboratories](../src/programming/linux-unix-system-programming/08-hands-on-laboratories.tex) — linux unix system programming · **provisional**
 - [07 hands on labs](../src/programming/web/micro-frontends/07-hands-on-labs.tex) — web/micro frontends · **provisional**
 - [07 hands on labs](../src/security/application-security/assessment/07-hands-on-labs.tex) — application security/assessment · **provisional**
+- [C And Cpp Secure Coding Laboratory](../src/security/application-security/sast/labs/c-and-cpp-secure-coding-laboratory.tex) — application-security/sast · **provisional**
+- [Java Secure Coding Laboratory](../src/security/application-security/sast/labs/java-secure-coding-laboratory.tex) — application-security/sast · **provisional**
+- [Python Secure Coding Laboratory](../src/security/application-security/sast/labs/python-secure-coding-laboratory.tex) — application-security/sast · **provisional**
+- [Cfg Dataflow And Taint Exercise](../src/security/application-security/sast/static-analysis/cfg-dataflow-and-taint-exercise.tex) — application-security/sast · **provisional**
+- [Custom Rule Engineering Exercise](../src/security/application-security/sast/static-analysis/custom-rule-engineering-exercise.tex) — application-security/sast · **provisional**
+- [Sarif Normalization And Evidence Exercise](../src/security/application-security/sast/static-analysis/sarif-normalization-and-evidence-exercise.tex) — application-security/sast · **provisional**
+- [Lab Evidence Template](../src/security/application-security/sast/workbooks/lab-evidence-template.tex) — application-security/sast · **provisional**
+- [Remediation Traceability Template](../src/security/application-security/sast/workbooks/remediation-traceability-template.tex) — application-security/sast · **provisional**
+- [Scan Baseline Template](../src/security/application-security/sast/workbooks/scan-baseline-template.tex) — application-security/sast · **provisional**
+- [Vulnerability Triage Template](../src/security/application-security/sast/workbooks/vulnerability-triage-template.tex) — application-security/sast · **provisional**
 

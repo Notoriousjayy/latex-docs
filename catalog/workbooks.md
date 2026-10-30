@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary workbooks and exercises (33)
+## Primary workbooks and exercises (43)
 
 - [ISO/IEC/IEEE 42010 Conformance Assessment Workbook](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment.tex) — ISO/IEC/IEEE 42010 conformance evidence · **reviewed**
 - [architecture review findings template](../src/architecture/views-and-beyond/documentation-engineering-suite/workbooks/Architecture_Review_Findings_Template.tex) — views-and-beyond/documentation-engineering-suite/workbooks · **provisional**
@@ -37,6 +37,16 @@
 - [08 hands on laboratories](../src/programming/linux-unix-system-programming/08-hands-on-laboratories.tex) — linux unix system programming · **provisional**
 - [07 hands on labs](../src/programming/web/micro-frontends/07-hands-on-labs.tex) — web/micro frontends · **provisional**
 - [07 hands on labs](../src/security/application-security/assessment/07-hands-on-labs.tex) — application security/assessment · **provisional**
+- [C And Cpp Secure Coding Laboratory](../src/security/application-security/sast/labs/c-and-cpp-secure-coding-laboratory.tex) — application-security/sast · **provisional**
+- [Java Secure Coding Laboratory](../src/security/application-security/sast/labs/java-secure-coding-laboratory.tex) — application-security/sast · **provisional**
+- [Python Secure Coding Laboratory](../src/security/application-security/sast/labs/python-secure-coding-laboratory.tex) — application-security/sast · **provisional**
+- [Cfg Dataflow And Taint Exercise](../src/security/application-security/sast/static-analysis/cfg-dataflow-and-taint-exercise.tex) — application-security/sast · **provisional**
+- [Custom Rule Engineering Exercise](../src/security/application-security/sast/static-analysis/custom-rule-engineering-exercise.tex) — application-security/sast · **provisional**
+- [Sarif Normalization And Evidence Exercise](../src/security/application-security/sast/static-analysis/sarif-normalization-and-evidence-exercise.tex) — application-security/sast · **provisional**
+- [Lab Evidence Template](../src/security/application-security/sast/workbooks/lab-evidence-template.tex) — application-security/sast · **provisional**
+- [Remediation Traceability Template](../src/security/application-security/sast/workbooks/remediation-traceability-template.tex) — application-security/sast · **provisional**
+- [Scan Baseline Template](../src/security/application-security/sast/workbooks/scan-baseline-template.tex) — application-security/sast · **provisional**
+- [Vulnerability Triage Template](../src/security/application-security/sast/workbooks/vulnerability-triage-template.tex) — application-security/sast · **provisional**
 
 ## Related reviewed sources with secondary workbooks and exercises content (2)
 
