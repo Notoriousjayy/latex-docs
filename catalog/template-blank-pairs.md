@@ -18,6 +18,15 @@ Architecture descriptions and architecture decision records are distinct documen
 
 | Logical ID | Family | Template | Blank |
 |---|---|---|---|
+| SAST-01 | vulnerability-triage-workbook | [Template](../src/security/application-security/sast/workbooks/vulnerability-triage-template.tex) | [Blank](../src/security/application-security/sast/workbooks/vulnerability-triage-blank.tex) |
+| SAST-02 | scan-baseline-workbook | [Template](../src/security/application-security/sast/workbooks/scan-baseline-template.tex) | [Blank](../src/security/application-security/sast/workbooks/scan-baseline-blank.tex) |
+| SAST-03 | laboratory-evidence-workbook | [Template](../src/security/application-security/sast/workbooks/lab-evidence-template.tex) | [Blank](../src/security/application-security/sast/workbooks/lab-evidence-blank.tex) |
+| SAST-04 | remediation-traceability-workbook | [Template](../src/security/application-security/sast/workbooks/remediation-traceability-template.tex) | [Blank](../src/security/application-security/sast/workbooks/remediation-traceability-blank.tex) |
+| SAST-05 | custom-rule-specification | [Template](../src/security/application-security/sast/templates/custom-rule-specification-template.tex) | [Blank](../src/security/application-security/sast/templates/custom-rule-specification-blank.tex) |
+| SAST-06 | sast-review-plan | [Template](../src/security/application-security/sast/templates/sast-review-plan-template.tex) | [Blank](../src/security/application-security/sast/templates/sast-review-plan-blank.tex) |
+| SAST-07 | risk-exception-record | [Template](../src/security/application-security/sast/templates/risk-exception-record-template.tex) | [Blank](../src/security/application-security/sast/templates/risk-exception-record-blank.tex) |
+| SAST-08 | sast-program-assessment-scorecard | [Template](../src/security/application-security/sast/scorecards/sast-program-assessment-template.tex) | [Blank](../src/security/application-security/sast/scorecards/sast-program-assessment-blank.tex) |
+| SAST-09 | sast-release-gate-scorecard | [Template](../src/security/application-security/sast/scorecards/sast-release-gate-template.tex) | [Blank](../src/security/application-security/sast/scorecards/sast-release-gate-blank.tex) |
 | ARCH-ADR-AI_AND_AGENTIC_SYSTEMS | architecture-decision-record | [Template](../src/architecture/decisions/templates/adr-ai-and-agentic-systems-template.tex) | [Blank](../src/architecture/decisions/templates/adr-ai-and-agentic-systems-blank.tex) |
 | ARCH-ADR-CLOUD_PLATFORM | architecture-decision-record | [Template](../src/architecture/decisions/templates/adr-cloud-platform-template.tex) | [Blank](../src/architecture/decisions/templates/adr-cloud-platform-blank.tex) |
 | ARCH-ADR-DATA_AND_STORAGE | architecture-decision-record | [Template](../src/architecture/decisions/templates/adr-data-and-storage-template.tex) | [Blank](../src/architecture/decisions/templates/adr-data-and-storage-blank.tex) |

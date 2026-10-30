@@ -1,0 +1,82 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[margin=0.78in,headheight=17pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern,microtype,parskip}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor,booktabs,longtable,tabularx,array,enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr,lastpage,titlesec,hyperref,listings}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric}
+\definecolor{navy}{HTML}{17324D}
+\definecolor{bluegray}{HTML}{43657D}
+\definecolor{lightblue}{HTML}{EAF2F8}
+\definecolor{linegray}{HTML}{CBD5DF}
+\definecolor{softgray}{HTML}{F3F5F7}
+\definecolor{accent}{HTML}{8E3B46}
+\hypersetup{colorlinks=true,linkcolor=navy,urlcolor=bluegray,pdfborder={0 0 0}}
+\urlstyle{same}
+\titleformat{\section}{\Large\bfseries\color{navy}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{bluegray}}{\thesubsection}{0.5em}{}
+\setlist[itemize]{leftmargin=*,itemsep=3pt,topsep=3pt}
+\setlist[enumerate]{leftmargin=*,itemsep=3pt,topsep=3pt}
+\setlength{\emergencystretch}{3em}
+\renewcommand{\arraystretch}{1.22}
+\setlength{\tabcolsep}{4pt}
+\pagestyle{fancy}\fancyhf{}
+\lhead{Secure Programming \& SAST Engineering}
+\rhead{Engineering Documentation Suite}
+\cfoot{\thepage\ / \pageref{LastPage}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\checkbox}{\(\square\)}
+\newcommand{\blankline}{\noindent\rule{\linewidth}{0.35pt}\par\vspace{4pt}}
+\newcommand{\writearea}[1]{\par\begin{tcolorbox}[colback=white,colframe=linegray,boxrule=0.5pt,height=#1,sharp corners]\mbox{}\end{tcolorbox}\par}
+\newtcolorbox{focusbox}[1]{colback=lightblue,colframe=bluegray,title=\textbf{#1},fonttitle=\bfseries,breakable}
+\newtcolorbox{warnbox}[1]{colback=softgray,colframe=accent,title=\textbf{#1},fonttitle=\bfseries,breakable}
+\lstset{basicstyle=\ttfamily\footnotesize,breaklines=true,frame=single,rulecolor=\color{linegray},backgroundcolor=\color{softgray},showstringspaces=false,columns=fullflexible,keepspaces=true,upquote=true}
+
+\begin{document}
+\begin{titlepage}
+\vspace*{1.0in}
+{\color{bluegray}\Large Hands-on laboratory}\\[1.0em]
+{\color{navy}\Huge\bfseries C and C++ Secure Coding Laboratory}\\[0.7em]
+{\Large Memory bounds, checked arithmetic, ownership and sanitizer-assisted review}\\[2.0em]
+\rule{\linewidth}{1.0pt}
+\vfill
+\textbf{Source discipline:} Book-derived foundations are identified separately from current engineering extensions.\\
+\textbf{Edition:} 29 October 2026
+\end{titlepage}
+\tableofcontents
+\clearpage
+\section{Objective and environment}
+Compare static and dynamic memory-safety evidence using modern C and C++ techniques. All experiments are local and synthetic. Compile the safe companion with a supported compiler, warnings, and sanitizers where available; keep test data non-sensitive.
+\section{Exercise C1: Buffer capacity invariant}
+Given a destination buffer \(d\) of capacity \(c\), require \(0<c\), data length \(\ell<c\), and a terminator at \(d[\ell]\). A silent truncation contract must be explicit; do not assume \texttt{strncpy} always null-terminates.
+\textbf{Risky construction for code-review discussion only:}
+\begin{lstlisting}[language=C]
+void copy_name(char *dst, const char *input) {
+    strcpy(dst, input); /* length/capacity not established */
+}
+\end{lstlisting}
+\textbf{Reference pattern:} \texttt{examples/c/safe\_copy.c} implements checked copying with an explicit capacity and error return. Unit tests cover null pointers, zero capacity, exact fit, oversized input and terminator correctness.
+\section{Exercise C2: Integer arithmetic}
+Before allocating \(n\times k\) bytes, require \(n\le SIZE\_MAX/k\) for \(k\ne 0\). Test \(n=0,1,SIZE\_MAX/k\), and one exceeding the boundary. Signed-to-unsigned conversion must be validated before calculation.
+\begin{lstlisting}[language=C]
+if (item_size != 0 && count > SIZE_MAX / item_size)
+    return ERROR_OVERFLOW;
+size_t bytes = count * item_size;
+\end{lstlisting}
+\section{Exercise C3: C++ lifetime and containers}
+Refactor a manual heap buffer to \texttt{std::vector<std::byte>} or an owning value type; accept a \texttt{std::span} where the caller retains ownership. Explain why a view does not lengthen a resource's lifetime and why an iterator can become invalid after reallocation.
+\section{Verification protocol}
+\begin{lstlisting}[language=bash]
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror \
+   -fsanitize=address,undefined -fno-omit-frame-pointer \
+   examples/c/safe_copy.c -o safe_copy
+./safe_copy
+\end{lstlisting}
+Compile without sanitizer options if unsupported; record the difference. Compare compiler warnings, a SAST query and sanitizer behavior. Do not claim that a sanitizer's success proves safety for every input or execution path.
+\section{Required evidence}
+Bounds table, tool/build details, test results, any reproduced diagnostic, a fix change and limitations. Passing requires zero unexpected test failures, documented allocation check and accurate distinction between static and dynamic evidence.
+\end{document}

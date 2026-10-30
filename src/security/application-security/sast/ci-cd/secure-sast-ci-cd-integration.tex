@@ -1,0 +1,82 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[margin=0.78in,headheight=17pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern,microtype,parskip}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor,booktabs,longtable,tabularx,array,enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr,lastpage,titlesec,hyperref,listings}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric}
+\definecolor{navy}{HTML}{17324D}
+\definecolor{bluegray}{HTML}{43657D}
+\definecolor{lightblue}{HTML}{EAF2F8}
+\definecolor{linegray}{HTML}{CBD5DF}
+\definecolor{softgray}{HTML}{F3F5F7}
+\definecolor{accent}{HTML}{8E3B46}
+\hypersetup{colorlinks=true,linkcolor=navy,urlcolor=bluegray,pdfborder={0 0 0}}
+\urlstyle{same}
+\titleformat{\section}{\Large\bfseries\color{navy}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{bluegray}}{\thesubsection}{0.5em}{}
+\setlist[itemize]{leftmargin=*,itemsep=3pt,topsep=3pt}
+\setlist[enumerate]{leftmargin=*,itemsep=3pt,topsep=3pt}
+\setlength{\emergencystretch}{3em}
+\renewcommand{\arraystretch}{1.22}
+\setlength{\tabcolsep}{4pt}
+\pagestyle{fancy}\fancyhf{}
+\lhead{Secure Programming \& SAST Engineering}
+\rhead{Engineering Documentation Suite}
+\cfoot{\thepage\ / \pageref{LastPage}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\checkbox}{\(\square\)}
+\newcommand{\blankline}{\noindent\rule{\linewidth}{0.35pt}\par\vspace{4pt}}
+\newcommand{\writearea}[1]{\par\begin{tcolorbox}[colback=white,colframe=linegray,boxrule=0.5pt,height=#1,sharp corners]\mbox{}\end{tcolorbox}\par}
+\newtcolorbox{focusbox}[1]{colback=lightblue,colframe=bluegray,title=\textbf{#1},fonttitle=\bfseries,breakable}
+\newtcolorbox{warnbox}[1]{colback=softgray,colframe=accent,title=\textbf{#1},fonttitle=\bfseries,breakable}
+\lstset{basicstyle=\ttfamily\footnotesize,breaklines=true,frame=single,rulecolor=\color{linegray},backgroundcolor=\color{softgray},showstringspaces=false,columns=fullflexible,keepspaces=true,upquote=true}
+
+\begin{document}
+\begin{titlepage}
+\vspace*{1.0in}
+{\color{bluegray}\Large CI/CD reference}\\[1.0em]
+{\color{navy}\Huge\bfseries Secure SAST CI/CD Integration}\\[0.7em]
+{\Large Pull-request trust boundaries, CodeQL, Semgrep, SARIF and policy gates}\\[2.0em]
+\rule{\linewidth}{1.0pt}
+\vfill
+\textbf{Source discipline:} Book-derived foundations are identified separately from current engineering extensions.\\
+\textbf{Edition:} 29 October 2026
+\end{titlepage}
+\tableofcontents
+\clearpage
+\section{Architecture and responsibilities}
+Developers receive local IDE/CLI feedback; a restricted pull-request scan checks proposed changes; a trusted default-branch scan runs comprehensive rules; findings are normalized and attributed to owners; exceptions have an expiration. A policy service evaluates reviewer-confirmed impact and historical baseline state. Maintain a separate SCA, secrets and IaC scanning inventory: product bundling does not imply one SAST control covers all categories.
+\begin{focusbox}{Trust boundary}
+Untrusted PR content, dependencies, build scripts, custom rules and scanner configuration may execute code. Use least privilege, isolated runner context, limited network, verified artifacts, pinned or maintained actions and explicit approval for exposure to secrets or write tokens. Never check out untrusted contributions under privileged \texttt{pull\_request\_target} solely to run a scanner.
+\end{focusbox}
+\section{Reference workflow designs}
+\textbf{CodeQL}: The companion \texttt{examples/workflows/codeql-review.example.yml} illustrates a PR/push matrix for Java, Python and C/C++. It uses CodeQL Action v4 and language-aware build modes. C/C++ may need a project-specific build; \texttt{none} is a coverage trade-off, not equivalent to a complete compilation. Do not enable this illustrative workflow without reviewing repository license/feature eligibility, branch protection and action permissions. If CodeQL default setup is enabled, do not duplicate it unintentionally.
+
+\textbf{Semgrep}: \texttt{examples/workflows/semgrep-review.example.yml} runs a read-only pattern scan, generates JSON/SARIF artifacts and never uploads PR results with write permissions. It intentionally does not rely on cloud-account credentials. Local and CI rule choices, versions, engine and licensing require verification. SARIF upload to GitHub requires a separately designed, appropriately authorized workflow with \texttt{security-events: write} where eligible.
+\section{Policy-as-code gates}
+\begin{enumerate}
+\item Define eligible changes, required analyzers and known excluded modules.
+\item Preserve immutable scan output and metadata; distinguish invalid/scanner-failed/no-analysis from a passed result.
+\item Compare incoming result fingerprints with a reviewed baseline, then queue high-impact new hypotheses for confirmation.
+\item Block according to approved policy (e.g., newly confirmed high impact), and support time-limited exception with approval and compensating controls.
+\item Test gating logic using fixtures: new serious finding, inherited finding, false positive, expired exception, scanner outage and upload failure.
+\end{enumerate}
+\section{Implementation checklist}
+\begin{itemize}
+\item \checkbox\ Developer commands are documented and reproduce CI scans on a pinned commit.
+\item \checkbox\ Tool/ruleset versions and runtime dependencies recorded and updated.
+\item \checkbox\ No persistent secrets or elevated tokens granted to untrusted PR code.
+\item \checkbox\ Branch protections require selected checks and review; bypass activity is audited.
+\item \checkbox\ Findings retain file/rule evidence, assigned owner, classification, due date and closure verification.
+\item \checkbox\ Baseline exclusions are narrowly scoped, justified and measurable.
+\item \checkbox\ CodeQL default vs advanced setup decision documented; private code-scanning eligibility checked.
+\item \checkbox\ Alert categories and SARIF version/limits validated before upload.
+\end{itemize}
+\section{Reference register}
+GitHub code scanning overview: \url{https://docs.github.com/en/code-security}; Action guidance: \url{https://github.com/github/codeql-action}; SARIF: \url{https://docs.github.com/en/code-security/concepts/code-scanning/sarif-files}; secure actions: \url{https://docs.github.com/en/actions/reference/security/secure-use}; Semgrep: \url{https://semgrep.dev/docs/}.
+\end{document}
