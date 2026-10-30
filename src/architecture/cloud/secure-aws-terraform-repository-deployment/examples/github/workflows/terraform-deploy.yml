@@ -1,0 +1,91 @@
+name: Terraform deploy (protected environment)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform-deploy.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        description: Target deployment environment
+        options: [dev, test, prod]
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tf-${{ github.repository }}-${{ github.event_name == 'push' && 'dev' || inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    # GitHub environment MUST be configured before first deployment; production
+    # requires reviewed rulesets, branch restrictions and independent approvals.
+    environment: ${{ github.event_name == 'push' && 'dev' || inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      TARGET_ENV: ${{ github.event_name == 'push' && 'dev' || inputs.environment }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      TF_VAR_aws_region: ${{ vars.AWS_REGION }}
+      TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+      EXPECTED_AWS_ACCOUNT_ID: ${{ vars.EXPECTED_AWS_ACCOUNT_ID }}
+      AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+      TF_IN_AUTOMATION: 'true'
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout (immutable action ref)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      # Pin the next two actions to reviewed full commit SHAs before production.
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v4.0.1
+        with:
+          terraform_version: '1.10.5'
+          terraform_wrapper: false
+      - name: Validate protected configuration
+        run: |
+          set -euo pipefail
+          case "$TARGET_ENV" in dev|test|prod) ;; *) exit 2 ;; esac
+          : "${AWS_REGION:?Missing environment-scoped AWS_REGION}"
+          : "${TF_STATE_BUCKET:?Missing environment-scoped TF_STATE_BUCKET}"
+          : "${EXPECTED_AWS_ACCOUNT_ID:?Missing environment-scoped EXPECTED_AWS_ACCOUNT_ID}"
+          : "${AWS_DEPLOY_ROLE_ARN:?Missing environment-scoped AWS_DEPLOY_ROLE_ARN}"
+      - name: Assume isolated deployment role with GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
+          allowed-account-ids: ${{ env.EXPECTED_AWS_ACCOUNT_ID }}
+          role-session-name: gh-${{ github.run_id }}
+      - name: Verify AWS account binding
+        run: |
+          set -euo pipefail
+          actual="$(aws sts get-caller-identity --query Account --output text)"
+          test "$actual" = "$EXPECTED_AWS_ACCOUNT_ID"
+      - name: Plan and apply the exact plan inside one approved job
+        run: |
+          set -euo pipefail
+          cd "terraform/environments/$TARGET_ENV"
+          terraform init -input=false -lockfile=readonly \
+            -backend-config="bucket=$TF_STATE_BUCKET" \
+            -backend-config="region=$AWS_REGION"
+          terraform plan -input=false -lock-timeout=5m -out=tfplan
+          terraform apply -input=false -lock-timeout=5m tfplan
+          rm -f tfplan
+
+# No deploy on pull_request or pull_request_target. Do not expose plan files as
+# public artifacts. This workflow applies directly after approved main-branch
+# dispatch; higher-assurance deployments should additionally require a separate
+# policy/approval system and signed artifact provenance.

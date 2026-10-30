@@ -11,6 +11,7 @@ A source-controlled engineering documentation library covering software architec
 | Study algorithm engineering across TAOCP Volumes 1–4B | [Algorithm Engineering suite](src/programming/algorithms/algorithm-engineering/README.md) |
 | Find secure coding standards by language | [Programming language guide](src/programming/languages/README.md) |
 | Compare architecture documentation standards and tooling | [Architecture documentation technical reference](src/architecture/technical-documents/architecture-documentation-standards-frameworks-and-tooling.tex) |
+| Govern secure AWS Terraform deployments | [Secure AWS Terraform architecture standard](src/architecture/cloud/secure-aws-terraform-repository-deployment/README.md) |
 | Review architectural choices | [ADR template library](src/architecture/decisions/readme.md) |
 | Build enterprise-scale GitHub architecture discovery | [Discovery technical reference and working forms](src/architecture/github-actions-discovery-suite.md) |
 | Understand architecture governance | [CCoE governance suite](src/architecture/governance/ccoe/readme.md) |
