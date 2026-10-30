@@ -18,6 +18,10 @@ This domain covers data platforms, streaming and AI/ML systems. Place domain-ind
 | [Workbooks and exercises](workbooks/README.md) | Practice, exercises, checklists and worked activities | 2 |
 
 
+### Enterprise Data Governance and Information Management
+
+- [Standards and Frameworks Reference](enterprise-data-governance/standards-and-frameworks/README.md): publisher source map, authority selection, decision rights, traceability, capability assessment, legal applicability and governed printable forms.
+
 ### Enterprise Data Modeling and Database Architecture
 
 - [Documentation suite](enterprise-data-modeling/README.md): chapter guides, modeling laboratories, SQL exercises, governance scorecards, and printable Template--Blank pairs.
