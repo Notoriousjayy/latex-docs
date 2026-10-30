@@ -2190,7 +2190,7 @@ def plantuml_output_paths(source: Path, fmt: str, text: str | None = None) -> li
 def plantuml_render_command(prefix: Sequence[str], fmt: str, output_dir: Path, config: Path | None, names: Sequence[str]) -> list[str]:
     # An absolute -o is used verbatim; a relative one is joined to each source's directory,
     # which is how src/**/src/** trees were produced by runs started from the repository root.
-    cmd = [*prefix, "-failfast2", f"-t{fmt}", "-o", str(output_dir.resolve())]
+    cmd = [*prefix, "-failfast2", "-stdrpt:1", f"-t{fmt}", "-o", str(output_dir.resolve())]
     if config is not None:
         cmd.extend(["-config", str(config)])
     cmd.extend(names)
