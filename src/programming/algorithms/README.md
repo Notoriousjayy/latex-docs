@@ -1,5 +1,7 @@
 # Algorithms
 
+**Featured suite:** [Algorithm Engineering and Computer Science](algorithm-engineering/README.md) — source-aligned learning guides, proof workbooks, implementation laboratories, and printable governed forms.
+
 Source files for **algorithms** within the **programming** domain. This is a navigational index; descriptive labels below are derived from filenames, not substitutes for the documents' content.
 
 ## Files
@@ -23,3 +25,7 @@ See the [programming index](../README.md) for the parent collection and related 
 Preserve original titles, citations, styles, and any LaTeX input paths. Place new files here only when they match this collection's purpose.
 
 Build/validate using the repository's supported LaTeX tooling; do not treat this index as evidence that all documents have compiled.
+
+## Algorithm Engineering documentation suite
+
+[Algorithm Engineering and Computer Science Documentation Suite](algorithm-engineering/README.md) — 33 standalone LaTeX documents aligned with TAOCP Volumes 1–4B, original C11/C++20/Python laboratories, mathematical workbooks, benchmarking and verification procedures, and governed print-ready Template–Blank pairs.

@@ -77,9 +77,16 @@
 - [07 hands on implementation handbook](../src/security/security-engineering/07-hands-on-implementation-handbook.tex) — security engineering · **provisional**
 - [03 control implementation catalog](../src/security/standards/iso-27000/03-control-implementation-catalog.tex) — standards/iso 27000 · **provisional**
 
-## latex-fragment (2)
+## laboratory (3)
+
+- [C Algorithm Implementation Labs](../src/programming/algorithms/algorithm-engineering/laboratories/c-algorithm-implementation-labs.tex) — algorithm engineering / laboratories · **provisional**
+- [Cpp Algorithm Implementation Labs](../src/programming/algorithms/algorithm-engineering/laboratories/cpp-algorithm-implementation-labs.tex) — algorithm engineering / laboratories · **provisional**
+- [Python Algorithm Implementation Labs](../src/programming/algorithms/algorithm-engineering/laboratories/python-algorithm-implementation-labs.tex) — algorithm engineering / laboratories · **provisional**
+
+## latex-fragment (3)
 
 - [preamble](../src/business-analysis/user-stories/shared/preamble.tex) — agile requirements / user stories · **provisional** · non-standalone
+- [Algorithm Style](../src/programming/algorithms/algorithm-engineering/shared/algorithm-style.tex) — algorithm engineering / shared · **provisional** · non-standalone
 - [Assessment Curricula Shared Preamble](../src/security/application-security/learning/assessment-curricula/assessment-curricula-common.tex) — shared LaTeX preamble for AppSec curricula · **reviewed** · non-standalone
 
 ## policy-standard (16)
@@ -101,7 +108,12 @@
 - [closure playbook standard operating procedure](../src/security/application-security/processes/avit-seeker/closure-playbook-standard-operating-procedure.tex) — processes/avit seeker · **provisional**
 - [secure workflow standard github actions](../src/security/github-advanced-security/references/secure-workflow-standard-github-actions.tex) — github advanced security/references · **provisional**
 
-## study-guide (67)
+## runbook (2)
+
+- [Algorithm Verification And Review Procedure](../src/programming/algorithms/algorithm-engineering/procedures/algorithm-verification-and-review-procedure.tex) — algorithm engineering / procedures · **provisional**
+- [Reproducible Benchmarking Procedure](../src/programming/algorithms/algorithm-engineering/procedures/reproducible-benchmarking-procedure.tex) — algorithm engineering / procedures · **provisional**
+
+## study-guide (74)
 
 - [02 cloud architecture curriculum](../src/architecture/cloud/engineering-suite/02-cloud-architecture-curriculum.tex) — cloud/engineering suite · **provisional**
 - [software architecture learning curriculum](../src/architecture/workbooks/software-architecture-learning-curriculum.tex) — architecture · **provisional**
@@ -137,6 +149,13 @@
 - [study plan computational geometry c expanded](../src/mathematics/study-guides/study-plan-computational-geometry-c-expanded.tex) — mathematics · **provisional**
 - [02 chapter study guides](../src/personal/finance/investment-valuation/02-chapter-study-guides.tex) — finance/investment valuation · **provisional**
 - [07 learning curriculum](../src/personal/finance/investment-valuation/07-learning-curriculum.tex) — finance/investment valuation · **provisional**
+- [Competency And Portfolio Matrix](../src/programming/algorithms/algorithm-engineering/curricula/competency-and-portfolio-matrix.tex) — algorithm engineering / curricula · **provisional**
+- [Prerequisite Based Curriculum](../src/programming/algorithms/algorithm-engineering/curricula/prerequisite-based-curriculum.tex) — algorithm engineering / curricula · **provisional**
+- [Volume 1 Fundamental Algorithms](../src/programming/algorithms/algorithm-engineering/study-guides/volume-1-fundamental-algorithms.tex) — algorithm engineering / study guides · **provisional**
+- [Volume 2 Seminumerical Algorithms](../src/programming/algorithms/algorithm-engineering/study-guides/volume-2-seminumerical-algorithms.tex) — algorithm engineering / study guides · **provisional**
+- [Volume 3 Sorting And Searching](../src/programming/algorithms/algorithm-engineering/study-guides/volume-3-sorting-and-searching.tex) — algorithm engineering / study guides · **provisional**
+- [Volume 4A Combinatorial Algorithms](../src/programming/algorithms/algorithm-engineering/study-guides/volume-4a-combinatorial-algorithms.tex) — algorithm engineering / study guides · **provisional**
+- [Volume 4B Combinatorial Algorithms](../src/programming/algorithms/algorithm-engineering/study-guides/volume-4b-combinatorial-algorithms.tex) — algorithm engineering / study guides · **provisional**
 - [02 clause by clause study guide](../src/programming/languages/c-cpp/standards/c23/02-clause-by-clause-study-guide.tex) — standards/c23 · **provisional**
 - [08 training curriculum](../src/programming/languages/c-cpp/standards/c23/08-training-curriculum.tex) — standards/c23 · **provisional**
 - [07 clause study guide](../src/programming/languages/c-cpp/standards/cpp23/07-clause-study-guide.tex) — standards/cpp23 · **provisional**
@@ -498,7 +517,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (561)
+## technical-reference (564)
 
 - [cloud architecture diagram library index](../src/architecture/cloud/architecture/cloud-architecture-diagram-library-index.tex) — cloud/architecture · **provisional**
 - [self hosting cloud architecture reference](../src/architecture/cloud/architecture/self-hosting-cloud-architecture-reference.tex) — cloud/architecture · **provisional**
@@ -876,6 +895,9 @@
 - [tools measure direct sunlight guide gardeners](../src/personal/gardening/tools-measure-direct-sunlight-guide-gardeners.tex) — gardening · **provisional**
 - [calibre drm free ebook to pdf workflow handout](../src/personal/technical-documents/calibre-drm-free-ebook-to-pdf-workflow-handout.tex) — personal · **provisional**
 - [algorithm analysis patterns mathematics](../src/programming/algorithms/algorithm-analysis-patterns-mathematics.tex) — algorithms · **provisional**
+- [Algorithm Engineering Technical Reference](../src/programming/algorithms/algorithm-engineering/technical-references/algorithm-engineering-technical-reference.tex) — algorithm engineering / technical references · **provisional**
+- [Proof And Complexity Field Guide](../src/programming/algorithms/algorithm-engineering/technical-references/proof-and-complexity-field-guide.tex) — algorithm engineering / technical references · **provisional**
+- [Volume And Section Crosswalk](../src/programming/algorithms/algorithm-engineering/technical-references/volume-and-section-crosswalk.tex) — algorithm engineering / technical references · **provisional**
 - [combinatorial algorithms pseudocode handout](../src/programming/algorithms/combinatorial-algorithms-pseudocode-handout.tex) — algorithms · **provisional**
 - [employee scheduling algorithms handout](../src/programming/algorithms/employee-scheduling-algorithms-handout.tex) — algorithms · **provisional**
 - [numerical recipes algorithms pseudocode](../src/programming/algorithms/numerical-recipes-algorithms-pseudocode.tex) — algorithms · **provisional**
@@ -1062,7 +1084,7 @@
 - [immediate founder focus](../src/startups/media/fast-animation-channels/immediate-founder-focus.tex) — media/fast animation channels · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## template (61)
+## template (66)
 
 - [Architecture Documentation Templates](../src/architecture/cloud/engineering-suite/05-architecture-documentation-templates.tex) — cloud architecture documentation forms · **reviewed**
 - [Cloud Security Reference Templates](../src/architecture/cloud/engineering-suite/06-security-governance-templates.tex) — cloud security governance forms · **reviewed**
@@ -1117,6 +1139,11 @@
 - [game design document template](../src/game-development/templates/game-design-document-template.tex) — game development · **provisional**
 - [03 framework and formulas](../src/personal/finance/intelligent-investor/03-framework-and-formulas.tex) — finance/intelligent investor · **provisional**
 - [05 valuation margin of safety worksheets](../src/personal/finance/intelligent-investor/05-valuation-margin-of-safety-worksheets.tex) — finance/intelligent investor · **provisional**
+- [Algorithm Design Scorecard Template](../src/programming/algorithms/algorithm-engineering/templates/algorithm-design-scorecard-template.tex) — algorithm engineering / templates · **provisional**
+- [Benchmark Run Sheet Template](../src/programming/algorithms/algorithm-engineering/templates/benchmark-run-sheet-template.tex) — algorithm engineering / templates · **provisional**
+- [Laboratory Assessment Template](../src/programming/algorithms/algorithm-engineering/templates/laboratory-assessment-template.tex) — algorithm engineering / templates · **provisional**
+- [Learning Progress Tracker Template](../src/programming/algorithms/algorithm-engineering/templates/learning-progress-tracker-template.tex) — algorithm engineering / templates · **provisional**
+- [Mathematical Proof Review Template](../src/programming/algorithms/algorithm-engineering/templates/mathematical-proof-review-template.tex) — algorithm engineering / templates · **provisional**
 - [07 compiler conformance verification](../src/programming/languages/c-cpp/standards/c23/07-compiler-conformance-verification.tex) — standards/c23 · **provisional**
 - [11 forms and records](../src/programming/languages/c-cpp/standards/misra-c-2023/11-forms-and-records.tex) — standards/misra c 2023 · **provisional**
 - [12 audit templates evidence forms](../src/programming/languages/c-cpp/standards/misra-cpp-2023/12-audit-templates-evidence-forms.tex) — standards/misra cpp 2023 · **provisional**
@@ -1146,7 +1173,7 @@
 - [study plan user stories github advanced sec](../src/security/github-advanced-security/administration/study-plan-user-stories-github-advanced-sec.tex) — github advanced security/administration · **provisional**
 - [study plan owasp api sec top 10 user stories](../src/security/standards/owasp/study-plan-owasp-api-sec-top-10-user-stories.tex) — standards/owasp · **provisional**
 
-## workbook (20)
+## workbook (24)
 
 - [ISO/IEC/IEEE 42010 Conformance Assessment Workbook](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment.tex) — ISO/IEC/IEEE 42010 conformance evidence · **reviewed**
 - [Enterprise Architecture Discovery Evidence and Validation Workbook Template](../src/architecture/workbooks/github-actions-architecture-discovery-evidence-workbook-template.tex) — github-actions/enterprise-discovery · **reviewed**
@@ -1164,6 +1191,10 @@
 - [calculus applications workbook solutions](../src/mathematics/workbooks/calculus-applications-workbook-solutions.tex) — mathematics · **provisional**
 - [differential equations curriculum problem workbook](../src/mathematics/workbooks/differential-equations-curriculum-problem-workbook.tex) — mathematics · **provisional**
 - [Financial Modeling: Applied Exercises and Answer Keys](../src/personal/finance/investment-valuation/04-financial-modeling-exercises.tex) — financial modeling exercises · **reviewed**
+- [Arithmetic And Numerical Accuracy Workbook](../src/programming/algorithms/algorithm-engineering/workbooks/arithmetic-and-numerical-accuracy-workbook.tex) — algorithm engineering / workbooks · **provisional**
+- [Asymptotic And Proof Workbook](../src/programming/algorithms/algorithm-engineering/workbooks/asymptotic-and-proof-workbook.tex) — algorithm engineering / workbooks · **provisional**
+- [Combinatorics And Constraints Workbook](../src/programming/algorithms/algorithm-engineering/workbooks/combinatorics-and-constraints-workbook.tex) — algorithm engineering / workbooks · **provisional**
+- [Randomness And Statistics Workbook](../src/programming/algorithms/algorithm-engineering/workbooks/randomness-and-statistics-workbook.tex) — algorithm engineering / workbooks · **provisional**
 - [Desk-Check for Algorithms Workbook](../src/programming/algorithms/desk-check-algorithm-workbook.tex) — algorithm desk checking · **reviewed**
 - [08 hands on laboratories](../src/programming/linux-unix-system-programming/08-hands-on-laboratories.tex) — linux unix system programming · **provisional**
 - [07 hands on labs](../src/programming/web/micro-frontends/07-hands-on-labs.tex) — web/micro frontends · **provisional**

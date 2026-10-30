@@ -1,0 +1,80 @@
+\documentclass[11pt,letterpaper]{article}
+\input{../shared/algorithm-style.tex}
+\begin{document}
+\DocTitle{Algorithm Engineering: Technical Reference}{Formal reasoning, data structures, arithmetic, searching, combinatorics and evidence}{Engineering documentation}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+\section{Scope and disciplined use of the source volumes}
+The five supplied volumes cover Chapters 1--7 of \emph{The Art of Computer Programming} through the early part of Section 7.2.2. The materials here reorganize the concepts into an engineering workflow, rather than repeating the books' text or solved exercises. Treat the volume and numbered section in each module as a navigation key back to the original work.
+\begin{engineeringnote}[title=Classical theory versus current practice]
+The books deliberately explore machine-oriented models, including MIX and historic external storage. Their analysis techniques remain foundational; deployment recommendations must be checked against present hardware, compiler, language, system, and security assumptions. A pseudorandom generator suitable for a simulation is not necessarily cryptographically secure.
+\end{engineeringnote}
+\section{From specification to trusted implementation}
+Define an algorithm as a finite, explicit computational process with a declared input domain and observable output. For every implementation record (1) preconditions, (2) postconditions, (3) invariants, (4) termination argument, (5) cost model, (6) executable tests, and (7) measured evidence. Distinguish functional correctness from numerical stability, security, data-race freedom and acceptable resource consumption.
+\subsection{Loop invariants and termination}
+For Euclid's algorithm, the identity $\gcd(a,b)=\gcd(b,a\bmod b)$ is the invariant and the nonnegative divisor strictly decreases whenever $b\ne 0$. Termination follows from well-ordering of the nonnegative integers. A proof is incomplete if it covers only the maintained invariant but not initialization and termination.
+\subsection{Specifications as executable properties}
+Use small input spaces for exhaustive testing, property-based generators for larger spaces, and independent reference implementations as cross-checks. For sorting: output must be nondecreasing and its multiset of elements must equal the input multiset. This two-part specification detects both disorder and data loss. For exact cover: selected options must cover each primary item exactly once.
+\SourceNote{Vol.~1, \S\S1.1, 1.2.10, 1.4; Vol.~4B, \S7.2.2.1.}
+\section{Cost models and asymptotic reasoning}
+Let $T(n)$ count a well-defined primitive operation; never treat wall time as an exact proxy for $T(n)$. A tight bound requires both upper and lower arguments. For $n\ge 1$:
+\[\sum_{i=1}^{n}i=\frac{n(n+1)}2=\Theta(n^2),\qquad
+\sum_{i=1}^{n}\frac1i = H_n = \ln n + \gamma+O(1/n).\]
+For a divide-and-conquer procedure $T(n)=2T(n/2)+cn$ on powers of two, recursion-tree levels each incur $cn$, and there are $\log_2 n$ levels, hence $T(n)=\Theta(n\log n)$. For binary search, $T(n)\le T(\lceil n/2\rceil)+c$, giving $O(\log n)$ comparisons. State base cases and rounding conventions.
+\subsection{Expected and amortized costs}
+An expected cost is taken over a specified input distribution or algorithmic randomness; it is not a guarantee on each individual run. An amortized cost distributes exceptional expensive operations over a sequence of operations (e.g., geometric array resizing); it is not an average over random inputs. Under doubling capacity, copying costs form a geometric series below $2n$, yielding $O(1)$ amortized append time.
+\subsection{Memory and I/O dimensions}
+Record auxiliary space separately from input and output storage. External sorting prioritizes transfers, buffering and sequential access; cache locality and memory hierarchy can change practical rankings without changing comparison counts. Complexity claims must state the unit of cost: comparisons, bit operations, memory allocations, cache misses or block transfers.
+\SourceNote{Vol.~1, \S\S1.2.3, 1.2.7, 1.2.10--1.2.11; Vol.~3, \S\S5.2--5.4.}
+\section{Representations and information structures}
+\subsection{Sequential, linked and tree-based structures}
+Arrays offer constant-time indexed reads but may require shifts for insertion. Linked lists make known-position splices local but impose pointer overhead and traversal cost. Stacks/queues constrain access; circular buffers exploit bounded contiguous storage. Distinguish a tree's abstract parent--child relation from its binary-tree encoding. A representation is selected against an operation workload, not by a generic preference for one container.
+\subsection{Storage ownership and lifecycle}
+Specify allocation policy, ownership, invalidated references, exception safety, traversal invariants and memory bounds. In C++, use RAII and standard containers unless the laboratory explicitly requires implementing a structure. In Python, account for object overhead and garbage collection when interpreting measured memory.
+\SourceNote{Vol.~1, \S\S2.2--2.5.}
+\section{Randomness, arithmetic and representation}
+\subsection{Statistical PRNGs}
+A linear congruential generator follows $x_{k+1}=(ax_k+c)\bmod m$. It is deterministic and has period at most $m$. Frequency histograms alone are insufficient for validating independence or high-dimensional quality. Document seed, parameters, period assumptions, sampling protocol, statistical tests and their limitations. Prefer a vetted library PRNG in production simulations; use a dedicated cryptographically secure RNG for secrets, keys or tokens.
+\subsection{Correct arithmetic is representation-sensitive}
+In base $b$, digits determine $N=\sum_{i=0}^{k} d_i b^i$, $0\le d_i<b$. Fixed-width integer addition can overflow; floating point introduces rounding and representation errors. The expression $(a+b)+c$ need not equal $a+(b+c)$ under floating-point arithmetic. Compare absolute error $|\hat{x}-x|$, relative error $|\hat{x}-x|/|x|$ when $x\ne 0$, and residual error when exact reference values are unavailable.
+\subsection{Polynomial and large-integer computation}
+Horner evaluation performs $n$ multiplies and $n$ adds for a degree-$n$ polynomial; naive evaluation that recomputes powers can require more operations. Multiple-precision multiplication depends on digit length and chosen algorithm; account for carries and allocation in the bit-cost model. Modular arithmetic must normalize negative residues in cross-language comparisons.
+\SourceNote{Vol.~2, \S\S3.2--3.5, 4.1--4.7.}
+\section{Sorting and searching}
+\subsection{An engineering decision table}
+\begin{tabularx}{\linewidth}{@{}p{0.18\linewidth}p{0.22\linewidth}X@{}}\toprule
+Method & Typical bound & Preconditions and trade-offs\\\midrule
+Insertion sort & $O(n^2)$ worst, $O(n)$ best & Adaptive for nearly sorted data; in-place and stable if implemented carefully\\
+Merge sort & $O(n\log n)$ & Stable implementation possible; extra buffer commonly $O(n)$\\
+Binary search & $O(\log n)$ & Requires sorted random-access sequence and well-defined total ordering\\
+Balanced tree & $O(\log n)$ per operation & Maintains order under mutation; pointer/locality costs\\
+Hash table & $O(1)$ expected lookup & Performance depends on hash function, load, collision scheme and threat model\\
+\bottomrule\end{tabularx}
+\subsection{Comparator contracts}
+A comparator must be consistent with the algorithm's ordering requirements; in C++ a sorting comparator should implement a strict weak ordering. Nondeterministic or inconsistent comparisons invalidate algorithm assumptions. Stability means items with equal keys retain relative input order; verify this using unique payload identifiers.
+\subsection{External sorting versus internal sorting}
+For datasets exceeding available memory, design bounded-size sorted runs followed by a $k$-way merge. Analyze disk bytes, number of merge passes, file handle constraints and buffer sizes. Historic storage discussions in the source provide theory, not current storage configuration recommendations.
+\SourceNote{Vol.~3, \S\S5.2--5.4, 6.1--6.5.}
+\section{Combinatorial enumeration, exact cover and SAT}
+\subsection{Generation without unnecessary storage}
+Enumeration may need $\Theta(n!)$ outputs for permutations or $\Theta(2^n)$ subsets, independent of implementation cleverness. Use generators/iterators and report \emph{delay per output} and working space, rather than only total runtime. For $n$-bit patterns, a Gray code changes one bit between successive values and can reduce update work in an incremental downstream computation.
+\subsection{Exact cover}
+Represent the problem as primary items and options. A solution selects options so each primary item occurs exactly once. Backtracking selects a constrained uncovered item, tries an option, removes conflicting options, then reverses the update. The linked representation commonly called dancing links makes undo efficient. A simple set-based implementation is clearer for verification; the optimized linked implementation is a separate exercise.
+\subsection{SAT and DPLL}
+In conjunctive normal form, each clause is a disjunction of literals; the formula is their conjunction. A basic DPLL solver simplifies clauses, performs unit propagation, chooses a variable and branches. Correctness requires comparing its assignments and UNSAT results against exhaustive enumeration for small variable counts. Industrial CDCL, watched literals and clause-learning optimizations require additional invariants and testing.
+\SourceNote{Vol.~4A, \S\S7.1--7.2.1; Vol.~4B, \S\S7.2.2, 7.2.2.1--7.2.2.2.}
+\section{Engineering evidence and review gates}
+A result is reproducible when configuration, source revision, compiler/interpreter, dataset generator and seed, measurement method and analysis decisions are retained. Validate before timing. Report distribution of timings and confidence/dispersion rather than the best measurement alone. Separate algorithm comparisons from language-runtime comparisons; two implementations in different languages do not isolate algorithmic effects.
+\begin{evidencebox}
+For each evaluated algorithm include a written contract, a correctness argument, automated tests (including degenerate input), an explicitly derived time/space bound, a benchmark manifest, raw results, and a concise decision explaining the workload under which the algorithm is suitable.
+\end{evidencebox}
+\section{Compact reference bibliography}
+\begin{enumerate}
+\item Donald E. Knuth, \emph{The Art of Computer Programming}, Volume 1, \emph{Fundamental Algorithms}, third edition, Addison--Wesley, 1997.
+\item Donald E. Knuth, \emph{The Art of Computer Programming}, Volume 2, \emph{Seminumerical Algorithms}, third edition, Addison--Wesley, 1998.
+\item Donald E. Knuth, \emph{The Art of Computer Programming}, Volume 3, \emph{Sorting and Searching}, second edition, Addison--Wesley, 1998.
+\item Donald E. Knuth, \emph{The Art of Computer Programming}, Volume 4A, \emph{Combinatorial Algorithms, Part 1}, Addison--Wesley, 2011.
+\item Donald E. Knuth, \emph{The Art of Computer Programming}, Volume 4B, \emph{Combinatorial Algorithms, Part 2}, first printing 2022, Pearson/Addison--Wesley.
+\end{enumerate}
+\end{document}

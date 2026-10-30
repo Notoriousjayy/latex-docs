@@ -1,0 +1,46 @@
+\documentclass[11pt,letterpaper]{article}
+\input{../shared/algorithm-style.tex}
+\begin{document}
+\DocTitle{Reproducible Performance Benchmarking Procedure}{An experimental SOP for algorithms in Python and C++}{Engineering documentation}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+\section{Purpose, scope and roles}
+This procedure governs controlled microbenchmarks, scaling studies, and cross-implementation comparisons. The implementer owns correctness and instrumentation; the reviewer owns experimental design and disclosure of threats to validity. It is not a substitute for production profiling with representative applications.
+\section{Procedure ALG-BENCH-01}
+\subsection{Gate 0: validate correctness}
+Define the workload contract and deterministic inputs. Run unit tests, boundary tests, oracle comparisons and sanitizer checks when appropriate. If any result is incorrect, stop the benchmark and label measurements invalid. Preserve failures.
+\subsection{Gate 1: formulate a measurable hypothesis}
+Record candidate complexity, cost unit and independent input parameter. Examples: merge sort should scale approximately $n\log n$ in comparison cost; sequential search unsuccessful comparisons should be approximately $n$. State how the hypothesis could be falsified.
+\subsection{Gate 2: prepare workloads}
+Select geometrically spaced sizes (such as $2^8,2^{10},2^{12},\ldots$) inside a safe memory/time envelope. Include sorted, reverse, nearly sorted, duplicate-heavy and random cases when relevant. Generate datasets independently of timed regions, unless generation is explicitly part of the workload. Save seed and generation code; do not use one fixed seed as a complete distributional study.
+\subsection{Gate 3: identify the environment}
+Record processor model, core count, RAM, OS/kernel, governor and thermal/power context when available; Python runtime or C++ compiler/library version; build flags; virtualization/container limits; process affinity; background load; source commit; and absolute UTC timestamp. If a control cannot be established, report it as a limitation.
+\subsection{Gate 4: control execution}
+Warm code paths when a runtime benefits from warmup. Run a separately recorded pilot to choose batch size. Use a monotonic high-resolution clock; measure sufficiently long batches to rise above timer noise. Interleave competing implementations or randomize order to reduce temporal confounding. For C++, prevent dead-code elimination through an observable checksum. Avoid undefined behavior or data races.
+\subsection{Gate 5: acquire raw samples}
+Record at least 15 repeated batch observations per configuration as a baseline, and increase count if noisy. Save units, batch size, repetition index, seed and elapsed time in a machine-readable CSV. Do not delete outliers merely because they are inconvenient; explain any predeclared exclusion rule. Collect operation counts separately from wall time when useful.
+\subsection{Gate 6: analyze and visualize}
+Compute median and interquartile range (IQR), plus mean and dispersion if meaningful. Plot runtime versus input size, normalized runtime such as $T(n)/(n\log_2 n)$, and comparisons versus predicted counts. Use confidence intervals only when their sampling assumptions are defensible. Do not infer complexity class from a narrow plot alone.
+\subsection{Gate 7: interpret and review}
+Compare implementations on equal semantics, comparable optimization, identical input and output requirements. Distinguish latency, throughput, peak memory, allocation counts, cache misses and I/O volume. Archive raw samples and decisions. Reviewer signs only after reproducing at least one configuration.
+\section{CSV record contract}
+\begin{lstlisting}
+experiment_id,revision,language,variant,n,input_family,seed,run,batch_ops,elapsed_ns,checksum
+ALG-B03,abc123,python,merge,1024,random,42,1,25,80342211,7812
+\end{lstlisting}
+The row is illustrative only, not a measurement of this suite. Keep measurements rather than copying the example row.
+\section{Recommended statistical summaries}
+For samples $x_1,\ldots,x_R$, median is robust to isolated large stalls. IQR is $Q_{0.75}-Q_{0.25}$. The normalized timing ratio $T(2n)/T(n)$ may suggest scaling but is sensitive to memory, cache transitions and size-specific effects. Always present the actual observations and cost model alongside any regression fit.
+\section{Validity threats and incident response}
+\begin{itemize}
+\item \textbf{Construct validity:} counting a different operation than the theoretical model.
+\item \textbf{Internal validity:} unrelated system load or altered input distribution.
+\item \textbf{External validity:} small synthetic arrays misrepresent production access patterns.
+\item \textbf{Implementation validity:} competing code paths differ in output semantics or compiler optimization.
+\end{itemize}
+If a threat is significant, rerun with corrected controls and link both runs rather than overwriting evidence.
+\section{Sign-off criteria}
+\begin{evidencebox}Archive test report, source revision, workload generator, full manifest, raw CSV, summary table, derived model, confidence/dispersion description, plots if used, review record and explicit limitations.\end{evidencebox}
+\SourceNote{Algorithm analysis in Vol.~1, \S1.2.10; sorting/searching models in Vol.~3, Chapters 5--6. The operational SOP is an original modern extension, not a procedure supplied in the books.}
+\end{document}

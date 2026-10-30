@@ -167,6 +167,55 @@
 
 - [Desk-Check for Algorithms Workbook](../src/programming/algorithms/desk-check-algorithm-workbook.tex) — algorithm desk checking · **reviewed**
 
+## algorithm engineering / curricula (2)
+
+- [Competency And Portfolio Matrix](../src/programming/algorithms/algorithm-engineering/curricula/competency-and-portfolio-matrix.tex) — algorithm engineering / curricula · **provisional**
+- [Prerequisite Based Curriculum](../src/programming/algorithms/algorithm-engineering/curricula/prerequisite-based-curriculum.tex) — algorithm engineering / curricula · **provisional**
+
+## algorithm engineering / laboratories (3)
+
+- [C Algorithm Implementation Labs](../src/programming/algorithms/algorithm-engineering/laboratories/c-algorithm-implementation-labs.tex) — algorithm engineering / laboratories · **provisional**
+- [Cpp Algorithm Implementation Labs](../src/programming/algorithms/algorithm-engineering/laboratories/cpp-algorithm-implementation-labs.tex) — algorithm engineering / laboratories · **provisional**
+- [Python Algorithm Implementation Labs](../src/programming/algorithms/algorithm-engineering/laboratories/python-algorithm-implementation-labs.tex) — algorithm engineering / laboratories · **provisional**
+
+## algorithm engineering / procedures (2)
+
+- [Algorithm Verification And Review Procedure](../src/programming/algorithms/algorithm-engineering/procedures/algorithm-verification-and-review-procedure.tex) — algorithm engineering / procedures · **provisional**
+- [Reproducible Benchmarking Procedure](../src/programming/algorithms/algorithm-engineering/procedures/reproducible-benchmarking-procedure.tex) — algorithm engineering / procedures · **provisional**
+
+## algorithm engineering / shared (1)
+
+- [Algorithm Style](../src/programming/algorithms/algorithm-engineering/shared/algorithm-style.tex) — algorithm engineering / shared · **provisional** · non-standalone
+
+## algorithm engineering / study guides (5)
+
+- [Volume 1 Fundamental Algorithms](../src/programming/algorithms/algorithm-engineering/study-guides/volume-1-fundamental-algorithms.tex) — algorithm engineering / study guides · **provisional**
+- [Volume 2 Seminumerical Algorithms](../src/programming/algorithms/algorithm-engineering/study-guides/volume-2-seminumerical-algorithms.tex) — algorithm engineering / study guides · **provisional**
+- [Volume 3 Sorting And Searching](../src/programming/algorithms/algorithm-engineering/study-guides/volume-3-sorting-and-searching.tex) — algorithm engineering / study guides · **provisional**
+- [Volume 4A Combinatorial Algorithms](../src/programming/algorithms/algorithm-engineering/study-guides/volume-4a-combinatorial-algorithms.tex) — algorithm engineering / study guides · **provisional**
+- [Volume 4B Combinatorial Algorithms](../src/programming/algorithms/algorithm-engineering/study-guides/volume-4b-combinatorial-algorithms.tex) — algorithm engineering / study guides · **provisional**
+
+## algorithm engineering / technical references (3)
+
+- [Algorithm Engineering Technical Reference](../src/programming/algorithms/algorithm-engineering/technical-references/algorithm-engineering-technical-reference.tex) — algorithm engineering / technical references · **provisional**
+- [Proof And Complexity Field Guide](../src/programming/algorithms/algorithm-engineering/technical-references/proof-and-complexity-field-guide.tex) — algorithm engineering / technical references · **provisional**
+- [Volume And Section Crosswalk](../src/programming/algorithms/algorithm-engineering/technical-references/volume-and-section-crosswalk.tex) — algorithm engineering / technical references · **provisional**
+
+## algorithm engineering / templates (5)
+
+- [Algorithm Design Scorecard Template](../src/programming/algorithms/algorithm-engineering/templates/algorithm-design-scorecard-template.tex) — algorithm engineering / templates · **provisional**
+- [Benchmark Run Sheet Template](../src/programming/algorithms/algorithm-engineering/templates/benchmark-run-sheet-template.tex) — algorithm engineering / templates · **provisional**
+- [Laboratory Assessment Template](../src/programming/algorithms/algorithm-engineering/templates/laboratory-assessment-template.tex) — algorithm engineering / templates · **provisional**
+- [Learning Progress Tracker Template](../src/programming/algorithms/algorithm-engineering/templates/learning-progress-tracker-template.tex) — algorithm engineering / templates · **provisional**
+- [Mathematical Proof Review Template](../src/programming/algorithms/algorithm-engineering/templates/mathematical-proof-review-template.tex) — algorithm engineering / templates · **provisional**
+
+## algorithm engineering / workbooks (4)
+
+- [Arithmetic And Numerical Accuracy Workbook](../src/programming/algorithms/algorithm-engineering/workbooks/arithmetic-and-numerical-accuracy-workbook.tex) — algorithm engineering / workbooks · **provisional**
+- [Asymptotic And Proof Workbook](../src/programming/algorithms/algorithm-engineering/workbooks/asymptotic-and-proof-workbook.tex) — algorithm engineering / workbooks · **provisional**
+- [Combinatorics And Constraints Workbook](../src/programming/algorithms/algorithm-engineering/workbooks/combinatorics-and-constraints-workbook.tex) — algorithm engineering / workbooks · **provisional**
+- [Randomness And Statistics Workbook](../src/programming/algorithms/algorithm-engineering/workbooks/randomness-and-statistics-workbook.tex) — algorithm engineering / workbooks · **provisional**
+
 ## algorithms (6)
 
 - [algorithm analysis patterns mathematics](../src/programming/algorithms/algorithm-analysis-patterns-mathematics.tex) — algorithms · **provisional**
