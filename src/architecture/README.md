@@ -24,6 +24,7 @@ These collections retain topic, standard, chapter, governance or diagram boundar
 
 | Collection | Contents | LaTeX sources |
 |---|---|---:|
+| [C4 Model](c4-model/README.md) | C4 Model architecture visualization, chapter study guides, practical laboratories, printable forms, and traceability suite. | 67 |
 | [cloud](cloud/) | Cloud concepts, architecture/diagram sets and an engineering suite. | 27 |
 | [decisions](decisions/) | Generic and specialized ADR templates with review governance. | 11 |
 | [diagrams](diagrams/) | Cross-cutting diagrams and architectural model assets. | 0 |
@@ -56,6 +57,10 @@ The [AWS Terraform architecture standard](cloud/secure-aws-terraform-repository-
 ## Enterprise GitHub Actions architecture discovery
 
 See the [enterprise architecture discovery suite](github-actions-discovery-suite.md) for the uploaded technical reference and its four project-specific Template–Blank pairs: Architecture Description, evidence viewpoint, implementation workbook, and evidence/validation workbook. The Blank copies are printable and contain empty writing lines rather than bracketed prompts. Use separate ADRs for consequential design decisions.
+
+## C4 Model architecture visualization suite
+
+The [C4 Model and Software Architecture Visualization Documentation Suite](c4-model/documentation-suite/README.md) contains 12 chapter-aligned study guides, a prerequisite curriculum, original technical references, C4 viewpoints, PlantUML examples and laboratories, diagram specifications, traceability workbooks, review scorecards, and 15 paired authoring Template/printable Blank forms. The supplemental ISO 42010, UML, and Views and Beyond crosswalks are distinguished from the book's principles.
 
 ## Software architecture documentation engineering suite
 
