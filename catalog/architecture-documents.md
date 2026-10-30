@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary architecture documents (17)
+## Primary architecture documents (20)
 
 - [ADR-0001: Application-aligned repository ownership](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0001.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [ADR-0002: Multi-account workload and environment isolation](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0002.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
@@ -10,6 +10,9 @@
 - [ADR-0004: GitHub Actions OIDC authorization](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0004.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [ADR-0005: Terraform module provenance and promotion](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0005.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [ADR-0006: Separate validation and deployment trust](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0006.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
+- [deployment promotion and rollback](../src/devops/ci-cd/continuous-integration-engineering/specifications/deployment-promotion-and-rollback.tex) — ci cd/continuous integration engineering/specifications · **provisional**
+- [oidc authorization trust boundaries](../src/devops/ci-cd/continuous-integration-engineering/specifications/oidc-authorization-trust-boundaries.tex) — ci cd/continuous integration engineering/specifications · **provisional**
+- [pipeline reference architecture](../src/devops/ci-cd/continuous-integration-engineering/specifications/pipeline-reference-architecture.tex) — ci cd/continuous integration engineering/specifications · **provisional**
 - [game animation verification specification](../src/game-development/animation-timing/architecture/game-animation-verification-specification.tex) — animation-timing/architecture · **provisional**
 - [real time character animation architecture](../src/game-development/animation-timing/architecture/real-time-character-animation-architecture.tex) — animation-timing/architecture · **provisional**
 - [content and level pipeline architecture](../src/game-development/architecture-specifications/content-and-level-pipeline-architecture.tex) — architecture-specifications · **provisional**

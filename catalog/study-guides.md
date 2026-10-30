@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary study guides (326)
+## Primary study guides (337)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -57,6 +57,17 @@
 - [21 the acceptance tests](../src/business-analysis/user-stories/study-guides/21-the-acceptance-tests.tex) — agile requirements / user stories · **provisional**
 - [02 chapter study guides](../src/devops/build-systems/professional-cmake/02-chapter-study-guides.tex) — build systems/professional cmake · **provisional**
 - [08 prerequisite curriculum](../src/devops/build-systems/professional-cmake/08-prerequisite-curriculum.tex) — build systems/professional cmake · **provisional**
+- [chapter to operations crosswalk](../src/devops/ci-cd/continuous-integration-engineering/curriculum/chapter-to-operations-crosswalk.tex) — ci cd/continuous integration engineering/curriculum · **provisional**
+- [prerequisite based curriculum](../src/devops/ci-cd/continuous-integration-engineering/curriculum/prerequisite-based-curriculum.tex) — ci cd/continuous integration engineering/curriculum · **provisional**
+- [chapter 01 getting started](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-01-getting-started.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 02 introducing continuous integration](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-02-introducing-continuous-integration.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 03 reducing risks using ci](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-03-reducing-risks-using-ci.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 04 building software at every change](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-04-building-software-at-every-change.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 05 continuous database integration](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-05-continuous-database-integration.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 06 continuous testing](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-06-continuous-testing.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 07 continuous inspection](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-07-continuous-inspection.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 08 continuous deployment](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-08-continuous-deployment.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 09 continuous feedback](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-09-continuous-feedback.tex) — ci cd/continuous integration engineering/study guides · **provisional**
 - [study plan nginx cookbook 3rd edition story](../src/devops/platform/nginx/study-plan-nginx-cookbook-3rd-edition-story.tex) — platform/nginx · **provisional**
 - [study plan nginx cookbook 3rd edition user](../src/devops/platform/nginx/study-plan-nginx-cookbook-3rd-edition-user.tex) — platform/nginx · **provisional**
 - [study plan nginx cookbook derek dejonghe user](../src/devops/platform/nginx/study-plan-nginx-cookbook-derek-dejonghe-user.tex) — platform/nginx · **provisional**

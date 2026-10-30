@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## architecture-document (17)
+## architecture-document (20)
 
 - [ADR-0001: Application-aligned repository ownership](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0001.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [ADR-0002: Multi-account workload and environment isolation](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0002.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
@@ -10,6 +10,9 @@
 - [ADR-0004: GitHub Actions OIDC authorization](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0004.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [ADR-0005: Terraform module provenance and promotion](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0005.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [ADR-0006: Separate validation and deployment trust](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0006.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
+- [deployment promotion and rollback](../src/devops/ci-cd/continuous-integration-engineering/specifications/deployment-promotion-and-rollback.tex) — ci cd/continuous integration engineering/specifications · **provisional**
+- [oidc authorization trust boundaries](../src/devops/ci-cd/continuous-integration-engineering/specifications/oidc-authorization-trust-boundaries.tex) — ci cd/continuous integration engineering/specifications · **provisional**
+- [pipeline reference architecture](../src/devops/ci-cd/continuous-integration-engineering/specifications/pipeline-reference-architecture.tex) — ci cd/continuous integration engineering/specifications · **provisional**
 - [game animation verification specification](../src/game-development/animation-timing/architecture/game-animation-verification-specification.tex) — animation-timing/architecture · **provisional**
 - [real time character animation architecture](../src/game-development/animation-timing/architecture/real-time-character-animation-architecture.tex) — animation-timing/architecture · **provisional**
 - [content and level pipeline architecture](../src/game-development/architecture-specifications/content-and-level-pipeline-architecture.tex) — architecture-specifications · **provisional**
@@ -22,7 +25,7 @@
 - [subsystem and lifecycle specification](../src/game-development/game-engine-architecture-suite/architecture-specifications/subsystem-and-lifecycle-specification.tex) — game-engine-architecture-suite/architecture-specifications · **provisional**
 - [Open-Source Enterprise Security Platform: Reference Architecture and Tool Strategy](../src/security/technical-documents/open-source-enterprise-security-platform.tex) — enterprise security platform architecture · **reviewed**
 
-## assessment (35)
+## assessment (37)
 
 - [architecture traceability scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/architecture-traceability-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
 - [diagram quality scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/diagram-quality-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
@@ -33,6 +36,8 @@
 - [architecture view completeness template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Architecture_View_Completeness_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
 - [documentation review readiness template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Documentation_Review_Readiness_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
 - [traceability and change readiness template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Traceability_and_Change_Readiness_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
+- [ci cd maturity assessment model](../src/devops/ci-cd/continuous-integration-engineering/assessments/ci-cd-maturity-assessment-model.tex) — ci cd/continuous integration engineering/assessments · **provisional**
+- [pipeline architecture review standard](../src/devops/ci-cd/continuous-integration-engineering/assessments/pipeline-architecture-review-standard.tex) — ci cd/continuous integration engineering/assessments · **provisional**
 - [animation accessibility and playtest scorecard template](../src/game-development/animation-timing/scorecards/animation-accessibility-and-playtest-scorecard-template.tex) — animation-timing/scorecards · **provisional**
 - [animation timing scorecard template](../src/game-development/animation-timing/scorecards/animation-timing-scorecard-template.tex) — animation-timing/scorecards · **provisional**
 - [game animation engineering scorecard template](../src/game-development/animation-timing/scorecards/game-animation-engineering-scorecard-template.tex) — animation-timing/scorecards · **provisional**
@@ -121,8 +126,18 @@
 - [07 hands on implementation handbook](../src/security/security-engineering/07-hands-on-implementation-handbook.tex) — security engineering · **provisional**
 - [03 control implementation catalog](../src/security/standards/iso-27000/03-control-implementation-catalog.tex) — standards/iso 27000 · **provisional**
 
-## laboratory (40)
+## laboratory (50)
 
+- [lab 01 pr triggered ci](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-01-pr-triggered-ci.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
+- [lab 02 python quality gates](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-02-python-quality-gates.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
+- [lab 03 java maven junit](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-03-java-maven-junit.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
+- [lab 04 cpp cmake ctest](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-04-cpp-cmake-ctest.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
+- [lab 05 disposable database](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-05-disposable-database.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
+- [lab 06 security assurance](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-06-security-assurance.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
+- [lab 07 advanced workflows](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-07-advanced-workflows.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
+- [lab 08 controlled release](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-08-controlled-release.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
+- [lab 09 performance and feedback](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-09-performance-and-feedback.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
+- [lab 10 capstone assessment](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-10-capstone-assessment.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
 - [lab 01 fixed step game loop](../src/game-development/game-engine-architecture-suite/labs/lab-01-fixed-step-game-loop.tex) — game-engine-architecture-suite/labs · **provisional**
 - [lab 02 arena allocator](../src/game-development/game-engine-architecture-suite/labs/lab-02-arena-allocator.tex) — game-engine-architecture-suite/labs · **provisional**
 - [lab 03 parallel batch](../src/game-development/game-engine-architecture-suite/labs/lab-03-parallel-batch.tex) — game-engine-architecture-suite/labs · **provisional**
@@ -225,7 +240,7 @@
 - [operational resilience template](../src/startups/small-business-management/scorecards/templates/operational-resilience-template.tex) — small-business-management/scorecards/templates · **provisional**
 - [venture feasibility template](../src/startups/small-business-management/scorecards/templates/venture-feasibility-template.tex) — small-business-management/scorecards/templates · **provisional**
 
-## study-guide (326)
+## study-guide (337)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -280,6 +295,17 @@
 - [21 the acceptance tests](../src/business-analysis/user-stories/study-guides/21-the-acceptance-tests.tex) — agile requirements / user stories · **provisional**
 - [02 chapter study guides](../src/devops/build-systems/professional-cmake/02-chapter-study-guides.tex) — build systems/professional cmake · **provisional**
 - [08 prerequisite curriculum](../src/devops/build-systems/professional-cmake/08-prerequisite-curriculum.tex) — build systems/professional cmake · **provisional**
+- [chapter to operations crosswalk](../src/devops/ci-cd/continuous-integration-engineering/curriculum/chapter-to-operations-crosswalk.tex) — ci cd/continuous integration engineering/curriculum · **provisional**
+- [prerequisite based curriculum](../src/devops/ci-cd/continuous-integration-engineering/curriculum/prerequisite-based-curriculum.tex) — ci cd/continuous integration engineering/curriculum · **provisional**
+- [chapter 01 getting started](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-01-getting-started.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 02 introducing continuous integration](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-02-introducing-continuous-integration.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 03 reducing risks using ci](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-03-reducing-risks-using-ci.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 04 building software at every change](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-04-building-software-at-every-change.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 05 continuous database integration](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-05-continuous-database-integration.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 06 continuous testing](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-06-continuous-testing.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 07 continuous inspection](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-07-continuous-inspection.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 08 continuous deployment](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-08-continuous-deployment.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 09 continuous feedback](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-09-continuous-feedback.tex) — ci cd/continuous integration engineering/study guides · **provisional**
 - [study plan nginx cookbook 3rd edition story](../src/devops/platform/nginx/study-plan-nginx-cookbook-3rd-edition-story.tex) — platform/nginx · **provisional**
 - [study plan nginx cookbook 3rd edition user](../src/devops/platform/nginx/study-plan-nginx-cookbook-3rd-edition-user.tex) — platform/nginx · **provisional**
 - [study plan nginx cookbook derek dejonghe user](../src/devops/platform/nginx/study-plan-nginx-cookbook-derek-dejonghe-user.tex) — platform/nginx · **provisional**
@@ -881,7 +907,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (649)
+## technical-reference (658)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -1215,6 +1241,15 @@
 - [05 testing quality engineering](../src/devops/build-systems/professional-cmake/05-testing-quality-engineering.tex) — build systems/professional cmake · **provisional**
 - [06 cicd devsecops](../src/devops/build-systems/professional-cmake/06-cicd-devsecops.tex) — build systems/professional cmake · **provisional**
 - [Professional CMake: Cross-Platform Builds and Performance](../src/devops/build-systems/professional-cmake/07-cross-platform-performance.tex) — CMake cross-platform builds and benchmarking · **reviewed**
+- [delivery performance measures](../src/devops/ci-cd/continuous-integration-engineering/performance/delivery-performance-measures.tex) — ci cd/continuous integration engineering/performance · **provisional**
+- [pipeline benchmarking procedure](../src/devops/ci-cd/continuous-integration-engineering/performance/pipeline-benchmarking-procedure.tex) — ci cd/continuous integration engineering/performance · **provisional**
+- [source register](../src/devops/ci-cd/continuous-integration-engineering/references/source-register.tex) — ci cd/continuous integration engineering/references · **provisional**
+- [build reproducibility and cache reference](../src/devops/ci-cd/continuous-integration-engineering/technical-references/build-reproducibility-and-cache-reference.tex) — ci cd/continuous integration engineering/technical references · **provisional**
+- [ci cd operations and feedback](../src/devops/ci-cd/continuous-integration-engineering/technical-references/ci-cd-operations-and-feedback.tex) — ci cd/continuous integration engineering/technical references · **provisional**
+- [ci principles and system model](../src/devops/ci-cd/continuous-integration-engineering/technical-references/ci-principles-and-system-model.tex) — ci cd/continuous integration engineering/technical references · **provisional**
+- [continuous testing and flaky tests](../src/devops/ci-cd/continuous-integration-engineering/technical-references/continuous-testing-and-flaky-tests.tex) — ci cd/continuous integration engineering/technical references · **provisional**
+- [devsecops supply chain assurance](../src/devops/ci-cd/continuous-integration-engineering/technical-references/devsecops-supply-chain-assurance.tex) — ci cd/continuous integration engineering/technical references · **provisional**
+- [github actions workflow engineering](../src/devops/ci-cd/continuous-integration-engineering/technical-references/github-actions-workflow-engineering.tex) — ci cd/continuous integration engineering/technical references · **provisional**
 - [continuous integr toolkit github first minted](../src/devops/ci-cd/fundamentals/continuous-integr-toolkit-github-first-minted.tex) — ci cd/fundamentals · **provisional**
 - [github devsecops ci foundation handout](../src/devops/ci-cd/fundamentals/github-devsecops-ci-foundation-handout.tex) — ci cd/fundamentals · **provisional**
 - [release engineering quick start](../src/devops/ci-cd/fundamentals/release-engineering-quick-start.tex) — ci cd/fundamentals · **provisional**
@@ -1533,7 +1568,7 @@
 - [venture lifecycle reference](../src/startups/small-business-management/technical-reference/venture-lifecycle-reference.tex) — small-business-management/technical-reference · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## template (154)
+## template (162)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -1600,6 +1635,14 @@
 - [release planning workbook template](../src/business-analysis/user-stories/workbooks/templates/release-planning-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [role and discovery workbook template](../src/business-analysis/user-stories/workbooks/templates/role-and-discovery-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [story refinement workbook template](../src/business-analysis/user-stories/workbooks/templates/story-refinement-workbook-template.tex) — agile requirements / user stories · **provisional**
+- [benchmark experiment template](../src/devops/ci-cd/continuous-integration-engineering/templates/benchmark-experiment-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [ci cd maturity scorecard template](../src/devops/ci-cd/continuous-integration-engineering/templates/ci-cd-maturity-scorecard-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [ci failure triage template](../src/devops/ci-cd/continuous-integration-engineering/templates/ci-failure-triage-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [ci laboratory workbook template](../src/devops/ci-cd/continuous-integration-engineering/templates/ci-laboratory-workbook-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [ci pipeline design record template](../src/devops/ci-cd/continuous-integration-engineering/templates/ci-pipeline-design-record-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [deployment release readiness template](../src/devops/ci-cd/continuous-integration-engineering/templates/deployment-release-readiness-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [pipeline architecture scorecard template](../src/devops/ci-cd/continuous-integration-engineering/templates/pipeline-architecture-scorecard-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [workflow security assessment template](../src/devops/ci-cd/continuous-integration-engineering/templates/workflow-security-assessment-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
 - [collaborating your community github templates](../src/devops/platform/github/collaborating-your-community-github-templates.tex) — platform/github · **provisional**
 - [Business Letterhead Template](../src/documentation/templates/letterhead-template.tex) — letterhead and correspondence · **reviewed**
 - [animation asset handoff template](../src/game-development/animation-timing/templates/animation-asset-handoff-template.tex) — animation-timing/templates · **provisional**
