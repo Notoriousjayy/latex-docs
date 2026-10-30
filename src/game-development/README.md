@@ -39,6 +39,8 @@ These collections retain topic, standard, chapter, governance or diagram boundar
 
 ## Recommended navigation
 
+- [Game Engine Architecture and Development Engineering suite](game-engine-architecture-suite/README.md) for the 17-chapter curriculum, subsystem references, C++/Python laboratories, benchmarking, and printable Template–Blank pairs.
+
 - [Animation Timing and Game Animation Engineering suite](animation-timing/README.md) for 82 chapter guides, code laboratories, integration references, and printable forms.
 
 - [Game Design Document template](templates/game-design-document-gdd-template.tex) for design scope, mechanics and requirements.
