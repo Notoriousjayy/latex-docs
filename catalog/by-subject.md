@@ -1242,6 +1242,10 @@
 - [Compiler Security Test Plan](../src/programming/compilers/compiler-engineering/security-assessments/compiler-security-test-plan.tex) — compiler engineering / engineering a compiler / security-assessments · **provisional**
 - [Compiler Threat Model](../src/programming/compilers/compiler-engineering/security-assessments/compiler-threat-model.tex) — compiler engineering / engineering a compiler / security-assessments · **provisional**
 
+## compiler engineering / engineering a compiler / shared (1)
+
+- [Compiler Suite Shared Style Preamble](../src/programming/compilers/compiler-engineering/shared/compiler-suite-style.tex) — compiler engineering / engineering a compiler / shared · **provisional** · non-standalone
+
 ## compiler engineering / engineering a compiler / study-guides (14)
 
 - [Chapter 01 Overview Of Compilation](../src/programming/compilers/compiler-engineering/study-guides/chapter-01-overview-of-compilation.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**

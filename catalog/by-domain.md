@@ -923,7 +923,7 @@
 - [tools measure direct sunlight guide gardeners](../src/personal/gardening/tools-measure-direct-sunlight-guide-gardeners.tex) — gardening · **provisional**
 - [calibre drm free ebook to pdf workflow handout](../src/personal/technical-documents/calibre-drm-free-ebook-to-pdf-workflow-handout.tex) — personal · **provisional**
 
-## programming (282)
+## programming (283)
 
 - [capstone assessment and rubric](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/assessments/capstone-assessment-and-rubric.tex) — algorithms · **provisional**
 - [foundations diagnostic assessment](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/assessments/foundations-diagnostic-assessment.tex) — algorithms · **provisional**
@@ -996,6 +996,7 @@
 - [Compiler Security Assessment Scorecard](../src/programming/compilers/compiler-engineering/security-assessments/compiler-security-assessment-scorecard.tex) — compiler engineering / engineering a compiler / security-assessments · **provisional**
 - [Compiler Security Test Plan](../src/programming/compilers/compiler-engineering/security-assessments/compiler-security-test-plan.tex) — compiler engineering / engineering a compiler / security-assessments · **provisional**
 - [Compiler Threat Model](../src/programming/compilers/compiler-engineering/security-assessments/compiler-threat-model.tex) — compiler engineering / engineering a compiler / security-assessments · **provisional**
+- [Compiler Suite Shared Style Preamble](../src/programming/compilers/compiler-engineering/shared/compiler-suite-style.tex) — compiler engineering / engineering a compiler / shared · **provisional** · non-standalone
 - [Chapter 01 Overview Of Compilation](../src/programming/compilers/compiler-engineering/study-guides/chapter-01-overview-of-compilation.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
 - [Chapter 02 Scanners](../src/programming/compilers/compiler-engineering/study-guides/chapter-02-scanners.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
 - [Chapter 03 Parsers](../src/programming/compilers/compiler-engineering/study-guides/chapter-03-parsers.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
