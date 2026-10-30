@@ -8,6 +8,10 @@ Source files for **study guides** within the **game development** domain. This i
 |---|---|
 | [`study-plan-computer-animation-3rd-edition-user.tex`](study-plan-computer-animation-3rd-edition-user.tex) | LaTeX source |
 
+## Additional chapter collection
+
+- [The Art of Game Design (third edition): 35 chapter guides](art-of-game-design/README.md)
+
 ## Navigation
 
 See the [game development index](../README.md) for the parent collection and related material.

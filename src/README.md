@@ -44,7 +44,7 @@ For coherent multi-file suites, standards clauses, book chapters and diagram set
 
 | [`electronics/`](electronics/README.md) | Electronic circuits and single-board-computer studies. |
 
-| [`game-development/`](game-development/README.md) | Game-engine concepts, pipelines, physics and design. |
+| [`game-development/`](game-development/README.md) | Game design, mechanics, player experience, playtesting, game-engine architecture, graphics and simulation. |
 
 | [`mathematics/`](mathematics/README.md) | Algebra, calculus, differential equations, geometry and proofs. |
 
