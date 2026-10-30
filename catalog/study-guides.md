@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary study guides (99)
+## Primary study guides (114)
 
 - [02 cloud architecture curriculum](../src/architecture/cloud/engineering-suite/02-cloud-architecture-curriculum.tex) — cloud/engineering suite · **provisional**
 - [prerequisite based architecture documentation curriculum](../src/architecture/views-and-beyond/documentation-engineering-suite/curriculum/Prerequisite_Based_Architecture_Documentation_Curriculum.tex) — views-and-beyond/documentation-engineering-suite/curriculum · **provisional**
@@ -95,6 +95,21 @@
 - [web application curriculum](../src/security/application-security/learning/assessment-curricula/web-application-curriculum.tex) — learning/assessment curricula · **provisional**
 - [windows curriculum](../src/security/application-security/learning/assessment-curricula/windows-curriculum.tex) — learning/assessment curricula · **provisional**
 - [oswe curriculum](../src/security/application-security/learning/oswe/oswe-curriculum.tex) — learning/oswe · **provisional**
+- [Prerequisite Based Sast Curriculum](../src/security/application-security/sast/curriculum/prerequisite-based-sast-curriculum.tex) — application-security/sast · **provisional**
+- [Chapter 01 The Software Security Problem](../src/security/application-security/sast/study-guides/chapter-01-the-software-security-problem.tex) — application-security/sast · **provisional**
+- [Chapter 02 Introduction To Static Analysis](../src/security/application-security/sast/study-guides/chapter-02-introduction-to-static-analysis.tex) — application-security/sast · **provisional**
+- [Chapter 03 Static Analysis As Part Of The Code Review Process](../src/security/application-security/sast/study-guides/chapter-03-static-analysis-as-part-of-the-code-review-process.tex) — application-security/sast · **provisional**
+- [Chapter 04 Static Analysis Internals](../src/security/application-security/sast/study-guides/chapter-04-static-analysis-internals.tex) — application-security/sast · **provisional**
+- [Chapter 05 Handling Input](../src/security/application-security/sast/study-guides/chapter-05-handling-input.tex) — application-security/sast · **provisional**
+- [Chapter 06 Buffer Overflow](../src/security/application-security/sast/study-guides/chapter-06-buffer-overflow.tex) — application-security/sast · **provisional**
+- [Chapter 07 Bride Of Buffer Overflow](../src/security/application-security/sast/study-guides/chapter-07-bride-of-buffer-overflow.tex) — application-security/sast · **provisional**
+- [Chapter 08 Errors And Exceptions](../src/security/application-security/sast/study-guides/chapter-08-errors-and-exceptions.tex) — application-security/sast · **provisional**
+- [Chapter 09 Web Applications](../src/security/application-security/sast/study-guides/chapter-09-web-applications.tex) — application-security/sast · **provisional**
+- [Chapter 10 Xml And Web Services](../src/security/application-security/sast/study-guides/chapter-10-xml-and-web-services.tex) — application-security/sast · **provisional**
+- [Chapter 11 Privacy And Secrets](../src/security/application-security/sast/study-guides/chapter-11-privacy-and-secrets.tex) — application-security/sast · **provisional**
+- [Chapter 12 Privileged Programs](../src/security/application-security/sast/study-guides/chapter-12-privileged-programs.tex) — application-security/sast · **provisional**
+- [Chapter 13 Source Code Analysis Exercises For Java](../src/security/application-security/sast/study-guides/chapter-13-source-code-analysis-exercises-for-java.tex) — application-security/sast · **provisional**
+- [Chapter 14 Source Code Analysis Exercises For C](../src/security/application-security/sast/study-guides/chapter-14-source-code-analysis-exercises-for-c.tex) — application-security/sast · **provisional**
 - [study plan isc 2 cissp cbk ref 6th ed user](../src/security/certifications/cissp/study-plan-isc-2-cissp-cbk-ref-6th-ed-user.tex) — certifications/cissp · **provisional**
 - [precision study plan final 72 hour plan retake](../src/security/certifications/gh-500/precision-study-plan-final-72-hour-plan-retake.tex) — certifications/gh 500 · **provisional**
 - [02 criterion study guide](../src/security/governance-risk-compliance/soc2/02-criterion-study-guide.tex) — governance risk compliance/soc2 · **provisional**
