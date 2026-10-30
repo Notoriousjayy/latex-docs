@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (162)
+## Primary reusable templates (170)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -69,6 +69,14 @@
 - [release planning workbook template](../src/business-analysis/user-stories/workbooks/templates/release-planning-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [role and discovery workbook template](../src/business-analysis/user-stories/workbooks/templates/role-and-discovery-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [story refinement workbook template](../src/business-analysis/user-stories/workbooks/templates/story-refinement-workbook-template.tex) — agile requirements / user stories · **provisional**
+- [architecture decision record template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/architecture-decision-record-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
+- [canary rollout plan template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/canary-rollout-plan-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
+- [deployment readiness review template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/deployment-readiness-review-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
+- [pipeline architecture specification template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/pipeline-architecture-specification-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
+- [release evidence manifest template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/release-evidence-manifest-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
+- [release plan template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/release-plan-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
+- [rollback runbook template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/rollback-runbook-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
+- [security exception record template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/security-exception-record-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
 - [benchmark experiment template](../src/devops/ci-cd/continuous-integration-engineering/templates/benchmark-experiment-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
 - [ci cd maturity scorecard template](../src/devops/ci-cd/continuous-integration-engineering/templates/ci-cd-maturity-scorecard-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
 - [ci failure triage template](../src/devops/ci-cd/continuous-integration-engineering/templates/ci-failure-triage-template.tex) — ci cd/continuous integration engineering/templates · **provisional**

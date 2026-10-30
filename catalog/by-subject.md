@@ -930,6 +930,83 @@
 
 - [pre read briefing](../src/devops/ci-cd/pre-read-briefing.tex) — ci cd · **provisional**
 
+## ci cd/continuous delivery release engineering/curriculum (2)
+
+- [capstone delivery program](../src/devops/ci-cd/continuous-delivery-release-engineering/curriculum/capstone-delivery-program.tex) — ci cd/continuous delivery release engineering/curriculum · **provisional**
+- [prerequisite based curriculum](../src/devops/ci-cd/continuous-delivery-release-engineering/curriculum/prerequisite-based-curriculum.tex) — ci cd/continuous delivery release engineering/curriculum · **provisional**
+
+## ci cd/continuous delivery release engineering/laboratories (12)
+
+- [lab 01 pipeline value stream](../src/devops/ci-cd/continuous-delivery-release-engineering/laboratories/lab-01-pipeline-value-stream.tex) — ci cd/continuous delivery release engineering/laboratories · **provisional**
+- [lab 02 github actions ci](../src/devops/ci-cd/continuous-delivery-release-engineering/laboratories/lab-02-github-actions-ci.tex) — ci cd/continuous delivery release engineering/laboratories · **provisional**
+- [lab 03 quality gates](../src/devops/ci-cd/continuous-delivery-release-engineering/laboratories/lab-03-quality-gates.tex) — ci cd/continuous delivery release engineering/laboratories · **provisional**
+- [lab 04 artifact manifest](../src/devops/ci-cd/continuous-delivery-release-engineering/laboratories/lab-04-artifact-manifest.tex) — ci cd/continuous delivery release engineering/laboratories · **provisional**
+- [lab 05 terraform plan](../src/devops/ci-cd/continuous-delivery-release-engineering/laboratories/lab-05-terraform-plan.tex) — ci cd/continuous delivery release engineering/laboratories · **provisional**
+- [lab 06 aws oidc](../src/devops/ci-cd/continuous-delivery-release-engineering/laboratories/lab-06-aws-oidc.tex) — ci cd/continuous delivery release engineering/laboratories · **provisional**
+- [lab 07 lambda sandbox](../src/devops/ci-cd/continuous-delivery-release-engineering/laboratories/lab-07-lambda-sandbox.tex) — ci cd/continuous delivery release engineering/laboratories · **provisional**
+- [lab 08 acceptance performance](../src/devops/ci-cd/continuous-delivery-release-engineering/laboratories/lab-08-acceptance-performance.tex) — ci cd/continuous delivery release engineering/laboratories · **provisional**
+- [lab 09 database expand contract](../src/devops/ci-cd/continuous-delivery-release-engineering/laboratories/lab-09-database-expand-contract.tex) — ci cd/continuous delivery release engineering/laboratories · **provisional**
+- [lab 10 canary rollback](../src/devops/ci-cd/continuous-delivery-release-engineering/laboratories/lab-10-canary-rollback.tex) — ci cd/continuous delivery release engineering/laboratories · **provisional**
+- [lab 11 devsecops evidence](../src/devops/ci-cd/continuous-delivery-release-engineering/laboratories/lab-11-devsecops-evidence.tex) — ci cd/continuous delivery release engineering/laboratories · **provisional**
+- [lab 12 release rehearsal](../src/devops/ci-cd/continuous-delivery-release-engineering/laboratories/lab-12-release-rehearsal.tex) — ci cd/continuous delivery release engineering/laboratories · **provisional**
+
+## ci cd/continuous delivery release engineering/scorecards (3)
+
+- [devsecops control assurance template](../src/devops/ci-cd/continuous-delivery-release-engineering/scorecards/devsecops-control-assurance-template.tex) — ci cd/continuous delivery release engineering/scorecards · **provisional**
+- [pipeline architecture template](../src/devops/ci-cd/continuous-delivery-release-engineering/scorecards/pipeline-architecture-template.tex) — ci cd/continuous delivery release engineering/scorecards · **provisional**
+- [release process maturity template](../src/devops/ci-cd/continuous-delivery-release-engineering/scorecards/release-process-maturity-template.tex) — ci cd/continuous delivery release engineering/scorecards · **provisional**
+
+## ci cd/continuous delivery release engineering/study guides (15)
+
+- [chapter 01 the problem of delivering software](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-01-the-problem-of-delivering-software.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 02 configuration management](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-02-configuration-management.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 03 continuous integration](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-03-continuous-integration.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 04 implementing a testing strategy](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-04-implementing-a-testing-strategy.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 05 anatomy of the deployment pipeline](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-05-anatomy-of-the-deployment-pipeline.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 06 build and deployment scripting](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-06-build-and-deployment-scripting.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 07 the commit stage](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-07-the-commit-stage.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 08 automated acceptance testing](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-08-automated-acceptance-testing.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 09 testing nonfunctional requirements](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-09-testing-nonfunctional-requirements.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 10 deploying and releasing applications](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-10-deploying-and-releasing-applications.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 11 managing infrastructure and environments](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-11-managing-infrastructure-and-environments.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 12 managing data](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-12-managing-data.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 13 managing components and dependencies](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-13-managing-components-and-dependencies.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 14 advanced version control](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-14-advanced-version-control.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 15 managing continuous delivery](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-15-managing-continuous-delivery.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+
+## ci cd/continuous delivery release engineering/technical documents (10)
+
+- [artifact supply chain and promotion](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/artifact-supply-chain-and-promotion.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
+- [book to modern practice crosswalk](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/book-to-modern-practice-crosswalk.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
+- [database migration and data integrity](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/database-migration-and-data-integrity.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
+- [delivery engineering technical reference](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/delivery-engineering-technical-reference.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
+- [deployment pipeline architecture](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/deployment-pipeline-architecture.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
+- [devsecops control standard](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/devsecops-control-standard.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
+- [performance benchmarking reference](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/performance-benchmarking-reference.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
+- [progressive delivery and rollback](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/progressive-delivery-and-rollback.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
+- [test automation strategy](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/test-automation-strategy.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
+- [traceability and architecture crosswalk](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/traceability-and-architecture-crosswalk.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
+
+## ci cd/continuous delivery release engineering/templates (8)
+
+- [architecture decision record template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/architecture-decision-record-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
+- [canary rollout plan template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/canary-rollout-plan-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
+- [deployment readiness review template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/deployment-readiness-review-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
+- [pipeline architecture specification template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/pipeline-architecture-specification-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
+- [release evidence manifest template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/release-evidence-manifest-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
+- [release plan template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/release-plan-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
+- [rollback runbook template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/rollback-runbook-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
+- [security exception record template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/security-exception-record-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
+
+## ci cd/continuous delivery release engineering/workbooks (6)
+
+- [benchmark experiment template](../src/devops/ci-cd/continuous-delivery-release-engineering/workbooks/benchmark-experiment-template.tex) — ci cd/continuous delivery release engineering/workbooks · **provisional**
+- [failure injection template](../src/devops/ci-cd/continuous-delivery-release-engineering/workbooks/failure-injection-template.tex) — ci cd/continuous delivery release engineering/workbooks · **provisional**
+- [migration compatibility template](../src/devops/ci-cd/continuous-delivery-release-engineering/workbooks/migration-compatibility-template.tex) — ci cd/continuous delivery release engineering/workbooks · **provisional**
+- [pipeline value stream template](../src/devops/ci-cd/continuous-delivery-release-engineering/workbooks/pipeline-value-stream-template.tex) — ci cd/continuous delivery release engineering/workbooks · **provisional**
+- [release readiness template](../src/devops/ci-cd/continuous-delivery-release-engineering/workbooks/release-readiness-template.tex) — ci cd/continuous delivery release engineering/workbooks · **provisional**
+- [testing gates template](../src/devops/ci-cd/continuous-delivery-release-engineering/workbooks/testing-gates-template.tex) — ci cd/continuous delivery release engineering/workbooks · **provisional**
+
 ## ci cd/continuous integration engineering/assessments (2)
 
 - [ci cd maturity assessment model](../src/devops/ci-cd/continuous-integration-engineering/assessments/ci-cd-maturity-assessment-model.tex) — ci cd/continuous integration engineering/assessments · **provisional**

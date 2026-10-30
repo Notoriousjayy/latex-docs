@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary workbooks and exercises (108)
+## Primary workbooks and exercises (114)
 
 - [concern view evidence template](../src/architecture/c4-model/documentation-suite/workbooks/concern-view-evidence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
 - [cross view correspondence template](../src/architecture/c4-model/documentation-suite/workbooks/cross-view-correspondence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
@@ -24,6 +24,12 @@
 - [lab 07 negotiate a release plan](../src/business-analysis/user-stories/laboratories/lab-07-negotiate-a-release-plan.tex) — agile requirements / user stories · **provisional**
 - [lab 08 run change impact and governance](../src/business-analysis/user-stories/laboratories/lab-08-run-change-impact-and-governance.tex) — agile requirements / user stories · **provisional**
 - [lab 09 capstone deliver a story led release](../src/business-analysis/user-stories/laboratories/lab-09-capstone-deliver-a-story-led-release.tex) — agile requirements / user stories · **provisional**
+- [benchmark experiment template](../src/devops/ci-cd/continuous-delivery-release-engineering/workbooks/benchmark-experiment-template.tex) — ci cd/continuous delivery release engineering/workbooks · **provisional**
+- [failure injection template](../src/devops/ci-cd/continuous-delivery-release-engineering/workbooks/failure-injection-template.tex) — ci cd/continuous delivery release engineering/workbooks · **provisional**
+- [migration compatibility template](../src/devops/ci-cd/continuous-delivery-release-engineering/workbooks/migration-compatibility-template.tex) — ci cd/continuous delivery release engineering/workbooks · **provisional**
+- [pipeline value stream template](../src/devops/ci-cd/continuous-delivery-release-engineering/workbooks/pipeline-value-stream-template.tex) — ci cd/continuous delivery release engineering/workbooks · **provisional**
+- [release readiness template](../src/devops/ci-cd/continuous-delivery-release-engineering/workbooks/release-readiness-template.tex) — ci cd/continuous delivery release engineering/workbooks · **provisional**
+- [testing gates template](../src/devops/ci-cd/continuous-delivery-release-engineering/workbooks/testing-gates-template.tex) — ci cd/continuous delivery release engineering/workbooks · **provisional**
 - [cpp20 physics and spring settle](../src/game-development/animation-timing/laboratories/cpp20-physics-and-spring-settle.tex) — animation-timing/laboratories · **provisional**
 - [cpp20 time step and timing curves](../src/game-development/animation-timing/laboratories/cpp20-time-step-and-timing-curves.tex) — animation-timing/laboratories · **provisional**
 - [engine agnostic character integration](../src/game-development/animation-timing/laboratories/engine-agnostic-character-integration.tex) — animation-timing/laboratories · **provisional**

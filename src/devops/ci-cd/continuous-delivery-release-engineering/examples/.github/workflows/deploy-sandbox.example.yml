@@ -1,0 +1,87 @@
+# MANUAL sandbox-only example, not an active workflow in latex-docs.
+# Promote the artifact from a successful mainline CI run: do not rebuild on deploy.
+# SHA-pin action dependencies before production adoption; protect sandbox environment.
+name: CD Suite Sandbox Promotion (example)
+on:
+  workflow_dispatch:
+    inputs:
+      acknowledgement:
+        description: 'Type DEPLOY to approve a sandbox promotion'
+        required: true
+        type: string
+      ci_run_id:
+        description: 'Successful push-to-main CI workflow run ID'
+        required: true
+        type: string
+      source_sha:
+        description: 'Exact 40-character source commit SHA produced by CI'
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  sandbox:
+    if: github.event.inputs.acknowledgement == 'DEPLOY' && github.ref == 'refs/heads/main'
+    environment: sandbox
+    concurrency:
+      group: terraform-cd-suite-sandbox
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    env:
+      CI_RUN_ID: ${{ inputs.ci_run_id }}
+      SOURCE_SHA: ${{ inputs.source_sha }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Verify source run identity and success before accepting artifact
+        run: |
+          [[ "$CI_RUN_ID" =~ ^[0-9]+$ ]]
+          [[ "$SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CI_RUN_ID" | jq -e \
+            --arg sha "$SOURCE_SHA" \
+            '.conclusion == "success" and .event == "push" and .head_branch == "main" and .head_sha == $sha'
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: lambda-${{ inputs.source_sha }}
+          path: examples/lambda
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.ci_run_id }}
+      - name: Verify artifact identity without rebuilding
+        run: |
+          python examples/scripts/verify_artifact.py \
+            examples/lambda/function.zip \
+            examples/lambda/function.zip.manifest.json \
+            --revision "$SOURCE_SHA"
+          python -m unittest discover -s examples/lambda -p 'test_*.py' -v
+          python -m unittest discover -s examples/scripts -p 'test_*.py' -v
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_SANDBOX_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-2
+          role-session-name: cd-suite-sandbox
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.11.4' # validate and update when adopting
+      - name: Verify AWS account and apply a locally saved plan
+        working-directory: examples/terraform
+        env:
+          TF_INPUT: '0'
+        run: |
+          test "$(aws sts get-caller-identity --query Account --output text)" = "${{ vars.AWS_SANDBOX_ACCOUNT_ID }}"
+          terraform fmt -check
+          terraform init -input=false -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" -backend-config="key=cd-suite/sandbox/terraform.tfstate" -backend-config="region=us-east-2" -backend-config="use_lockfile=true"
+          terraform validate
+          terraform plan -input=false -out=reviewed.tfplan -var="suffix=${{ vars.DEMO_SUFFIX }}" -var="owner_tag=training"
+          terraform apply -input=false reviewed.tfplan
+      - name: Verify version selected by protected alias
+        working-directory: examples/terraform
+        run: |
+          aws lambda get-alias --function-name "$(terraform output -raw lambda_name)" --name live --query FunctionVersion

@@ -94,6 +94,14 @@ def validate(root: Path = ROOT, manifest_path: Path = MANIFEST) -> list[str]:
                     issues.append(f"{artifact_id}: print-form must open the suite layout")
                 if r"\FormField{" not in contents["blank"]:
                     issues.append(f"{artifact_id}: print-form has no writable response fields")
+            elif artifact.get("structure_rule") == "guided-printable-form":
+                # Instructional Templates and writable Blanks intentionally use
+                # different section headings; check both have meaningful structure
+                # and that the Blank offers actual printed writing space.
+                if len(HEADING.findall(contents["template"])) < 2 or len(HEADING.findall(contents["blank"])) < 2:
+                    issues.append(f"{artifact_id}: guided printable pair lacks document sections")
+                if r"\rule{" not in contents["blank"]:
+                    issues.append(f"{artifact_id}: Blank has no printed writing space")
             elif HEADING.findall(contents["template"]) != HEADING.findall(contents["blank"]):
                 issues.append(f"{artifact_id}: sections/subsections are out of sync")
             if artifact["family"] == "architecture-decision-record":

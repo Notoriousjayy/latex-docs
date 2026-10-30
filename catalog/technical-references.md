@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (658)
+## Primary technical references (668)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -336,6 +336,16 @@
 - [05 testing quality engineering](../src/devops/build-systems/professional-cmake/05-testing-quality-engineering.tex) — build systems/professional cmake · **provisional**
 - [06 cicd devsecops](../src/devops/build-systems/professional-cmake/06-cicd-devsecops.tex) — build systems/professional cmake · **provisional**
 - [Professional CMake: Cross-Platform Builds and Performance](../src/devops/build-systems/professional-cmake/07-cross-platform-performance.tex) — CMake cross-platform builds and benchmarking · **reviewed**
+- [artifact supply chain and promotion](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/artifact-supply-chain-and-promotion.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
+- [book to modern practice crosswalk](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/book-to-modern-practice-crosswalk.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
+- [database migration and data integrity](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/database-migration-and-data-integrity.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
+- [delivery engineering technical reference](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/delivery-engineering-technical-reference.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
+- [deployment pipeline architecture](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/deployment-pipeline-architecture.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
+- [devsecops control standard](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/devsecops-control-standard.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
+- [performance benchmarking reference](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/performance-benchmarking-reference.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
+- [progressive delivery and rollback](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/progressive-delivery-and-rollback.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
+- [test automation strategy](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/test-automation-strategy.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
+- [traceability and architecture crosswalk](../src/devops/ci-cd/continuous-delivery-release-engineering/technical-documents/traceability-and-architecture-crosswalk.tex) — ci cd/continuous delivery release engineering/technical documents · **provisional**
 - [delivery performance measures](../src/devops/ci-cd/continuous-integration-engineering/performance/delivery-performance-measures.tex) — ci cd/continuous integration engineering/performance · **provisional**
 - [pipeline benchmarking procedure](../src/devops/ci-cd/continuous-integration-engineering/performance/pipeline-benchmarking-procedure.tex) — ci cd/continuous integration engineering/performance · **provisional**
 - [source register](../src/devops/ci-cd/continuous-integration-engineering/references/source-register.tex) — ci cd/continuous integration engineering/references · **provisional**
