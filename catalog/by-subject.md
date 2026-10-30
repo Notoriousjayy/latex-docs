@@ -648,6 +648,13 @@
 
 - [Architecture Description Template (ISO/IEC/IEEE 42010)](../src/architecture/templates/42010-ad-template-polished.tex) — architecture description authoring template · **reviewed**
 
+## architecture-specifications (4)
+
+- [content and level pipeline architecture](../src/game-development/architecture-specifications/content-and-level-pipeline-architecture.tex) — architecture-specifications · **provisional**
+- [game economy and balance architecture](../src/game-development/architecture-specifications/game-economy-and-balance-architecture.tex) — architecture-specifications · **provisional**
+- [gameplay runtime architecture](../src/game-development/architecture-specifications/gameplay-runtime-architecture.tex) — architecture-specifications · **provisional**
+- [playtest telemetry and privacy architecture](../src/game-development/architecture-specifications/playtest-telemetry-and-privacy-architecture.tex) — architecture-specifications · **provisional**
+
 ## architecture/cloud computing (18)
 
 - [01 introduction cornell notes](../src/cornell-notes/architecture/cloud-computing/01-introduction-cornell-notes.tex) — architecture/cloud computing · **provisional**
@@ -668,6 +675,13 @@
 - [16 cloud delivery model considerations notes](../src/cornell-notes/architecture/cloud-computing/16-cloud-delivery-model-considerations-notes.tex) — architecture/cloud computing · **provisional**
 - [17 cost metrics and pricing models notes](../src/cornell-notes/architecture/cloud-computing/17-cost-metrics-and-pricing-models-notes.tex) — architecture/cloud computing · **provisional**
 - [18 service quality metrics slas notes](../src/cornell-notes/architecture/cloud-computing/18-service-quality-metrics-slas-notes.tex) — architecture/cloud computing · **provisional**
+
+## assessments (4)
+
+- [game architecture readiness assessment template](../src/game-development/assessments/game-architecture-readiness-assessment-template.tex) — assessments · **provisional**
+- [game mechanics balance assessment template](../src/game-development/assessments/game-mechanics-balance-assessment-template.tex) — assessments · **provisional**
+- [player experience assessment template](../src/game-development/assessments/player-experience-assessment-template.tex) — assessments · **provisional**
+- [playtesting quality assessment template](../src/game-development/assessments/playtesting-quality-assessment-template.tex) — assessments · **provisional**
 
 ## asset pipelines (2)
 
@@ -1652,6 +1666,10 @@
 
 - [CSHARP secure coding standard](../src/programming/languages/csharp/secure-coding-standard-csharp.tex) — csharp secure coding · **reviewed**
 
+## curricula (1)
+
+- [game design engineering learning path](../src/game-development/curricula/game-design-engineering-learning-path.tex) — curricula · **provisional**
+
 ## curriculum review and learning outcomes (1)
 
 - [Minimum Curriculum Quality Checklist](../src/business-analysis/workbooks/babok-minimum-checklist.tex) — curriculum review and learning outcomes · **reviewed**
@@ -2116,6 +2134,19 @@
 
 - [KOTLIN secure coding standard](../src/programming/languages/kotlin/secure-coding-standard-kotlin.tex) — kotlin secure coding · **reviewed**
 
+## laboratories (10)
+
+- [adaptive challenge laboratory](../src/game-development/laboratories/adaptive-challenge-laboratory.tex) — laboratories · **provisional**
+- [combat expected value laboratory](../src/game-development/laboratories/combat-expected-value-laboratory.tex) — laboratories · **provisional**
+- [deterministic replay laboratory](../src/game-development/laboratories/deterministic-replay-laboratory.tex) — laboratories · **provisional**
+- [finite state rules laboratory](../src/game-development/laboratories/finite-state-rules-laboratory.tex) — laboratories · **provisional**
+- [monte carlo balancing laboratory](../src/game-development/laboratories/monte-carlo-balancing-laboratory.tex) — laboratories · **provisional**
+- [narrative state graph laboratory](../src/game-development/laboratories/narrative-state-graph-laboratory.tex) — laboratories · **provisional**
+- [privacy aware telemetry laboratory](../src/game-development/laboratories/privacy-aware-telemetry-laboratory.tex) — laboratories · **provisional**
+- [puzzle state search laboratory](../src/game-development/laboratories/puzzle-state-search-laboratory.tex) — laboratories · **provisional**
+- [resource economy laboratory](../src/game-development/laboratories/resource-economy-laboratory.tex) — laboratories · **provisional**
+- [stable event queue laboratory](../src/game-development/laboratories/stable-event-queue-laboratory.tex) — laboratories · **provisional**
+
 ## languages/c cpp (5)
 
 - [benefits simulating object oriented](../src/programming/languages/c-cpp/benefits-simulating-object-oriented.tex) — languages/c cpp · **provisional**
@@ -2397,6 +2428,12 @@
 - [study plan nginx cookbook 3rd edition user](../src/devops/platform/nginx/study-plan-nginx-cookbook-3rd-edition-user.tex) — platform/nginx · **provisional**
 - [study plan nginx cookbook derek dejonghe user](../src/devops/platform/nginx/study-plan-nginx-cookbook-derek-dejonghe-user.tex) — platform/nginx · **provisional**
 
+## playtesting (3)
+
+- [playtest analysis and prioritization procedure](../src/game-development/playtesting/playtest-analysis-and-prioritization-procedure.tex) — playtesting · **provisional**
+- [playtest design and recruitment procedure](../src/game-development/playtesting/playtest-design-and-recruitment-procedure.tex) — playtesting · **provisional**
+- [playtest execution and observation procedure](../src/game-development/playtesting/playtest-execution-and-observation-procedure.tex) — playtesting · **provisional**
+
 ## processes/avit seeker (1)
 
 - [closure playbook standard operating procedure](../src/security/application-security/processes/avit-seeker/closure-playbook-standard-operating-procedure.tex) — processes/avit seeker · **provisional**
@@ -2632,6 +2669,44 @@
 - [ch08 lowest common ancestor notes](../src/cornell-notes/computer-science/string-algorithms/suffix-structures/ch08-lowest-common-ancestor-notes.tex) — string algorithms/suffix structures · **provisional**
 - [ch09 advanced suffix applications notes](../src/cornell-notes/computer-science/string-algorithms/suffix-structures/ch09-advanced-suffix-applications-notes.tex) — string algorithms/suffix structures · **provisional**
 
+## study-guides/art-of-game-design (35)
+
+- [chapter 01 in the beginning there is the designer](../src/game-development/study-guides/art-of-game-design/chapter-01-in-the-beginning-there-is-the-designer.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 02 the designer creates an experience](../src/game-development/study-guides/art-of-game-design/chapter-02-the-designer-creates-an-experience.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 03 the experience takes place in a venue](../src/game-development/study-guides/art-of-game-design/chapter-03-the-experience-takes-place-in-a-venue.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 04 the experience rises out of a game](../src/game-development/study-guides/art-of-game-design/chapter-04-the-experience-rises-out-of-a-game.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 05 the game consists of elements](../src/game-development/study-guides/art-of-game-design/chapter-05-the-game-consists-of-elements.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 06 the elements support a theme](../src/game-development/study-guides/art-of-game-design/chapter-06-the-elements-support-a-theme.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 07 the game begins with an idea](../src/game-development/study-guides/art-of-game-design/chapter-07-the-game-begins-with-an-idea.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 08 the game improves through iteration](../src/game-development/study-guides/art-of-game-design/chapter-08-the-game-improves-through-iteration.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 09 the game is made for a player](../src/game-development/study-guides/art-of-game-design/chapter-09-the-game-is-made-for-a-player.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 10 the experience is in the player s mind](../src/game-development/study-guides/art-of-game-design/chapter-10-the-experience-is-in-the-player-s-mind.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 11 the player s mind is driven by the player s motivation](../src/game-development/study-guides/art-of-game-design/chapter-11-the-player-s-mind-is-driven-by-the-player-s-motivation.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 12 some elements are game mechanics](../src/game-development/study-guides/art-of-game-design/chapter-12-some-elements-are-game-mechanics.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 13 game mechanics must be in balance](../src/game-development/study-guides/art-of-game-design/chapter-13-game-mechanics-must-be-in-balance.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 14 game mechanics support puzzles](../src/game-development/study-guides/art-of-game-design/chapter-14-game-mechanics-support-puzzles.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 15 players play games through an interface](../src/game-development/study-guides/art-of-game-design/chapter-15-players-play-games-through-an-interface.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 16 experiences can be judged by their interest curves](../src/game-development/study-guides/art-of-game-design/chapter-16-experiences-can-be-judged-by-their-interest-curves.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 17 one kind of experience is the story](../src/game-development/study-guides/art-of-game-design/chapter-17-one-kind-of-experience-is-the-story.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 18 story and game structures can be artfully merged with indirect control](../src/game-development/study-guides/art-of-game-design/chapter-18-story-and-game-structures-can-be-artfully-merged-with-indirect-control.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 19 stories and games take place in worlds](../src/game-development/study-guides/art-of-game-design/chapter-19-stories-and-games-take-place-in-worlds.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 20 worlds contain characters](../src/game-development/study-guides/art-of-game-design/chapter-20-worlds-contain-characters.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 21 worlds contain spaces](../src/game-development/study-guides/art-of-game-design/chapter-21-worlds-contain-spaces.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 22 some interfaces create a feeling of presence](../src/game-development/study-guides/art-of-game-design/chapter-22-some-interfaces-create-a-feeling-of-presence.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 23 the look and feel of a world is defined by its aesthetics](../src/game-development/study-guides/art-of-game-design/chapter-23-the-look-and-feel-of-a-world-is-defined-by-its-aesthetics.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 24 some games are played with other players](../src/game-development/study-guides/art-of-game-design/chapter-24-some-games-are-played-with-other-players.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 25 other players sometimes form communities](../src/game-development/study-guides/art-of-game-design/chapter-25-other-players-sometimes-form-communities.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 26 the designer usually works with a team](../src/game-development/study-guides/art-of-game-design/chapter-26-the-designer-usually-works-with-a-team.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 27 the team sometimes communicates through documents](../src/game-development/study-guides/art-of-game-design/chapter-27-the-team-sometimes-communicates-through-documents.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 28 good games are created through playtesting](../src/game-development/study-guides/art-of-game-design/chapter-28-good-games-are-created-through-playtesting.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 29 the team builds a game with technology](../src/game-development/study-guides/art-of-game-design/chapter-29-the-team-builds-a-game-with-technology.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 30 your game will probably have a client](../src/game-development/study-guides/art-of-game-design/chapter-30-your-game-will-probably-have-a-client.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 31 the designer gives the client a pitch](../src/game-development/study-guides/art-of-game-design/chapter-31-the-designer-gives-the-client-a-pitch.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 32 the designer and client want the game to make a profit](../src/game-development/study-guides/art-of-game-design/chapter-32-the-designer-and-client-want-the-game-to-make-a-profit.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 33 games transform their players](../src/game-development/study-guides/art-of-game-design/chapter-33-games-transform-their-players.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 34 designers have certain responsibilities](../src/game-development/study-guides/art-of-game-design/chapter-34-designers-have-certain-responsibilities.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 35 each designer has a purpose](../src/game-development/study-guides/art-of-game-design/chapter-35-each-designer-has-a-purpose.tex) — study-guides/art-of-game-design · **provisional**
+
 ## style system (1)
 
 - [modular latex style module architecture](../src/architecture/style-system/modular-latex-style-module-architecture.tex) — style system · **provisional**
@@ -2656,6 +2731,33 @@
 ## systems engineering (1)
 
 - [systems engineering and software architecture](../src/architecture/systems-engineering/systems-engineering-and-software-architecture.tex) — systems engineering · **provisional**
+
+## technical-references (7)
+
+- [formal game mechanics reference](../src/game-development/technical-references/formal-game-mechanics-reference.tex) — technical-references · **provisional**
+- [game design concepts and lenses reference](../src/game-development/technical-references/game-design-concepts-and-lenses-reference.tex) — technical-references · **provisional**
+- [game design traceability reference](../src/game-development/technical-references/game-design-traceability-reference.tex) — technical-references · **provisional**
+- [game systems engineering reference](../src/game-development/technical-references/game-systems-engineering-reference.tex) — technical-references · **provisional**
+- [player experience measurement reference](../src/game-development/technical-references/player-experience-measurement-reference.tex) — technical-references · **provisional**
+- [quantitative game balancing reference](../src/game-development/technical-references/quantitative-game-balancing-reference.tex) — technical-references · **provisional**
+- [schell lens index and review crosswalk](../src/game-development/technical-references/schell-lens-index-and-review-crosswalk.tex) — technical-references · **provisional**
+
+## templates/art-of-game-design (14)
+
+- [community safety review template](../src/game-development/templates/art-of-game-design/community-safety-review-template.tex) — templates/art-of-game-design · **provisional**
+- [design to test traceability matrix template](../src/game-development/templates/art-of-game-design/design-to-test-traceability-matrix-template.tex) — templates/art-of-game-design · **provisional**
+- [game architecture description template](../src/game-development/templates/art-of-game-design/game-architecture-description-template.tex) — templates/art-of-game-design · **provisional**
+- [game balance experiment template](../src/game-development/templates/art-of-game-design/game-balance-experiment-template.tex) — templates/art-of-game-design · **provisional**
+- [game concept and experience brief template](../src/game-development/templates/art-of-game-design/game-concept-and-experience-brief-template.tex) — templates/art-of-game-design · **provisional**
+- [game design decision record template](../src/game-development/templates/art-of-game-design/game-design-decision-record-template.tex) — templates/art-of-game-design · **provisional**
+- [game economy model template](../src/game-development/templates/art-of-game-design/game-economy-model-template.tex) — templates/art-of-game-design · **provisional**
+- [game project retrospective template](../src/game-development/templates/art-of-game-design/game-project-retrospective-template.tex) — templates/art-of-game-design · **provisional**
+- [gameplay mechanics specification template](../src/game-development/templates/art-of-game-design/gameplay-mechanics-specification-template.tex) — templates/art-of-game-design · **provisional**
+- [player accessibility and ethics review template](../src/game-development/templates/art-of-game-design/player-accessibility-and-ethics-review-template.tex) — templates/art-of-game-design · **provisional**
+- [player experience journey map template](../src/game-development/templates/art-of-game-design/player-experience-journey-map-template.tex) — templates/art-of-game-design · **provisional**
+- [playtest observation and issue log template](../src/game-development/templates/art-of-game-design/playtest-observation-and-issue-log-template.tex) — templates/art-of-game-design · **provisional**
+- [playtest session plan template](../src/game-development/templates/art-of-game-design/playtest-session-plan-template.tex) — templates/art-of-game-design · **provisional**
+- [prototype hypothesis and iteration log template](../src/game-development/templates/art-of-game-design/prototype-hypothesis-and-iteration-log-template.tex) — templates/art-of-game-design · **provisional**
 
 ## togaf (4)
 
@@ -2824,4 +2926,17 @@
 - [06 migration playbook](../src/programming/web/micro-frontends/06-migration-playbook.tex) — web/micro frontends · **provisional**
 - [07 hands on labs](../src/programming/web/micro-frontends/07-hands-on-labs.tex) — web/micro frontends · **provisional**
 - [08 learning curriculum](../src/programming/web/micro-frontends/08-learning-curriculum.tex) — web/micro frontends · **provisional**
+
+## workbooks (10)
+
+- [game design architecture workbook template](../src/game-development/workbooks/game-design-architecture-workbook-template.tex) — workbooks · **provisional**
+- [game design architecture workbook](../src/game-development/workbooks/game-design-architecture-workbook.tex) — workbooks · **provisional**
+- [mechanics modeling workbook template](../src/game-development/workbooks/mechanics-modeling-workbook-template.tex) — workbooks · **provisional**
+- [mechanics modeling workbook](../src/game-development/workbooks/mechanics-modeling-workbook.tex) — workbooks · **provisional**
+- [player research and playtesting workbook template](../src/game-development/workbooks/player-research-and-playtesting-workbook-template.tex) — workbooks · **provisional**
+- [player research and playtesting workbook](../src/game-development/workbooks/player-research-and-playtesting-workbook.tex) — workbooks · **provisional**
+- [probability and balancing workbook template](../src/game-development/workbooks/probability-and-balancing-workbook-template.tex) — workbooks · **provisional**
+- [probability and balancing workbook](../src/game-development/workbooks/probability-and-balancing-workbook.tex) — workbooks · **provisional**
+- [prototype and iteration workbook template](../src/game-development/workbooks/prototype-and-iteration-workbook-template.tex) — workbooks · **provisional**
+- [prototype and iteration workbook](../src/game-development/workbooks/prototype-and-iteration-workbook.tex) — workbooks · **provisional**
 

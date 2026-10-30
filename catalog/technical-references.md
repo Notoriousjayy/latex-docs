@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (625)
+## Primary technical references (632)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -394,6 +394,13 @@
 - [fluid simulation algorithms pseudocode handout](../src/game-development/physics-engines/fluid-simulation-algorithms-pseudocode-handout.tex) — physics engines · **provisional**
 - [game physics algorithms pseudocode handout](../src/game-development/physics-engines/game-physics-algorithms-pseudocode-handout.tex) — physics engines · **provisional**
 - [real time collision detection algorithms](../src/game-development/physics-engines/real-time-collision-detection-algorithms.tex) — physics engines · **provisional**
+- [formal game mechanics reference](../src/game-development/technical-references/formal-game-mechanics-reference.tex) — technical-references · **provisional**
+- [game design concepts and lenses reference](../src/game-development/technical-references/game-design-concepts-and-lenses-reference.tex) — technical-references · **provisional**
+- [game design traceability reference](../src/game-development/technical-references/game-design-traceability-reference.tex) — technical-references · **provisional**
+- [game systems engineering reference](../src/game-development/technical-references/game-systems-engineering-reference.tex) — technical-references · **provisional**
+- [player experience measurement reference](../src/game-development/technical-references/player-experience-measurement-reference.tex) — technical-references · **provisional**
+- [quantitative game balancing reference](../src/game-development/technical-references/quantitative-game-balancing-reference.tex) — technical-references · **provisional**
+- [schell lens index and review crosswalk](../src/game-development/technical-references/schell-lens-index-and-review-crosswalk.tex) — technical-references · **provisional**
 - [how matrices polynomials relate algebraic ops](../src/mathematics/algebra/how-matrices-polynomials-relate-algebraic-ops.tex) — algebra · **provisional**
 - [polynomial data structures in c and cpp](../src/mathematics/algebra/polynomial-data-structures-in-c-and-cpp.tex) — algebra · **provisional**
 - [01 mathematical foundations](../src/mathematics/differential-equations/01-mathematical-foundations.tex) — differential equations · **provisional**

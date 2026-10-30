@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (122)
+## Primary reusable templates (136)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -76,6 +76,20 @@
 - [character animation specification template](../src/game-development/animation-timing/templates/character-animation-specification-template.tex) — animation-timing/templates · **provisional**
 - [playtest session template](../src/game-development/animation-timing/templates/playtest-session-template.tex) — animation-timing/templates · **provisional**
 - [shot timing brief template](../src/game-development/animation-timing/templates/shot-timing-brief-template.tex) — animation-timing/templates · **provisional**
+- [community safety review template](../src/game-development/templates/art-of-game-design/community-safety-review-template.tex) — templates/art-of-game-design · **provisional**
+- [design to test traceability matrix template](../src/game-development/templates/art-of-game-design/design-to-test-traceability-matrix-template.tex) — templates/art-of-game-design · **provisional**
+- [game architecture description template](../src/game-development/templates/art-of-game-design/game-architecture-description-template.tex) — templates/art-of-game-design · **provisional**
+- [game balance experiment template](../src/game-development/templates/art-of-game-design/game-balance-experiment-template.tex) — templates/art-of-game-design · **provisional**
+- [game concept and experience brief template](../src/game-development/templates/art-of-game-design/game-concept-and-experience-brief-template.tex) — templates/art-of-game-design · **provisional**
+- [game design decision record template](../src/game-development/templates/art-of-game-design/game-design-decision-record-template.tex) — templates/art-of-game-design · **provisional**
+- [game economy model template](../src/game-development/templates/art-of-game-design/game-economy-model-template.tex) — templates/art-of-game-design · **provisional**
+- [game project retrospective template](../src/game-development/templates/art-of-game-design/game-project-retrospective-template.tex) — templates/art-of-game-design · **provisional**
+- [gameplay mechanics specification template](../src/game-development/templates/art-of-game-design/gameplay-mechanics-specification-template.tex) — templates/art-of-game-design · **provisional**
+- [player accessibility and ethics review template](../src/game-development/templates/art-of-game-design/player-accessibility-and-ethics-review-template.tex) — templates/art-of-game-design · **provisional**
+- [player experience journey map template](../src/game-development/templates/art-of-game-design/player-experience-journey-map-template.tex) — templates/art-of-game-design · **provisional**
+- [playtest observation and issue log template](../src/game-development/templates/art-of-game-design/playtest-observation-and-issue-log-template.tex) — templates/art-of-game-design · **provisional**
+- [playtest session plan template](../src/game-development/templates/art-of-game-design/playtest-session-plan-template.tex) — templates/art-of-game-design · **provisional**
+- [prototype hypothesis and iteration log template](../src/game-development/templates/art-of-game-design/prototype-hypothesis-and-iteration-log-template.tex) — templates/art-of-game-design · **provisional**
 - [game design document gdd template](../src/game-development/templates/game-design-document-gdd-template.tex) — game development · **provisional**
 - [game design document template](../src/game-development/templates/game-design-document-template.tex) — game development · **provisional**
 - [03 framework and formulas](../src/personal/finance/intelligent-investor/03-framework-and-formulas.tex) — finance/intelligent investor · **provisional**

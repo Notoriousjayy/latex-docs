@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary study guides (247)
+## Primary study guides (283)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -145,6 +145,42 @@
 - [chapter 80 editing for childrens programming](../src/game-development/animation-timing/study-guides/chapter-80-editing-for-childrens-programming.tex) — animation-timing/study-guides · **provisional**
 - [chapter 81 editing for internet programs](../src/game-development/animation-timing/study-guides/chapter-81-editing-for-internet-programs.tex) — animation-timing/study-guides · **provisional**
 - [chapter 82 conclusion](../src/game-development/animation-timing/study-guides/chapter-82-conclusion.tex) — animation-timing/study-guides · **provisional**
+- [game design engineering learning path](../src/game-development/curricula/game-design-engineering-learning-path.tex) — curricula · **provisional**
+- [chapter 01 in the beginning there is the designer](../src/game-development/study-guides/art-of-game-design/chapter-01-in-the-beginning-there-is-the-designer.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 02 the designer creates an experience](../src/game-development/study-guides/art-of-game-design/chapter-02-the-designer-creates-an-experience.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 03 the experience takes place in a venue](../src/game-development/study-guides/art-of-game-design/chapter-03-the-experience-takes-place-in-a-venue.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 04 the experience rises out of a game](../src/game-development/study-guides/art-of-game-design/chapter-04-the-experience-rises-out-of-a-game.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 05 the game consists of elements](../src/game-development/study-guides/art-of-game-design/chapter-05-the-game-consists-of-elements.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 06 the elements support a theme](../src/game-development/study-guides/art-of-game-design/chapter-06-the-elements-support-a-theme.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 07 the game begins with an idea](../src/game-development/study-guides/art-of-game-design/chapter-07-the-game-begins-with-an-idea.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 08 the game improves through iteration](../src/game-development/study-guides/art-of-game-design/chapter-08-the-game-improves-through-iteration.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 09 the game is made for a player](../src/game-development/study-guides/art-of-game-design/chapter-09-the-game-is-made-for-a-player.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 10 the experience is in the player s mind](../src/game-development/study-guides/art-of-game-design/chapter-10-the-experience-is-in-the-player-s-mind.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 11 the player s mind is driven by the player s motivation](../src/game-development/study-guides/art-of-game-design/chapter-11-the-player-s-mind-is-driven-by-the-player-s-motivation.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 12 some elements are game mechanics](../src/game-development/study-guides/art-of-game-design/chapter-12-some-elements-are-game-mechanics.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 13 game mechanics must be in balance](../src/game-development/study-guides/art-of-game-design/chapter-13-game-mechanics-must-be-in-balance.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 14 game mechanics support puzzles](../src/game-development/study-guides/art-of-game-design/chapter-14-game-mechanics-support-puzzles.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 15 players play games through an interface](../src/game-development/study-guides/art-of-game-design/chapter-15-players-play-games-through-an-interface.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 16 experiences can be judged by their interest curves](../src/game-development/study-guides/art-of-game-design/chapter-16-experiences-can-be-judged-by-their-interest-curves.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 17 one kind of experience is the story](../src/game-development/study-guides/art-of-game-design/chapter-17-one-kind-of-experience-is-the-story.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 18 story and game structures can be artfully merged with indirect control](../src/game-development/study-guides/art-of-game-design/chapter-18-story-and-game-structures-can-be-artfully-merged-with-indirect-control.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 19 stories and games take place in worlds](../src/game-development/study-guides/art-of-game-design/chapter-19-stories-and-games-take-place-in-worlds.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 20 worlds contain characters](../src/game-development/study-guides/art-of-game-design/chapter-20-worlds-contain-characters.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 21 worlds contain spaces](../src/game-development/study-guides/art-of-game-design/chapter-21-worlds-contain-spaces.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 22 some interfaces create a feeling of presence](../src/game-development/study-guides/art-of-game-design/chapter-22-some-interfaces-create-a-feeling-of-presence.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 23 the look and feel of a world is defined by its aesthetics](../src/game-development/study-guides/art-of-game-design/chapter-23-the-look-and-feel-of-a-world-is-defined-by-its-aesthetics.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 24 some games are played with other players](../src/game-development/study-guides/art-of-game-design/chapter-24-some-games-are-played-with-other-players.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 25 other players sometimes form communities](../src/game-development/study-guides/art-of-game-design/chapter-25-other-players-sometimes-form-communities.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 26 the designer usually works with a team](../src/game-development/study-guides/art-of-game-design/chapter-26-the-designer-usually-works-with-a-team.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 27 the team sometimes communicates through documents](../src/game-development/study-guides/art-of-game-design/chapter-27-the-team-sometimes-communicates-through-documents.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 28 good games are created through playtesting](../src/game-development/study-guides/art-of-game-design/chapter-28-good-games-are-created-through-playtesting.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 29 the team builds a game with technology](../src/game-development/study-guides/art-of-game-design/chapter-29-the-team-builds-a-game-with-technology.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 30 your game will probably have a client](../src/game-development/study-guides/art-of-game-design/chapter-30-your-game-will-probably-have-a-client.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 31 the designer gives the client a pitch](../src/game-development/study-guides/art-of-game-design/chapter-31-the-designer-gives-the-client-a-pitch.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 32 the designer and client want the game to make a profit](../src/game-development/study-guides/art-of-game-design/chapter-32-the-designer-and-client-want-the-game-to-make-a-profit.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 33 games transform their players](../src/game-development/study-guides/art-of-game-design/chapter-33-games-transform-their-players.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 34 designers have certain responsibilities](../src/game-development/study-guides/art-of-game-design/chapter-34-designers-have-certain-responsibilities.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 35 each designer has a purpose](../src/game-development/study-guides/art-of-game-design/chapter-35-each-designer-has-a-purpose.tex) — study-guides/art-of-game-design · **provisional**
 - [study plan computer animation 3rd edition user](../src/game-development/study-guides/study-plan-computer-animation-3rd-edition-user.tex) — game development · **provisional**
 - [study plan computational geometry c cards](../src/mathematics/study-guides/study-plan-computational-geometry-c-cards.tex) — mathematics · **provisional**
 - [study plan computational geometry c expanded](../src/mathematics/study-guides/study-plan-computational-geometry-c-expanded.tex) — mathematics · **provisional**

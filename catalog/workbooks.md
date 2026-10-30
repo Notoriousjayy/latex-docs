@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary workbooks and exercises (74)
+## Primary workbooks and exercises (94)
 
 - [concern view evidence template](../src/architecture/c4-model/documentation-suite/workbooks/concern-view-evidence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
 - [cross view correspondence template](../src/architecture/c4-model/documentation-suite/workbooks/cross-view-correspondence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
@@ -40,6 +40,26 @@
 - [spacing and easing workbook template](../src/game-development/animation-timing/workbooks/spacing-and-easing-workbook-template.tex) — animation-timing/workbooks · **provisional**
 - [walk cycle contact workbook template](../src/game-development/animation-timing/workbooks/walk-cycle-contact-workbook-template.tex) — animation-timing/workbooks · **provisional**
 - [walk runs and interruptibility problem set](../src/game-development/animation-timing/workbooks/walk-runs-and-interruptibility-problem-set.tex) — animation-timing/workbooks · **provisional**
+- [adaptive challenge laboratory](../src/game-development/laboratories/adaptive-challenge-laboratory.tex) — laboratories · **provisional**
+- [combat expected value laboratory](../src/game-development/laboratories/combat-expected-value-laboratory.tex) — laboratories · **provisional**
+- [deterministic replay laboratory](../src/game-development/laboratories/deterministic-replay-laboratory.tex) — laboratories · **provisional**
+- [finite state rules laboratory](../src/game-development/laboratories/finite-state-rules-laboratory.tex) — laboratories · **provisional**
+- [monte carlo balancing laboratory](../src/game-development/laboratories/monte-carlo-balancing-laboratory.tex) — laboratories · **provisional**
+- [narrative state graph laboratory](../src/game-development/laboratories/narrative-state-graph-laboratory.tex) — laboratories · **provisional**
+- [privacy aware telemetry laboratory](../src/game-development/laboratories/privacy-aware-telemetry-laboratory.tex) — laboratories · **provisional**
+- [puzzle state search laboratory](../src/game-development/laboratories/puzzle-state-search-laboratory.tex) — laboratories · **provisional**
+- [resource economy laboratory](../src/game-development/laboratories/resource-economy-laboratory.tex) — laboratories · **provisional**
+- [stable event queue laboratory](../src/game-development/laboratories/stable-event-queue-laboratory.tex) — laboratories · **provisional**
+- [game design architecture workbook template](../src/game-development/workbooks/game-design-architecture-workbook-template.tex) — workbooks · **provisional**
+- [game design architecture workbook](../src/game-development/workbooks/game-design-architecture-workbook.tex) — workbooks · **provisional**
+- [mechanics modeling workbook template](../src/game-development/workbooks/mechanics-modeling-workbook-template.tex) — workbooks · **provisional**
+- [mechanics modeling workbook](../src/game-development/workbooks/mechanics-modeling-workbook.tex) — workbooks · **provisional**
+- [player research and playtesting workbook template](../src/game-development/workbooks/player-research-and-playtesting-workbook-template.tex) — workbooks · **provisional**
+- [player research and playtesting workbook](../src/game-development/workbooks/player-research-and-playtesting-workbook.tex) — workbooks · **provisional**
+- [probability and balancing workbook template](../src/game-development/workbooks/probability-and-balancing-workbook-template.tex) — workbooks · **provisional**
+- [probability and balancing workbook](../src/game-development/workbooks/probability-and-balancing-workbook.tex) — workbooks · **provisional**
+- [prototype and iteration workbook template](../src/game-development/workbooks/prototype-and-iteration-workbook-template.tex) — workbooks · **provisional**
+- [prototype and iteration workbook](../src/game-development/workbooks/prototype-and-iteration-workbook.tex) — workbooks · **provisional**
 - [calculus applications companion workbook](../src/mathematics/workbooks/calculus-applications-companion-workbook.tex) — mathematics · **provisional**
 - [calculus applications workbook solutions](../src/mathematics/workbooks/calculus-applications-workbook-solutions.tex) — mathematics · **provisional**
 - [differential equations curriculum problem workbook](../src/mathematics/workbooks/differential-equations-curriculum-problem-workbook.tex) — mathematics · **provisional**
