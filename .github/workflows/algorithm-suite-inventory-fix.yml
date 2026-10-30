@@ -1,0 +1,55 @@
+name: Align Algorithm Engineering canonical inventory (one-time)
+
+on:
+  push:
+    branches:
+      - docs/algorithm-engineering-suite-20261029
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  align:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Remove governed Blank derivatives from canonical inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          semantic=Path('tooling/manifests/semantic-document-inventory.json')
+          data=json.loads(semantic.read_text(encoding='utf-8'))
+          pair_data=json.loads(Path('tooling/manifests/reusable-artifact-pairs.json').read_text())
+          blanks={p['blank'] for p in pair_data['pairs']}
+          before=len(data['sources'])
+          data['sources']=[e for e in data['sources'] if e['path'] not in blanks]
+          removed=before-len(data['sources'])
+          assert removed==9,removed
+          data['document_count']=len(data['sources'])
+          data['reviewed_items']=sum(e.get('review_status')=='targeted-content-reviewed' for e in data['sources'])
+          semantic.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n')
+          print(f'Canonical sources: {len(data["sources"])}; governed Blank derivatives excluded: {removed}')
+          PY
+          python3 tooling/scripts/build_semantic_catalogs.py --write
+          python3 tooling/scripts/semantic_content_audit.py --check
+          python3 tooling/scripts/build_semantic_catalogs.py --check
+          python3 tooling/scripts/validate_artifact_pairs.py
+      - name: Commit validated registry and remove one-time action
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/algorithm-suite-inventory-fix.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tooling/manifests/semantic-document-inventory.json catalog/
+          git add -u .github/workflows/algorithm-suite-inventory-fix.yml
+          git diff --cached --check
+          git commit -m 'fix(catalog): exclude governed algorithm Blank derivatives from canonical inventory'
+          git push origin HEAD:docs/algorithm-engineering-suite-20261029
