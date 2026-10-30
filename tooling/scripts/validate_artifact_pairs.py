@@ -92,7 +92,7 @@ def validate(root: Path = ROOT, manifest_path: Path = MANIFEST) -> list[str]:
                 # different section hierarchies; validate the form contract instead.
                 if r"\SuiteOpen" not in contents["template"] or r"\SuiteOpen" not in contents["blank"]:
                     issues.append(f"{artifact_id}: print-form must open the suite layout")
-                if r"\FormField{" not in contents["blank"]:
+                if (r"\FormField{" not in contents["blank"] and r"\Field{" not in contents["blank"]):
                     issues.append(f"{artifact_id}: print-form has no writable response fields")
             elif artifact.get("structure_rule") == "guided-printable-form":
                 # Instructional Templates and writable Blanks intentionally use
