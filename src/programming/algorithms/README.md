@@ -1,5 +1,7 @@
 # Algorithms
 
+**Featured suite:** [Algorithm Engineering and Computer Science](algorithm-engineering/README.md) — source-aligned learning guides, proof workbooks, implementation laboratories, and printable governed forms.
+
 Source files for **algorithms** within the **programming** domain. This is a navigational index; descriptive labels below are derived from filenames, not substitutes for the documents' content.
 
 ## Files
