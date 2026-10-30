@@ -2,9 +2,11 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary workbooks and exercises (18)
+## Primary workbooks and exercises (20)
 
 - [ISO/IEC/IEEE 42010 Conformance Assessment Workbook](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment.tex) — ISO/IEC/IEEE 42010 conformance evidence · **reviewed**
+- [Enterprise Architecture Discovery Evidence and Validation Workbook Template](../src/architecture/workbooks/github-actions-architecture-discovery-evidence-workbook-template.tex) — github-actions/enterprise-discovery · **reviewed**
+- [Enterprise Architecture Discovery Implementation Workbook Template](../src/architecture/workbooks/github-actions-architecture-discovery-implementation-workbook-template.tex) — github-actions/enterprise-discovery · **reviewed**
 - [lab 01 discover real user roles](../src/business-analysis/user-stories/laboratories/lab-01-discover-real-user-roles.tex) — agile requirements / user stories · **provisional**
 - [lab 02 write and assess user stories](../src/business-analysis/user-stories/laboratories/lab-02-write-and-assess-user-stories.tex) — agile requirements / user stories · **provisional**
 - [lab 03 slice a full workflow vertically](../src/business-analysis/user-stories/laboratories/lab-03-slice-a-full-workflow-vertically.tex) — agile requirements / user stories · **provisional**

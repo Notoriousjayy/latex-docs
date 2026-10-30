@@ -14,9 +14,9 @@ Architecture descriptions, ADRs, viewpoints, patterns, and governance belong her
 
 | Collection | Use it for | LaTeX sources |
 |---|---|---:|
-| [Technical documents](technical-documents/README.md) | Design guides, engineering references and explanatory technical material | 5 |
-| [Templates](templates/README.md) | Reusable structured starting points and document forms | 4 |
-| [Workbooks and exercises](workbooks/README.md) | Practice, exercises, checklists and worked activities | 1 |
+| [Technical documents](technical-documents/README.md) | Design guides, engineering references and explanatory technical material | 6 |
+| [Templates](templates/README.md) | Reusable structured starting points and document forms | 8 |
+| [Workbooks and exercises](workbooks/README.md) | Practice, exercises, checklists and worked activities | 5 |
 
 ### Subject collections and preserved suites
 
@@ -48,6 +48,10 @@ make list-roots
 ```
 
 The category command discovers standalone LaTeX roots and builds them with the shared pdfLaTeX toolchain. To stage PDFs under `public/pdfs/`, use `make publish` from the repository root. The commands above describe the supported interface; they do not imply that every root has been compiled in this change.
+
+## Enterprise GitHub Actions architecture discovery
+
+See the [enterprise architecture discovery suite](github-actions-discovery-suite.md) for the uploaded technical reference and its four project-specific Template–Blank pairs: Architecture Description, evidence viewpoint, implementation workbook, and evidence/validation workbook. The Blank copies are printable and contain empty writing lines rather than bracketed prompts. Use separate ADRs for consequential design decisions.
 
 ## Recommended navigation
 

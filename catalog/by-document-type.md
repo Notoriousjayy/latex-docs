@@ -498,7 +498,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (559)
+## technical-reference (560)
 
 - [cloud architecture diagram library index](../src/architecture/cloud/architecture/cloud-architecture-diagram-library-index.tex) — cloud/architecture · **provisional**
 - [self hosting cloud architecture reference](../src/architecture/cloud/architecture/self-hosting-cloud-architecture-reference.tex) — cloud/architecture · **provisional**
@@ -614,6 +614,7 @@
 - [applying iso iec ieee 42010 2022 enterprise](../src/architecture/technical-documents/applying-iso-iec-ieee-42010-2022-enterprise.tex) — architecture · **provisional**
 - [architecture definition and description](../src/architecture/technical-documents/architecture-definition-and-description.tex) — architecture · **provisional**
 - [c4 plantuml technical guide](../src/architecture/technical-documents/c4-plantuml-technical-guide.tex) — architecture · **provisional**
+- [GitHub Actions Architecture Discovery at Enterprise Scale](../src/architecture/technical-documents/github-actions-architecture-discovery-enterprise-scale.tex) — github-actions/enterprise-discovery · **reviewed**
 - [iso iec ieee 42010 2022 clean handout](../src/architecture/technical-documents/iso-iec-ieee-42010-2022-clean-handout.tex) — architecture · **provisional**
 - [viewpoint section](../src/architecture/templates/viewpoint-section.tex) — architecture · **provisional**
 - [document authoring template guide detailed](../src/architecture/togaf/document-authoring-template-guide-detailed.tex) — togaf · **provisional**
@@ -1060,7 +1061,7 @@
 - [immediate founder focus](../src/startups/media/fast-animation-channels/immediate-founder-focus.tex) — media/fast animation channels · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## template (59)
+## template (61)
 
 - [Architecture Documentation Templates](../src/architecture/cloud/engineering-suite/05-architecture-documentation-templates.tex) — cloud architecture documentation forms · **reviewed**
 - [Cloud Security Reference Templates](../src/architecture/cloud/engineering-suite/06-security-governance-templates.tex) — cloud security governance forms · **reviewed**
@@ -1084,6 +1085,8 @@
 - [02 ad templates](../src/architecture/standards/iso-iec-ieee-42010/02-ad-templates.tex) — standards/iso iec ieee 42010 · **provisional**
 - [Architecture Description Template (ISO/IEC/IEEE 42010)](../src/architecture/templates/42010-ad-template-polished.tex) — architecture description authoring template · **reviewed**
 - [42010 vp template polished](../src/architecture/templates/42010-vp-template-polished.tex) — architecture · **provisional**
+- [GitHub Actions Discovery Architecture Description Template](../src/architecture/templates/github-actions-architecture-discovery-ad-template.tex) — github-actions/enterprise-discovery · **reviewed**
+- [Architecture Discovery Evidence Viewpoint Specification Template](../src/architecture/templates/github-actions-architecture-discovery-viewpoint-template.tex) — github-actions/enterprise-discovery · **reviewed**
 - [viewpoint template polished](../src/architecture/templates/viewpoint-template-polished.tex) — architecture · **provisional**
 - [TOGAF User Stories (Day in the Life)](../src/architecture/togaf/togaf-user-stories-day-in-the-life.tex) — TOGAF user story scaffold · **reviewed**
 - [Viewpoint Template](../src/architecture/views-and-beyond/advanced-concepts/viewpoint-template.tex) — software architecture viewpoint specification · **reviewed**
@@ -1142,9 +1145,11 @@
 - [study plan user stories github advanced sec](../src/security/github-advanced-security/administration/study-plan-user-stories-github-advanced-sec.tex) — github advanced security/administration · **provisional**
 - [study plan owasp api sec top 10 user stories](../src/security/standards/owasp/study-plan-owasp-api-sec-top-10-user-stories.tex) — standards/owasp · **provisional**
 
-## workbook (18)
+## workbook (20)
 
 - [ISO/IEC/IEEE 42010 Conformance Assessment Workbook](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment.tex) — ISO/IEC/IEEE 42010 conformance evidence · **reviewed**
+- [Enterprise Architecture Discovery Evidence and Validation Workbook Template](../src/architecture/workbooks/github-actions-architecture-discovery-evidence-workbook-template.tex) — github-actions/enterprise-discovery · **reviewed**
+- [Enterprise Architecture Discovery Implementation Workbook Template](../src/architecture/workbooks/github-actions-architecture-discovery-implementation-workbook-template.tex) — github-actions/enterprise-discovery · **reviewed**
 - [lab 01 discover real user roles](../src/business-analysis/user-stories/laboratories/lab-01-discover-real-user-roles.tex) — agile requirements / user stories · **provisional**
 - [lab 02 write and assess user stories](../src/business-analysis/user-stories/laboratories/lab-02-write-and-assess-user-stories.tex) — agile requirements / user stories · **provisional**
 - [lab 03 slice a full workflow vertically](../src/business-analysis/user-stories/laboratories/lab-03-slice-a-full-workflow-vertically.tex) — agile requirements / user stories · **provisional**

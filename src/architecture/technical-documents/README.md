@@ -11,6 +11,7 @@ Source files for **technical documents** within the **architecture** domain. Thi
 | [`c4-plantuml-technical-guide.tex`](c4-plantuml-technical-guide.tex) | LaTeX source |
 | [`iso-iec-ieee-42010-2022-clean-handout.tex`](iso-iec-ieee-42010-2022-clean-handout.tex) | LaTeX source |
 | [`adr-ad-viewpoint-governance-handout.tex`](adr-ad-viewpoint-governance-handout.tex) | Technical handout: ADR, AD and viewpoint distinctions, classification, traceability, and governance |
+| [`github-actions-architecture-discovery-enterprise-scale.tex`](github-actions-architecture-discovery-enterprise-scale.tex) | Original uploaded LaTeX source: enterprise GitHub Actions architecture discovery methodology |
 
 ## Navigation
 

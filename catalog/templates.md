@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (59)
+## Primary reusable templates (61)
 
 - [Architecture Documentation Templates](../src/architecture/cloud/engineering-suite/05-architecture-documentation-templates.tex) — cloud architecture documentation forms · **reviewed**
 - [Cloud Security Reference Templates](../src/architecture/cloud/engineering-suite/06-security-governance-templates.tex) — cloud security governance forms · **reviewed**
@@ -26,6 +26,8 @@
 - [02 ad templates](../src/architecture/standards/iso-iec-ieee-42010/02-ad-templates.tex) — standards/iso iec ieee 42010 · **provisional**
 - [Architecture Description Template (ISO/IEC/IEEE 42010)](../src/architecture/templates/42010-ad-template-polished.tex) — architecture description authoring template · **reviewed**
 - [42010 vp template polished](../src/architecture/templates/42010-vp-template-polished.tex) — architecture · **provisional**
+- [GitHub Actions Discovery Architecture Description Template](../src/architecture/templates/github-actions-architecture-discovery-ad-template.tex) — github-actions/enterprise-discovery · **reviewed**
+- [Architecture Discovery Evidence Viewpoint Specification Template](../src/architecture/templates/github-actions-architecture-discovery-viewpoint-template.tex) — github-actions/enterprise-discovery · **reviewed**
 - [viewpoint template polished](../src/architecture/templates/viewpoint-template-polished.tex) — architecture · **provisional**
 - [TOGAF User Stories (Day in the Life)](../src/architecture/togaf/togaf-user-stories-day-in-the-life.tex) — TOGAF user story scaffold · **reviewed**
 - [Viewpoint Template](../src/architecture/views-and-beyond/advanced-concepts/viewpoint-template.tex) — software architecture viewpoint specification · **reviewed**

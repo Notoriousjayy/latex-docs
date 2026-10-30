@@ -10,6 +10,10 @@ A **Blank is a printable working form**, not a second instructional template. No
 
 Architecture descriptions and architecture decision records are distinct document types. Completed examples, answer keys and technical references are preserved.
 
+## Enterprise discovery implementation suite
+
+[GitHub Actions Architecture Discovery suite](../src/architecture/github-actions-discovery-suite.md) includes an unchanged technical reference, a project-specific Architecture Description and Viewpoint Specification, and two phase/evidence workbooks. The four paired guided Templates and print-ready Blanks are listed above. Unlike an architecture description, an ADR records one bounded decision; unlike an architecture view, a viewpoint specification defines reusable construction and interpretation conventions.
+
 ## Registered pairs
 
 | Logical ID | Family | Template | Blank |
@@ -33,6 +37,11 @@ Architecture descriptions and architecture decision records are distinct documen
 | ARCH-FINOPS-SLA-WORKBOOK | finops-sla-workbook | [Template](../src/architecture/cloud/engineering-suite/07-finops-sla-templates.tex) | [Blank](../src/architecture/cloud/engineering-suite/07-finops-sla-blank.tex) |
 | ARCH-42010-CONFORMANCE-WORKBOOK | architecture-conformance-workbook | [Template](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment.tex) | [Blank](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment-blank.tex) |
 | SEC-APPSEC-REVIEW-WORKBOOK | application-security-assessment-workbook | [Template](../src/security/application-security/processes/application-review-analysis-template.tex) | [Blank](../src/security/application-security/processes/application-review-analysis-blank.tex) |
+
+| ARCH-GHA-DISCOVERY-AD | architecture-description | [Template](../src/architecture/templates/github-actions-architecture-discovery-ad-template.tex) | [Blank](../src/architecture/templates/github-actions-architecture-discovery-ad-blank.tex) |
+| ARCH-GHA-DISCOVERY-VIEWPOINT | architecture-viewpoint | [Template](../src/architecture/templates/github-actions-architecture-discovery-viewpoint-template.tex) | [Blank](../src/architecture/templates/github-actions-architecture-discovery-viewpoint-blank.tex) |
+| ARCH-GHA-DISCOVERY-IMPLEMENTATION | discovery-implementation-workbook | [Template](../src/architecture/workbooks/github-actions-architecture-discovery-implementation-workbook-template.tex) | [Blank](../src/architecture/workbooks/github-actions-architecture-discovery-implementation-workbook-blank.tex) |
+| ARCH-GHA-DISCOVERY-EVIDENCE | discovery-evidence-workbook | [Template](../src/architecture/workbooks/github-actions-architecture-discovery-evidence-workbook-template.tex) | [Blank](../src/architecture/workbooks/github-actions-architecture-discovery-evidence-workbook-blank.tex) |
 
 ## Priority review queue
 
