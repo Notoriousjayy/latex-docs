@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary study guides (337)
+## Primary study guides (354)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -57,6 +57,23 @@
 - [21 the acceptance tests](../src/business-analysis/user-stories/study-guides/21-the-acceptance-tests.tex) — agile requirements / user stories · **provisional**
 - [02 chapter study guides](../src/devops/build-systems/professional-cmake/02-chapter-study-guides.tex) — build systems/professional cmake · **provisional**
 - [08 prerequisite curriculum](../src/devops/build-systems/professional-cmake/08-prerequisite-curriculum.tex) — build systems/professional cmake · **provisional**
+- [capstone delivery program](../src/devops/ci-cd/continuous-delivery-release-engineering/curriculum/capstone-delivery-program.tex) — ci cd/continuous delivery release engineering/curriculum · **provisional**
+- [prerequisite based curriculum](../src/devops/ci-cd/continuous-delivery-release-engineering/curriculum/prerequisite-based-curriculum.tex) — ci cd/continuous delivery release engineering/curriculum · **provisional**
+- [chapter 01 the problem of delivering software](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-01-the-problem-of-delivering-software.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 02 configuration management](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-02-configuration-management.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 03 continuous integration](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-03-continuous-integration.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 04 implementing a testing strategy](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-04-implementing-a-testing-strategy.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 05 anatomy of the deployment pipeline](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-05-anatomy-of-the-deployment-pipeline.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 06 build and deployment scripting](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-06-build-and-deployment-scripting.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 07 the commit stage](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-07-the-commit-stage.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 08 automated acceptance testing](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-08-automated-acceptance-testing.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 09 testing nonfunctional requirements](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-09-testing-nonfunctional-requirements.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 10 deploying and releasing applications](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-10-deploying-and-releasing-applications.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 11 managing infrastructure and environments](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-11-managing-infrastructure-and-environments.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 12 managing data](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-12-managing-data.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 13 managing components and dependencies](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-13-managing-components-and-dependencies.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 14 advanced version control](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-14-advanced-version-control.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
+- [chapter 15 managing continuous delivery](../src/devops/ci-cd/continuous-delivery-release-engineering/study-guides/chapter-15-managing-continuous-delivery.tex) — ci cd/continuous delivery release engineering/study guides · **provisional**
 - [chapter to operations crosswalk](../src/devops/ci-cd/continuous-integration-engineering/curriculum/chapter-to-operations-crosswalk.tex) — ci cd/continuous integration engineering/curriculum · **provisional**
 - [prerequisite based curriculum](../src/devops/ci-cd/continuous-integration-engineering/curriculum/prerequisite-based-curriculum.tex) — ci cd/continuous integration engineering/curriculum · **provisional**
 - [chapter 01 getting started](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-01-getting-started.tex) — ci cd/continuous integration engineering/study guides · **provisional**
