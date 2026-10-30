@@ -64,3 +64,8 @@ These contain the phrase in indexed source content. They are **not** assumed to 
 | security | [thinking in systems](../src/security/application-security/learning/thinking-in-systems.tex) | application security/learning | Provisional classification |
 
 [Catalog home](README.md) · [Browse by domain](by-domain.md)
+
+
+## Small Business Management and Entrepreneurship
+
+The [Small Business Management suite](../src/startups/small-business-management/README.md) provides six printable entrepreneurship assessment scorecard Template–Blank pairs for venture feasibility, ethical governance, business-plan quality, financial readiness, go-to-market readiness and operational resilience. These new sources are registered in the central pair manifest and the semantic inventory; no assessment outcome or approval is implied.

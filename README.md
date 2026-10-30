@@ -8,6 +8,7 @@ A source-controlled engineering documentation library covering software architec
 |---|---|
 | Learn animation timing and game animation engineering | [Animation Timing suite](src/game-development/animation-timing/README.md) |
 | Find a topic or project | [Source catalog](src/README.md) |
+| Study small-business management and entrepreneurship | [Small Business Management suite](src/startups/small-business-management/README.md) |
 | Browse reusable templates, workbooks, scorecards or user stories | [Discovery catalog](catalog/README.md) and [Template–Blank pair catalog](catalog/template-blank-pairs.md) |
 | Study algorithm engineering across TAOCP Volumes 1–4B | [Algorithm Engineering suite](src/programming/algorithms/algorithm-engineering/README.md) |
 | Find secure coding standards by language | [Programming language guide](src/programming/languages/README.md) |

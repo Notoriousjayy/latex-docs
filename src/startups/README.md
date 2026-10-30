@@ -30,6 +30,7 @@ These collections retain topic, standard, chapter, governance or diagram boundar
 | [iot](iot/) | IoT business and implementation concepts. | 1 |
 | [media](media/) | Media business planning and production operations. | 3 |
 | [security](security/) | Security controls and startup governance. | 2 |
+| [small business management](small-business-management/README.md) | 23-chapter entrepreneurship curriculum; finance laboratories, operations procedures, business cases, forms and assessment scorecards. | 111 |
 
 
 ## Build and validate
