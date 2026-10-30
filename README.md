@@ -7,6 +7,7 @@ A source-controlled engineering documentation library covering software architec
 | Goal | Entry point |
 |---|---|
 | Learn animation timing and game animation engineering | [Animation Timing suite](src/game-development/animation-timing/README.md) |
+| Study CI, build engineering and DevSecOps | [Continuous Integration and CI/CD Engineering suite](src/devops/ci-cd/continuous-integration-engineering/README.md) |
 | Find a topic or project | [Source catalog](src/README.md) |
 | Study small-business management and entrepreneurship | [Small Business Management suite](src/startups/small-business-management/README.md) |
 | Browse reusable templates, workbooks, scorecards or user stories | [Discovery catalog](catalog/README.md) and [Template–Blank pair catalog](catalog/template-blank-pairs.md) |

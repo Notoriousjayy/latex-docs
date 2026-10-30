@@ -261,3 +261,18 @@ The [Game Engine Architecture engineering suite](../src/game-development/game-en
 | GAME-ENGINE-PHYSICS_AUDIO_INTEGRATION_WORKBOOK | game-engine-workbook | [Template](../src/game-development/game-engine-architecture-suite/workbooks/physics-audio-integration-workbook-template.tex) | [Blank](../src/game-development/game-engine-architecture-suite/workbooks/physics-audio-integration-workbook-blank.tex) |
 | GAME-ENGINE-RENDER_AND_ANIMATION_WORKBOOK | game-engine-workbook | [Template](../src/game-development/game-engine-architecture-suite/workbooks/render-and-animation-workbook-template.tex) | [Blank](../src/game-development/game-engine-architecture-suite/workbooks/render-and-animation-workbook-blank.tex) |
 | GAME-ENGINE-SIMULATION_TIMESTEP_WORKBOOK | game-engine-workbook | [Template](../src/game-development/game-engine-architecture-suite/workbooks/simulation-timestep-workbook-template.tex) | [Blank](../src/game-development/game-engine-architecture-suite/workbooks/simulation-timestep-workbook-blank.tex) |
+
+## Continuous Integration and CI/CD Engineering
+
+The [CI/CD Engineering suite](../src/devops/ci-cd/continuous-integration-engineering/README.md) contains eight governed Template–Blank pairs. Templates contain instructional examples; Blanks are printable working documents with no example answers or bracketed prompts.
+
+| Logical ID | Family | Template | Blank |
+|---|---|---|---|
+| CI-CD-01 | ci-pipeline-design-record | [Template](../src/devops/ci-cd/continuous-integration-engineering/templates/ci-pipeline-design-record-template.tex) | [Blank](../src/devops/ci-cd/continuous-integration-engineering/blank-forms/ci-pipeline-design-record-blank.tex) |
+| CI-CD-02 | workflow-security-assessment | [Template](../src/devops/ci-cd/continuous-integration-engineering/templates/workflow-security-assessment-template.tex) | [Blank](../src/devops/ci-cd/continuous-integration-engineering/blank-forms/workflow-security-assessment-blank.tex) |
+| CI-CD-03 | ci-failure-triage | [Template](../src/devops/ci-cd/continuous-integration-engineering/templates/ci-failure-triage-template.tex) | [Blank](../src/devops/ci-cd/continuous-integration-engineering/blank-forms/ci-failure-triage-blank.tex) |
+| CI-CD-04 | deployment-release-readiness | [Template](../src/devops/ci-cd/continuous-integration-engineering/templates/deployment-release-readiness-template.tex) | [Blank](../src/devops/ci-cd/continuous-integration-engineering/blank-forms/deployment-release-readiness-blank.tex) |
+| CI-CD-05 | benchmark-experiment | [Template](../src/devops/ci-cd/continuous-integration-engineering/templates/benchmark-experiment-template.tex) | [Blank](../src/devops/ci-cd/continuous-integration-engineering/blank-forms/benchmark-experiment-blank.tex) |
+| CI-CD-06 | ci-cd-maturity-scorecard | [Template](../src/devops/ci-cd/continuous-integration-engineering/templates/ci-cd-maturity-scorecard-template.tex) | [Blank](../src/devops/ci-cd/continuous-integration-engineering/blank-forms/ci-cd-maturity-scorecard-blank.tex) |
+| CI-CD-07 | pipeline-architecture-scorecard | [Template](../src/devops/ci-cd/continuous-integration-engineering/templates/pipeline-architecture-scorecard-template.tex) | [Blank](../src/devops/ci-cd/continuous-integration-engineering/blank-forms/pipeline-architecture-scorecard-blank.tex) |
+| CI-CD-08 | ci-laboratory-workbook | [Template](../src/devops/ci-cd/continuous-integration-engineering/templates/ci-laboratory-workbook-template.tex) | [Blank](../src/devops/ci-cd/continuous-integration-engineering/blank-forms/ci-laboratory-workbook-blank.tex) |

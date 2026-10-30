@@ -30,6 +30,11 @@ These collections retain topic, standard, chapter, governance or diagram boundar
 | [secrets management](secrets-management/) | Secret lifecycle, vaults and operational processes. | 5 |
 
 
+
+## Continuous Integration and CI/CD Engineering Suite
+
+The [Continuous Integration and CI/CD Engineering suite](ci-cd/continuous-integration-engineering/README.md) provides the nine-chapter Duvall/Matyas/Glover study sequence, a 12-module prerequisite curriculum, Python/Java/C++ labs, GitHub Actions teaching workflows, DevSecOps practices, pipeline architecture specifications, benchmarking, CI/CD maturity reviews, and eight governed printable Template–Blank pairs. The workflows are inactive teaching assets, not workflows for this documentation repository.
+
 ## Build and validate
 
 ```bash
