@@ -1,0 +1,139 @@
+\documentclass[11pt]{article}
+% Uses the canonical latex-docs semantic style in-repository. The local
+% lightweight fallback is for independent compilation of this distribution.
+\IfFileExists{technical-implementation.sty}{\usepackage{technical-implementation}}{\usepackage{../support/aaoa-standalone}}
+\usepackage{mathtools}
+\setDocTitle{Algorithm Analysis: Technical Reference}
+\setDocSubtitle{Models, exact identities, asymptotics and validation}
+\setDocVersion{1.0}
+\setDocStatus{Educational reference / unapproved working material}
+\setDocOwner{Algorithm Engineering}
+\setDocAuthor{Original companion material}
+\setDocSummary{Independent engineering reference with explicit models, worked derivations, and diagnostic checks.}
+\providecommand{\Expect}{\mathbb{E}}
+\providecommand{\Prob}{\mathbb{P}}
+\providecommand{\Var}{\operatorname{Var}}
+\providecommand{\bigoh}{\mathcal{O}}
+\begin{document}
+\makedoctocpage
+
+\section{Purpose, provenance, and scope}
+This companion treats algorithm analysis as a reproducible engineering discipline: specify the input distribution and cost measure, derive a mathematical model, validate it empirically, and record the gap between prediction and measurement. It is an \emph{original} companion to Robert Sedgewick and Philippe Flajolet, \emph{An Introduction to the Analysis of Algorithms}, second edition, Addison--Wesley, 2013 (ISBN 978-0-321-90575-8). It does not reproduce textbook chapters or solutions. The book's nine-chapter sequence and section names determine the conceptual coverage; laboratories, forms, and proposed engineering practice are additions to that coverage.
+
+\section{Cost models and the analysis contract}
+An analysis begins with an input domain $\mathcal{I}_n$, a cost $C(x)$ for each input $x$, and a probability model $p_n(x)$ when average behavior is claimed. The fundamental distinctions are
+\[
+W(n)=\max_{x\in\mathcal{I}_n} C(x),\qquad
+B(n)=\min_{x\in\mathcal{I}_n} C(x),\qquad
+\Expect[C_n]=\sum_{x\in\mathcal{I}_n}p_n(x)C(x).
+\]
+An average over uniformly random permutations is not automatically an average over production data. Each result shall name $n$, the unit (comparisons, probes, allocations, bytes, or elapsed time), the input law, and all boundary assumptions. Distinguish a statement about an abstract algorithm from one about a compiled program on a machine.
+
+\subsection{Asymptotic claims versus predictive claims}
+$O(g(n))$ is an eventual upper bound, $\Omega(g(n))$ an eventual lower bound, and $\Theta(g(n))$ a two-sided bound. By contrast, $C(n)\sim g(n)$ asserts $C(n)/g(n)\to1$. The approximation $C(n)=an\log n+bn+o(n)$ is more informative for capacity planning than $C(n)=\Theta(n\log n)$, but depends on a justified model and fitted or derived constants. State whether logarithms are natural or base two.
+
+\subsection{A minimal reproducible analysis record}
+\begin{enumerate}
+\item Define the algorithm and implementation identifier; state what constitutes an operation.
+\item Specify adversarial, empirical, or probabilistic input generation, including the seed.
+\item Derive a finite-$n$ relation or expectation; verify small instances by enumeration.
+\item Determine leading-order growth, second-order terms where reliable, and error conditions.
+\item Compare predictions with the operation counts and wall-clock timing; report limitations.
+\end{enumerate}
+
+\section{Recurrence relations: algebra before asymptotics}
+For a balanced binary divide-and-conquer algorithm, a simplified model is $T(n)=2T(n/2)+cn$ for $n=2^k$, $T(1)=d$. Set $S(k)=T(2^k)/2^k$. Then $S(k)=S(k-1)+c$, giving $T(n)=n(d+c\log_2 n)$. This derivation explicitly assumes exact halving; floor and ceiling versions need separate attention.
+
+For $T(n)=T(n-1)+n$, $T(0)=0$, telescoping yields $T(n)=n(n+1)/2$. For linear recurrences $a_n=pa_{n-1}+qa_{n-2}$, derive and solve the characteristic polynomial $r^2-pr-q=0$ subject to initial conditions. An unverified appeal to a Master theorem is not a replacement for specifying the applicable case.
+
+\section{Generating functions: turning sequences into algebra}
+The ordinary generating function (OGF) of a sequence $a_n$ is $A(z)=\sum_{n\ge0}a_nz^n$. The exponential generating function (EGF) is $\widehat A(z)=\sum_{n\ge0}a_n z^n/n!$. Use OGFs for many unlabelled constructions and EGFs for labelled structures, but choose based on combinatorial semantics rather than habit.
+
+\subsection{Worked example: a linear recurrence}
+For $a_0=0$ and $a_n=a_{n-1}+n$ for $n\ge1$, multiply by $z^n$ and sum:
+\[
+A(z)=zA(z)+\sum_{n\ge1}nz^n
+=zA(z)+\frac{z}{(1-z)^2}.
+\]
+Therefore $A(z)=z/(1-z)^3$ and coefficient extraction gives $a_n=\binom{n+1}{2}$. Check $a_0=0$, $a_1=1$, $a_2=3$ before using this model as a benchmark oracle.
+
+\subsection{Counting classes and labelled constructions}
+For ordered sequences built from an atom with OGF $Z(z)=z$, a sequence of arbitrary length has $1/(1-z)$. Ordered binary trees satisfy the combinatorial decomposition $\mathcal{T}=\epsilon+\mathcal{Z}\times\mathcal{T}\times\mathcal{T}$, hence $T(z)=1+zT(z)^2$, with the solution analytic at zero
+\[
+T(z)=\frac{1-\sqrt{1-4z}}{2z};\qquad [z^n]T(z)=\frac{1}{n+1}\binom{2n}{n}.
+\]
+The coefficient is the $n$th Catalan number. The equation and coefficient formula require the binary-tree size to count \emph{internal nodes}; change the size convention and the indexing changes.
+
+\section{Asymptotic approximations}
+Stirling's approximation $n!\sim\sqrt{2\pi n}(n/e)^n$ implies
+\[
+\log(n!)=n\log n-n+\tfrac12\log(2\pi n)+\bigoh(1/n).
+\]
+Consequently the comparison decision-tree lower bound $\lceil \log_2(n!)\rceil$ grows like $n\log_2n-(\log_2e)n+O(\log n)$ for distinct keys. This lower bound does not apply to every key-representation-specific, non-comparison sorting method.
+
+Coefficient asymptotics for $[z^n](1-z)^{-\alpha}=\Gamma(n+\alpha)/(\Gamma(\alpha)\Gamma(n+1))\sim n^{\alpha-1}/\Gamma(\alpha)$ hold for admissible $\alpha$; when used for a general generating function, identify \emph{all} dominant singularities, analytic hypotheses, and possible periodicity. For Catalan numbers, $C_n\sim4^n/(\sqrt{\pi}n^{3/2})$.
+
+\section{Analytic combinatorics: construction to asymptotics}
+\begin{enumerate}
+\item Specify the class, size parameter, and whether objects are labelled.
+\item Write a bijective decomposition using constructors (sum, product, sequence, set, cycle, or recursion) with their valid semantics.
+\item Translate the construction into generating-function equations.
+\item Solve formally or implicitly; select the branch with the correct constant term.
+\item Extract exact coefficients when feasible and analyze dominant singularities for large $n$.
+\item Validate coefficients by enumeration for $n\leq 6$ before asserting a general law.
+\end{enumerate}
+The symbolic method counts structures; it does not by itself prove that a particular implementation's measured runtime follows the same expression. To analyze algorithm cost, introduce a parameter (e.g., comparisons or path length) and derive an augmented or bivariate generating function when required.
+
+\section{Trees: shape laws, algorithms, and model choice}
+For a binary search tree (BST) formed by inserting a uniform random permutation of distinct keys, root rank is uniform. Let $E_n$ be the expected internal path length, $E_0=E_1=0$, with every non-root node increasing its depth by one. Then
+\[
+E_n=(n-1)+\frac{1}{n}\sum_{k=0}^{n-1}(E_k+E_{n-1-k})
+=(n-1)+\frac{2}{n}\sum_{k=0}^{n-1}E_k.
+\]
+Solving gives $E_n=2(n+1)H_n-4n$, where $H_n=\sum_{j=1}^{n}1/j$. A uniformly random \emph{Catalan tree shape} is a different stochastic model and generally has different height/path-length behavior. Never substitute the two distributions without justification.
+
+\section{Permutations: cost parameters and distributions}
+For uniformly random permutations of $n$ distinct values, each pair is inverted with probability $1/2$; by linearity,
+\[
+\Expect[\mathrm{Inv}]=\sum_{1\le i<j\le n}\Prob(a_i>a_j)
+=\tfrac12\binom{n}{2}=\frac{n(n-1)}4.
+\]
+Insertion sort's key-shift count is exactly the number of inversions for the usual adjacent-shift implementation, making this a precise average-case operation-count prediction. The distribution and variance matter when diagnosing outliers; expecting every sample to equal the mean is an error.
+
+\section{Strings, automata, and tries}
+Define the alphabet $\Sigma$, string distribution, termination model, and counting unit (character inspections versus state transitions). A prefix trie for $m$ keys requires a space model that distinguishes allocated nodes, child-map representation, and compressed edges. For KMP, the prefix/failure function controls how the search avoids reexamining text characters; compare deterministic worst-case transition bounds with average probes only under a specified pattern/text law.
+
+\section{Words and mappings: occupancy}
+Hashing with separate chaining is governed by bucket occupancy. Place $m$ independent keys uniformly into $b$ buckets. A specified bucket has occupancy $X\sim\mathrm{Binomial}(m,1/b)$, and $\Expect[X]=m/b=\lambda$. For a given inserted key, expected other colliders are $(m-1)/b$. These results assume independent uniform hashing and may not predict adversarial keys, skewed hashes, memory locality, resize behavior, or open addressing probe sequences.
+
+For the coupon collector with $b$ equally likely buckets, expected draws to see all buckets are $bH_b$. This is not a hashing runtime bound by itself; it is a distinct occupancy model useful for analyzing coverage experiments.
+
+\section{Methods comparison and failure modes}
+\begin{longtable}{p{0.19\linewidth}p{0.29\linewidth}p{0.38\linewidth}}
+\toprule Method & Valid application & Frequent failure \\ \midrule
+Exact recurrence & Recursive comparison count & Dropping floor/ceiling and claiming an exact result \\
+OGF/EGF & Counting sequence/class & Wrong label semantics or initial coefficient \\
+Asymptotic transfer & Coefficient estimates & Ignoring other dominant singularities \\
+Indicator variables & Expected count & Assuming events must be independent for linearity \\
+Monte Carlo & Distributional validation & Reporting timing uncertainty as mathematical proof \\
+Wall-clock benchmark & Practical cost hypothesis & Confounding startup, allocation, cache, frequency scaling \\
+\bottomrule
+\end{longtable}
+
+\section{Reporting checklist}
+\begin{itemize}
+\item Theorem statement contains model, metric, quantifiers, and range of $n$.
+\item Exact identities have proved base cases and checked boundary behavior.
+\item Numerical tests provide known-good oracles and independent seeds.
+\item Benchmarks provide raw observations, summaries, confidence interval method, and environment manifest.
+\item Any departure from theoretical predictions has a documented hypothesis and retest plan.
+\end{itemize}
+
+\section{Primary and related reading}
+\begin{itemize}
+\item Robert Sedgewick and Philippe Flajolet. \emph{An Introduction to the Analysis of Algorithms}, 2nd ed., Addison--Wesley, 2013. Chapters 1--9. Primary source for this suite's chapter taxonomy.
+\item Donald E. Knuth. \emph{The Art of Computer Programming}, Volumes 1--3. Optional contextual reinforcement, not a replacement for the primary source.
+\item Philippe Flajolet and Robert Sedgewick. \emph{Analytic Combinatorics}. Advanced continuation for singularity analysis and labelled constructions.
+\end{itemize}
+
+\end{document}
