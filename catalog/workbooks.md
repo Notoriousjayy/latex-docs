@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary workbooks and exercises (58)
+## Primary workbooks and exercises (74)
 
 - [concern view evidence template](../src/architecture/c4-model/documentation-suite/workbooks/concern-view-evidence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
 - [cross view correspondence template](../src/architecture/c4-model/documentation-suite/workbooks/cross-view-correspondence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
@@ -24,6 +24,22 @@
 - [lab 07 negotiate a release plan](../src/business-analysis/user-stories/laboratories/lab-07-negotiate-a-release-plan.tex) — agile requirements / user stories · **provisional**
 - [lab 08 run change impact and governance](../src/business-analysis/user-stories/laboratories/lab-08-run-change-impact-and-governance.tex) — agile requirements / user stories · **provisional**
 - [lab 09 capstone deliver a story led release](../src/business-analysis/user-stories/laboratories/lab-09-capstone-deliver-a-story-led-release.tex) — agile requirements / user stories · **provisional**
+- [cpp20 physics and spring settle](../src/game-development/animation-timing/laboratories/cpp20-physics-and-spring-settle.tex) — animation-timing/laboratories · **provisional**
+- [cpp20 time step and timing curves](../src/game-development/animation-timing/laboratories/cpp20-time-step-and-timing-curves.tex) — animation-timing/laboratories · **provisional**
+- [engine agnostic character integration](../src/game-development/animation-timing/laboratories/engine-agnostic-character-integration.tex) — animation-timing/laboratories · **provisional**
+- [python easing contact and character motion](../src/game-development/animation-timing/laboratories/python-easing-contact-and-character-motion.tex) — animation-timing/laboratories · **provisional**
+- [python game animation state machine](../src/game-development/animation-timing/laboratories/python-game-animation-state-machine.tex) — animation-timing/laboratories · **provisional**
+- [python projectiles and secondary motion](../src/game-development/animation-timing/laboratories/python-projectiles-and-secondary-motion.tex) — animation-timing/laboratories · **provisional**
+- [python rational time and exposure sheet](../src/game-development/animation-timing/laboratories/python-rational-time-and-exposure-sheet.tex) — animation-timing/laboratories · **provisional**
+- [ballistics and spring problem set](../src/game-development/animation-timing/workbooks/ballistics-and-spring-problem-set.tex) — animation-timing/workbooks · **provisional**
+- [exposure sheet workbook template](../src/game-development/animation-timing/workbooks/exposure-sheet-workbook-template.tex) — animation-timing/workbooks · **provisional**
+- [frame rate conversion workbook template](../src/game-development/animation-timing/workbooks/frame-rate-conversion-workbook-template.tex) — animation-timing/workbooks · **provisional**
+- [frame time and exposure problem set](../src/game-development/animation-timing/workbooks/frame-time-and-exposure-problem-set.tex) — animation-timing/workbooks · **provisional**
+- [lip sync and music workbook template](../src/game-development/animation-timing/workbooks/lip-sync-and-music-workbook-template.tex) — animation-timing/workbooks · **provisional**
+- [physics and weight workbook template](../src/game-development/animation-timing/workbooks/physics-and-weight-workbook-template.tex) — animation-timing/workbooks · **provisional**
+- [spacing and easing workbook template](../src/game-development/animation-timing/workbooks/spacing-and-easing-workbook-template.tex) — animation-timing/workbooks · **provisional**
+- [walk cycle contact workbook template](../src/game-development/animation-timing/workbooks/walk-cycle-contact-workbook-template.tex) — animation-timing/workbooks · **provisional**
+- [walk runs and interruptibility problem set](../src/game-development/animation-timing/workbooks/walk-runs-and-interruptibility-problem-set.tex) — animation-timing/workbooks · **provisional**
 - [calculus applications companion workbook](../src/mathematics/workbooks/calculus-applications-companion-workbook.tex) — mathematics · **provisional**
 - [calculus applications workbook solutions](../src/mathematics/workbooks/calculus-applications-workbook-solutions.tex) — mathematics · **provisional**
 - [differential equations curriculum problem workbook](../src/mathematics/workbooks/differential-equations-curriculum-problem-workbook.tex) — mathematics · **provisional**

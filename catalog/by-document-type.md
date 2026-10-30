@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## architecture-document (7)
+## architecture-document (9)
 
 - [ADR-0001: Application-aligned repository ownership](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0001.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [ADR-0002: Multi-account workload and environment isolation](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0002.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
@@ -10,9 +10,11 @@
 - [ADR-0004: GitHub Actions OIDC authorization](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0004.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [ADR-0005: Terraform module provenance and promotion](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0005.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [ADR-0006: Separate validation and deployment trust](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0006.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
+- [game animation verification specification](../src/game-development/animation-timing/architecture/game-animation-verification-specification.tex) — animation-timing/architecture · **provisional**
+- [real time character animation architecture](../src/game-development/animation-timing/architecture/real-time-character-animation-architecture.tex) — animation-timing/architecture · **provisional**
 - [Open-Source Enterprise Security Platform: Reference Architecture and Tool Strategy](../src/security/technical-documents/open-source-enterprise-security-platform.tex) — enterprise security platform architecture · **reviewed**
 
-## assessment (24)
+## assessment (27)
 
 - [architecture traceability scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/architecture-traceability-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
 - [diagram quality scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/diagram-quality-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
@@ -23,6 +25,9 @@
 - [architecture view completeness template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Architecture_View_Completeness_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
 - [documentation review readiness template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Documentation_Review_Readiness_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
 - [traceability and change readiness template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Traceability_and_Change_Readiness_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
+- [animation accessibility and playtest scorecard template](../src/game-development/animation-timing/scorecards/animation-accessibility-and-playtest-scorecard-template.tex) — animation-timing/scorecards · **provisional**
+- [animation timing scorecard template](../src/game-development/animation-timing/scorecards/animation-timing-scorecard-template.tex) — animation-timing/scorecards · **provisional**
+- [game animation engineering scorecard template](../src/game-development/animation-timing/scorecards/game-animation-engineering-scorecard-template.tex) — animation-timing/scorecards · **provisional**
 - [physics engine gap analysis production library](../src/game-development/physics-engines/physics-engine-gap-analysis-production-library.tex) — physics engines · **provisional**
 - [capstone assessment and rubric](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/assessments/capstone-assessment-and-rubric.tex) — algorithms · **provisional**
 - [foundations diagnostic assessment](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/assessments/foundations-diagnostic-assessment.tex) — algorithms · **provisional**
@@ -144,15 +149,17 @@
 - [closure playbook standard operating procedure](../src/security/application-security/processes/avit-seeker/closure-playbook-standard-operating-procedure.tex) — processes/avit seeker · **provisional**
 - [secure workflow standard github actions](../src/security/github-advanced-security/references/secure-workflow-standard-github-actions.tex) — github advanced security/references · **provisional**
 
-## runbook (5)
+## runbook (7)
 
+- [animation benchmark and regression procedure](../src/game-development/animation-timing/procedures/animation-benchmark-and-regression-procedure.tex) — animation-timing/procedures · **provisional**
+- [animation playtest standard operating procedure](../src/game-development/animation-timing/procedures/animation-playtest-standard-operating-procedure.tex) — animation-timing/procedures · **provisional**
 - [Algorithm Verification And Review Procedure](../src/programming/algorithms/algorithm-engineering/procedures/algorithm-verification-and-review-procedure.tex) — algorithm engineering / procedures · **provisional**
 - [Reproducible Benchmarking Procedure](../src/programming/algorithms/algorithm-engineering/procedures/reproducible-benchmarking-procedure.tex) — algorithm engineering / procedures · **provisional**
 - [Compiler Benchmarking Procedure](../src/programming/compilers/compiler-engineering/procedures/compiler-benchmarking-procedure.tex) — compiler engineering / engineering a compiler / procedures · **provisional**
 - [Compiler Correctness Verification](../src/programming/compilers/compiler-engineering/procedures/compiler-correctness-verification.tex) — compiler engineering / engineering a compiler / procedures · **provisional**
 - [Optimization Change Control](../src/programming/compilers/compiler-engineering/procedures/optimization-change-control.tex) — compiler engineering / engineering a compiler / procedures · **provisional**
 
-## study-guide (163)
+## study-guide (247)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -211,6 +218,90 @@
 - [study plan nginx cookbook 3rd edition user](../src/devops/platform/nginx/study-plan-nginx-cookbook-3rd-edition-user.tex) — platform/nginx · **provisional**
 - [study plan nginx cookbook derek dejonghe user](../src/devops/platform/nginx/study-plan-nginx-cookbook-derek-dejonghe-user.tex) — platform/nginx · **provisional**
 - [the art of electronics curriculum](../src/electronics/study-guides/the-art-of-electronics-curriculum.tex) — electronics · **provisional**
+- [chapter to competency and evidence crosswalk](../src/game-development/animation-timing/curricula/chapter-to-competency-and-evidence-crosswalk.tex) — animation-timing/curricula · **provisional**
+- [prerequisite based 16 week curriculum](../src/game-development/animation-timing/curricula/prerequisite-based-16-week-curriculum.tex) — animation-timing/curricula · **provisional**
+- [chapter 01 timing for broadcast media](../src/game-development/animation-timing/study-guides/chapter-01-timing-for-broadcast-media.tex) — animation-timing/study-guides · **provisional**
+- [chapter 02 what is good timing](../src/game-development/animation-timing/study-guides/chapter-02-what-is-good-timing.tex) — animation-timing/study-guides · **provisional**
+- [chapter 03 the storyboard](../src/game-development/animation-timing/study-guides/chapter-03-the-storyboard.tex) — animation-timing/study-guides · **provisional**
+- [chapter 04 traditional storyboards](../src/game-development/animation-timing/study-guides/chapter-04-traditional-storyboards.tex) — animation-timing/study-guides · **provisional**
+- [chapter 05 digital storyboarding](../src/game-development/animation-timing/study-guides/chapter-05-digital-storyboarding.tex) — animation-timing/study-guides · **provisional**
+- [chapter 06 additional storyboard effects](../src/game-development/animation-timing/study-guides/chapter-06-additional-storyboard-effects.tex) — animation-timing/study-guides · **provisional**
+- [chapter 07 responsibility of the director](../src/game-development/animation-timing/study-guides/chapter-07-responsibility-of-the-director.tex) — animation-timing/study-guides · **provisional**
+- [chapter 08 directing for interactive games](../src/game-development/animation-timing/study-guides/chapter-08-directing-for-interactive-games.tex) — animation-timing/study-guides · **provisional**
+- [chapter 09 the basic unit of time in animation](../src/game-development/animation-timing/study-guides/chapter-09-the-basic-unit-of-time-in-animation.tex) — animation-timing/study-guides · **provisional**
+- [chapter 10 timing for television web based programming vs timing for](../src/game-development/animation-timing/study-guides/chapter-10-timing-for-television-web-based-programming-vs-timing-for.tex) — animation-timing/study-guides · **provisional**
+- [chapter 11 slugging](../src/game-development/animation-timing/study-guides/chapter-11-slugging.tex) — animation-timing/study-guides · **provisional**
+- [chapter 12 bar sheets](../src/game-development/animation-timing/study-guides/chapter-12-bar-sheets.tex) — animation-timing/study-guides · **provisional**
+- [chapter 13 timing for a hand drawn film exposure charts or exposure ](../src/game-development/animation-timing/study-guides/chapter-13-timing-for-a-hand-drawn-film-exposure-charts-or-exposure-.tex) — animation-timing/study-guides · **provisional**
+- [chapter 14 timing for an overseas production](../src/game-development/animation-timing/study-guides/chapter-14-timing-for-an-overseas-production.tex) — animation-timing/study-guides · **provisional**
+- [chapter 15 timing for a 2d digital production](../src/game-development/animation-timing/study-guides/chapter-15-timing-for-a-2d-digital-production.tex) — animation-timing/study-guides · **provisional**
+- [chapter 16 timing for a 3d digital production](../src/game-development/animation-timing/study-guides/chapter-16-timing-for-a-3d-digital-production.tex) — animation-timing/study-guides · **provisional**
+- [chapter 17 timing for an actor based program performance or motion c](../src/game-development/animation-timing/study-guides/chapter-17-timing-for-an-actor-based-program-performance-or-motion-c.tex) — animation-timing/study-guides · **provisional**
+- [chapter 18 animation and properties of matter](../src/game-development/animation-timing/study-guides/chapter-18-animation-and-properties-of-matter.tex) — animation-timing/study-guides · **provisional**
+- [chapter 19 movement and caricature](../src/game-development/animation-timing/study-guides/chapter-19-movement-and-caricature.tex) — animation-timing/study-guides · **provisional**
+- [chapter 20 cause and effect](../src/game-development/animation-timing/study-guides/chapter-20-cause-and-effect.tex) — animation-timing/study-guides · **provisional**
+- [chapter 21 newtons laws of motion](../src/game-development/animation-timing/study-guides/chapter-21-newtons-laws-of-motion.tex) — animation-timing/study-guides · **provisional**
+- [chapter 22 objects thrown through the air](../src/game-development/animation-timing/study-guides/chapter-22-objects-thrown-through-the-air.tex) — animation-timing/study-guides · **provisional**
+- [chapter 23 timing of inanimate objects](../src/game-development/animation-timing/study-guides/chapter-23-timing-of-inanimate-objects.tex) — animation-timing/study-guides · **provisional**
+- [chapter 24 rotating objects](../src/game-development/animation-timing/study-guides/chapter-24-rotating-objects.tex) — animation-timing/study-guides · **provisional**
+- [chapter 25 force transmitted through a flexible joint](../src/game-development/animation-timing/study-guides/chapter-25-force-transmitted-through-a-flexible-joint.tex) — animation-timing/study-guides · **provisional**
+- [chapter 26 force transmitted through jointed limbs](../src/game-development/animation-timing/study-guides/chapter-26-force-transmitted-through-jointed-limbs.tex) — animation-timing/study-guides · **provisional**
+- [chapter 27 spacing of drawings general remarks](../src/game-development/animation-timing/study-guides/chapter-27-spacing-of-drawings-general-remarks.tex) — animation-timing/study-guides · **provisional**
+- [chapter 28 spacing of drawings](../src/game-development/animation-timing/study-guides/chapter-28-spacing-of-drawings.tex) — animation-timing/study-guides · **provisional**
+- [chapter 29 timing a slow action](../src/game-development/animation-timing/study-guides/chapter-29-timing-a-slow-action.tex) — animation-timing/study-guides · **provisional**
+- [chapter 30 timing a fast action](../src/game-development/animation-timing/study-guides/chapter-30-timing-a-fast-action.tex) — animation-timing/study-guides · **provisional**
+- [chapter 31 getting into and out of holds](../src/game-development/animation-timing/study-guides/chapter-31-getting-into-and-out-of-holds.tex) — animation-timing/study-guides · **provisional**
+- [chapter 32 single frames or double frames ones or twos](../src/game-development/animation-timing/study-guides/chapter-32-single-frames-or-double-frames-ones-or-twos.tex) — animation-timing/study-guides · **provisional**
+- [chapter 33 how long to hold](../src/game-development/animation-timing/study-guides/chapter-33-how-long-to-hold.tex) — animation-timing/study-guides · **provisional**
+- [chapter 34 anticipation](../src/game-development/animation-timing/study-guides/chapter-34-anticipation.tex) — animation-timing/study-guides · **provisional**
+- [chapter 35 follow through](../src/game-development/animation-timing/study-guides/chapter-35-follow-through.tex) — animation-timing/study-guides · **provisional**
+- [chapter 36 overlapping action](../src/game-development/animation-timing/study-guides/chapter-36-overlapping-action.tex) — animation-timing/study-guides · **provisional**
+- [chapter 37 timing an oscillating movement](../src/game-development/animation-timing/study-guides/chapter-37-timing-an-oscillating-movement.tex) — animation-timing/study-guides · **provisional**
+- [chapter 38 timing to suggest weight and force 1](../src/game-development/animation-timing/study-guides/chapter-38-timing-to-suggest-weight-and-force-1.tex) — animation-timing/study-guides · **provisional**
+- [chapter 39 timing to suggest weight and force 2](../src/game-development/animation-timing/study-guides/chapter-39-timing-to-suggest-weight-and-force-2.tex) — animation-timing/study-guides · **provisional**
+- [chapter 40 timing to suggest weight and force 3](../src/game-development/animation-timing/study-guides/chapter-40-timing-to-suggest-weight-and-force-3.tex) — animation-timing/study-guides · **provisional**
+- [chapter 41 timing to suggest weight and force 4](../src/game-development/animation-timing/study-guides/chapter-41-timing-to-suggest-weight-and-force-4.tex) — animation-timing/study-guides · **provisional**
+- [chapter 42 timing to suggest force repeat action](../src/game-development/animation-timing/study-guides/chapter-42-timing-to-suggest-force-repeat-action.tex) — animation-timing/study-guides · **provisional**
+- [chapter 43 character reactions and takes](../src/game-development/animation-timing/study-guides/chapter-43-character-reactions-and-takes.tex) — animation-timing/study-guides · **provisional**
+- [chapter 44 timing to give a feeling of size](../src/game-development/animation-timing/study-guides/chapter-44-timing-to-give-a-feeling-of-size.tex) — animation-timing/study-guides · **provisional**
+- [chapter 45 the effects of friction air resistance and wind](../src/game-development/animation-timing/study-guides/chapter-45-the-effects-of-friction-air-resistance-and-wind.tex) — animation-timing/study-guides · **provisional**
+- [chapter 46 timing cycles how long a repeat](../src/game-development/animation-timing/study-guides/chapter-46-timing-cycles-how-long-a-repeat.tex) — animation-timing/study-guides · **provisional**
+- [chapter 47 scenes with multiple characters](../src/game-development/animation-timing/study-guides/chapter-47-scenes-with-multiple-characters.tex) — animation-timing/study-guides · **provisional**
+- [chapter 48 digital crowds massive](../src/game-development/animation-timing/study-guides/chapter-48-digital-crowds-massive.tex) — animation-timing/study-guides · **provisional**
+- [chapter 49 effects animation flames and smoke](../src/game-development/animation-timing/study-guides/chapter-49-effects-animation-flames-and-smoke.tex) — animation-timing/study-guides · **provisional**
+- [chapter 50 water](../src/game-development/animation-timing/study-guides/chapter-50-water.tex) — animation-timing/study-guides · **provisional**
+- [chapter 51 rain](../src/game-development/animation-timing/study-guides/chapter-51-rain.tex) — animation-timing/study-guides · **provisional**
+- [chapter 52 snow](../src/game-development/animation-timing/study-guides/chapter-52-snow.tex) — animation-timing/study-guides · **provisional**
+- [chapter 53 explosions](../src/game-development/animation-timing/study-guides/chapter-53-explosions.tex) — animation-timing/study-guides · **provisional**
+- [chapter 54 repeat movements of inanimate objects](../src/game-development/animation-timing/study-guides/chapter-54-repeat-movements-of-inanimate-objects.tex) — animation-timing/study-guides · **provisional**
+- [chapter 55 timing a walk](../src/game-development/animation-timing/study-guides/chapter-55-timing-a-walk.tex) — animation-timing/study-guides · **provisional**
+- [chapter 56 types of walk](../src/game-development/animation-timing/study-guides/chapter-56-types-of-walk.tex) — animation-timing/study-guides · **provisional**
+- [chapter 57 spacing of drawings in perspective animation](../src/game-development/animation-timing/study-guides/chapter-57-spacing-of-drawings-in-perspective-animation.tex) — animation-timing/study-guides · **provisional**
+- [chapter 58 timing animals movements horses](../src/game-development/animation-timing/study-guides/chapter-58-timing-animals-movements-horses.tex) — animation-timing/study-guides · **provisional**
+- [chapter 59 timing animals movements other quadrupeds](../src/game-development/animation-timing/study-guides/chapter-59-timing-animals-movements-other-quadrupeds.tex) — animation-timing/study-guides · **provisional**
+- [chapter 60 timing an animals gallop](../src/game-development/animation-timing/study-guides/chapter-60-timing-an-animals-gallop.tex) — animation-timing/study-guides · **provisional**
+- [chapter 61 bird flight](../src/game-development/animation-timing/study-guides/chapter-61-bird-flight.tex) — animation-timing/study-guides · **provisional**
+- [chapter 62 drybrush speed lines and motion blur](../src/game-development/animation-timing/study-guides/chapter-62-drybrush-speed-lines-and-motion-blur.tex) — animation-timing/study-guides · **provisional**
+- [chapter 63 accentuating a movement](../src/game-development/animation-timing/study-guides/chapter-63-accentuating-a-movement.tex) — animation-timing/study-guides · **provisional**
+- [chapter 64 strobing](../src/game-development/animation-timing/study-guides/chapter-64-strobing.tex) — animation-timing/study-guides · **provisional**
+- [chapter 65 fast run cycles](../src/game-development/animation-timing/study-guides/chapter-65-fast-run-cycles.tex) — animation-timing/study-guides · **provisional**
+- [chapter 66 characterization acting](../src/game-development/animation-timing/study-guides/chapter-66-characterization-acting.tex) — animation-timing/study-guides · **provisional**
+- [chapter 67 the use of timing to suggest mood](../src/game-development/animation-timing/study-guides/chapter-67-the-use-of-timing-to-suggest-mood.tex) — animation-timing/study-guides · **provisional**
+- [chapter 68 synchronizing animation to speech](../src/game-development/animation-timing/study-guides/chapter-68-synchronizing-animation-to-speech.tex) — animation-timing/study-guides · **provisional**
+- [chapter 69 lip sync 1](../src/game-development/animation-timing/study-guides/chapter-69-lip-sync-1.tex) — animation-timing/study-guides · **provisional**
+- [chapter 70 lip sync 2](../src/game-development/animation-timing/study-guides/chapter-70-lip-sync-2.tex) — animation-timing/study-guides · **provisional**
+- [chapter 71 lip sync 3](../src/game-development/animation-timing/study-guides/chapter-71-lip-sync-3.tex) — animation-timing/study-guides · **provisional**
+- [chapter 72 timing and music](../src/game-development/animation-timing/study-guides/chapter-72-timing-and-music.tex) — animation-timing/study-guides · **provisional**
+- [chapter 73 animating for interactive games](../src/game-development/animation-timing/study-guides/chapter-73-animating-for-interactive-games.tex) — animation-timing/study-guides · **provisional**
+- [chapter 74 traditional camera movements](../src/game-development/animation-timing/study-guides/chapter-74-traditional-camera-movements.tex) — animation-timing/study-guides · **provisional**
+- [chapter 75 3d camera moves](../src/game-development/animation-timing/study-guides/chapter-75-3d-camera-moves.tex) — animation-timing/study-guides · **provisional**
+- [chapter 76 peg movements in traditional animation](../src/game-development/animation-timing/study-guides/chapter-76-peg-movements-in-traditional-animation.tex) — animation-timing/study-guides · **provisional**
+- [chapter 77 peg movements in 3d animation](../src/game-development/animation-timing/study-guides/chapter-77-peg-movements-in-3d-animation.tex) — animation-timing/study-guides · **provisional**
+- [chapter 78 editing animation](../src/game-development/animation-timing/study-guides/chapter-78-editing-animation.tex) — animation-timing/study-guides · **provisional**
+- [chapter 79 editing for feature films](../src/game-development/animation-timing/study-guides/chapter-79-editing-for-feature-films.tex) — animation-timing/study-guides · **provisional**
+- [chapter 80 editing for childrens programming](../src/game-development/animation-timing/study-guides/chapter-80-editing-for-childrens-programming.tex) — animation-timing/study-guides · **provisional**
+- [chapter 81 editing for internet programs](../src/game-development/animation-timing/study-guides/chapter-81-editing-for-internet-programs.tex) — animation-timing/study-guides · **provisional**
+- [chapter 82 conclusion](../src/game-development/animation-timing/study-guides/chapter-82-conclusion.tex) — animation-timing/study-guides · **provisional**
 - [study plan computer animation 3rd edition user](../src/game-development/study-guides/study-plan-computer-animation-3rd-edition-user.tex) — game development · **provisional**
 - [study plan computational geometry c cards](../src/mathematics/study-guides/study-plan-computational-geometry-c-cards.tex) — mathematics · **provisional**
 - [study plan computational geometry c expanded](../src/mathematics/study-guides/study-plan-computational-geometry-c-expanded.tex) — mathematics · **provisional**
@@ -645,7 +736,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (618)
+## technical-reference (625)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -1022,6 +1113,13 @@
 - [orange pi zero engineering guide](../src/electronics/technical-documents/orange-pi-zero-engineering-guide.tex) — electronics · **provisional**
 - [the art of electronics x chapters lab course](../src/electronics/workbooks/the-art-of-electronics-x-chapters-lab-course.tex) — electronics · **provisional**
 - [ai for games algorithms pseudocode handout](../src/game-development/ai/ai-for-games-algorithms-pseudocode-handout.tex) — ai · **provisional**
+- [capstone a timed character performance](../src/game-development/animation-timing/projects/capstone-a-timed-character-performance.tex) — animation-timing/projects · **provisional**
+- [capstone b playable character controller](../src/game-development/animation-timing/projects/capstone-b-playable-character-controller.tex) — animation-timing/projects · **provisional**
+- [capstone c cinematic and gameplay hybrid](../src/game-development/animation-timing/projects/capstone-c-cinematic-and-gameplay-hybrid.tex) — animation-timing/projects · **provisional**
+- [game motion dynamics and numerics](../src/game-development/animation-timing/technical-references/game-motion-dynamics-and-numerics.tex) — animation-timing/technical-references · **provisional**
+- [realtime animation architecture and integration](../src/game-development/animation-timing/technical-references/realtime-animation-architecture-and-integration.tex) — animation-timing/technical-references · **provisional**
+- [spacing poses easing and cycles](../src/game-development/animation-timing/technical-references/spacing-poses-easing-and-cycles.tex) — animation-timing/technical-references · **provisional**
+- [timing frame rates and exposure](../src/game-development/animation-timing/technical-references/timing-frame-rates-and-exposure.tex) — animation-timing/technical-references · **provisional**
 - [ai assisted sprite generation pipeline](../src/game-development/asset-pipelines/ai-assisted-sprite-generation-pipeline.tex) — asset pipelines · **provisional**
 - [ai driven 3d model generation technical games](../src/game-development/asset-pipelines/ai-driven-3d-model-generation-technical-games.tex) — asset pipelines · **provisional**
 - [computer graphics principles practice](../src/game-development/graphics/computer-graphics-principles-practice.tex) — graphics · **provisional**
@@ -1266,7 +1364,7 @@
 - [immediate founder focus](../src/startups/media/fast-animation-channels/immediate-founder-focus.tex) — media/fast animation channels · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## template (117)
+## template (122)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -1335,6 +1433,11 @@
 - [story refinement workbook template](../src/business-analysis/user-stories/workbooks/templates/story-refinement-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [collaborating your community github templates](../src/devops/platform/github/collaborating-your-community-github-templates.tex) — platform/github · **provisional**
 - [Business Letterhead Template](../src/documentation/templates/letterhead-template.tex) — letterhead and correspondence · **reviewed**
+- [animation asset handoff template](../src/game-development/animation-timing/templates/animation-asset-handoff-template.tex) — animation-timing/templates · **provisional**
+- [animation state machine specification template](../src/game-development/animation-timing/templates/animation-state-machine-specification-template.tex) — animation-timing/templates · **provisional**
+- [character animation specification template](../src/game-development/animation-timing/templates/character-animation-specification-template.tex) — animation-timing/templates · **provisional**
+- [playtest session template](../src/game-development/animation-timing/templates/playtest-session-template.tex) — animation-timing/templates · **provisional**
+- [shot timing brief template](../src/game-development/animation-timing/templates/shot-timing-brief-template.tex) — animation-timing/templates · **provisional**
 - [game design document gdd template](../src/game-development/templates/game-design-document-gdd-template.tex) — game development · **provisional**
 - [game design document template](../src/game-development/templates/game-design-document-template.tex) — game development · **provisional**
 - [03 framework and formulas](../src/personal/finance/intelligent-investor/03-framework-and-formulas.tex) — finance/intelligent investor · **provisional**
@@ -1406,7 +1509,7 @@
 - [study plan user stories github advanced sec](../src/security/github-advanced-security/administration/study-plan-user-stories-github-advanced-sec.tex) — github advanced security/administration · **provisional**
 - [study plan owasp api sec top 10 user stories](../src/security/standards/owasp/study-plan-owasp-api-sec-top-10-user-stories.tex) — standards/owasp · **provisional**
 
-## workbook (58)
+## workbook (74)
 
 - [concern view evidence template](../src/architecture/c4-model/documentation-suite/workbooks/concern-view-evidence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
 - [cross view correspondence template](../src/architecture/c4-model/documentation-suite/workbooks/cross-view-correspondence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
@@ -1428,6 +1531,22 @@
 - [lab 07 negotiate a release plan](../src/business-analysis/user-stories/laboratories/lab-07-negotiate-a-release-plan.tex) — agile requirements / user stories · **provisional**
 - [lab 08 run change impact and governance](../src/business-analysis/user-stories/laboratories/lab-08-run-change-impact-and-governance.tex) — agile requirements / user stories · **provisional**
 - [lab 09 capstone deliver a story led release](../src/business-analysis/user-stories/laboratories/lab-09-capstone-deliver-a-story-led-release.tex) — agile requirements / user stories · **provisional**
+- [cpp20 physics and spring settle](../src/game-development/animation-timing/laboratories/cpp20-physics-and-spring-settle.tex) — animation-timing/laboratories · **provisional**
+- [cpp20 time step and timing curves](../src/game-development/animation-timing/laboratories/cpp20-time-step-and-timing-curves.tex) — animation-timing/laboratories · **provisional**
+- [engine agnostic character integration](../src/game-development/animation-timing/laboratories/engine-agnostic-character-integration.tex) — animation-timing/laboratories · **provisional**
+- [python easing contact and character motion](../src/game-development/animation-timing/laboratories/python-easing-contact-and-character-motion.tex) — animation-timing/laboratories · **provisional**
+- [python game animation state machine](../src/game-development/animation-timing/laboratories/python-game-animation-state-machine.tex) — animation-timing/laboratories · **provisional**
+- [python projectiles and secondary motion](../src/game-development/animation-timing/laboratories/python-projectiles-and-secondary-motion.tex) — animation-timing/laboratories · **provisional**
+- [python rational time and exposure sheet](../src/game-development/animation-timing/laboratories/python-rational-time-and-exposure-sheet.tex) — animation-timing/laboratories · **provisional**
+- [ballistics and spring problem set](../src/game-development/animation-timing/workbooks/ballistics-and-spring-problem-set.tex) — animation-timing/workbooks · **provisional**
+- [exposure sheet workbook template](../src/game-development/animation-timing/workbooks/exposure-sheet-workbook-template.tex) — animation-timing/workbooks · **provisional**
+- [frame rate conversion workbook template](../src/game-development/animation-timing/workbooks/frame-rate-conversion-workbook-template.tex) — animation-timing/workbooks · **provisional**
+- [frame time and exposure problem set](../src/game-development/animation-timing/workbooks/frame-time-and-exposure-problem-set.tex) — animation-timing/workbooks · **provisional**
+- [lip sync and music workbook template](../src/game-development/animation-timing/workbooks/lip-sync-and-music-workbook-template.tex) — animation-timing/workbooks · **provisional**
+- [physics and weight workbook template](../src/game-development/animation-timing/workbooks/physics-and-weight-workbook-template.tex) — animation-timing/workbooks · **provisional**
+- [spacing and easing workbook template](../src/game-development/animation-timing/workbooks/spacing-and-easing-workbook-template.tex) — animation-timing/workbooks · **provisional**
+- [walk cycle contact workbook template](../src/game-development/animation-timing/workbooks/walk-cycle-contact-workbook-template.tex) — animation-timing/workbooks · **provisional**
+- [walk runs and interruptibility problem set](../src/game-development/animation-timing/workbooks/walk-runs-and-interruptibility-problem-set.tex) — animation-timing/workbooks · **provisional**
 - [calculus applications companion workbook](../src/mathematics/workbooks/calculus-applications-companion-workbook.tex) — mathematics · **provisional**
 - [calculus applications workbook solutions](../src/mathematics/workbooks/calculus-applications-workbook-solutions.tex) — mathematics · **provisional**
 - [differential equations curriculum problem workbook](../src/mathematics/workbooks/differential-equations-curriculum-problem-workbook.tex) — mathematics · **provisional**

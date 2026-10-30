@@ -260,6 +260,155 @@
 
 - [architectural style ref mapping software](../src/architecture/views-and-beyond/style-catalogs/allocation/install-style/architectural-style-ref-mapping-software.tex) — allocation/install style · **provisional**
 
+## animation-timing/architecture (2)
+
+- [game animation verification specification](../src/game-development/animation-timing/architecture/game-animation-verification-specification.tex) — animation-timing/architecture · **provisional**
+- [real time character animation architecture](../src/game-development/animation-timing/architecture/real-time-character-animation-architecture.tex) — animation-timing/architecture · **provisional**
+
+## animation-timing/curricula (2)
+
+- [chapter to competency and evidence crosswalk](../src/game-development/animation-timing/curricula/chapter-to-competency-and-evidence-crosswalk.tex) — animation-timing/curricula · **provisional**
+- [prerequisite based 16 week curriculum](../src/game-development/animation-timing/curricula/prerequisite-based-16-week-curriculum.tex) — animation-timing/curricula · **provisional**
+
+## animation-timing/laboratories (7)
+
+- [cpp20 physics and spring settle](../src/game-development/animation-timing/laboratories/cpp20-physics-and-spring-settle.tex) — animation-timing/laboratories · **provisional**
+- [cpp20 time step and timing curves](../src/game-development/animation-timing/laboratories/cpp20-time-step-and-timing-curves.tex) — animation-timing/laboratories · **provisional**
+- [engine agnostic character integration](../src/game-development/animation-timing/laboratories/engine-agnostic-character-integration.tex) — animation-timing/laboratories · **provisional**
+- [python easing contact and character motion](../src/game-development/animation-timing/laboratories/python-easing-contact-and-character-motion.tex) — animation-timing/laboratories · **provisional**
+- [python game animation state machine](../src/game-development/animation-timing/laboratories/python-game-animation-state-machine.tex) — animation-timing/laboratories · **provisional**
+- [python projectiles and secondary motion](../src/game-development/animation-timing/laboratories/python-projectiles-and-secondary-motion.tex) — animation-timing/laboratories · **provisional**
+- [python rational time and exposure sheet](../src/game-development/animation-timing/laboratories/python-rational-time-and-exposure-sheet.tex) — animation-timing/laboratories · **provisional**
+
+## animation-timing/procedures (2)
+
+- [animation benchmark and regression procedure](../src/game-development/animation-timing/procedures/animation-benchmark-and-regression-procedure.tex) — animation-timing/procedures · **provisional**
+- [animation playtest standard operating procedure](../src/game-development/animation-timing/procedures/animation-playtest-standard-operating-procedure.tex) — animation-timing/procedures · **provisional**
+
+## animation-timing/projects (3)
+
+- [capstone a timed character performance](../src/game-development/animation-timing/projects/capstone-a-timed-character-performance.tex) — animation-timing/projects · **provisional**
+- [capstone b playable character controller](../src/game-development/animation-timing/projects/capstone-b-playable-character-controller.tex) — animation-timing/projects · **provisional**
+- [capstone c cinematic and gameplay hybrid](../src/game-development/animation-timing/projects/capstone-c-cinematic-and-gameplay-hybrid.tex) — animation-timing/projects · **provisional**
+
+## animation-timing/scorecards (3)
+
+- [animation accessibility and playtest scorecard template](../src/game-development/animation-timing/scorecards/animation-accessibility-and-playtest-scorecard-template.tex) — animation-timing/scorecards · **provisional**
+- [animation timing scorecard template](../src/game-development/animation-timing/scorecards/animation-timing-scorecard-template.tex) — animation-timing/scorecards · **provisional**
+- [game animation engineering scorecard template](../src/game-development/animation-timing/scorecards/game-animation-engineering-scorecard-template.tex) — animation-timing/scorecards · **provisional**
+
+## animation-timing/study-guides (82)
+
+- [chapter 01 timing for broadcast media](../src/game-development/animation-timing/study-guides/chapter-01-timing-for-broadcast-media.tex) — animation-timing/study-guides · **provisional**
+- [chapter 02 what is good timing](../src/game-development/animation-timing/study-guides/chapter-02-what-is-good-timing.tex) — animation-timing/study-guides · **provisional**
+- [chapter 03 the storyboard](../src/game-development/animation-timing/study-guides/chapter-03-the-storyboard.tex) — animation-timing/study-guides · **provisional**
+- [chapter 04 traditional storyboards](../src/game-development/animation-timing/study-guides/chapter-04-traditional-storyboards.tex) — animation-timing/study-guides · **provisional**
+- [chapter 05 digital storyboarding](../src/game-development/animation-timing/study-guides/chapter-05-digital-storyboarding.tex) — animation-timing/study-guides · **provisional**
+- [chapter 06 additional storyboard effects](../src/game-development/animation-timing/study-guides/chapter-06-additional-storyboard-effects.tex) — animation-timing/study-guides · **provisional**
+- [chapter 07 responsibility of the director](../src/game-development/animation-timing/study-guides/chapter-07-responsibility-of-the-director.tex) — animation-timing/study-guides · **provisional**
+- [chapter 08 directing for interactive games](../src/game-development/animation-timing/study-guides/chapter-08-directing-for-interactive-games.tex) — animation-timing/study-guides · **provisional**
+- [chapter 09 the basic unit of time in animation](../src/game-development/animation-timing/study-guides/chapter-09-the-basic-unit-of-time-in-animation.tex) — animation-timing/study-guides · **provisional**
+- [chapter 10 timing for television web based programming vs timing for](../src/game-development/animation-timing/study-guides/chapter-10-timing-for-television-web-based-programming-vs-timing-for.tex) — animation-timing/study-guides · **provisional**
+- [chapter 11 slugging](../src/game-development/animation-timing/study-guides/chapter-11-slugging.tex) — animation-timing/study-guides · **provisional**
+- [chapter 12 bar sheets](../src/game-development/animation-timing/study-guides/chapter-12-bar-sheets.tex) — animation-timing/study-guides · **provisional**
+- [chapter 13 timing for a hand drawn film exposure charts or exposure ](../src/game-development/animation-timing/study-guides/chapter-13-timing-for-a-hand-drawn-film-exposure-charts-or-exposure-.tex) — animation-timing/study-guides · **provisional**
+- [chapter 14 timing for an overseas production](../src/game-development/animation-timing/study-guides/chapter-14-timing-for-an-overseas-production.tex) — animation-timing/study-guides · **provisional**
+- [chapter 15 timing for a 2d digital production](../src/game-development/animation-timing/study-guides/chapter-15-timing-for-a-2d-digital-production.tex) — animation-timing/study-guides · **provisional**
+- [chapter 16 timing for a 3d digital production](../src/game-development/animation-timing/study-guides/chapter-16-timing-for-a-3d-digital-production.tex) — animation-timing/study-guides · **provisional**
+- [chapter 17 timing for an actor based program performance or motion c](../src/game-development/animation-timing/study-guides/chapter-17-timing-for-an-actor-based-program-performance-or-motion-c.tex) — animation-timing/study-guides · **provisional**
+- [chapter 18 animation and properties of matter](../src/game-development/animation-timing/study-guides/chapter-18-animation-and-properties-of-matter.tex) — animation-timing/study-guides · **provisional**
+- [chapter 19 movement and caricature](../src/game-development/animation-timing/study-guides/chapter-19-movement-and-caricature.tex) — animation-timing/study-guides · **provisional**
+- [chapter 20 cause and effect](../src/game-development/animation-timing/study-guides/chapter-20-cause-and-effect.tex) — animation-timing/study-guides · **provisional**
+- [chapter 21 newtons laws of motion](../src/game-development/animation-timing/study-guides/chapter-21-newtons-laws-of-motion.tex) — animation-timing/study-guides · **provisional**
+- [chapter 22 objects thrown through the air](../src/game-development/animation-timing/study-guides/chapter-22-objects-thrown-through-the-air.tex) — animation-timing/study-guides · **provisional**
+- [chapter 23 timing of inanimate objects](../src/game-development/animation-timing/study-guides/chapter-23-timing-of-inanimate-objects.tex) — animation-timing/study-guides · **provisional**
+- [chapter 24 rotating objects](../src/game-development/animation-timing/study-guides/chapter-24-rotating-objects.tex) — animation-timing/study-guides · **provisional**
+- [chapter 25 force transmitted through a flexible joint](../src/game-development/animation-timing/study-guides/chapter-25-force-transmitted-through-a-flexible-joint.tex) — animation-timing/study-guides · **provisional**
+- [chapter 26 force transmitted through jointed limbs](../src/game-development/animation-timing/study-guides/chapter-26-force-transmitted-through-jointed-limbs.tex) — animation-timing/study-guides · **provisional**
+- [chapter 27 spacing of drawings general remarks](../src/game-development/animation-timing/study-guides/chapter-27-spacing-of-drawings-general-remarks.tex) — animation-timing/study-guides · **provisional**
+- [chapter 28 spacing of drawings](../src/game-development/animation-timing/study-guides/chapter-28-spacing-of-drawings.tex) — animation-timing/study-guides · **provisional**
+- [chapter 29 timing a slow action](../src/game-development/animation-timing/study-guides/chapter-29-timing-a-slow-action.tex) — animation-timing/study-guides · **provisional**
+- [chapter 30 timing a fast action](../src/game-development/animation-timing/study-guides/chapter-30-timing-a-fast-action.tex) — animation-timing/study-guides · **provisional**
+- [chapter 31 getting into and out of holds](../src/game-development/animation-timing/study-guides/chapter-31-getting-into-and-out-of-holds.tex) — animation-timing/study-guides · **provisional**
+- [chapter 32 single frames or double frames ones or twos](../src/game-development/animation-timing/study-guides/chapter-32-single-frames-or-double-frames-ones-or-twos.tex) — animation-timing/study-guides · **provisional**
+- [chapter 33 how long to hold](../src/game-development/animation-timing/study-guides/chapter-33-how-long-to-hold.tex) — animation-timing/study-guides · **provisional**
+- [chapter 34 anticipation](../src/game-development/animation-timing/study-guides/chapter-34-anticipation.tex) — animation-timing/study-guides · **provisional**
+- [chapter 35 follow through](../src/game-development/animation-timing/study-guides/chapter-35-follow-through.tex) — animation-timing/study-guides · **provisional**
+- [chapter 36 overlapping action](../src/game-development/animation-timing/study-guides/chapter-36-overlapping-action.tex) — animation-timing/study-guides · **provisional**
+- [chapter 37 timing an oscillating movement](../src/game-development/animation-timing/study-guides/chapter-37-timing-an-oscillating-movement.tex) — animation-timing/study-guides · **provisional**
+- [chapter 38 timing to suggest weight and force 1](../src/game-development/animation-timing/study-guides/chapter-38-timing-to-suggest-weight-and-force-1.tex) — animation-timing/study-guides · **provisional**
+- [chapter 39 timing to suggest weight and force 2](../src/game-development/animation-timing/study-guides/chapter-39-timing-to-suggest-weight-and-force-2.tex) — animation-timing/study-guides · **provisional**
+- [chapter 40 timing to suggest weight and force 3](../src/game-development/animation-timing/study-guides/chapter-40-timing-to-suggest-weight-and-force-3.tex) — animation-timing/study-guides · **provisional**
+- [chapter 41 timing to suggest weight and force 4](../src/game-development/animation-timing/study-guides/chapter-41-timing-to-suggest-weight-and-force-4.tex) — animation-timing/study-guides · **provisional**
+- [chapter 42 timing to suggest force repeat action](../src/game-development/animation-timing/study-guides/chapter-42-timing-to-suggest-force-repeat-action.tex) — animation-timing/study-guides · **provisional**
+- [chapter 43 character reactions and takes](../src/game-development/animation-timing/study-guides/chapter-43-character-reactions-and-takes.tex) — animation-timing/study-guides · **provisional**
+- [chapter 44 timing to give a feeling of size](../src/game-development/animation-timing/study-guides/chapter-44-timing-to-give-a-feeling-of-size.tex) — animation-timing/study-guides · **provisional**
+- [chapter 45 the effects of friction air resistance and wind](../src/game-development/animation-timing/study-guides/chapter-45-the-effects-of-friction-air-resistance-and-wind.tex) — animation-timing/study-guides · **provisional**
+- [chapter 46 timing cycles how long a repeat](../src/game-development/animation-timing/study-guides/chapter-46-timing-cycles-how-long-a-repeat.tex) — animation-timing/study-guides · **provisional**
+- [chapter 47 scenes with multiple characters](../src/game-development/animation-timing/study-guides/chapter-47-scenes-with-multiple-characters.tex) — animation-timing/study-guides · **provisional**
+- [chapter 48 digital crowds massive](../src/game-development/animation-timing/study-guides/chapter-48-digital-crowds-massive.tex) — animation-timing/study-guides · **provisional**
+- [chapter 49 effects animation flames and smoke](../src/game-development/animation-timing/study-guides/chapter-49-effects-animation-flames-and-smoke.tex) — animation-timing/study-guides · **provisional**
+- [chapter 50 water](../src/game-development/animation-timing/study-guides/chapter-50-water.tex) — animation-timing/study-guides · **provisional**
+- [chapter 51 rain](../src/game-development/animation-timing/study-guides/chapter-51-rain.tex) — animation-timing/study-guides · **provisional**
+- [chapter 52 snow](../src/game-development/animation-timing/study-guides/chapter-52-snow.tex) — animation-timing/study-guides · **provisional**
+- [chapter 53 explosions](../src/game-development/animation-timing/study-guides/chapter-53-explosions.tex) — animation-timing/study-guides · **provisional**
+- [chapter 54 repeat movements of inanimate objects](../src/game-development/animation-timing/study-guides/chapter-54-repeat-movements-of-inanimate-objects.tex) — animation-timing/study-guides · **provisional**
+- [chapter 55 timing a walk](../src/game-development/animation-timing/study-guides/chapter-55-timing-a-walk.tex) — animation-timing/study-guides · **provisional**
+- [chapter 56 types of walk](../src/game-development/animation-timing/study-guides/chapter-56-types-of-walk.tex) — animation-timing/study-guides · **provisional**
+- [chapter 57 spacing of drawings in perspective animation](../src/game-development/animation-timing/study-guides/chapter-57-spacing-of-drawings-in-perspective-animation.tex) — animation-timing/study-guides · **provisional**
+- [chapter 58 timing animals movements horses](../src/game-development/animation-timing/study-guides/chapter-58-timing-animals-movements-horses.tex) — animation-timing/study-guides · **provisional**
+- [chapter 59 timing animals movements other quadrupeds](../src/game-development/animation-timing/study-guides/chapter-59-timing-animals-movements-other-quadrupeds.tex) — animation-timing/study-guides · **provisional**
+- [chapter 60 timing an animals gallop](../src/game-development/animation-timing/study-guides/chapter-60-timing-an-animals-gallop.tex) — animation-timing/study-guides · **provisional**
+- [chapter 61 bird flight](../src/game-development/animation-timing/study-guides/chapter-61-bird-flight.tex) — animation-timing/study-guides · **provisional**
+- [chapter 62 drybrush speed lines and motion blur](../src/game-development/animation-timing/study-guides/chapter-62-drybrush-speed-lines-and-motion-blur.tex) — animation-timing/study-guides · **provisional**
+- [chapter 63 accentuating a movement](../src/game-development/animation-timing/study-guides/chapter-63-accentuating-a-movement.tex) — animation-timing/study-guides · **provisional**
+- [chapter 64 strobing](../src/game-development/animation-timing/study-guides/chapter-64-strobing.tex) — animation-timing/study-guides · **provisional**
+- [chapter 65 fast run cycles](../src/game-development/animation-timing/study-guides/chapter-65-fast-run-cycles.tex) — animation-timing/study-guides · **provisional**
+- [chapter 66 characterization acting](../src/game-development/animation-timing/study-guides/chapter-66-characterization-acting.tex) — animation-timing/study-guides · **provisional**
+- [chapter 67 the use of timing to suggest mood](../src/game-development/animation-timing/study-guides/chapter-67-the-use-of-timing-to-suggest-mood.tex) — animation-timing/study-guides · **provisional**
+- [chapter 68 synchronizing animation to speech](../src/game-development/animation-timing/study-guides/chapter-68-synchronizing-animation-to-speech.tex) — animation-timing/study-guides · **provisional**
+- [chapter 69 lip sync 1](../src/game-development/animation-timing/study-guides/chapter-69-lip-sync-1.tex) — animation-timing/study-guides · **provisional**
+- [chapter 70 lip sync 2](../src/game-development/animation-timing/study-guides/chapter-70-lip-sync-2.tex) — animation-timing/study-guides · **provisional**
+- [chapter 71 lip sync 3](../src/game-development/animation-timing/study-guides/chapter-71-lip-sync-3.tex) — animation-timing/study-guides · **provisional**
+- [chapter 72 timing and music](../src/game-development/animation-timing/study-guides/chapter-72-timing-and-music.tex) — animation-timing/study-guides · **provisional**
+- [chapter 73 animating for interactive games](../src/game-development/animation-timing/study-guides/chapter-73-animating-for-interactive-games.tex) — animation-timing/study-guides · **provisional**
+- [chapter 74 traditional camera movements](../src/game-development/animation-timing/study-guides/chapter-74-traditional-camera-movements.tex) — animation-timing/study-guides · **provisional**
+- [chapter 75 3d camera moves](../src/game-development/animation-timing/study-guides/chapter-75-3d-camera-moves.tex) — animation-timing/study-guides · **provisional**
+- [chapter 76 peg movements in traditional animation](../src/game-development/animation-timing/study-guides/chapter-76-peg-movements-in-traditional-animation.tex) — animation-timing/study-guides · **provisional**
+- [chapter 77 peg movements in 3d animation](../src/game-development/animation-timing/study-guides/chapter-77-peg-movements-in-3d-animation.tex) — animation-timing/study-guides · **provisional**
+- [chapter 78 editing animation](../src/game-development/animation-timing/study-guides/chapter-78-editing-animation.tex) — animation-timing/study-guides · **provisional**
+- [chapter 79 editing for feature films](../src/game-development/animation-timing/study-guides/chapter-79-editing-for-feature-films.tex) — animation-timing/study-guides · **provisional**
+- [chapter 80 editing for childrens programming](../src/game-development/animation-timing/study-guides/chapter-80-editing-for-childrens-programming.tex) — animation-timing/study-guides · **provisional**
+- [chapter 81 editing for internet programs](../src/game-development/animation-timing/study-guides/chapter-81-editing-for-internet-programs.tex) — animation-timing/study-guides · **provisional**
+- [chapter 82 conclusion](../src/game-development/animation-timing/study-guides/chapter-82-conclusion.tex) — animation-timing/study-guides · **provisional**
+
+## animation-timing/technical-references (4)
+
+- [game motion dynamics and numerics](../src/game-development/animation-timing/technical-references/game-motion-dynamics-and-numerics.tex) — animation-timing/technical-references · **provisional**
+- [realtime animation architecture and integration](../src/game-development/animation-timing/technical-references/realtime-animation-architecture-and-integration.tex) — animation-timing/technical-references · **provisional**
+- [spacing poses easing and cycles](../src/game-development/animation-timing/technical-references/spacing-poses-easing-and-cycles.tex) — animation-timing/technical-references · **provisional**
+- [timing frame rates and exposure](../src/game-development/animation-timing/technical-references/timing-frame-rates-and-exposure.tex) — animation-timing/technical-references · **provisional**
+
+## animation-timing/templates (5)
+
+- [animation asset handoff template](../src/game-development/animation-timing/templates/animation-asset-handoff-template.tex) — animation-timing/templates · **provisional**
+- [animation state machine specification template](../src/game-development/animation-timing/templates/animation-state-machine-specification-template.tex) — animation-timing/templates · **provisional**
+- [character animation specification template](../src/game-development/animation-timing/templates/character-animation-specification-template.tex) — animation-timing/templates · **provisional**
+- [playtest session template](../src/game-development/animation-timing/templates/playtest-session-template.tex) — animation-timing/templates · **provisional**
+- [shot timing brief template](../src/game-development/animation-timing/templates/shot-timing-brief-template.tex) — animation-timing/templates · **provisional**
+
+## animation-timing/workbooks (9)
+
+- [ballistics and spring problem set](../src/game-development/animation-timing/workbooks/ballistics-and-spring-problem-set.tex) — animation-timing/workbooks · **provisional**
+- [exposure sheet workbook template](../src/game-development/animation-timing/workbooks/exposure-sheet-workbook-template.tex) — animation-timing/workbooks · **provisional**
+- [frame rate conversion workbook template](../src/game-development/animation-timing/workbooks/frame-rate-conversion-workbook-template.tex) — animation-timing/workbooks · **provisional**
+- [frame time and exposure problem set](../src/game-development/animation-timing/workbooks/frame-time-and-exposure-problem-set.tex) — animation-timing/workbooks · **provisional**
+- [lip sync and music workbook template](../src/game-development/animation-timing/workbooks/lip-sync-and-music-workbook-template.tex) — animation-timing/workbooks · **provisional**
+- [physics and weight workbook template](../src/game-development/animation-timing/workbooks/physics-and-weight-workbook-template.tex) — animation-timing/workbooks · **provisional**
+- [spacing and easing workbook template](../src/game-development/animation-timing/workbooks/spacing-and-easing-workbook-template.tex) — animation-timing/workbooks · **provisional**
+- [walk cycle contact workbook template](../src/game-development/animation-timing/workbooks/walk-cycle-contact-workbook-template.tex) — animation-timing/workbooks · **provisional**
+- [walk runs and interruptibility problem set](../src/game-development/animation-timing/workbooks/walk-runs-and-interruptibility-problem-set.tex) — animation-timing/workbooks · **provisional**
+
 ## annexes/annex a 01 (1)
 
 - [annex a 01 general cornell notes](../src/cornell-notes/architecture/standards/iso-iec-ieee-42010-2022/annexes/annex-a-01/annex-a-01-general-cornell-notes.tex) — annexes/annex a 01 · **provisional**

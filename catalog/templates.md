@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (117)
+## Primary reusable templates (122)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -71,6 +71,11 @@
 - [story refinement workbook template](../src/business-analysis/user-stories/workbooks/templates/story-refinement-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [collaborating your community github templates](../src/devops/platform/github/collaborating-your-community-github-templates.tex) — platform/github · **provisional**
 - [Business Letterhead Template](../src/documentation/templates/letterhead-template.tex) — letterhead and correspondence · **reviewed**
+- [animation asset handoff template](../src/game-development/animation-timing/templates/animation-asset-handoff-template.tex) — animation-timing/templates · **provisional**
+- [animation state machine specification template](../src/game-development/animation-timing/templates/animation-state-machine-specification-template.tex) — animation-timing/templates · **provisional**
+- [character animation specification template](../src/game-development/animation-timing/templates/character-animation-specification-template.tex) — animation-timing/templates · **provisional**
+- [playtest session template](../src/game-development/animation-timing/templates/playtest-session-template.tex) — animation-timing/templates · **provisional**
+- [shot timing brief template](../src/game-development/animation-timing/templates/shot-timing-brief-template.tex) — animation-timing/templates · **provisional**
 - [game design document gdd template](../src/game-development/templates/game-design-document-gdd-template.tex) — game development · **provisional**
 - [game design document template](../src/game-development/templates/game-design-document-template.tex) — game development · **provisional**
 - [03 framework and formulas](../src/personal/finance/intelligent-investor/03-framework-and-formulas.tex) — finance/intelligent investor · **provisional**

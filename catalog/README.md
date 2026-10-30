@@ -6,20 +6,20 @@ Find documents by **domain**, **subject**, or **artifact type** without duplicat
 
 | Catalog | Number of primary sources |
 |---|---:|
-| [By domain](by-domain.md) | 1414 |
-| [By subject](by-subject.md) | 1414 |
-| [By document type](by-document-type.md) | 1414 |
+| [By domain](by-domain.md) | 1533 |
+| [By subject](by-subject.md) | 1533 |
+| [By document type](by-document-type.md) | 1533 |
 | [User Stories](user-stories.md) | 17 |
-| [Reusable Templates](templates.md) | 117 |
-| [Workbooks and Exercises](workbooks.md) | 58 |
+| [Reusable Templates](templates.md) | 122 |
+| [Workbooks and Exercises](workbooks.md) | 74 |
 | [Checklists](checklists.md) | 9 |
-| [Technical References](technical-references.md) | 618 |
-| [Assessments](assessments.md) | 24 |
-| [Operational Runbooks](runbooks.md) | 5 |
-| [Study Guides](study-guides.md) | 163 |
+| [Technical References](technical-references.md) | 625 |
+| [Assessments](assessments.md) | 27 |
+| [Operational Runbooks](runbooks.md) | 7 |
+| [Study Guides](study-guides.md) | 247 |
 | [Handbooks](handbooks.md) | 8 |
 | [Business Plans](business-plans.md) | 2 |
-| [Architecture Documents](architecture-documents.md) | 7 |
+| [Architecture Documents](architecture-documents.md) | 9 |
 | [LaTeX Source Fragments](source-fragments.md) | 6 |
 | [Scorecards and embedded evaluation tools](scorecards.md) | 0 standalone verified; embedded examples listed |
 | [Secure coding by language](secure-coding.md) | Language-specific and cross-domain guidance |
@@ -28,6 +28,6 @@ Find documents by **domain**, **subject**, or **artifact type** without duplicat
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-**59 of 1414** LaTeX sources have targeted semantic content review; **1355** remain provisional. A reference that merely contains a checklist, workbook section, or scorecard does not automatically have that primary type. Non-standalone LaTeX fragments have their own classification and are not regular documents.
+**59 of 1533** LaTeX sources have targeted semantic content review; **1474** remain provisional. A reference that merely contains a checklist, workbook section, or scorecard does not automatically have that primary type. Non-standalone LaTeX fragments have their own classification and are not regular documents.
 
 After modifying the inventory, regenerate the indexes with `python3 tooling/scripts/build_semantic_catalogs.py --write`; CI checks that the committed catalogs match the manifest. Update the relevant domain README for substantive source relocations.
