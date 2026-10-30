@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## architecture (199)
+## architecture (200)
 
 - [cloud architecture diagram library index](../src/architecture/cloud/architecture/cloud-architecture-diagram-library-index.tex) — cloud/architecture · **provisional**
 - [self hosting cloud architecture reference](../src/architecture/cloud/architecture/self-hosting-cloud-architecture-reference.tex) — cloud/architecture · **provisional**
@@ -148,6 +148,7 @@
 - [architecture decisions descriptions and viewpoint specifications](../src/architecture/technical-documents/adr-ad-viewpoint-governance-handout.tex) — architecture · **reviewed**
 - [applying iso iec ieee 42010 2022 enterprise](../src/architecture/technical-documents/applying-iso-iec-ieee-42010-2022-enterprise.tex) — architecture · **provisional**
 - [architecture definition and description](../src/architecture/technical-documents/architecture-definition-and-description.tex) — architecture · **provisional**
+- [Architecture Documentation: Standards, Frameworks, Modeling Languages, and Tooling](../src/architecture/technical-documents/architecture-documentation-standards-frameworks-and-tooling.tex) — architecture · **reviewed**
 - [c4 plantuml technical guide](../src/architecture/technical-documents/c4-plantuml-technical-guide.tex) — architecture · **provisional**
 - [GitHub Actions Architecture Discovery at Enterprise Scale](../src/architecture/technical-documents/github-actions-architecture-discovery-enterprise-scale.tex) — github-actions/enterprise-discovery · **reviewed**
 - [iso iec ieee 42010 2022 clean handout](../src/architecture/technical-documents/iso-iec-ieee-42010-2022-clean-handout.tex) — architecture · **provisional**

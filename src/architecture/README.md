@@ -14,7 +14,7 @@ Architecture descriptions, ADRs, viewpoints, patterns, and governance belong her
 
 | Collection | Use it for | LaTeX sources |
 |---|---|---:|
-| [Technical documents](technical-documents/README.md) | Design guides, engineering references and explanatory technical material | 6 |
+| [Technical documents](technical-documents/README.md) | Design guides, engineering references and explanatory technical material | 7 |
 | [Templates](templates/README.md) | Reusable structured starting points and document forms | 8 |
 | [Workbooks and exercises](workbooks/README.md) | Practice, exercises, checklists and worked activities | 5 |
 
@@ -58,6 +58,8 @@ See the [enterprise architecture discovery suite](github-actions-discovery-suite
 - Begin with the [architecture-description index](architecture-description-index.md) to understand diagram provenance and view/concern traceability.
 
 - Use [ADRs](decisions/readme.md) for trade-offs and decision rationale; use [architecture descriptions](templates/README.md) to express the architecture of an entity of interest; and use [architecture viewpoint specifications](templates/README.md) for reusable conventions that govern views.
+
+- Read the [architecture documentation standards, frameworks, modeling languages, and tooling reference](technical-documents/architecture-documentation-standards-frameworks-and-tooling.tex) for the ISO 42010 / Views and Beyond / C4 / UML / PlantUML crosswalk, lifecycle, validation, and governance strategy.
 
 - Read the [ADR vs. AD vs. Viewpoint technical handout](technical-documents/adr-ad-viewpoint-governance-handout.tex) for authoritative terminology, lifecycle rules, traceability examples, and a semantic classification of unresolved architecture forms.
 
