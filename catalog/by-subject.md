@@ -591,6 +591,82 @@
 
 - [C secure coding standard](../src/programming/languages/c-cpp/secure-coding/secure-coding-standard-c.tex) — c secure coding · **reviewed**
 
+## c4-model/documentation-suite/curriculum (1)
+
+- [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
+
+## c4-model/documentation-suite/labs (9)
+
+- [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
+- [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
+- [lab 03 container boundaries and technologies](../src/architecture/c4-model/documentation-suite/labs/lab-03-container-boundaries-and-technologies.tex) — c4-model/documentation-suite/labs · **provisional**
+- [lab 04 component and code correspondence](../src/architecture/c4-model/documentation-suite/labs/lab-04-component-and-code-correspondence.tex) — c4-model/documentation-suite/labs · **provisional**
+- [lab 05 dynamic happy and failure paths](../src/architecture/c4-model/documentation-suite/labs/lab-05-dynamic-happy-and-failure-paths.tex) — c4-model/documentation-suite/labs · **provisional**
+- [lab 06 development and production deployment](../src/architecture/c4-model/documentation-suite/labs/lab-06-development-and-production-deployment.tex) — c4-model/documentation-suite/labs · **provisional**
+- [lab 07 landscape federation](../src/architecture/c4-model/documentation-suite/labs/lab-07-landscape-federation.tex) — c4-model/documentation-suite/labs · **provisional**
+- [lab 08 notation message driven design and drift](../src/architecture/c4-model/documentation-suite/labs/lab-08-notation-message-driven-design-and-drift.tex) — c4-model/documentation-suite/labs · **provisional**
+- [lab 09 architecture package governance and review](../src/architecture/c4-model/documentation-suite/labs/lab-09-architecture-package-governance-and-review.tex) — c4-model/documentation-suite/labs · **provisional**
+
+## c4-model/documentation-suite/reference (8)
+
+- [c4 architecture visualization engineering manual](../src/architecture/c4-model/documentation-suite/reference/c4-architecture-visualization-engineering-manual.tex) — c4-model/documentation-suite/reference · **provisional**
+- [c4 foundations reference](../src/architecture/c4-model/documentation-suite/reference/c4-foundations-reference.tex) — c4-model/documentation-suite/reference · **provisional**
+- [diagram specification catalog](../src/architecture/c4-model/documentation-suite/reference/diagram-specification-catalog.tex) — c4-model/documentation-suite/reference · **provisional**
+- [iso42010 integration crosswalk](../src/architecture/c4-model/documentation-suite/reference/iso42010-integration-crosswalk.tex) — c4-model/documentation-suite/reference · **provisional**
+- [plantuml engineering reference](../src/architecture/c4-model/documentation-suite/reference/plantuml-engineering-reference.tex) — c4-model/documentation-suite/reference · **provisional**
+- [security and quality reference](../src/architecture/c4-model/documentation-suite/reference/security-and-quality-reference.tex) — c4-model/documentation-suite/reference · **provisional**
+- [traceability and governance reference](../src/architecture/c4-model/documentation-suite/reference/traceability-and-governance-reference.tex) — c4-model/documentation-suite/reference · **provisional**
+- [uml and views beyond crosswalk](../src/architecture/c4-model/documentation-suite/reference/uml-and-views-beyond-crosswalk.tex) — c4-model/documentation-suite/reference · **provisional**
+
+## c4-model/documentation-suite/scorecards (3)
+
+- [architecture traceability scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/architecture-traceability-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
+- [diagram quality scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/diagram-quality-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
+- [release readiness scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/release-readiness-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
+
+## c4-model/documentation-suite/study-guides (12)
+
+- [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 02 the basics](../src/architecture/c4-model/documentation-suite/study-guides/chapter-02-the-basics.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 03 system context diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-03-system-context-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 04 container diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-04-container-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 05 component diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-05-component-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 06 code diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-06-code-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 07 dynamic diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-07-dynamic-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 08 deployment diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-08-deployment-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 09 system landscape diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-09-system-landscape-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 10 notation](../src/architecture/c4-model/documentation-suite/study-guides/chapter-10-notation.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 11 beyond the basics](../src/architecture/c4-model/documentation-suite/study-guides/chapter-11-beyond-the-basics.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 12 c4 model in practice](../src/architecture/c4-model/documentation-suite/study-guides/chapter-12-c4-model-in-practice.tex) — c4-model/documentation-suite/study-guides · **provisional**
+
+## c4-model/documentation-suite/templates (9)
+
+- [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [container template](../src/architecture/c4-model/documentation-suite/templates/container-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [deployment template](../src/architecture/c4-model/documentation-suite/templates/deployment-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [diagram review record template](../src/architecture/c4-model/documentation-suite/templates/diagram-review-record-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [dynamic template](../src/architecture/c4-model/documentation-suite/templates/dynamic-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [landscape template](../src/architecture/c4-model/documentation-suite/templates/landscape-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [system context template](../src/architecture/c4-model/documentation-suite/templates/system-context-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [viewpoint specification template](../src/architecture/c4-model/documentation-suite/templates/viewpoint-specification-template.tex) — c4-model/documentation-suite/templates · **provisional**
+
+## c4-model/documentation-suite/viewpoints (7)
+
+- [viewpoint code](../src/architecture/c4-model/documentation-suite/viewpoints/viewpoint-code.tex) — c4-model/documentation-suite/viewpoints · **provisional**
+- [viewpoint component](../src/architecture/c4-model/documentation-suite/viewpoints/viewpoint-component.tex) — c4-model/documentation-suite/viewpoints · **provisional**
+- [viewpoint container](../src/architecture/c4-model/documentation-suite/viewpoints/viewpoint-container.tex) — c4-model/documentation-suite/viewpoints · **provisional**
+- [viewpoint context](../src/architecture/c4-model/documentation-suite/viewpoints/viewpoint-context.tex) — c4-model/documentation-suite/viewpoints · **provisional**
+- [viewpoint deployment](../src/architecture/c4-model/documentation-suite/viewpoints/viewpoint-deployment.tex) — c4-model/documentation-suite/viewpoints · **provisional**
+- [viewpoint dynamic](../src/architecture/c4-model/documentation-suite/viewpoints/viewpoint-dynamic.tex) — c4-model/documentation-suite/viewpoints · **provisional**
+- [viewpoint landscape](../src/architecture/c4-model/documentation-suite/viewpoints/viewpoint-landscape.tex) — c4-model/documentation-suite/viewpoints · **provisional**
+
+## c4-model/documentation-suite/workbooks (3)
+
+- [concern view evidence template](../src/architecture/c4-model/documentation-suite/workbooks/concern-view-evidence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
+- [cross view correspondence template](../src/architecture/c4-model/documentation-suite/workbooks/cross-view-correspondence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
+- [model code drift template](../src/architecture/c4-model/documentation-suite/workbooks/model-code-drift-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
+
 ## career (3)
 
 - [franchise sales director meeting handout](../src/personal/career/franchise-sales-director-meeting-handout.tex) — career · **provisional**

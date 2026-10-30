@@ -2,8 +2,17 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (108)
+## Primary reusable templates (117)
 
+- [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [container template](../src/architecture/c4-model/documentation-suite/templates/container-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [deployment template](../src/architecture/c4-model/documentation-suite/templates/deployment-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [diagram review record template](../src/architecture/c4-model/documentation-suite/templates/diagram-review-record-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [dynamic template](../src/architecture/c4-model/documentation-suite/templates/dynamic-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [landscape template](../src/architecture/c4-model/documentation-suite/templates/landscape-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [system context template](../src/architecture/c4-model/documentation-suite/templates/system-context-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [viewpoint specification template](../src/architecture/c4-model/documentation-suite/templates/viewpoint-specification-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [Architecture Documentation Templates](../src/architecture/cloud/engineering-suite/05-architecture-documentation-templates.tex) — cloud architecture documentation forms · **reviewed**
 - [Cloud Security Reference Templates](../src/architecture/cloud/engineering-suite/06-security-governance-templates.tex) — cloud security governance forms · **reviewed**
 - [FinOps and SLA Reference Templates](../src/architecture/cloud/engineering-suite/07-finops-sla-templates.tex) — FinOps and SLA · **reviewed**

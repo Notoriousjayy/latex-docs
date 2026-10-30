@@ -2,8 +2,11 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary assessments (21)
+## Primary assessments (24)
 
+- [architecture traceability scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/architecture-traceability-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
+- [diagram quality scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/diagram-quality-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
+- [release readiness scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/release-readiness-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
 - [3 5 quality audit](../src/architecture/governance/ccoe/execution/3-5-quality-audit.tex) — ccoe/execution · **provisional**
 - [2 33 probability and impact assessment](../src/architecture/governance/ccoe/planning/2-33-probability-and-impact-assessment.tex) — ccoe/planning · **provisional**
 - [architecture description quality template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Architecture_Description_Quality_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
