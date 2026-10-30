@@ -9,6 +9,10 @@ Source files for **templates** within the **game development** domain. This is a
 | [`game-design-document-gdd-template.tex`](game-design-document-gdd-template.tex) | LaTeX source |
 | [`game-design-document-template.tex`](game-design-document-template.tex) | LaTeX source |
 
+## Additional printable forms
+
+- [Game Design and Engineering: 14 Template–Blank pairs](art-of-game-design/README.md)
+
 ## Navigation
 
 See the [game development index](../README.md) for the parent collection and related material.

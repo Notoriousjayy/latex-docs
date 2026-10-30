@@ -14,8 +14,15 @@ Use this domain for game-engineering principles, design documents, graphics, ani
 
 | Collection | Use it for | LaTeX sources |
 |---|---|---:|
-| [Templates](templates/README.md) | Reusable structured starting points and document forms | 2 |
-| [Study guides](study-guides/README.md) | Study plans, curricula and guided reading | 1 |
+| [Templates](templates/README.md) | Reusable design documents, worked forms and printable blanks | 30 |
+| [Study guides](study-guides/README.md) | Chapter-by-chapter guided reading | 36 |
+| [Curricula](curricula/README.md) | Prerequisite-based learning path | 1 |
+| [Technical references](technical-references/README.md) | Design theory, probability, metrics and lens crosswalk | 7 |
+| [Workbooks](workbooks/README.md) | Engineering exercises and printable workbook pairs | 15 |
+| [Laboratories](laboratories/README.md) | Python/C++ design and implementation handouts | 10 |
+| [Architecture specifications](architecture-specifications/README.md) | Game runtime, economy, telemetry and content architecture | 4 |
+| [Playtesting](playtesting/README.md) | Recruitment, observation and analysis procedures | 3 |
+| [Assessments](assessments/README.md) | Scored quality gates and Template–Blank pairs | 8 |
 
 ### Subject collections and preserved suites
 
@@ -33,6 +40,12 @@ These collections retain topic, standard, chapter, governance or diagram boundar
 ## Recommended navigation
 
 - [Game Design Document template](templates/game-design-document-gdd-template.tex) for design scope, mechanics and requirements.
+- [Art of Game Design: 35-chapter study collection](study-guides/art-of-game-design/README.md) for reading and labs.
+- [Game Design Engineering learning path](curricula/game-design-engineering-learning-path.tex) for prerequisite-ordered progression.
+- [Gameplay design forms](templates/art-of-game-design/README.md) for 14 printable Template–Blank pairs.
+- [Game mechanics and balancing workbooks](workbooks/README.md) for exercises and working forms.
+- [Architecture and playtesting quality gates](assessments/README.md) for assessments.
+- [Suite catalog and validation](game-design-engineering-suite/README.md) for source crosswalks, provenance and evidence.
 - [Game programming pattern catalog](patterns/game-programming-pattern-catalog.tex) for implementation trade-offs.
 - [Real-time collision detection](physics-engines/real-time-collision-detection-algorithms.tex) for math, numerical assumptions and example algorithms.
 
