@@ -2,8 +2,21 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary study guides (150)
+## Primary study guides (163)
 
+- [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
+- [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 02 the basics](../src/architecture/c4-model/documentation-suite/study-guides/chapter-02-the-basics.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 03 system context diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-03-system-context-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 04 container diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-04-container-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 05 component diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-05-component-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 06 code diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-06-code-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 07 dynamic diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-07-dynamic-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 08 deployment diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-08-deployment-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 09 system landscape diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-09-system-landscape-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 10 notation](../src/architecture/c4-model/documentation-suite/study-guides/chapter-10-notation.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 11 beyond the basics](../src/architecture/c4-model/documentation-suite/study-guides/chapter-11-beyond-the-basics.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 12 c4 model in practice](../src/architecture/c4-model/documentation-suite/study-guides/chapter-12-c4-model-in-practice.tex) — c4-model/documentation-suite/study-guides · **provisional**
 - [02 cloud architecture curriculum](../src/architecture/cloud/engineering-suite/02-cloud-architecture-curriculum.tex) — cloud/engineering suite · **provisional**
 - [prerequisite based architecture documentation curriculum](../src/architecture/views-and-beyond/documentation-engineering-suite/curriculum/Prerequisite_Based_Architecture_Documentation_Curriculum.tex) — views-and-beyond/documentation-engineering-suite/curriculum · **provisional**
 - [study guide 00 prologue](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_00_Prologue.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**

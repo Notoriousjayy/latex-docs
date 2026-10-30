@@ -12,8 +12,11 @@
 - [ADR-0006: Separate validation and deployment trust](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0006.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [Open-Source Enterprise Security Platform: Reference Architecture and Tool Strategy](../src/security/technical-documents/open-source-enterprise-security-platform.tex) — enterprise security platform architecture · **reviewed**
 
-## assessment (21)
+## assessment (24)
 
+- [architecture traceability scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/architecture-traceability-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
+- [diagram quality scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/diagram-quality-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
+- [release readiness scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/release-readiness-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
 - [3 5 quality audit](../src/architecture/governance/ccoe/execution/3-5-quality-audit.tex) — ccoe/execution · **provisional**
 - [2 33 probability and impact assessment](../src/architecture/governance/ccoe/planning/2-33-probability-and-impact-assessment.tex) — ccoe/planning · **provisional**
 - [architecture description quality template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Architecture_Description_Quality_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
@@ -149,8 +152,21 @@
 - [Compiler Correctness Verification](../src/programming/compilers/compiler-engineering/procedures/compiler-correctness-verification.tex) — compiler engineering / engineering a compiler / procedures · **provisional**
 - [Optimization Change Control](../src/programming/compilers/compiler-engineering/procedures/optimization-change-control.tex) — compiler engineering / engineering a compiler / procedures · **provisional**
 
-## study-guide (150)
+## study-guide (163)
 
+- [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
+- [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 02 the basics](../src/architecture/c4-model/documentation-suite/study-guides/chapter-02-the-basics.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 03 system context diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-03-system-context-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 04 container diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-04-container-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 05 component diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-05-component-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 06 code diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-06-code-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 07 dynamic diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-07-dynamic-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 08 deployment diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-08-deployment-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 09 system landscape diagram](../src/architecture/c4-model/documentation-suite/study-guides/chapter-09-system-landscape-diagram.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 10 notation](../src/architecture/c4-model/documentation-suite/study-guides/chapter-10-notation.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 11 beyond the basics](../src/architecture/c4-model/documentation-suite/study-guides/chapter-11-beyond-the-basics.tex) — c4-model/documentation-suite/study-guides · **provisional**
+- [chapter 12 c4 model in practice](../src/architecture/c4-model/documentation-suite/study-guides/chapter-12-c4-model-in-practice.tex) — c4-model/documentation-suite/study-guides · **provisional**
 - [02 cloud architecture curriculum](../src/architecture/cloud/engineering-suite/02-cloud-architecture-curriculum.tex) — cloud/engineering suite · **provisional**
 - [prerequisite based architecture documentation curriculum](../src/architecture/views-and-beyond/documentation-engineering-suite/curriculum/Prerequisite_Based_Architecture_Documentation_Curriculum.tex) — views-and-beyond/documentation-engineering-suite/curriculum · **provisional**
 - [study guide 00 prologue](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_00_Prologue.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
@@ -629,8 +645,32 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (594)
+## technical-reference (618)
 
+- [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
+- [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
+- [lab 03 container boundaries and technologies](../src/architecture/c4-model/documentation-suite/labs/lab-03-container-boundaries-and-technologies.tex) — c4-model/documentation-suite/labs · **provisional**
+- [lab 04 component and code correspondence](../src/architecture/c4-model/documentation-suite/labs/lab-04-component-and-code-correspondence.tex) — c4-model/documentation-suite/labs · **provisional**
+- [lab 05 dynamic happy and failure paths](../src/architecture/c4-model/documentation-suite/labs/lab-05-dynamic-happy-and-failure-paths.tex) — c4-model/documentation-suite/labs · **provisional**
+- [lab 06 development and production deployment](../src/architecture/c4-model/documentation-suite/labs/lab-06-development-and-production-deployment.tex) — c4-model/documentation-suite/labs · **provisional**
+- [lab 07 landscape federation](../src/architecture/c4-model/documentation-suite/labs/lab-07-landscape-federation.tex) — c4-model/documentation-suite/labs · **provisional**
+- [lab 08 notation message driven design and drift](../src/architecture/c4-model/documentation-suite/labs/lab-08-notation-message-driven-design-and-drift.tex) — c4-model/documentation-suite/labs · **provisional**
+- [lab 09 architecture package governance and review](../src/architecture/c4-model/documentation-suite/labs/lab-09-architecture-package-governance-and-review.tex) — c4-model/documentation-suite/labs · **provisional**
+- [c4 architecture visualization engineering manual](../src/architecture/c4-model/documentation-suite/reference/c4-architecture-visualization-engineering-manual.tex) — c4-model/documentation-suite/reference · **provisional**
+- [c4 foundations reference](../src/architecture/c4-model/documentation-suite/reference/c4-foundations-reference.tex) — c4-model/documentation-suite/reference · **provisional**
+- [diagram specification catalog](../src/architecture/c4-model/documentation-suite/reference/diagram-specification-catalog.tex) — c4-model/documentation-suite/reference · **provisional**
+- [iso42010 integration crosswalk](../src/architecture/c4-model/documentation-suite/reference/iso42010-integration-crosswalk.tex) — c4-model/documentation-suite/reference · **provisional**
+- [plantuml engineering reference](../src/architecture/c4-model/documentation-suite/reference/plantuml-engineering-reference.tex) — c4-model/documentation-suite/reference · **provisional**
+- [security and quality reference](../src/architecture/c4-model/documentation-suite/reference/security-and-quality-reference.tex) — c4-model/documentation-suite/reference · **provisional**
+- [traceability and governance reference](../src/architecture/c4-model/documentation-suite/reference/traceability-and-governance-reference.tex) — c4-model/documentation-suite/reference · **provisional**
+- [uml and views beyond crosswalk](../src/architecture/c4-model/documentation-suite/reference/uml-and-views-beyond-crosswalk.tex) — c4-model/documentation-suite/reference · **provisional**
+- [viewpoint code](../src/architecture/c4-model/documentation-suite/viewpoints/viewpoint-code.tex) — c4-model/documentation-suite/viewpoints · **provisional**
+- [viewpoint component](../src/architecture/c4-model/documentation-suite/viewpoints/viewpoint-component.tex) — c4-model/documentation-suite/viewpoints · **provisional**
+- [viewpoint container](../src/architecture/c4-model/documentation-suite/viewpoints/viewpoint-container.tex) — c4-model/documentation-suite/viewpoints · **provisional**
+- [viewpoint context](../src/architecture/c4-model/documentation-suite/viewpoints/viewpoint-context.tex) — c4-model/documentation-suite/viewpoints · **provisional**
+- [viewpoint deployment](../src/architecture/c4-model/documentation-suite/viewpoints/viewpoint-deployment.tex) — c4-model/documentation-suite/viewpoints · **provisional**
+- [viewpoint dynamic](../src/architecture/c4-model/documentation-suite/viewpoints/viewpoint-dynamic.tex) — c4-model/documentation-suite/viewpoints · **provisional**
+- [viewpoint landscape](../src/architecture/c4-model/documentation-suite/viewpoints/viewpoint-landscape.tex) — c4-model/documentation-suite/viewpoints · **provisional**
 - [cloud architecture diagram library index](../src/architecture/cloud/architecture/cloud-architecture-diagram-library-index.tex) — cloud/architecture · **provisional**
 - [self hosting cloud architecture reference](../src/architecture/cloud/architecture/self-hosting-cloud-architecture-reference.tex) — cloud/architecture · **provisional**
 - [ch01 introduction](../src/architecture/cloud/concepts-technology-architecture/ch01-introduction.tex) — cloud/concepts technology architecture · **provisional**
@@ -1226,8 +1266,17 @@
 - [immediate founder focus](../src/startups/media/fast-animation-channels/immediate-founder-focus.tex) — media/fast animation channels · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## template (108)
+## template (117)
 
+- [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [container template](../src/architecture/c4-model/documentation-suite/templates/container-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [deployment template](../src/architecture/c4-model/documentation-suite/templates/deployment-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [diagram review record template](../src/architecture/c4-model/documentation-suite/templates/diagram-review-record-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [dynamic template](../src/architecture/c4-model/documentation-suite/templates/dynamic-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [landscape template](../src/architecture/c4-model/documentation-suite/templates/landscape-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [system context template](../src/architecture/c4-model/documentation-suite/templates/system-context-template.tex) — c4-model/documentation-suite/templates · **provisional**
+- [viewpoint specification template](../src/architecture/c4-model/documentation-suite/templates/viewpoint-specification-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [Architecture Documentation Templates](../src/architecture/cloud/engineering-suite/05-architecture-documentation-templates.tex) — cloud architecture documentation forms · **reviewed**
 - [Cloud Security Reference Templates](../src/architecture/cloud/engineering-suite/06-security-governance-templates.tex) — cloud security governance forms · **reviewed**
 - [FinOps and SLA Reference Templates](../src/architecture/cloud/engineering-suite/07-finops-sla-templates.tex) — FinOps and SLA · **reviewed**
@@ -1357,8 +1406,11 @@
 - [study plan user stories github advanced sec](../src/security/github-advanced-security/administration/study-plan-user-stories-github-advanced-sec.tex) — github advanced security/administration · **provisional**
 - [study plan owasp api sec top 10 user stories](../src/security/standards/owasp/study-plan-owasp-api-sec-top-10-user-stories.tex) — standards/owasp · **provisional**
 
-## workbook (55)
+## workbook (58)
 
+- [concern view evidence template](../src/architecture/c4-model/documentation-suite/workbooks/concern-view-evidence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
+- [cross view correspondence template](../src/architecture/c4-model/documentation-suite/workbooks/cross-view-correspondence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
+- [model code drift template](../src/architecture/c4-model/documentation-suite/workbooks/model-code-drift-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
 - [ISO/IEC/IEEE 42010 Conformance Assessment Workbook](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment.tex) — ISO/IEC/IEEE 42010 conformance evidence · **reviewed**
 - [architecture review findings template](../src/architecture/views-and-beyond/documentation-engineering-suite/workbooks/Architecture_Review_Findings_Template.tex) — views-and-beyond/documentation-engineering-suite/workbooks · **provisional**
 - [cross view correspondence template](../src/architecture/views-and-beyond/documentation-engineering-suite/workbooks/Cross_View_Correspondence_Template.tex) — views-and-beyond/documentation-engineering-suite/workbooks · **provisional**

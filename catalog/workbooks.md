@@ -2,8 +2,11 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary workbooks and exercises (55)
+## Primary workbooks and exercises (58)
 
+- [concern view evidence template](../src/architecture/c4-model/documentation-suite/workbooks/concern-view-evidence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
+- [cross view correspondence template](../src/architecture/c4-model/documentation-suite/workbooks/cross-view-correspondence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
+- [model code drift template](../src/architecture/c4-model/documentation-suite/workbooks/model-code-drift-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
 - [ISO/IEC/IEEE 42010 Conformance Assessment Workbook](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment.tex) — ISO/IEC/IEEE 42010 conformance evidence · **reviewed**
 - [architecture review findings template](../src/architecture/views-and-beyond/documentation-engineering-suite/workbooks/Architecture_Review_Findings_Template.tex) — views-and-beyond/documentation-engineering-suite/workbooks · **provisional**
 - [cross view correspondence template](../src/architecture/views-and-beyond/documentation-engineering-suite/workbooks/Cross_View_Correspondence_Template.tex) — views-and-beyond/documentation-engineering-suite/workbooks · **provisional**
