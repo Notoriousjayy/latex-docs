@@ -87,6 +87,13 @@ def validate(root: Path = ROOT, manifest_path: Path = MANIFEST) -> list[str]:
             elif artifact.get("structure_rule") == "guided-instrument":
                 if len(HEADING.findall(contents["template"])) < 3 or len(HEADING.findall(contents["blank"])) < 3:
                     issues.append(f"{artifact_id}: guided workbook or scorecard structure is incomplete")
+            elif artifact.get("structure_rule") == "printable-field-layout":
+                # Guided authoring instructions and print-ready forms have intentionally
+                # different section hierarchies; validate the form contract instead.
+                if r"\SuiteOpen" not in contents["template"] or r"\SuiteOpen" not in contents["blank"]:
+                    issues.append(f"{artifact_id}: print-form must open the suite layout")
+                if r"\FormField{" not in contents["blank"]:
+                    issues.append(f"{artifact_id}: print-form has no writable response fields")
             elif HEADING.findall(contents["template"]) != HEADING.findall(contents["blank"]):
                 issues.append(f"{artifact_id}: sections/subsections are out of sync")
             if artifact["family"] == "architecture-decision-record":

@@ -121,7 +121,7 @@
 - [07 hands on implementation handbook](../src/security/security-engineering/07-hands-on-implementation-handbook.tex) — security engineering · **provisional**
 - [03 control implementation catalog](../src/security/standards/iso-27000/03-control-implementation-catalog.tex) — standards/iso 27000 · **provisional**
 
-## laboratory (24)
+## laboratory (40)
 
 - [lab 01 fixed step game loop](../src/game-development/game-engine-architecture-suite/labs/lab-01-fixed-step-game-loop.tex) — game-engine-architecture-suite/labs · **provisional**
 - [lab 02 arena allocator](../src/game-development/game-engine-architecture-suite/labs/lab-02-arena-allocator.tex) — game-engine-architecture-suite/labs · **provisional**
@@ -147,8 +147,24 @@
 - [06 Mini Language Compiler](../src/programming/compilers/parsing-techniques/laboratories/06-mini-language-compiler.tex) — compiler engineering / parsing techniques / laboratories · **provisional**
 - [07 Adversarial Parsing](../src/programming/compilers/parsing-techniques/laboratories/07-adversarial-parsing.tex) — compiler engineering / parsing techniques / laboratories · **provisional**
 - [08 Comparative Benchmarking](../src/programming/compilers/parsing-techniques/laboratories/08-comparative-benchmarking.tex) — compiler engineering / parsing techniques / laboratories · **provisional**
+- [boutique ecommerce case](../src/startups/small-business-management/case-studies/boutique-ecommerce-case.tex) — small-business-management/case-studies · **provisional**
+- [digital services export case](../src/startups/small-business-management/case-studies/digital-services-export-case.tex) — small-business-management/case-studies · **provisional**
+- [family business buyout case](../src/startups/small-business-management/case-studies/family-business-buyout-case.tex) — small-business-management/case-studies · **provisional**
+- [franchise due diligence case](../src/startups/small-business-management/case-studies/franchise-due-diligence-case.tex) — small-business-management/case-studies · **provisional**
+- [regional home cleaning case](../src/startups/small-business-management/case-studies/regional-home-cleaning-case.tex) — small-business-management/case-studies · **provisional**
+- [service agency scheduling case](../src/startups/small-business-management/case-studies/service-agency-scheduling-case.tex) — small-business-management/case-studies · **provisional**
+- [small batch manufacturer case](../src/startups/small-business-management/case-studies/small-batch-manufacturer-case.tex) — small-business-management/case-studies · **provisional**
+- [acquisition adjustment lab](../src/startups/small-business-management/financial-labs/acquisition-adjustment-lab.tex) — small-business-management/financial-labs · **provisional**
+- [capex npv lab](../src/startups/small-business-management/financial-labs/capex-npv-lab.tex) — small-business-management/financial-labs · **provisional**
+- [collections lag lab](../src/startups/small-business-management/financial-labs/collections-lag-lab.tex) — small-business-management/financial-labs · **provisional**
+- [debt equity lab](../src/startups/small-business-management/financial-labs/debt-equity-lab.tex) — small-business-management/financial-labs · **provisional**
+- [marketing funnel lab](../src/startups/small-business-management/financial-labs/marketing-funnel-lab.tex) — small-business-management/financial-labs · **provisional**
+- [pricing break even lab](../src/startups/small-business-management/financial-labs/pricing-break-even-lab.tex) — small-business-management/financial-labs · **provisional**
+- [startup cost runway lab](../src/startups/small-business-management/financial-labs/startup-cost-runway-lab.tex) — small-business-management/financial-labs · **provisional**
+- [three statement lab](../src/startups/small-business-management/financial-labs/three-statement-lab.tex) — small-business-management/financial-labs · **provisional**
+- [working capital cycle lab](../src/startups/small-business-management/financial-labs/working-capital-cycle-lab.tex) — small-business-management/financial-labs · **provisional**
 
-## latex-fragment (6)
+## latex-fragment (7)
 
 - [architecture style](../src/architecture/views-and-beyond/documentation-engineering-suite/shared/architecture-style.tex) — views-and-beyond/documentation-engineering-suite/shared · **provisional** · non-standalone
 - [preamble](../src/business-analysis/user-stories/shared/preamble.tex) — agile requirements / user stories · **provisional** · non-standalone
@@ -156,6 +172,7 @@
 - [Compiler Suite Shared Style Preamble](../src/programming/compilers/compiler-engineering/shared/compiler-suite-style.tex) — compiler engineering / engineering a compiler / shared · **provisional** · non-standalone
 - [Parsing Macros](../src/programming/compilers/parsing-techniques/shared/parsing-macros.tex) — compiler engineering / parsing techniques / shared · **provisional** · non-standalone
 - [Assessment Curricula Shared Preamble](../src/security/application-security/learning/assessment-curricula/assessment-curricula-common.tex) — shared LaTeX preamble for AppSec curricula · **reviewed** · non-standalone
+- [preamble](../src/startups/small-business-management/shared/preamble.tex) — small-business-management/shared · **provisional** · non-standalone
 
 ## policy-standard (16)
 
@@ -176,7 +193,7 @@
 - [closure playbook standard operating procedure](../src/security/application-security/processes/avit-seeker/closure-playbook-standard-operating-procedure.tex) — processes/avit seeker · **provisional**
 - [secure workflow standard github actions](../src/security/github-advanced-security/references/secure-workflow-standard-github-actions.tex) — github advanced security/references · **provisional**
 
-## runbook (10)
+## runbook (20)
 
 - [animation benchmark and regression procedure](../src/game-development/animation-timing/procedures/animation-benchmark-and-regression-procedure.tex) — animation-timing/procedures · **provisional**
 - [animation playtest standard operating procedure](../src/game-development/animation-timing/procedures/animation-playtest-standard-operating-procedure.tex) — animation-timing/procedures · **provisional**
@@ -188,8 +205,27 @@
 - [Compiler Benchmarking Procedure](../src/programming/compilers/compiler-engineering/procedures/compiler-benchmarking-procedure.tex) — compiler engineering / engineering a compiler / procedures · **provisional**
 - [Compiler Correctness Verification](../src/programming/compilers/compiler-engineering/procedures/compiler-correctness-verification.tex) — compiler engineering / engineering a compiler / procedures · **provisional**
 - [Optimization Change Control](../src/programming/compilers/compiler-engineering/procedures/optimization-change-control.tex) — compiler engineering / engineering a compiler / procedures · **provisional**
+- [business plan change control sop](../src/startups/small-business-management/procedures/business-plan-change-control-sop.tex) — small-business-management/procedures · **provisional**
+- [business risk response sop](../src/startups/small-business-management/procedures/business-risk-response-sop.tex) — small-business-management/procedures · **provisional**
+- [capital investment sop](../src/startups/small-business-management/procedures/capital-investment-sop.tex) — small-business-management/procedures · **provisional**
+- [customer discovery sop](../src/startups/small-business-management/procedures/customer-discovery-sop.tex) — small-business-management/procedures · **provisional**
+- [customer service recovery sop](../src/startups/small-business-management/procedures/customer-service-recovery-sop.tex) — small-business-management/procedures · **provisional**
+- [ethical decision sop](../src/startups/small-business-management/procedures/ethical-decision-sop.tex) — small-business-management/procedures · **provisional**
+- [hiring onboarding sop](../src/startups/small-business-management/procedures/hiring-onboarding-sop.tex) — small-business-management/procedures · **provisional**
+- [marketing experiment sop](../src/startups/small-business-management/procedures/marketing-experiment-sop.tex) — small-business-management/procedures · **provisional**
+- [monthly financial close sop](../src/startups/small-business-management/procedures/monthly-financial-close-sop.tex) — small-business-management/procedures · **provisional**
+- [supplier and inventory sop](../src/startups/small-business-management/procedures/supplier-and-inventory-sop.tex) — small-business-management/procedures · **provisional**
 
-## study-guide (301)
+## scorecard (6)
+
+- [business plan quality template](../src/startups/small-business-management/scorecards/templates/business-plan-quality-template.tex) — small-business-management/scorecards/templates · **provisional**
+- [ethical governance template](../src/startups/small-business-management/scorecards/templates/ethical-governance-template.tex) — small-business-management/scorecards/templates · **provisional**
+- [financial readiness template](../src/startups/small-business-management/scorecards/templates/financial-readiness-template.tex) — small-business-management/scorecards/templates · **provisional**
+- [go to market template](../src/startups/small-business-management/scorecards/templates/go-to-market-template.tex) — small-business-management/scorecards/templates · **provisional**
+- [operational resilience template](../src/startups/small-business-management/scorecards/templates/operational-resilience-template.tex) — small-business-management/scorecards/templates · **provisional**
+- [venture feasibility template](../src/startups/small-business-management/scorecards/templates/venture-feasibility-template.tex) — small-business-management/scorecards/templates · **provisional**
+
+## study-guide (326)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -492,6 +528,31 @@
 - [04 control study guide casebook](../src/security/standards/iso-27000/04-control-study-guide-casebook.tex) — standards/iso 27000 · **provisional**
 - [10 training curriculum labs](../src/security/standards/iso-27000/10-training-curriculum-labs.tex) — standards/iso 27000 · **provisional**
 - [residential cleaning training curriculum](../src/startups/cleaning-services/residential-cleaning-training-curriculum.tex) — cleaning services · **provisional**
+- [chapter to operations crosswalk](../src/startups/small-business-management/curriculum/chapter-to-operations-crosswalk.tex) — small-business-management/curriculum · **provisional**
+- [prerequisite based curriculum](../src/startups/small-business-management/curriculum/prerequisite-based-curriculum.tex) — small-business-management/curriculum · **provisional**
+- [chapter 01 the entrepreneurial life](../src/startups/small-business-management/study-guides/chapter-01-the-entrepreneurial-life.tex) — small-business-management/study-guides · **provisional**
+- [chapter 02 integrity ethics and social entrepreneurship](../src/startups/small-business-management/study-guides/chapter-02-integrity-ethics-and-social-entrepreneurship.tex) — small-business-management/study-guides · **provisional**
+- [chapter 03 starting a small business](../src/startups/small-business-management/study-guides/chapter-03-starting-a-small-business.tex) — small-business-management/study-guides · **provisional**
+- [chapter 04 franchises and independent contracting in the gig and sharing economies](../src/startups/small-business-management/study-guides/chapter-04-franchises-and-independent-contracting-in-the-gig-and-sharing-economies.tex) — small-business-management/study-guides · **provisional**
+- [chapter 05 the family business and buyouts](../src/startups/small-business-management/study-guides/chapter-05-the-family-business-and-buyouts.tex) — small-business-management/study-guides · **provisional**
+- [chapter 06 visualizing your dream the business model and the business plan](../src/startups/small-business-management/study-guides/chapter-06-visualizing-your-dream-the-business-model-and-the-business-plan.tex) — small-business-management/study-guides · **provisional**
+- [chapter 07 the marketing plan](../src/startups/small-business-management/study-guides/chapter-07-the-marketing-plan.tex) — small-business-management/study-guides · **provisional**
+- [chapter 08 the organizational plan teams legal structures alliances and directors](../src/startups/small-business-management/study-guides/chapter-08-the-organizational-plan-teams-legal-structures-alliances-and-directors.tex) — small-business-management/study-guides · **provisional**
+- [chapter 09 the location plan](../src/startups/small-business-management/study-guides/chapter-09-the-location-plan.tex) — small-business-management/study-guides · **provisional**
+- [chapter 10 understanding a firm s financial statements](../src/startups/small-business-management/study-guides/chapter-10-understanding-a-firm-s-financial-statements.tex) — small-business-management/study-guides · **provisional**
+- [chapter 11 forecasting financial requirements](../src/startups/small-business-management/study-guides/chapter-11-forecasting-financial-requirements.tex) — small-business-management/study-guides · **provisional**
+- [chapter 12 financing the small business](../src/startups/small-business-management/study-guides/chapter-12-financing-the-small-business.tex) — small-business-management/study-guides · **provisional**
+- [chapter 13 planning for the harvest](../src/startups/small-business-management/study-guides/chapter-13-planning-for-the-harvest.tex) — small-business-management/study-guides · **provisional**
+- [chapter 14 building customer relationships](../src/startups/small-business-management/study-guides/chapter-14-building-customer-relationships.tex) — small-business-management/study-guides · **provisional**
+- [chapter 15 product development and supply chain management](../src/startups/small-business-management/study-guides/chapter-15-product-development-and-supply-chain-management.tex) — small-business-management/study-guides · **provisional**
+- [chapter 16 pricing and credit decisions](../src/startups/small-business-management/study-guides/chapter-16-pricing-and-credit-decisions.tex) — small-business-management/study-guides · **provisional**
+- [chapter 17 promotional planning](../src/startups/small-business-management/study-guides/chapter-17-promotional-planning.tex) — small-business-management/study-guides · **provisional**
+- [chapter 18 global opportunities for small businesses](../src/startups/small-business-management/study-guides/chapter-18-global-opportunities-for-small-businesses.tex) — small-business-management/study-guides · **provisional**
+- [chapter 19 professional management and the small business](../src/startups/small-business-management/study-guides/chapter-19-professional-management-and-the-small-business.tex) — small-business-management/study-guides · **provisional**
+- [chapter 20 managing human resources](../src/startups/small-business-management/study-guides/chapter-20-managing-human-resources.tex) — small-business-management/study-guides · **provisional**
+- [chapter 21 managing small business operations](../src/startups/small-business-management/study-guides/chapter-21-managing-small-business-operations.tex) — small-business-management/study-guides · **provisional**
+- [chapter 22 managing the firm s assets](../src/startups/small-business-management/study-guides/chapter-22-managing-the-firm-s-assets.tex) — small-business-management/study-guides · **provisional**
+- [chapter 23 managing risk](../src/startups/small-business-management/study-guides/chapter-23-managing-risk.tex) — small-business-management/study-guides · **provisional**
 
 ## study-notes (324)
 
@@ -820,7 +881,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (643)
+## technical-reference (649)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -1464,9 +1525,15 @@
 - [fast animation channels programming](../src/startups/media/fast-animation-channels/fast-animation-channels-programming.tex) — media/fast animation channels · **provisional**
 - [fast animation channels startup plan](../src/startups/media/fast-animation-channels/fast-animation-channels-startup-plan.tex) — media/fast animation channels · **provisional**
 - [immediate founder focus](../src/startups/media/fast-animation-channels/immediate-founder-focus.tex) — media/fast animation channels · **provisional**
+- [source and practice boundary](../src/startups/small-business-management/references/source-and-practice-boundary.tex) — small-business-management/references · **provisional**
+- [financial modeling reference](../src/startups/small-business-management/technical-reference/financial-modeling-reference.tex) — small-business-management/technical-reference · **provisional**
+- [governance and ethics reference](../src/startups/small-business-management/technical-reference/governance-and-ethics-reference.tex) — small-business-management/technical-reference · **provisional**
+- [marketing and customer reference](../src/startups/small-business-management/technical-reference/marketing-and-customer-reference.tex) — small-business-management/technical-reference · **provisional**
+- [operations and risk reference](../src/startups/small-business-management/technical-reference/operations-and-risk-reference.tex) — small-business-management/technical-reference · **provisional**
+- [venture lifecycle reference](../src/startups/small-business-management/technical-reference/venture-lifecycle-reference.tex) — small-business-management/technical-reference · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## template (142)
+## template (154)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -1608,6 +1675,18 @@
 - [Risk Exception Record Template](../src/security/application-security/sast/templates/risk-exception-record-template.tex) — application-security/sast · **provisional**
 - [Sast Review Plan Template](../src/security/application-security/sast/templates/sast-review-plan-template.tex) — application-security/sast · **provisional**
 - [08 compliance templates traceability](../src/security/standards/iso-27000/08-compliance-templates-traceability.tex) — standards/iso 27000 · **provisional**
+- [business model canvas template](../src/startups/small-business-management/forms/templates/business-model-canvas-template.tex) — small-business-management/forms/templates · **provisional**
+- [business plan template](../src/startups/small-business-management/forms/templates/business-plan-template.tex) — small-business-management/forms/templates · **provisional**
+- [customer interview record template](../src/startups/small-business-management/forms/templates/customer-interview-record-template.tex) — small-business-management/forms/templates · **provisional**
+- [financing sources and uses template](../src/startups/small-business-management/forms/templates/financing-sources-and-uses-template.tex) — small-business-management/forms/templates · **provisional**
+- [founder risk register template](../src/startups/small-business-management/forms/templates/founder-risk-register-template.tex) — small-business-management/forms/templates · **provisional**
+- [harvest and succession plan template](../src/startups/small-business-management/forms/templates/harvest-and-succession-plan-template.tex) — small-business-management/forms/templates · **provisional**
+- [human resources plan template](../src/startups/small-business-management/forms/templates/human-resources-plan-template.tex) — small-business-management/forms/templates · **provisional**
+- [location decision template](../src/startups/small-business-management/forms/templates/location-decision-template.tex) — small-business-management/forms/templates · **provisional**
+- [marketing plan template](../src/startups/small-business-management/forms/templates/marketing-plan-template.tex) — small-business-management/forms/templates · **provisional**
+- [organization and entity review template](../src/startups/small-business-management/forms/templates/organization-and-entity-review-template.tex) — small-business-management/forms/templates · **provisional**
+- [product supplier plan template](../src/startups/small-business-management/forms/templates/product-supplier-plan-template.tex) — small-business-management/forms/templates · **provisional**
+- [venture opportunity screen template](../src/startups/small-business-management/forms/templates/venture-opportunity-screen-template.tex) — small-business-management/forms/templates · **provisional**
 - [startup plan template worksheet](../src/startups/templates/startup-plan-template-worksheet.tex) — startups · **provisional**
 - [Startup Plan Template](../src/startups/templates/startup-plan-template.tex) — startup operating plan form · **reviewed**
 
@@ -1631,7 +1710,7 @@
 - [study plan user stories github advanced sec](../src/security/github-advanced-security/administration/study-plan-user-stories-github-advanced-sec.tex) — github advanced security/administration · **provisional**
 - [study plan owasp api sec top 10 user stories](../src/security/standards/owasp/study-plan-owasp-api-sec-top-10-user-stories.tex) — standards/owasp · **provisional**
 
-## workbook (99)
+## workbook (108)
 
 - [concern view evidence template](../src/architecture/c4-model/documentation-suite/workbooks/concern-view-evidence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
 - [cross view correspondence template](../src/architecture/c4-model/documentation-suite/workbooks/cross-view-correspondence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
@@ -1732,4 +1811,13 @@
 - [Remediation Traceability Template](../src/security/application-security/sast/workbooks/remediation-traceability-template.tex) — application-security/sast · **provisional**
 - [Scan Baseline Template](../src/security/application-security/sast/workbooks/scan-baseline-template.tex) — application-security/sast · **provisional**
 - [Vulnerability Triage Template](../src/security/application-security/sast/workbooks/vulnerability-triage-template.tex) — application-security/sast · **provisional**
+- [cash budget template](../src/startups/small-business-management/workbooks/templates/cash-budget-template.tex) — small-business-management/workbooks/templates · **provisional**
+- [customer validation template](../src/startups/small-business-management/workbooks/templates/customer-validation-template.tex) — small-business-management/workbooks/templates · **provisional**
+- [financial statement reconciliation template](../src/startups/small-business-management/workbooks/templates/financial-statement-reconciliation-template.tex) — small-business-management/workbooks/templates · **provisional**
+- [risk tabletop template](../src/startups/small-business-management/workbooks/templates/risk-tabletop-template.tex) — small-business-management/workbooks/templates · **provisional**
+- [sales forecast template](../src/startups/small-business-management/workbooks/templates/sales-forecast-template.tex) — small-business-management/workbooks/templates · **provisional**
+- [thirteen week cash budget template](../src/startups/small-business-management/workbooks/templates/thirteen-week-cash-budget-template.tex) — small-business-management/workbooks/templates · **provisional**
+- [twelve month operating forecast template](../src/startups/small-business-management/workbooks/templates/twelve-month-operating-forecast-template.tex) — small-business-management/workbooks/templates · **provisional**
+- [unit economics template](../src/startups/small-business-management/workbooks/templates/unit-economics-template.tex) — small-business-management/workbooks/templates · **provisional**
+- [working capital template](../src/startups/small-business-management/workbooks/templates/working-capital-template.tex) — small-business-management/workbooks/templates · **provisional**
 

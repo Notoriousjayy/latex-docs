@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (142)
+## Primary reusable templates (154)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -144,6 +144,18 @@
 - [Risk Exception Record Template](../src/security/application-security/sast/templates/risk-exception-record-template.tex) — application-security/sast · **provisional**
 - [Sast Review Plan Template](../src/security/application-security/sast/templates/sast-review-plan-template.tex) — application-security/sast · **provisional**
 - [08 compliance templates traceability](../src/security/standards/iso-27000/08-compliance-templates-traceability.tex) — standards/iso 27000 · **provisional**
+- [business model canvas template](../src/startups/small-business-management/forms/templates/business-model-canvas-template.tex) — small-business-management/forms/templates · **provisional**
+- [business plan template](../src/startups/small-business-management/forms/templates/business-plan-template.tex) — small-business-management/forms/templates · **provisional**
+- [customer interview record template](../src/startups/small-business-management/forms/templates/customer-interview-record-template.tex) — small-business-management/forms/templates · **provisional**
+- [financing sources and uses template](../src/startups/small-business-management/forms/templates/financing-sources-and-uses-template.tex) — small-business-management/forms/templates · **provisional**
+- [founder risk register template](../src/startups/small-business-management/forms/templates/founder-risk-register-template.tex) — small-business-management/forms/templates · **provisional**
+- [harvest and succession plan template](../src/startups/small-business-management/forms/templates/harvest-and-succession-plan-template.tex) — small-business-management/forms/templates · **provisional**
+- [human resources plan template](../src/startups/small-business-management/forms/templates/human-resources-plan-template.tex) — small-business-management/forms/templates · **provisional**
+- [location decision template](../src/startups/small-business-management/forms/templates/location-decision-template.tex) — small-business-management/forms/templates · **provisional**
+- [marketing plan template](../src/startups/small-business-management/forms/templates/marketing-plan-template.tex) — small-business-management/forms/templates · **provisional**
+- [organization and entity review template](../src/startups/small-business-management/forms/templates/organization-and-entity-review-template.tex) — small-business-management/forms/templates · **provisional**
+- [product supplier plan template](../src/startups/small-business-management/forms/templates/product-supplier-plan-template.tex) — small-business-management/forms/templates · **provisional**
+- [venture opportunity screen template](../src/startups/small-business-management/forms/templates/venture-opportunity-screen-template.tex) — small-business-management/forms/templates · **provisional**
 - [startup plan template worksheet](../src/startups/templates/startup-plan-template-worksheet.tex) — startups · **provisional**
 - [Startup Plan Template](../src/startups/templates/startup-plan-template.tex) — startup operating plan form · **reviewed**
 

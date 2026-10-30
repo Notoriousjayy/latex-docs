@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary workbooks and exercises (99)
+## Primary workbooks and exercises (108)
 
 - [concern view evidence template](../src/architecture/c4-model/documentation-suite/workbooks/concern-view-evidence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
 - [cross view correspondence template](../src/architecture/c4-model/documentation-suite/workbooks/cross-view-correspondence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
@@ -103,6 +103,15 @@
 - [Remediation Traceability Template](../src/security/application-security/sast/workbooks/remediation-traceability-template.tex) — application-security/sast · **provisional**
 - [Scan Baseline Template](../src/security/application-security/sast/workbooks/scan-baseline-template.tex) — application-security/sast · **provisional**
 - [Vulnerability Triage Template](../src/security/application-security/sast/workbooks/vulnerability-triage-template.tex) — application-security/sast · **provisional**
+- [cash budget template](../src/startups/small-business-management/workbooks/templates/cash-budget-template.tex) — small-business-management/workbooks/templates · **provisional**
+- [customer validation template](../src/startups/small-business-management/workbooks/templates/customer-validation-template.tex) — small-business-management/workbooks/templates · **provisional**
+- [financial statement reconciliation template](../src/startups/small-business-management/workbooks/templates/financial-statement-reconciliation-template.tex) — small-business-management/workbooks/templates · **provisional**
+- [risk tabletop template](../src/startups/small-business-management/workbooks/templates/risk-tabletop-template.tex) — small-business-management/workbooks/templates · **provisional**
+- [sales forecast template](../src/startups/small-business-management/workbooks/templates/sales-forecast-template.tex) — small-business-management/workbooks/templates · **provisional**
+- [thirteen week cash budget template](../src/startups/small-business-management/workbooks/templates/thirteen-week-cash-budget-template.tex) — small-business-management/workbooks/templates · **provisional**
+- [twelve month operating forecast template](../src/startups/small-business-management/workbooks/templates/twelve-month-operating-forecast-template.tex) — small-business-management/workbooks/templates · **provisional**
+- [unit economics template](../src/startups/small-business-management/workbooks/templates/unit-economics-template.tex) — small-business-management/workbooks/templates · **provisional**
+- [working capital template](../src/startups/small-business-management/workbooks/templates/working-capital-template.tex) — small-business-management/workbooks/templates · **provisional**
 
 ## Related reviewed sources with secondary workbooks and exercises content (2)
 

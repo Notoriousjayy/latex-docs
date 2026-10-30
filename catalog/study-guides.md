@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary study guides (301)
+## Primary study guides (326)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -305,6 +305,31 @@
 - [04 control study guide casebook](../src/security/standards/iso-27000/04-control-study-guide-casebook.tex) — standards/iso 27000 · **provisional**
 - [10 training curriculum labs](../src/security/standards/iso-27000/10-training-curriculum-labs.tex) — standards/iso 27000 · **provisional**
 - [residential cleaning training curriculum](../src/startups/cleaning-services/residential-cleaning-training-curriculum.tex) — cleaning services · **provisional**
+- [chapter to operations crosswalk](../src/startups/small-business-management/curriculum/chapter-to-operations-crosswalk.tex) — small-business-management/curriculum · **provisional**
+- [prerequisite based curriculum](../src/startups/small-business-management/curriculum/prerequisite-based-curriculum.tex) — small-business-management/curriculum · **provisional**
+- [chapter 01 the entrepreneurial life](../src/startups/small-business-management/study-guides/chapter-01-the-entrepreneurial-life.tex) — small-business-management/study-guides · **provisional**
+- [chapter 02 integrity ethics and social entrepreneurship](../src/startups/small-business-management/study-guides/chapter-02-integrity-ethics-and-social-entrepreneurship.tex) — small-business-management/study-guides · **provisional**
+- [chapter 03 starting a small business](../src/startups/small-business-management/study-guides/chapter-03-starting-a-small-business.tex) — small-business-management/study-guides · **provisional**
+- [chapter 04 franchises and independent contracting in the gig and sharing economies](../src/startups/small-business-management/study-guides/chapter-04-franchises-and-independent-contracting-in-the-gig-and-sharing-economies.tex) — small-business-management/study-guides · **provisional**
+- [chapter 05 the family business and buyouts](../src/startups/small-business-management/study-guides/chapter-05-the-family-business-and-buyouts.tex) — small-business-management/study-guides · **provisional**
+- [chapter 06 visualizing your dream the business model and the business plan](../src/startups/small-business-management/study-guides/chapter-06-visualizing-your-dream-the-business-model-and-the-business-plan.tex) — small-business-management/study-guides · **provisional**
+- [chapter 07 the marketing plan](../src/startups/small-business-management/study-guides/chapter-07-the-marketing-plan.tex) — small-business-management/study-guides · **provisional**
+- [chapter 08 the organizational plan teams legal structures alliances and directors](../src/startups/small-business-management/study-guides/chapter-08-the-organizational-plan-teams-legal-structures-alliances-and-directors.tex) — small-business-management/study-guides · **provisional**
+- [chapter 09 the location plan](../src/startups/small-business-management/study-guides/chapter-09-the-location-plan.tex) — small-business-management/study-guides · **provisional**
+- [chapter 10 understanding a firm s financial statements](../src/startups/small-business-management/study-guides/chapter-10-understanding-a-firm-s-financial-statements.tex) — small-business-management/study-guides · **provisional**
+- [chapter 11 forecasting financial requirements](../src/startups/small-business-management/study-guides/chapter-11-forecasting-financial-requirements.tex) — small-business-management/study-guides · **provisional**
+- [chapter 12 financing the small business](../src/startups/small-business-management/study-guides/chapter-12-financing-the-small-business.tex) — small-business-management/study-guides · **provisional**
+- [chapter 13 planning for the harvest](../src/startups/small-business-management/study-guides/chapter-13-planning-for-the-harvest.tex) — small-business-management/study-guides · **provisional**
+- [chapter 14 building customer relationships](../src/startups/small-business-management/study-guides/chapter-14-building-customer-relationships.tex) — small-business-management/study-guides · **provisional**
+- [chapter 15 product development and supply chain management](../src/startups/small-business-management/study-guides/chapter-15-product-development-and-supply-chain-management.tex) — small-business-management/study-guides · **provisional**
+- [chapter 16 pricing and credit decisions](../src/startups/small-business-management/study-guides/chapter-16-pricing-and-credit-decisions.tex) — small-business-management/study-guides · **provisional**
+- [chapter 17 promotional planning](../src/startups/small-business-management/study-guides/chapter-17-promotional-planning.tex) — small-business-management/study-guides · **provisional**
+- [chapter 18 global opportunities for small businesses](../src/startups/small-business-management/study-guides/chapter-18-global-opportunities-for-small-businesses.tex) — small-business-management/study-guides · **provisional**
+- [chapter 19 professional management and the small business](../src/startups/small-business-management/study-guides/chapter-19-professional-management-and-the-small-business.tex) — small-business-management/study-guides · **provisional**
+- [chapter 20 managing human resources](../src/startups/small-business-management/study-guides/chapter-20-managing-human-resources.tex) — small-business-management/study-guides · **provisional**
+- [chapter 21 managing small business operations](../src/startups/small-business-management/study-guides/chapter-21-managing-small-business-operations.tex) — small-business-management/study-guides · **provisional**
+- [chapter 22 managing the firm s assets](../src/startups/small-business-management/study-guides/chapter-22-managing-the-firm-s-assets.tex) — small-business-management/study-guides · **provisional**
+- [chapter 23 managing risk](../src/startups/small-business-management/study-guides/chapter-23-managing-risk.tex) — small-business-management/study-guides · **provisional**
 
 ## Related reviewed sources with secondary study guides content (3)
 

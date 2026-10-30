@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (643)
+## Primary technical references (649)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -646,6 +646,12 @@
 - [fast animation channels programming](../src/startups/media/fast-animation-channels/fast-animation-channels-programming.tex) — media/fast animation channels · **provisional**
 - [fast animation channels startup plan](../src/startups/media/fast-animation-channels/fast-animation-channels-startup-plan.tex) — media/fast animation channels · **provisional**
 - [immediate founder focus](../src/startups/media/fast-animation-channels/immediate-founder-focus.tex) — media/fast animation channels · **provisional**
+- [source and practice boundary](../src/startups/small-business-management/references/source-and-practice-boundary.tex) — small-business-management/references · **provisional**
+- [financial modeling reference](../src/startups/small-business-management/technical-reference/financial-modeling-reference.tex) — small-business-management/technical-reference · **provisional**
+- [governance and ethics reference](../src/startups/small-business-management/technical-reference/governance-and-ethics-reference.tex) — small-business-management/technical-reference · **provisional**
+- [marketing and customer reference](../src/startups/small-business-management/technical-reference/marketing-and-customer-reference.tex) — small-business-management/technical-reference · **provisional**
+- [operations and risk reference](../src/startups/small-business-management/technical-reference/operations-and-risk-reference.tex) — small-business-management/technical-reference · **provisional**
+- [venture lifecycle reference](../src/startups/small-business-management/technical-reference/venture-lifecycle-reference.tex) — small-business-management/technical-reference · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
 ## Related reviewed sources with secondary technical references content (1)
