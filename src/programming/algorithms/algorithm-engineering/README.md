@@ -99,3 +99,7 @@ Blank forms contain **no bracketed instructional placeholders**. The `*-template
 ## Status
 
 This is a standalone import-ready package. It has **not** been pushed to or merged with a remote GitHub repository. Import paths may require minor adjustment if the destination `latex-docs` repository uses different taxonomy or LaTeX conventions.
+
+## Repository catalog governance
+
+The canonical semantic source inventory registers the 24 non-Blank standalone documents and the one shared LaTeX fragment. The nine printable Blank variants are deliberately excluded from the canonical source count and governed by the separate Template–Blank pairing manifest. All 33 standalone documents remain discoverable through this suite index and are compiled as LaTeX roots by the repository build pipeline.
