@@ -1,0 +1,39 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage{technical-design-spec}
+\input{../shared/parsing-macros.tex}
+\setDocTitle{Parsing Techniques and Compiler Engineering: Technical Reference}
+\setDocSubtitle{Models, algorithm families, compiler interfaces, correctness and limitations}
+\setDocVersion{1.0}\setDocStatus{Engineering education / source-aligned}
+\setDocOwner{Compiler Engineering}
+\setDocDate{30 October 2026}
+\setDocSummary{Engineering reference and source crosswalk.}
+\begin{document}\makedoctitle\makedocsummary
+\tableofcontents\clearpage
+
+\section{Scope and source provenance}
+This reference connects the formal grammar, recognition and parsing methods in Grune and Jacobs (2008) to contemporary compiler-engineering practices. The book is the authority for the historical algorithm families and their terminology; the source book does not prescribe our source-code examples, security requirements, CI conventions, or benchmark protocol. These latter elements are new engineering recommendations.\PTSource{Chapters 1--17, particularly 2--9, 11, 16--17.}
+\section{Parsing objects, grammar, and acceptance}
+A context-free grammar is a tuple $G=(N,\Sigma,P,S)$: finite nonterminal set $N$, terminal set $\Sigma$, production set $P\subseteq N\times(N\cup\Sigma)^*$, and start symbol $S\in N$. The language $L(G)$ contains terminal strings derivable from $S$. The empty word $\epsilon$ differs from the empty language $\varnothing$. A recognizer decides membership in $L(G)$; a parser produces structural evidence such as a derivation, tree or shared forest.\par
+A parse tree records a production choice at every internal node. Ambiguity means a string has distinct parse trees, not merely distinct orders of applying independent productions. Concrete syntax trees preserve grammar detail; abstract syntax trees discard punctuation and grouping nodes when those do not affect meaning. Lexical validity, syntactic validity, and semantic validity are separate checks.
+\section{Grammar engineering lifecycle}
+\begin{enumerate}\item Define the token alphabet, whitespace/comments policy, encoding and end-of-input semantics.\item Write a grammar and a corpus of valid/invalid strings.\item Detect undefined, unreachable and unproductive nonterminals; identify nullable rules, direct/indirect left recursion and ambiguity risks.\item Decide whether preserving exact tree shape is important before transformations such as left-factoring, recursion elimination and Chomsky-normal-form conversion.\item Record the chosen parser family and its grammar restrictions.\item Add parse tree/AST construction, source spans, diagnostics and resource budgets.\end{enumerate}
+\section{Formal operations and invariants}
+For a right-hand side sequence $X_1\cdots X_k$, $\operatorname{FIRST}$ contains terminals that can begin a derived string; $\epsilon$ is present only when every $X_i$ is nullable. $\operatorname{FOLLOW}(A)$ contains terminals that can occur after an occurrence of nonterminal $A$ in a sentential form, with end-of-input included for the start symbol. FIRST/FOLLOW are least fixed points of monotone set equations over finite terminal sets. A predictive LL(1) table is valid only when no table cell requires two distinct productions. A conflict is not a proof that the grammar is ambiguous.
+\section{Finite-state lexing}
+DFA execution takes $O(n)$ transitions on an input of $n$ input symbols when transitions are constant-time, while state construction and regex compilation are separate costs. Prioritize maximal-munch rules with explicit tie-breaking; prevent regex-engine backtracking pathologies by preferring automata-backed lexers for attacker-controlled input. Token positions must reference the original encoded source consistently.
+\section{CYK and tabular recognition}
+For a grammar in strict CNF with binary rules $A\to BC$ and terminal rules $A\to a$, define $T[i,j]$ as nonterminals deriving the nonempty half-open input span $[i,j)$. Initialize $T[i,i+1]$ from terminal productions. For span length at least two, add $A$ whenever a split $k$ and rule $A\to BC$ satisfy $B\in T[i,k]$ and $C\in T[k,j]$. Accept iff $S\in T[0,n]$, with $n=0$ handled through an explicit empty-word policy. Naive recognition costs $O(|P|n^3)$ time and $O(|N|n^2)$ chart storage; parse forest pointers cost extra. Grammar conversion can change parse tree shape.\PTSource{Chapter 4.}
+\section{Earley and chart recognition}
+An Earley item $(A\to\alpha\bullet\beta,i)$ in chart $j$ represents progress from input origin $i$ through $j$. Prediction adds items for nonterminals after the dot, scanning consumes terminals, and completion advances waiting items. Deduplication of items is essential for termination of closure. Complexity depends on grammar restrictions and implementation: general worst-case cubic, with better bounds for important subclasses; outputting all trees can dwarf recognition cost. Verify nullable and cyclic cases explicitly.\PTSource{Chapter 7.}
+\section{Predictive LL and shift/reduce LR}
+An LL(1) parser uses one lookahead token to select a production with the predictive table. Its operational recognizer is $O(n)$ on a valid LL(1) grammar with bounded-cost table operations, apart from AST and diagnostics costs. LR parsing constructs a deterministic control automaton over items and performs shift/reduce transitions; canonical LR(1), LALR(1) and SLR(1) differ in lookahead and state merging. Document every shift/reduce or reduce/reduce conflict and its resolution. Conflict suppression is not a substitute for specifying operator precedence or associativity.\PTSource{Chapters 8--9.}
+\section{Generalized, noncanonical, substring and parallel approaches}
+Unger, CYK, left-corner, generalized LR/LL, parsing by intersection, and substring recognition solve different constraints. Generalized recognition can represent ambiguous parses compactly with packed forests; parse-forest size still depends on grammar and input ambiguity. Parsing a substring with grammatical context is not equivalent to an unanchored byte search. Parallel algorithms require a work/depth and scheduling model in addition to asymptotic sequential time.\PTSource{Chapters 10--14.}
+\section{Beyond context-free syntax}
+Attribute and affix grammars can express semantic dependencies that a bare parse tree does not. In conventional compilers, identifier binding, type checking, control-flow validation and constant evaluation generally follow syntactic parsing. Keep syntax and semantics separate enough to report errors independently and keep transformations auditable.\PTSource{Chapters 2, 15, 17.}
+\section{Diagnostics, recovery and trust}
+Detection identifies a violation; recovery resynchronizes so diagnostics can continue; correction proposes repairs. Never silently treat repaired untrusted source as validated executable input. Retain source spans and error provenance, bound recovery steps and count, reject unrecoverable ambiguity and out-of-budget states.\PTSource{Chapter 16.}
+\section{Engineering acceptance criteria}
+\begin{itemize}\item Explicit grammar and parser API contract, encoding, resource ceilings, error status codes.\item Differential tests using independent implementations where feasible.\item Property-based or generative tests with controlled seed and minimized failures.\item Golden AST fixtures, fuzzing and negative syntax/semantics tests.\item Complexity hypotheses separated from measured runtime, allocation and maximum-stack depth.\item A threat model covering malicious input, Unicode, numeric overflow, memory management and dependency risk.\end{itemize}
+
+\end{document}

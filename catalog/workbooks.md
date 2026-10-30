@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary workbooks and exercises (43)
+## Primary workbooks and exercises (47)
 
 - [ISO/IEC/IEEE 42010 Conformance Assessment Workbook](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment.tex) — ISO/IEC/IEEE 42010 conformance evidence · **reviewed**
 - [architecture review findings template](../src/architecture/views-and-beyond/documentation-engineering-suite/workbooks/Architecture_Review_Findings_Template.tex) — views-and-beyond/documentation-engineering-suite/workbooks · **provisional**
@@ -34,6 +34,10 @@
 - [Combinatorics And Constraints Workbook](../src/programming/algorithms/algorithm-engineering/workbooks/combinatorics-and-constraints-workbook.tex) — algorithm engineering / workbooks · **provisional**
 - [Randomness And Statistics Workbook](../src/programming/algorithms/algorithm-engineering/workbooks/randomness-and-statistics-workbook.tex) — algorithm engineering / workbooks · **provisional**
 - [Desk-Check for Algorithms Workbook](../src/programming/algorithms/desk-check-algorithm-workbook.tex) — algorithm desk checking · **reviewed**
+- [Automata Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/automata-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**
+- [Compiler Pipeline Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/compiler-pipeline-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**
+- [Formal Language Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/formal-language-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**
+- [Parsing Trace Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/parsing-trace-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**
 - [08 hands on laboratories](../src/programming/linux-unix-system-programming/08-hands-on-laboratories.tex) — linux unix system programming · **provisional**
 - [07 hands on labs](../src/programming/web/micro-frontends/07-hands-on-labs.tex) — web/micro frontends · **provisional**
 - [07 hands on labs](../src/security/application-security/assessment/07-hands-on-labs.tex) — application security/assessment · **provisional**

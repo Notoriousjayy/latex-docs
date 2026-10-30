@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary study guides (114)
+## Primary study guides (134)
 
 - [02 cloud architecture curriculum](../src/architecture/cloud/engineering-suite/02-cloud-architecture-curriculum.tex) — cloud/engineering suite · **provisional**
 - [prerequisite based architecture documentation curriculum](../src/architecture/views-and-beyond/documentation-engineering-suite/curriculum/Prerequisite_Based_Architecture_Documentation_Curriculum.tex) — views-and-beyond/documentation-engineering-suite/curriculum · **provisional**
@@ -70,6 +70,26 @@
 - [Volume 3 Sorting And Searching](../src/programming/algorithms/algorithm-engineering/study-guides/volume-3-sorting-and-searching.tex) — algorithm engineering / study guides · **provisional**
 - [Volume 4A Combinatorial Algorithms](../src/programming/algorithms/algorithm-engineering/study-guides/volume-4a-combinatorial-algorithms.tex) — algorithm engineering / study guides · **provisional**
 - [Volume 4B Combinatorial Algorithms](../src/programming/algorithms/algorithm-engineering/study-guides/volume-4b-combinatorial-algorithms.tex) — algorithm engineering / study guides · **provisional**
+- [Competency Portfolio Matrix](../src/programming/compilers/parsing-techniques/curricula/competency-portfolio-matrix.tex) — compiler engineering / parsing techniques / curricula · **provisional**
+- [Prerequisite Based Curriculum](../src/programming/compilers/parsing-techniques/curricula/prerequisite-based-curriculum.tex) — compiler engineering / parsing techniques / curricula · **provisional**
+- [01 Introduction](../src/programming/compilers/parsing-techniques/study-guides/01-introduction.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [02 Grammars As A Generating Device](../src/programming/compilers/parsing-techniques/study-guides/02-grammars-as-a-generating-device.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [03 Introduction To Parsing](../src/programming/compilers/parsing-techniques/study-guides/03-introduction-to-parsing.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [04 General Non Directional Parsing](../src/programming/compilers/parsing-techniques/study-guides/04-general-non-directional-parsing.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [05 Regular Grammars And Finite State Automata](../src/programming/compilers/parsing-techniques/study-guides/05-regular-grammars-and-finite-state-automata.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [06 General Directional Top Down Parsing](../src/programming/compilers/parsing-techniques/study-guides/06-general-directional-top-down-parsing.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [07 General Directional Bottom Up Parsing](../src/programming/compilers/parsing-techniques/study-guides/07-general-directional-bottom-up-parsing.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [08 Deterministic Top Down Parsing](../src/programming/compilers/parsing-techniques/study-guides/08-deterministic-top-down-parsing.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [09 Deterministic Bottom Up Parsing](../src/programming/compilers/parsing-techniques/study-guides/09-deterministic-bottom-up-parsing.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [10 Non Canonical Parsers](../src/programming/compilers/parsing-techniques/study-guides/10-non-canonical-parsers.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [11 Generalized Deterministic Parsers](../src/programming/compilers/parsing-techniques/study-guides/11-generalized-deterministic-parsers.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [12 Substring Parsing](../src/programming/compilers/parsing-techniques/study-guides/12-substring-parsing.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [13 Parsing As Intersection](../src/programming/compilers/parsing-techniques/study-guides/13-parsing-as-intersection.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [14 Parallel Parsing](../src/programming/compilers/parsing-techniques/study-guides/14-parallel-parsing.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [15 Non Chomsky Grammars And Their Parsers](../src/programming/compilers/parsing-techniques/study-guides/15-non-chomsky-grammars-and-their-parsers.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [16 Error Handling](../src/programming/compilers/parsing-techniques/study-guides/16-error-handling.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [17 Practical Parser Writing And Usage](../src/programming/compilers/parsing-techniques/study-guides/17-practical-parser-writing-and-usage.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [18 Annotated Bibliography](../src/programming/compilers/parsing-techniques/study-guides/18-annotated-bibliography.tex) — compiler engineering / parsing techniques / study guides · **provisional**
 - [02 clause by clause study guide](../src/programming/languages/c-cpp/standards/c23/02-clause-by-clause-study-guide.tex) — standards/c23 · **provisional**
 - [08 training curriculum](../src/programming/languages/c-cpp/standards/c23/08-training-curriculum.tex) — standards/c23 · **provisional**
 - [07 clause study guide](../src/programming/languages/c-cpp/standards/cpp23/07-clause-study-guide.tex) — standards/cpp23 · **provisional**
