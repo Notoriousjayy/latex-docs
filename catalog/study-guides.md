@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary study guides (134)
+## Primary study guides (150)
 
 - [02 cloud architecture curriculum](../src/architecture/cloud/engineering-suite/02-cloud-architecture-curriculum.tex) — cloud/engineering suite · **provisional**
 - [prerequisite based architecture documentation curriculum](../src/architecture/views-and-beyond/documentation-engineering-suite/curriculum/Prerequisite_Based_Architecture_Documentation_Curriculum.tex) — views-and-beyond/documentation-engineering-suite/curriculum · **provisional**
@@ -70,6 +70,22 @@
 - [Volume 3 Sorting And Searching](../src/programming/algorithms/algorithm-engineering/study-guides/volume-3-sorting-and-searching.tex) — algorithm engineering / study guides · **provisional**
 - [Volume 4A Combinatorial Algorithms](../src/programming/algorithms/algorithm-engineering/study-guides/volume-4a-combinatorial-algorithms.tex) — algorithm engineering / study guides · **provisional**
 - [Volume 4B Combinatorial Algorithms](../src/programming/algorithms/algorithm-engineering/study-guides/volume-4b-combinatorial-algorithms.tex) — algorithm engineering / study guides · **provisional**
+- [Competency Gates And Assessment](../src/programming/compilers/compiler-engineering/curricula/competency-gates-and-assessment.tex) — compiler engineering / engineering a compiler / curricula · **provisional**
+- [Compiler Engineering 18 Week Curriculum](../src/programming/compilers/compiler-engineering/curricula/compiler-engineering-18-week-curriculum.tex) — compiler engineering / engineering a compiler / curricula · **provisional**
+- [Chapter 01 Overview Of Compilation](../src/programming/compilers/compiler-engineering/study-guides/chapter-01-overview-of-compilation.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 02 Scanners](../src/programming/compilers/compiler-engineering/study-guides/chapter-02-scanners.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 03 Parsers](../src/programming/compilers/compiler-engineering/study-guides/chapter-03-parsers.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 04 Intermediate Representations](../src/programming/compilers/compiler-engineering/study-guides/chapter-04-intermediate-representations.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 05 Syntax Driven Translation](../src/programming/compilers/compiler-engineering/study-guides/chapter-05-syntax-driven-translation.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 06 Implementing Procedures](../src/programming/compilers/compiler-engineering/study-guides/chapter-06-implementing-procedures.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 07 Code Shape](../src/programming/compilers/compiler-engineering/study-guides/chapter-07-code-shape.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 08 Introduction To Optimization](../src/programming/compilers/compiler-engineering/study-guides/chapter-08-introduction-to-optimization.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 09 Data Flow Analysis](../src/programming/compilers/compiler-engineering/study-guides/chapter-09-data-flow-analysis.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 10 Scalar Optimization](../src/programming/compilers/compiler-engineering/study-guides/chapter-10-scalar-optimization.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 11 Instruction Selection](../src/programming/compilers/compiler-engineering/study-guides/chapter-11-instruction-selection.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 12 Instruction Scheduling](../src/programming/compilers/compiler-engineering/study-guides/chapter-12-instruction-scheduling.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 13 Register Allocation](../src/programming/compilers/compiler-engineering/study-guides/chapter-13-register-allocation.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 14 Runtime Optimization](../src/programming/compilers/compiler-engineering/study-guides/chapter-14-runtime-optimization.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
 - [Competency Portfolio Matrix](../src/programming/compilers/parsing-techniques/curricula/competency-portfolio-matrix.tex) — compiler engineering / parsing techniques / curricula · **provisional**
 - [Prerequisite Based Curriculum](../src/programming/compilers/parsing-techniques/curricula/prerequisite-based-curriculum.tex) — compiler engineering / parsing techniques / curricula · **provisional**
 - [01 Introduction](../src/programming/compilers/parsing-techniques/study-guides/01-introduction.tex) — compiler engineering / parsing techniques / study guides · **provisional**

@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary workbooks and exercises (47)
+## Primary workbooks and exercises (55)
 
 - [ISO/IEC/IEEE 42010 Conformance Assessment Workbook](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment.tex) — ISO/IEC/IEEE 42010 conformance evidence · **reviewed**
 - [architecture review findings template](../src/architecture/views-and-beyond/documentation-engineering-suite/workbooks/Architecture_Review_Findings_Template.tex) — views-and-beyond/documentation-engineering-suite/workbooks · **provisional**
@@ -34,6 +34,14 @@
 - [Combinatorics And Constraints Workbook](../src/programming/algorithms/algorithm-engineering/workbooks/combinatorics-and-constraints-workbook.tex) — algorithm engineering / workbooks · **provisional**
 - [Randomness And Statistics Workbook](../src/programming/algorithms/algorithm-engineering/workbooks/randomness-and-statistics-workbook.tex) — algorithm engineering / workbooks · **provisional**
 - [Desk-Check for Algorithms Workbook](../src/programming/algorithms/desk-check-algorithm-workbook.tex) — algorithm desk checking · **reviewed**
+- [C Cpp Front End Laboratory](../src/programming/compilers/compiler-engineering/laboratories/c-cpp-front-end-laboratory.tex) — compiler engineering / engineering a compiler / laboratories · **provisional**
+- [Cpp Back End Laboratory](../src/programming/compilers/compiler-engineering/laboratories/cpp-back-end-laboratory.tex) — compiler engineering / engineering a compiler / laboratories · **provisional**
+- [Python Analysis Optimization Laboratory](../src/programming/compilers/compiler-engineering/laboratories/python-analysis-optimization-laboratory.tex) — compiler engineering / engineering a compiler / laboratories · **provisional**
+- [Python Front End Laboratory](../src/programming/compilers/compiler-engineering/laboratories/python-front-end-laboratory.tex) — compiler engineering / engineering a compiler / laboratories · **provisional**
+- [Back End Runtime Workbook Template](../src/programming/compilers/compiler-engineering/workbooks/back-end-runtime-workbook-template.tex) — compiler engineering / engineering a compiler / workbooks · **provisional**
+- [Dataflow Ssa Workbook Template](../src/programming/compilers/compiler-engineering/workbooks/dataflow-ssa-workbook-template.tex) — compiler engineering / engineering a compiler / workbooks · **provisional**
+- [Grammar And Automata Workbook Template](../src/programming/compilers/compiler-engineering/workbooks/grammar-and-automata-workbook-template.tex) — compiler engineering / engineering a compiler / workbooks · **provisional**
+- [Intermediate Representation Workbook Template](../src/programming/compilers/compiler-engineering/workbooks/intermediate-representation-workbook-template.tex) — compiler engineering / engineering a compiler / workbooks · **provisional**
 - [Automata Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/automata-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**
 - [Compiler Pipeline Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/compiler-pipeline-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**
 - [Formal Language Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/formal-language-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**

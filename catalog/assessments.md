@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary assessments (18)
+## Primary assessments (21)
 
 - [3 5 quality audit](../src/architecture/governance/ccoe/execution/3-5-quality-audit.tex) — ccoe/execution · **provisional**
 - [2 33 probability and impact assessment](../src/architecture/governance/ccoe/planning/2-33-probability-and-impact-assessment.tex) — ccoe/planning · **provisional**
@@ -13,6 +13,9 @@
 - [physics engine gap analysis production library](../src/game-development/physics-engines/physics-engine-gap-analysis-production-library.tex) — physics engines · **provisional**
 - [capstone assessment and rubric](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/assessments/capstone-assessment-and-rubric.tex) — algorithms · **provisional**
 - [foundations diagnostic assessment](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/assessments/foundations-diagnostic-assessment.tex) — algorithms · **provisional**
+- [Compiler Security Assessment Scorecard](../src/programming/compilers/compiler-engineering/security-assessments/compiler-security-assessment-scorecard.tex) — compiler engineering / engineering a compiler / security-assessments · **provisional**
+- [Compiler Security Test Plan](../src/programming/compilers/compiler-engineering/security-assessments/compiler-security-test-plan.tex) — compiler engineering / engineering a compiler / security-assessments · **provisional**
+- [Compiler Threat Model](../src/programming/compilers/compiler-engineering/security-assessments/compiler-threat-model.tex) — compiler engineering / engineering a compiler / security-assessments · **provisional**
 - [Parser Security Assessment Guide](../src/programming/compilers/parsing-techniques/assessments/parser-security-assessment-guide.tex) — compiler engineering / parsing techniques / assessments · **provisional**
 - [03 manual code auditing](../src/security/application-security/assessment/03-manual-code-auditing.tex) — application security/assessment · **provisional**
 - [06 assessment procedures](../src/security/application-security/assessment/06-assessment-procedures.tex) — application security/assessment · **provisional**

@@ -12,7 +12,7 @@
 - [ADR-0006: Separate validation and deployment trust](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0006.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [Open-Source Enterprise Security Platform: Reference Architecture and Tool Strategy](../src/security/technical-documents/open-source-enterprise-security-platform.tex) — enterprise security platform architecture · **reviewed**
 
-## assessment (18)
+## assessment (21)
 
 - [3 5 quality audit](../src/architecture/governance/ccoe/execution/3-5-quality-audit.tex) — ccoe/execution · **provisional**
 - [2 33 probability and impact assessment](../src/architecture/governance/ccoe/planning/2-33-probability-and-impact-assessment.tex) — ccoe/planning · **provisional**
@@ -23,6 +23,9 @@
 - [physics engine gap analysis production library](../src/game-development/physics-engines/physics-engine-gap-analysis-production-library.tex) — physics engines · **provisional**
 - [capstone assessment and rubric](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/assessments/capstone-assessment-and-rubric.tex) — algorithms · **provisional**
 - [foundations diagnostic assessment](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/assessments/foundations-diagnostic-assessment.tex) — algorithms · **provisional**
+- [Compiler Security Assessment Scorecard](../src/programming/compilers/compiler-engineering/security-assessments/compiler-security-assessment-scorecard.tex) — compiler engineering / engineering a compiler / security-assessments · **provisional**
+- [Compiler Security Test Plan](../src/programming/compilers/compiler-engineering/security-assessments/compiler-security-test-plan.tex) — compiler engineering / engineering a compiler / security-assessments · **provisional**
+- [Compiler Threat Model](../src/programming/compilers/compiler-engineering/security-assessments/compiler-threat-model.tex) — compiler engineering / engineering a compiler / security-assessments · **provisional**
 - [Parser Security Assessment Guide](../src/programming/compilers/parsing-techniques/assessments/parser-security-assessment-guide.tex) — compiler engineering / parsing techniques / assessments · **provisional**
 - [03 manual code auditing](../src/security/application-security/assessment/03-manual-code-auditing.tex) — application security/assessment · **provisional**
 - [06 assessment procedures](../src/security/application-security/assessment/06-assessment-procedures.tex) — application security/assessment · **provisional**
@@ -137,12 +140,15 @@
 - [closure playbook standard operating procedure](../src/security/application-security/processes/avit-seeker/closure-playbook-standard-operating-procedure.tex) — processes/avit seeker · **provisional**
 - [secure workflow standard github actions](../src/security/github-advanced-security/references/secure-workflow-standard-github-actions.tex) — github advanced security/references · **provisional**
 
-## runbook (2)
+## runbook (5)
 
 - [Algorithm Verification And Review Procedure](../src/programming/algorithms/algorithm-engineering/procedures/algorithm-verification-and-review-procedure.tex) — algorithm engineering / procedures · **provisional**
 - [Reproducible Benchmarking Procedure](../src/programming/algorithms/algorithm-engineering/procedures/reproducible-benchmarking-procedure.tex) — algorithm engineering / procedures · **provisional**
+- [Compiler Benchmarking Procedure](../src/programming/compilers/compiler-engineering/procedures/compiler-benchmarking-procedure.tex) — compiler engineering / engineering a compiler / procedures · **provisional**
+- [Compiler Correctness Verification](../src/programming/compilers/compiler-engineering/procedures/compiler-correctness-verification.tex) — compiler engineering / engineering a compiler / procedures · **provisional**
+- [Optimization Change Control](../src/programming/compilers/compiler-engineering/procedures/optimization-change-control.tex) — compiler engineering / engineering a compiler / procedures · **provisional**
 
-## study-guide (134)
+## study-guide (150)
 
 - [02 cloud architecture curriculum](../src/architecture/cloud/engineering-suite/02-cloud-architecture-curriculum.tex) — cloud/engineering suite · **provisional**
 - [prerequisite based architecture documentation curriculum](../src/architecture/views-and-beyond/documentation-engineering-suite/curriculum/Prerequisite_Based_Architecture_Documentation_Curriculum.tex) — views-and-beyond/documentation-engineering-suite/curriculum · **provisional**
@@ -210,6 +216,22 @@
 - [Volume 3 Sorting And Searching](../src/programming/algorithms/algorithm-engineering/study-guides/volume-3-sorting-and-searching.tex) — algorithm engineering / study guides · **provisional**
 - [Volume 4A Combinatorial Algorithms](../src/programming/algorithms/algorithm-engineering/study-guides/volume-4a-combinatorial-algorithms.tex) — algorithm engineering / study guides · **provisional**
 - [Volume 4B Combinatorial Algorithms](../src/programming/algorithms/algorithm-engineering/study-guides/volume-4b-combinatorial-algorithms.tex) — algorithm engineering / study guides · **provisional**
+- [Competency Gates And Assessment](../src/programming/compilers/compiler-engineering/curricula/competency-gates-and-assessment.tex) — compiler engineering / engineering a compiler / curricula · **provisional**
+- [Compiler Engineering 18 Week Curriculum](../src/programming/compilers/compiler-engineering/curricula/compiler-engineering-18-week-curriculum.tex) — compiler engineering / engineering a compiler / curricula · **provisional**
+- [Chapter 01 Overview Of Compilation](../src/programming/compilers/compiler-engineering/study-guides/chapter-01-overview-of-compilation.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 02 Scanners](../src/programming/compilers/compiler-engineering/study-guides/chapter-02-scanners.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 03 Parsers](../src/programming/compilers/compiler-engineering/study-guides/chapter-03-parsers.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 04 Intermediate Representations](../src/programming/compilers/compiler-engineering/study-guides/chapter-04-intermediate-representations.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 05 Syntax Driven Translation](../src/programming/compilers/compiler-engineering/study-guides/chapter-05-syntax-driven-translation.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 06 Implementing Procedures](../src/programming/compilers/compiler-engineering/study-guides/chapter-06-implementing-procedures.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 07 Code Shape](../src/programming/compilers/compiler-engineering/study-guides/chapter-07-code-shape.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 08 Introduction To Optimization](../src/programming/compilers/compiler-engineering/study-guides/chapter-08-introduction-to-optimization.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 09 Data Flow Analysis](../src/programming/compilers/compiler-engineering/study-guides/chapter-09-data-flow-analysis.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 10 Scalar Optimization](../src/programming/compilers/compiler-engineering/study-guides/chapter-10-scalar-optimization.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 11 Instruction Selection](../src/programming/compilers/compiler-engineering/study-guides/chapter-11-instruction-selection.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 12 Instruction Scheduling](../src/programming/compilers/compiler-engineering/study-guides/chapter-12-instruction-scheduling.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 13 Register Allocation](../src/programming/compilers/compiler-engineering/study-guides/chapter-13-register-allocation.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
+- [Chapter 14 Runtime Optimization](../src/programming/compilers/compiler-engineering/study-guides/chapter-14-runtime-optimization.tex) — compiler engineering / engineering a compiler / study-guides · **provisional**
 - [Competency Portfolio Matrix](../src/programming/compilers/parsing-techniques/curricula/competency-portfolio-matrix.tex) — compiler engineering / parsing techniques / curricula · **provisional**
 - [Prerequisite Based Curriculum](../src/programming/compilers/parsing-techniques/curricula/prerequisite-based-curriculum.tex) — compiler engineering / parsing techniques / curricula · **provisional**
 - [01 Introduction](../src/programming/compilers/parsing-techniques/study-guides/01-introduction.tex) — compiler engineering / parsing techniques / study guides · **provisional**
@@ -606,7 +628,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (591)
+## technical-reference (594)
 
 - [cloud architecture diagram library index](../src/architecture/cloud/architecture/cloud-architecture-diagram-library-index.tex) — cloud/architecture · **provisional**
 - [self hosting cloud architecture reference](../src/architecture/cloud/architecture/self-hosting-cloud-architecture-reference.tex) — cloud/architecture · **provisional**
@@ -1011,6 +1033,9 @@
 - [numerical recipes algorithms pseudocode](../src/programming/algorithms/numerical-recipes-algorithms-pseudocode.tex) — algorithms · **provisional**
 - [stanford graphbase algorithms pseudocode](../src/programming/algorithms/stanford-graphbase-algorithms-pseudocode.tex) — algorithms · **provisional**
 - [strings trees sequences pseudocode handout](../src/programming/algorithms/strings-trees-sequences-pseudocode-handout.tex) — algorithms · **provisional**
+- [Book Crosswalk And Provenance](../src/programming/compilers/compiler-engineering/technical-references/book-crosswalk-and-provenance.tex) — compiler engineering / engineering a compiler / technical-references · **provisional**
+- [Compiler Engineering Handbook](../src/programming/compilers/compiler-engineering/technical-references/compiler-engineering-handbook.tex) — compiler engineering / engineering a compiler / technical-references · **provisional**
+- [Formal Methods And Analysis Reference](../src/programming/compilers/compiler-engineering/technical-references/formal-methods-and-analysis-reference.tex) — compiler engineering / engineering a compiler / technical-references · **provisional**
 - [Compiler Pipeline And Interfaces](../src/programming/compilers/parsing-techniques/technical-references/compiler-pipeline-and-interfaces.tex) — compiler engineering / parsing techniques / technical references · **provisional**
 - [Grammar Automata Field Guide](../src/programming/compilers/parsing-techniques/technical-references/grammar-automata-field-guide.tex) — compiler engineering / parsing techniques / technical references · **provisional**
 - [Parser Algorithm Selection](../src/programming/compilers/parsing-techniques/technical-references/parser-algorithm-selection.tex) — compiler engineering / parsing techniques / technical references · **provisional**
@@ -1200,7 +1225,7 @@
 - [immediate founder focus](../src/startups/media/fast-animation-channels/immediate-founder-focus.tex) — media/fast animation channels · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## template (101)
+## template (108)
 
 - [Architecture Documentation Templates](../src/architecture/cloud/engineering-suite/05-architecture-documentation-templates.tex) — cloud architecture documentation forms · **reviewed**
 - [Cloud Security Reference Templates](../src/architecture/cloud/engineering-suite/06-security-governance-templates.tex) — cloud security governance forms · **reviewed**
@@ -1274,6 +1299,13 @@
 - [Laboratory Assessment Template](../src/programming/algorithms/algorithm-engineering/templates/laboratory-assessment-template.tex) — algorithm engineering / templates · **provisional**
 - [Learning Progress Tracker Template](../src/programming/algorithms/algorithm-engineering/templates/learning-progress-tracker-template.tex) — algorithm engineering / templates · **provisional**
 - [Mathematical Proof Review Template](../src/programming/algorithms/algorithm-engineering/templates/mathematical-proof-review-template.tex) — algorithm engineering / templates · **provisional**
+- [Compiler Benchmark Template](../src/programming/compilers/compiler-engineering/templates/compiler-benchmark-template.tex) — compiler engineering / engineering a compiler / templates · **provisional**
+- [Compiler Capstone Evidence Template](../src/programming/compilers/compiler-engineering/templates/compiler-capstone-evidence-template.tex) — compiler engineering / engineering a compiler / templates · **provisional**
+- [Compiler Design Decision Template](../src/programming/compilers/compiler-engineering/templates/compiler-design-decision-template.tex) — compiler engineering / engineering a compiler / templates · **provisional**
+- [Compiler Pass Specification Template](../src/programming/compilers/compiler-engineering/templates/compiler-pass-specification-template.tex) — compiler engineering / engineering a compiler / templates · **provisional**
+- [Compiler Security Review Template](../src/programming/compilers/compiler-engineering/templates/compiler-security-review-template.tex) — compiler engineering / engineering a compiler / templates · **provisional**
+- [Compiler Security Scorecard Template](../src/programming/compilers/compiler-engineering/templates/compiler-security-scorecard-template.tex) — compiler engineering / engineering a compiler / templates · **provisional**
+- [Compiler Test Plan Template](../src/programming/compilers/compiler-engineering/templates/compiler-test-plan-template.tex) — compiler engineering / engineering a compiler / templates · **provisional**
 - [Ambiguity Investigation Template](../src/programming/compilers/parsing-techniques/templates/ambiguity-investigation-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
 - [Automata Construction Template](../src/programming/compilers/parsing-techniques/templates/automata-construction-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
 - [Benchmark Record Template](../src/programming/compilers/parsing-techniques/templates/benchmark-record-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
@@ -1324,7 +1356,7 @@
 - [study plan user stories github advanced sec](../src/security/github-advanced-security/administration/study-plan-user-stories-github-advanced-sec.tex) — github advanced security/administration · **provisional**
 - [study plan owasp api sec top 10 user stories](../src/security/standards/owasp/study-plan-owasp-api-sec-top-10-user-stories.tex) — standards/owasp · **provisional**
 
-## workbook (47)
+## workbook (55)
 
 - [ISO/IEC/IEEE 42010 Conformance Assessment Workbook](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment.tex) — ISO/IEC/IEEE 42010 conformance evidence · **reviewed**
 - [architecture review findings template](../src/architecture/views-and-beyond/documentation-engineering-suite/workbooks/Architecture_Review_Findings_Template.tex) — views-and-beyond/documentation-engineering-suite/workbooks · **provisional**
@@ -1356,6 +1388,14 @@
 - [Combinatorics And Constraints Workbook](../src/programming/algorithms/algorithm-engineering/workbooks/combinatorics-and-constraints-workbook.tex) — algorithm engineering / workbooks · **provisional**
 - [Randomness And Statistics Workbook](../src/programming/algorithms/algorithm-engineering/workbooks/randomness-and-statistics-workbook.tex) — algorithm engineering / workbooks · **provisional**
 - [Desk-Check for Algorithms Workbook](../src/programming/algorithms/desk-check-algorithm-workbook.tex) — algorithm desk checking · **reviewed**
+- [C Cpp Front End Laboratory](../src/programming/compilers/compiler-engineering/laboratories/c-cpp-front-end-laboratory.tex) — compiler engineering / engineering a compiler / laboratories · **provisional**
+- [Cpp Back End Laboratory](../src/programming/compilers/compiler-engineering/laboratories/cpp-back-end-laboratory.tex) — compiler engineering / engineering a compiler / laboratories · **provisional**
+- [Python Analysis Optimization Laboratory](../src/programming/compilers/compiler-engineering/laboratories/python-analysis-optimization-laboratory.tex) — compiler engineering / engineering a compiler / laboratories · **provisional**
+- [Python Front End Laboratory](../src/programming/compilers/compiler-engineering/laboratories/python-front-end-laboratory.tex) — compiler engineering / engineering a compiler / laboratories · **provisional**
+- [Back End Runtime Workbook Template](../src/programming/compilers/compiler-engineering/workbooks/back-end-runtime-workbook-template.tex) — compiler engineering / engineering a compiler / workbooks · **provisional**
+- [Dataflow Ssa Workbook Template](../src/programming/compilers/compiler-engineering/workbooks/dataflow-ssa-workbook-template.tex) — compiler engineering / engineering a compiler / workbooks · **provisional**
+- [Grammar And Automata Workbook Template](../src/programming/compilers/compiler-engineering/workbooks/grammar-and-automata-workbook-template.tex) — compiler engineering / engineering a compiler / workbooks · **provisional**
+- [Intermediate Representation Workbook Template](../src/programming/compilers/compiler-engineering/workbooks/intermediate-representation-workbook-template.tex) — compiler engineering / engineering a compiler / workbooks · **provisional**
 - [Automata Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/automata-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**
 - [Compiler Pipeline Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/compiler-pipeline-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**
 - [Formal Language Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/formal-language-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**
