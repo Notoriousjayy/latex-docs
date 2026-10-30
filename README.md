@@ -8,6 +8,7 @@ A source-controlled engineering documentation library covering software architec
 |---|---|
 | Learn animation timing and game animation engineering | [Animation Timing suite](src/game-development/animation-timing/README.md) |
 | Study CI, build engineering and DevSecOps | [Continuous Integration and CI/CD Engineering suite](src/devops/ci-cd/continuous-integration-engineering/README.md) |
+| Assess data governance standards and controls | [Enterprise Data Governance Standards Reference](src/data-systems/enterprise-data-governance/standards-and-frameworks/README.md) |
 | Find a topic or project | [Source catalog](src/README.md) |
 | Study small-business management and entrepreneurship | [Small Business Management suite](src/startups/small-business-management/README.md) |
 | Browse reusable templates, workbooks, scorecards or user stories | [Discovery catalog](catalog/README.md) and [Template–Blank pair catalog](catalog/template-blank-pairs.md) |
