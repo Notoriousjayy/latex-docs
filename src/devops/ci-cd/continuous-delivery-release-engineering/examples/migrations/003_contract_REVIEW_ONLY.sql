@@ -1,0 +1,3 @@
+-- DO NOT EXECUTE during initial rollout. Requires client inventory and backup.
+-- Contraction intentionally omitted: irreversible operations need their own reviewed migration.
+-- Verify all old readers are retired and backed-up before scheduling contraction.

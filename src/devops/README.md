@@ -49,7 +49,7 @@ The category command discovers standalone LaTeX roots and builds them with the s
 
 Use the [Secure AWS Terraform architecture standard](../architecture/cloud/secure-aws-terraform-repository-deployment/README.md) for OIDC-based Terraform deployments, state isolation, and platform security controls. Example workflows are documentation assets, not active CI for this repository.
 
-## Recommended navigation
+## Continuous Delivery engineering suite\n\nThe [Continuous Delivery, CI/CD and Release Engineering Documentation Suite](ci-cd/continuous-delivery-release-engineering/README.md) adds 15 chapter guides based on Humble and Farley, AWS/Terraform laboratories, automated quality gates, progressive-delivery and rollback practices, and governed printable workbooks, templates, and scorecards. The companion [Continuous Integration suite](ci-cd/continuous-integration-engineering/README.md) covers the earlier CI foundation.\n\n## Recommended navigation
 
 - Start with `foundations/` for concepts, `ci-cd/` for delivery architecture, and `github-actions/` for platform-specific workflow syntax.
 
