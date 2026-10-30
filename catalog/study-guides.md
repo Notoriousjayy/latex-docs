@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary study guides (74)
+## Primary study guides (84)
 
 - [02 cloud architecture curriculum](../src/architecture/cloud/engineering-suite/02-cloud-architecture-curriculum.tex) — cloud/engineering suite · **provisional**
 - [software architecture learning curriculum](../src/architecture/workbooks/software-architecture-learning-curriculum.tex) — architecture · **provisional**
@@ -38,6 +38,16 @@
 - [study plan computational geometry c expanded](../src/mathematics/study-guides/study-plan-computational-geometry-c-expanded.tex) — mathematics · **provisional**
 - [02 chapter study guides](../src/personal/finance/investment-valuation/02-chapter-study-guides.tex) — finance/investment valuation · **provisional**
 - [07 learning curriculum](../src/personal/finance/investment-valuation/07-learning-curriculum.tex) — finance/investment valuation · **provisional**
+- [chapter 01 analysis of algorithms study guide](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/chapter-01-analysis-of-algorithms-study-guide.tex) — algorithms · **provisional**
+- [chapter 02 recurrence relations study guide](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/chapter-02-recurrence-relations-study-guide.tex) — algorithms · **provisional**
+- [chapter 03 generating functions study guide](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/chapter-03-generating-functions-study-guide.tex) — algorithms · **provisional**
+- [chapter 04 asymptotic approximations study guide](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/chapter-04-asymptotic-approximations-study-guide.tex) — algorithms · **provisional**
+- [chapter 05 analytic combinatorics study guide](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/chapter-05-analytic-combinatorics-study-guide.tex) — algorithms · **provisional**
+- [chapter 06 trees study guide](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/chapter-06-trees-study-guide.tex) — algorithms · **provisional**
+- [chapter 07 permutations study guide](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/chapter-07-permutations-study-guide.tex) — algorithms · **provisional**
+- [chapter 08 strings and tries study guide](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/chapter-08-strings-and-tries-study-guide.tex) — algorithms · **provisional**
+- [chapter 09 words and mappings study guide](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/chapter-09-words-and-mappings-study-guide.tex) — algorithms · **provisional**
+- [prerequisite based learning curriculum](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/prerequisite-based-learning-curriculum.tex) — algorithms · **provisional**
 - [Competency And Portfolio Matrix](../src/programming/algorithms/algorithm-engineering/curricula/competency-and-portfolio-matrix.tex) — algorithm engineering / curricula · **provisional**
 - [Prerequisite Based Curriculum](../src/programming/algorithms/algorithm-engineering/curricula/prerequisite-based-curriculum.tex) — algorithm engineering / curricula · **provisional**
 - [Volume 1 Fundamental Algorithms](../src/programming/algorithms/algorithm-engineering/study-guides/volume-1-fundamental-algorithms.tex) — algorithm engineering / study guides · **provisional**

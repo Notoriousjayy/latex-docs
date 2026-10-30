@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary workbooks and exercises (24)
+## Primary workbooks and exercises (28)
 
 - [ISO/IEC/IEEE 42010 Conformance Assessment Workbook](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment.tex) — ISO/IEC/IEEE 42010 conformance evidence · **reviewed**
 - [Enterprise Architecture Discovery Evidence and Validation Workbook Template](../src/architecture/workbooks/github-actions-architecture-discovery-evidence-workbook-template.tex) — github-actions/enterprise-discovery · **reviewed**
@@ -20,6 +20,10 @@
 - [calculus applications workbook solutions](../src/mathematics/workbooks/calculus-applications-workbook-solutions.tex) — mathematics · **provisional**
 - [differential equations curriculum problem workbook](../src/mathematics/workbooks/differential-equations-curriculum-problem-workbook.tex) — mathematics · **provisional**
 - [Financial Modeling: Applied Exercises and Answer Keys](../src/personal/finance/investment-valuation/04-financial-modeling-exercises.tex) — financial modeling exercises · **reviewed**
+- [asymptotic analysis workbook](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/workbooks/asymptotic-analysis-workbook.tex) — algorithms · **provisional**
+- [combinatorial structures workbook](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/workbooks/combinatorial-structures-workbook.tex) — algorithms · **provisional**
+- [generating functions workbook](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/workbooks/generating-functions-workbook.tex) — algorithms · **provisional**
+- [recurrence analysis workbook](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/workbooks/recurrence-analysis-workbook.tex) — algorithms · **provisional**
 - [Arithmetic And Numerical Accuracy Workbook](../src/programming/algorithms/algorithm-engineering/workbooks/arithmetic-and-numerical-accuracy-workbook.tex) — algorithm engineering / workbooks · **provisional**
 - [Asymptotic And Proof Workbook](../src/programming/algorithms/algorithm-engineering/workbooks/asymptotic-and-proof-workbook.tex) — algorithm engineering / workbooks · **provisional**
 - [Combinatorics And Constraints Workbook](../src/programming/algorithms/algorithm-engineering/workbooks/combinatorics-and-constraints-workbook.tex) — algorithm engineering / workbooks · **provisional**
