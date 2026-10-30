@@ -27,6 +27,19 @@ jobs:
           tar -xJf "${RUNNER_TEMP}/algorithm-suite-import.tar.xz" -C . --no-same-owner --no-same-permissions
           test -f src/programming/algorithms/algorithm-engineering/README.md
           test -f src/programming/algorithms/algorithm-engineering/scripts/validate-algorithm-suite.py
+          # Fix a verified temporary-container lifetime error in the C++ test.
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/programming/algorithms/algorithm-engineering/code/cpp/tests/test_algorithms.cpp')
+          s=p.read_text()
+          old='    auto sols=alg::exact_cover({1,2,3,4},{{1,2},{3,4},{1,3},{2,4}});'
+          assert old in s
+          s=s.replace(old,'    const std::vector<std::set<int>> options={{1,2},{3,4},{1,3},{2,4}};\\n    auto sols=alg::exact_cover({1,2,3,4},options);')
+          old='std::vector<std::set<int>>{{1,2},{3,4},{1,3},{2,4}}[ix]'
+          assert old in s
+          s=s.replace(old,'options.at(ix)')
+          p.write_text(s)
+          PY
           if find src/programming/algorithms/algorithm-engineering -name '*.pdf' | grep -q .; then
             echo 'Unexpected compiled PDFs in source import' >&2; exit 1
           fi
