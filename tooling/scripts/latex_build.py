@@ -2190,7 +2190,7 @@ def plantuml_output_paths(source: Path, fmt: str, text: str | None = None) -> li
 def plantuml_render_command(prefix: Sequence[str], fmt: str, output_dir: Path, config: Path | None, names: Sequence[str]) -> list[str]:
     # An absolute -o is used verbatim; a relative one is joined to each source's directory,
     # which is how src/**/src/** trees were produced by runs started from the repository root.
-    cmd = [*prefix, "-failfast2", "-stdrpt:1", f"-t{fmt}", "-o", str(output_dir.resolve())]
+    cmd = [*prefix, "-failfast2", f"-t{fmt}", "-o", str(output_dir.resolve())]
     if config is not None:
         cmd.extend(["-config", str(config)])
     cmd.extend(names)
@@ -2559,16 +2559,11 @@ def render_plantuml(
                 cwd=str(work_dir),
                 env=env,
                 check=False,
-                stdout=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
                 stderr=subprocess.PIPE,
             )
-            # Preserve PlantUML's actual syntax diagnostics in failed batch logs.
-            # With -failfast2 a single bad diagram cancels every output in the batch;
-            # the last stderr line alone often says only "No diagram found".
-            detail = ((proc.stdout or b"") + b"\n" + (proc.stderr or b"")).decode(
-                "utf-8", errors="ignore"
-            ).strip().splitlines()
-            batch_reason = " | ".join(detail[-20:]) if detail else "renderer failed"
+            detail = (proc.stderr or b"").decode("utf-8", errors="ignore").strip().splitlines()
+            batch_reason = detail[-1] if detail else "renderer failed"
 
             for name in names:
                 source = work_dir / name
