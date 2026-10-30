@@ -18,6 +18,10 @@ This domain covers data platforms, streaming and AI/ML systems. Place domain-ind
 | [Workbooks and exercises](workbooks/README.md) | Practice, exercises, checklists and worked activities | 2 |
 
 
+### Enterprise Data Modeling and Database Architecture
+
+- [Documentation suite](enterprise-data-modeling/README.md): chapter guides, modeling laboratories, SQL exercises, governance scorecards, and printable Template--Blank pairs.
+
 ## Build and validate
 
 ```bash
