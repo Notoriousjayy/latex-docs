@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary assessments (31)
+## Primary assessments (35)
 
 - [architecture traceability scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/architecture-traceability-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
 - [diagram quality scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/diagram-quality-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
@@ -20,6 +20,10 @@
 - [game mechanics balance assessment template](../src/game-development/assessments/game-mechanics-balance-assessment-template.tex) — assessments · **provisional**
 - [player experience assessment template](../src/game-development/assessments/player-experience-assessment-template.tex) — assessments · **provisional**
 - [playtesting quality assessment template](../src/game-development/assessments/playtesting-quality-assessment-template.tex) — assessments · **provisional**
+- [documentation and capstone assessment scorecard template](../src/game-development/game-engine-architecture-suite/scorecards/documentation-and-capstone-assessment-scorecard-template.tex) — game-engine-architecture-suite/scorecards · **provisional**
+- [gameplay integration readiness scorecard template](../src/game-development/game-engine-architecture-suite/scorecards/gameplay-integration-readiness-scorecard-template.tex) — game-engine-architecture-suite/scorecards · **provisional**
+- [performance and memory scorecard template](../src/game-development/game-engine-architecture-suite/scorecards/performance-and-memory-scorecard-template.tex) — game-engine-architecture-suite/scorecards · **provisional**
+- [runtime architecture quality scorecard template](../src/game-development/game-engine-architecture-suite/scorecards/runtime-architecture-quality-scorecard-template.tex) — game-engine-architecture-suite/scorecards · **provisional**
 - [physics engine gap analysis production library](../src/game-development/physics-engines/physics-engine-gap-analysis-production-library.tex) — physics engines · **provisional**
 - [capstone assessment and rubric](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/assessments/capstone-assessment-and-rubric.tex) — algorithms · **provisional**
 - [foundations diagnostic assessment](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/assessments/foundations-diagnostic-assessment.tex) — algorithms · **provisional**

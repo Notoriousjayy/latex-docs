@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary workbooks and exercises (94)
+## Primary workbooks and exercises (99)
 
 - [concern view evidence template](../src/architecture/c4-model/documentation-suite/workbooks/concern-view-evidence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
 - [cross view correspondence template](../src/architecture/c4-model/documentation-suite/workbooks/cross-view-correspondence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
@@ -40,6 +40,11 @@
 - [spacing and easing workbook template](../src/game-development/animation-timing/workbooks/spacing-and-easing-workbook-template.tex) — animation-timing/workbooks · **provisional**
 - [walk cycle contact workbook template](../src/game-development/animation-timing/workbooks/walk-cycle-contact-workbook-template.tex) — animation-timing/workbooks · **provisional**
 - [walk runs and interruptibility problem set](../src/game-development/animation-timing/workbooks/walk-runs-and-interruptibility-problem-set.tex) — animation-timing/workbooks · **provisional**
+- [memory allocator benchmark workbook template](../src/game-development/game-engine-architecture-suite/workbooks/memory-allocator-benchmark-workbook-template.tex) — game-engine-architecture-suite/workbooks · **provisional**
+- [parallel jobs and race analysis workbook template](../src/game-development/game-engine-architecture-suite/workbooks/parallel-jobs-and-race-analysis-workbook-template.tex) — game-engine-architecture-suite/workbooks · **provisional**
+- [physics audio integration workbook template](../src/game-development/game-engine-architecture-suite/workbooks/physics-audio-integration-workbook-template.tex) — game-engine-architecture-suite/workbooks · **provisional**
+- [render and animation workbook template](../src/game-development/game-engine-architecture-suite/workbooks/render-and-animation-workbook-template.tex) — game-engine-architecture-suite/workbooks · **provisional**
+- [simulation timestep workbook template](../src/game-development/game-engine-architecture-suite/workbooks/simulation-timestep-workbook-template.tex) — game-engine-architecture-suite/workbooks · **provisional**
 - [adaptive challenge laboratory](../src/game-development/laboratories/adaptive-challenge-laboratory.tex) — laboratories · **provisional**
 - [combat expected value laboratory](../src/game-development/laboratories/combat-expected-value-laboratory.tex) — laboratories · **provisional**
 - [deterministic replay laboratory](../src/game-development/laboratories/deterministic-replay-laboratory.tex) — laboratories · **provisional**

@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (632)
+## Primary technical references (643)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -388,6 +388,17 @@
 - [timing frame rates and exposure](../src/game-development/animation-timing/technical-references/timing-frame-rates-and-exposure.tex) — animation-timing/technical-references · **provisional**
 - [ai assisted sprite generation pipeline](../src/game-development/asset-pipelines/ai-assisted-sprite-generation-pipeline.tex) — asset pipelines · **provisional**
 - [ai driven 3d model generation technical games](../src/game-development/asset-pipelines/ai-driven-3d-model-generation-technical-games.tex) — asset pipelines · **provisional**
+- [allocator and data layout](../src/game-development/game-engine-architecture-suite/benchmarking/allocator-and-data-layout.tex) — game-engine-architecture-suite/benchmarking · **provisional**
+- [frame pacing and real time budget](../src/game-development/game-engine-architecture-suite/benchmarking/frame-pacing-and-real-time-budget.tex) — game-engine-architecture-suite/benchmarking · **provisional**
+- [job scheduler scaling](../src/game-development/game-engine-architecture-suite/benchmarking/job-scheduler-scaling.tex) — game-engine-architecture-suite/benchmarking · **provisional**
+- [animation and state machines](../src/game-development/game-engine-architecture-suite/technical-references/animation-and-state-machines.tex) — game-engine-architecture-suite/technical-references · **provisional**
+- [audio and input](../src/game-development/game-engine-architecture-suite/technical-references/audio-and-input.tex) — game-engine-architecture-suite/technical-references · **provisional**
+- [engine system boundaries](../src/game-development/game-engine-architecture-suite/technical-references/engine-system-boundaries.tex) — game-engine-architecture-suite/technical-references · **provisional**
+- [gameplay object model](../src/game-development/game-engine-architecture-suite/technical-references/gameplay-object-model.tex) — game-engine-architecture-suite/technical-references · **provisional**
+- [math rendering and visibility](../src/game-development/game-engine-architecture-suite/technical-references/math-rendering-and-visibility.tex) — game-engine-architecture-suite/technical-references · **provisional**
+- [memory and resource lifetimes](../src/game-development/game-engine-architecture-suite/technical-references/memory-and-resource-lifetimes.tex) — game-engine-architecture-suite/technical-references · **provisional**
+- [physics and collision](../src/game-development/game-engine-architecture-suite/technical-references/physics-and-collision.tex) — game-engine-architecture-suite/technical-references · **provisional**
+- [simulation and concurrency](../src/game-development/game-engine-architecture-suite/technical-references/simulation-and-concurrency.tex) — game-engine-architecture-suite/technical-references · **provisional**
 - [computer graphics principles practice](../src/game-development/graphics/computer-graphics-principles-practice.tex) — graphics · **provisional**
 - [game programming pattern catalog](../src/game-development/patterns/game-programming-pattern-catalog.tex) — patterns · **provisional**
 - [game programming patterns algorithms](../src/game-development/patterns/game-programming-patterns-algorithms.tex) — patterns · **provisional**

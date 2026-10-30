@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (136)
+## Primary reusable templates (142)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -76,6 +76,12 @@
 - [character animation specification template](../src/game-development/animation-timing/templates/character-animation-specification-template.tex) — animation-timing/templates · **provisional**
 - [playtest session template](../src/game-development/animation-timing/templates/playtest-session-template.tex) — animation-timing/templates · **provisional**
 - [shot timing brief template](../src/game-development/animation-timing/templates/shot-timing-brief-template.tex) — animation-timing/templates · **provisional**
+- [asset pipeline design record template](../src/game-development/game-engine-architecture-suite/templates/asset-pipeline-design-record-template.tex) — game-engine-architecture-suite/templates · **provisional**
+- [engine architecture decision record template](../src/game-development/game-engine-architecture-suite/templates/engine-architecture-decision-record-template.tex) — game-engine-architecture-suite/templates · **provisional**
+- [engine subsystem interface record template](../src/game-development/game-engine-architecture-suite/templates/engine-subsystem-interface-record-template.tex) — game-engine-architecture-suite/templates · **provisional**
+- [game loop design record template](../src/game-development/game-engine-architecture-suite/templates/game-loop-design-record-template.tex) — game-engine-architecture-suite/templates · **provisional**
+- [gameplay object model design record template](../src/game-development/game-engine-architecture-suite/templates/gameplay-object-model-design-record-template.tex) — game-engine-architecture-suite/templates · **provisional**
+- [performance experiment plan template](../src/game-development/game-engine-architecture-suite/templates/performance-experiment-plan-template.tex) — game-engine-architecture-suite/templates · **provisional**
 - [community safety review template](../src/game-development/templates/art-of-game-design/community-safety-review-template.tex) — templates/art-of-game-design · **provisional**
 - [design to test traceability matrix template](../src/game-development/templates/art-of-game-design/design-to-test-traceability-matrix-template.tex) — templates/art-of-game-design · **provisional**
 - [game architecture description template](../src/game-development/templates/art-of-game-design/game-architecture-description-template.tex) — templates/art-of-game-design · **provisional**
