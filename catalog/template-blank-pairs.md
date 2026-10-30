@@ -10,6 +10,57 @@ A **Blank is a printable working form**, not a second instructional template. No
 
 Architecture descriptions and architecture decision records are distinct document types. Completed examples, answer keys and technical references are preserved.
 
+## Game Design: additional governed pairs
+
+The previously integrated game-design forms are registered in the central governance manifest for structural validation.
+
+| Logical ID | Family | Template | Blank |
+|---|---|---|---|
+| GAME-DESIGN-PROTOTYPE_AND_ITERATION_WORKBOOK | game-design-workbook | [Template](../src/game-development/workbooks/prototype-and-iteration-workbook-template.tex) | [Blank](../src/game-development/workbooks/prototype-and-iteration-workbook-blank.tex) |
+| GAME-DESIGN-PROBABILITY_AND_BALANCING_WORKBOOK | game-design-workbook | [Template](../src/game-development/workbooks/probability-and-balancing-workbook-template.tex) | [Blank](../src/game-development/workbooks/probability-and-balancing-workbook-blank.tex) |
+| GAME-DESIGN-MECHANICS_MODELING_WORKBOOK | game-design-workbook | [Template](../src/game-development/workbooks/mechanics-modeling-workbook-template.tex) | [Blank](../src/game-development/workbooks/mechanics-modeling-workbook-blank.tex) |
+| GAME-DESIGN-GAME_DESIGN_ARCHITECTURE_WORKBOOK | game-design-workbook | [Template](../src/game-development/workbooks/game-design-architecture-workbook-template.tex) | [Blank](../src/game-development/workbooks/game-design-architecture-workbook-blank.tex) |
+| GAME-DESIGN-PLAYER_RESEARCH_AND_PLAYTESTING_WORKBOOK | game-design-workbook | [Template](../src/game-development/workbooks/player-research-and-playtesting-workbook-template.tex) | [Blank](../src/game-development/workbooks/player-research-and-playtesting-workbook-blank.tex) |
+| GAME-DESIGN-PLAYTESTING_QUALITY_ASSESSMENT | game-design-assessment | [Template](../src/game-development/assessments/playtesting-quality-assessment-template.tex) | [Blank](../src/game-development/assessments/playtesting-quality-assessment-blank.tex) |
+| GAME-DESIGN-GAME_ARCHITECTURE_READINESS_ASSESSMENT | game-design-assessment | [Template](../src/game-development/assessments/game-architecture-readiness-assessment-template.tex) | [Blank](../src/game-development/assessments/game-architecture-readiness-assessment-blank.tex) |
+| GAME-DESIGN-GAME_MECHANICS_BALANCE_ASSESSMENT | game-design-assessment | [Template](../src/game-development/assessments/game-mechanics-balance-assessment-template.tex) | [Blank](../src/game-development/assessments/game-mechanics-balance-assessment-blank.tex) |
+| GAME-DESIGN-PLAYER_EXPERIENCE_ASSESSMENT | game-design-assessment | [Template](../src/game-development/assessments/player-experience-assessment-template.tex) | [Blank](../src/game-development/assessments/player-experience-assessment-blank.tex) |
+| GAME-DESIGN-GAME_DESIGN_DECISION_RECORD | game-design-form | [Template](../src/game-development/templates/art-of-game-design/game-design-decision-record-template.tex) | [Blank](../src/game-development/templates/art-of-game-design/game-design-decision-record-blank.tex) |
+| GAME-DESIGN-PLAYER_ACCESSIBILITY_AND_ETHICS_REVIEW | game-design-form | [Template](../src/game-development/templates/art-of-game-design/player-accessibility-and-ethics-review-template.tex) | [Blank](../src/game-development/templates/art-of-game-design/player-accessibility-and-ethics-review-blank.tex) |
+| GAME-DESIGN-GAMEPLAY_MECHANICS_SPECIFICATION | game-design-form | [Template](../src/game-development/templates/art-of-game-design/gameplay-mechanics-specification-template.tex) | [Blank](../src/game-development/templates/art-of-game-design/gameplay-mechanics-specification-blank.tex) |
+| GAME-DESIGN-PLAYTEST_OBSERVATION_AND_ISSUE_LOG | game-design-form | [Template](../src/game-development/templates/art-of-game-design/playtest-observation-and-issue-log-template.tex) | [Blank](../src/game-development/templates/art-of-game-design/playtest-observation-and-issue-log-blank.tex) |
+| GAME-DESIGN-COMMUNITY_SAFETY_REVIEW | game-design-form | [Template](../src/game-development/templates/art-of-game-design/community-safety-review-template.tex) | [Blank](../src/game-development/templates/art-of-game-design/community-safety-review-blank.tex) |
+| GAME-DESIGN-GAME_ARCHITECTURE_DESCRIPTION | game-design-form | [Template](../src/game-development/templates/art-of-game-design/game-architecture-description-template.tex) | [Blank](../src/game-development/templates/art-of-game-design/game-architecture-description-blank.tex) |
+| GAME-DESIGN-DESIGN_TO_TEST_TRACEABILITY_MATRIX | game-design-form | [Template](../src/game-development/templates/art-of-game-design/design-to-test-traceability-matrix-template.tex) | [Blank](../src/game-development/templates/art-of-game-design/design-to-test-traceability-matrix-blank.tex) |
+| GAME-DESIGN-GAME_BALANCE_EXPERIMENT | game-design-form | [Template](../src/game-development/templates/art-of-game-design/game-balance-experiment-template.tex) | [Blank](../src/game-development/templates/art-of-game-design/game-balance-experiment-blank.tex) |
+| GAME-DESIGN-PLAYTEST_SESSION_PLAN | game-design-form | [Template](../src/game-development/templates/art-of-game-design/playtest-session-plan-template.tex) | [Blank](../src/game-development/templates/art-of-game-design/playtest-session-plan-blank.tex) |
+| GAME-DESIGN-PROTOTYPE_HYPOTHESIS_AND_ITERATION_LOG | game-design-form | [Template](../src/game-development/templates/art-of-game-design/prototype-hypothesis-and-iteration-log-template.tex) | [Blank](../src/game-development/templates/art-of-game-design/prototype-hypothesis-and-iteration-log-blank.tex) |
+| GAME-DESIGN-GAME_ECONOMY_MODEL | game-design-form | [Template](../src/game-development/templates/art-of-game-design/game-economy-model-template.tex) | [Blank](../src/game-development/templates/art-of-game-design/game-economy-model-blank.tex) |
+| GAME-DESIGN-GAME_PROJECT_RETROSPECTIVE | game-design-form | [Template](../src/game-development/templates/art-of-game-design/game-project-retrospective-template.tex) | [Blank](../src/game-development/templates/art-of-game-design/game-project-retrospective-blank.tex) |
+| GAME-DESIGN-PLAYER_EXPERIENCE_JOURNEY_MAP | game-design-form | [Template](../src/game-development/templates/art-of-game-design/player-experience-journey-map-template.tex) | [Blank](../src/game-development/templates/art-of-game-design/player-experience-journey-map-blank.tex) |
+| GAME-DESIGN-GAME_CONCEPT_AND_EXPERIENCE_BRIEF | game-design-form | [Template](../src/game-development/templates/art-of-game-design/game-concept-and-experience-brief-template.tex) | [Blank](../src/game-development/templates/art-of-game-design/game-concept-and-experience-brief-blank.tex) |
+
+## Animation Timing and Game Animation Engineering
+
+The [animation timing suite](../src/game-development/animation-timing/README.md) includes 14 governed Template–Blank pairs for exposure sheets, timing, motion, character specifications, game integration, playtesting, and assessment. Printable Blanks contain empty response areas.
+
+| Logical ID | Family | Template | Blank |
+|---|---|---|---|
+| GAME-ANIM-01 | animation-workbook | [Template](../src/game-development/animation-timing/workbooks/frame-rate-conversion-workbook-template.tex) | [Blank](../src/game-development/animation-timing/workbooks/frame-rate-conversion-workbook-blank.tex) |
+| GAME-ANIM-02 | animation-workbook | [Template](../src/game-development/animation-timing/workbooks/exposure-sheet-workbook-template.tex) | [Blank](../src/game-development/animation-timing/workbooks/exposure-sheet-workbook-blank.tex) |
+| GAME-ANIM-03 | animation-workbook | [Template](../src/game-development/animation-timing/workbooks/spacing-and-easing-workbook-template.tex) | [Blank](../src/game-development/animation-timing/workbooks/spacing-and-easing-workbook-blank.tex) |
+| GAME-ANIM-04 | animation-workbook | [Template](../src/game-development/animation-timing/workbooks/physics-and-weight-workbook-template.tex) | [Blank](../src/game-development/animation-timing/workbooks/physics-and-weight-workbook-blank.tex) |
+| GAME-ANIM-05 | animation-workbook | [Template](../src/game-development/animation-timing/workbooks/walk-cycle-contact-workbook-template.tex) | [Blank](../src/game-development/animation-timing/workbooks/walk-cycle-contact-workbook-blank.tex) |
+| GAME-ANIM-06 | animation-workbook | [Template](../src/game-development/animation-timing/workbooks/lip-sync-and-music-workbook-template.tex) | [Blank](../src/game-development/animation-timing/workbooks/lip-sync-and-music-workbook-blank.tex) |
+| GAME-ANIM-07 | animation-production-form | [Template](../src/game-development/animation-timing/templates/shot-timing-brief-template.tex) | [Blank](../src/game-development/animation-timing/templates/shot-timing-brief-blank.tex) |
+| GAME-ANIM-08 | animation-production-form | [Template](../src/game-development/animation-timing/templates/character-animation-specification-template.tex) | [Blank](../src/game-development/animation-timing/templates/character-animation-specification-blank.tex) |
+| GAME-ANIM-09 | animation-production-form | [Template](../src/game-development/animation-timing/templates/animation-state-machine-specification-template.tex) | [Blank](../src/game-development/animation-timing/templates/animation-state-machine-specification-blank.tex) |
+| GAME-ANIM-10 | animation-production-form | [Template](../src/game-development/animation-timing/templates/animation-asset-handoff-template.tex) | [Blank](../src/game-development/animation-timing/templates/animation-asset-handoff-blank.tex) |
+| GAME-ANIM-11 | animation-production-form | [Template](../src/game-development/animation-timing/templates/playtest-session-template.tex) | [Blank](../src/game-development/animation-timing/templates/playtest-session-blank.tex) |
+| GAME-ANIM-12 | animation-quality-scorecard | [Template](../src/game-development/animation-timing/scorecards/animation-timing-scorecard-template.tex) | [Blank](../src/game-development/animation-timing/scorecards/animation-timing-scorecard-blank.tex) |
+| GAME-ANIM-13 | animation-quality-scorecard | [Template](../src/game-development/animation-timing/scorecards/game-animation-engineering-scorecard-template.tex) | [Blank](../src/game-development/animation-timing/scorecards/game-animation-engineering-scorecard-blank.tex) |
+| GAME-ANIM-14 | animation-quality-scorecard | [Template](../src/game-development/animation-timing/scorecards/animation-accessibility-and-playtest-scorecard-template.tex) | [Blank](../src/game-development/animation-timing/scorecards/animation-accessibility-and-playtest-scorecard-blank.tex) |
+
 ## Enterprise discovery implementation suite
 
 [GitHub Actions Architecture Discovery suite](../src/architecture/github-actions-discovery-suite.md) includes an unchanged technical reference, a project-specific Architecture Description and Viewpoint Specification, and two phase/evidence workbooks. The four paired guided Templates and print-ready Blanks are listed above. Unlike an architecture description, an ADR records one bounded decision; unlike an architecture view, a viewpoint specification defines reusable construction and interpretation conventions.

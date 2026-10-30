@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary study guides (163)
+## Primary study guides (283)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -61,6 +61,126 @@
 - [study plan nginx cookbook 3rd edition user](../src/devops/platform/nginx/study-plan-nginx-cookbook-3rd-edition-user.tex) — platform/nginx · **provisional**
 - [study plan nginx cookbook derek dejonghe user](../src/devops/platform/nginx/study-plan-nginx-cookbook-derek-dejonghe-user.tex) — platform/nginx · **provisional**
 - [the art of electronics curriculum](../src/electronics/study-guides/the-art-of-electronics-curriculum.tex) — electronics · **provisional**
+- [chapter to competency and evidence crosswalk](../src/game-development/animation-timing/curricula/chapter-to-competency-and-evidence-crosswalk.tex) — animation-timing/curricula · **provisional**
+- [prerequisite based 16 week curriculum](../src/game-development/animation-timing/curricula/prerequisite-based-16-week-curriculum.tex) — animation-timing/curricula · **provisional**
+- [chapter 01 timing for broadcast media](../src/game-development/animation-timing/study-guides/chapter-01-timing-for-broadcast-media.tex) — animation-timing/study-guides · **provisional**
+- [chapter 02 what is good timing](../src/game-development/animation-timing/study-guides/chapter-02-what-is-good-timing.tex) — animation-timing/study-guides · **provisional**
+- [chapter 03 the storyboard](../src/game-development/animation-timing/study-guides/chapter-03-the-storyboard.tex) — animation-timing/study-guides · **provisional**
+- [chapter 04 traditional storyboards](../src/game-development/animation-timing/study-guides/chapter-04-traditional-storyboards.tex) — animation-timing/study-guides · **provisional**
+- [chapter 05 digital storyboarding](../src/game-development/animation-timing/study-guides/chapter-05-digital-storyboarding.tex) — animation-timing/study-guides · **provisional**
+- [chapter 06 additional storyboard effects](../src/game-development/animation-timing/study-guides/chapter-06-additional-storyboard-effects.tex) — animation-timing/study-guides · **provisional**
+- [chapter 07 responsibility of the director](../src/game-development/animation-timing/study-guides/chapter-07-responsibility-of-the-director.tex) — animation-timing/study-guides · **provisional**
+- [chapter 08 directing for interactive games](../src/game-development/animation-timing/study-guides/chapter-08-directing-for-interactive-games.tex) — animation-timing/study-guides · **provisional**
+- [chapter 09 the basic unit of time in animation](../src/game-development/animation-timing/study-guides/chapter-09-the-basic-unit-of-time-in-animation.tex) — animation-timing/study-guides · **provisional**
+- [chapter 10 timing for television web based programming vs timing for](../src/game-development/animation-timing/study-guides/chapter-10-timing-for-television-web-based-programming-vs-timing-for.tex) — animation-timing/study-guides · **provisional**
+- [chapter 11 slugging](../src/game-development/animation-timing/study-guides/chapter-11-slugging.tex) — animation-timing/study-guides · **provisional**
+- [chapter 12 bar sheets](../src/game-development/animation-timing/study-guides/chapter-12-bar-sheets.tex) — animation-timing/study-guides · **provisional**
+- [chapter 13 timing for a hand drawn film exposure charts or exposure ](../src/game-development/animation-timing/study-guides/chapter-13-timing-for-a-hand-drawn-film-exposure-charts-or-exposure-.tex) — animation-timing/study-guides · **provisional**
+- [chapter 14 timing for an overseas production](../src/game-development/animation-timing/study-guides/chapter-14-timing-for-an-overseas-production.tex) — animation-timing/study-guides · **provisional**
+- [chapter 15 timing for a 2d digital production](../src/game-development/animation-timing/study-guides/chapter-15-timing-for-a-2d-digital-production.tex) — animation-timing/study-guides · **provisional**
+- [chapter 16 timing for a 3d digital production](../src/game-development/animation-timing/study-guides/chapter-16-timing-for-a-3d-digital-production.tex) — animation-timing/study-guides · **provisional**
+- [chapter 17 timing for an actor based program performance or motion c](../src/game-development/animation-timing/study-guides/chapter-17-timing-for-an-actor-based-program-performance-or-motion-c.tex) — animation-timing/study-guides · **provisional**
+- [chapter 18 animation and properties of matter](../src/game-development/animation-timing/study-guides/chapter-18-animation-and-properties-of-matter.tex) — animation-timing/study-guides · **provisional**
+- [chapter 19 movement and caricature](../src/game-development/animation-timing/study-guides/chapter-19-movement-and-caricature.tex) — animation-timing/study-guides · **provisional**
+- [chapter 20 cause and effect](../src/game-development/animation-timing/study-guides/chapter-20-cause-and-effect.tex) — animation-timing/study-guides · **provisional**
+- [chapter 21 newtons laws of motion](../src/game-development/animation-timing/study-guides/chapter-21-newtons-laws-of-motion.tex) — animation-timing/study-guides · **provisional**
+- [chapter 22 objects thrown through the air](../src/game-development/animation-timing/study-guides/chapter-22-objects-thrown-through-the-air.tex) — animation-timing/study-guides · **provisional**
+- [chapter 23 timing of inanimate objects](../src/game-development/animation-timing/study-guides/chapter-23-timing-of-inanimate-objects.tex) — animation-timing/study-guides · **provisional**
+- [chapter 24 rotating objects](../src/game-development/animation-timing/study-guides/chapter-24-rotating-objects.tex) — animation-timing/study-guides · **provisional**
+- [chapter 25 force transmitted through a flexible joint](../src/game-development/animation-timing/study-guides/chapter-25-force-transmitted-through-a-flexible-joint.tex) — animation-timing/study-guides · **provisional**
+- [chapter 26 force transmitted through jointed limbs](../src/game-development/animation-timing/study-guides/chapter-26-force-transmitted-through-jointed-limbs.tex) — animation-timing/study-guides · **provisional**
+- [chapter 27 spacing of drawings general remarks](../src/game-development/animation-timing/study-guides/chapter-27-spacing-of-drawings-general-remarks.tex) — animation-timing/study-guides · **provisional**
+- [chapter 28 spacing of drawings](../src/game-development/animation-timing/study-guides/chapter-28-spacing-of-drawings.tex) — animation-timing/study-guides · **provisional**
+- [chapter 29 timing a slow action](../src/game-development/animation-timing/study-guides/chapter-29-timing-a-slow-action.tex) — animation-timing/study-guides · **provisional**
+- [chapter 30 timing a fast action](../src/game-development/animation-timing/study-guides/chapter-30-timing-a-fast-action.tex) — animation-timing/study-guides · **provisional**
+- [chapter 31 getting into and out of holds](../src/game-development/animation-timing/study-guides/chapter-31-getting-into-and-out-of-holds.tex) — animation-timing/study-guides · **provisional**
+- [chapter 32 single frames or double frames ones or twos](../src/game-development/animation-timing/study-guides/chapter-32-single-frames-or-double-frames-ones-or-twos.tex) — animation-timing/study-guides · **provisional**
+- [chapter 33 how long to hold](../src/game-development/animation-timing/study-guides/chapter-33-how-long-to-hold.tex) — animation-timing/study-guides · **provisional**
+- [chapter 34 anticipation](../src/game-development/animation-timing/study-guides/chapter-34-anticipation.tex) — animation-timing/study-guides · **provisional**
+- [chapter 35 follow through](../src/game-development/animation-timing/study-guides/chapter-35-follow-through.tex) — animation-timing/study-guides · **provisional**
+- [chapter 36 overlapping action](../src/game-development/animation-timing/study-guides/chapter-36-overlapping-action.tex) — animation-timing/study-guides · **provisional**
+- [chapter 37 timing an oscillating movement](../src/game-development/animation-timing/study-guides/chapter-37-timing-an-oscillating-movement.tex) — animation-timing/study-guides · **provisional**
+- [chapter 38 timing to suggest weight and force 1](../src/game-development/animation-timing/study-guides/chapter-38-timing-to-suggest-weight-and-force-1.tex) — animation-timing/study-guides · **provisional**
+- [chapter 39 timing to suggest weight and force 2](../src/game-development/animation-timing/study-guides/chapter-39-timing-to-suggest-weight-and-force-2.tex) — animation-timing/study-guides · **provisional**
+- [chapter 40 timing to suggest weight and force 3](../src/game-development/animation-timing/study-guides/chapter-40-timing-to-suggest-weight-and-force-3.tex) — animation-timing/study-guides · **provisional**
+- [chapter 41 timing to suggest weight and force 4](../src/game-development/animation-timing/study-guides/chapter-41-timing-to-suggest-weight-and-force-4.tex) — animation-timing/study-guides · **provisional**
+- [chapter 42 timing to suggest force repeat action](../src/game-development/animation-timing/study-guides/chapter-42-timing-to-suggest-force-repeat-action.tex) — animation-timing/study-guides · **provisional**
+- [chapter 43 character reactions and takes](../src/game-development/animation-timing/study-guides/chapter-43-character-reactions-and-takes.tex) — animation-timing/study-guides · **provisional**
+- [chapter 44 timing to give a feeling of size](../src/game-development/animation-timing/study-guides/chapter-44-timing-to-give-a-feeling-of-size.tex) — animation-timing/study-guides · **provisional**
+- [chapter 45 the effects of friction air resistance and wind](../src/game-development/animation-timing/study-guides/chapter-45-the-effects-of-friction-air-resistance-and-wind.tex) — animation-timing/study-guides · **provisional**
+- [chapter 46 timing cycles how long a repeat](../src/game-development/animation-timing/study-guides/chapter-46-timing-cycles-how-long-a-repeat.tex) — animation-timing/study-guides · **provisional**
+- [chapter 47 scenes with multiple characters](../src/game-development/animation-timing/study-guides/chapter-47-scenes-with-multiple-characters.tex) — animation-timing/study-guides · **provisional**
+- [chapter 48 digital crowds massive](../src/game-development/animation-timing/study-guides/chapter-48-digital-crowds-massive.tex) — animation-timing/study-guides · **provisional**
+- [chapter 49 effects animation flames and smoke](../src/game-development/animation-timing/study-guides/chapter-49-effects-animation-flames-and-smoke.tex) — animation-timing/study-guides · **provisional**
+- [chapter 50 water](../src/game-development/animation-timing/study-guides/chapter-50-water.tex) — animation-timing/study-guides · **provisional**
+- [chapter 51 rain](../src/game-development/animation-timing/study-guides/chapter-51-rain.tex) — animation-timing/study-guides · **provisional**
+- [chapter 52 snow](../src/game-development/animation-timing/study-guides/chapter-52-snow.tex) — animation-timing/study-guides · **provisional**
+- [chapter 53 explosions](../src/game-development/animation-timing/study-guides/chapter-53-explosions.tex) — animation-timing/study-guides · **provisional**
+- [chapter 54 repeat movements of inanimate objects](../src/game-development/animation-timing/study-guides/chapter-54-repeat-movements-of-inanimate-objects.tex) — animation-timing/study-guides · **provisional**
+- [chapter 55 timing a walk](../src/game-development/animation-timing/study-guides/chapter-55-timing-a-walk.tex) — animation-timing/study-guides · **provisional**
+- [chapter 56 types of walk](../src/game-development/animation-timing/study-guides/chapter-56-types-of-walk.tex) — animation-timing/study-guides · **provisional**
+- [chapter 57 spacing of drawings in perspective animation](../src/game-development/animation-timing/study-guides/chapter-57-spacing-of-drawings-in-perspective-animation.tex) — animation-timing/study-guides · **provisional**
+- [chapter 58 timing animals movements horses](../src/game-development/animation-timing/study-guides/chapter-58-timing-animals-movements-horses.tex) — animation-timing/study-guides · **provisional**
+- [chapter 59 timing animals movements other quadrupeds](../src/game-development/animation-timing/study-guides/chapter-59-timing-animals-movements-other-quadrupeds.tex) — animation-timing/study-guides · **provisional**
+- [chapter 60 timing an animals gallop](../src/game-development/animation-timing/study-guides/chapter-60-timing-an-animals-gallop.tex) — animation-timing/study-guides · **provisional**
+- [chapter 61 bird flight](../src/game-development/animation-timing/study-guides/chapter-61-bird-flight.tex) — animation-timing/study-guides · **provisional**
+- [chapter 62 drybrush speed lines and motion blur](../src/game-development/animation-timing/study-guides/chapter-62-drybrush-speed-lines-and-motion-blur.tex) — animation-timing/study-guides · **provisional**
+- [chapter 63 accentuating a movement](../src/game-development/animation-timing/study-guides/chapter-63-accentuating-a-movement.tex) — animation-timing/study-guides · **provisional**
+- [chapter 64 strobing](../src/game-development/animation-timing/study-guides/chapter-64-strobing.tex) — animation-timing/study-guides · **provisional**
+- [chapter 65 fast run cycles](../src/game-development/animation-timing/study-guides/chapter-65-fast-run-cycles.tex) — animation-timing/study-guides · **provisional**
+- [chapter 66 characterization acting](../src/game-development/animation-timing/study-guides/chapter-66-characterization-acting.tex) — animation-timing/study-guides · **provisional**
+- [chapter 67 the use of timing to suggest mood](../src/game-development/animation-timing/study-guides/chapter-67-the-use-of-timing-to-suggest-mood.tex) — animation-timing/study-guides · **provisional**
+- [chapter 68 synchronizing animation to speech](../src/game-development/animation-timing/study-guides/chapter-68-synchronizing-animation-to-speech.tex) — animation-timing/study-guides · **provisional**
+- [chapter 69 lip sync 1](../src/game-development/animation-timing/study-guides/chapter-69-lip-sync-1.tex) — animation-timing/study-guides · **provisional**
+- [chapter 70 lip sync 2](../src/game-development/animation-timing/study-guides/chapter-70-lip-sync-2.tex) — animation-timing/study-guides · **provisional**
+- [chapter 71 lip sync 3](../src/game-development/animation-timing/study-guides/chapter-71-lip-sync-3.tex) — animation-timing/study-guides · **provisional**
+- [chapter 72 timing and music](../src/game-development/animation-timing/study-guides/chapter-72-timing-and-music.tex) — animation-timing/study-guides · **provisional**
+- [chapter 73 animating for interactive games](../src/game-development/animation-timing/study-guides/chapter-73-animating-for-interactive-games.tex) — animation-timing/study-guides · **provisional**
+- [chapter 74 traditional camera movements](../src/game-development/animation-timing/study-guides/chapter-74-traditional-camera-movements.tex) — animation-timing/study-guides · **provisional**
+- [chapter 75 3d camera moves](../src/game-development/animation-timing/study-guides/chapter-75-3d-camera-moves.tex) — animation-timing/study-guides · **provisional**
+- [chapter 76 peg movements in traditional animation](../src/game-development/animation-timing/study-guides/chapter-76-peg-movements-in-traditional-animation.tex) — animation-timing/study-guides · **provisional**
+- [chapter 77 peg movements in 3d animation](../src/game-development/animation-timing/study-guides/chapter-77-peg-movements-in-3d-animation.tex) — animation-timing/study-guides · **provisional**
+- [chapter 78 editing animation](../src/game-development/animation-timing/study-guides/chapter-78-editing-animation.tex) — animation-timing/study-guides · **provisional**
+- [chapter 79 editing for feature films](../src/game-development/animation-timing/study-guides/chapter-79-editing-for-feature-films.tex) — animation-timing/study-guides · **provisional**
+- [chapter 80 editing for childrens programming](../src/game-development/animation-timing/study-guides/chapter-80-editing-for-childrens-programming.tex) — animation-timing/study-guides · **provisional**
+- [chapter 81 editing for internet programs](../src/game-development/animation-timing/study-guides/chapter-81-editing-for-internet-programs.tex) — animation-timing/study-guides · **provisional**
+- [chapter 82 conclusion](../src/game-development/animation-timing/study-guides/chapter-82-conclusion.tex) — animation-timing/study-guides · **provisional**
+- [game design engineering learning path](../src/game-development/curricula/game-design-engineering-learning-path.tex) — curricula · **provisional**
+- [chapter 01 in the beginning there is the designer](../src/game-development/study-guides/art-of-game-design/chapter-01-in-the-beginning-there-is-the-designer.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 02 the designer creates an experience](../src/game-development/study-guides/art-of-game-design/chapter-02-the-designer-creates-an-experience.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 03 the experience takes place in a venue](../src/game-development/study-guides/art-of-game-design/chapter-03-the-experience-takes-place-in-a-venue.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 04 the experience rises out of a game](../src/game-development/study-guides/art-of-game-design/chapter-04-the-experience-rises-out-of-a-game.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 05 the game consists of elements](../src/game-development/study-guides/art-of-game-design/chapter-05-the-game-consists-of-elements.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 06 the elements support a theme](../src/game-development/study-guides/art-of-game-design/chapter-06-the-elements-support-a-theme.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 07 the game begins with an idea](../src/game-development/study-guides/art-of-game-design/chapter-07-the-game-begins-with-an-idea.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 08 the game improves through iteration](../src/game-development/study-guides/art-of-game-design/chapter-08-the-game-improves-through-iteration.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 09 the game is made for a player](../src/game-development/study-guides/art-of-game-design/chapter-09-the-game-is-made-for-a-player.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 10 the experience is in the player s mind](../src/game-development/study-guides/art-of-game-design/chapter-10-the-experience-is-in-the-player-s-mind.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 11 the player s mind is driven by the player s motivation](../src/game-development/study-guides/art-of-game-design/chapter-11-the-player-s-mind-is-driven-by-the-player-s-motivation.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 12 some elements are game mechanics](../src/game-development/study-guides/art-of-game-design/chapter-12-some-elements-are-game-mechanics.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 13 game mechanics must be in balance](../src/game-development/study-guides/art-of-game-design/chapter-13-game-mechanics-must-be-in-balance.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 14 game mechanics support puzzles](../src/game-development/study-guides/art-of-game-design/chapter-14-game-mechanics-support-puzzles.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 15 players play games through an interface](../src/game-development/study-guides/art-of-game-design/chapter-15-players-play-games-through-an-interface.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 16 experiences can be judged by their interest curves](../src/game-development/study-guides/art-of-game-design/chapter-16-experiences-can-be-judged-by-their-interest-curves.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 17 one kind of experience is the story](../src/game-development/study-guides/art-of-game-design/chapter-17-one-kind-of-experience-is-the-story.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 18 story and game structures can be artfully merged with indirect control](../src/game-development/study-guides/art-of-game-design/chapter-18-story-and-game-structures-can-be-artfully-merged-with-indirect-control.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 19 stories and games take place in worlds](../src/game-development/study-guides/art-of-game-design/chapter-19-stories-and-games-take-place-in-worlds.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 20 worlds contain characters](../src/game-development/study-guides/art-of-game-design/chapter-20-worlds-contain-characters.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 21 worlds contain spaces](../src/game-development/study-guides/art-of-game-design/chapter-21-worlds-contain-spaces.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 22 some interfaces create a feeling of presence](../src/game-development/study-guides/art-of-game-design/chapter-22-some-interfaces-create-a-feeling-of-presence.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 23 the look and feel of a world is defined by its aesthetics](../src/game-development/study-guides/art-of-game-design/chapter-23-the-look-and-feel-of-a-world-is-defined-by-its-aesthetics.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 24 some games are played with other players](../src/game-development/study-guides/art-of-game-design/chapter-24-some-games-are-played-with-other-players.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 25 other players sometimes form communities](../src/game-development/study-guides/art-of-game-design/chapter-25-other-players-sometimes-form-communities.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 26 the designer usually works with a team](../src/game-development/study-guides/art-of-game-design/chapter-26-the-designer-usually-works-with-a-team.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 27 the team sometimes communicates through documents](../src/game-development/study-guides/art-of-game-design/chapter-27-the-team-sometimes-communicates-through-documents.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 28 good games are created through playtesting](../src/game-development/study-guides/art-of-game-design/chapter-28-good-games-are-created-through-playtesting.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 29 the team builds a game with technology](../src/game-development/study-guides/art-of-game-design/chapter-29-the-team-builds-a-game-with-technology.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 30 your game will probably have a client](../src/game-development/study-guides/art-of-game-design/chapter-30-your-game-will-probably-have-a-client.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 31 the designer gives the client a pitch](../src/game-development/study-guides/art-of-game-design/chapter-31-the-designer-gives-the-client-a-pitch.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 32 the designer and client want the game to make a profit](../src/game-development/study-guides/art-of-game-design/chapter-32-the-designer-and-client-want-the-game-to-make-a-profit.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 33 games transform their players](../src/game-development/study-guides/art-of-game-design/chapter-33-games-transform-their-players.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 34 designers have certain responsibilities](../src/game-development/study-guides/art-of-game-design/chapter-34-designers-have-certain-responsibilities.tex) — study-guides/art-of-game-design · **provisional**
+- [chapter 35 each designer has a purpose](../src/game-development/study-guides/art-of-game-design/chapter-35-each-designer-has-a-purpose.tex) — study-guides/art-of-game-design · **provisional**
 - [study plan computer animation 3rd edition user](../src/game-development/study-guides/study-plan-computer-animation-3rd-edition-user.tex) — game development · **provisional**
 - [study plan computational geometry c cards](../src/mathematics/study-guides/study-plan-computational-geometry-c-cards.tex) — mathematics · **provisional**
 - [study plan computational geometry c expanded](../src/mathematics/study-guides/study-plan-computational-geometry-c-expanded.tex) — mathematics · **provisional**

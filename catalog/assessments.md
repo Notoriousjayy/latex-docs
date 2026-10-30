@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary assessments (24)
+## Primary assessments (31)
 
 - [architecture traceability scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/architecture-traceability-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
 - [diagram quality scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/diagram-quality-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
@@ -13,6 +13,13 @@
 - [architecture view completeness template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Architecture_View_Completeness_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
 - [documentation review readiness template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Documentation_Review_Readiness_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
 - [traceability and change readiness template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Traceability_and_Change_Readiness_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
+- [animation accessibility and playtest scorecard template](../src/game-development/animation-timing/scorecards/animation-accessibility-and-playtest-scorecard-template.tex) — animation-timing/scorecards · **provisional**
+- [animation timing scorecard template](../src/game-development/animation-timing/scorecards/animation-timing-scorecard-template.tex) — animation-timing/scorecards · **provisional**
+- [game animation engineering scorecard template](../src/game-development/animation-timing/scorecards/game-animation-engineering-scorecard-template.tex) — animation-timing/scorecards · **provisional**
+- [game architecture readiness assessment template](../src/game-development/assessments/game-architecture-readiness-assessment-template.tex) — assessments · **provisional**
+- [game mechanics balance assessment template](../src/game-development/assessments/game-mechanics-balance-assessment-template.tex) — assessments · **provisional**
+- [player experience assessment template](../src/game-development/assessments/player-experience-assessment-template.tex) — assessments · **provisional**
+- [playtesting quality assessment template](../src/game-development/assessments/playtesting-quality-assessment-template.tex) — assessments · **provisional**
 - [physics engine gap analysis production library](../src/game-development/physics-engines/physics-engine-gap-analysis-production-library.tex) — physics engines · **provisional**
 - [capstone assessment and rubric](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/assessments/capstone-assessment-and-rubric.tex) — algorithms · **provisional**
 - [foundations diagnostic assessment](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/assessments/foundations-diagnostic-assessment.tex) — algorithms · **provisional**

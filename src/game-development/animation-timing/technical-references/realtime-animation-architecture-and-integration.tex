@@ -1,0 +1,45 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage{technical-implementation}
+\setDocTitle{Realtime Animation Architecture and Integration}
+\setDocSubtitle{Technical reference | supplementary engineering with book crosswalk}
+\setDocVersion{1.0}
+\setDocStatus{Educational / Draft}
+\setDocOwner{Game Development}
+\setDocDate{2026-10-30}
+\setDocSummary{Technical reference | supplementary engineering with book crosswalk}
+\begin{document}
+\makedoctitle
+\makedocsummary
+\tableofcontents\clearpage
+
+\section{Book-to-engine translation}
+Chapters 7--8, 15--17, 73--81 motivate director/animator handoffs, digital production and interactive animation. This document specifies a supplementary real-time engineering architecture, not a software architecture described in the book.
+\section{Runtime components and ownership}
+\begin{enumerate}
+\item \textbf{Input and game rules:} report intent, ability permissions and cancellations.
+\item \textbf{Animation state machine:} choose valid states and transitions, including interruption windows and transition priority.
+\item \textbf{Clip player:} sample pose curves at authored time and perform clip looping.
+\item \textbf{Blend and retarget layer:} blend compatible poses with explicit weights and coordinate conventions.
+\item \textbf{Contact and root-motion reconciler:} align visual feet with world contacts and enforce one displacement owner.
+\item \textbf{Render integration:} consume interpolated pose after fixed-step state advancement.
+\item \textbf{Telemetry and test harness:} expose clip ID, state, normalized time, transition cause, contact drift and time spent evaluating.
+\end{enumerate}
+\section{Data contracts}
+Clip metadata: immutable clip ID, skeleton or sprite rig ID, sample timebase, duration, looping policy, event markers, root track, marker namespace and content version. Transition metadata: source, destination, predicate, priority, minimum exit time, cross-fade seconds and interruption policy. Log transitions with monotonic simulation tick numbers.
+\section{Invariants}
+State transitions are validated before pose sampling. No blend weights are negative or non-finite; normalized weights sum to one within tolerance. A non-looping clip reaches its terminal boundary exactly once. An event with an absolute clip time crossing a wrap boundary fires according to explicit event policy, never an accidental frame-time equality comparison.
+\section{Sample state chart}
+\begin{verbatim}
+Idle --(speed > eps)--> Locomotion
+Locomotion --(speed <= eps)--> Idle
+Idle/Locomotion --(attack_allowed)--> AttackStartup
+AttackStartup --(marker: active)--> AttackActive
+AttackActive --(marker: recover)--> AttackRecovery
+AttackRecovery --(finished)--> Idle or Locomotion
+Any --(death; highest priority)--> Dead
+\end{verbatim}
+\section{Cross-engine integration checklist}
+Godot: AnimationTree/AnimationPlayer with declared state and root-motion handling. Unity: Animator graphs and Playables where appropriate; clarify update mode and physics sync. Unreal: Anim Blueprint/state machines, montages, and root-motion settings; coordinate movement component authority. The names are illustrative integration targets; verify exact APIs against the target engine version before deployment.
+\section{Quality gates}
+Measure transition latency, visual discontinuity at blend boundaries, foot-sliding distance, CPU time per animated entity, memory used per rig/clip and animation event duplication. Record platform, engine build, test scene and release criteria.
+\end{document}

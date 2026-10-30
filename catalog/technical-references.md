@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (618)
+## Primary technical references (632)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -379,6 +379,13 @@
 - [orange pi zero engineering guide](../src/electronics/technical-documents/orange-pi-zero-engineering-guide.tex) — electronics · **provisional**
 - [the art of electronics x chapters lab course](../src/electronics/workbooks/the-art-of-electronics-x-chapters-lab-course.tex) — electronics · **provisional**
 - [ai for games algorithms pseudocode handout](../src/game-development/ai/ai-for-games-algorithms-pseudocode-handout.tex) — ai · **provisional**
+- [capstone a timed character performance](../src/game-development/animation-timing/projects/capstone-a-timed-character-performance.tex) — animation-timing/projects · **provisional**
+- [capstone b playable character controller](../src/game-development/animation-timing/projects/capstone-b-playable-character-controller.tex) — animation-timing/projects · **provisional**
+- [capstone c cinematic and gameplay hybrid](../src/game-development/animation-timing/projects/capstone-c-cinematic-and-gameplay-hybrid.tex) — animation-timing/projects · **provisional**
+- [game motion dynamics and numerics](../src/game-development/animation-timing/technical-references/game-motion-dynamics-and-numerics.tex) — animation-timing/technical-references · **provisional**
+- [realtime animation architecture and integration](../src/game-development/animation-timing/technical-references/realtime-animation-architecture-and-integration.tex) — animation-timing/technical-references · **provisional**
+- [spacing poses easing and cycles](../src/game-development/animation-timing/technical-references/spacing-poses-easing-and-cycles.tex) — animation-timing/technical-references · **provisional**
+- [timing frame rates and exposure](../src/game-development/animation-timing/technical-references/timing-frame-rates-and-exposure.tex) — animation-timing/technical-references · **provisional**
 - [ai assisted sprite generation pipeline](../src/game-development/asset-pipelines/ai-assisted-sprite-generation-pipeline.tex) — asset pipelines · **provisional**
 - [ai driven 3d model generation technical games](../src/game-development/asset-pipelines/ai-driven-3d-model-generation-technical-games.tex) — asset pipelines · **provisional**
 - [computer graphics principles practice](../src/game-development/graphics/computer-graphics-principles-practice.tex) — graphics · **provisional**
@@ -387,6 +394,13 @@
 - [fluid simulation algorithms pseudocode handout](../src/game-development/physics-engines/fluid-simulation-algorithms-pseudocode-handout.tex) — physics engines · **provisional**
 - [game physics algorithms pseudocode handout](../src/game-development/physics-engines/game-physics-algorithms-pseudocode-handout.tex) — physics engines · **provisional**
 - [real time collision detection algorithms](../src/game-development/physics-engines/real-time-collision-detection-algorithms.tex) — physics engines · **provisional**
+- [formal game mechanics reference](../src/game-development/technical-references/formal-game-mechanics-reference.tex) — technical-references · **provisional**
+- [game design concepts and lenses reference](../src/game-development/technical-references/game-design-concepts-and-lenses-reference.tex) — technical-references · **provisional**
+- [game design traceability reference](../src/game-development/technical-references/game-design-traceability-reference.tex) — technical-references · **provisional**
+- [game systems engineering reference](../src/game-development/technical-references/game-systems-engineering-reference.tex) — technical-references · **provisional**
+- [player experience measurement reference](../src/game-development/technical-references/player-experience-measurement-reference.tex) — technical-references · **provisional**
+- [quantitative game balancing reference](../src/game-development/technical-references/quantitative-game-balancing-reference.tex) — technical-references · **provisional**
+- [schell lens index and review crosswalk](../src/game-development/technical-references/schell-lens-index-and-review-crosswalk.tex) — technical-references · **provisional**
 - [how matrices polynomials relate algebraic ops](../src/mathematics/algebra/how-matrices-polynomials-relate-algebraic-ops.tex) — algebra · **provisional**
 - [polynomial data structures in c and cpp](../src/mathematics/algebra/polynomial-data-structures-in-c-and-cpp.tex) — algebra · **provisional**
 - [01 mathematical foundations](../src/mathematics/differential-equations/01-mathematical-foundations.tex) — differential equations · **provisional**

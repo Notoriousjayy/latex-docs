@@ -1,0 +1,51 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage{technical-design-spec}
+\setDocTitle{Real Time Character Animation Architecture}
+\setDocSubtitle{Animation architecture and verification specification}
+\setDocVersion{1.0}
+\setDocStatus{Educational / Draft}
+\setDocOwner{Game Development}
+\setDocDate{2026-10-30}
+\setDocSummary{Animation architecture and verification specification}
+\begin{document}
+\makedoctitle
+\makedocsummary
+\tableofcontents\clearpage
+
+\section{Architecture stakeholders and concerns}
+Gameplay design: responsive control and expressive intent. Animation: rig fidelity, contact, natural arcs. Engine: bounded time and allocation cost. QA: deterministic trace and stable regression results. Accessibility: readability at reduced motion and small displays.
+\section{System context and logical interfaces}
+\begin{verbatim}
+Input -> Player Ability Rules -> Animation State Graph
+                          -> Clip Sampler -> Pose Blender
+Physics Contact Solver -> Contact Reconciler -> Final Pose
+World Clock -> Fixed-Step Tick -> State Graph
+Final Pose -> Renderer + Animation Event Dispatch
+Telemetry <- each subsystem
+\end{verbatim}
+\section{Data ownership}
+The authoritative simulation clock increments by integer ticks. Clip player owns normalized authored time; state machine owns selected state and interruption policy; physics owns world collision resolution; movement reconciler owns conversion between animation root delta and actor displacement. Renderer never advances gameplay state on its own.
+\section{Functional requirements}
+\Req{ANIM-R-001}{The runtime shall represent frame rate as a rational pair or an equivalent drift-free clock.}
+\Req{ANIM-R-002}{The transition graph shall apply explicitly ordered guards and priorities, without implicit first-match dependence on container iteration.}
+\Req{ANIM-R-003}{The root-motion integration shall have exactly one declared authoritative displacement owner.}
+\Req{ANIM-R-004}{Animation markers shall have a documented boundary and loop-wrap delivery policy.}
+\Req{ANIM-R-005}{A captured run shall include shot/clip IDs, fixed ticks, transition triggers and content versions.}
+\Req{ANIM-R-006}{The runtime shall degrade safely under a fixed-step overload rather than skipping updates without telemetry.}
+\section{Nonfunctional thresholds}
+Populate platform-specific targets using the engineering-quality scorecard; record p50/p95 animation update time, CPU budget, memory/rig, contact drift, visual cue latency, continuity at clip boundaries, and accessibility configuration. This specification intentionally does not invent universal tolerances.
+\section{Risk assessment}
+High: double root displacement, accidental interrupt deadlocks, event duplication on looping. Medium: foot skating, retarget issues, asset mismatch. Observe through traces; mitigate with invariant assertions, integration tests, and owner sign-off.
+\section{Traceability and validation}
+\begin{tabular}{p{.21\linewidth}p{.33\linewidth}p{.3\linewidth}}
+\textbf{Requirement}&\textbf{Evidence}&\textbf{Validation}\\\hline
+ANIM-R-001&Frame rate field and frame boundary trace&24 vs $24000/1001$ conversion test\\
+ANIM-R-002&Transition table&Interruptible attack state tests\\
+ANIM-R-003&Root ownership record&Contact drift + actor displacement checks\\
+ANIM-R-004&Marker semantics&Wrap, reverse, clamp test matrix\\
+ANIM-R-005&Serialized trace fixture&Reproducibility replay check\\
+ANIM-R-006&Overload monitor&Catch-up budget stress test\\
+\end{tabular}
+\section{Related source}
+Chapters 8 and 73 identify the challenges of interactive-game animation; the software decomposition above is a supplementary engineering design.
+\end{document}
