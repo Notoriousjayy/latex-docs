@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary study guides (283)
+## Primary study guides (301)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -146,6 +146,24 @@
 - [chapter 81 editing for internet programs](../src/game-development/animation-timing/study-guides/chapter-81-editing-for-internet-programs.tex) — animation-timing/study-guides · **provisional**
 - [chapter 82 conclusion](../src/game-development/animation-timing/study-guides/chapter-82-conclusion.tex) — animation-timing/study-guides · **provisional**
 - [game design engineering learning path](../src/game-development/curricula/game-design-engineering-learning-path.tex) — curricula · **provisional**
+- [prerequisite based curriculum](../src/game-development/game-engine-architecture-suite/curriculum/prerequisite-based-curriculum.tex) — game-engine-architecture-suite/curriculum · **provisional**
+- [01 introduction](../src/game-development/game-engine-architecture-suite/study-guides/01-introduction.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [02 tools of the trade](../src/game-development/game-engine-architecture-suite/study-guides/02-tools-of-the-trade.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [03 fundamentals of software engineering for games](../src/game-development/game-engine-architecture-suite/study-guides/03-fundamentals-of-software-engineering-for-games.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [04 parallelism and concurrent programming](../src/game-development/game-engine-architecture-suite/study-guides/04-parallelism-and-concurrent-programming.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [05 3d math for games](../src/game-development/game-engine-architecture-suite/study-guides/05-3d-math-for-games.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [06 engine support systems](../src/game-development/game-engine-architecture-suite/study-guides/06-engine-support-systems.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [07 resources and the file system](../src/game-development/game-engine-architecture-suite/study-guides/07-resources-and-the-file-system.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [08 the game loop and real time simulation](../src/game-development/game-engine-architecture-suite/study-guides/08-the-game-loop-and-real-time-simulation.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [09 human interface devices](../src/game-development/game-engine-architecture-suite/study-guides/09-human-interface-devices.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [10 tools for debugging and development](../src/game-development/game-engine-architecture-suite/study-guides/10-tools-for-debugging-and-development.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [11 the rendering engine](../src/game-development/game-engine-architecture-suite/study-guides/11-the-rendering-engine.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [12 animation systems](../src/game-development/game-engine-architecture-suite/study-guides/12-animation-systems.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [13 collision and rigid body dynamics](../src/game-development/game-engine-architecture-suite/study-guides/13-collision-and-rigid-body-dynamics.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [14 audio](../src/game-development/game-engine-architecture-suite/study-guides/14-audio.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [15 introduction to gameplay systems](../src/game-development/game-engine-architecture-suite/study-guides/15-introduction-to-gameplay-systems.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [16 runtime gameplay foundation systems](../src/game-development/game-engine-architecture-suite/study-guides/16-runtime-gameplay-foundation-systems.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [17 you mean there s more](../src/game-development/game-engine-architecture-suite/study-guides/17-you-mean-there-s-more.tex) — game-engine-architecture-suite/study-guides · **provisional**
 - [chapter 01 in the beginning there is the designer](../src/game-development/study-guides/art-of-game-design/chapter-01-in-the-beginning-there-is-the-designer.tex) — study-guides/art-of-game-design · **provisional**
 - [chapter 02 the designer creates an experience](../src/game-development/study-guides/art-of-game-design/chapter-02-the-designer-creates-an-experience.tex) — study-guides/art-of-game-design · **provisional**
 - [chapter 03 the experience takes place in a venue](../src/game-development/study-guides/art-of-game-design/chapter-03-the-experience-takes-place-in-a-venue.tex) — study-guides/art-of-game-design · **provisional**

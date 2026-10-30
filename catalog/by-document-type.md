@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## architecture-document (13)
+## architecture-document (17)
 
 - [ADR-0001: Application-aligned repository ownership](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0001.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [ADR-0002: Multi-account workload and environment isolation](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0002.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
@@ -16,9 +16,13 @@
 - [game economy and balance architecture](../src/game-development/architecture-specifications/game-economy-and-balance-architecture.tex) — architecture-specifications · **provisional**
 - [gameplay runtime architecture](../src/game-development/architecture-specifications/gameplay-runtime-architecture.tex) — architecture-specifications · **provisional**
 - [playtest telemetry and privacy architecture](../src/game-development/architecture-specifications/playtest-telemetry-and-privacy-architecture.tex) — architecture-specifications · **provisional**
+- [asset pipeline and world streaming](../src/game-development/game-engine-architecture-suite/architecture-specifications/asset-pipeline-and-world-streaming.tex) — game-engine-architecture-suite/architecture-specifications · **provisional**
+- [capstone engine architecture description](../src/game-development/game-engine-architecture-suite/architecture-specifications/capstone-engine-architecture-description.tex) — game-engine-architecture-suite/architecture-specifications · **provisional**
+- [render animation physics audio integration](../src/game-development/game-engine-architecture-suite/architecture-specifications/render-animation-physics-audio-integration.tex) — game-engine-architecture-suite/architecture-specifications · **provisional**
+- [subsystem and lifecycle specification](../src/game-development/game-engine-architecture-suite/architecture-specifications/subsystem-and-lifecycle-specification.tex) — game-engine-architecture-suite/architecture-specifications · **provisional**
 - [Open-Source Enterprise Security Platform: Reference Architecture and Tool Strategy](../src/security/technical-documents/open-source-enterprise-security-platform.tex) — enterprise security platform architecture · **reviewed**
 
-## assessment (31)
+## assessment (35)
 
 - [architecture traceability scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/architecture-traceability-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
 - [diagram quality scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/diagram-quality-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
@@ -36,6 +40,10 @@
 - [game mechanics balance assessment template](../src/game-development/assessments/game-mechanics-balance-assessment-template.tex) — assessments · **provisional**
 - [player experience assessment template](../src/game-development/assessments/player-experience-assessment-template.tex) — assessments · **provisional**
 - [playtesting quality assessment template](../src/game-development/assessments/playtesting-quality-assessment-template.tex) — assessments · **provisional**
+- [documentation and capstone assessment scorecard template](../src/game-development/game-engine-architecture-suite/scorecards/documentation-and-capstone-assessment-scorecard-template.tex) — game-engine-architecture-suite/scorecards · **provisional**
+- [gameplay integration readiness scorecard template](../src/game-development/game-engine-architecture-suite/scorecards/gameplay-integration-readiness-scorecard-template.tex) — game-engine-architecture-suite/scorecards · **provisional**
+- [performance and memory scorecard template](../src/game-development/game-engine-architecture-suite/scorecards/performance-and-memory-scorecard-template.tex) — game-engine-architecture-suite/scorecards · **provisional**
+- [runtime architecture quality scorecard template](../src/game-development/game-engine-architecture-suite/scorecards/runtime-architecture-quality-scorecard-template.tex) — game-engine-architecture-suite/scorecards · **provisional**
 - [physics engine gap analysis production library](../src/game-development/physics-engines/physics-engine-gap-analysis-production-library.tex) — physics engines · **provisional**
 - [capstone assessment and rubric](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/assessments/capstone-assessment-and-rubric.tex) — algorithms · **provisional**
 - [foundations diagnostic assessment](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/assessments/foundations-diagnostic-assessment.tex) — algorithms · **provisional**
@@ -113,8 +121,19 @@
 - [07 hands on implementation handbook](../src/security/security-engineering/07-hands-on-implementation-handbook.tex) — security engineering · **provisional**
 - [03 control implementation catalog](../src/security/standards/iso-27000/03-control-implementation-catalog.tex) — standards/iso 27000 · **provisional**
 
-## laboratory (13)
+## laboratory (24)
 
+- [lab 01 fixed step game loop](../src/game-development/game-engine-architecture-suite/labs/lab-01-fixed-step-game-loop.tex) — game-engine-architecture-suite/labs · **provisional**
+- [lab 02 arena allocator](../src/game-development/game-engine-architecture-suite/labs/lab-02-arena-allocator.tex) — game-engine-architecture-suite/labs · **provisional**
+- [lab 03 parallel batch](../src/game-development/game-engine-architecture-suite/labs/lab-03-parallel-batch.tex) — game-engine-architecture-suite/labs · **provisional**
+- [lab 04 generation handles](../src/game-development/game-engine-architecture-suite/labs/lab-04-generation-handles.tex) — game-engine-architecture-suite/labs · **provisional**
+- [lab 05 math and pose blending](../src/game-development/game-engine-architecture-suite/labs/lab-05-math-and-pose-blending.tex) — game-engine-architecture-suite/labs · **provisional**
+- [lab 06 triangle rasterizer](../src/game-development/game-engine-architecture-suite/labs/lab-06-triangle-rasterizer.tex) — game-engine-architecture-suite/labs · **provisional**
+- [lab 07 bouncing body](../src/game-development/game-engine-architecture-suite/labs/lab-07-bouncing-body.tex) — game-engine-architecture-suite/labs · **provisional**
+- [lab 08 audio mixer](../src/game-development/game-engine-architecture-suite/labs/lab-08-audio-mixer.tex) — game-engine-architecture-suite/labs · **provisional**
+- [lab 09 entity events](../src/game-development/game-engine-architecture-suite/labs/lab-09-entity-events.tex) — game-engine-architecture-suite/labs · **provisional**
+- [lab 10 frame metrics](../src/game-development/game-engine-architecture-suite/labs/lab-10-frame-metrics.tex) — game-engine-architecture-suite/labs · **provisional**
+- [lab 11 integrated engine capstone](../src/game-development/game-engine-architecture-suite/labs/lab-11-integrated-engine-capstone.tex) — game-engine-architecture-suite/labs · **provisional**
 - [c and cpp laboratory manual](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/laboratories/c-and-cpp-laboratory-manual.tex) — algorithms · **provisional**
 - [python laboratory manual](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/laboratories/python-laboratory-manual.tex) — algorithms · **provisional**
 - [C Algorithm Implementation Labs](../src/programming/algorithms/algorithm-engineering/laboratories/c-algorithm-implementation-labs.tex) — algorithm engineering / laboratories · **provisional**
@@ -170,7 +189,7 @@
 - [Compiler Correctness Verification](../src/programming/compilers/compiler-engineering/procedures/compiler-correctness-verification.tex) — compiler engineering / engineering a compiler / procedures · **provisional**
 - [Optimization Change Control](../src/programming/compilers/compiler-engineering/procedures/optimization-change-control.tex) — compiler engineering / engineering a compiler / procedures · **provisional**
 
-## study-guide (283)
+## study-guide (301)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -314,6 +333,24 @@
 - [chapter 81 editing for internet programs](../src/game-development/animation-timing/study-guides/chapter-81-editing-for-internet-programs.tex) — animation-timing/study-guides · **provisional**
 - [chapter 82 conclusion](../src/game-development/animation-timing/study-guides/chapter-82-conclusion.tex) — animation-timing/study-guides · **provisional**
 - [game design engineering learning path](../src/game-development/curricula/game-design-engineering-learning-path.tex) — curricula · **provisional**
+- [prerequisite based curriculum](../src/game-development/game-engine-architecture-suite/curriculum/prerequisite-based-curriculum.tex) — game-engine-architecture-suite/curriculum · **provisional**
+- [01 introduction](../src/game-development/game-engine-architecture-suite/study-guides/01-introduction.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [02 tools of the trade](../src/game-development/game-engine-architecture-suite/study-guides/02-tools-of-the-trade.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [03 fundamentals of software engineering for games](../src/game-development/game-engine-architecture-suite/study-guides/03-fundamentals-of-software-engineering-for-games.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [04 parallelism and concurrent programming](../src/game-development/game-engine-architecture-suite/study-guides/04-parallelism-and-concurrent-programming.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [05 3d math for games](../src/game-development/game-engine-architecture-suite/study-guides/05-3d-math-for-games.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [06 engine support systems](../src/game-development/game-engine-architecture-suite/study-guides/06-engine-support-systems.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [07 resources and the file system](../src/game-development/game-engine-architecture-suite/study-guides/07-resources-and-the-file-system.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [08 the game loop and real time simulation](../src/game-development/game-engine-architecture-suite/study-guides/08-the-game-loop-and-real-time-simulation.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [09 human interface devices](../src/game-development/game-engine-architecture-suite/study-guides/09-human-interface-devices.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [10 tools for debugging and development](../src/game-development/game-engine-architecture-suite/study-guides/10-tools-for-debugging-and-development.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [11 the rendering engine](../src/game-development/game-engine-architecture-suite/study-guides/11-the-rendering-engine.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [12 animation systems](../src/game-development/game-engine-architecture-suite/study-guides/12-animation-systems.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [13 collision and rigid body dynamics](../src/game-development/game-engine-architecture-suite/study-guides/13-collision-and-rigid-body-dynamics.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [14 audio](../src/game-development/game-engine-architecture-suite/study-guides/14-audio.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [15 introduction to gameplay systems](../src/game-development/game-engine-architecture-suite/study-guides/15-introduction-to-gameplay-systems.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [16 runtime gameplay foundation systems](../src/game-development/game-engine-architecture-suite/study-guides/16-runtime-gameplay-foundation-systems.tex) — game-engine-architecture-suite/study-guides · **provisional**
+- [17 you mean there s more](../src/game-development/game-engine-architecture-suite/study-guides/17-you-mean-there-s-more.tex) — game-engine-architecture-suite/study-guides · **provisional**
 - [chapter 01 in the beginning there is the designer](../src/game-development/study-guides/art-of-game-design/chapter-01-in-the-beginning-there-is-the-designer.tex) — study-guides/art-of-game-design · **provisional**
 - [chapter 02 the designer creates an experience](../src/game-development/study-guides/art-of-game-design/chapter-02-the-designer-creates-an-experience.tex) — study-guides/art-of-game-design · **provisional**
 - [chapter 03 the experience takes place in a venue](../src/game-development/study-guides/art-of-game-design/chapter-03-the-experience-takes-place-in-a-venue.tex) — study-guides/art-of-game-design · **provisional**
@@ -783,7 +820,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (632)
+## technical-reference (643)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -1169,6 +1206,17 @@
 - [timing frame rates and exposure](../src/game-development/animation-timing/technical-references/timing-frame-rates-and-exposure.tex) — animation-timing/technical-references · **provisional**
 - [ai assisted sprite generation pipeline](../src/game-development/asset-pipelines/ai-assisted-sprite-generation-pipeline.tex) — asset pipelines · **provisional**
 - [ai driven 3d model generation technical games](../src/game-development/asset-pipelines/ai-driven-3d-model-generation-technical-games.tex) — asset pipelines · **provisional**
+- [allocator and data layout](../src/game-development/game-engine-architecture-suite/benchmarking/allocator-and-data-layout.tex) — game-engine-architecture-suite/benchmarking · **provisional**
+- [frame pacing and real time budget](../src/game-development/game-engine-architecture-suite/benchmarking/frame-pacing-and-real-time-budget.tex) — game-engine-architecture-suite/benchmarking · **provisional**
+- [job scheduler scaling](../src/game-development/game-engine-architecture-suite/benchmarking/job-scheduler-scaling.tex) — game-engine-architecture-suite/benchmarking · **provisional**
+- [animation and state machines](../src/game-development/game-engine-architecture-suite/technical-references/animation-and-state-machines.tex) — game-engine-architecture-suite/technical-references · **provisional**
+- [audio and input](../src/game-development/game-engine-architecture-suite/technical-references/audio-and-input.tex) — game-engine-architecture-suite/technical-references · **provisional**
+- [engine system boundaries](../src/game-development/game-engine-architecture-suite/technical-references/engine-system-boundaries.tex) — game-engine-architecture-suite/technical-references · **provisional**
+- [gameplay object model](../src/game-development/game-engine-architecture-suite/technical-references/gameplay-object-model.tex) — game-engine-architecture-suite/technical-references · **provisional**
+- [math rendering and visibility](../src/game-development/game-engine-architecture-suite/technical-references/math-rendering-and-visibility.tex) — game-engine-architecture-suite/technical-references · **provisional**
+- [memory and resource lifetimes](../src/game-development/game-engine-architecture-suite/technical-references/memory-and-resource-lifetimes.tex) — game-engine-architecture-suite/technical-references · **provisional**
+- [physics and collision](../src/game-development/game-engine-architecture-suite/technical-references/physics-and-collision.tex) — game-engine-architecture-suite/technical-references · **provisional**
+- [simulation and concurrency](../src/game-development/game-engine-architecture-suite/technical-references/simulation-and-concurrency.tex) — game-engine-architecture-suite/technical-references · **provisional**
 - [computer graphics principles practice](../src/game-development/graphics/computer-graphics-principles-practice.tex) — graphics · **provisional**
 - [game programming pattern catalog](../src/game-development/patterns/game-programming-pattern-catalog.tex) — patterns · **provisional**
 - [game programming patterns algorithms](../src/game-development/patterns/game-programming-patterns-algorithms.tex) — patterns · **provisional**
@@ -1418,7 +1466,7 @@
 - [immediate founder focus](../src/startups/media/fast-animation-channels/immediate-founder-focus.tex) — media/fast animation channels · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## template (136)
+## template (142)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -1492,6 +1540,12 @@
 - [character animation specification template](../src/game-development/animation-timing/templates/character-animation-specification-template.tex) — animation-timing/templates · **provisional**
 - [playtest session template](../src/game-development/animation-timing/templates/playtest-session-template.tex) — animation-timing/templates · **provisional**
 - [shot timing brief template](../src/game-development/animation-timing/templates/shot-timing-brief-template.tex) — animation-timing/templates · **provisional**
+- [asset pipeline design record template](../src/game-development/game-engine-architecture-suite/templates/asset-pipeline-design-record-template.tex) — game-engine-architecture-suite/templates · **provisional**
+- [engine architecture decision record template](../src/game-development/game-engine-architecture-suite/templates/engine-architecture-decision-record-template.tex) — game-engine-architecture-suite/templates · **provisional**
+- [engine subsystem interface record template](../src/game-development/game-engine-architecture-suite/templates/engine-subsystem-interface-record-template.tex) — game-engine-architecture-suite/templates · **provisional**
+- [game loop design record template](../src/game-development/game-engine-architecture-suite/templates/game-loop-design-record-template.tex) — game-engine-architecture-suite/templates · **provisional**
+- [gameplay object model design record template](../src/game-development/game-engine-architecture-suite/templates/gameplay-object-model-design-record-template.tex) — game-engine-architecture-suite/templates · **provisional**
+- [performance experiment plan template](../src/game-development/game-engine-architecture-suite/templates/performance-experiment-plan-template.tex) — game-engine-architecture-suite/templates · **provisional**
 - [community safety review template](../src/game-development/templates/art-of-game-design/community-safety-review-template.tex) — templates/art-of-game-design · **provisional**
 - [design to test traceability matrix template](../src/game-development/templates/art-of-game-design/design-to-test-traceability-matrix-template.tex) — templates/art-of-game-design · **provisional**
 - [game architecture description template](../src/game-development/templates/art-of-game-design/game-architecture-description-template.tex) — templates/art-of-game-design · **provisional**
@@ -1577,7 +1631,7 @@
 - [study plan user stories github advanced sec](../src/security/github-advanced-security/administration/study-plan-user-stories-github-advanced-sec.tex) — github advanced security/administration · **provisional**
 - [study plan owasp api sec top 10 user stories](../src/security/standards/owasp/study-plan-owasp-api-sec-top-10-user-stories.tex) — standards/owasp · **provisional**
 
-## workbook (94)
+## workbook (99)
 
 - [concern view evidence template](../src/architecture/c4-model/documentation-suite/workbooks/concern-view-evidence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
 - [cross view correspondence template](../src/architecture/c4-model/documentation-suite/workbooks/cross-view-correspondence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
@@ -1615,6 +1669,11 @@
 - [spacing and easing workbook template](../src/game-development/animation-timing/workbooks/spacing-and-easing-workbook-template.tex) — animation-timing/workbooks · **provisional**
 - [walk cycle contact workbook template](../src/game-development/animation-timing/workbooks/walk-cycle-contact-workbook-template.tex) — animation-timing/workbooks · **provisional**
 - [walk runs and interruptibility problem set](../src/game-development/animation-timing/workbooks/walk-runs-and-interruptibility-problem-set.tex) — animation-timing/workbooks · **provisional**
+- [memory allocator benchmark workbook template](../src/game-development/game-engine-architecture-suite/workbooks/memory-allocator-benchmark-workbook-template.tex) — game-engine-architecture-suite/workbooks · **provisional**
+- [parallel jobs and race analysis workbook template](../src/game-development/game-engine-architecture-suite/workbooks/parallel-jobs-and-race-analysis-workbook-template.tex) — game-engine-architecture-suite/workbooks · **provisional**
+- [physics audio integration workbook template](../src/game-development/game-engine-architecture-suite/workbooks/physics-audio-integration-workbook-template.tex) — game-engine-architecture-suite/workbooks · **provisional**
+- [render and animation workbook template](../src/game-development/game-engine-architecture-suite/workbooks/render-and-animation-workbook-template.tex) — game-engine-architecture-suite/workbooks · **provisional**
+- [simulation timestep workbook template](../src/game-development/game-engine-architecture-suite/workbooks/simulation-timestep-workbook-template.tex) — game-engine-architecture-suite/workbooks · **provisional**
 - [adaptive challenge laboratory](../src/game-development/laboratories/adaptive-challenge-laboratory.tex) — laboratories · **provisional**
 - [combat expected value laboratory](../src/game-development/laboratories/combat-expected-value-laboratory.tex) — laboratories · **provisional**
 - [deterministic replay laboratory](../src/game-development/laboratories/deterministic-replay-laboratory.tex) — laboratories · **provisional**
