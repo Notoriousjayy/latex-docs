@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (179)
+## Primary reusable templates (183)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -69,6 +69,10 @@
 - [release planning workbook template](../src/business-analysis/user-stories/workbooks/templates/release-planning-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [role and discovery workbook template](../src/business-analysis/user-stories/workbooks/templates/role-and-discovery-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [story refinement workbook template](../src/business-analysis/user-stories/workbooks/templates/story-refinement-workbook-template.tex) — agile requirements / user stories · **provisional**
+- [Data Governance Regulatory Applicability Register Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/registers/data-governance-regulatory-applicability-register-template.tex) — enterprise-data-governance · **provisional**
+- [Governance Compliance Evidence Register Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/registers/governance-compliance-evidence-register-template.tex) — enterprise-data-governance · **provisional**
+- [Data Quality and Metadata Standards Crosswalk Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/templates/data-quality-and-metadata-standards-crosswalk-template.tex) — enterprise-data-governance · **provisional**
+- [Governance Framework Selection and Applicability Matrix Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/templates/governance-framework-selection-and-applicability-matrix-template.tex) — enterprise-data-governance · **provisional**
 - [Architecture Decision Record Template](../src/data-systems/enterprise-data-modeling/templates/architecture-decision-record-template.tex) — enterprise-data-modeling · **provisional**
 - [Conceptual Model Brief Template](../src/data-systems/enterprise-data-modeling/templates/conceptual-model-brief-template.tex) — enterprise-data-modeling · **provisional**
 - [Data Dictionary Template](../src/data-systems/enterprise-data-modeling/templates/data-dictionary-template.tex) — enterprise-data-modeling · **provisional**
