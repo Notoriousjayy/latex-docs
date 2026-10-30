@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (649)
+## Primary technical references (658)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -336,6 +336,15 @@
 - [05 testing quality engineering](../src/devops/build-systems/professional-cmake/05-testing-quality-engineering.tex) — build systems/professional cmake · **provisional**
 - [06 cicd devsecops](../src/devops/build-systems/professional-cmake/06-cicd-devsecops.tex) — build systems/professional cmake · **provisional**
 - [Professional CMake: Cross-Platform Builds and Performance](../src/devops/build-systems/professional-cmake/07-cross-platform-performance.tex) — CMake cross-platform builds and benchmarking · **reviewed**
+- [delivery performance measures](../src/devops/ci-cd/continuous-integration-engineering/performance/delivery-performance-measures.tex) — ci cd/continuous integration engineering/performance · **provisional**
+- [pipeline benchmarking procedure](../src/devops/ci-cd/continuous-integration-engineering/performance/pipeline-benchmarking-procedure.tex) — ci cd/continuous integration engineering/performance · **provisional**
+- [source register](../src/devops/ci-cd/continuous-integration-engineering/references/source-register.tex) — ci cd/continuous integration engineering/references · **provisional**
+- [build reproducibility and cache reference](../src/devops/ci-cd/continuous-integration-engineering/technical-references/build-reproducibility-and-cache-reference.tex) — ci cd/continuous integration engineering/technical references · **provisional**
+- [ci cd operations and feedback](../src/devops/ci-cd/continuous-integration-engineering/technical-references/ci-cd-operations-and-feedback.tex) — ci cd/continuous integration engineering/technical references · **provisional**
+- [ci principles and system model](../src/devops/ci-cd/continuous-integration-engineering/technical-references/ci-principles-and-system-model.tex) — ci cd/continuous integration engineering/technical references · **provisional**
+- [continuous testing and flaky tests](../src/devops/ci-cd/continuous-integration-engineering/technical-references/continuous-testing-and-flaky-tests.tex) — ci cd/continuous integration engineering/technical references · **provisional**
+- [devsecops supply chain assurance](../src/devops/ci-cd/continuous-integration-engineering/technical-references/devsecops-supply-chain-assurance.tex) — ci cd/continuous integration engineering/technical references · **provisional**
+- [github actions workflow engineering](../src/devops/ci-cd/continuous-integration-engineering/technical-references/github-actions-workflow-engineering.tex) — ci cd/continuous integration engineering/technical references · **provisional**
 - [continuous integr toolkit github first minted](../src/devops/ci-cd/fundamentals/continuous-integr-toolkit-github-first-minted.tex) — ci cd/fundamentals · **provisional**
 - [github devsecops ci foundation handout](../src/devops/ci-cd/fundamentals/github-devsecops-ci-foundation-handout.tex) — ci cd/fundamentals · **provisional**
 - [release engineering quick start](../src/devops/ci-cd/fundamentals/release-engineering-quick-start.tex) — ci cd/fundamentals · **provisional**

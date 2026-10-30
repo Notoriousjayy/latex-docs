@@ -822,7 +822,7 @@
 - [Kafka: The Definitive Guide (2nd ed.) — chapter story cards](../src/data-systems/workbooks/kafka-study-plan-user-stories.tex) — Kafka · **reviewed**
 - [llm adoption user stories](../src/data-systems/workbooks/llm-adoption-user-stories.tex) — data systems · **provisional**
 
-## devops (68)
+## devops (111)
 
 - [01 architecture and adrs](../src/devops/build-systems/cmake-webassembly/01-architecture-and-adrs.tex) — build systems/cmake webassembly · **provisional**
 - [02 cmake targets and dependencies](../src/devops/build-systems/cmake-webassembly/02-cmake-targets-and-dependencies.tex) — build systems/cmake webassembly · **provisional**
@@ -843,6 +843,49 @@
 - [06 cicd devsecops](../src/devops/build-systems/professional-cmake/06-cicd-devsecops.tex) — build systems/professional cmake · **provisional**
 - [Professional CMake: Cross-Platform Builds and Performance](../src/devops/build-systems/professional-cmake/07-cross-platform-performance.tex) — CMake cross-platform builds and benchmarking · **reviewed**
 - [08 prerequisite curriculum](../src/devops/build-systems/professional-cmake/08-prerequisite-curriculum.tex) — build systems/professional cmake · **provisional**
+- [ci cd maturity assessment model](../src/devops/ci-cd/continuous-integration-engineering/assessments/ci-cd-maturity-assessment-model.tex) — ci cd/continuous integration engineering/assessments · **provisional**
+- [pipeline architecture review standard](../src/devops/ci-cd/continuous-integration-engineering/assessments/pipeline-architecture-review-standard.tex) — ci cd/continuous integration engineering/assessments · **provisional**
+- [chapter to operations crosswalk](../src/devops/ci-cd/continuous-integration-engineering/curriculum/chapter-to-operations-crosswalk.tex) — ci cd/continuous integration engineering/curriculum · **provisional**
+- [prerequisite based curriculum](../src/devops/ci-cd/continuous-integration-engineering/curriculum/prerequisite-based-curriculum.tex) — ci cd/continuous integration engineering/curriculum · **provisional**
+- [lab 01 pr triggered ci](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-01-pr-triggered-ci.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
+- [lab 02 python quality gates](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-02-python-quality-gates.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
+- [lab 03 java maven junit](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-03-java-maven-junit.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
+- [lab 04 cpp cmake ctest](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-04-cpp-cmake-ctest.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
+- [lab 05 disposable database](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-05-disposable-database.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
+- [lab 06 security assurance](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-06-security-assurance.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
+- [lab 07 advanced workflows](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-07-advanced-workflows.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
+- [lab 08 controlled release](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-08-controlled-release.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
+- [lab 09 performance and feedback](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-09-performance-and-feedback.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
+- [lab 10 capstone assessment](../src/devops/ci-cd/continuous-integration-engineering/laboratories/lab-10-capstone-assessment.tex) — ci cd/continuous integration engineering/laboratories · **provisional**
+- [delivery performance measures](../src/devops/ci-cd/continuous-integration-engineering/performance/delivery-performance-measures.tex) — ci cd/continuous integration engineering/performance · **provisional**
+- [pipeline benchmarking procedure](../src/devops/ci-cd/continuous-integration-engineering/performance/pipeline-benchmarking-procedure.tex) — ci cd/continuous integration engineering/performance · **provisional**
+- [source register](../src/devops/ci-cd/continuous-integration-engineering/references/source-register.tex) — ci cd/continuous integration engineering/references · **provisional**
+- [deployment promotion and rollback](../src/devops/ci-cd/continuous-integration-engineering/specifications/deployment-promotion-and-rollback.tex) — ci cd/continuous integration engineering/specifications · **provisional**
+- [oidc authorization trust boundaries](../src/devops/ci-cd/continuous-integration-engineering/specifications/oidc-authorization-trust-boundaries.tex) — ci cd/continuous integration engineering/specifications · **provisional**
+- [pipeline reference architecture](../src/devops/ci-cd/continuous-integration-engineering/specifications/pipeline-reference-architecture.tex) — ci cd/continuous integration engineering/specifications · **provisional**
+- [chapter 01 getting started](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-01-getting-started.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 02 introducing continuous integration](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-02-introducing-continuous-integration.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 03 reducing risks using ci](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-03-reducing-risks-using-ci.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 04 building software at every change](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-04-building-software-at-every-change.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 05 continuous database integration](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-05-continuous-database-integration.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 06 continuous testing](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-06-continuous-testing.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 07 continuous inspection](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-07-continuous-inspection.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 08 continuous deployment](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-08-continuous-deployment.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [chapter 09 continuous feedback](../src/devops/ci-cd/continuous-integration-engineering/study-guides/chapter-09-continuous-feedback.tex) — ci cd/continuous integration engineering/study guides · **provisional**
+- [build reproducibility and cache reference](../src/devops/ci-cd/continuous-integration-engineering/technical-references/build-reproducibility-and-cache-reference.tex) — ci cd/continuous integration engineering/technical references · **provisional**
+- [ci cd operations and feedback](../src/devops/ci-cd/continuous-integration-engineering/technical-references/ci-cd-operations-and-feedback.tex) — ci cd/continuous integration engineering/technical references · **provisional**
+- [ci principles and system model](../src/devops/ci-cd/continuous-integration-engineering/technical-references/ci-principles-and-system-model.tex) — ci cd/continuous integration engineering/technical references · **provisional**
+- [continuous testing and flaky tests](../src/devops/ci-cd/continuous-integration-engineering/technical-references/continuous-testing-and-flaky-tests.tex) — ci cd/continuous integration engineering/technical references · **provisional**
+- [devsecops supply chain assurance](../src/devops/ci-cd/continuous-integration-engineering/technical-references/devsecops-supply-chain-assurance.tex) — ci cd/continuous integration engineering/technical references · **provisional**
+- [github actions workflow engineering](../src/devops/ci-cd/continuous-integration-engineering/technical-references/github-actions-workflow-engineering.tex) — ci cd/continuous integration engineering/technical references · **provisional**
+- [benchmark experiment template](../src/devops/ci-cd/continuous-integration-engineering/templates/benchmark-experiment-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [ci cd maturity scorecard template](../src/devops/ci-cd/continuous-integration-engineering/templates/ci-cd-maturity-scorecard-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [ci failure triage template](../src/devops/ci-cd/continuous-integration-engineering/templates/ci-failure-triage-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [ci laboratory workbook template](../src/devops/ci-cd/continuous-integration-engineering/templates/ci-laboratory-workbook-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [ci pipeline design record template](../src/devops/ci-cd/continuous-integration-engineering/templates/ci-pipeline-design-record-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [deployment release readiness template](../src/devops/ci-cd/continuous-integration-engineering/templates/deployment-release-readiness-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [pipeline architecture scorecard template](../src/devops/ci-cd/continuous-integration-engineering/templates/pipeline-architecture-scorecard-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [workflow security assessment template](../src/devops/ci-cd/continuous-integration-engineering/templates/workflow-security-assessment-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
 - [continuous integr toolkit github first minted](../src/devops/ci-cd/fundamentals/continuous-integr-toolkit-github-first-minted.tex) — ci cd/fundamentals · **provisional**
 - [github devsecops ci foundation handout](../src/devops/ci-cd/fundamentals/github-devsecops-ci-foundation-handout.tex) — ci cd/fundamentals · **provisional**
 - [release engineering quick start](../src/devops/ci-cd/fundamentals/release-engineering-quick-start.tex) — ci cd/fundamentals · **provisional**

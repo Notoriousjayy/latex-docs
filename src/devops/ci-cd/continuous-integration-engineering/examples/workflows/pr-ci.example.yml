@@ -1,0 +1,61 @@
+# TEACHING WORKFLOW: copy into a dedicated demo repo .github/workflows/ to activate.
+# For production, replace action tags with verified full-length SHAs / approved lockfiles.
+name: example-multilanguage-ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          python -m pip install -r python-service/requirements-dev.txt
+          python -m pip install -e python-service
+          python -m pytest python-service/tests -q
+  java:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: mvn -B -ntp -f java-service/pom.xml verify
+  cpp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: |
+          cmake -S cpp-service -B cpp-service/out -DCMAKE_BUILD_TYPE=Debug
+          cmake --build cpp-service/out --parallel 2
+          ctest --test-dir cpp-service/out --output-on-failure
+  required-gates:
+    if: always()
+    needs: [python, java, cpp]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every language check
+        env:
+          PYTHON_RESULT: ${{ needs.python.result }}
+          JAVA_RESULT: ${{ needs.java.result }}
+          CPP_RESULT: ${{ needs.cpp.result }}
+        run: |
+          test "$PYTHON_RESULT" = success
+          test "$JAVA_RESULT" = success
+          test "$CPP_RESULT" = success

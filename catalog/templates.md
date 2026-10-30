@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (154)
+## Primary reusable templates (162)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -69,6 +69,14 @@
 - [release planning workbook template](../src/business-analysis/user-stories/workbooks/templates/release-planning-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [role and discovery workbook template](../src/business-analysis/user-stories/workbooks/templates/role-and-discovery-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [story refinement workbook template](../src/business-analysis/user-stories/workbooks/templates/story-refinement-workbook-template.tex) — agile requirements / user stories · **provisional**
+- [benchmark experiment template](../src/devops/ci-cd/continuous-integration-engineering/templates/benchmark-experiment-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [ci cd maturity scorecard template](../src/devops/ci-cd/continuous-integration-engineering/templates/ci-cd-maturity-scorecard-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [ci failure triage template](../src/devops/ci-cd/continuous-integration-engineering/templates/ci-failure-triage-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [ci laboratory workbook template](../src/devops/ci-cd/continuous-integration-engineering/templates/ci-laboratory-workbook-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [ci pipeline design record template](../src/devops/ci-cd/continuous-integration-engineering/templates/ci-pipeline-design-record-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [deployment release readiness template](../src/devops/ci-cd/continuous-integration-engineering/templates/deployment-release-readiness-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [pipeline architecture scorecard template](../src/devops/ci-cd/continuous-integration-engineering/templates/pipeline-architecture-scorecard-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
+- [workflow security assessment template](../src/devops/ci-cd/continuous-integration-engineering/templates/workflow-security-assessment-template.tex) — ci cd/continuous integration engineering/templates · **provisional**
 - [collaborating your community github templates](../src/devops/platform/github/collaborating-your-community-github-templates.tex) — platform/github · **provisional**
 - [Business Letterhead Template](../src/documentation/templates/letterhead-template.tex) — letterhead and correspondence · **reviewed**
 - [animation asset handoff template](../src/game-development/animation-timing/templates/animation-asset-handoff-template.tex) — animation-timing/templates · **provisional**
