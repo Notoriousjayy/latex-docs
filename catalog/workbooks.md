@@ -2,9 +2,14 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary workbooks and exercises (28)
+## Primary workbooks and exercises (33)
 
 - [ISO/IEC/IEEE 42010 Conformance Assessment Workbook](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment.tex) — ISO/IEC/IEEE 42010 conformance evidence · **reviewed**
+- [architecture review findings template](../src/architecture/views-and-beyond/documentation-engineering-suite/workbooks/Architecture_Review_Findings_Template.tex) — views-and-beyond/documentation-engineering-suite/workbooks · **provisional**
+- [cross view correspondence template](../src/architecture/views-and-beyond/documentation-engineering-suite/workbooks/Cross_View_Correspondence_Template.tex) — views-and-beyond/documentation-engineering-suite/workbooks · **provisional**
+- [decision and risk register template](../src/architecture/views-and-beyond/documentation-engineering-suite/workbooks/Decision_and_Risk_Register_Template.tex) — views-and-beyond/documentation-engineering-suite/workbooks · **provisional**
+- [quality scenarios and tradeoffs template](../src/architecture/views-and-beyond/documentation-engineering-suite/workbooks/Quality_Scenarios_and_Tradeoffs_Template.tex) — views-and-beyond/documentation-engineering-suite/workbooks · **provisional**
+- [requirement view traceability template](../src/architecture/views-and-beyond/documentation-engineering-suite/workbooks/Requirement_View_Traceability_Template.tex) — views-and-beyond/documentation-engineering-suite/workbooks · **provisional**
 - [Enterprise Architecture Discovery Evidence and Validation Workbook Template](../src/architecture/workbooks/github-actions-architecture-discovery-evidence-workbook-template.tex) — github-actions/enterprise-discovery · **reviewed**
 - [Enterprise Architecture Discovery Implementation Workbook Template](../src/architecture/workbooks/github-actions-architecture-discovery-implementation-workbook-template.tex) — github-actions/enterprise-discovery · **reviewed**
 - [lab 01 discover real user roles](../src/business-analysis/user-stories/laboratories/lab-01-discover-real-user-roles.tex) — agile requirements / user stories · **provisional**

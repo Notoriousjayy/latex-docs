@@ -36,7 +36,7 @@ These collections retain topic, standard, chapter, governance or diagram boundar
 | [systems engineering](systems-engineering/README.md) | Systems engineering perspectives. | 1 |
 | [togaf](togaf/README.md) | TOGAF material and guidance. | 5 |
 | [uml](uml/) | UML notation material and reference diagrams. | 1 |
-| [views and beyond](views-and-beyond/) | Viewpoint methodology, style catalogs and view packets. | 37 |
+| [views and beyond](views-and-beyond/) | Viewpoint methodology, style catalogs, view packets, and the 66-document engineering suite. | 103 |
 
 
 ## Build and validate
@@ -56,6 +56,10 @@ The [AWS Terraform architecture standard](cloud/secure-aws-terraform-repository-
 ## Enterprise GitHub Actions architecture discovery
 
 See the [enterprise architecture discovery suite](github-actions-discovery-suite.md) for the uploaded technical reference and its four project-specific Template–Blank pairs: Architecture Description, evidence viewpoint, implementation workbook, and evidence/validation workbook. The Blank copies are printable and contain empty writing lines rather than bracketed prompts. Use separate ADRs for consequential design decisions.
+
+## Software architecture documentation engineering suite
+
+The [Views and Beyond Documentation Engineering Suite](views-and-beyond/documentation-engineering-suite/README.md) contains original technical references, 14 chapter-aligned study guides, a prerequisite curriculum, six viewpoint specifications, 18 Template–Blank pairs, practical laboratories, and architecture assessment scorecards. It complements rather than replaces the existing style catalogs and governed architecture forms.
 
 ## Recommended navigation
 
