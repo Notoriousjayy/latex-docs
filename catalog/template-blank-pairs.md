@@ -14,6 +14,28 @@ Architecture descriptions and architecture decision records are distinct documen
 
 [GitHub Actions Architecture Discovery suite](../src/architecture/github-actions-discovery-suite.md) includes an unchanged technical reference, a project-specific Architecture Description and Viewpoint Specification, and two phase/evidence workbooks. The four paired guided Templates and print-ready Blanks are listed above. Unlike an architecture description, an ADR records one bounded decision; unlike an architecture view, a viewpoint specification defines reusable construction and interpretation conventions.
 
+## C4 Model architecture visualization
+
+The [C4 Model Documentation Suite](../src/architecture/c4-model/documentation-suite/README.md) provides 15 governed Template–Blank pairs for diagram records, architecture traceability workbooks, and review scorecards. The Blanks are print-ready working forms without bracketed response prompts.
+
+| Logical ID | Family | Template | Blank |
+|---|---|---|---|
+| ARCH-C4-ARCHITECTURE-TRACEABILITY-SCORECARD | architecture-assessment-scorecard | [Template](../src/architecture/c4-model/documentation-suite/scorecards/architecture-traceability-scorecard-template.tex) | [Blank](../src/architecture/c4-model/documentation-suite/scorecards/architecture-traceability-scorecard-blank.tex) |
+| ARCH-C4-CODE | architecture-diagram-record | [Template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) | [Blank](../src/architecture/c4-model/documentation-suite/blanks/code-blank.tex) |
+| ARCH-C4-COMPONENT | architecture-diagram-record | [Template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) | [Blank](../src/architecture/c4-model/documentation-suite/blanks/component-blank.tex) |
+| ARCH-C4-CONCERN-VIEW-EVIDENCE | architecture-traceability-workbook | [Template](../src/architecture/c4-model/documentation-suite/workbooks/concern-view-evidence-template.tex) | [Blank](../src/architecture/c4-model/documentation-suite/workbooks/concern-view-evidence-blank.tex) |
+| ARCH-C4-CONTAINER | architecture-diagram-record | [Template](../src/architecture/c4-model/documentation-suite/templates/container-template.tex) | [Blank](../src/architecture/c4-model/documentation-suite/blanks/container-blank.tex) |
+| ARCH-C4-CROSS-VIEW-CORRESPONDENCE | architecture-traceability-workbook | [Template](../src/architecture/c4-model/documentation-suite/workbooks/cross-view-correspondence-template.tex) | [Blank](../src/architecture/c4-model/documentation-suite/workbooks/cross-view-correspondence-blank.tex) |
+| ARCH-C4-DEPLOYMENT | architecture-diagram-record | [Template](../src/architecture/c4-model/documentation-suite/templates/deployment-template.tex) | [Blank](../src/architecture/c4-model/documentation-suite/blanks/deployment-blank.tex) |
+| ARCH-C4-DIAGRAM-QUALITY-SCORECARD | architecture-assessment-scorecard | [Template](../src/architecture/c4-model/documentation-suite/scorecards/diagram-quality-scorecard-template.tex) | [Blank](../src/architecture/c4-model/documentation-suite/scorecards/diagram-quality-scorecard-blank.tex) |
+| ARCH-C4-DIAGRAM-REVIEW-RECORD | architecture-diagram-record | [Template](../src/architecture/c4-model/documentation-suite/templates/diagram-review-record-template.tex) | [Blank](../src/architecture/c4-model/documentation-suite/blanks/diagram-review-record-blank.tex) |
+| ARCH-C4-DYNAMIC | architecture-diagram-record | [Template](../src/architecture/c4-model/documentation-suite/templates/dynamic-template.tex) | [Blank](../src/architecture/c4-model/documentation-suite/blanks/dynamic-blank.tex) |
+| ARCH-C4-LANDSCAPE | architecture-diagram-record | [Template](../src/architecture/c4-model/documentation-suite/templates/landscape-template.tex) | [Blank](../src/architecture/c4-model/documentation-suite/blanks/landscape-blank.tex) |
+| ARCH-C4-MODEL-CODE-DRIFT | architecture-traceability-workbook | [Template](../src/architecture/c4-model/documentation-suite/workbooks/model-code-drift-template.tex) | [Blank](../src/architecture/c4-model/documentation-suite/workbooks/model-code-drift-blank.tex) |
+| ARCH-C4-RELEASE-READINESS-SCORECARD | architecture-assessment-scorecard | [Template](../src/architecture/c4-model/documentation-suite/scorecards/release-readiness-scorecard-template.tex) | [Blank](../src/architecture/c4-model/documentation-suite/scorecards/release-readiness-scorecard-blank.tex) |
+| ARCH-C4-SYSTEM-CONTEXT | architecture-diagram-record | [Template](../src/architecture/c4-model/documentation-suite/templates/system-context-template.tex) | [Blank](../src/architecture/c4-model/documentation-suite/blanks/system-context-blank.tex) |
+| ARCH-C4-VIEWPOINT-SPECIFICATION | architecture-diagram-record | [Template](../src/architecture/c4-model/documentation-suite/templates/viewpoint-specification-template.tex) | [Blank](../src/architecture/c4-model/documentation-suite/blanks/viewpoint-specification-blank.tex) |
+
 ## Registered pairs
 
 | Logical ID | Family | Template | Blank |
