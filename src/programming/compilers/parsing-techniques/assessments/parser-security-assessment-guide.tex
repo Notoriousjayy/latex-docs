@@ -1,0 +1,35 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage{technical-testing}
+\input{../shared/parsing-macros.tex}
+\setDocTitle{Parser Security Threat Model and Assessment Guide}
+\setDocSubtitle{Adversarial grammars, untrusted inputs, resource limits and fail-closed behavior}
+\setDocVersion{1.0}\setDocStatus{Engineering education / source-aligned}
+\setDocOwner{Compiler Engineering}
+\setDocDate{30 October 2026}
+\setDocSummary{Security engineering assessment and risk model.}
+\begin{document}\makedoctitle\makedocsummary
+\tableofcontents\clearpage
+\section{Scope and assumptions}
+A parser may consume untrusted source: source code, templates, configuration, documents or protocol payloads. Its output is not trusted simply because it is syntactically valid. This guide adds modern software-security controls to the book's treatments of ambiguity, algorithm families, error handling and practical implementation.\PTSource{Chapters 3, 4, 7, 11, 16, 17; security methodology is a contemporary extension.}
+\section{Assets, boundaries and attacker objectives}
+Assets include integrity of AST/IR, availability of parsing services, consistent diagnostics, memory safety, and isolation of semantic actions. Trust boundaries: bytes-to-decoder, decoder-to-lexer, token-to-parser, parse-tree-to-semantic-pass, and diagnostics-to-logs. Consider attackers controlling grammar definitions separately from attackers controlling source inputs.
+\section{Threat catalog and controls}
+\small\begin{longtable}{p{0.22\linewidth}p{0.32\linewidth}p{0.33\linewidth}}\toprule Threat & Exploit mechanism & Control and evidence\\\midrule\endhead
+Exponential or cubic blowup & Pathological backtracking, ambiguity, chart size & Algorithm choice, per-request work budget, worst-case fixtures\\
+Depth exhaustion & Deeply nested or recursive input & Nesting limits, iterative stack or checked recursion, depth tests\\
+Memory exhaustion & Large tokens, forests, object count & Byte/token/node/chart quotas, constrained allocations\\
+Lexical mismatch & Unicode normalization, confusables, byte/scalar offsets & Document encoding and normalization policy, exact span tests\\
+Recovery misuse & Malformed input accepted after silent correction & Distinguish recovered AST; fail closed for execution/build paths\\
+Integer overflow & Input offsets, lengths, size arithmetic & Checked bounds, conversion tests, sanitizers\\
+Native memory corruption & Out-of-bounds and lifetime errors & ASan/UBSan (where supported), fuzzing, code review\\
+Supply-chain compromise & Untrusted grammar generator or parser dependency & Pinned versions, review, CI attestation policy\\
+Diagnostics abuse & Huge error lists, secret-bearing log content & Error caps, safe redaction and structured error codes\\
+\bottomrule\end{longtable}\normalsize
+\section{Mandatory secure-parser invariants}
+\begin{enumerate}\item Every input path has a maximum byte length and a deterministic rejection status.\item Every iterative closure and graph traversal deduplicates work and has finite bounds.\item Every AST or forest allocation counts toward a node budget.\item Errors never trigger unchecked semantic execution, evaluation or code emission.\item Every failure has an unambiguous status: lexical, syntax, semantic, resource-limit or internal.\item Native implementations pass sanitizer builds and must not rely on undefined behavior.\end{enumerate}
+\section{Fuzzing protocol}
+Seed with both valid and invalid syntactic samples. Apply mutations to individual tokens, boundaries, nesting depth, UTF-8, numeric magnitude, nullable cycles, and ambiguous alternatives. For each observed crash or timeout, minimize the input, record exact binary+build flags+seed, and add a regression. Distinguish harness errors from parser errors. Maintain an internal severity gate for memory corruption, nontermination and unsafe execution.
+\section{Assessment decision}
+A passing mean score does not override an exploitable crash, a known unbounded input path, or silent recovery that proceeds to execution. Record the remaining attack surface, accepted limitations, ownership, and test evidence; reassess after parser or grammar changes.
+
+\end{document}

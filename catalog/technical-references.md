@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (586)
+## Primary technical references (591)
 
 - [cloud architecture diagram library index](../src/architecture/cloud/architecture/cloud-architecture-diagram-library-index.tex) — cloud/architecture · **provisional**
 - [self hosting cloud architecture reference](../src/architecture/cloud/architecture/self-hosting-cloud-architecture-reference.tex) — cloud/architecture · **provisional**
@@ -407,6 +407,11 @@
 - [numerical recipes algorithms pseudocode](../src/programming/algorithms/numerical-recipes-algorithms-pseudocode.tex) — algorithms · **provisional**
 - [stanford graphbase algorithms pseudocode](../src/programming/algorithms/stanford-graphbase-algorithms-pseudocode.tex) — algorithms · **provisional**
 - [strings trees sequences pseudocode handout](../src/programming/algorithms/strings-trees-sequences-pseudocode-handout.tex) — algorithms · **provisional**
+- [Compiler Pipeline And Interfaces](../src/programming/compilers/parsing-techniques/technical-references/compiler-pipeline-and-interfaces.tex) — compiler engineering / parsing techniques / technical references · **provisional**
+- [Grammar Automata Field Guide](../src/programming/compilers/parsing-techniques/technical-references/grammar-automata-field-guide.tex) — compiler engineering / parsing techniques / technical references · **provisional**
+- [Parser Algorithm Selection](../src/programming/compilers/parsing-techniques/technical-references/parser-algorithm-selection.tex) — compiler engineering / parsing techniques / technical references · **provisional**
+- [Parsing Engineering Technical Reference](../src/programming/compilers/parsing-techniques/technical-references/parsing-engineering-technical-reference.tex) — compiler engineering / parsing techniques / technical references · **provisional**
+- [Source Chapter And Engineering Crosswalk](../src/programming/compilers/parsing-techniques/technical-references/source-chapter-and-engineering-crosswalk.tex) — compiler engineering / parsing techniques / technical references · **provisional**
 - [benefits simulating object oriented](../src/programming/languages/c-cpp/benefits-simulating-object-oriented.tex) — languages/c cpp · **provisional**
 - [object oriented programming ansi c algorithms](../src/programming/languages/c-cpp/object-oriented-programming-ansi-c-algorithms.tex) — languages/c cpp · **provisional**
 - [point vs vertex c composition handout](../src/programming/languages/c-cpp/point-vs-vertex-c-composition-handout.tex) — languages/c cpp · **provisional**

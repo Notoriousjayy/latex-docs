@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (85)
+## Primary reusable templates (101)
 
 - [Architecture Documentation Templates](../src/architecture/cloud/engineering-suite/05-architecture-documentation-templates.tex) — cloud architecture documentation forms · **reviewed**
 - [Cloud Security Reference Templates](../src/architecture/cloud/engineering-suite/06-security-governance-templates.tex) — cloud security governance forms · **reviewed**
@@ -76,6 +76,22 @@
 - [Laboratory Assessment Template](../src/programming/algorithms/algorithm-engineering/templates/laboratory-assessment-template.tex) — algorithm engineering / templates · **provisional**
 - [Learning Progress Tracker Template](../src/programming/algorithms/algorithm-engineering/templates/learning-progress-tracker-template.tex) — algorithm engineering / templates · **provisional**
 - [Mathematical Proof Review Template](../src/programming/algorithms/algorithm-engineering/templates/mathematical-proof-review-template.tex) — algorithm engineering / templates · **provisional**
+- [Ambiguity Investigation Template](../src/programming/compilers/parsing-techniques/templates/ambiguity-investigation-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Automata Construction Template](../src/programming/compilers/parsing-techniques/templates/automata-construction-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Benchmark Record Template](../src/programming/compilers/parsing-techniques/templates/benchmark-record-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Compiler Laboratory Record Template](../src/programming/compilers/parsing-techniques/templates/compiler-laboratory-record-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Compiler Readiness Scorecard Template](../src/programming/compilers/parsing-techniques/templates/compiler-readiness-scorecard-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Complexity Analysis Template](../src/programming/compilers/parsing-techniques/templates/complexity-analysis-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Error Recovery Assessment Template](../src/programming/compilers/parsing-techniques/templates/error-recovery-assessment-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [First Follow Analysis Template](../src/programming/compilers/parsing-techniques/templates/first-follow-analysis-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Grammar Specification Template](../src/programming/compilers/parsing-techniques/templates/grammar-specification-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Learning Progress Tracker Template](../src/programming/compilers/parsing-techniques/templates/learning-progress-tracker-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Parser Design Review Template](../src/programming/compilers/parsing-techniques/templates/parser-design-review-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Parser Fuzzing Session Template](../src/programming/compilers/parsing-techniques/templates/parser-fuzzing-session-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Parser Quality Scorecard Template](../src/programming/compilers/parsing-techniques/templates/parser-quality-scorecard-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Parser Security Scorecard Template](../src/programming/compilers/parsing-techniques/templates/parser-security-scorecard-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Security Threat Model Template](../src/programming/compilers/parsing-techniques/templates/security-threat-model-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Test Case Matrix Template](../src/programming/compilers/parsing-techniques/templates/test-case-matrix-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
 - [07 compiler conformance verification](../src/programming/languages/c-cpp/standards/c23/07-compiler-conformance-verification.tex) — standards/c23 · **provisional**
 - [11 forms and records](../src/programming/languages/c-cpp/standards/misra-c-2023/11-forms-and-records.tex) — standards/misra c 2023 · **provisional**
 - [12 audit templates evidence forms](../src/programming/languages/c-cpp/standards/misra-cpp-2023/12-audit-templates-evidence-forms.tex) — standards/misra cpp 2023 · **provisional**

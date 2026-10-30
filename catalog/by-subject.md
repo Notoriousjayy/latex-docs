@@ -1218,6 +1218,91 @@
 
 - [ch14 young tableaux notes](../src/cornell-notes/computer-science/combinatorial-algorithms/young-tableaux/ch14-young-tableaux-notes.tex) — combinatorial algorithms/young tableaux · **provisional**
 
+## compiler engineering / parsing techniques / assessments (1)
+
+- [Parser Security Assessment Guide](../src/programming/compilers/parsing-techniques/assessments/parser-security-assessment-guide.tex) — compiler engineering / parsing techniques / assessments · **provisional**
+
+## compiler engineering / parsing techniques / curricula (2)
+
+- [Competency Portfolio Matrix](../src/programming/compilers/parsing-techniques/curricula/competency-portfolio-matrix.tex) — compiler engineering / parsing techniques / curricula · **provisional**
+- [Prerequisite Based Curriculum](../src/programming/compilers/parsing-techniques/curricula/prerequisite-based-curriculum.tex) — compiler engineering / parsing techniques / curricula · **provisional**
+
+## compiler engineering / parsing techniques / laboratories (8)
+
+- [01 Grammar And Automata](../src/programming/compilers/parsing-techniques/laboratories/01-grammar-and-automata.tex) — compiler engineering / parsing techniques / laboratories · **provisional**
+- [02 Cyk Recognizer](../src/programming/compilers/parsing-techniques/laboratories/02-cyk-recognizer.tex) — compiler engineering / parsing techniques / laboratories · **provisional**
+- [03 Earley Chart Parser](../src/programming/compilers/parsing-techniques/laboratories/03-earley-chart-parser.tex) — compiler engineering / parsing techniques / laboratories · **provisional**
+- [04 Predictive Ll1](../src/programming/compilers/parsing-techniques/laboratories/04-predictive-ll1.tex) — compiler engineering / parsing techniques / laboratories · **provisional**
+- [05 Lr Items And Conflicts](../src/programming/compilers/parsing-techniques/laboratories/05-lr-items-and-conflicts.tex) — compiler engineering / parsing techniques / laboratories · **provisional**
+- [06 Mini Language Compiler](../src/programming/compilers/parsing-techniques/laboratories/06-mini-language-compiler.tex) — compiler engineering / parsing techniques / laboratories · **provisional**
+- [07 Adversarial Parsing](../src/programming/compilers/parsing-techniques/laboratories/07-adversarial-parsing.tex) — compiler engineering / parsing techniques / laboratories · **provisional**
+- [08 Comparative Benchmarking](../src/programming/compilers/parsing-techniques/laboratories/08-comparative-benchmarking.tex) — compiler engineering / parsing techniques / laboratories · **provisional**
+
+## compiler engineering / parsing techniques / procedures (3)
+
+- [Parser Verification And Review](../src/programming/compilers/parsing-techniques/procedures/parser-verification-and-review.tex) — compiler engineering / parsing techniques / procedures · **provisional**
+- [Reproducible Parsing Benchmark Procedure](../src/programming/compilers/parsing-techniques/procedures/reproducible-parsing-benchmark-procedure.tex) — compiler engineering / parsing techniques / procedures · **provisional**
+- [Technical Source And Research Review](../src/programming/compilers/parsing-techniques/procedures/technical-source-and-research-review.tex) — compiler engineering / parsing techniques / procedures · **provisional**
+
+## compiler engineering / parsing techniques / shared (1)
+
+- [Parsing Macros](../src/programming/compilers/parsing-techniques/shared/parsing-macros.tex) — compiler engineering / parsing techniques / shared · **provisional** · non-standalone
+
+## compiler engineering / parsing techniques / study guides (18)
+
+- [01 Introduction](../src/programming/compilers/parsing-techniques/study-guides/01-introduction.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [02 Grammars As A Generating Device](../src/programming/compilers/parsing-techniques/study-guides/02-grammars-as-a-generating-device.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [03 Introduction To Parsing](../src/programming/compilers/parsing-techniques/study-guides/03-introduction-to-parsing.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [04 General Non Directional Parsing](../src/programming/compilers/parsing-techniques/study-guides/04-general-non-directional-parsing.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [05 Regular Grammars And Finite State Automata](../src/programming/compilers/parsing-techniques/study-guides/05-regular-grammars-and-finite-state-automata.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [06 General Directional Top Down Parsing](../src/programming/compilers/parsing-techniques/study-guides/06-general-directional-top-down-parsing.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [07 General Directional Bottom Up Parsing](../src/programming/compilers/parsing-techniques/study-guides/07-general-directional-bottom-up-parsing.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [08 Deterministic Top Down Parsing](../src/programming/compilers/parsing-techniques/study-guides/08-deterministic-top-down-parsing.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [09 Deterministic Bottom Up Parsing](../src/programming/compilers/parsing-techniques/study-guides/09-deterministic-bottom-up-parsing.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [10 Non Canonical Parsers](../src/programming/compilers/parsing-techniques/study-guides/10-non-canonical-parsers.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [11 Generalized Deterministic Parsers](../src/programming/compilers/parsing-techniques/study-guides/11-generalized-deterministic-parsers.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [12 Substring Parsing](../src/programming/compilers/parsing-techniques/study-guides/12-substring-parsing.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [13 Parsing As Intersection](../src/programming/compilers/parsing-techniques/study-guides/13-parsing-as-intersection.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [14 Parallel Parsing](../src/programming/compilers/parsing-techniques/study-guides/14-parallel-parsing.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [15 Non Chomsky Grammars And Their Parsers](../src/programming/compilers/parsing-techniques/study-guides/15-non-chomsky-grammars-and-their-parsers.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [16 Error Handling](../src/programming/compilers/parsing-techniques/study-guides/16-error-handling.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [17 Practical Parser Writing And Usage](../src/programming/compilers/parsing-techniques/study-guides/17-practical-parser-writing-and-usage.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [18 Annotated Bibliography](../src/programming/compilers/parsing-techniques/study-guides/18-annotated-bibliography.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+
+## compiler engineering / parsing techniques / technical references (5)
+
+- [Compiler Pipeline And Interfaces](../src/programming/compilers/parsing-techniques/technical-references/compiler-pipeline-and-interfaces.tex) — compiler engineering / parsing techniques / technical references · **provisional**
+- [Grammar Automata Field Guide](../src/programming/compilers/parsing-techniques/technical-references/grammar-automata-field-guide.tex) — compiler engineering / parsing techniques / technical references · **provisional**
+- [Parser Algorithm Selection](../src/programming/compilers/parsing-techniques/technical-references/parser-algorithm-selection.tex) — compiler engineering / parsing techniques / technical references · **provisional**
+- [Parsing Engineering Technical Reference](../src/programming/compilers/parsing-techniques/technical-references/parsing-engineering-technical-reference.tex) — compiler engineering / parsing techniques / technical references · **provisional**
+- [Source Chapter And Engineering Crosswalk](../src/programming/compilers/parsing-techniques/technical-references/source-chapter-and-engineering-crosswalk.tex) — compiler engineering / parsing techniques / technical references · **provisional**
+
+## compiler engineering / parsing techniques / templates (16)
+
+- [Ambiguity Investigation Template](../src/programming/compilers/parsing-techniques/templates/ambiguity-investigation-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Automata Construction Template](../src/programming/compilers/parsing-techniques/templates/automata-construction-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Benchmark Record Template](../src/programming/compilers/parsing-techniques/templates/benchmark-record-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Compiler Laboratory Record Template](../src/programming/compilers/parsing-techniques/templates/compiler-laboratory-record-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Compiler Readiness Scorecard Template](../src/programming/compilers/parsing-techniques/templates/compiler-readiness-scorecard-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Complexity Analysis Template](../src/programming/compilers/parsing-techniques/templates/complexity-analysis-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Error Recovery Assessment Template](../src/programming/compilers/parsing-techniques/templates/error-recovery-assessment-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [First Follow Analysis Template](../src/programming/compilers/parsing-techniques/templates/first-follow-analysis-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Grammar Specification Template](../src/programming/compilers/parsing-techniques/templates/grammar-specification-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Learning Progress Tracker Template](../src/programming/compilers/parsing-techniques/templates/learning-progress-tracker-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Parser Design Review Template](../src/programming/compilers/parsing-techniques/templates/parser-design-review-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Parser Fuzzing Session Template](../src/programming/compilers/parsing-techniques/templates/parser-fuzzing-session-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Parser Quality Scorecard Template](../src/programming/compilers/parsing-techniques/templates/parser-quality-scorecard-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Parser Security Scorecard Template](../src/programming/compilers/parsing-techniques/templates/parser-security-scorecard-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Security Threat Model Template](../src/programming/compilers/parsing-techniques/templates/security-threat-model-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [Test Case Matrix Template](../src/programming/compilers/parsing-techniques/templates/test-case-matrix-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+
+## compiler engineering / parsing techniques / workbooks (4)
+
+- [Automata Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/automata-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**
+- [Compiler Pipeline Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/compiler-pipeline-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**
+- [Formal Language Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/formal-language-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**
+- [Parsing Trace Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/parsing-trace-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**
+
 ## component and connector/component and connector views (1)
 
 - [architectural views ref](../src/architecture/views-and-beyond/style-catalogs/component-and-connector/component-and-connector-views/architectural-views-ref.tex) — component and connector/component and connector views · **provisional**
