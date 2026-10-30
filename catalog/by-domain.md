@@ -814,8 +814,70 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## data-systems (5)
+## data-systems (67)
 
+- [Healthcare Insurance Integration](../src/data-systems/enterprise-data-modeling/case-studies/healthcare-insurance-integration.tex) — enterprise-data-modeling · **provisional**
+- [Manufacturer Digital Thread](../src/data-systems/enterprise-data-modeling/case-studies/manufacturer-digital-thread.tex) — enterprise-data-modeling · **provisional**
+- [Retail Financial Marketplace](../src/data-systems/enterprise-data-modeling/case-studies/retail-financial-marketplace.tex) — enterprise-data-modeling · **provisional**
+- [Travel Reservation Changes](../src/data-systems/enterprise-data-modeling/case-studies/travel-reservation-changes.tex) — enterprise-data-modeling · **provisional**
+- [Competency And Assessment Roadmap](../src/data-systems/enterprise-data-modeling/curriculum/competency-and-assessment-roadmap.tex) — enterprise-data-modeling · **provisional**
+- [Prerequisite Based Curriculum](../src/data-systems/enterprise-data-modeling/curriculum/prerequisite-based-curriculum.tex) — enterprise-data-modeling · **provisional**
+- [Data Classification Lineage Retention](../src/data-systems/enterprise-data-modeling/governance/data-classification-lineage-retention.tex) — enterprise-data-modeling · **provisional**
+- [Data Governance Operating Model](../src/data-systems/enterprise-data-modeling/governance/data-governance-operating-model.tex) — enterprise-data-modeling · **provisional**
+- [Model Review And Change Control](../src/data-systems/enterprise-data-modeling/governance/model-review-and-change-control.tex) — enterprise-data-modeling · **provisional**
+- [Conceptual To Logical Erd Lab](../src/data-systems/enterprise-data-modeling/laboratories/conceptual-to-logical-erd-lab.tex) — enterprise-data-modeling · **provisional**
+- [Ecommerce Marketplace Lab](../src/data-systems/enterprise-data-modeling/laboratories/ecommerce-marketplace-lab.tex) — enterprise-data-modeling · **provisional**
+- [Finance Ledger Lab](../src/data-systems/enterprise-data-modeling/laboratories/finance-ledger-lab.tex) — enterprise-data-modeling · **provisional**
+- [Healthcare Encounter Lab](../src/data-systems/enterprise-data-modeling/laboratories/healthcare-encounter-lab.tex) — enterprise-data-modeling · **provisional**
+- [Manufacturing Bom Lab](../src/data-systems/enterprise-data-modeling/laboratories/manufacturing-bom-lab.tex) — enterprise-data-modeling · **provisional**
+- [Postgresql Implementation Laboratory](../src/data-systems/enterprise-data-modeling/laboratories/postgresql-implementation-laboratory.tex) — enterprise-data-modeling · **provisional**
+- [Schema Evolution Lab](../src/data-systems/enterprise-data-modeling/laboratories/schema-evolution-lab.tex) — enterprise-data-modeling · **provisional**
+- [Telecom Network Lab](../src/data-systems/enterprise-data-modeling/laboratories/telecom-network-lab.tex) — enterprise-data-modeling · **provisional**
+- [Uml Class And Erd Traceability Lab](../src/data-systems/enterprise-data-modeling/laboratories/uml-class-and-erd-traceability-lab.tex) — enterprise-data-modeling · **provisional**
+- [Dimensional And Analytical Modeling](../src/data-systems/enterprise-data-modeling/references/dimensional-and-analytical-modeling.tex) — enterprise-data-modeling · **provisional**
+- [E Commerce Models Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/e-commerce-models-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Financial Services Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/financial-services-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Health Care Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/health-care-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Insurance Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/insurance-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Manufacturing Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/manufacturing-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Normalization And Dependencies](../src/data-systems/enterprise-data-modeling/references/normalization-and-dependencies.tex) — enterprise-data-modeling · **provisional**
+- [Professional Services Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/professional-services-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Telecommunications Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/telecommunications-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Temporal And Event Data](../src/data-systems/enterprise-data-modeling/references/temporal-and-event-data.tex) — enterprise-data-modeling · **provisional**
+- [Travel Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/travel-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Universal Data Modeling Reference](../src/data-systems/enterprise-data-modeling/references/universal-data-modeling-reference.tex) — enterprise-data-modeling · **provisional**
+- [Data Governance Scorecard](../src/data-systems/enterprise-data-modeling/scorecards/data-governance-scorecard.tex) — enterprise-data-modeling · **provisional**
+- [Data Model Quality Scorecard](../src/data-systems/enterprise-data-modeling/scorecards/data-model-quality-scorecard.tex) — enterprise-data-modeling · **provisional**
+- [Database Architecture Scorecard](../src/data-systems/enterprise-data-modeling/scorecards/database-architecture-scorecard.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 01 Introduction](../src/data-systems/enterprise-data-modeling/study-guides/chapter-01-introduction.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 02 Manufacturing](../src/data-systems/enterprise-data-modeling/study-guides/chapter-02-manufacturing.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 03 Telecommunications](../src/data-systems/enterprise-data-modeling/study-guides/chapter-03-telecommunications.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 04 Health Care](../src/data-systems/enterprise-data-modeling/study-guides/chapter-04-health-care.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 05 Insurance](../src/data-systems/enterprise-data-modeling/study-guides/chapter-05-insurance.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 06 Financial Services](../src/data-systems/enterprise-data-modeling/study-guides/chapter-06-financial-services.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 07 Professional Services](../src/data-systems/enterprise-data-modeling/study-guides/chapter-07-professional-services.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 08 Travel](../src/data-systems/enterprise-data-modeling/study-guides/chapter-08-travel.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 09 E Commerce Models](../src/data-systems/enterprise-data-modeling/study-guides/chapter-09-e-commerce-models.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 10 Using The Industry Models In The Real World](../src/data-systems/enterprise-data-modeling/study-guides/chapter-10-using-the-industry-models-in-the-real-world.tex) — enterprise-data-modeling · **provisional**
+- [Architecture Decision Record Template](../src/data-systems/enterprise-data-modeling/templates/architecture-decision-record-template.tex) — enterprise-data-modeling · **provisional**
+- [Conceptual Model Brief Template](../src/data-systems/enterprise-data-modeling/templates/conceptual-model-brief-template.tex) — enterprise-data-modeling · **provisional**
+- [Data Dictionary Template](../src/data-systems/enterprise-data-modeling/templates/data-dictionary-template.tex) — enterprise-data-modeling · **provisional**
+- [Data Governance Assessment Template](../src/data-systems/enterprise-data-modeling/templates/data-governance-assessment-template.tex) — enterprise-data-modeling · **provisional**
+- [Data Model Assessment Scorecard Template](../src/data-systems/enterprise-data-modeling/templates/data-model-assessment-scorecard-template.tex) — enterprise-data-modeling · **provisional**
+- [Entity Relationship Specification Template](../src/data-systems/enterprise-data-modeling/templates/entity-relationship-specification-template.tex) — enterprise-data-modeling · **provisional**
+- [Normalization Review Template](../src/data-systems/enterprise-data-modeling/templates/normalization-review-template.tex) — enterprise-data-modeling · **provisional**
+- [Schema Design Review Template](../src/data-systems/enterprise-data-modeling/templates/schema-design-review-template.tex) — enterprise-data-modeling · **provisional**
+- [Schema Migration Plan Template](../src/data-systems/enterprise-data-modeling/templates/schema-migration-plan-template.tex) — enterprise-data-modeling · **provisional**
+- [Dimensional Modeling Workbook Template](../src/data-systems/enterprise-data-modeling/workbooks/dimensional-modeling-workbook-template.tex) — enterprise-data-modeling · **provisional**
+- [Dimensional Modeling Workbook](../src/data-systems/enterprise-data-modeling/workbooks/dimensional-modeling-workbook.tex) — enterprise-data-modeling · **provisional**
+- [Migration Planning Workbook Template](../src/data-systems/enterprise-data-modeling/workbooks/migration-planning-workbook-template.tex) — enterprise-data-modeling · **provisional**
+- [Migration Planning Workbook](../src/data-systems/enterprise-data-modeling/workbooks/migration-planning-workbook.tex) — enterprise-data-modeling · **provisional**
+- [Normalization Workbook Template](../src/data-systems/enterprise-data-modeling/workbooks/normalization-workbook-template.tex) — enterprise-data-modeling · **provisional**
+- [Normalization Workbook](../src/data-systems/enterprise-data-modeling/workbooks/normalization-workbook.tex) — enterprise-data-modeling · **provisional**
+- [Schema Design Workbook Template](../src/data-systems/enterprise-data-modeling/workbooks/schema-design-workbook-template.tex) — enterprise-data-modeling · **provisional**
+- [Schema Design Workbook](../src/data-systems/enterprise-data-modeling/workbooks/schema-design-workbook.tex) — enterprise-data-modeling · **provisional**
+- [Temporal Validity Workbook Template](../src/data-systems/enterprise-data-modeling/workbooks/temporal-validity-workbook-template.tex) — enterprise-data-modeling · **provisional**
+- [Temporal Validity Workbook](../src/data-systems/enterprise-data-modeling/workbooks/temporal-validity-workbook.tex) — enterprise-data-modeling · **provisional**
 - [agentic architecture handout](../src/data-systems/technical-documents/agentic-architecture-handout.tex) — data systems · **provisional**
 - [computer networks algorithms pseudocode](../src/data-systems/technical-documents/computer-networks-algorithms-pseudocode.tex) — data systems · **provisional**
 - [llm api engineering reference](../src/data-systems/technical-documents/llm-api-engineering-reference.tex) — data systems · **provisional**

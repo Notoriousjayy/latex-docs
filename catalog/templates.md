@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (170)
+## Primary reusable templates (179)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -69,6 +69,15 @@
 - [release planning workbook template](../src/business-analysis/user-stories/workbooks/templates/release-planning-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [role and discovery workbook template](../src/business-analysis/user-stories/workbooks/templates/role-and-discovery-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [story refinement workbook template](../src/business-analysis/user-stories/workbooks/templates/story-refinement-workbook-template.tex) — agile requirements / user stories · **provisional**
+- [Architecture Decision Record Template](../src/data-systems/enterprise-data-modeling/templates/architecture-decision-record-template.tex) — enterprise-data-modeling · **provisional**
+- [Conceptual Model Brief Template](../src/data-systems/enterprise-data-modeling/templates/conceptual-model-brief-template.tex) — enterprise-data-modeling · **provisional**
+- [Data Dictionary Template](../src/data-systems/enterprise-data-modeling/templates/data-dictionary-template.tex) — enterprise-data-modeling · **provisional**
+- [Data Governance Assessment Template](../src/data-systems/enterprise-data-modeling/templates/data-governance-assessment-template.tex) — enterprise-data-modeling · **provisional**
+- [Data Model Assessment Scorecard Template](../src/data-systems/enterprise-data-modeling/templates/data-model-assessment-scorecard-template.tex) — enterprise-data-modeling · **provisional**
+- [Entity Relationship Specification Template](../src/data-systems/enterprise-data-modeling/templates/entity-relationship-specification-template.tex) — enterprise-data-modeling · **provisional**
+- [Normalization Review Template](../src/data-systems/enterprise-data-modeling/templates/normalization-review-template.tex) — enterprise-data-modeling · **provisional**
+- [Schema Design Review Template](../src/data-systems/enterprise-data-modeling/templates/schema-design-review-template.tex) — enterprise-data-modeling · **provisional**
+- [Schema Migration Plan Template](../src/data-systems/enterprise-data-modeling/templates/schema-migration-plan-template.tex) — enterprise-data-modeling · **provisional**
 - [architecture decision record template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/architecture-decision-record-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
 - [canary rollout plan template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/canary-rollout-plan-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
 - [deployment readiness review template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/deployment-readiness-review-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**

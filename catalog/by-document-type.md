@@ -129,8 +129,21 @@
 - [07 hands on implementation handbook](../src/security/security-engineering/07-hands-on-implementation-handbook.tex) — security engineering · **provisional**
 - [03 control implementation catalog](../src/security/standards/iso-27000/03-control-implementation-catalog.tex) — standards/iso 27000 · **provisional**
 
-## laboratory (62)
+## laboratory (75)
 
+- [Healthcare Insurance Integration](../src/data-systems/enterprise-data-modeling/case-studies/healthcare-insurance-integration.tex) — enterprise-data-modeling · **provisional**
+- [Manufacturer Digital Thread](../src/data-systems/enterprise-data-modeling/case-studies/manufacturer-digital-thread.tex) — enterprise-data-modeling · **provisional**
+- [Retail Financial Marketplace](../src/data-systems/enterprise-data-modeling/case-studies/retail-financial-marketplace.tex) — enterprise-data-modeling · **provisional**
+- [Travel Reservation Changes](../src/data-systems/enterprise-data-modeling/case-studies/travel-reservation-changes.tex) — enterprise-data-modeling · **provisional**
+- [Conceptual To Logical Erd Lab](../src/data-systems/enterprise-data-modeling/laboratories/conceptual-to-logical-erd-lab.tex) — enterprise-data-modeling · **provisional**
+- [Ecommerce Marketplace Lab](../src/data-systems/enterprise-data-modeling/laboratories/ecommerce-marketplace-lab.tex) — enterprise-data-modeling · **provisional**
+- [Finance Ledger Lab](../src/data-systems/enterprise-data-modeling/laboratories/finance-ledger-lab.tex) — enterprise-data-modeling · **provisional**
+- [Healthcare Encounter Lab](../src/data-systems/enterprise-data-modeling/laboratories/healthcare-encounter-lab.tex) — enterprise-data-modeling · **provisional**
+- [Manufacturing Bom Lab](../src/data-systems/enterprise-data-modeling/laboratories/manufacturing-bom-lab.tex) — enterprise-data-modeling · **provisional**
+- [Postgresql Implementation Laboratory](../src/data-systems/enterprise-data-modeling/laboratories/postgresql-implementation-laboratory.tex) — enterprise-data-modeling · **provisional**
+- [Schema Evolution Lab](../src/data-systems/enterprise-data-modeling/laboratories/schema-evolution-lab.tex) — enterprise-data-modeling · **provisional**
+- [Telecom Network Lab](../src/data-systems/enterprise-data-modeling/laboratories/telecom-network-lab.tex) — enterprise-data-modeling · **provisional**
+- [Uml Class And Erd Traceability Lab](../src/data-systems/enterprise-data-modeling/laboratories/uml-class-and-erd-traceability-lab.tex) — enterprise-data-modeling · **provisional**
 - [lab 01 pipeline value stream](../src/devops/ci-cd/continuous-delivery-release-engineering/laboratories/lab-01-pipeline-value-stream.tex) — ci cd/continuous delivery release engineering/laboratories · **provisional**
 - [lab 02 github actions ci](../src/devops/ci-cd/continuous-delivery-release-engineering/laboratories/lab-02-github-actions-ci.tex) — ci cd/continuous delivery release engineering/laboratories · **provisional**
 - [lab 03 quality gates](../src/devops/ci-cd/continuous-delivery-release-engineering/laboratories/lab-03-quality-gates.tex) — ci cd/continuous delivery release engineering/laboratories · **provisional**
@@ -204,8 +217,11 @@
 - [Assessment Curricula Shared Preamble](../src/security/application-security/learning/assessment-curricula/assessment-curricula-common.tex) — shared LaTeX preamble for AppSec curricula · **reviewed** · non-standalone
 - [preamble](../src/startups/small-business-management/shared/preamble.tex) — small-business-management/shared · **provisional** · non-standalone
 
-## policy-standard (16)
+## policy-standard (19)
 
+- [Data Classification Lineage Retention](../src/data-systems/enterprise-data-modeling/governance/data-classification-lineage-retention.tex) — enterprise-data-modeling · **provisional**
+- [Data Governance Operating Model](../src/data-systems/enterprise-data-modeling/governance/data-governance-operating-model.tex) — enterprise-data-modeling · **provisional**
+- [Model Review And Change Control](../src/data-systems/enterprise-data-modeling/governance/model-review-and-change-control.tex) — enterprise-data-modeling · **provisional**
 - [C secure coding standard](../src/programming/languages/c-cpp/secure-coding/secure-coding-standard-c.tex) — c secure coding · **reviewed**
 - [CPP secure coding standard](../src/programming/languages/c-cpp/secure-coding/secure-coding-standard-cpp.tex) — cpp secure coding · **reviewed**
 - [04 standard library reference](../src/programming/languages/c-cpp/standards/c23/04-standard-library-reference.tex) — standards/c23 · **provisional**
@@ -246,8 +262,11 @@
 - [monthly financial close sop](../src/startups/small-business-management/procedures/monthly-financial-close-sop.tex) — small-business-management/procedures · **provisional**
 - [supplier and inventory sop](../src/startups/small-business-management/procedures/supplier-and-inventory-sop.tex) — small-business-management/procedures · **provisional**
 
-## scorecard (6)
+## scorecard (9)
 
+- [Data Governance Scorecard](../src/data-systems/enterprise-data-modeling/scorecards/data-governance-scorecard.tex) — enterprise-data-modeling · **provisional**
+- [Data Model Quality Scorecard](../src/data-systems/enterprise-data-modeling/scorecards/data-model-quality-scorecard.tex) — enterprise-data-modeling · **provisional**
+- [Database Architecture Scorecard](../src/data-systems/enterprise-data-modeling/scorecards/database-architecture-scorecard.tex) — enterprise-data-modeling · **provisional**
 - [business plan quality template](../src/startups/small-business-management/scorecards/templates/business-plan-quality-template.tex) — small-business-management/scorecards/templates · **provisional**
 - [ethical governance template](../src/startups/small-business-management/scorecards/templates/ethical-governance-template.tex) — small-business-management/scorecards/templates · **provisional**
 - [financial readiness template](../src/startups/small-business-management/scorecards/templates/financial-readiness-template.tex) — small-business-management/scorecards/templates · **provisional**
@@ -255,7 +274,7 @@
 - [operational resilience template](../src/startups/small-business-management/scorecards/templates/operational-resilience-template.tex) — small-business-management/scorecards/templates · **provisional**
 - [venture feasibility template](../src/startups/small-business-management/scorecards/templates/venture-feasibility-template.tex) — small-business-management/scorecards/templates · **provisional**
 
-## study-guide (354)
+## study-guide (366)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -308,6 +327,18 @@
 - [19 estimating the stories](../src/business-analysis/user-stories/study-guides/19-estimating-the-stories.tex) — agile requirements / user stories · **provisional**
 - [20 the release plan](../src/business-analysis/user-stories/study-guides/20-the-release-plan.tex) — agile requirements / user stories · **provisional**
 - [21 the acceptance tests](../src/business-analysis/user-stories/study-guides/21-the-acceptance-tests.tex) — agile requirements / user stories · **provisional**
+- [Competency And Assessment Roadmap](../src/data-systems/enterprise-data-modeling/curriculum/competency-and-assessment-roadmap.tex) — enterprise-data-modeling · **provisional**
+- [Prerequisite Based Curriculum](../src/data-systems/enterprise-data-modeling/curriculum/prerequisite-based-curriculum.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 01 Introduction](../src/data-systems/enterprise-data-modeling/study-guides/chapter-01-introduction.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 02 Manufacturing](../src/data-systems/enterprise-data-modeling/study-guides/chapter-02-manufacturing.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 03 Telecommunications](../src/data-systems/enterprise-data-modeling/study-guides/chapter-03-telecommunications.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 04 Health Care](../src/data-systems/enterprise-data-modeling/study-guides/chapter-04-health-care.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 05 Insurance](../src/data-systems/enterprise-data-modeling/study-guides/chapter-05-insurance.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 06 Financial Services](../src/data-systems/enterprise-data-modeling/study-guides/chapter-06-financial-services.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 07 Professional Services](../src/data-systems/enterprise-data-modeling/study-guides/chapter-07-professional-services.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 08 Travel](../src/data-systems/enterprise-data-modeling/study-guides/chapter-08-travel.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 09 E Commerce Models](../src/data-systems/enterprise-data-modeling/study-guides/chapter-09-e-commerce-models.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 10 Using The Industry Models In The Real World](../src/data-systems/enterprise-data-modeling/study-guides/chapter-10-using-the-industry-models-in-the-real-world.tex) — enterprise-data-modeling · **provisional**
 - [02 chapter study guides](../src/devops/build-systems/professional-cmake/02-chapter-study-guides.tex) — build systems/professional cmake · **provisional**
 - [08 prerequisite curriculum](../src/devops/build-systems/professional-cmake/08-prerequisite-curriculum.tex) — build systems/professional cmake · **provisional**
 - [capstone delivery program](../src/devops/ci-cd/continuous-delivery-release-engineering/curriculum/capstone-delivery-program.tex) — ci cd/continuous delivery release engineering/curriculum · **provisional**
@@ -939,7 +970,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (668)
+## technical-reference (680)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -1255,6 +1286,18 @@
 - [ch14 statistical description notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch14-statistical-description-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
 - [ch15 data modeling notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch15-data-modeling-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
 - [ch16 classification inference notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch16-classification-inference-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
+- [Dimensional And Analytical Modeling](../src/data-systems/enterprise-data-modeling/references/dimensional-and-analytical-modeling.tex) — enterprise-data-modeling · **provisional**
+- [E Commerce Models Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/e-commerce-models-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Financial Services Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/financial-services-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Health Care Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/health-care-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Insurance Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/insurance-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Manufacturing Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/manufacturing-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Normalization And Dependencies](../src/data-systems/enterprise-data-modeling/references/normalization-and-dependencies.tex) — enterprise-data-modeling · **provisional**
+- [Professional Services Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/professional-services-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Telecommunications Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/telecommunications-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Temporal And Event Data](../src/data-systems/enterprise-data-modeling/references/temporal-and-event-data.tex) — enterprise-data-modeling · **provisional**
+- [Travel Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/travel-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Universal Data Modeling Reference](../src/data-systems/enterprise-data-modeling/references/universal-data-modeling-reference.tex) — enterprise-data-modeling · **provisional**
 - [agentic architecture handout](../src/data-systems/technical-documents/agentic-architecture-handout.tex) — data systems · **provisional**
 - [computer networks algorithms pseudocode](../src/data-systems/technical-documents/computer-networks-algorithms-pseudocode.tex) — data systems · **provisional**
 - [llm api engineering reference](../src/data-systems/technical-documents/llm-api-engineering-reference.tex) — data systems · **provisional**
@@ -1610,7 +1653,7 @@
 - [venture lifecycle reference](../src/startups/small-business-management/technical-reference/venture-lifecycle-reference.tex) — small-business-management/technical-reference · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## template (170)
+## template (179)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -1677,6 +1720,15 @@
 - [release planning workbook template](../src/business-analysis/user-stories/workbooks/templates/release-planning-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [role and discovery workbook template](../src/business-analysis/user-stories/workbooks/templates/role-and-discovery-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [story refinement workbook template](../src/business-analysis/user-stories/workbooks/templates/story-refinement-workbook-template.tex) — agile requirements / user stories · **provisional**
+- [Architecture Decision Record Template](../src/data-systems/enterprise-data-modeling/templates/architecture-decision-record-template.tex) — enterprise-data-modeling · **provisional**
+- [Conceptual Model Brief Template](../src/data-systems/enterprise-data-modeling/templates/conceptual-model-brief-template.tex) — enterprise-data-modeling · **provisional**
+- [Data Dictionary Template](../src/data-systems/enterprise-data-modeling/templates/data-dictionary-template.tex) — enterprise-data-modeling · **provisional**
+- [Data Governance Assessment Template](../src/data-systems/enterprise-data-modeling/templates/data-governance-assessment-template.tex) — enterprise-data-modeling · **provisional**
+- [Data Model Assessment Scorecard Template](../src/data-systems/enterprise-data-modeling/templates/data-model-assessment-scorecard-template.tex) — enterprise-data-modeling · **provisional**
+- [Entity Relationship Specification Template](../src/data-systems/enterprise-data-modeling/templates/entity-relationship-specification-template.tex) — enterprise-data-modeling · **provisional**
+- [Normalization Review Template](../src/data-systems/enterprise-data-modeling/templates/normalization-review-template.tex) — enterprise-data-modeling · **provisional**
+- [Schema Design Review Template](../src/data-systems/enterprise-data-modeling/templates/schema-design-review-template.tex) — enterprise-data-modeling · **provisional**
+- [Schema Migration Plan Template](../src/data-systems/enterprise-data-modeling/templates/schema-migration-plan-template.tex) — enterprise-data-modeling · **provisional**
 - [architecture decision record template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/architecture-decision-record-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
 - [canary rollout plan template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/canary-rollout-plan-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
 - [deployment readiness review template](../src/devops/ci-cd/continuous-delivery-release-engineering/templates/deployment-readiness-review-template.tex) — ci cd/continuous delivery release engineering/templates · **provisional**
@@ -1803,7 +1855,7 @@
 - [study plan user stories github advanced sec](../src/security/github-advanced-security/administration/study-plan-user-stories-github-advanced-sec.tex) — github advanced security/administration · **provisional**
 - [study plan owasp api sec top 10 user stories](../src/security/standards/owasp/study-plan-owasp-api-sec-top-10-user-stories.tex) — standards/owasp · **provisional**
 
-## workbook (114)
+## workbook (124)
 
 - [concern view evidence template](../src/architecture/c4-model/documentation-suite/workbooks/concern-view-evidence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
 - [cross view correspondence template](../src/architecture/c4-model/documentation-suite/workbooks/cross-view-correspondence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
@@ -1825,6 +1877,16 @@
 - [lab 07 negotiate a release plan](../src/business-analysis/user-stories/laboratories/lab-07-negotiate-a-release-plan.tex) — agile requirements / user stories · **provisional**
 - [lab 08 run change impact and governance](../src/business-analysis/user-stories/laboratories/lab-08-run-change-impact-and-governance.tex) — agile requirements / user stories · **provisional**
 - [lab 09 capstone deliver a story led release](../src/business-analysis/user-stories/laboratories/lab-09-capstone-deliver-a-story-led-release.tex) — agile requirements / user stories · **provisional**
+- [Dimensional Modeling Workbook Template](../src/data-systems/enterprise-data-modeling/workbooks/dimensional-modeling-workbook-template.tex) — enterprise-data-modeling · **provisional**
+- [Dimensional Modeling Workbook](../src/data-systems/enterprise-data-modeling/workbooks/dimensional-modeling-workbook.tex) — enterprise-data-modeling · **provisional**
+- [Migration Planning Workbook Template](../src/data-systems/enterprise-data-modeling/workbooks/migration-planning-workbook-template.tex) — enterprise-data-modeling · **provisional**
+- [Migration Planning Workbook](../src/data-systems/enterprise-data-modeling/workbooks/migration-planning-workbook.tex) — enterprise-data-modeling · **provisional**
+- [Normalization Workbook Template](../src/data-systems/enterprise-data-modeling/workbooks/normalization-workbook-template.tex) — enterprise-data-modeling · **provisional**
+- [Normalization Workbook](../src/data-systems/enterprise-data-modeling/workbooks/normalization-workbook.tex) — enterprise-data-modeling · **provisional**
+- [Schema Design Workbook Template](../src/data-systems/enterprise-data-modeling/workbooks/schema-design-workbook-template.tex) — enterprise-data-modeling · **provisional**
+- [Schema Design Workbook](../src/data-systems/enterprise-data-modeling/workbooks/schema-design-workbook.tex) — enterprise-data-modeling · **provisional**
+- [Temporal Validity Workbook Template](../src/data-systems/enterprise-data-modeling/workbooks/temporal-validity-workbook-template.tex) — enterprise-data-modeling · **provisional**
+- [Temporal Validity Workbook](../src/data-systems/enterprise-data-modeling/workbooks/temporal-validity-workbook.tex) — enterprise-data-modeling · **provisional**
 - [benchmark experiment template](../src/devops/ci-cd/continuous-delivery-release-engineering/workbooks/benchmark-experiment-template.tex) — ci cd/continuous delivery release engineering/workbooks · **provisional**
 - [failure injection template](../src/devops/ci-cd/continuous-delivery-release-engineering/workbooks/failure-injection-template.tex) — ci cd/continuous delivery release engineering/workbooks · **provisional**
 - [migration compatibility template](../src/devops/ci-cd/continuous-delivery-release-engineering/workbooks/migration-compatibility-template.tex) — ci cd/continuous delivery release engineering/workbooks · **provisional**
