@@ -25,7 +25,7 @@
 - [subsystem and lifecycle specification](../src/game-development/game-engine-architecture-suite/architecture-specifications/subsystem-and-lifecycle-specification.tex) — game-engine-architecture-suite/architecture-specifications · **provisional**
 - [Open-Source Enterprise Security Platform: Reference Architecture and Tool Strategy](../src/security/technical-documents/open-source-enterprise-security-platform.tex) — enterprise security platform architecture · **reviewed**
 
-## assessment (41)
+## assessment (47)
 
 - [architecture traceability scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/architecture-traceability-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
 - [diagram quality scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/diagram-quality-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
@@ -36,6 +36,12 @@
 - [architecture view completeness template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Architecture_View_Completeness_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
 - [documentation review readiness template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Documentation_Review_Readiness_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
 - [traceability and change readiness template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Traceability_and_Change_Readiness_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
+- [chair procedure assessment template](../src/business-analysis/parliamentary-procedure-and-governance/scorecards/templates/chair-procedure-assessment-template.tex) — parliamentary-procedure-and-governance/scorecards/templates · **provisional**
+- [disciplinary due process assessment template](../src/business-analysis/parliamentary-procedure-and-governance/scorecards/templates/disciplinary-due-process-assessment-template.tex) — parliamentary-procedure-and-governance/scorecards/templates · **provisional**
+- [election integrity assessment template](../src/business-analysis/parliamentary-procedure-and-governance/scorecards/templates/election-integrity-assessment-template.tex) — parliamentary-procedure-and-governance/scorecards/templates · **provisional**
+- [governance bylaws maturity template](../src/business-analysis/parliamentary-procedure-and-governance/scorecards/templates/governance-bylaws-maturity-template.tex) — parliamentary-procedure-and-governance/scorecards/templates · **provisional**
+- [meeting validity assessment template](../src/business-analysis/parliamentary-procedure-and-governance/scorecards/templates/meeting-validity-assessment-template.tex) — parliamentary-procedure-and-governance/scorecards/templates · **provisional**
+- [minutes and records assessment template](../src/business-analysis/parliamentary-procedure-and-governance/scorecards/templates/minutes-and-records-assessment-template.tex) — parliamentary-procedure-and-governance/scorecards/templates · **provisional**
 - [DCAM-Based Capability Assessment Scorecard Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/scorecards/dcam-based-capability-assessment-scorecard-template.tex) — enterprise-data-governance · **provisional**
 - [devsecops control assurance template](../src/devops/ci-cd/continuous-delivery-release-engineering/scorecards/devsecops-control-assurance-template.tex) — ci cd/continuous delivery release engineering/scorecards · **provisional**
 - [pipeline architecture template](../src/devops/ci-cd/continuous-delivery-release-engineering/scorecards/pipeline-architecture-template.tex) — ci cd/continuous delivery release engineering/scorecards · **provisional**
@@ -208,9 +214,10 @@
 - [three statement lab](../src/startups/small-business-management/financial-labs/three-statement-lab.tex) — small-business-management/financial-labs · **provisional**
 - [working capital cycle lab](../src/startups/small-business-management/financial-labs/working-capital-cycle-lab.tex) — small-business-management/financial-labs · **provisional**
 
-## latex-fragment (7)
+## latex-fragment (8)
 
 - [architecture style](../src/architecture/views-and-beyond/documentation-engineering-suite/shared/architecture-style.tex) — views-and-beyond/documentation-engineering-suite/shared · **provisional** · non-standalone
+- [preamble](../src/business-analysis/parliamentary-procedure-and-governance/shared/preamble.tex) — parliamentary-procedure-and-governance/shared · **provisional** · non-standalone
 - [preamble](../src/business-analysis/user-stories/shared/preamble.tex) — agile requirements / user stories · **provisional** · non-standalone
 - [Algorithm Style](../src/programming/algorithms/algorithm-engineering/shared/algorithm-style.tex) — algorithm engineering / shared · **provisional** · non-standalone
 - [Compiler Suite Shared Style Preamble](../src/programming/compilers/compiler-engineering/shared/compiler-suite-style.tex) — compiler engineering / engineering a compiler / shared · **provisional** · non-standalone
@@ -240,8 +247,21 @@
 - [closure playbook standard operating procedure](../src/security/application-security/processes/avit-seeker/closure-playbook-standard-operating-procedure.tex) — processes/avit seeker · **provisional**
 - [secure workflow standard github actions](../src/security/github-advanced-security/references/secure-workflow-standard-github-actions.tex) — github advanced security/references · **provisional**
 
-## runbook (20)
+## runbook (33)
 
+- [administer nominations and election](../src/business-analysis/parliamentary-procedure-and-governance/procedures/administer-nominations-and-election.tex) — parliamentary-procedure-and-governance/procedures · **provisional**
+- [conduct tally and announce](../src/business-analysis/parliamentary-procedure-and-governance/procedures/conduct-tally-and-announce.tex) — parliamentary-procedure-and-governance/procedures · **provisional**
+- [control bylaws amendments](../src/business-analysis/parliamentary-procedure-and-governance/procedures/control-bylaws-amendments.tex) — parliamentary-procedure-and-governance/procedures · **provisional**
+- [convene electronic meeting](../src/business-analysis/parliamentary-procedure-and-governance/procedures/convene-electronic-meeting.tex) — parliamentary-procedure-and-governance/procedures · **provisional**
+- [handle point of order and appeal](../src/business-analysis/parliamentary-procedure-and-governance/procedures/handle-point-of-order-and-appeal.tex) — parliamentary-procedure-and-governance/procedures · **provisional**
+- [introduce handle motion](../src/business-analysis/parliamentary-procedure-and-governance/procedures/introduce-handle-motion.tex) — parliamentary-procedure-and-governance/procedures · **provisional**
+- [manage quorum loss](../src/business-analysis/parliamentary-procedure-and-governance/procedures/manage-quorum-loss.tex) — parliamentary-procedure-and-governance/procedures · **provisional**
+- [open validate and chair](../src/business-analysis/parliamentary-procedure-and-governance/procedures/open-validate-and-chair.tex) — parliamentary-procedure-and-governance/procedures · **provisional**
+- [prepare and notify meetings](../src/business-analysis/parliamentary-procedure-and-governance/procedures/prepare-and-notify-meetings.tex) — parliamentary-procedure-and-governance/procedures · **provisional**
+- [process amendment stack](../src/business-analysis/parliamentary-procedure-and-governance/procedures/process-amendment-stack.tex) — parliamentary-procedure-and-governance/procedures · **provisional**
+- [produce approve minutes](../src/business-analysis/parliamentary-procedure-and-governance/procedures/produce-approve-minutes.tex) — parliamentary-procedure-and-governance/procedures · **provisional**
+- [refer and review committee work](../src/business-analysis/parliamentary-procedure-and-governance/procedures/refer-and-review-committee-work.tex) — parliamentary-procedure-and-governance/procedures · **provisional**
+- [triage order and discipline](../src/business-analysis/parliamentary-procedure-and-governance/procedures/triage-order-and-discipline.tex) — parliamentary-procedure-and-governance/procedures · **provisional**
 - [animation benchmark and regression procedure](../src/game-development/animation-timing/procedures/animation-benchmark-and-regression-procedure.tex) — animation-timing/procedures · **provisional**
 - [animation playtest standard operating procedure](../src/game-development/animation-timing/procedures/animation-playtest-standard-operating-procedure.tex) — animation-timing/procedures · **provisional**
 - [playtest analysis and prioritization procedure](../src/game-development/playtesting/playtest-analysis-and-prioritization-procedure.tex) — playtesting · **provisional**
@@ -275,7 +295,7 @@
 - [operational resilience template](../src/startups/small-business-management/scorecards/templates/operational-resilience-template.tex) — small-business-management/scorecards/templates · **provisional**
 - [venture feasibility template](../src/startups/small-business-management/scorecards/templates/venture-feasibility-template.tex) — small-business-management/scorecards/templates · **provisional**
 
-## study-guide (366)
+## study-guide (431)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -307,6 +327,71 @@
 - [study guide 12 epilogue and complementary methods](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_12_Epilogue_and_Complementary_Methods.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
 - [study guide 13 appendices modeling notations](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_13_Appendices_Modeling_Notations.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
 - [software architecture learning curriculum](../src/architecture/workbooks/software-architecture-learning-curriculum.tex) — architecture · **provisional**
+- [prerequisite based curriculum](../src/business-analysis/parliamentary-procedure-and-governance/curriculum/prerequisite-based-curriculum.tex) — parliamentary-procedure-and-governance/curriculum · **provisional**
+- [section to competency crosswalk](../src/business-analysis/parliamentary-procedure-and-governance/curriculum/section-to-competency-crosswalk.tex) — parliamentary-procedure-and-governance/curriculum · **provisional**
+- [section 01 the deliberative assembly](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-01-the-deliberative-assembly.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 02 rules of an assembly or organization](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-02-rules-of-an-assembly-or-organization.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 03 basic provisions and procedures](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-03-basic-provisions-and-procedures.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 04 the handling of a motion](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-04-the-handling-of-a-motion.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 05 basic classifications order of precedence](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-05-basic-classifications-order-of-precedence.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 06 description of classes and individual motions](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-06-description-of-classes-and-individual-motions.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 07 standard descriptive characteristics of motions](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-07-standard-descriptive-characteristics-of-motions.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 08 meeting session recess adjournment](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-08-meeting-session-recess-adjournment.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 09 particular types of business meetings](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-09-particular-types-of-business-meetings.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 10 the main motion](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-10-the-main-motion.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 11 postpone indefinitely](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-11-postpone-indefinitely.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 12 amend](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-12-amend.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 13 commit or refer](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-13-commit-or-refer.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 14 postpone to a certain time](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-14-postpone-to-a-certain-time.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 15 limit or extend limits of debate](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-15-limit-or-extend-limits-of-debate.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 16 previous question](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-16-previous-question.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 17 lay on the table](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-17-lay-on-the-table.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 18 call for the orders of the day](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-18-call-for-the-orders-of-the-day.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 19 raise a question of privilege](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-19-raise-a-question-of-privilege.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 20 recess](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-20-recess.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 21 adjourn](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-21-adjourn.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 22 fix the time to which to adjourn](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-22-fix-the-time-to-which-to-adjourn.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 23 point of order](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-23-point-of-order.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 24 appeal](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-24-appeal.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 25 suspend the rules](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-25-suspend-the-rules.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 26 objection to the consideration of a question](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-26-objection-to-the-consideration-of-a-question.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 27 division of a question](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-27-division-of-a-question.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 28 consideration by paragraph or seriatim](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-28-consideration-by-paragraph-or-seriatim.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 29 division of the assembly](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-29-division-of-the-assembly.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 30 motions relating to methods of voting and the polls](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-30-motions-relating-to-methods-of-voting-and-the-polls.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 31 motions relating to nominations](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-31-motions-relating-to-nominations.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 32 request to be excused from a duty](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-32-request-to-be-excused-from-a-duty.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 33 requests and inquiries](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-33-requests-and-inquiries.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 34 take from the table](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-34-take-from-the-table.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 35 rescind amend something previously adopted](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-35-rescind-amend-something-previously-adopted.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 36 discharge a committee](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-36-discharge-a-committee.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 37 reconsider](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-37-reconsider.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 38 renewal of motions](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-38-renewal-of-motions.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 39 dilatory and improper motions](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-39-dilatory-and-improper-motions.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 40 quorum](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-40-quorum.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 41 order of business orders of the day agenda or program](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-41-order-of-business-orders-of-the-day-agenda-or-program.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 42 rules governing assignment of the floor](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-42-rules-governing-assignment-of-the-floor.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 43 rules governing debate](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-43-rules-governing-debate.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 44 bases for determining a voting result](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-44-bases-for-determining-a-voting-result.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 45 voting procedure](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-45-voting-procedure.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 46 nominations and elections](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-46-nominations-and-elections.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 47 officers](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-47-officers.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 48 minutes and reports of officers](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-48-minutes-and-reports-of-officers.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 49 boards](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-49-boards.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 50 committees](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-50-committees.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 51 reports of boards and committees](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-51-reports-of-boards-and-committees.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 52 committee of the whole and its alternate forms](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-52-committee-of-the-whole-and-its-alternate-forms.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 53 mass meetings](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-53-mass-meetings.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 54 organization of a permanent society](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-54-organization-of-a-permanent-society.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 55 merger consolidation and dissolution of societies](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-55-merger-consolidation-and-dissolution-of-societies.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 56 content and composition of bylaws](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-56-content-and-composition-of-bylaws.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 57 amendment of bylaws](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-57-amendment-of-bylaws.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 58 conventions of delegates](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-58-conventions-of-delegates.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 59 organization of a convention of an established society](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-59-organization-of-a-convention-of-an-established-society.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 60 conventions not of a permanent society](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-60-conventions-not-of-a-permanent-society.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 61 discipline of members and guests](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-61-discipline-of-members-and-guests.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 62 removal from office and other remedies](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-62-removal-from-office-and-other-remedies.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
+- [section 63 investigation and trial](../src/business-analysis/parliamentary-procedure-and-governance/study-guides/section-63-investigation-and-trial.tex) — parliamentary-procedure-and-governance/study-guides · **provisional**
 - [01 an overview](../src/business-analysis/user-stories/study-guides/01-an-overview.tex) — agile requirements / user stories · **provisional**
 - [02 writing stories](../src/business-analysis/user-stories/study-guides/02-writing-stories.tex) — agile requirements / user stories · **provisional**
 - [03 user role modeling](../src/business-analysis/user-stories/study-guides/03-user-role-modeling.tex) — agile requirements / user stories · **provisional**
@@ -971,7 +1056,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (682)
+## technical-reference (693)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -1175,6 +1260,17 @@
 - [babok v3 appsec agile uml bpmn ea crosswalk](../src/business-analysis/babok/babok-v3-appsec-agile-uml-bpmn-ea-crosswalk.tex) — babok · **provisional**
 - [babok v3 knowledge areas and tasks](../src/business-analysis/babok/babok-v3-knowledge-areas-and-tasks.tex) — babok · **provisional**
 - [babok v3 technical guide](../src/business-analysis/babok/babok-v3-technical-guide.tex) — babok · **provisional**
+- [governance authority and decision rights matrix](../src/business-analysis/parliamentary-procedure-and-governance/decision-matrices/governance-authority-and-decision-rights-matrix.tex) — parliamentary-procedure-and-governance/decision-matrices · **provisional**
+- [motion characteristics and precedence matrix](../src/business-analysis/parliamentary-procedure-and-governance/decision-matrices/motion-characteristics-and-precedence-matrix.tex) — parliamentary-procedure-and-governance/decision-matrices · **provisional**
+- [voting threshold and tally decision matrix](../src/business-analysis/parliamentary-procedure-and-governance/decision-matrices/voting-threshold-and-tally-decision-matrix.tex) — parliamentary-procedure-and-governance/decision-matrices · **provisional**
+- [boards committees and delegation](../src/business-analysis/parliamentary-procedure-and-governance/technical-reference/boards-committees-and-delegation.tex) — parliamentary-procedure-and-governance/technical-reference · **provisional**
+- [bylaws formation and change control](../src/business-analysis/parliamentary-procedure-and-governance/technical-reference/bylaws-formation-and-change-control.tex) — parliamentary-procedure-and-governance/technical-reference · **provisional**
+- [due process conventions and ethics](../src/business-analysis/parliamentary-procedure-and-governance/technical-reference/due-process-conventions-and-ethics.tex) — parliamentary-procedure-and-governance/technical-reference · **provisional**
+- [meeting lifecycle notice and agenda](../src/business-analysis/parliamentary-procedure-and-governance/technical-reference/meeting-lifecycle-notice-and-agenda.tex) — parliamentary-procedure-and-governance/technical-reference · **provisional**
+- [minutes recordkeeping and evidence](../src/business-analysis/parliamentary-procedure-and-governance/technical-reference/minutes-recordkeeping-and-evidence.tex) — parliamentary-procedure-and-governance/technical-reference · **provisional**
+- [motion processing and chair rulings](../src/business-analysis/parliamentary-procedure-and-governance/technical-reference/motion-processing-and-chair-rulings.tex) — parliamentary-procedure-and-governance/technical-reference · **provisional**
+- [rules hierarchy and governing instruments](../src/business-analysis/parliamentary-procedure-and-governance/technical-reference/rules-hierarchy-and-governing-instruments.tex) — parliamentary-procedure-and-governance/technical-reference · **provisional**
+- [voting counting and election controls](../src/business-analysis/parliamentary-procedure-and-governance/technical-reference/voting-counting-and-election-controls.tex) — parliamentary-procedure-and-governance/technical-reference · **provisional**
 - [babok v3 cornell chapter notes](../src/business-analysis/study-notes/babok-v3-cornell-chapter-notes.tex) — business analysis · **provisional**
 - [chapter to operations crosswalk](../src/business-analysis/user-stories/curriculum/chapter-to-operations-crosswalk.tex) — agile requirements / user stories · **provisional**
 - [prerequisite based learning curriculum](../src/business-analysis/user-stories/curriculum/prerequisite-based-learning-curriculum.tex) — agile requirements / user stories · **provisional**
@@ -1656,7 +1752,7 @@
 - [venture lifecycle reference](../src/startups/small-business-management/technical-reference/venture-lifecycle-reference.tex) — small-business-management/technical-reference · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## template (183)
+## template (200)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -1703,6 +1799,23 @@
 - [component interface record template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Component_Interface_Record_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
 - [quality attribute scenario template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Quality_Attribute_Scenario_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
 - [stakeholder concern register template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Stakeholder_Concern_Register_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
+- [action and decision register template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/action-and-decision-register-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [amendment stack register template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/amendment-stack-register-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [ballot election tellers report template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/ballot-election-tellers-report-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [bylaws amendment control register template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/bylaws-amendment-control-register-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [committee charter and delegation template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/committee-charter-and-delegation-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [committee report and recommendations template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/committee-report-and-recommendations-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [confidential disciplinary case intake template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/confidential-disciplinary-case-intake-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [electronic meeting readiness template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/electronic-meeting-readiness-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [meeting agenda template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/meeting-agenda-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [meeting minutes template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/meeting-minutes-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [meeting notice and call template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/meeting-notice-and-call-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [motion intake and disposition template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/motion-intake-and-disposition-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [officer transition and vacancy template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/officer-transition-and-vacancy-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [point of order and appeal template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/point-of-order-and-appeal-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [quorum and attendance template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/quorum-and-attendance-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [unanimous consent log template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/unanimous-consent-log-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
+- [vote tally and announcement template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/vote-tally-and-announcement-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
 - [babok v3 requirements traceability templates](../src/business-analysis/templates/babok-v3-requirements-traceability-templates.tex) — business analysis · **provisional**
 - [acceptance readiness scorecard template](../src/business-analysis/user-stories/scorecards/templates/acceptance-readiness-scorecard-template.tex) — agile requirements / user stories · **provisional**
 - [backlog health scorecard template](../src/business-analysis/user-stories/scorecards/templates/backlog-health-scorecard-template.tex) — agile requirements / user stories · **provisional**
@@ -1862,7 +1975,7 @@
 - [study plan user stories github advanced sec](../src/security/github-advanced-security/administration/study-plan-user-stories-github-advanced-sec.tex) — github advanced security/administration · **provisional**
 - [study plan owasp api sec top 10 user stories](../src/security/standards/owasp/study-plan-owasp-api-sec-top-10-user-stories.tex) — standards/owasp · **provisional**
 
-## workbook (125)
+## workbook (148)
 
 - [concern view evidence template](../src/architecture/c4-model/documentation-suite/workbooks/concern-view-evidence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
 - [cross view correspondence template](../src/architecture/c4-model/documentation-suite/workbooks/cross-view-correspondence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
@@ -1875,6 +1988,29 @@
 - [requirement view traceability template](../src/architecture/views-and-beyond/documentation-engineering-suite/workbooks/Requirement_View_Traceability_Template.tex) — views-and-beyond/documentation-engineering-suite/workbooks · **provisional**
 - [Enterprise Architecture Discovery Evidence and Validation Workbook Template](../src/architecture/workbooks/github-actions-architecture-discovery-evidence-workbook-template.tex) — github-actions/enterprise-discovery · **reviewed**
 - [Enterprise Architecture Discovery Implementation Workbook Template](../src/architecture/workbooks/github-actions-architecture-discovery-implementation-workbook-template.tex) — github-actions/enterprise-discovery · **reviewed**
+- [amendments two degrees](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/amendments-two-degrees.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [ballot election](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/ballot-election.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [bylaws amendment](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/bylaws-amendment.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [committee referral](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/committee-referral.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [convening a valid meeting](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/convening-a-valid-meeting.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [convention credentials](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/convention-credentials.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [disciplinary fairness](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/disciplinary-fairness.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [main motion lifecycle](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/main-motion-lifecycle.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [minutes review](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/minutes-review.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [motions of precedence](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/motions-of-precedence.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [point of order appeal](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/point-of-order-appeal.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [quorum loss](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/quorum-loss.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [special and electronic meeting](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/special-and-electronic-meeting.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [urgent tabling and recovery](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/urgent-tabling-and-recovery.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [voting denominator](../src/business-analysis/parliamentary-procedure-and-governance/laboratories/voting-denominator.tex) — parliamentary-procedure-and-governance/laboratories · **provisional**
+- [amendment wording template](../src/business-analysis/parliamentary-procedure-and-governance/workbooks/templates/amendment-wording-template.tex) — parliamentary-procedure-and-governance/workbooks/templates · **provisional**
+- [bylaws change impact template](../src/business-analysis/parliamentary-procedure-and-governance/workbooks/templates/bylaws-change-impact-template.tex) — parliamentary-procedure-and-governance/workbooks/templates · **provisional**
+- [chair procedural scenario template](../src/business-analysis/parliamentary-procedure-and-governance/workbooks/templates/chair-procedural-scenario-template.tex) — parliamentary-procedure-and-governance/workbooks/templates · **provisional**
+- [committee report traceability template](../src/business-analysis/parliamentary-procedure-and-governance/workbooks/templates/committee-report-traceability-template.tex) — parliamentary-procedure-and-governance/workbooks/templates · **provisional**
+- [meeting validity and agenda template](../src/business-analysis/parliamentary-procedure-and-governance/workbooks/templates/meeting-validity-and-agenda-template.tex) — parliamentary-procedure-and-governance/workbooks/templates · **provisional**
+- [motion classification template](../src/business-analysis/parliamentary-procedure-and-governance/workbooks/templates/motion-classification-template.tex) — parliamentary-procedure-and-governance/workbooks/templates · **provisional**
+- [nominations and ballots template](../src/business-analysis/parliamentary-procedure-and-governance/workbooks/templates/nominations-and-ballots-template.tex) — parliamentary-procedure-and-governance/workbooks/templates · **provisional**
+- [vote threshold calculator template](../src/business-analysis/parliamentary-procedure-and-governance/workbooks/templates/vote-threshold-calculator-template.tex) — parliamentary-procedure-and-governance/workbooks/templates · **provisional**
 - [lab 01 discover real user roles](../src/business-analysis/user-stories/laboratories/lab-01-discover-real-user-roles.tex) — agile requirements / user stories · **provisional**
 - [lab 02 write and assess user stories](../src/business-analysis/user-stories/laboratories/lab-02-write-and-assess-user-stories.tex) — agile requirements / user stories · **provisional**
 - [lab 03 slice a full workflow vertically](../src/business-analysis/user-stories/laboratories/lab-03-slice-a-full-workflow-vertically.tex) — agile requirements / user stories · **provisional**

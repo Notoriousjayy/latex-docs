@@ -2,9 +2,10 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary latex source fragments (7)
+## Primary latex source fragments (8)
 
 - [architecture style](../src/architecture/views-and-beyond/documentation-engineering-suite/shared/architecture-style.tex) — views-and-beyond/documentation-engineering-suite/shared · **provisional** · non-standalone
+- [preamble](../src/business-analysis/parliamentary-procedure-and-governance/shared/preamble.tex) — parliamentary-procedure-and-governance/shared · **provisional** · non-standalone
 - [preamble](../src/business-analysis/user-stories/shared/preamble.tex) — agile requirements / user stories · **provisional** · non-standalone
 - [Algorithm Style](../src/programming/algorithms/algorithm-engineering/shared/algorithm-style.tex) — algorithm engineering / shared · **provisional** · non-standalone
 - [Compiler Suite Shared Style Preamble](../src/programming/compilers/compiler-engineering/shared/compiler-suite-style.tex) — compiler engineering / engineering a compiler / shared · **provisional** · non-standalone

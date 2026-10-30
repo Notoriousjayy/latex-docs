@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (682)
+## Primary technical references (693)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -206,6 +206,17 @@
 - [babok v3 appsec agile uml bpmn ea crosswalk](../src/business-analysis/babok/babok-v3-appsec-agile-uml-bpmn-ea-crosswalk.tex) — babok · **provisional**
 - [babok v3 knowledge areas and tasks](../src/business-analysis/babok/babok-v3-knowledge-areas-and-tasks.tex) — babok · **provisional**
 - [babok v3 technical guide](../src/business-analysis/babok/babok-v3-technical-guide.tex) — babok · **provisional**
+- [governance authority and decision rights matrix](../src/business-analysis/parliamentary-procedure-and-governance/decision-matrices/governance-authority-and-decision-rights-matrix.tex) — parliamentary-procedure-and-governance/decision-matrices · **provisional**
+- [motion characteristics and precedence matrix](../src/business-analysis/parliamentary-procedure-and-governance/decision-matrices/motion-characteristics-and-precedence-matrix.tex) — parliamentary-procedure-and-governance/decision-matrices · **provisional**
+- [voting threshold and tally decision matrix](../src/business-analysis/parliamentary-procedure-and-governance/decision-matrices/voting-threshold-and-tally-decision-matrix.tex) — parliamentary-procedure-and-governance/decision-matrices · **provisional**
+- [boards committees and delegation](../src/business-analysis/parliamentary-procedure-and-governance/technical-reference/boards-committees-and-delegation.tex) — parliamentary-procedure-and-governance/technical-reference · **provisional**
+- [bylaws formation and change control](../src/business-analysis/parliamentary-procedure-and-governance/technical-reference/bylaws-formation-and-change-control.tex) — parliamentary-procedure-and-governance/technical-reference · **provisional**
+- [due process conventions and ethics](../src/business-analysis/parliamentary-procedure-and-governance/technical-reference/due-process-conventions-and-ethics.tex) — parliamentary-procedure-and-governance/technical-reference · **provisional**
+- [meeting lifecycle notice and agenda](../src/business-analysis/parliamentary-procedure-and-governance/technical-reference/meeting-lifecycle-notice-and-agenda.tex) — parliamentary-procedure-and-governance/technical-reference · **provisional**
+- [minutes recordkeeping and evidence](../src/business-analysis/parliamentary-procedure-and-governance/technical-reference/minutes-recordkeeping-and-evidence.tex) — parliamentary-procedure-and-governance/technical-reference · **provisional**
+- [motion processing and chair rulings](../src/business-analysis/parliamentary-procedure-and-governance/technical-reference/motion-processing-and-chair-rulings.tex) — parliamentary-procedure-and-governance/technical-reference · **provisional**
+- [rules hierarchy and governing instruments](../src/business-analysis/parliamentary-procedure-and-governance/technical-reference/rules-hierarchy-and-governing-instruments.tex) — parliamentary-procedure-and-governance/technical-reference · **provisional**
+- [voting counting and election controls](../src/business-analysis/parliamentary-procedure-and-governance/technical-reference/voting-counting-and-election-controls.tex) — parliamentary-procedure-and-governance/technical-reference · **provisional**
 - [babok v3 cornell chapter notes](../src/business-analysis/study-notes/babok-v3-cornell-chapter-notes.tex) — business analysis · **provisional**
 - [chapter to operations crosswalk](../src/business-analysis/user-stories/curriculum/chapter-to-operations-crosswalk.tex) — agile requirements / user stories · **provisional**
 - [prerequisite based learning curriculum](../src/business-analysis/user-stories/curriculum/prerequisite-based-learning-curriculum.tex) — agile requirements / user stories · **provisional**
