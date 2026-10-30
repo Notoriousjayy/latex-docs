@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary study guides (354)
+## Primary study guides (366)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -55,6 +55,18 @@
 - [19 estimating the stories](../src/business-analysis/user-stories/study-guides/19-estimating-the-stories.tex) — agile requirements / user stories · **provisional**
 - [20 the release plan](../src/business-analysis/user-stories/study-guides/20-the-release-plan.tex) — agile requirements / user stories · **provisional**
 - [21 the acceptance tests](../src/business-analysis/user-stories/study-guides/21-the-acceptance-tests.tex) — agile requirements / user stories · **provisional**
+- [Competency And Assessment Roadmap](../src/data-systems/enterprise-data-modeling/curriculum/competency-and-assessment-roadmap.tex) — enterprise-data-modeling · **provisional**
+- [Prerequisite Based Curriculum](../src/data-systems/enterprise-data-modeling/curriculum/prerequisite-based-curriculum.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 01 Introduction](../src/data-systems/enterprise-data-modeling/study-guides/chapter-01-introduction.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 02 Manufacturing](../src/data-systems/enterprise-data-modeling/study-guides/chapter-02-manufacturing.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 03 Telecommunications](../src/data-systems/enterprise-data-modeling/study-guides/chapter-03-telecommunications.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 04 Health Care](../src/data-systems/enterprise-data-modeling/study-guides/chapter-04-health-care.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 05 Insurance](../src/data-systems/enterprise-data-modeling/study-guides/chapter-05-insurance.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 06 Financial Services](../src/data-systems/enterprise-data-modeling/study-guides/chapter-06-financial-services.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 07 Professional Services](../src/data-systems/enterprise-data-modeling/study-guides/chapter-07-professional-services.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 08 Travel](../src/data-systems/enterprise-data-modeling/study-guides/chapter-08-travel.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 09 E Commerce Models](../src/data-systems/enterprise-data-modeling/study-guides/chapter-09-e-commerce-models.tex) — enterprise-data-modeling · **provisional**
+- [Chapter 10 Using The Industry Models In The Real World](../src/data-systems/enterprise-data-modeling/study-guides/chapter-10-using-the-industry-models-in-the-real-world.tex) — enterprise-data-modeling · **provisional**
 - [02 chapter study guides](../src/devops/build-systems/professional-cmake/02-chapter-study-guides.tex) — build systems/professional cmake · **provisional**
 - [08 prerequisite curriculum](../src/devops/build-systems/professional-cmake/08-prerequisite-curriculum.tex) — build systems/professional cmake · **provisional**
 - [capstone delivery program](../src/devops/ci-cd/continuous-delivery-release-engineering/curriculum/capstone-delivery-program.tex) — ci cd/continuous delivery release engineering/curriculum · **provisional**

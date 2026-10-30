@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (668)
+## Primary technical references (680)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -318,6 +318,18 @@
 - [ch14 statistical description notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch14-statistical-description-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
 - [ch15 data modeling notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch15-data-modeling-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
 - [ch16 classification inference notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch16-classification-inference-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
+- [Dimensional And Analytical Modeling](../src/data-systems/enterprise-data-modeling/references/dimensional-and-analytical-modeling.tex) — enterprise-data-modeling · **provisional**
+- [E Commerce Models Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/e-commerce-models-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Financial Services Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/financial-services-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Health Care Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/health-care-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Insurance Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/insurance-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Manufacturing Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/manufacturing-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Normalization And Dependencies](../src/data-systems/enterprise-data-modeling/references/normalization-and-dependencies.tex) — enterprise-data-modeling · **provisional**
+- [Professional Services Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/professional-services-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Telecommunications Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/telecommunications-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Temporal And Event Data](../src/data-systems/enterprise-data-modeling/references/temporal-and-event-data.tex) — enterprise-data-modeling · **provisional**
+- [Travel Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/travel-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
+- [Universal Data Modeling Reference](../src/data-systems/enterprise-data-modeling/references/universal-data-modeling-reference.tex) — enterprise-data-modeling · **provisional**
 - [agentic architecture handout](../src/data-systems/technical-documents/agentic-architecture-handout.tex) — data systems · **provisional**
 - [computer networks algorithms pseudocode](../src/data-systems/technical-documents/computer-networks-algorithms-pseudocode.tex) — data systems · **provisional**
 - [llm api engineering reference](../src/data-systems/technical-documents/llm-api-engineering-reference.tex) — data systems · **provisional**
