@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (693)
+## Primary technical references (694)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -51,6 +51,7 @@
 - [01 cloud engineering guide](../src/architecture/cloud/engineering-suite/01-cloud-engineering-guide.tex) — cloud/engineering suite · **provisional**
 - [03 cloud mechanisms catalog](../src/architecture/cloud/engineering-suite/03-cloud-mechanisms-catalog.tex) — cloud/engineering suite · **provisional**
 - [04 cloud architecture catalog](../src/architecture/cloud/engineering-suite/04-cloud-architecture-catalog.tex) — cloud/engineering suite · **provisional**
+- [Secure AWS Platform: Story Crosswalk and Delivery Roadmap](../src/architecture/cloud/reusable-secure-aws-cloud-environment/story-traceability-and-roadmap.tex) — cloud/reusable-secure-aws-cloud-environment · **provisional**
 - [Secure AWS Terraform Repository and Deployment Architecture Standard](../src/architecture/cloud/secure-aws-terraform-repository-deployment/standard/aws-terraform-repository-deployment-standard.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [administration and it security system](../src/architecture/enterprise/business-operations/small-business-core-systems/administration-and-it-security-system.tex) — business operations/small business core systems · **provisional**
 - [financial management system](../src/architecture/enterprise/business-operations/small-business-core-systems/financial-management-system.tex) — business operations/small business core systems · **provisional**

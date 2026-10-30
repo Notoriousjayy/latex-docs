@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (200)
+## Primary reusable templates (202)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -16,6 +16,8 @@
 - [Architecture Documentation Templates](../src/architecture/cloud/engineering-suite/05-architecture-documentation-templates.tex) — cloud architecture documentation forms · **reviewed**
 - [Cloud Security Reference Templates](../src/architecture/cloud/engineering-suite/06-security-governance-templates.tex) — cloud security governance forms · **reviewed**
 - [FinOps and SLA Reference Templates](../src/architecture/cloud/engineering-suite/07-finops-sla-templates.tex) — FinOps and SLA · **reviewed**
+- [Secure AWS Gate Assessment Template](../src/architecture/cloud/reusable-secure-aws-cloud-environment/templates/gate-assessment-template.tex) — cloud/reusable-secure-aws-cloud-environment · **provisional**
+- [Secure AWS Security Evidence Register Template](../src/architecture/cloud/reusable-secure-aws-cloud-environment/templates/security-evidence-register-template.tex) — cloud/reusable-secure-aws-cloud-environment · **provisional**
 - [adr ai and agentic systems template](../src/architecture/decisions/templates/adr-ai-and-agentic-systems-template.tex) — decisions · **provisional**
 - [adr cloud platform template](../src/architecture/decisions/templates/adr-cloud-platform-template.tex) — decisions · **provisional**
 - [adr data and storage template](../src/architecture/decisions/templates/adr-data-and-storage-template.tex) — decisions · **provisional**

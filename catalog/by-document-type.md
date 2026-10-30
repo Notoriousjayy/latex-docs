@@ -2,8 +2,9 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## architecture-document (20)
+## architecture-document (21)
 
+- [Secure AWS Platform: Six Architecture Acceptance Gates](../src/architecture/cloud/reusable-secure-aws-cloud-environment/architecture-and-acceptance-gates.tex) — cloud/reusable-secure-aws-cloud-environment · **provisional**
 - [ADR-0001: Application-aligned repository ownership](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0001.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [ADR-0002: Multi-account workload and environment isolation](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0002.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [ADR-0003: Terraform state isolation and locking](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0003.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
@@ -1056,7 +1057,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (693)
+## technical-reference (694)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -1105,6 +1106,7 @@
 - [01 cloud engineering guide](../src/architecture/cloud/engineering-suite/01-cloud-engineering-guide.tex) — cloud/engineering suite · **provisional**
 - [03 cloud mechanisms catalog](../src/architecture/cloud/engineering-suite/03-cloud-mechanisms-catalog.tex) — cloud/engineering suite · **provisional**
 - [04 cloud architecture catalog](../src/architecture/cloud/engineering-suite/04-cloud-architecture-catalog.tex) — cloud/engineering suite · **provisional**
+- [Secure AWS Platform: Story Crosswalk and Delivery Roadmap](../src/architecture/cloud/reusable-secure-aws-cloud-environment/story-traceability-and-roadmap.tex) — cloud/reusable-secure-aws-cloud-environment · **provisional**
 - [Secure AWS Terraform Repository and Deployment Architecture Standard](../src/architecture/cloud/secure-aws-terraform-repository-deployment/standard/aws-terraform-repository-deployment-standard.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [administration and it security system](../src/architecture/enterprise/business-operations/small-business-core-systems/administration-and-it-security-system.tex) — business operations/small business core systems · **provisional**
 - [financial management system](../src/architecture/enterprise/business-operations/small-business-core-systems/financial-management-system.tex) — business operations/small business core systems · **provisional**
@@ -1752,7 +1754,7 @@
 - [venture lifecycle reference](../src/startups/small-business-management/technical-reference/venture-lifecycle-reference.tex) — small-business-management/technical-reference · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## template (200)
+## template (202)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -1766,6 +1768,8 @@
 - [Architecture Documentation Templates](../src/architecture/cloud/engineering-suite/05-architecture-documentation-templates.tex) — cloud architecture documentation forms · **reviewed**
 - [Cloud Security Reference Templates](../src/architecture/cloud/engineering-suite/06-security-governance-templates.tex) — cloud security governance forms · **reviewed**
 - [FinOps and SLA Reference Templates](../src/architecture/cloud/engineering-suite/07-finops-sla-templates.tex) — FinOps and SLA · **reviewed**
+- [Secure AWS Gate Assessment Template](../src/architecture/cloud/reusable-secure-aws-cloud-environment/templates/gate-assessment-template.tex) — cloud/reusable-secure-aws-cloud-environment · **provisional**
+- [Secure AWS Security Evidence Register Template](../src/architecture/cloud/reusable-secure-aws-cloud-environment/templates/security-evidence-register-template.tex) — cloud/reusable-secure-aws-cloud-environment · **provisional**
 - [adr ai and agentic systems template](../src/architecture/decisions/templates/adr-ai-and-agentic-systems-template.tex) — decisions · **provisional**
 - [adr cloud platform template](../src/architecture/decisions/templates/adr-cloud-platform-template.tex) — decisions · **provisional**
 - [adr data and storage template](../src/architecture/decisions/templates/adr-data-and-storage-template.tex) — decisions · **provisional**

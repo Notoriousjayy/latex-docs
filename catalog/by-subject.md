@@ -1519,6 +1519,13 @@
 - [03 cloud mechanisms catalog](../src/architecture/cloud/engineering-suite/03-cloud-mechanisms-catalog.tex) — cloud/engineering suite · **provisional**
 - [04 cloud architecture catalog](../src/architecture/cloud/engineering-suite/04-cloud-architecture-catalog.tex) — cloud/engineering suite · **provisional**
 
+## cloud/reusable-secure-aws-cloud-environment (4)
+
+- [Secure AWS Platform: Six Architecture Acceptance Gates](../src/architecture/cloud/reusable-secure-aws-cloud-environment/architecture-and-acceptance-gates.tex) — cloud/reusable-secure-aws-cloud-environment · **provisional**
+- [Secure AWS Platform: Story Crosswalk and Delivery Roadmap](../src/architecture/cloud/reusable-secure-aws-cloud-environment/story-traceability-and-roadmap.tex) — cloud/reusable-secure-aws-cloud-environment · **provisional**
+- [Secure AWS Gate Assessment Template](../src/architecture/cloud/reusable-secure-aws-cloud-environment/templates/gate-assessment-template.tex) — cloud/reusable-secure-aws-cloud-environment · **provisional**
+- [Secure AWS Security Evidence Register Template](../src/architecture/cloud/reusable-secure-aws-cloud-environment/templates/security-evidence-register-template.tex) — cloud/reusable-secure-aws-cloud-environment · **provisional**
+
 ## cloud/secure-aws-terraform-repository-deployment (7)
 
 - [ADR-0001: Application-aligned repository ownership](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0001.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
