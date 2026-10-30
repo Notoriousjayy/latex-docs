@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (66)
+## Primary reusable templates (71)
 
 - [Architecture Documentation Templates](../src/architecture/cloud/engineering-suite/05-architecture-documentation-templates.tex) — cloud architecture documentation forms · **reviewed**
 - [Cloud Security Reference Templates](../src/architecture/cloud/engineering-suite/06-security-governance-templates.tex) — cloud security governance forms · **reviewed**
@@ -57,6 +57,11 @@
 - [game design document template](../src/game-development/templates/game-design-document-template.tex) — game development · **provisional**
 - [03 framework and formulas](../src/personal/finance/intelligent-investor/03-framework-and-formulas.tex) — finance/intelligent investor · **provisional**
 - [05 valuation margin of safety worksheets](../src/personal/finance/intelligent-investor/05-valuation-margin-of-safety-worksheets.tex) — finance/intelligent investor · **provisional**
+- [algorithm analysis record template](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/templates/algorithm-analysis-record-template.tex) — algorithms · **provisional**
+- [capstone review template](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/templates/capstone-review-template.tex) — algorithms · **provisional**
+- [experiment plan template](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/templates/experiment-plan-template.tex) — algorithms · **provisional**
+- [laboratory report template](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/templates/laboratory-report-template.tex) — algorithms · **provisional**
+- [proof assessment template](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/templates/proof-assessment-template.tex) — algorithms · **provisional**
 - [Algorithm Design Scorecard Template](../src/programming/algorithms/algorithm-engineering/templates/algorithm-design-scorecard-template.tex) — algorithm engineering / templates · **provisional**
 - [Benchmark Run Sheet Template](../src/programming/algorithms/algorithm-engineering/templates/benchmark-run-sheet-template.tex) — algorithm engineering / templates · **provisional**
 - [Laboratory Assessment Template](../src/programming/algorithms/algorithm-engineering/templates/laboratory-assessment-template.tex) — algorithm engineering / templates · **provisional**

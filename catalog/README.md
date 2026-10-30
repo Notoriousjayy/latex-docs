@@ -6,18 +6,18 @@ Find documents by **domain**, **subject**, or **artifact type** without duplicat
 
 | Catalog | Number of primary sources |
 |---|---:|
-| [By domain](by-domain.md) | 1147 |
-| [By subject](by-subject.md) | 1147 |
-| [By document type](by-document-type.md) | 1147 |
+| [By domain](by-domain.md) | 1174 |
+| [By subject](by-subject.md) | 1174 |
+| [By document type](by-document-type.md) | 1174 |
 | [User Stories](user-stories.md) | 17 |
-| [Reusable Templates](templates.md) | 66 |
-| [Workbooks and Exercises](workbooks.md) | 24 |
+| [Reusable Templates](templates.md) | 71 |
+| [Workbooks and Exercises](workbooks.md) | 28 |
 | [Checklists](checklists.md) | 9 |
-| [Technical References](technical-references.md) | 564 |
-| [Assessments](assessments.md) | 11 |
+| [Technical References](technical-references.md) | 567 |
+| [Assessments](assessments.md) | 13 |
 | [Operational Runbooks](runbooks.md) | 2 |
-| [Study Guides](study-guides.md) | 74 |
-| [Handbooks](handbooks.md) | 7 |
+| [Study Guides](study-guides.md) | 84 |
+| [Handbooks](handbooks.md) | 8 |
 | [Business Plans](business-plans.md) | 2 |
 | [Architecture Documents](architecture-documents.md) | 1 |
 | [LaTeX Source Fragments](source-fragments.md) | 3 |
@@ -28,6 +28,6 @@ Find documents by **domain**, **subject**, or **artifact type** without duplicat
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-**59 of 1147** LaTeX sources have targeted semantic content review; **1088** remain provisional. A reference that merely contains a checklist, workbook section, or scorecard does not automatically have that primary type. Non-standalone LaTeX fragments have their own classification and are not regular documents.
+**59 of 1174** LaTeX sources have targeted semantic content review; **1115** remain provisional. A reference that merely contains a checklist, workbook section, or scorecard does not automatically have that primary type. Non-standalone LaTeX fragments have their own classification and are not regular documents.
 
 After modifying the inventory, regenerate the indexes with `python3 tooling/scripts/build_semantic_catalogs.py --write`; CI checks that the committed catalogs match the manifest. Update the relevant domain README for substantive source relocations.

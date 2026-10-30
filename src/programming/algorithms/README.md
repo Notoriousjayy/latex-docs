@@ -29,3 +29,7 @@ Build/validate using the repository's supported LaTeX tooling; do not treat this
 ## Algorithm Engineering documentation suite
 
 [Algorithm Engineering and Computer Science Documentation Suite](algorithm-engineering/README.md) — 33 standalone LaTeX documents aligned with TAOCP Volumes 1–4B, original C11/C++20/Python laboratories, mathematical workbooks, benchmarking and verification procedures, and governed print-ready Template–Blank pairs.
+
+## Algorithm Analysis and Analytic Combinatorics
+
+[Analysis of Algorithms and Analytic Combinatorics Documentation Suite](algorithm-analysis-and-analytic-combinatorics/README.md) — 36 standalone LaTeX documents across technical references, nine chapter study guides, a prerequisite curriculum, proof and asymptotic workbooks, executable Python/C/C++ labs, benchmarking procedures, and nine guided Template–Blank pairs.

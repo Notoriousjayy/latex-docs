@@ -867,8 +867,35 @@
 - [tools measure direct sunlight guide gardeners](../src/personal/gardening/tools-measure-direct-sunlight-guide-gardeners.tex) — gardening · **provisional**
 - [calibre drm free ebook to pdf workflow handout](../src/personal/technical-documents/calibre-drm-free-ebook-to-pdf-workflow-handout.tex) — personal · **provisional**
 
-## programming (157)
+## programming (184)
 
+- [capstone assessment and rubric](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/assessments/capstone-assessment-and-rubric.tex) — algorithms · **provisional**
+- [foundations diagnostic assessment](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/assessments/foundations-diagnostic-assessment.tex) — algorithms · **provisional**
+- [c and cpp laboratory manual](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/laboratories/c-and-cpp-laboratory-manual.tex) — algorithms · **provisional**
+- [python laboratory manual](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/laboratories/python-laboratory-manual.tex) — algorithms · **provisional**
+- [chapter 01 analysis of algorithms study guide](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/chapter-01-analysis-of-algorithms-study-guide.tex) — algorithms · **provisional**
+- [chapter 02 recurrence relations study guide](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/chapter-02-recurrence-relations-study-guide.tex) — algorithms · **provisional**
+- [chapter 03 generating functions study guide](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/chapter-03-generating-functions-study-guide.tex) — algorithms · **provisional**
+- [chapter 04 asymptotic approximations study guide](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/chapter-04-asymptotic-approximations-study-guide.tex) — algorithms · **provisional**
+- [chapter 05 analytic combinatorics study guide](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/chapter-05-analytic-combinatorics-study-guide.tex) — algorithms · **provisional**
+- [chapter 06 trees study guide](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/chapter-06-trees-study-guide.tex) — algorithms · **provisional**
+- [chapter 07 permutations study guide](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/chapter-07-permutations-study-guide.tex) — algorithms · **provisional**
+- [chapter 08 strings and tries study guide](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/chapter-08-strings-and-tries-study-guide.tex) — algorithms · **provisional**
+- [chapter 09 words and mappings study guide](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/chapter-09-words-and-mappings-study-guide.tex) — algorithms · **provisional**
+- [prerequisite based learning curriculum](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/study-guides/prerequisite-based-learning-curriculum.tex) — algorithms · **provisional**
+- [algorithm analysis technical reference](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/technical-documents/algorithm-analysis-technical-reference.tex) — algorithms · **provisional**
+- [analytic combinatorics methods handbook](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/technical-documents/analytic-combinatorics-methods-handbook.tex) — algorithms · **provisional**
+- [chapter to operations crosswalk](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/technical-documents/chapter-to-operations-crosswalk.tex) — algorithms · **provisional**
+- [performance benchmarking procedures](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/technical-documents/performance-benchmarking-procedures.tex) — algorithms · **provisional**
+- [algorithm analysis record template](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/templates/algorithm-analysis-record-template.tex) — algorithms · **provisional**
+- [capstone review template](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/templates/capstone-review-template.tex) — algorithms · **provisional**
+- [experiment plan template](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/templates/experiment-plan-template.tex) — algorithms · **provisional**
+- [laboratory report template](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/templates/laboratory-report-template.tex) — algorithms · **provisional**
+- [proof assessment template](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/templates/proof-assessment-template.tex) — algorithms · **provisional**
+- [asymptotic analysis workbook](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/workbooks/asymptotic-analysis-workbook.tex) — algorithms · **provisional**
+- [combinatorial structures workbook](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/workbooks/combinatorial-structures-workbook.tex) — algorithms · **provisional**
+- [generating functions workbook](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/workbooks/generating-functions-workbook.tex) — algorithms · **provisional**
+- [recurrence analysis workbook](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/workbooks/recurrence-analysis-workbook.tex) — algorithms · **provisional**
 - [algorithm analysis patterns mathematics](../src/programming/algorithms/algorithm-analysis-patterns-mathematics.tex) — algorithms · **provisional**
 - [Competency And Portfolio Matrix](../src/programming/algorithms/algorithm-engineering/curricula/competency-and-portfolio-matrix.tex) — algorithm engineering / curricula · **provisional**
 - [Prerequisite Based Curriculum](../src/programming/algorithms/algorithm-engineering/curricula/prerequisite-based-curriculum.tex) — algorithm engineering / curricula · **provisional**
