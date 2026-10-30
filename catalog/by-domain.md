@@ -814,8 +814,16 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## data-systems (67)
+## data-systems (75)
 
+- [Data Governance Regulatory Applicability Register Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/registers/data-governance-regulatory-applicability-register-template.tex) — enterprise-data-governance · **provisional**
+- [Governance Compliance Evidence Register Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/registers/governance-compliance-evidence-register-template.tex) — enterprise-data-governance · **provisional**
+- [DCAM-Based Capability Assessment Scorecard Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/scorecards/dcam-based-capability-assessment-scorecard-template.tex) — enterprise-data-governance · **provisional**
+- [Governance Roles and Decision Rights Specification](../src/data-systems/enterprise-data-governance/standards-and-frameworks/technical-documents/governance-roles-and-decision-rights-specification.tex) — enterprise-data-governance · **provisional**
+- [Data Governance Standards and Frameworks Technical Reference](../src/data-systems/enterprise-data-governance/standards-and-frameworks/technical-documents/standards-and-frameworks-technical-reference.tex) — enterprise-data-governance · **provisional**
+- [Data Quality and Metadata Standards Crosswalk Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/templates/data-quality-and-metadata-standards-crosswalk-template.tex) — enterprise-data-governance · **provisional**
+- [Governance Framework Selection and Applicability Matrix Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/templates/governance-framework-selection-and-applicability-matrix-template.tex) — enterprise-data-governance · **provisional**
+- [Standards-to-Enterprise-Control Traceability Workbook Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/workbooks/standards-to-enterprise-control-traceability-workbook-template.tex) — enterprise-data-governance · **provisional**
 - [Healthcare Insurance Integration](../src/data-systems/enterprise-data-modeling/case-studies/healthcare-insurance-integration.tex) — enterprise-data-modeling · **provisional**
 - [Manufacturer Digital Thread](../src/data-systems/enterprise-data-modeling/case-studies/manufacturer-digital-thread.tex) — enterprise-data-modeling · **provisional**
 - [Retail Financial Marketplace](../src/data-systems/enterprise-data-modeling/case-studies/retail-financial-marketplace.tex) — enterprise-data-modeling · **provisional**

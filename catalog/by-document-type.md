@@ -25,7 +25,7 @@
 - [subsystem and lifecycle specification](../src/game-development/game-engine-architecture-suite/architecture-specifications/subsystem-and-lifecycle-specification.tex) — game-engine-architecture-suite/architecture-specifications · **provisional**
 - [Open-Source Enterprise Security Platform: Reference Architecture and Tool Strategy](../src/security/technical-documents/open-source-enterprise-security-platform.tex) — enterprise security platform architecture · **reviewed**
 
-## assessment (40)
+## assessment (41)
 
 - [architecture traceability scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/architecture-traceability-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
 - [diagram quality scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/diagram-quality-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
@@ -36,6 +36,7 @@
 - [architecture view completeness template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Architecture_View_Completeness_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
 - [documentation review readiness template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Documentation_Review_Readiness_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
 - [traceability and change readiness template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Traceability_and_Change_Readiness_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
+- [DCAM-Based Capability Assessment Scorecard Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/scorecards/dcam-based-capability-assessment-scorecard-template.tex) — enterprise-data-governance · **provisional**
 - [devsecops control assurance template](../src/devops/ci-cd/continuous-delivery-release-engineering/scorecards/devsecops-control-assurance-template.tex) — ci cd/continuous delivery release engineering/scorecards · **provisional**
 - [pipeline architecture template](../src/devops/ci-cd/continuous-delivery-release-engineering/scorecards/pipeline-architecture-template.tex) — ci cd/continuous delivery release engineering/scorecards · **provisional**
 - [release process maturity template](../src/devops/ci-cd/continuous-delivery-release-engineering/scorecards/release-process-maturity-template.tex) — ci cd/continuous delivery release engineering/scorecards · **provisional**
@@ -970,7 +971,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (680)
+## technical-reference (682)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -1286,6 +1287,8 @@
 - [ch14 statistical description notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch14-statistical-description-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
 - [ch15 data modeling notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch15-data-modeling-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
 - [ch16 classification inference notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch16-classification-inference-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
+- [Governance Roles and Decision Rights Specification](../src/data-systems/enterprise-data-governance/standards-and-frameworks/technical-documents/governance-roles-and-decision-rights-specification.tex) — enterprise-data-governance · **provisional**
+- [Data Governance Standards and Frameworks Technical Reference](../src/data-systems/enterprise-data-governance/standards-and-frameworks/technical-documents/standards-and-frameworks-technical-reference.tex) — enterprise-data-governance · **provisional**
 - [Dimensional And Analytical Modeling](../src/data-systems/enterprise-data-modeling/references/dimensional-and-analytical-modeling.tex) — enterprise-data-modeling · **provisional**
 - [E Commerce Models Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/e-commerce-models-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
 - [Financial Services Industry Model Reference](../src/data-systems/enterprise-data-modeling/references/financial-services-industry-model-reference.tex) — enterprise-data-modeling · **provisional**
@@ -1653,7 +1656,7 @@
 - [venture lifecycle reference](../src/startups/small-business-management/technical-reference/venture-lifecycle-reference.tex) — small-business-management/technical-reference · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## template (179)
+## template (183)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -1720,6 +1723,10 @@
 - [release planning workbook template](../src/business-analysis/user-stories/workbooks/templates/release-planning-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [role and discovery workbook template](../src/business-analysis/user-stories/workbooks/templates/role-and-discovery-workbook-template.tex) — agile requirements / user stories · **provisional**
 - [story refinement workbook template](../src/business-analysis/user-stories/workbooks/templates/story-refinement-workbook-template.tex) — agile requirements / user stories · **provisional**
+- [Data Governance Regulatory Applicability Register Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/registers/data-governance-regulatory-applicability-register-template.tex) — enterprise-data-governance · **provisional**
+- [Governance Compliance Evidence Register Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/registers/governance-compliance-evidence-register-template.tex) — enterprise-data-governance · **provisional**
+- [Data Quality and Metadata Standards Crosswalk Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/templates/data-quality-and-metadata-standards-crosswalk-template.tex) — enterprise-data-governance · **provisional**
+- [Governance Framework Selection and Applicability Matrix Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/templates/governance-framework-selection-and-applicability-matrix-template.tex) — enterprise-data-governance · **provisional**
 - [Architecture Decision Record Template](../src/data-systems/enterprise-data-modeling/templates/architecture-decision-record-template.tex) — enterprise-data-modeling · **provisional**
 - [Conceptual Model Brief Template](../src/data-systems/enterprise-data-modeling/templates/conceptual-model-brief-template.tex) — enterprise-data-modeling · **provisional**
 - [Data Dictionary Template](../src/data-systems/enterprise-data-modeling/templates/data-dictionary-template.tex) — enterprise-data-modeling · **provisional**
@@ -1855,7 +1862,7 @@
 - [study plan user stories github advanced sec](../src/security/github-advanced-security/administration/study-plan-user-stories-github-advanced-sec.tex) — github advanced security/administration · **provisional**
 - [study plan owasp api sec top 10 user stories](../src/security/standards/owasp/study-plan-owasp-api-sec-top-10-user-stories.tex) — standards/owasp · **provisional**
 
-## workbook (124)
+## workbook (125)
 
 - [concern view evidence template](../src/architecture/c4-model/documentation-suite/workbooks/concern-view-evidence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
 - [cross view correspondence template](../src/architecture/c4-model/documentation-suite/workbooks/cross-view-correspondence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
@@ -1877,6 +1884,7 @@
 - [lab 07 negotiate a release plan](../src/business-analysis/user-stories/laboratories/lab-07-negotiate-a-release-plan.tex) — agile requirements / user stories · **provisional**
 - [lab 08 run change impact and governance](../src/business-analysis/user-stories/laboratories/lab-08-run-change-impact-and-governance.tex) — agile requirements / user stories · **provisional**
 - [lab 09 capstone deliver a story led release](../src/business-analysis/user-stories/laboratories/lab-09-capstone-deliver-a-story-led-release.tex) — agile requirements / user stories · **provisional**
+- [Standards-to-Enterprise-Control Traceability Workbook Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/workbooks/standards-to-enterprise-control-traceability-workbook-template.tex) — enterprise-data-governance · **provisional**
 - [Dimensional Modeling Workbook Template](../src/data-systems/enterprise-data-modeling/workbooks/dimensional-modeling-workbook-template.tex) — enterprise-data-modeling · **provisional**
 - [Dimensional Modeling Workbook](../src/data-systems/enterprise-data-modeling/workbooks/dimensional-modeling-workbook.tex) — enterprise-data-modeling · **provisional**
 - [Migration Planning Workbook Template](../src/data-systems/enterprise-data-modeling/workbooks/migration-planning-workbook-template.tex) — enterprise-data-modeling · **provisional**
