@@ -1,0 +1,47 @@
+name: Import Enterprise Data Modeling Documentation Suite
+on:
+  push:
+    branches:
+      - docs/enterprise-data-modeling-suite-20261030
+    paths:
+      - .github/transfer/enterprise-data-modeling.tar.xz
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Validate and import source suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'cd7e7829edecdc2eec55f9fb0bfa7c2583619ac92607149a163923fcf48da11a  .github/transfer/enterprise-data-modeling.tar.xz' | sha256sum -c -
+          tar -tJf .github/transfer/enterprise-data-modeling.tar.xz | grep -q '^src/data-systems/enterprise-data-modeling/'
+          tar -xJf .github/transfer/enterprise-data-modeling.tar.xz
+          python3 src/data-systems/enterprise-data-modeling/scripts/verify_suite.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/data-systems/README.md')
+          t=p.read_text(encoding='utf-8')
+          title='### Enterprise Data Modeling and Database Architecture'
+          addition='''### Enterprise Data Modeling and Database Architecture
+
+          - [Documentation suite](enterprise-data-modeling/README.md): chapter guides, modeling labs, SQL exercises, governance scorecards, and printable Template--Blank pairs.
+
+          '''
+          if title not in t:
+              t=t.replace('## Build and validate',addition+'## Build and validate',1)
+              p.write_text(t,encoding='utf-8')
+          PY
+          rm -f .github/transfer/enterprise-data-modeling.tar.xz
+          rm -f .github/workflows/import-enterprise-data-modeling.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A src/data-systems/enterprise-data-modeling src/data-systems/README.md .github/transfer .github/workflows/import-enterprise-data-modeling.yml
+          git diff --cached --quiet || git commit -m 'docs(data-systems): integrate enterprise data modeling suite'
+          git push origin HEAD:docs/enterprise-data-modeling-suite-20261030
