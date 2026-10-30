@@ -10,6 +10,27 @@ A **Blank is a printable working form**, not a second instructional template. No
 
 Architecture descriptions and architecture decision records are distinct document types. Completed examples, answer keys and technical references are preserved.
 
+## Animation Timing and Game Animation Engineering
+
+The [animation timing suite](../src/game-development/animation-timing/README.md) includes 14 governed Template–Blank pairs for exposure sheets, timing, motion, character specifications, game integration, playtesting, and assessment. Printable Blanks contain empty response areas.
+
+| Logical ID | Family | Template | Blank |
+|---|---|---|---|
+| GAME-ANIM-01 | animation-workbook | [Template](../src/game-development/animation-timing/workbooks/frame-rate-conversion-workbook-template.tex) | [Blank](../src/game-development/animation-timing/workbooks/frame-rate-conversion-workbook-blank.tex) |
+| GAME-ANIM-02 | animation-workbook | [Template](../src/game-development/animation-timing/workbooks/exposure-sheet-workbook-template.tex) | [Blank](../src/game-development/animation-timing/workbooks/exposure-sheet-workbook-blank.tex) |
+| GAME-ANIM-03 | animation-workbook | [Template](../src/game-development/animation-timing/workbooks/spacing-and-easing-workbook-template.tex) | [Blank](../src/game-development/animation-timing/workbooks/spacing-and-easing-workbook-blank.tex) |
+| GAME-ANIM-04 | animation-workbook | [Template](../src/game-development/animation-timing/workbooks/physics-and-weight-workbook-template.tex) | [Blank](../src/game-development/animation-timing/workbooks/physics-and-weight-workbook-blank.tex) |
+| GAME-ANIM-05 | animation-workbook | [Template](../src/game-development/animation-timing/workbooks/walk-cycle-contact-workbook-template.tex) | [Blank](../src/game-development/animation-timing/workbooks/walk-cycle-contact-workbook-blank.tex) |
+| GAME-ANIM-06 | animation-workbook | [Template](../src/game-development/animation-timing/workbooks/lip-sync-and-music-workbook-template.tex) | [Blank](../src/game-development/animation-timing/workbooks/lip-sync-and-music-workbook-blank.tex) |
+| GAME-ANIM-07 | animation-production-form | [Template](../src/game-development/animation-timing/templates/shot-timing-brief-template.tex) | [Blank](../src/game-development/animation-timing/templates/shot-timing-brief-blank.tex) |
+| GAME-ANIM-08 | animation-production-form | [Template](../src/game-development/animation-timing/templates/character-animation-specification-template.tex) | [Blank](../src/game-development/animation-timing/templates/character-animation-specification-blank.tex) |
+| GAME-ANIM-09 | animation-production-form | [Template](../src/game-development/animation-timing/templates/animation-state-machine-specification-template.tex) | [Blank](../src/game-development/animation-timing/templates/animation-state-machine-specification-blank.tex) |
+| GAME-ANIM-10 | animation-production-form | [Template](../src/game-development/animation-timing/templates/animation-asset-handoff-template.tex) | [Blank](../src/game-development/animation-timing/templates/animation-asset-handoff-blank.tex) |
+| GAME-ANIM-11 | animation-production-form | [Template](../src/game-development/animation-timing/templates/playtest-session-template.tex) | [Blank](../src/game-development/animation-timing/templates/playtest-session-blank.tex) |
+| GAME-ANIM-12 | animation-quality-scorecard | [Template](../src/game-development/animation-timing/scorecards/animation-timing-scorecard-template.tex) | [Blank](../src/game-development/animation-timing/scorecards/animation-timing-scorecard-blank.tex) |
+| GAME-ANIM-13 | animation-quality-scorecard | [Template](../src/game-development/animation-timing/scorecards/game-animation-engineering-scorecard-template.tex) | [Blank](../src/game-development/animation-timing/scorecards/game-animation-engineering-scorecard-blank.tex) |
+| GAME-ANIM-14 | animation-quality-scorecard | [Template](../src/game-development/animation-timing/scorecards/animation-accessibility-and-playtest-scorecard-template.tex) | [Blank](../src/game-development/animation-timing/scorecards/animation-accessibility-and-playtest-scorecard-blank.tex) |
+
 ## Enterprise discovery implementation suite
 
 [GitHub Actions Architecture Discovery suite](../src/architecture/github-actions-discovery-suite.md) includes an unchanged technical reference, a project-specific Architecture Description and Viewpoint Specification, and two phase/evidence workbooks. The four paired guided Templates and print-ready Blanks are listed above. Unlike an architecture description, an ADR records one bounded decision; unlike an architecture view, a viewpoint specification defines reusable construction and interpretation conventions.

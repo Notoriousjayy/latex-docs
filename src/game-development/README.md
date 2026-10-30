@@ -39,6 +39,8 @@ These collections retain topic, standard, chapter, governance or diagram boundar
 
 ## Recommended navigation
 
+- [Animation Timing and Game Animation Engineering suite](animation-timing/README.md) for 82 chapter guides, code laboratories, integration references, and printable forms.
+
 - [Game Design Document template](templates/game-design-document-gdd-template.tex) for design scope, mechanics and requirements.
 - [Art of Game Design: 35-chapter study collection](study-guides/art-of-game-design/README.md) for reading and labs.
 - [Game Design Engineering learning path](curricula/game-design-engineering-learning-path.tex) for prerequisite-ordered progression.
