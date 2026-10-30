@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (591)
+## Primary technical references (594)
 
 - [cloud architecture diagram library index](../src/architecture/cloud/architecture/cloud-architecture-diagram-library-index.tex) — cloud/architecture · **provisional**
 - [self hosting cloud architecture reference](../src/architecture/cloud/architecture/self-hosting-cloud-architecture-reference.tex) — cloud/architecture · **provisional**
@@ -407,6 +407,9 @@
 - [numerical recipes algorithms pseudocode](../src/programming/algorithms/numerical-recipes-algorithms-pseudocode.tex) — algorithms · **provisional**
 - [stanford graphbase algorithms pseudocode](../src/programming/algorithms/stanford-graphbase-algorithms-pseudocode.tex) — algorithms · **provisional**
 - [strings trees sequences pseudocode handout](../src/programming/algorithms/strings-trees-sequences-pseudocode-handout.tex) — algorithms · **provisional**
+- [Book Crosswalk And Provenance](../src/programming/compilers/compiler-engineering/technical-references/book-crosswalk-and-provenance.tex) — compiler engineering / engineering a compiler / technical-references · **provisional**
+- [Compiler Engineering Handbook](../src/programming/compilers/compiler-engineering/technical-references/compiler-engineering-handbook.tex) — compiler engineering / engineering a compiler / technical-references · **provisional**
+- [Formal Methods And Analysis Reference](../src/programming/compilers/compiler-engineering/technical-references/formal-methods-and-analysis-reference.tex) — compiler engineering / engineering a compiler / technical-references · **provisional**
 - [Compiler Pipeline And Interfaces](../src/programming/compilers/parsing-techniques/technical-references/compiler-pipeline-and-interfaces.tex) — compiler engineering / parsing techniques / technical references · **provisional**
 - [Grammar Automata Field Guide](../src/programming/compilers/parsing-techniques/technical-references/grammar-automata-field-guide.tex) — compiler engineering / parsing techniques / technical references · **provisional**
 - [Parser Algorithm Selection](../src/programming/compilers/parsing-techniques/technical-references/parser-algorithm-selection.tex) — compiler engineering / parsing techniques / technical references · **provisional**

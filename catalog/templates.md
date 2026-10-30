@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (101)
+## Primary reusable templates (108)
 
 - [Architecture Documentation Templates](../src/architecture/cloud/engineering-suite/05-architecture-documentation-templates.tex) — cloud architecture documentation forms · **reviewed**
 - [Cloud Security Reference Templates](../src/architecture/cloud/engineering-suite/06-security-governance-templates.tex) — cloud security governance forms · **reviewed**
@@ -76,6 +76,13 @@
 - [Laboratory Assessment Template](../src/programming/algorithms/algorithm-engineering/templates/laboratory-assessment-template.tex) — algorithm engineering / templates · **provisional**
 - [Learning Progress Tracker Template](../src/programming/algorithms/algorithm-engineering/templates/learning-progress-tracker-template.tex) — algorithm engineering / templates · **provisional**
 - [Mathematical Proof Review Template](../src/programming/algorithms/algorithm-engineering/templates/mathematical-proof-review-template.tex) — algorithm engineering / templates · **provisional**
+- [Compiler Benchmark Template](../src/programming/compilers/compiler-engineering/templates/compiler-benchmark-template.tex) — compiler engineering / engineering a compiler / templates · **provisional**
+- [Compiler Capstone Evidence Template](../src/programming/compilers/compiler-engineering/templates/compiler-capstone-evidence-template.tex) — compiler engineering / engineering a compiler / templates · **provisional**
+- [Compiler Design Decision Template](../src/programming/compilers/compiler-engineering/templates/compiler-design-decision-template.tex) — compiler engineering / engineering a compiler / templates · **provisional**
+- [Compiler Pass Specification Template](../src/programming/compilers/compiler-engineering/templates/compiler-pass-specification-template.tex) — compiler engineering / engineering a compiler / templates · **provisional**
+- [Compiler Security Review Template](../src/programming/compilers/compiler-engineering/templates/compiler-security-review-template.tex) — compiler engineering / engineering a compiler / templates · **provisional**
+- [Compiler Security Scorecard Template](../src/programming/compilers/compiler-engineering/templates/compiler-security-scorecard-template.tex) — compiler engineering / engineering a compiler / templates · **provisional**
+- [Compiler Test Plan Template](../src/programming/compilers/compiler-engineering/templates/compiler-test-plan-template.tex) — compiler engineering / engineering a compiler / templates · **provisional**
 - [Ambiguity Investigation Template](../src/programming/compilers/parsing-techniques/templates/ambiguity-investigation-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
 - [Automata Construction Template](../src/programming/compilers/parsing-techniques/templates/automata-construction-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
 - [Benchmark Record Template](../src/programming/compilers/parsing-techniques/templates/benchmark-record-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
