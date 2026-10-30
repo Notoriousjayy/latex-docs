@@ -25,6 +25,7 @@ The Views and Beyond methodology for documenting software architecture
 | `framework-mappings/` | Mappings to DoDAF, ISO 42010, RUP, Rozanski & Woods. |
 | `style-catalogs/` | Style catalog grouped by viewpoint family (allocation, component-and-connector, module). |
 | `view-packets/` | Structured documentation packets and worked view examples. |
+| [`documentation-engineering-suite/`](documentation-engineering-suite/README.md) | 66 standalone references, study guides, laboratories, viewpoints, templates/blanks, workbooks, and scorecards. |
 
 ## Working sequence
 

@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (71)
+## Primary reusable templates (80)
 
 - [Architecture Documentation Templates](../src/architecture/cloud/engineering-suite/05-architecture-documentation-templates.tex) — cloud architecture documentation forms · **reviewed**
 - [Cloud Security Reference Templates](../src/architecture/cloud/engineering-suite/06-security-governance-templates.tex) — cloud security governance forms · **reviewed**
@@ -31,6 +31,15 @@
 - [viewpoint template polished](../src/architecture/templates/viewpoint-template-polished.tex) — architecture · **provisional**
 - [TOGAF User Stories (Day in the Life)](../src/architecture/togaf/togaf-user-stories-day-in-the-life.tex) — TOGAF user story scaffold · **reviewed**
 - [Viewpoint Template](../src/architecture/views-and-beyond/advanced-concepts/viewpoint-template.tex) — software architecture viewpoint specification · **reviewed**
+- [architecture change impact record template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Architecture_Change_Impact_Record_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
+- [architecture decision record template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Architecture_Decision_Record_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
+- [architecture description record template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Architecture_Description_Record_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
+- [architecture review record template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Architecture_Review_Record_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
+- [architecture view record template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Architecture_View_Record_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
+- [architecture viewpoint specification template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Architecture_Viewpoint_Specification_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
+- [component interface record template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Component_Interface_Record_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
+- [quality attribute scenario template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Quality_Attribute_Scenario_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
+- [stakeholder concern register template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Stakeholder_Concern_Register_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
 - [babok v3 requirements traceability templates](../src/business-analysis/templates/babok-v3-requirements-traceability-templates.tex) — business analysis · **provisional**
 - [acceptance readiness scorecard template](../src/business-analysis/user-stories/scorecards/templates/acceptance-readiness-scorecard-template.tex) — agile requirements / user stories · **provisional**
 - [backlog health scorecard template](../src/business-analysis/user-stories/scorecards/templates/backlog-health-scorecard-template.tex) — agile requirements / user stories · **provisional**

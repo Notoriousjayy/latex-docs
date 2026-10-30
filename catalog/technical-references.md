@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (568)
+## Primary technical references (583)
 
 - [cloud architecture diagram library index](../src/architecture/cloud/architecture/cloud-architecture-diagram-library-index.tex) — cloud/architecture · **provisional**
 - [self hosting cloud architecture reference](../src/architecture/cloud/architecture/self-hosting-cloud-architecture-reference.tex) — cloud/architecture · **provisional**
@@ -130,6 +130,21 @@
 - [2 5 1 diagram types classification handout](../src/architecture/uml/2-5-1-diagram-types-classification-handout.tex) — uml · **provisional**
 - [spectrum of style specializations](../src/architecture/views-and-beyond/advanced-concepts/spectrum-of-style-specializations.tex) — views and beyond/advanced concepts · **provisional**
 - [variation points](../src/architecture/views-and-beyond/advanced-concepts/variation-points.tex) — views and beyond/advanced concepts · **provisional**
+- [lab 01 discover and select views](../src/architecture/views-and-beyond/documentation-engineering-suite/labs/Lab_01_Discover_and_Select_Views.tex) — views-and-beyond/documentation-engineering-suite/labs · **provisional**
+- [lab 02 model module dependencies](../src/architecture/views-and-beyond/documentation-engineering-suite/labs/Lab_02_Model_Module_Dependencies.tex) — views-and-beyond/documentation-engineering-suite/labs · **provisional**
+- [lab 03 trace runtime interactions](../src/architecture/views-and-beyond/documentation-engineering-suite/labs/Lab_03_Trace_Runtime_Interactions.tex) — views-and-beyond/documentation-engineering-suite/labs · **provisional**
+- [lab 04 map deployment and terraform](../src/architecture/views-and-beyond/documentation-engineering-suite/labs/Lab_04_Map_Deployment_and_Terraform.tex) — views-and-beyond/documentation-engineering-suite/labs · **provisional**
+- [lab 05 specify interfaces and behavior](../src/architecture/views-and-beyond/documentation-engineering-suite/labs/Lab_05_Specify_Interfaces_and_Behavior.tex) — views-and-beyond/documentation-engineering-suite/labs · **provisional**
+- [lab 06 build architecture description](../src/architecture/views-and-beyond/documentation-engineering-suite/labs/Lab_06_Build_Architecture_Description.tex) — views-and-beyond/documentation-engineering-suite/labs · **provisional**
+- [lab 07 review and revise](../src/architecture/views-and-beyond/documentation-engineering-suite/labs/Lab_07_Review_and_Revise.tex) — views-and-beyond/documentation-engineering-suite/labs · **provisional**
+- [lab 08 secure cloud capstone](../src/architecture/views-and-beyond/documentation-engineering-suite/labs/Lab_08_Secure_Cloud_Capstone.tex) — views-and-beyond/documentation-engineering-suite/labs · **provisional**
+- [architecture documentation engineering reference](../src/architecture/views-and-beyond/documentation-engineering-suite/reference/Architecture_Documentation_Engineering_Reference.tex) — views-and-beyond/documentation-engineering-suite/reference · **provisional**
+- [viewpoint architecture security trust boundaries](../src/architecture/views-and-beyond/documentation-engineering-suite/viewpoints/Viewpoint_Architecture_Security_Trust_Boundaries.tex) — views-and-beyond/documentation-engineering-suite/viewpoints · **provisional**
+- [viewpoint deployment allocation](../src/architecture/views-and-beyond/documentation-engineering-suite/viewpoints/Viewpoint_Deployment_Allocation.tex) — views-and-beyond/documentation-engineering-suite/viewpoints · **provisional**
+- [viewpoint hybrid cross view correspondence](../src/architecture/views-and-beyond/documentation-engineering-suite/viewpoints/Viewpoint_Hybrid_Cross_View_Correspondence.tex) — views-and-beyond/documentation-engineering-suite/viewpoints · **provisional**
+- [viewpoint module decomposition](../src/architecture/views-and-beyond/documentation-engineering-suite/viewpoints/Viewpoint_Module_Decomposition.tex) — views-and-beyond/documentation-engineering-suite/viewpoints · **provisional**
+- [viewpoint module uses and layers](../src/architecture/views-and-beyond/documentation-engineering-suite/viewpoints/Viewpoint_Module_Uses_and_Layers.tex) — views-and-beyond/documentation-engineering-suite/viewpoints · **provisional**
+- [viewpoint runtime component and connector](../src/architecture/views-and-beyond/documentation-engineering-suite/viewpoints/Viewpoint_Runtime_Component_and_Connector.tex) — views-and-beyond/documentation-engineering-suite/viewpoints · **provisional**
 - [how the two approaches fit together](../src/architecture/views-and-beyond/framework-mappings/how-the-two-approaches-fit-together.tex) — views and beyond/framework mappings · **provisional**
 - [integrating rozanski woods views beyond guide](../src/architecture/views-and-beyond/framework-mappings/integrating-rozanski-woods-views-beyond-guide.tex) — views and beyond/framework mappings · **provisional**
 - [integrating rozanski woods views beyond](../src/architecture/views-and-beyond/framework-mappings/integrating-rozanski-woods-views-beyond.tex) — views and beyond/framework mappings · **provisional**

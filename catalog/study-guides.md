@@ -2,9 +2,24 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary study guides (84)
+## Primary study guides (99)
 
 - [02 cloud architecture curriculum](../src/architecture/cloud/engineering-suite/02-cloud-architecture-curriculum.tex) — cloud/engineering suite · **provisional**
+- [prerequisite based architecture documentation curriculum](../src/architecture/views-and-beyond/documentation-engineering-suite/curriculum/Prerequisite_Based_Architecture_Documentation_Curriculum.tex) — views-and-beyond/documentation-engineering-suite/curriculum · **provisional**
+- [study guide 00 prologue](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_00_Prologue.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
+- [study guide 01 module views](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_01_Module_Views.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
+- [study guide 02 module styles](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_02_Module_Styles.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
+- [study guide 03 component and connector views](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_03_Component_and_Connector_Views.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
+- [study guide 04 component and connector styles](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_04_Component_and_Connector_Styles.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
+- [study guide 05 allocation views](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_05_Allocation_Views.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
+- [study guide 06 beyond the basics](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_06_Beyond_the_Basics.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
+- [study guide 07 documenting software interfaces](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_07_Documenting_Software_Interfaces.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
+- [study guide 08 documenting behavior](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_08_Documenting_Behavior.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
+- [study guide 09 choosing the views](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_09_Choosing_the_Views.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
+- [study guide 10 building the documentation package](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_10_Building_the_Documentation_Package.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
+- [study guide 11 reviewing an architecture document](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_11_Reviewing_an_Architecture_Document.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
+- [study guide 12 epilogue and complementary methods](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_12_Epilogue_and_Complementary_Methods.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
+- [study guide 13 appendices modeling notations](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_13_Appendices_Modeling_Notations.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
 - [software architecture learning curriculum](../src/architecture/workbooks/software-architecture-learning-curriculum.tex) — architecture · **provisional**
 - [01 an overview](../src/business-analysis/user-stories/study-guides/01-an-overview.tex) — agile requirements / user stories · **provisional**
 - [02 writing stories](../src/business-analysis/user-stories/study-guides/02-writing-stories.tex) — agile requirements / user stories · **provisional**
