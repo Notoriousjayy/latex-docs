@@ -15,8 +15,8 @@ Find documents by **domain**, **subject**, or **artifact type** without duplicat
 | [Checklists](checklists.md) | 9 |
 | [Technical References](technical-references.md) | 564 |
 | [Assessments](assessments.md) | 11 |
-| [Operational Runbooks](runbooks.md) | 0 |
-| [Study Guides](study-guides.md) | 72 |
+| [Operational Runbooks](runbooks.md) | 2 |
+| [Study Guides](study-guides.md) | 74 |
 | [Handbooks](handbooks.md) | 7 |
 | [Business Plans](business-plans.md) | 2 |
 | [Architecture Documents](architecture-documents.md) | 1 |

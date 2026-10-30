@@ -37,11 +37,6 @@
 - [Object-Oriented Programming in ANSI C: Rules and Practical Checklists](../src/programming/languages/c-cpp/object-oriented-programming-ansi-c-checklists.tex) — ANSI C object-oriented programming checklists · **reviewed**
 - [minimum curriculum quality checklist](../src/startups/workbooks/minimum-curriculum-quality-checklist.tex) — startups · **provisional**
 
-## curriculum (2)
-
-- [Competency And Portfolio Matrix](../src/programming/algorithms/algorithm-engineering/curricula/competency-and-portfolio-matrix.tex) — algorithm engineering / curricula · **provisional**
-- [Prerequisite Based Curriculum](../src/programming/algorithms/algorithm-engineering/curricula/prerequisite-based-curriculum.tex) — algorithm engineering / curricula · **provisional**
-
 ## decision-record (1)
 
 - [adr lifecycle and review guide](../src/architecture/decisions/adr-lifecycle-and-review-guide.tex) — decisions · **provisional**
@@ -113,12 +108,12 @@
 - [closure playbook standard operating procedure](../src/security/application-security/processes/avit-seeker/closure-playbook-standard-operating-procedure.tex) — processes/avit seeker · **provisional**
 - [secure workflow standard github actions](../src/security/github-advanced-security/references/secure-workflow-standard-github-actions.tex) — github advanced security/references · **provisional**
 
-## procedure (2)
+## runbook (2)
 
 - [Algorithm Verification And Review Procedure](../src/programming/algorithms/algorithm-engineering/procedures/algorithm-verification-and-review-procedure.tex) — algorithm engineering / procedures · **provisional**
 - [Reproducible Benchmarking Procedure](../src/programming/algorithms/algorithm-engineering/procedures/reproducible-benchmarking-procedure.tex) — algorithm engineering / procedures · **provisional**
 
-## study-guide (72)
+## study-guide (74)
 
 - [02 cloud architecture curriculum](../src/architecture/cloud/engineering-suite/02-cloud-architecture-curriculum.tex) — cloud/engineering suite · **provisional**
 - [software architecture learning curriculum](../src/architecture/workbooks/software-architecture-learning-curriculum.tex) — architecture · **provisional**
@@ -154,6 +149,8 @@
 - [study plan computational geometry c expanded](../src/mathematics/study-guides/study-plan-computational-geometry-c-expanded.tex) — mathematics · **provisional**
 - [02 chapter study guides](../src/personal/finance/investment-valuation/02-chapter-study-guides.tex) — finance/investment valuation · **provisional**
 - [07 learning curriculum](../src/personal/finance/investment-valuation/07-learning-curriculum.tex) — finance/investment valuation · **provisional**
+- [Competency And Portfolio Matrix](../src/programming/algorithms/algorithm-engineering/curricula/competency-and-portfolio-matrix.tex) — algorithm engineering / curricula · **provisional**
+- [Prerequisite Based Curriculum](../src/programming/algorithms/algorithm-engineering/curricula/prerequisite-based-curriculum.tex) — algorithm engineering / curricula · **provisional**
 - [Volume 1 Fundamental Algorithms](../src/programming/algorithms/algorithm-engineering/study-guides/volume-1-fundamental-algorithms.tex) — algorithm engineering / study guides · **provisional**
 - [Volume 2 Seminumerical Algorithms](../src/programming/algorithms/algorithm-engineering/study-guides/volume-2-seminumerical-algorithms.tex) — algorithm engineering / study guides · **provisional**
 - [Volume 3 Sorting And Searching](../src/programming/algorithms/algorithm-engineering/study-guides/volume-3-sorting-and-searching.tex) — algorithm engineering / study guides · **provisional**
