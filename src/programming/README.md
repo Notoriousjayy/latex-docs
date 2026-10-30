@@ -22,7 +22,7 @@ These collections retain topic, standard, chapter, governance or diagram boundar
 
 | Collection | Contents | LaTeX sources |
 |---|---|---:|
-| [compilers](compilers/README.md) | Parsing Techniques and Compiler Engineering suite: 18 study guides, implementation labs, formal workbooks, security assessment and 20 governed Template–Blank pairs. | 78 |
+| [compilers](compilers/README.md) | Parsing Techniques and Compiler Engineering suites: 32 chapter study guides, technical references, curricula, implementation laboratories, formal workbooks, security assessments and 31 governed Template–Blank pairs. | 129 |
 | [algorithms](algorithms/README.md) | Algorithm design, analysis and implementation guidance; Algorithm Engineering suite. | 41 |
 | [languages](languages/) | C/C++, Java, Python, TypeScript and other language- and standards-specific references. | 72 |
 | [linux unix system programming](linux-unix-system-programming/) | C/POSIX systems programming guides, labs and runbooks. | 9 |

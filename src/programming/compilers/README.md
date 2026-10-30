@@ -5,6 +5,7 @@ This is the compiler-design subject collection within the `src/programming/` dom
 ## Suites
 
 - [Parsing Techniques and Compiler Engineering](parsing-techniques/README.md) — 18 source-aligned study guides, technical references and crosswalk, structured 24-week curriculum, formal grammar and automata workbooks, CYK/Earley/LL reference implementations, compiler laboratories, performance and security assessments, and twenty Template–Blank pairs.
+- [Compiler Engineering Documentation Suite](compiler-engineering/README.md) — 14 third-edition chapter study guides, formal references and workbooks, an 18-week curriculum, Python/C/C++ laboratories, optimization and benchmarking procedures, security assessments, and eleven Template–Blank pairs.
 
 ## Related material
 
