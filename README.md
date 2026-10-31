@@ -4,6 +4,9 @@ A source-controlled engineering documentation library covering software architec
 
 ## Start here
 
+| Design an integrated OSS-first enterprise technology operating model | [Enterprise Technology Architecture and Operations Suite](src/architecture/enterprise/open-source-enterprise-technology-suite/README.md) |
+
+
 | Goal | Entry point |
 |---|---|
 | Learn parliamentary procedure and organizational meeting governance | [Parliamentary procedure suite](src/business-analysis/parliamentary-procedure-and-governance/README.md) |
