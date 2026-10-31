@@ -4,11 +4,10 @@ A source-controlled engineering documentation library covering software architec
 
 ## Start here
 
-| Design an integrated OSS-first enterprise technology operating model | [Enterprise Technology Architecture and Operations Suite](src/architecture/enterprise/open-source-enterprise-technology-suite/README.md) |
-
 
 | Goal | Entry point |
 |---|---|
+| Design an integrated OSS-first enterprise technology operating model | [Enterprise Technology Architecture and Operations Suite](src/architecture/enterprise/open-source-enterprise-technology-suite/README.md) |
 | Learn parliamentary procedure and organizational meeting governance | [Parliamentary procedure suite](src/business-analysis/parliamentary-procedure-and-governance/README.md) |
 | Learn animation timing and game animation engineering | [Animation Timing suite](src/game-development/animation-timing/README.md) |
 | Study CI, build engineering and DevSecOps | [Continuous Integration and CI/CD Engineering suite](src/devops/ci-cd/continuous-integration-engineering/README.md) |
