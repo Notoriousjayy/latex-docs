@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (202)
+## Primary reusable templates (213)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -28,6 +28,17 @@
 - [adr resilience and continuity template](../src/architecture/decisions/templates/adr-resilience-and-continuity-template.tex) — decisions · **provisional**
 - [adr security and privacy template](../src/architecture/decisions/templates/adr-security-and-privacy-template.tex) — decisions · **provisional**
 - [adr software structure template](../src/architecture/decisions/templates/adr-software-structure-template.tex) — decisions · **provisional**
+- [architecture review template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/architecture-review-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [capability assessment template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/capability-assessment-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [control assurance scorecard template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/control-assurance-scorecard-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [control evidence register template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/control-evidence-register-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [data ownership matrix template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/data-ownership-matrix-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [disaster recovery drill template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/disaster-recovery-drill-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [implementation wave plan template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/implementation-wave-plan-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [integration contract template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/integration-contract-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [integration test record template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/integration-test-record-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [risk exception template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/risk-exception-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [tool qualification template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/tool-qualification-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
 - [Procurement Audit — Working Form](../src/architecture/governance/ccoe/closure/5-1-procurement-audit.tex) — CCoE procurement evaluation form · **reviewed**
 - [Team Performance Assessment — Working Form](../src/architecture/governance/ccoe/execution/3-8-team-performance-assessment.tex) — CCoE team evaluation form · **reviewed**
 - [3 9 team member performance assessment](../src/architecture/governance/ccoe/execution/3-9-team-member-performance-assessment.tex) — ccoe/execution · **provisional**

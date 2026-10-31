@@ -2,8 +2,14 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary operational runbooks (33)
+## Primary operational runbooks (39)
 
+- [rb 01 identity onboarding and offboarding](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-01-identity-onboarding-and-offboarding.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
+- [rb 02 vulnerability to remediation](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-02-vulnerability-to-remediation.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
+- [rb 03 asset service reconciliation](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-03-asset-service-reconciliation.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
+- [rb 04 backup and disaster recovery drill](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-04-backup-and-disaster-recovery-drill.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
+- [rb 05 license upgrade and rollback](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-05-license-upgrade-and-rollback.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
+- [rb 06 data breach privacy and finance isolation](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-06-data-breach-privacy-and-finance-isolation.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
 - [administer nominations and election](../src/business-analysis/parliamentary-procedure-and-governance/procedures/administer-nominations-and-election.tex) — parliamentary-procedure-and-governance/procedures · **provisional**
 - [conduct tally and announce](../src/business-analysis/parliamentary-procedure-and-governance/procedures/conduct-tally-and-announce.tex) — parliamentary-procedure-and-governance/procedures · **provisional**
 - [control bylaws amendments](../src/business-analysis/parliamentary-procedure-and-governance/procedures/control-bylaws-amendments.tex) — parliamentary-procedure-and-governance/procedures · **provisional**

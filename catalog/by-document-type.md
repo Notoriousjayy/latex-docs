@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## architecture-document (21)
+## architecture-document (22)
 
 - [Secure AWS Platform: Six Architecture Acceptance Gates](../src/architecture/cloud/reusable-secure-aws-cloud-environment/architecture-and-acceptance-gates.tex) — cloud/reusable-secure-aws-cloud-environment · **provisional**
 - [ADR-0001: Application-aligned repository ownership](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0001.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
@@ -11,6 +11,7 @@
 - [ADR-0004: GitHub Actions OIDC authorization](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0004.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [ADR-0005: Terraform module provenance and promotion](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0005.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [ADR-0006: Separate validation and deployment trust](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0006.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
+- [00 executive architecture and scope](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/00-executive-architecture-and-scope.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
 - [deployment promotion and rollback](../src/devops/ci-cd/continuous-integration-engineering/specifications/deployment-promotion-and-rollback.tex) — ci cd/continuous integration engineering/specifications · **provisional**
 - [oidc authorization trust boundaries](../src/devops/ci-cd/continuous-integration-engineering/specifications/oidc-authorization-trust-boundaries.tex) — ci cd/continuous integration engineering/specifications · **provisional**
 - [pipeline reference architecture](../src/devops/ci-cd/continuous-integration-engineering/specifications/pipeline-reference-architecture.tex) — ci cd/continuous integration engineering/specifications · **provisional**
@@ -93,9 +94,14 @@
 - [Object-Oriented Programming in ANSI C: Rules and Practical Checklists](../src/programming/languages/c-cpp/object-oriented-programming-ansi-c-checklists.tex) — ANSI C object-oriented programming checklists · **reviewed**
 - [minimum curriculum quality checklist](../src/startups/workbooks/minimum-curriculum-quality-checklist.tex) — startups · **provisional**
 
-## decision-record (1)
+## decision-record (6)
 
 - [adr lifecycle and review guide](../src/architecture/decisions/adr-lifecycle-and-review-guide.tex) — decisions · **provisional**
+- [adr 0001 oss and commercial exceptions](../src/architecture/enterprise/open-source-enterprise-technology-suite/adrs/adr-0001-oss-and-commercial-exceptions.tex) — enterprise/open-source-enterprise-technology-suite/adrs · **provisional**
+- [adr 0002 master asset and service](../src/architecture/enterprise/open-source-enterprise-technology-suite/adrs/adr-0002-master-asset-and-service.tex) — enterprise/open-source-enterprise-technology-suite/adrs · **provisional**
+- [adr 0003 finance segregation](../src/architecture/enterprise/open-source-enterprise-technology-suite/adrs/adr-0003-finance-segregation.tex) — enterprise/open-source-enterprise-technology-suite/adrs · **provisional**
+- [adr 0004 finding evidence workflow](../src/architecture/enterprise/open-source-enterprise-technology-suite/adrs/adr-0004-finding-evidence-workflow.tex) — enterprise/open-source-enterprise-technology-suite/adrs · **provisional**
+- [adr 0005 identity federation](../src/architecture/enterprise/open-source-enterprise-technology-suite/adrs/adr-0005-identity-federation.tex) — enterprise/open-source-enterprise-technology-suite/adrs · **provisional**
 
 ## handbook (8)
 
@@ -248,8 +254,14 @@
 - [closure playbook standard operating procedure](../src/security/application-security/processes/avit-seeker/closure-playbook-standard-operating-procedure.tex) — processes/avit seeker · **provisional**
 - [secure workflow standard github actions](../src/security/github-advanced-security/references/secure-workflow-standard-github-actions.tex) — github advanced security/references · **provisional**
 
-## runbook (33)
+## runbook (39)
 
+- [rb 01 identity onboarding and offboarding](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-01-identity-onboarding-and-offboarding.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
+- [rb 02 vulnerability to remediation](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-02-vulnerability-to-remediation.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
+- [rb 03 asset service reconciliation](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-03-asset-service-reconciliation.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
+- [rb 04 backup and disaster recovery drill](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-04-backup-and-disaster-recovery-drill.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
+- [rb 05 license upgrade and rollback](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-05-license-upgrade-and-rollback.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
+- [rb 06 data breach privacy and finance isolation](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-06-data-breach-privacy-and-finance-isolation.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
 - [administer nominations and election](../src/business-analysis/parliamentary-procedure-and-governance/procedures/administer-nominations-and-election.tex) — parliamentary-procedure-and-governance/procedures · **provisional**
 - [conduct tally and announce](../src/business-analysis/parliamentary-procedure-and-governance/procedures/conduct-tally-and-announce.tex) — parliamentary-procedure-and-governance/procedures · **provisional**
 - [control bylaws amendments](../src/business-analysis/parliamentary-procedure-and-governance/procedures/control-bylaws-amendments.tex) — parliamentary-procedure-and-governance/procedures · **provisional**
@@ -1057,7 +1069,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (694)
+## technical-reference (705)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -1121,6 +1133,17 @@
 - [integr arch guide itam cmdb synchronization](../src/architecture/enterprise/itsm-cmdb/glpi-itop/integr-arch-guide-itam-cmdb-synchronization.tex) — itsm cmdb/glpi itop · **provisional**
 - [integr handout itam cmdb operating pattern](../src/architecture/enterprise/itsm-cmdb/glpi-itop/integr-handout-itam-cmdb-operating-pattern.tex) — itsm cmdb/glpi itop · **provisional**
 - [plus itop itam cmdb itsm comparison table tool](../src/architecture/enterprise/itsm-cmdb/glpi-itop/plus-itop-itam-cmdb-itsm-comparison-table-tool.tex) — itsm cmdb/glpi itop · **provisional**
+- [01 source provenance and audit](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/01-source-provenance-and-audit.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [02 capability overlap and tool selection](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/02-capability-overlap-and-tool-selection.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [03 data model and integration contracts](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/03-data-model-and-integration-contracts.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [04 trust boundaries identity and threat model](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/04-trust-boundaries-identity-and-threat-model.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [05 finance data boundaries and qualification](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/05-finance-data-boundaries-and-qualification.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [06 licensing maintenance and supply chain](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/06-licensing-maintenance-and-supply-chain.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [07 controls evidence and assurance](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/07-controls-evidence-and-assurance.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [08 implementation roadmap and sprint backlog](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/08-implementation-roadmap-and-sprint-backlog.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [09 operating model slo and raci](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/09-operating-model-slo-and-raci.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [10 resilience backup and recovery](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/10-resilience-backup-and-recovery.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [11 technical architecture review checklist](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/11-technical-architecture-review-checklist.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
 - [shems architecture description](../src/architecture/examples/shems-architecture-description.tex) — examples · **provisional**
 - [ccoe master governance guide](../src/architecture/governance/ccoe/ccoe-master-governance-guide.tex) — governance/ccoe · **provisional**
 - [5 2 contract close out](../src/architecture/governance/ccoe/closure/5-2-contract-close-out.tex) — ccoe/closure · **provisional**
@@ -1754,7 +1777,7 @@
 - [venture lifecycle reference](../src/startups/small-business-management/technical-reference/venture-lifecycle-reference.tex) — small-business-management/technical-reference · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## template (202)
+## template (213)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -1780,6 +1803,17 @@
 - [adr resilience and continuity template](../src/architecture/decisions/templates/adr-resilience-and-continuity-template.tex) — decisions · **provisional**
 - [adr security and privacy template](../src/architecture/decisions/templates/adr-security-and-privacy-template.tex) — decisions · **provisional**
 - [adr software structure template](../src/architecture/decisions/templates/adr-software-structure-template.tex) — decisions · **provisional**
+- [architecture review template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/architecture-review-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [capability assessment template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/capability-assessment-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [control assurance scorecard template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/control-assurance-scorecard-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [control evidence register template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/control-evidence-register-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [data ownership matrix template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/data-ownership-matrix-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [disaster recovery drill template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/disaster-recovery-drill-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [implementation wave plan template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/implementation-wave-plan-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [integration contract template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/integration-contract-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [integration test record template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/integration-test-record-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [risk exception template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/risk-exception-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [tool qualification template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/tool-qualification-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
 - [Procurement Audit — Working Form](../src/architecture/governance/ccoe/closure/5-1-procurement-audit.tex) — CCoE procurement evaluation form · **reviewed**
 - [Team Performance Assessment — Working Form](../src/architecture/governance/ccoe/execution/3-8-team-performance-assessment.tex) — CCoE team evaluation form · **reviewed**
 - [3 9 team member performance assessment](../src/architecture/governance/ccoe/execution/3-9-team-member-performance-assessment.tex) — ccoe/execution · **provisional**

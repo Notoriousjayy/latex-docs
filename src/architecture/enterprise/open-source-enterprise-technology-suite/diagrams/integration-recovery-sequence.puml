@@ -1,0 +1,24 @@
+@startuml
+!include ../../../../../tooling/styles/plantuml/interaction/sequence-diagram-style.iuml
+actor Scanner
+participant "Ingest / Validator" as Ingest
+participant "Evidence Vault" as Vault
+participant "Canonical Findings" as Find
+participant "iTop / GLPI" as CMDB
+participant "Taiga" as Taiga
+participant "Eramba" as GRC
+Scanner -> Ingest: signed observation, source run ID
+Ingest -> Vault: store raw payload + hash
+Ingest -> Find: validated event + idempotency key
+Find -> CMDB: scoped asset/service lookup
+CMDB --> Find: canonical ID or unresolved
+alt authoritative match
+ Find -> Taiga: upsert story by finding ID
+ Taiga --> Find: story ID + acceptance
+ Find -> GRC: risk/control evidence pointer
+ GRC --> Find: risk decision reference
+else conflict or API failure
+ Find -> Find: quarantine / bounded retry / dead letter
+end
+note over Find,Taiga: Replay must not create duplicate stories.
+@enduml

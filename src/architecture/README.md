@@ -93,3 +93,8 @@ The [Views and Beyond Documentation Engineering Suite](views-and-beyond/document
 - [Views and Beyond](views-and-beyond/readme.md)
 
 - [Repository source catalog](../README.md)
+
+
+## Open-source enterprise technology architecture and operations suite
+
+The [Open-Source Enterprise Technology Architecture and Operations Suite](enterprise/open-source-enterprise-technology-suite/README.md) consolidates the existing security platform, AppSec/operations and finance references without duplicating their original LaTeX sources. It includes twelve architecture references, five proposed ADRs, six operating runbooks, eleven independently printable Template/Blank pairs, two PlantUML architecture diagrams, and five machine-readable CSV registers. It separates personal finance from enterprise accounting; GHAS is explicitly a commercial exception rather than an OSS component. Each proposed connector requires target-edition verification and safety testing.
