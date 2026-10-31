@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary architecture documents (21)
+## Primary architecture documents (22)
 
 - [Secure AWS Platform: Six Architecture Acceptance Gates](../src/architecture/cloud/reusable-secure-aws-cloud-environment/architecture-and-acceptance-gates.tex) — cloud/reusable-secure-aws-cloud-environment · **provisional**
 - [ADR-0001: Application-aligned repository ownership](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0001.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
@@ -11,6 +11,7 @@
 - [ADR-0004: GitHub Actions OIDC authorization](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0004.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [ADR-0005: Terraform module provenance and promotion](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0005.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [ADR-0006: Separate validation and deployment trust](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0006.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
+- [00 executive architecture and scope](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/00-executive-architecture-and-scope.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
 - [deployment promotion and rollback](../src/devops/ci-cd/continuous-integration-engineering/specifications/deployment-promotion-and-rollback.tex) — ci cd/continuous integration engineering/specifications · **provisional**
 - [oidc authorization trust boundaries](../src/devops/ci-cd/continuous-integration-engineering/specifications/oidc-authorization-trust-boundaries.tex) — ci cd/continuous integration engineering/specifications · **provisional**
 - [pipeline reference architecture](../src/devops/ci-cd/continuous-integration-engineering/specifications/pipeline-reference-architecture.tex) — ci cd/continuous integration engineering/specifications · **provisional**

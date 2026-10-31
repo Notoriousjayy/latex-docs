@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (694)
+## Primary technical references (705)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -66,6 +66,17 @@
 - [integr arch guide itam cmdb synchronization](../src/architecture/enterprise/itsm-cmdb/glpi-itop/integr-arch-guide-itam-cmdb-synchronization.tex) — itsm cmdb/glpi itop · **provisional**
 - [integr handout itam cmdb operating pattern](../src/architecture/enterprise/itsm-cmdb/glpi-itop/integr-handout-itam-cmdb-operating-pattern.tex) — itsm cmdb/glpi itop · **provisional**
 - [plus itop itam cmdb itsm comparison table tool](../src/architecture/enterprise/itsm-cmdb/glpi-itop/plus-itop-itam-cmdb-itsm-comparison-table-tool.tex) — itsm cmdb/glpi itop · **provisional**
+- [01 source provenance and audit](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/01-source-provenance-and-audit.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [02 capability overlap and tool selection](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/02-capability-overlap-and-tool-selection.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [03 data model and integration contracts](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/03-data-model-and-integration-contracts.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [04 trust boundaries identity and threat model](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/04-trust-boundaries-identity-and-threat-model.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [05 finance data boundaries and qualification](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/05-finance-data-boundaries-and-qualification.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [06 licensing maintenance and supply chain](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/06-licensing-maintenance-and-supply-chain.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [07 controls evidence and assurance](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/07-controls-evidence-and-assurance.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [08 implementation roadmap and sprint backlog](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/08-implementation-roadmap-and-sprint-backlog.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [09 operating model slo and raci](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/09-operating-model-slo-and-raci.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [10 resilience backup and recovery](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/10-resilience-backup-and-recovery.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [11 technical architecture review checklist](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/11-technical-architecture-review-checklist.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
 - [shems architecture description](../src/architecture/examples/shems-architecture-description.tex) — examples · **provisional**
 - [ccoe master governance guide](../src/architecture/governance/ccoe/ccoe-master-governance-guide.tex) — governance/ccoe · **provisional**
 - [5 2 contract close out](../src/architecture/governance/ccoe/closure/5-2-contract-close-out.tex) — ccoe/closure · **provisional**

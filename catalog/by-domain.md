@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## architecture (312)
+## architecture (346)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -120,6 +120,40 @@
 - [integr handout itam cmdb operating pattern](../src/architecture/enterprise/itsm-cmdb/glpi-itop/integr-handout-itam-cmdb-operating-pattern.tex) — itsm cmdb/glpi itop · **provisional**
 - [integr impl checklist minimum readiness](../src/architecture/enterprise/itsm-cmdb/glpi-itop/integr-impl-checklist-minimum-readiness.tex) — itsm cmdb/glpi itop · **provisional**
 - [plus itop itam cmdb itsm comparison table tool](../src/architecture/enterprise/itsm-cmdb/glpi-itop/plus-itop-itam-cmdb-itsm-comparison-table-tool.tex) — itsm cmdb/glpi itop · **provisional**
+- [adr 0001 oss and commercial exceptions](../src/architecture/enterprise/open-source-enterprise-technology-suite/adrs/adr-0001-oss-and-commercial-exceptions.tex) — enterprise/open-source-enterprise-technology-suite/adrs · **provisional**
+- [adr 0002 master asset and service](../src/architecture/enterprise/open-source-enterprise-technology-suite/adrs/adr-0002-master-asset-and-service.tex) — enterprise/open-source-enterprise-technology-suite/adrs · **provisional**
+- [adr 0003 finance segregation](../src/architecture/enterprise/open-source-enterprise-technology-suite/adrs/adr-0003-finance-segregation.tex) — enterprise/open-source-enterprise-technology-suite/adrs · **provisional**
+- [adr 0004 finding evidence workflow](../src/architecture/enterprise/open-source-enterprise-technology-suite/adrs/adr-0004-finding-evidence-workflow.tex) — enterprise/open-source-enterprise-technology-suite/adrs · **provisional**
+- [adr 0005 identity federation](../src/architecture/enterprise/open-source-enterprise-technology-suite/adrs/adr-0005-identity-federation.tex) — enterprise/open-source-enterprise-technology-suite/adrs · **provisional**
+- [00 executive architecture and scope](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/00-executive-architecture-and-scope.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [01 source provenance and audit](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/01-source-provenance-and-audit.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [02 capability overlap and tool selection](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/02-capability-overlap-and-tool-selection.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [03 data model and integration contracts](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/03-data-model-and-integration-contracts.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [04 trust boundaries identity and threat model](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/04-trust-boundaries-identity-and-threat-model.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [05 finance data boundaries and qualification](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/05-finance-data-boundaries-and-qualification.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [06 licensing maintenance and supply chain](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/06-licensing-maintenance-and-supply-chain.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [07 controls evidence and assurance](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/07-controls-evidence-and-assurance.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [08 implementation roadmap and sprint backlog](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/08-implementation-roadmap-and-sprint-backlog.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [09 operating model slo and raci](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/09-operating-model-slo-and-raci.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [10 resilience backup and recovery](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/10-resilience-backup-and-recovery.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [11 technical architecture review checklist](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/11-technical-architecture-review-checklist.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
+- [rb 01 identity onboarding and offboarding](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-01-identity-onboarding-and-offboarding.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
+- [rb 02 vulnerability to remediation](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-02-vulnerability-to-remediation.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
+- [rb 03 asset service reconciliation](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-03-asset-service-reconciliation.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
+- [rb 04 backup and disaster recovery drill](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-04-backup-and-disaster-recovery-drill.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
+- [rb 05 license upgrade and rollback](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-05-license-upgrade-and-rollback.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
+- [rb 06 data breach privacy and finance isolation](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-06-data-breach-privacy-and-finance-isolation.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
+- [architecture review template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/architecture-review-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [capability assessment template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/capability-assessment-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [control assurance scorecard template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/control-assurance-scorecard-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [control evidence register template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/control-evidence-register-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [data ownership matrix template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/data-ownership-matrix-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [disaster recovery drill template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/disaster-recovery-drill-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [implementation wave plan template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/implementation-wave-plan-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [integration contract template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/integration-contract-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [integration test record template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/integration-test-record-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [risk exception template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/risk-exception-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
+- [tool qualification template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/tool-qualification-template.tex) — enterprise/open-source-enterprise-technology-suite/templates · **provisional**
 - [shems architecture description](../src/architecture/examples/shems-architecture-description.tex) — examples · **provisional**
 - [ccoe master governance guide](../src/architecture/governance/ccoe/ccoe-master-governance-guide.tex) — governance/ccoe · **provisional**
 - [Procurement Audit — Working Form](../src/architecture/governance/ccoe/closure/5-1-procurement-audit.tex) — CCoE procurement evaluation form · **reviewed**
