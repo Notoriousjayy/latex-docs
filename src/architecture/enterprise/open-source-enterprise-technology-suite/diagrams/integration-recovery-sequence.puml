@@ -1,24 +1,30 @@
-@startuml
+@startuml integration-recovery-sequence
+' Proposed interaction, not evidence that vendor APIs have been qualified.
 !include ../../../../../tooling/styles/plantuml/interaction/sequence-diagram-style.iuml
-actor Scanner
-participant "Ingest / Validator" as Ingest
+title Findings Intake - Idempotency and Recovery
+
+actor "Scanner" as Scanner
+participant "Ingest Validator" as Intake
 participant "Evidence Vault" as Vault
-participant "Canonical Findings" as Find
-participant "iTop / GLPI" as CMDB
+participant "Findings Registry" as Findings
+participant "GLPI or iTop" as CMDB
 participant "Taiga" as Taiga
 participant "Eramba" as GRC
-Scanner -> Ingest: signed observation, source run ID
-Ingest -> Vault: store raw payload + hash
-Ingest -> Find: validated event + idempotency key
-Find -> CMDB: scoped asset/service lookup
-CMDB --> Find: canonical ID or unresolved
-alt authoritative match
- Find -> Taiga: upsert story by finding ID
- Taiga --> Find: story ID + acceptance
- Find -> GRC: risk/control evidence pointer
- GRC --> Find: risk decision reference
-else conflict or API failure
- Find -> Find: quarantine / bounded retry / dead letter
+
+Scanner -> Intake: signed scan event and source run ID
+Intake -> Vault: store source payload and hash
+Intake -> Findings: validated event and idempotency key
+Findings -> CMDB: scoped asset and service lookup
+CMDB --> Findings: authoritative ID or unresolved
+alt authoritative record resolved
+  Findings -> Taiga: upsert remediation using finding ID
+  Taiga --> Findings: task ID and acknowledgement
+  Findings -> GRC: risk and control evidence reference
+  GRC --> Findings: decision reference
+else match conflict or API failure
+  Findings -> Findings: quarantine or bounded retry
 end
-note over Find,Taiga: Replay must not create duplicate stories.
+note over Findings, Taiga
+  Replay does not create duplicate remediation tasks.
+end note
 @enduml
