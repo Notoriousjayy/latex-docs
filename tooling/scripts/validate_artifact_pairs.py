@@ -94,6 +94,13 @@ def validate(root: Path = ROOT, manifest_path: Path = MANIFEST) -> list[str]:
                     issues.append(f"{artifact_id}: print-form must open the suite layout")
                 if (r"\FormField{" not in contents["blank"] and r"\Field{" not in contents["blank"]):
                     issues.append(f"{artifact_id}: print-form has no writable response fields")
+            elif artifact.get("structure_rule") == "enterprise-writable-form":
+                # Independent authoring guide and printed form deliberately differ in
+                # headings. Require named guide sections and physical writing space.
+                if len(HEADING.findall(contents["template"])) < 3:
+                    issues.append(f"{artifact_id}: authoring guide lacks section structure")
+                if r"\writearea" not in contents["blank"] or r"\rule{" not in contents["blank"]:
+                    issues.append(f"{artifact_id}: printable Blank lacks writable fields")
             elif artifact.get("structure_rule") == "guided-printable-form":
                 # Instructional Templates and writable Blanks intentionally use
                 # different section headings; check both have meaningful structure
