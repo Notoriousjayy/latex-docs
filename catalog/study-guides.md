@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary study guides (431)
+## Primary study guides (439)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -362,6 +362,14 @@
 - [16 Error Handling](../src/programming/compilers/parsing-techniques/study-guides/16-error-handling.tex) — compiler engineering / parsing techniques / study guides · **provisional**
 - [17 Practical Parser Writing And Usage](../src/programming/compilers/parsing-techniques/study-guides/17-practical-parser-writing-and-usage.tex) — compiler engineering / parsing techniques / study guides · **provisional**
 - [18 Annotated Bibliography](../src/programming/compilers/parsing-techniques/study-guides/18-annotated-bibliography.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [chapter 01 general rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-01-general-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 02 comment rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-02-comment-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 03 white space rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-03-white-space-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 04 module rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-04-module-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 05 data type rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-05-data-type-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 06 procedure rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-06-procedure-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 07 variable rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-07-variable-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 08 statement rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-08-statement-rules.tex) — embedded c and quality engineering · **provisional**
 - [02 clause by clause study guide](../src/programming/languages/c-cpp/standards/c23/02-clause-by-clause-study-guide.tex) — standards/c23 · **provisional**
 - [08 training curriculum](../src/programming/languages/c-cpp/standards/c23/08-training-curriculum.tex) — standards/c23 · **provisional**
 - [07 clause study guide](../src/programming/languages/c-cpp/standards/cpp23/07-clause-study-guide.tex) — standards/cpp23 · **provisional**

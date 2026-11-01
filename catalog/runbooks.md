@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary operational runbooks (39)
+## Primary operational runbooks (42)
 
 - [rb 01 identity onboarding and offboarding](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-01-identity-onboarding-and-offboarding.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
 - [rb 02 vulnerability to remediation](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-02-vulnerability-to-remediation.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
@@ -33,6 +33,9 @@
 - [Compiler Benchmarking Procedure](../src/programming/compilers/compiler-engineering/procedures/compiler-benchmarking-procedure.tex) — compiler engineering / engineering a compiler / procedures · **provisional**
 - [Compiler Correctness Verification](../src/programming/compilers/compiler-engineering/procedures/compiler-correctness-verification.tex) — compiler engineering / engineering a compiler / procedures · **provisional**
 - [Optimization Change Control](../src/programming/compilers/compiler-engineering/procedures/optimization-change-control.tex) — compiler engineering / engineering a compiler / procedures · **provisional**
+- [code review procedure](../src/programming/languages/c-cpp/embedded-c-quality-engineering/procedures/code-review-procedure.tex) — embedded c and quality engineering · **provisional**
+- [deviation and exception procedure](../src/programming/languages/c-cpp/embedded-c-quality-engineering/procedures/deviation-and-exception-procedure.tex) — embedded c and quality engineering · **provisional**
+- [release readiness procedure](../src/programming/languages/c-cpp/embedded-c-quality-engineering/procedures/release-readiness-procedure.tex) — embedded c and quality engineering · **provisional**
 - [business plan change control sop](../src/startups/small-business-management/procedures/business-plan-change-control-sop.tex) — small-business-management/procedures · **provisional**
 - [business risk response sop](../src/startups/small-business-management/procedures/business-risk-response-sop.tex) — small-business-management/procedures · **provisional**
 - [capital investment sop](../src/startups/small-business-management/procedures/capital-investment-sop.tex) — small-business-management/procedures · **provisional**

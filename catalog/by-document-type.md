@@ -27,7 +27,7 @@
 - [subsystem and lifecycle specification](../src/game-development/game-engine-architecture-suite/architecture-specifications/subsystem-and-lifecycle-specification.tex) — game-engine-architecture-suite/architecture-specifications · **provisional**
 - [Open-Source Enterprise Security Platform: Reference Architecture and Tool Strategy](../src/security/technical-documents/open-source-enterprise-security-platform.tex) — enterprise security platform architecture · **reviewed**
 
-## assessment (47)
+## assessment (49)
 
 - [architecture traceability scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/architecture-traceability-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
 - [diagram quality scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/diagram-quality-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
@@ -68,6 +68,8 @@
 - [Compiler Security Test Plan](../src/programming/compilers/compiler-engineering/security-assessments/compiler-security-test-plan.tex) — compiler engineering / engineering a compiler / security-assessments · **provisional**
 - [Compiler Threat Model](../src/programming/compilers/compiler-engineering/security-assessments/compiler-threat-model.tex) — compiler engineering / engineering a compiler / security-assessments · **provisional**
 - [Parser Security Assessment Guide](../src/programming/compilers/parsing-techniques/assessments/parser-security-assessment-guide.tex) — compiler engineering / parsing techniques / assessments · **provisional**
+- [code review and quality decision matrix](../src/programming/languages/c-cpp/embedded-c-quality-engineering/governance/code-review-and-quality-decision-matrix.tex) — embedded c and quality engineering · **provisional**
+- [compliance control matrix](../src/programming/languages/c-cpp/embedded-c-quality-engineering/governance/compliance-control-matrix.tex) — embedded c and quality engineering · **provisional**
 - [03 manual code auditing](../src/security/application-security/assessment/03-manual-code-auditing.tex) — application security/assessment · **provisional**
 - [06 assessment procedures](../src/security/application-security/assessment/06-assessment-procedures.tex) — application security/assessment · **provisional**
 - [modern application security assessment](../src/security/application-security/processes/modern-application-security-assessment.tex) — application security/processes · **provisional**
@@ -114,7 +116,7 @@
 - [Python Testing, Security and Performance Handbook](../src/programming/languages/python/07-testing-security-performance.tex) — Python testing, security, and performance engineering · **reviewed**
 - [06 concurrency ipc handbook](../src/programming/linux-unix-system-programming/06-concurrency-ipc-handbook.tex) — linux unix system programming · **provisional**
 
-## implementation-guide (26)
+## implementation-guide (27)
 
 - [06 modeling implementation](../src/architecture/standards/iso-iec-ieee-42010/06-modeling-implementation.tex) — standards/iso iec ieee 42010 · **provisional**
 - [technical implementation](../src/architecture/style-system/examples/technical-implementation.tex) — style system/examples · **provisional**
@@ -130,6 +132,7 @@
 - [Parser Verification And Review](../src/programming/compilers/parsing-techniques/procedures/parser-verification-and-review.tex) — compiler engineering / parsing techniques / procedures · **provisional**
 - [Reproducible Parsing Benchmark Procedure](../src/programming/compilers/parsing-techniques/procedures/reproducible-parsing-benchmark-procedure.tex) — compiler engineering / parsing techniques / procedures · **provisional**
 - [Technical Source And Research Review](../src/programming/compilers/parsing-techniques/procedures/technical-source-and-research-review.tex) — compiler engineering / parsing techniques / procedures · **provisional**
+- [prerequisite based curriculum](../src/programming/languages/c-cpp/embedded-c-quality-engineering/curriculum/prerequisite-based-curriculum.tex) — embedded c and quality engineering · **provisional**
 - [interfaces implementations algorithms](../src/programming/languages/c-cpp/interfaces-implementations-algorithms.tex) — languages/c cpp · **provisional**
 - [06 hands on implementation handbook](../src/programming/languages/c-cpp/standards/c23/06-hands-on-implementation-handbook.tex) — standards/c23 · **provisional**
 - [03 implementation handbook](../src/programming/languages/c-cpp/standards/cpp23/03-implementation-handbook.tex) — standards/cpp23 · **provisional**
@@ -143,7 +146,7 @@
 - [07 hands on implementation handbook](../src/security/security-engineering/07-hands-on-implementation-handbook.tex) — security engineering · **provisional**
 - [03 control implementation catalog](../src/security/standards/iso-27000/03-control-implementation-catalog.tex) — standards/iso 27000 · **provisional**
 
-## laboratory (75)
+## laboratory (81)
 
 - [Healthcare Insurance Integration](../src/data-systems/enterprise-data-modeling/case-studies/healthcare-insurance-integration.tex) — enterprise-data-modeling · **provisional**
 - [Manufacturer Digital Thread](../src/data-systems/enterprise-data-modeling/case-studies/manufacturer-digital-thread.tex) — enterprise-data-modeling · **provisional**
@@ -204,6 +207,12 @@
 - [06 Mini Language Compiler](../src/programming/compilers/parsing-techniques/laboratories/06-mini-language-compiler.tex) — compiler engineering / parsing techniques / laboratories · **provisional**
 - [07 Adversarial Parsing](../src/programming/compilers/parsing-techniques/laboratories/07-adversarial-parsing.tex) — compiler engineering / parsing techniques / laboratories · **provisional**
 - [08 Comparative Benchmarking](../src/programming/compilers/parsing-techniques/laboratories/08-comparative-benchmarking.tex) — compiler engineering / parsing techniques / laboratories · **provisional**
+- [lab 01 integer representations and checked arithmetic](../src/programming/languages/c-cpp/embedded-c-quality-engineering/laboratories/lab-01-integer-representations-and-checked-arithmetic.tex) — embedded c and quality engineering · **provisional**
+- [lab 02 bounded binary frame decoder](../src/programming/languages/c-cpp/embedded-c-quality-engineering/laboratories/lab-02-bounded-binary-frame-decoder.tex) — embedded c and quality engineering · **provisional**
+- [lab 03 finite state parsing and termination](../src/programming/languages/c-cpp/embedded-c-quality-engineering/laboratories/lab-03-finite-state-parsing-and-termination.tex) — embedded c and quality engineering · **provisional**
+- [lab 04 module isolation and peripheral interfaces](../src/programming/languages/c-cpp/embedded-c-quality-engineering/laboratories/lab-04-module-isolation-and-peripheral-interfaces.tex) — embedded c and quality engineering · **provisional**
+- [lab 05 macros interrupt context and state ownership](../src/programming/languages/c-cpp/embedded-c-quality-engineering/laboratories/lab-05-macros-interrupt-context-and-state-ownership.tex) — embedded c and quality engineering · **provisional**
+- [lab 06 static analysis and ci failure injection](../src/programming/languages/c-cpp/embedded-c-quality-engineering/laboratories/lab-06-static-analysis-and-ci-failure-injection.tex) — embedded c and quality engineering · **provisional**
 - [boutique ecommerce case](../src/startups/small-business-management/case-studies/boutique-ecommerce-case.tex) — small-business-management/case-studies · **provisional**
 - [digital services export case](../src/startups/small-business-management/case-studies/digital-services-export-case.tex) — small-business-management/case-studies · **provisional**
 - [family business buyout case](../src/startups/small-business-management/case-studies/family-business-buyout-case.tex) — small-business-management/case-studies · **provisional**
@@ -254,7 +263,7 @@
 - [closure playbook standard operating procedure](../src/security/application-security/processes/avit-seeker/closure-playbook-standard-operating-procedure.tex) — processes/avit seeker · **provisional**
 - [secure workflow standard github actions](../src/security/github-advanced-security/references/secure-workflow-standard-github-actions.tex) — github advanced security/references · **provisional**
 
-## runbook (39)
+## runbook (42)
 
 - [rb 01 identity onboarding and offboarding](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-01-identity-onboarding-and-offboarding.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
 - [rb 02 vulnerability to remediation](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-02-vulnerability-to-remediation.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
@@ -285,6 +294,9 @@
 - [Compiler Benchmarking Procedure](../src/programming/compilers/compiler-engineering/procedures/compiler-benchmarking-procedure.tex) — compiler engineering / engineering a compiler / procedures · **provisional**
 - [Compiler Correctness Verification](../src/programming/compilers/compiler-engineering/procedures/compiler-correctness-verification.tex) — compiler engineering / engineering a compiler / procedures · **provisional**
 - [Optimization Change Control](../src/programming/compilers/compiler-engineering/procedures/optimization-change-control.tex) — compiler engineering / engineering a compiler / procedures · **provisional**
+- [code review procedure](../src/programming/languages/c-cpp/embedded-c-quality-engineering/procedures/code-review-procedure.tex) — embedded c and quality engineering · **provisional**
+- [deviation and exception procedure](../src/programming/languages/c-cpp/embedded-c-quality-engineering/procedures/deviation-and-exception-procedure.tex) — embedded c and quality engineering · **provisional**
+- [release readiness procedure](../src/programming/languages/c-cpp/embedded-c-quality-engineering/procedures/release-readiness-procedure.tex) — embedded c and quality engineering · **provisional**
 - [business plan change control sop](../src/startups/small-business-management/procedures/business-plan-change-control-sop.tex) — small-business-management/procedures · **provisional**
 - [business risk response sop](../src/startups/small-business-management/procedures/business-risk-response-sop.tex) — small-business-management/procedures · **provisional**
 - [capital investment sop](../src/startups/small-business-management/procedures/capital-investment-sop.tex) — small-business-management/procedures · **provisional**
@@ -308,7 +320,7 @@
 - [operational resilience template](../src/startups/small-business-management/scorecards/templates/operational-resilience-template.tex) — small-business-management/scorecards/templates · **provisional**
 - [venture feasibility template](../src/startups/small-business-management/scorecards/templates/venture-feasibility-template.tex) — small-business-management/scorecards/templates · **provisional**
 
-## study-guide (431)
+## study-guide (439)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -668,6 +680,14 @@
 - [16 Error Handling](../src/programming/compilers/parsing-techniques/study-guides/16-error-handling.tex) — compiler engineering / parsing techniques / study guides · **provisional**
 - [17 Practical Parser Writing And Usage](../src/programming/compilers/parsing-techniques/study-guides/17-practical-parser-writing-and-usage.tex) — compiler engineering / parsing techniques / study guides · **provisional**
 - [18 Annotated Bibliography](../src/programming/compilers/parsing-techniques/study-guides/18-annotated-bibliography.tex) — compiler engineering / parsing techniques / study guides · **provisional**
+- [chapter 01 general rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-01-general-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 02 comment rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-02-comment-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 03 white space rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-03-white-space-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 04 module rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-04-module-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 05 data type rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-05-data-type-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 06 procedure rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-06-procedure-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 07 variable rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-07-variable-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 08 statement rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-08-statement-rules.tex) — embedded c and quality engineering · **provisional**
 - [02 clause by clause study guide](../src/programming/languages/c-cpp/standards/c23/02-clause-by-clause-study-guide.tex) — standards/c23 · **provisional**
 - [08 training curriculum](../src/programming/languages/c-cpp/standards/c23/08-training-curriculum.tex) — standards/c23 · **provisional**
 - [07 clause study guide](../src/programming/languages/c-cpp/standards/cpp23/07-clause-study-guide.tex) — standards/cpp23 · **provisional**
@@ -1069,7 +1089,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (705)
+## technical-reference (710)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -1588,6 +1608,11 @@
 - [Parsing Engineering Technical Reference](../src/programming/compilers/parsing-techniques/technical-references/parsing-engineering-technical-reference.tex) — compiler engineering / parsing techniques / technical references · **provisional**
 - [Source Chapter And Engineering Crosswalk](../src/programming/compilers/parsing-techniques/technical-references/source-chapter-and-engineering-crosswalk.tex) — compiler engineering / parsing techniques / technical references · **provisional**
 - [benefits simulating object oriented](../src/programming/languages/c-cpp/benefits-simulating-object-oriented.tex) — languages/c cpp · **provisional**
+- [source and rights register](../src/programming/languages/c-cpp/embedded-c-quality-engineering/references/source-and-rights-register.tex) — embedded c and quality engineering · **provisional**
+- [barr c misra conceptual comparison](../src/programming/languages/c-cpp/embedded-c-quality-engineering/technical-references/barr-c-misra-conceptual-comparison.tex) — embedded c and quality engineering · **provisional**
+- [ci cd integration](../src/programming/languages/c-cpp/embedded-c-quality-engineering/technical-references/ci-cd-integration.tex) — embedded c and quality engineering · **provisional**
+- [embedded c engineering reference](../src/programming/languages/c-cpp/embedded-c-quality-engineering/technical-references/embedded-c-engineering-reference.tex) — embedded c and quality engineering · **provisional**
+- [static analysis toolchain](../src/programming/languages/c-cpp/embedded-c-quality-engineering/technical-references/static-analysis-toolchain.tex) — embedded c and quality engineering · **provisional**
 - [object oriented programming ansi c algorithms](../src/programming/languages/c-cpp/object-oriented-programming-ansi-c-algorithms.tex) — languages/c cpp · **provisional**
 - [point vs vertex c composition handout](../src/programming/languages/c-cpp/point-vs-vertex-c-composition-handout.tex) — languages/c cpp · **provisional**
 - [01 language technical reference](../src/programming/languages/c-cpp/standards/c23/01-language-technical-reference.tex) — standards/c23 · **provisional**
@@ -1777,7 +1802,7 @@
 - [venture lifecycle reference](../src/startups/small-business-management/technical-reference/venture-lifecycle-reference.tex) — small-business-management/technical-reference · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## template (213)
+## template (221)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -1967,6 +1992,14 @@
 - [Parser Security Scorecard Template](../src/programming/compilers/parsing-techniques/templates/parser-security-scorecard-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
 - [Security Threat Model Template](../src/programming/compilers/parsing-techniques/templates/security-threat-model-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
 - [Test Case Matrix Template](../src/programming/compilers/parsing-techniques/templates/test-case-matrix-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [coding compliance assessment template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/coding-compliance-assessment-template.tex) — embedded c and quality engineering · **provisional**
+- [deviation request register template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/deviation-request-register-template.tex) — embedded c and quality engineering · **provisional**
+- [embedded c threat model template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/embedded-c-threat-model-template.tex) — embedded c and quality engineering · **provisional**
+- [laboratory test evidence template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/laboratory-test-evidence-template.tex) — embedded c and quality engineering · **provisional**
+- [misra applicability register template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/misra-applicability-register-template.tex) — embedded c and quality engineering · **provisional**
+- [peer code review template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/peer-code-review-template.tex) — embedded c and quality engineering · **provisional**
+- [release quality scorecard template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/release-quality-scorecard-template.tex) — embedded c and quality engineering · **provisional**
+- [static analysis triage template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/static-analysis-triage-template.tex) — embedded c and quality engineering · **provisional**
 - [07 compiler conformance verification](../src/programming/languages/c-cpp/standards/c23/07-compiler-conformance-verification.tex) — standards/c23 · **provisional**
 - [11 forms and records](../src/programming/languages/c-cpp/standards/misra-c-2023/11-forms-and-records.tex) — standards/misra c 2023 · **provisional**
 - [12 audit templates evidence forms](../src/programming/languages/c-cpp/standards/misra-cpp-2023/12-audit-templates-evidence-forms.tex) — standards/misra cpp 2023 · **provisional**
@@ -2013,7 +2046,7 @@
 - [study plan user stories github advanced sec](../src/security/github-advanced-security/administration/study-plan-user-stories-github-advanced-sec.tex) — github advanced security/administration · **provisional**
 - [study plan owasp api sec top 10 user stories](../src/security/standards/owasp/study-plan-owasp-api-sec-top-10-user-stories.tex) — standards/owasp · **provisional**
 
-## workbook (148)
+## workbook (149)
 
 - [concern view evidence template](../src/architecture/c4-model/documentation-suite/workbooks/concern-view-evidence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
 - [cross view correspondence template](../src/architecture/c4-model/documentation-suite/workbooks/cross-view-correspondence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
@@ -2141,6 +2174,7 @@
 - [Compiler Pipeline Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/compiler-pipeline-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**
 - [Formal Language Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/formal-language-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**
 - [Parsing Trace Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/parsing-trace-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**
+- [secure coding exercise workbook](../src/programming/languages/c-cpp/embedded-c-quality-engineering/laboratories/secure-coding-exercise-workbook.tex) — embedded c and quality engineering · **provisional**
 - [08 hands on laboratories](../src/programming/linux-unix-system-programming/08-hands-on-laboratories.tex) — linux unix system programming · **provisional**
 - [07 hands on labs](../src/programming/web/micro-frontends/07-hands-on-labs.tex) — web/micro frontends · **provisional**
 - [07 hands on labs](../src/security/application-security/assessment/07-hands-on-labs.tex) — application security/assessment · **provisional**
