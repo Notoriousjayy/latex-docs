@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary workbooks and exercises (148)
+## Primary workbooks and exercises (149)
 
 - [concern view evidence template](../src/architecture/c4-model/documentation-suite/workbooks/concern-view-evidence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
 - [cross view correspondence template](../src/architecture/c4-model/documentation-suite/workbooks/cross-view-correspondence-template.tex) — c4-model/documentation-suite/workbooks · **provisional**
@@ -130,6 +130,7 @@
 - [Compiler Pipeline Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/compiler-pipeline-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**
 - [Formal Language Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/formal-language-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**
 - [Parsing Trace Workbook Template](../src/programming/compilers/parsing-techniques/workbooks/parsing-trace-workbook-template.tex) — compiler engineering / parsing techniques / workbooks · **provisional**
+- [secure coding exercise workbook](../src/programming/languages/c-cpp/embedded-c-quality-engineering/laboratories/secure-coding-exercise-workbook.tex) — embedded c and quality engineering · **provisional**
 - [08 hands on laboratories](../src/programming/linux-unix-system-programming/08-hands-on-laboratories.tex) — linux unix system programming · **provisional**
 - [07 hands on labs](../src/programming/web/micro-frontends/07-hands-on-labs.tex) — web/micro frontends · **provisional**
 - [07 hands on labs](../src/security/application-security/assessment/07-hands-on-labs.tex) — application security/assessment · **provisional**

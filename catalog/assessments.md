@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary assessments (47)
+## Primary assessments (49)
 
 - [architecture traceability scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/architecture-traceability-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
 - [diagram quality scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/diagram-quality-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
@@ -43,6 +43,8 @@
 - [Compiler Security Test Plan](../src/programming/compilers/compiler-engineering/security-assessments/compiler-security-test-plan.tex) — compiler engineering / engineering a compiler / security-assessments · **provisional**
 - [Compiler Threat Model](../src/programming/compilers/compiler-engineering/security-assessments/compiler-threat-model.tex) — compiler engineering / engineering a compiler / security-assessments · **provisional**
 - [Parser Security Assessment Guide](../src/programming/compilers/parsing-techniques/assessments/parser-security-assessment-guide.tex) — compiler engineering / parsing techniques / assessments · **provisional**
+- [code review and quality decision matrix](../src/programming/languages/c-cpp/embedded-c-quality-engineering/governance/code-review-and-quality-decision-matrix.tex) — embedded c and quality engineering · **provisional**
+- [compliance control matrix](../src/programming/languages/c-cpp/embedded-c-quality-engineering/governance/compliance-control-matrix.tex) — embedded c and quality engineering · **provisional**
 - [03 manual code auditing](../src/security/application-security/assessment/03-manual-code-auditing.tex) — application security/assessment · **provisional**
 - [06 assessment procedures](../src/security/application-security/assessment/06-assessment-procedures.tex) — application security/assessment · **provisional**
 - [modern application security assessment](../src/security/application-security/processes/modern-application-security-assessment.tex) — application security/processes · **provisional**

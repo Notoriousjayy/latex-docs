@@ -2063,6 +2063,43 @@
 - [orange pi zero engineering guide](../src/electronics/technical-documents/orange-pi-zero-engineering-guide.tex) — electronics · **provisional**
 - [the art of electronics x chapters lab course](../src/electronics/workbooks/the-art-of-electronics-x-chapters-lab-course.tex) — electronics · **provisional**
 
+## embedded c and quality engineering (34)
+
+- [prerequisite based curriculum](../src/programming/languages/c-cpp/embedded-c-quality-engineering/curriculum/prerequisite-based-curriculum.tex) — embedded c and quality engineering · **provisional**
+- [code review and quality decision matrix](../src/programming/languages/c-cpp/embedded-c-quality-engineering/governance/code-review-and-quality-decision-matrix.tex) — embedded c and quality engineering · **provisional**
+- [compliance control matrix](../src/programming/languages/c-cpp/embedded-c-quality-engineering/governance/compliance-control-matrix.tex) — embedded c and quality engineering · **provisional**
+- [lab 01 integer representations and checked arithmetic](../src/programming/languages/c-cpp/embedded-c-quality-engineering/laboratories/lab-01-integer-representations-and-checked-arithmetic.tex) — embedded c and quality engineering · **provisional**
+- [lab 02 bounded binary frame decoder](../src/programming/languages/c-cpp/embedded-c-quality-engineering/laboratories/lab-02-bounded-binary-frame-decoder.tex) — embedded c and quality engineering · **provisional**
+- [lab 03 finite state parsing and termination](../src/programming/languages/c-cpp/embedded-c-quality-engineering/laboratories/lab-03-finite-state-parsing-and-termination.tex) — embedded c and quality engineering · **provisional**
+- [lab 04 module isolation and peripheral interfaces](../src/programming/languages/c-cpp/embedded-c-quality-engineering/laboratories/lab-04-module-isolation-and-peripheral-interfaces.tex) — embedded c and quality engineering · **provisional**
+- [lab 05 macros interrupt context and state ownership](../src/programming/languages/c-cpp/embedded-c-quality-engineering/laboratories/lab-05-macros-interrupt-context-and-state-ownership.tex) — embedded c and quality engineering · **provisional**
+- [lab 06 static analysis and ci failure injection](../src/programming/languages/c-cpp/embedded-c-quality-engineering/laboratories/lab-06-static-analysis-and-ci-failure-injection.tex) — embedded c and quality engineering · **provisional**
+- [secure coding exercise workbook](../src/programming/languages/c-cpp/embedded-c-quality-engineering/laboratories/secure-coding-exercise-workbook.tex) — embedded c and quality engineering · **provisional**
+- [code review procedure](../src/programming/languages/c-cpp/embedded-c-quality-engineering/procedures/code-review-procedure.tex) — embedded c and quality engineering · **provisional**
+- [deviation and exception procedure](../src/programming/languages/c-cpp/embedded-c-quality-engineering/procedures/deviation-and-exception-procedure.tex) — embedded c and quality engineering · **provisional**
+- [release readiness procedure](../src/programming/languages/c-cpp/embedded-c-quality-engineering/procedures/release-readiness-procedure.tex) — embedded c and quality engineering · **provisional**
+- [source and rights register](../src/programming/languages/c-cpp/embedded-c-quality-engineering/references/source-and-rights-register.tex) — embedded c and quality engineering · **provisional**
+- [chapter 01 general rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-01-general-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 02 comment rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-02-comment-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 03 white space rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-03-white-space-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 04 module rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-04-module-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 05 data type rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-05-data-type-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 06 procedure rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-06-procedure-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 07 variable rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-07-variable-rules.tex) — embedded c and quality engineering · **provisional**
+- [chapter 08 statement rules](../src/programming/languages/c-cpp/embedded-c-quality-engineering/study-guides/chapter-08-statement-rules.tex) — embedded c and quality engineering · **provisional**
+- [barr c misra conceptual comparison](../src/programming/languages/c-cpp/embedded-c-quality-engineering/technical-references/barr-c-misra-conceptual-comparison.tex) — embedded c and quality engineering · **provisional**
+- [ci cd integration](../src/programming/languages/c-cpp/embedded-c-quality-engineering/technical-references/ci-cd-integration.tex) — embedded c and quality engineering · **provisional**
+- [embedded c engineering reference](../src/programming/languages/c-cpp/embedded-c-quality-engineering/technical-references/embedded-c-engineering-reference.tex) — embedded c and quality engineering · **provisional**
+- [static analysis toolchain](../src/programming/languages/c-cpp/embedded-c-quality-engineering/technical-references/static-analysis-toolchain.tex) — embedded c and quality engineering · **provisional**
+- [coding compliance assessment template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/coding-compliance-assessment-template.tex) — embedded c and quality engineering · **provisional**
+- [deviation request register template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/deviation-request-register-template.tex) — embedded c and quality engineering · **provisional**
+- [embedded c threat model template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/embedded-c-threat-model-template.tex) — embedded c and quality engineering · **provisional**
+- [laboratory test evidence template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/laboratory-test-evidence-template.tex) — embedded c and quality engineering · **provisional**
+- [misra applicability register template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/misra-applicability-register-template.tex) — embedded c and quality engineering · **provisional**
+- [peer code review template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/peer-code-review-template.tex) — embedded c and quality engineering · **provisional**
+- [release quality scorecard template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/release-quality-scorecard-template.tex) — embedded c and quality engineering · **provisional**
+- [static analysis triage template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/static-analysis-triage-template.tex) — embedded c and quality engineering · **provisional**
+
 ## enterprise security platform architecture (1)
 
 - [Open-Source Enterprise Security Platform: Reference Architecture and Tool Strategy](../src/security/technical-documents/open-source-enterprise-security-platform.tex) — enterprise security platform architecture · **reviewed**

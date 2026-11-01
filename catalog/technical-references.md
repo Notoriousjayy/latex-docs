@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (705)
+## Primary technical references (710)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -521,6 +521,11 @@
 - [Parsing Engineering Technical Reference](../src/programming/compilers/parsing-techniques/technical-references/parsing-engineering-technical-reference.tex) — compiler engineering / parsing techniques / technical references · **provisional**
 - [Source Chapter And Engineering Crosswalk](../src/programming/compilers/parsing-techniques/technical-references/source-chapter-and-engineering-crosswalk.tex) — compiler engineering / parsing techniques / technical references · **provisional**
 - [benefits simulating object oriented](../src/programming/languages/c-cpp/benefits-simulating-object-oriented.tex) — languages/c cpp · **provisional**
+- [source and rights register](../src/programming/languages/c-cpp/embedded-c-quality-engineering/references/source-and-rights-register.tex) — embedded c and quality engineering · **provisional**
+- [barr c misra conceptual comparison](../src/programming/languages/c-cpp/embedded-c-quality-engineering/technical-references/barr-c-misra-conceptual-comparison.tex) — embedded c and quality engineering · **provisional**
+- [ci cd integration](../src/programming/languages/c-cpp/embedded-c-quality-engineering/technical-references/ci-cd-integration.tex) — embedded c and quality engineering · **provisional**
+- [embedded c engineering reference](../src/programming/languages/c-cpp/embedded-c-quality-engineering/technical-references/embedded-c-engineering-reference.tex) — embedded c and quality engineering · **provisional**
+- [static analysis toolchain](../src/programming/languages/c-cpp/embedded-c-quality-engineering/technical-references/static-analysis-toolchain.tex) — embedded c and quality engineering · **provisional**
 - [object oriented programming ansi c algorithms](../src/programming/languages/c-cpp/object-oriented-programming-ansi-c-algorithms.tex) — languages/c cpp · **provisional**
 - [point vs vertex c composition handout](../src/programming/languages/c-cpp/point-vs-vertex-c-composition-handout.tex) — languages/c cpp · **provisional**
 - [01 language technical reference](../src/programming/languages/c-cpp/standards/c23/01-language-technical-reference.tex) — standards/c23 · **provisional**

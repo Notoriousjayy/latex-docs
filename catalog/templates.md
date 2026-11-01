@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (213)
+## Primary reusable templates (221)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -192,6 +192,14 @@
 - [Parser Security Scorecard Template](../src/programming/compilers/parsing-techniques/templates/parser-security-scorecard-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
 - [Security Threat Model Template](../src/programming/compilers/parsing-techniques/templates/security-threat-model-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
 - [Test Case Matrix Template](../src/programming/compilers/parsing-techniques/templates/test-case-matrix-template.tex) — compiler engineering / parsing techniques / templates · **provisional**
+- [coding compliance assessment template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/coding-compliance-assessment-template.tex) — embedded c and quality engineering · **provisional**
+- [deviation request register template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/deviation-request-register-template.tex) — embedded c and quality engineering · **provisional**
+- [embedded c threat model template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/embedded-c-threat-model-template.tex) — embedded c and quality engineering · **provisional**
+- [laboratory test evidence template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/laboratory-test-evidence-template.tex) — embedded c and quality engineering · **provisional**
+- [misra applicability register template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/misra-applicability-register-template.tex) — embedded c and quality engineering · **provisional**
+- [peer code review template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/peer-code-review-template.tex) — embedded c and quality engineering · **provisional**
+- [release quality scorecard template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/release-quality-scorecard-template.tex) — embedded c and quality engineering · **provisional**
+- [static analysis triage template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/static-analysis-triage-template.tex) — embedded c and quality engineering · **provisional**
 - [07 compiler conformance verification](../src/programming/languages/c-cpp/standards/c23/07-compiler-conformance-verification.tex) — standards/c23 · **provisional**
 - [11 forms and records](../src/programming/languages/c-cpp/standards/misra-c-2023/11-forms-and-records.tex) — standards/misra c 2023 · **provisional**
 - [12 audit templates evidence forms](../src/programming/languages/c-cpp/standards/misra-cpp-2023/12-audit-templates-evidence-forms.tex) — standards/misra cpp 2023 · **provisional**
