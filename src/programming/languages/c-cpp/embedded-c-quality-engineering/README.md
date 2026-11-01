@@ -61,3 +61,7 @@ make clean test
 The pair governance manifest registers all eight complete pairs. Each Blank includes labels, lines, an empty working grid and sign-off space, but no prefilled evidence. A clean compiler or analyzer report is insufficient for correctness; validate ISR behavior, peripheral sequencing, latency and synchronization on target hardware. Any MISRA C compliance claim requires licensed normative materials, an edition-specific plan, supported rule coverage and approved deviations.
 
 [Primary BARR-C source](https://barrgroup.com/embedded-c-coding-standard) | [MISRA](https://misra.org.uk/) | [GCC](https://gcc.gnu.org/onlinedocs/) | [Cppcheck](https://cppcheck.sourceforge.io/)
+
+## Automated C99 reference validation
+
+The scoped repository workflow [Embedded C Quality](../../../../../.github/workflows/embedded-c-quality.yml) compiles and runs the included host C99 tests, then executes Cppcheck as a separate static-analysis gate. It uses least-privilege permissions and an immutable checkout action revision. Passing these checks verifies only the sample and configured analyzers, not target hardware, MISRA compliance or product release safety. The inactive workflow under `examples/workflows/` remains an adoption specimen for other projects.
