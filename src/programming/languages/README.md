@@ -5,6 +5,7 @@ Use language-specific collections for implementation guidance, standards, secure
 | Language | Secure coding source |
 |---|---|
 | C | [secure-coding-standard-c.tex](c-cpp/secure-coding/secure-coding-standard-c.tex) |
+| Embedded C engineering (C99) | [BARR-C:2018 study and software quality suite](c-cpp/embedded-c-quality-engineering/README.md) |
 | C++ | [secure-coding-standard-cpp.tex](c-cpp/secure-coding/secure-coding-standard-cpp.tex) |
 | C# | [secure-coding-standard-csharp.tex](csharp/secure-coding-standard-csharp.tex) |
 | Go | [secure-coding-standard-go.tex](go/secure-coding-standard-go.tex) |
@@ -22,3 +23,5 @@ For Java, see its [existing CERT/Oracle rules](java/secure-coding/README.md) alo
 ## Placement rules
 
 Place a source next to the language whose features it discusses. Do not create extra nesting solely for document type; add subcollections only when multiple related documents warrant them. Use the central [document catalogs](../../../catalog/README.md) to browse across artifact types.
+
+The [Embedded C C99 quality engineering collection](c-cpp/embedded-c-quality-engineering/README.md) contains original eight-chapter study guides, laboratories, CI and review procedures, and eight governed Template–Blank pairs. It is an educational complement, not a reproduction of BARR-C or a MISRA compliance claim.

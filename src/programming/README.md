@@ -61,3 +61,7 @@ For **language-specific secure coding standards**, start with the [Programming l
 - [Security standards and application security](../security/README.md)
 
 - [Source catalog](../README.md)
+
+## Embedded C engineering suite
+
+The [embedded C programming, BARR-C:2018 study and software-quality engineering collection](languages/c-cpp/embedded-c-quality-engineering/README.md) provides C99 laboratories, source-aligned study guides, static analysis integration, local EC-Q controls and printable governed forms. Published material is independently authored and does not redistribute the source standard.

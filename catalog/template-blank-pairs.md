@@ -345,3 +345,19 @@ Six governed Template–Blank pairs for framework selection, external-source-to-
 | ARCH-EOT-TOOL_QUALIFICATION | [Template](../src/architecture/enterprise/open-source-enterprise-technology-suite/templates/tool-qualification-template.tex) | [Blank](../src/architecture/enterprise/open-source-enterprise-technology-suite/blanks/tool-qualification-blank.tex) |
 
 Each Blank is a physically writable standalone printable form; each Template is an independent instructional authoring document. Entries are registered in `tooling/manifests/reusable-artifact-pairs.json`.
+
+## Embedded C Programming and Quality Engineering
+
+Eight original form pairs are available in the [Embedded C suite](../src/programming/languages/c-cpp/embedded-c-quality-engineering/README.md). All Blank files are unfilled printable worksheets, not proof of completion.
+
+| Form | Template | Blank |
+|---|---|---|
+| coding compliance assessment | [Template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/coding-compliance-assessment-template.tex) | [Blank](../src/programming/languages/c-cpp/embedded-c-quality-engineering/blank-forms/coding-compliance-assessment-blank.tex) |
+| peer code review | [Template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/peer-code-review-template.tex) | [Blank](../src/programming/languages/c-cpp/embedded-c-quality-engineering/blank-forms/peer-code-review-blank.tex) |
+| deviation request register | [Template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/deviation-request-register-template.tex) | [Blank](../src/programming/languages/c-cpp/embedded-c-quality-engineering/blank-forms/deviation-request-register-blank.tex) |
+| static analysis triage | [Template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/static-analysis-triage-template.tex) | [Blank](../src/programming/languages/c-cpp/embedded-c-quality-engineering/blank-forms/static-analysis-triage-blank.tex) |
+| laboratory test evidence | [Template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/laboratory-test-evidence-template.tex) | [Blank](../src/programming/languages/c-cpp/embedded-c-quality-engineering/blank-forms/laboratory-test-evidence-blank.tex) |
+| misra applicability register | [Template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/misra-applicability-register-template.tex) | [Blank](../src/programming/languages/c-cpp/embedded-c-quality-engineering/blank-forms/misra-applicability-register-blank.tex) |
+| release quality scorecard | [Template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/release-quality-scorecard-template.tex) | [Blank](../src/programming/languages/c-cpp/embedded-c-quality-engineering/blank-forms/release-quality-scorecard-blank.tex) |
+| embedded c threat model | [Template](../src/programming/languages/c-cpp/embedded-c-quality-engineering/templates/embedded-c-threat-model-template.tex) | [Blank](../src/programming/languages/c-cpp/embedded-c-quality-engineering/blank-forms/embedded-c-threat-model-blank.tex) |
+
