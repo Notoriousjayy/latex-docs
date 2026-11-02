@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary assessments (49)
+## Primary assessments (50)
 
 - [architecture traceability scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/architecture-traceability-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
 - [diagram quality scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/diagram-quality-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
@@ -48,6 +48,7 @@
 - [03 manual code auditing](../src/security/application-security/assessment/03-manual-code-auditing.tex) — application security/assessment · **provisional**
 - [06 assessment procedures](../src/security/application-security/assessment/06-assessment-procedures.tex) — application security/assessment · **provisional**
 - [modern application security assessment](../src/security/application-security/processes/modern-application-security-assessment.tex) — application security/processes · **provisional**
+- [assurance and compliance assessment](../src/security/computer-security-art-and-science/assessment/assurance-and-compliance-assessment.tex) — computer security/formal models and assurance · **provisional**
 - [codeql source security assessment](../src/security/github-advanced-security/code-scanning/codeql-source-security-assessment.tex) — github advanced security/code scanning · **provisional**
 - [04 readiness gap assessment](../src/security/governance-risk-compliance/soc2/04-readiness-gap-assessment.tex) — governance risk compliance/soc2 · **provisional**
 - [07 audit testing handbook](../src/security/governance-risk-compliance/soc2/07-audit-testing-handbook.tex) — governance risk compliance/soc2 · **provisional**

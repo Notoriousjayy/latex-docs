@@ -1804,6 +1804,67 @@
 
 - [ch06 transport layer cornell notes](../src/cornell-notes/computer-science/computer-networks/transport-layer/ch06-transport-layer-cornell-notes.tex) — computer networks/transport layer · **provisional**
 
+## computer security/formal models and assurance (58)
+
+- [assurance and compliance assessment](../src/security/computer-security-art-and-science/assessment/assurance-and-compliance-assessment.tex) — computer security/formal models and assurance · **provisional**
+- [security laboratories github actions](../src/security/computer-security-art-and-science/ci-cd/security-laboratories-github-actions.tex) — computer security/formal models and assurance · **provisional**
+- [control mapping and evidence](../src/security/computer-security-art-and-science/controls/control-mapping-and-evidence.tex) — computer security/formal models and assurance · **provisional**
+- [prerequisite based curriculum](../src/security/computer-security-art-and-science/curriculum/prerequisite-based-curriculum.tex) — computer security/formal models and assurance · **provisional**
+- [access control template](../src/security/computer-security-art-and-science/forms/access-control-template.tex) — computer security/formal models and assurance · **provisional**
+- [assurance case template](../src/security/computer-security-art-and-science/forms/assurance-case-template.tex) — computer security/formal models and assurance · **provisional**
+- [ci gate template](../src/security/computer-security-art-and-science/forms/ci-gate-template.tex) — computer security/formal models and assurance · **provisional**
+- [control traceability template](../src/security/computer-security-art-and-science/forms/control-traceability-template.tex) — computer security/formal models and assurance · **provisional**
+- [deviation template](../src/security/computer-security-art-and-science/forms/deviation-template.tex) — computer security/formal models and assurance · **provisional**
+- [formal proof template](../src/security/computer-security-art-and-science/forms/formal-proof-template.tex) — computer security/formal models and assurance · **provisional**
+- [secure review template](../src/security/computer-security-art-and-science/forms/secure-review-template.tex) — computer security/formal models and assurance · **provisional**
+- [threat detection template](../src/security/computer-security-art-and-science/forms/threat-detection-template.tex) — computer security/formal models and assurance · **provisional**
+- [threat model template](../src/security/computer-security-art-and-science/forms/threat-model-template.tex) — computer security/formal models and assurance · **provisional**
+- [vulnerability assessment template](../src/security/computer-security-art-and-science/forms/vulnerability-assessment-template.tex) — computer security/formal models and assurance · **provisional**
+- [lab 01 finite access matrix and unauthorized grant](../src/security/computer-security-art-and-science/labs/lab-01-finite-access-matrix-and-unauthorized-grant.tex) — computer security/formal models and assurance · **provisional**
+- [lab 02 two run noninterference counterexample](../src/security/computer-security-art-and-science/labs/lab-02-two-run-noninterference-counterexample.tex) — computer security/formal models and assurance · **provisional**
+- [lab 03 length checked buffer boundary](../src/security/computer-security-art-and-science/labs/lab-03-length-checked-buffer-boundary.tex) — computer security/formal models and assurance · **provisional**
+- [lab 04 object level authorization in c ](../src/security/computer-security-art-and-science/labs/lab-04-object-level-authorization-in-c-.tex) — computer security/formal models and assurance · **provisional**
+- [lab 05 trust boundary threat model](../src/security/computer-security-art-and-science/labs/lab-05-trust-boundary-threat-model.tex) — computer security/formal models and assurance · **provisional**
+- [lab 06 vulnerability validation and remediation](../src/security/computer-security-art-and-science/labs/lab-06-vulnerability-validation-and-remediation.tex) — computer security/formal models and assurance · **provisional**
+- [lab 07 least privilege github actions security gate](../src/security/computer-security-art-and-science/labs/lab-07-least-privilege-github-actions-security-gate.tex) — computer security/formal models and assurance · **provisional**
+- [lab 08 assurance case and final evaluation](../src/security/computer-security-art-and-science/labs/lab-08-assurance-case-and-final-evaluation.tex) — computer security/formal models and assurance · **provisional**
+- [secure coding and review](../src/security/computer-security-art-and-science/procedures/secure-coding-and-review.tex) — computer security/formal models and assurance · **provisional**
+- [threat modeling procedure](../src/security/computer-security-art-and-science/procedures/threat-modeling-procedure.tex) — computer security/formal models and assurance · **provisional**
+- [vulnerability assessment procedure](../src/security/computer-security-art-and-science/procedures/vulnerability-assessment-procedure.tex) — computer security/formal models and assurance · **provisional**
+- [formal protection information flow and assurance](../src/security/computer-security-art-and-science/reference/formal-protection-information-flow-and-assurance.tex) — computer security/formal models and assurance · **provisional**
+- [standards provenance and applicability](../src/security/computer-security-art-and-science/reference/standards-provenance-and-applicability.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 01 an overview of computer security](../src/security/computer-security-art-and-science/study-guides/chapter-01-an-overview-of-computer-security.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 02 access control matrix](../src/security/computer-security-art-and-science/study-guides/chapter-02-access-control-matrix.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 03 foundational results](../src/security/computer-security-art-and-science/study-guides/chapter-03-foundational-results.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 04 security policies](../src/security/computer-security-art-and-science/study-guides/chapter-04-security-policies.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 05 confidentiality policies](../src/security/computer-security-art-and-science/study-guides/chapter-05-confidentiality-policies.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 06 integrity policies](../src/security/computer-security-art-and-science/study-guides/chapter-06-integrity-policies.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 07 availability policies](../src/security/computer-security-art-and-science/study-guides/chapter-07-availability-policies.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 08 hybrid policies](../src/security/computer-security-art-and-science/study-guides/chapter-08-hybrid-policies.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 09 noninterference and policy composition](../src/security/computer-security-art-and-science/study-guides/chapter-09-noninterference-and-policy-composition.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 10 basic cryptography](../src/security/computer-security-art-and-science/study-guides/chapter-10-basic-cryptography.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 11 key management](../src/security/computer-security-art-and-science/study-guides/chapter-11-key-management.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 12 cipher techniques](../src/security/computer-security-art-and-science/study-guides/chapter-12-cipher-techniques.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 13 authentication](../src/security/computer-security-art-and-science/study-guides/chapter-13-authentication.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 14 design principles](../src/security/computer-security-art-and-science/study-guides/chapter-14-design-principles.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 15 representing identity](../src/security/computer-security-art-and-science/study-guides/chapter-15-representing-identity.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 16 access control mechanisms](../src/security/computer-security-art-and-science/study-guides/chapter-16-access-control-mechanisms.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 17 information flow](../src/security/computer-security-art-and-science/study-guides/chapter-17-information-flow.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 18 confinement problem](../src/security/computer-security-art-and-science/study-guides/chapter-18-confinement-problem.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 19 introduction to assurance](../src/security/computer-security-art-and-science/study-guides/chapter-19-introduction-to-assurance.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 20 building systems with assurance](../src/security/computer-security-art-and-science/study-guides/chapter-20-building-systems-with-assurance.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 21 formal methods](../src/security/computer-security-art-and-science/study-guides/chapter-21-formal-methods.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 22 evaluating systems](../src/security/computer-security-art-and-science/study-guides/chapter-22-evaluating-systems.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 23 malware](../src/security/computer-security-art-and-science/study-guides/chapter-23-malware.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 24 vulnerability analysis](../src/security/computer-security-art-and-science/study-guides/chapter-24-vulnerability-analysis.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 25 auditing](../src/security/computer-security-art-and-science/study-guides/chapter-25-auditing.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 26 intrusion detection](../src/security/computer-security-art-and-science/study-guides/chapter-26-intrusion-detection.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 27 attacks and responses](../src/security/computer-security-art-and-science/study-guides/chapter-27-attacks-and-responses.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 28 network security](../src/security/computer-security-art-and-science/study-guides/chapter-28-network-security.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 29 system security](../src/security/computer-security-art-and-science/study-guides/chapter-29-system-security.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 30 user security](../src/security/computer-security-art-and-science/study-guides/chapter-30-user-security.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 31 program security](../src/security/computer-security-art-and-science/study-guides/chapter-31-program-security.tex) — computer security/formal models and assurance · **provisional**
+
 ## cpp secure coding (1)
 
 - [CPP secure coding standard](../src/programming/languages/c-cpp/secure-coding/secure-coding-standard-cpp.tex) — cpp secure coding · **reviewed**

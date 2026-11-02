@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary operational runbooks (42)
+## Primary operational runbooks (45)
 
 - [rb 01 identity onboarding and offboarding](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-01-identity-onboarding-and-offboarding.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
 - [rb 02 vulnerability to remediation](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-02-vulnerability-to-remediation.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
@@ -36,6 +36,9 @@
 - [code review procedure](../src/programming/languages/c-cpp/embedded-c-quality-engineering/procedures/code-review-procedure.tex) — embedded c and quality engineering · **provisional**
 - [deviation and exception procedure](../src/programming/languages/c-cpp/embedded-c-quality-engineering/procedures/deviation-and-exception-procedure.tex) — embedded c and quality engineering · **provisional**
 - [release readiness procedure](../src/programming/languages/c-cpp/embedded-c-quality-engineering/procedures/release-readiness-procedure.tex) — embedded c and quality engineering · **provisional**
+- [secure coding and review](../src/security/computer-security-art-and-science/procedures/secure-coding-and-review.tex) — computer security/formal models and assurance · **provisional**
+- [threat modeling procedure](../src/security/computer-security-art-and-science/procedures/threat-modeling-procedure.tex) — computer security/formal models and assurance · **provisional**
+- [vulnerability assessment procedure](../src/security/computer-security-art-and-science/procedures/vulnerability-assessment-procedure.tex) — computer security/formal models and assurance · **provisional**
 - [business plan change control sop](../src/startups/small-business-management/procedures/business-plan-change-control-sop.tex) — small-business-management/procedures · **provisional**
 - [business risk response sop](../src/startups/small-business-management/procedures/business-risk-response-sop.tex) — small-business-management/procedures · **provisional**
 - [capital investment sop](../src/startups/small-business-management/procedures/capital-investment-sop.tex) — small-business-management/procedures · **provisional**

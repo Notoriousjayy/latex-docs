@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (221)
+## Primary reusable templates (231)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -210,6 +210,16 @@
 - [Custom Rule Specification Template](../src/security/application-security/sast/templates/custom-rule-specification-template.tex) — application-security/sast · **provisional**
 - [Risk Exception Record Template](../src/security/application-security/sast/templates/risk-exception-record-template.tex) — application-security/sast · **provisional**
 - [Sast Review Plan Template](../src/security/application-security/sast/templates/sast-review-plan-template.tex) — application-security/sast · **provisional**
+- [access control template](../src/security/computer-security-art-and-science/forms/access-control-template.tex) — computer security/formal models and assurance · **provisional**
+- [assurance case template](../src/security/computer-security-art-and-science/forms/assurance-case-template.tex) — computer security/formal models and assurance · **provisional**
+- [ci gate template](../src/security/computer-security-art-and-science/forms/ci-gate-template.tex) — computer security/formal models and assurance · **provisional**
+- [control traceability template](../src/security/computer-security-art-and-science/forms/control-traceability-template.tex) — computer security/formal models and assurance · **provisional**
+- [deviation template](../src/security/computer-security-art-and-science/forms/deviation-template.tex) — computer security/formal models and assurance · **provisional**
+- [formal proof template](../src/security/computer-security-art-and-science/forms/formal-proof-template.tex) — computer security/formal models and assurance · **provisional**
+- [secure review template](../src/security/computer-security-art-and-science/forms/secure-review-template.tex) — computer security/formal models and assurance · **provisional**
+- [threat detection template](../src/security/computer-security-art-and-science/forms/threat-detection-template.tex) — computer security/formal models and assurance · **provisional**
+- [threat model template](../src/security/computer-security-art-and-science/forms/threat-model-template.tex) — computer security/formal models and assurance · **provisional**
+- [vulnerability assessment template](../src/security/computer-security-art-and-science/forms/vulnerability-assessment-template.tex) — computer security/formal models and assurance · **provisional**
 - [08 compliance templates traceability](../src/security/standards/iso-27000/08-compliance-templates-traceability.tex) — standards/iso 27000 · **provisional**
 - [business model canvas template](../src/startups/small-business-management/forms/templates/business-model-canvas-template.tex) — small-business-management/forms/templates · **provisional**
 - [business plan template](../src/startups/small-business-management/forms/templates/business-plan-template.tex) — small-business-management/forms/templates · **provisional**

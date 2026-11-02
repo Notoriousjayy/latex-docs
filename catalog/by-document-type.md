@@ -27,7 +27,7 @@
 - [subsystem and lifecycle specification](../src/game-development/game-engine-architecture-suite/architecture-specifications/subsystem-and-lifecycle-specification.tex) — game-engine-architecture-suite/architecture-specifications · **provisional**
 - [Open-Source Enterprise Security Platform: Reference Architecture and Tool Strategy](../src/security/technical-documents/open-source-enterprise-security-platform.tex) — enterprise security platform architecture · **reviewed**
 
-## assessment (49)
+## assessment (50)
 
 - [architecture traceability scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/architecture-traceability-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
 - [diagram quality scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/diagram-quality-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
@@ -73,6 +73,7 @@
 - [03 manual code auditing](../src/security/application-security/assessment/03-manual-code-auditing.tex) — application security/assessment · **provisional**
 - [06 assessment procedures](../src/security/application-security/assessment/06-assessment-procedures.tex) — application security/assessment · **provisional**
 - [modern application security assessment](../src/security/application-security/processes/modern-application-security-assessment.tex) — application security/processes · **provisional**
+- [assurance and compliance assessment](../src/security/computer-security-art-and-science/assessment/assurance-and-compliance-assessment.tex) — computer security/formal models and assurance · **provisional**
 - [codeql source security assessment](../src/security/github-advanced-security/code-scanning/codeql-source-security-assessment.tex) — github advanced security/code scanning · **provisional**
 - [04 readiness gap assessment](../src/security/governance-risk-compliance/soc2/04-readiness-gap-assessment.tex) — governance risk compliance/soc2 · **provisional**
 - [07 audit testing handbook](../src/security/governance-risk-compliance/soc2/07-audit-testing-handbook.tex) — governance risk compliance/soc2 · **provisional**
@@ -116,7 +117,7 @@
 - [Python Testing, Security and Performance Handbook](../src/programming/languages/python/07-testing-security-performance.tex) — Python testing, security, and performance engineering · **reviewed**
 - [06 concurrency ipc handbook](../src/programming/linux-unix-system-programming/06-concurrency-ipc-handbook.tex) — linux unix system programming · **provisional**
 
-## implementation-guide (27)
+## implementation-guide (28)
 
 - [06 modeling implementation](../src/architecture/standards/iso-iec-ieee-42010/06-modeling-implementation.tex) — standards/iso iec ieee 42010 · **provisional**
 - [technical implementation](../src/architecture/style-system/examples/technical-implementation.tex) — style system/examples · **provisional**
@@ -142,11 +143,12 @@
 - [ECMAScript Testing and Conformance Guide](../src/programming/languages/ecmascript/06-testing-conformance-guide.tex) — ECMAScript conformance and testing · **reviewed**
 - [03 c posix implementation handbook](../src/programming/linux-unix-system-programming/03-c-posix-implementation-handbook.tex) — linux unix system programming · **provisional**
 - [04 implementation handbook](../src/programming/web/micro-frontends/04-implementation-handbook.tex) — web/micro frontends · **provisional**
+- [security laboratories github actions](../src/security/computer-security-art-and-science/ci-cd/security-laboratories-github-actions.tex) — computer security/formal models and assurance · **provisional**
 - [03 control implementation handbook](../src/security/governance-risk-compliance/soc2/03-control-implementation-handbook.tex) — governance risk compliance/soc2 · **provisional**
 - [07 hands on implementation handbook](../src/security/security-engineering/07-hands-on-implementation-handbook.tex) — security engineering · **provisional**
 - [03 control implementation catalog](../src/security/standards/iso-27000/03-control-implementation-catalog.tex) — standards/iso 27000 · **provisional**
 
-## laboratory (81)
+## laboratory (89)
 
 - [Healthcare Insurance Integration](../src/data-systems/enterprise-data-modeling/case-studies/healthcare-insurance-integration.tex) — enterprise-data-modeling · **provisional**
 - [Manufacturer Digital Thread](../src/data-systems/enterprise-data-modeling/case-studies/manufacturer-digital-thread.tex) — enterprise-data-modeling · **provisional**
@@ -213,6 +215,14 @@
 - [lab 04 module isolation and peripheral interfaces](../src/programming/languages/c-cpp/embedded-c-quality-engineering/laboratories/lab-04-module-isolation-and-peripheral-interfaces.tex) — embedded c and quality engineering · **provisional**
 - [lab 05 macros interrupt context and state ownership](../src/programming/languages/c-cpp/embedded-c-quality-engineering/laboratories/lab-05-macros-interrupt-context-and-state-ownership.tex) — embedded c and quality engineering · **provisional**
 - [lab 06 static analysis and ci failure injection](../src/programming/languages/c-cpp/embedded-c-quality-engineering/laboratories/lab-06-static-analysis-and-ci-failure-injection.tex) — embedded c and quality engineering · **provisional**
+- [lab 01 finite access matrix and unauthorized grant](../src/security/computer-security-art-and-science/labs/lab-01-finite-access-matrix-and-unauthorized-grant.tex) — computer security/formal models and assurance · **provisional**
+- [lab 02 two run noninterference counterexample](../src/security/computer-security-art-and-science/labs/lab-02-two-run-noninterference-counterexample.tex) — computer security/formal models and assurance · **provisional**
+- [lab 03 length checked buffer boundary](../src/security/computer-security-art-and-science/labs/lab-03-length-checked-buffer-boundary.tex) — computer security/formal models and assurance · **provisional**
+- [lab 04 object level authorization in c ](../src/security/computer-security-art-and-science/labs/lab-04-object-level-authorization-in-c-.tex) — computer security/formal models and assurance · **provisional**
+- [lab 05 trust boundary threat model](../src/security/computer-security-art-and-science/labs/lab-05-trust-boundary-threat-model.tex) — computer security/formal models and assurance · **provisional**
+- [lab 06 vulnerability validation and remediation](../src/security/computer-security-art-and-science/labs/lab-06-vulnerability-validation-and-remediation.tex) — computer security/formal models and assurance · **provisional**
+- [lab 07 least privilege github actions security gate](../src/security/computer-security-art-and-science/labs/lab-07-least-privilege-github-actions-security-gate.tex) — computer security/formal models and assurance · **provisional**
+- [lab 08 assurance case and final evaluation](../src/security/computer-security-art-and-science/labs/lab-08-assurance-case-and-final-evaluation.tex) — computer security/formal models and assurance · **provisional**
 - [boutique ecommerce case](../src/startups/small-business-management/case-studies/boutique-ecommerce-case.tex) — small-business-management/case-studies · **provisional**
 - [digital services export case](../src/startups/small-business-management/case-studies/digital-services-export-case.tex) — small-business-management/case-studies · **provisional**
 - [family business buyout case](../src/startups/small-business-management/case-studies/family-business-buyout-case.tex) — small-business-management/case-studies · **provisional**
@@ -263,7 +273,7 @@
 - [closure playbook standard operating procedure](../src/security/application-security/processes/avit-seeker/closure-playbook-standard-operating-procedure.tex) — processes/avit seeker · **provisional**
 - [secure workflow standard github actions](../src/security/github-advanced-security/references/secure-workflow-standard-github-actions.tex) — github advanced security/references · **provisional**
 
-## runbook (42)
+## runbook (45)
 
 - [rb 01 identity onboarding and offboarding](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-01-identity-onboarding-and-offboarding.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
 - [rb 02 vulnerability to remediation](../src/architecture/enterprise/open-source-enterprise-technology-suite/runbooks/rb-02-vulnerability-to-remediation.tex) — enterprise/open-source-enterprise-technology-suite/runbooks · **provisional**
@@ -297,6 +307,9 @@
 - [code review procedure](../src/programming/languages/c-cpp/embedded-c-quality-engineering/procedures/code-review-procedure.tex) — embedded c and quality engineering · **provisional**
 - [deviation and exception procedure](../src/programming/languages/c-cpp/embedded-c-quality-engineering/procedures/deviation-and-exception-procedure.tex) — embedded c and quality engineering · **provisional**
 - [release readiness procedure](../src/programming/languages/c-cpp/embedded-c-quality-engineering/procedures/release-readiness-procedure.tex) — embedded c and quality engineering · **provisional**
+- [secure coding and review](../src/security/computer-security-art-and-science/procedures/secure-coding-and-review.tex) — computer security/formal models and assurance · **provisional**
+- [threat modeling procedure](../src/security/computer-security-art-and-science/procedures/threat-modeling-procedure.tex) — computer security/formal models and assurance · **provisional**
+- [vulnerability assessment procedure](../src/security/computer-security-art-and-science/procedures/vulnerability-assessment-procedure.tex) — computer security/formal models and assurance · **provisional**
 - [business plan change control sop](../src/startups/small-business-management/procedures/business-plan-change-control-sop.tex) — small-business-management/procedures · **provisional**
 - [business risk response sop](../src/startups/small-business-management/procedures/business-risk-response-sop.tex) — small-business-management/procedures · **provisional**
 - [capital investment sop](../src/startups/small-business-management/procedures/capital-investment-sop.tex) — small-business-management/procedures · **provisional**
@@ -320,7 +333,7 @@
 - [operational resilience template](../src/startups/small-business-management/scorecards/templates/operational-resilience-template.tex) — small-business-management/scorecards/templates · **provisional**
 - [venture feasibility template](../src/startups/small-business-management/scorecards/templates/venture-feasibility-template.tex) — small-business-management/scorecards/templates · **provisional**
 
-## study-guide (439)
+## study-guide (471)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -730,6 +743,38 @@
 - [Chapter 14 Source Code Analysis Exercises For C](../src/security/application-security/sast/study-guides/chapter-14-source-code-analysis-exercises-for-c.tex) — application-security/sast · **provisional**
 - [study plan isc 2 cissp cbk ref 6th ed user](../src/security/certifications/cissp/study-plan-isc-2-cissp-cbk-ref-6th-ed-user.tex) — certifications/cissp · **provisional**
 - [precision study plan final 72 hour plan retake](../src/security/certifications/gh-500/precision-study-plan-final-72-hour-plan-retake.tex) — certifications/gh 500 · **provisional**
+- [prerequisite based curriculum](../src/security/computer-security-art-and-science/curriculum/prerequisite-based-curriculum.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 01 an overview of computer security](../src/security/computer-security-art-and-science/study-guides/chapter-01-an-overview-of-computer-security.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 02 access control matrix](../src/security/computer-security-art-and-science/study-guides/chapter-02-access-control-matrix.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 03 foundational results](../src/security/computer-security-art-and-science/study-guides/chapter-03-foundational-results.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 04 security policies](../src/security/computer-security-art-and-science/study-guides/chapter-04-security-policies.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 05 confidentiality policies](../src/security/computer-security-art-and-science/study-guides/chapter-05-confidentiality-policies.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 06 integrity policies](../src/security/computer-security-art-and-science/study-guides/chapter-06-integrity-policies.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 07 availability policies](../src/security/computer-security-art-and-science/study-guides/chapter-07-availability-policies.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 08 hybrid policies](../src/security/computer-security-art-and-science/study-guides/chapter-08-hybrid-policies.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 09 noninterference and policy composition](../src/security/computer-security-art-and-science/study-guides/chapter-09-noninterference-and-policy-composition.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 10 basic cryptography](../src/security/computer-security-art-and-science/study-guides/chapter-10-basic-cryptography.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 11 key management](../src/security/computer-security-art-and-science/study-guides/chapter-11-key-management.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 12 cipher techniques](../src/security/computer-security-art-and-science/study-guides/chapter-12-cipher-techniques.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 13 authentication](../src/security/computer-security-art-and-science/study-guides/chapter-13-authentication.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 14 design principles](../src/security/computer-security-art-and-science/study-guides/chapter-14-design-principles.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 15 representing identity](../src/security/computer-security-art-and-science/study-guides/chapter-15-representing-identity.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 16 access control mechanisms](../src/security/computer-security-art-and-science/study-guides/chapter-16-access-control-mechanisms.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 17 information flow](../src/security/computer-security-art-and-science/study-guides/chapter-17-information-flow.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 18 confinement problem](../src/security/computer-security-art-and-science/study-guides/chapter-18-confinement-problem.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 19 introduction to assurance](../src/security/computer-security-art-and-science/study-guides/chapter-19-introduction-to-assurance.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 20 building systems with assurance](../src/security/computer-security-art-and-science/study-guides/chapter-20-building-systems-with-assurance.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 21 formal methods](../src/security/computer-security-art-and-science/study-guides/chapter-21-formal-methods.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 22 evaluating systems](../src/security/computer-security-art-and-science/study-guides/chapter-22-evaluating-systems.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 23 malware](../src/security/computer-security-art-and-science/study-guides/chapter-23-malware.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 24 vulnerability analysis](../src/security/computer-security-art-and-science/study-guides/chapter-24-vulnerability-analysis.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 25 auditing](../src/security/computer-security-art-and-science/study-guides/chapter-25-auditing.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 26 intrusion detection](../src/security/computer-security-art-and-science/study-guides/chapter-26-intrusion-detection.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 27 attacks and responses](../src/security/computer-security-art-and-science/study-guides/chapter-27-attacks-and-responses.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 28 network security](../src/security/computer-security-art-and-science/study-guides/chapter-28-network-security.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 29 system security](../src/security/computer-security-art-and-science/study-guides/chapter-29-system-security.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 30 user security](../src/security/computer-security-art-and-science/study-guides/chapter-30-user-security.tex) — computer security/formal models and assurance · **provisional**
+- [chapter 31 program security](../src/security/computer-security-art-and-science/study-guides/chapter-31-program-security.tex) — computer security/formal models and assurance · **provisional**
 - [02 criterion study guide](../src/security/governance-risk-compliance/soc2/02-criterion-study-guide.tex) — governance risk compliance/soc2 · **provisional**
 - [08 training curriculum](../src/security/governance-risk-compliance/soc2/08-training-curriculum.tex) — governance risk compliance/soc2 · **provisional**
 - [08 training curriculum reference index](../src/security/security-engineering/08-training-curriculum-reference-index.tex) — security engineering · **provisional**
@@ -1089,7 +1134,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (710)
+## technical-reference (713)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -1724,6 +1769,9 @@
 - [how to use this document](../src/security/certifications/ciso/how-to-use-this-document.tex) — certifications/ciso · **provisional**
 - [section i introduction ch 1 5 expanded](../src/security/cloud-security/section-i-introduction-ch-1-5-expanded.tex) — cloud security · **provisional**
 - [section i introduction ch 1 5](../src/security/cloud-security/section-i-introduction-ch-1-5.tex) — cloud security · **provisional**
+- [control mapping and evidence](../src/security/computer-security-art-and-science/controls/control-mapping-and-evidence.tex) — computer security/formal models and assurance · **provisional**
+- [formal protection information flow and assurance](../src/security/computer-security-art-and-science/reference/formal-protection-information-flow-and-assurance.tex) — computer security/formal models and assurance · **provisional**
+- [standards provenance and applicability](../src/security/computer-security-art-and-science/reference/standards-provenance-and-applicability.tex) — computer security/formal models and assurance · **provisional**
 - [automating review github advanced sec alert](../src/security/github-advanced-security/administration/automating-review-github-advanced-sec-alert.tex) — github advanced security/administration · **provisional**
 - [github advanced sec ghas its role 16 gate ci](../src/security/github-advanced-security/administration/github-advanced-sec-ghas-its-role-16-gate-ci.tex) — github advanced security/administration · **provisional**
 - [github advanced sec ghas sop markdown](../src/security/github-advanced-security/administration/github-advanced-sec-ghas-sop-markdown.tex) — github advanced security/administration · **provisional**
@@ -1802,7 +1850,7 @@
 - [venture lifecycle reference](../src/startups/small-business-management/technical-reference/venture-lifecycle-reference.tex) — small-business-management/technical-reference · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## template (221)
+## template (231)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -2010,6 +2058,16 @@
 - [Custom Rule Specification Template](../src/security/application-security/sast/templates/custom-rule-specification-template.tex) — application-security/sast · **provisional**
 - [Risk Exception Record Template](../src/security/application-security/sast/templates/risk-exception-record-template.tex) — application-security/sast · **provisional**
 - [Sast Review Plan Template](../src/security/application-security/sast/templates/sast-review-plan-template.tex) — application-security/sast · **provisional**
+- [access control template](../src/security/computer-security-art-and-science/forms/access-control-template.tex) — computer security/formal models and assurance · **provisional**
+- [assurance case template](../src/security/computer-security-art-and-science/forms/assurance-case-template.tex) — computer security/formal models and assurance · **provisional**
+- [ci gate template](../src/security/computer-security-art-and-science/forms/ci-gate-template.tex) — computer security/formal models and assurance · **provisional**
+- [control traceability template](../src/security/computer-security-art-and-science/forms/control-traceability-template.tex) — computer security/formal models and assurance · **provisional**
+- [deviation template](../src/security/computer-security-art-and-science/forms/deviation-template.tex) — computer security/formal models and assurance · **provisional**
+- [formal proof template](../src/security/computer-security-art-and-science/forms/formal-proof-template.tex) — computer security/formal models and assurance · **provisional**
+- [secure review template](../src/security/computer-security-art-and-science/forms/secure-review-template.tex) — computer security/formal models and assurance · **provisional**
+- [threat detection template](../src/security/computer-security-art-and-science/forms/threat-detection-template.tex) — computer security/formal models and assurance · **provisional**
+- [threat model template](../src/security/computer-security-art-and-science/forms/threat-model-template.tex) — computer security/formal models and assurance · **provisional**
+- [vulnerability assessment template](../src/security/computer-security-art-and-science/forms/vulnerability-assessment-template.tex) — computer security/formal models and assurance · **provisional**
 - [08 compliance templates traceability](../src/security/standards/iso-27000/08-compliance-templates-traceability.tex) — standards/iso 27000 · **provisional**
 - [business model canvas template](../src/startups/small-business-management/forms/templates/business-model-canvas-template.tex) — small-business-management/forms/templates · **provisional**
 - [business plan template](../src/startups/small-business-management/forms/templates/business-plan-template.tex) — small-business-management/forms/templates · **provisional**
