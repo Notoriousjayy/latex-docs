@@ -113,3 +113,7 @@ make build-category-security
 ## Agile requirements and user stories
 
 Explore the [User Stories and Agile Requirements Engineering suite](src/business-analysis/user-stories/README.md), with matching template/blank pairs and a chapter-to-operations curriculum.
+
+## Computer security formal models and assurance
+
+The [Computer Security Engineering and Information Assurance Suite](src/security/computer-security-art-and-science/README.md) complements the existing security-engineering, SAST, and GHAS documents with 31 original Bishop-aligned study guides, a gated curriculum, formal model exercises, threat/vulnerability procedures, synthetic code labs, and printable Template–Blank pairs.
