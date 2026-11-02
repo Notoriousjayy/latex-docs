@@ -20,7 +20,7 @@ cc -std=c99 -Wall -Wextra -Wpedantic -Werror src/security/computer-security-art-
 c++ -std=c++17 -Wall -Wextra -Wpedantic -Werror src/security/computer-security-art-and-science/examples/cpp/object_authorization.cpp -o /tmp/ces-auth && /tmp/ces-auth
 ```
 
-The existing LaTeX CI performs changed-root compilation. The new [lab workflow](../../../../.github/workflows/bishop-security-labs.yml) runs read-only, no-network-target example tests; it does not provision infrastructure, enable GHAS, or certify security.
+The existing LaTeX CI performs changed-root compilation. The new [lab workflow](../../../.github/workflows/bishop-security-labs.yml) runs read-only, no-network-target example tests; it does not provision infrastructure, enable GHAS, or certify security.
 
 ## 31 textbook-aligned study guides
 
