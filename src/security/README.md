@@ -64,3 +64,7 @@ Language-specific secure coding standards are maintained under [Programming lang
 - [DevOps delivery and platform documentation](../devops/README.md)
 
 - [Source catalog](../README.md)
+
+## Bishop: Computer Security Engineering and Information Assurance
+
+The [31-chapter Computer Security: Art and Science companion](computer-security-art-and-science/README.md) adds a formal-policy curriculum, assurance methods, synthetic C/C++/Python labs, evidence-based security procedures, control crosswalks, and printable Template–Blank form pairs. It references (rather than supersedes) existing security engineering, SAST, GHAS, and GRC collections.

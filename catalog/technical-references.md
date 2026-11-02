@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (710)
+## Primary technical references (713)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -637,6 +637,9 @@
 - [how to use this document](../src/security/certifications/ciso/how-to-use-this-document.tex) — certifications/ciso · **provisional**
 - [section i introduction ch 1 5 expanded](../src/security/cloud-security/section-i-introduction-ch-1-5-expanded.tex) — cloud security · **provisional**
 - [section i introduction ch 1 5](../src/security/cloud-security/section-i-introduction-ch-1-5.tex) — cloud security · **provisional**
+- [control mapping and evidence](../src/security/computer-security-art-and-science/controls/control-mapping-and-evidence.tex) — computer security/formal models and assurance · **provisional**
+- [formal protection information flow and assurance](../src/security/computer-security-art-and-science/reference/formal-protection-information-flow-and-assurance.tex) — computer security/formal models and assurance · **provisional**
+- [standards provenance and applicability](../src/security/computer-security-art-and-science/reference/standards-provenance-and-applicability.tex) — computer security/formal models and assurance · **provisional**
 - [automating review github advanced sec alert](../src/security/github-advanced-security/administration/automating-review-github-advanced-sec-alert.tex) — github advanced security/administration · **provisional**
 - [github advanced sec ghas its role 16 gate ci](../src/security/github-advanced-security/administration/github-advanced-sec-ghas-its-role-16-gate-ci.tex) — github advanced security/administration · **provisional**
 - [github advanced sec ghas sop markdown](../src/security/github-advanced-security/administration/github-advanced-sec-ghas-sop-markdown.tex) — github advanced security/administration · **provisional**
