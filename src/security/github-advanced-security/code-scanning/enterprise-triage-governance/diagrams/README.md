@@ -14,4 +14,6 @@ These eleven PlantUML diagrams model the **proposed**, not deployed, security go
 - [10-deployment-boundaries.puml](10-deployment-boundaries.puml)
 - [11-exception-evidence-lifecycle.puml](11-exception-evidence-lifecycle.puml)
 
+Rendered exports: [PNG](png/README.md) and [SVG](svg/README.md).
+
 Use the repository's `make render-plantuml` path when validating diagrams. Architecture Discovery is always read-only; no diagram grants dismissal authority.
