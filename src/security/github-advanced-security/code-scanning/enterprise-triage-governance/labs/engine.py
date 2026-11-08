@@ -130,12 +130,14 @@ def evaluate(observation: dict[str, Any], policy: dict[str, Any],
         return result("SCAN_INCOMPLETE", "required tool or analysis not successfully completed")
     if observation.get("coverage_status") != "complete":
         return result("INSUFFICIENT_EVIDENCE", "repository coverage incomplete or unknown")
-    if observation.get("required_check_state") != "success":
+    if observation.get("required_check_state") not in ("success", "not_required"):
         return result("INSUFFICIENT_EVIDENCE", "required check not confirmed successful")
     if observation.get("ruleset_state") not in ("enforced", "none"):
         return result("INSUFFICIENT_EVIDENCE", "effective ruleset not verified")
     if observation.get("required_review") == "pending":
         return result("APPSEC_REVIEW_REQUIRED", "independent PR reviewer still required")
+    if observation.get("required_review") not in ("complete", "not_required"):
+        return result("INSUFFICIENT_EVIDENCE", "PR review state not verified")
     if observation.get("conflict") or observation.get("merge_queue_state") == "blocked":
         return result("INSUFFICIENT_EVIDENCE", "merge mechanics remain blocked")
 

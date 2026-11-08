@@ -54,6 +54,12 @@ class OfflinePolicyTests(unittest.TestCase):
     def test_required_check_is_separate_block(self):
         self.assertEqual("INSUFFICIENT_EVIDENCE", self.e(required_check_state="failed")["decision"])
 
+    def test_not_required_check_is_not_a_blocker(self):
+        self.assertEqual("ALLOW_MERGE", self.e(alerts=[], required_check_state="not_required")["decision"])
+
+    def test_unknown_review_abstains(self):
+        self.assertEqual("INSUFFICIENT_EVIDENCE", self.e(alerts=[], required_review="unknown")["decision"])
+
     def test_unknown_ruleset_abstains(self):
         self.assertEqual("INSUFFICIENT_EVIDENCE", self.e(ruleset_state="unknown")["decision"])
 
