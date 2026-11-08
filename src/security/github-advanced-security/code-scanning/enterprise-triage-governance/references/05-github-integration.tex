@@ -1,0 +1,69 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.86in]{geometry}
+\usepackage{microtype}
+\usepackage{booktabs,longtable,tabularx,array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{xurl}
+\definecolor{DocBlue}{HTML}{16435F}
+\hypersetup{colorlinks=true,urlcolor=DocBlue,linkcolor=DocBlue}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.54em}
+\setlist[itemize]{leftmargin=*,itemsep=3pt}
+\begin{document}
+\begin{center}
+{\LARGE\bfseries GitHub App and Actions Integration Guide}\par
+\vspace{5pt}{\large Secure read-only observation and separately authorized executor}\par
+\vspace{9pt}{\small Engineering reference | Proposed design | Not a deployment or approval record}\par
+\end{center}
+\tableofcontents
+\clearpage
+\section{API surface}
+\begin{itemize}
+\item GET code scanning alerts and alert instances; retain analysis\_key, ref, commit\_sha, tool, rule ID and classifications.
+\item GET pull requests, reviews, checks, statuses, effective rulesets and review obligations where accessible.
+\item GET delegated dismissal requests with pagination, explicit statuses and organization boundary.
+\item PATCH direct code scanning alert requires Code scanning alerts write and authorization.
+\item PATCH review of delegated code scanning dismissal requires organization dismissal-request permission and repository alert read plus reviewer eligibility.
+\item Handle 403/404/422/429/5xx independently; do not interpret missing permissions as no alerts.
+\end{itemize}
+
+\section{GitHub REST source register}
+\begin{itemize}
+\item Code scanning REST: https://docs.github.com/en/rest/code-scanning/code-scanning
+\item Delegated dismissal REST: https://docs.github.com/en/rest/code-scanning/alert-dismissal-requests
+\item Merge protection: https://docs.github.com/en/code-security/concepts/code-scanning/merge-protection
+\item Delegated dismissal concepts: https://docs.github.com/en/code-security/concepts/security-at-scale/delegated-alert-dismissal
+\item Actions security hardening: https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions
+\end{itemize}
+
+\section{Token boundaries}
+A read-only collector uses the minimal GitHub App installation permissions needed for specific endpoints. The executor is a separate app/role, cannot run in a fork PR trust context, must not checkout untrusted code with write-capable tokens and must use short-lived installation tokens.
+
+Repository permission alone may not establish organization-level eligibility to review delegated dismissal requests. Verify effective roles and endpoint requirements at deployment.
+
+
+\section{Event strategy}
+\begin{itemize}
+\item pull\_request: untrusted contribution data; safe for isolated, low-privilege assessment only.
+\item pull\_request\_target: privileged context; do not checkout or execute untrusted head, particularly when tokens are write-capable.
+\item workflow\_run: previous workflow outputs are untrusted; re-validate artifact digests and no privileged execution of raw data.
+\item workflow\_dispatch: manually initiated after authorization; validate all parameters, actor and head SHA.
+\item schedule: read-only reconciliation, coverage and expiration monitoring; do not use as implicit blanket approval.
+\end{itemize}
+
+\section{Reliability and audit}
+Use ETag/conditional requests, pagination Link headers, bounded retries, 429/secondary limit backoff, idempotency tokens, correlation IDs, optimistic checks against state and head SHA, and after-write observation. Maintain a durable outbox before enabling mutations.
+
+
+\section{Enterprise variations}
+Document GitHub.com versus Enterprise Server feature support and licensing. Delegated code scanning dismissal is available on GHES 3.17+ in current conceptual documentation, but API feature details and GitHub App behavior must be verified for each target release. No edition entitlement is assumed.
+
+
+\section*{Document status and provenance}
+This document is a proposed reference design. Actual GitHub feature availability, organization policies, approvals, and runtime performance must be independently verified before adoption. The architecture inventory is not proof of vulnerability exploitability or correctness of a dismissal.
+\end{document}
