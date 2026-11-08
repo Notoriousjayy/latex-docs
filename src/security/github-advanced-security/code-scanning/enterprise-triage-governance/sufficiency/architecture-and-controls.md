@@ -66,6 +66,23 @@ Collector and evaluator permissions must be read-only. A contributor-controlled 
 | INT-09 | Audit -> KPI and incident review | Versioned immutable receipt, actor and denominator; redact sensitive payload | KPI reference; evidence form | Missing denominator or unverifiable provenance -> unreported |
 | INT-10 | Operations -> architecture governance | Owner reconciliation, exception expiry, control drift, ADR impact review | Operations playbook; readiness backlog | Unknown owner and unauthorized changes escalate |
 
+## 3A. End-to-end requirement and evidence chains
+
+The row IDs below connect the [requirements matrix](requirements-matrix.csv) to the [document register](document-register.csv). The `INT` crosswalk names logical controls, not installed enforcement mechanisms. Proposed ADRs remain unaccepted, and a cited form is never a completed evidence record.
+
+| Business outcome → requirement | Component / proposed ADR | Control obligation | Operating procedure | Test → evidence record | Accountable role |
+|---|---|---|---|---|---|
+| Authorized coverage → GOV-05, DISC-01, INT-01 | Scope collector / APPSEC-001 | Restrict API scope; preserve denial/missing denominators | Discovery phase 0–1 implementation workbook | VER-01, VER-02 → approved installation and census record | Platform service owner |
+| Trustworthy dependency map → DISC-03, DISC-04, INT-02 | E1/E2/E3 graph / APPSEC-001 | No E2 promotion to unproven E3 or dismissal authority | Discovery evidence/validation workbook | VER-03 → corroborated sampling record | Architecture steward |
+| Reproducible decision → APP-03, APP-04, INT-05 | Deterministic evaluator / APPSEC-002 | Pinned inputs, policy digest, unknown-state abstention | Policy reference and decision-record form | VER-07, VER-09 → input/policy/evaluation digest | AppSec control owner |
+| Correct merge diagnosis → MERGE-01, MERGE-02, INT-04 | Blocker adapter / APPSEC-002 | Separate scan rulesets, required checks, reviews and queue | Merge-blocker reference and root-cause form | VER-05 → read-only PR adjudication | GitHub platform owner |
+| Independently authorized exception → DISM-01, DISM-02, INT-06 | Reviewer queue / APPSEC-003 | No reason-only or self approval; verify reviewer authority | Delegated dismissal reference and reviewer form | VER-06 → signed decision and entitlement proof | AppSec reviewer lead |
+| Controlled execution boundary → DISM-05, PLAT-04, INT-07 | Future isolated executor / APPSEC-003 | Short-lived privilege; revalidate current state | Privileged access review and authorized change record | VER-01, VER-12 → negative scope test and approval | Platform security owner |
+| Recover from wrongful disposition → OPS-04, SEC-04, INT-08 | Incident containment and reconciliation | Pause executor, trace branch effects, authorized corrective action | Operations playbook and threat model | VER-08 → witnessed incident/rollback drill | Incident response lead |
+| Verifiable control effectiveness → EVID-02, KPI-02, INT-09 | Restricted audit and KPI pipeline | Immutable provenance, privacy, valid denominators | Evidence workbook and effectiveness scorecard | VER-09, VER-10 → restricted audit record and sampled metrics | Records custodian / AppSec owner |
+
+Do not regard these links as proof that any restricted enterprise record exists. Assign actual approved identifiers only after deployment/tenant access is independently authorized.
+
 ## 4. GitHub security control distinctions
 
 A PR may have simultaneously outstanding: (a) GitHub code scanning ruleset merge protection; (b) required status checks, including workflow success; (c) required human reviews; (d) queue or merge-group obligations; (e) a pending delegated dismissal review. They must be measured and resolved **independently**. Dismissing a code scanning alert can affect all branches; it is not a PR-local exception and cannot repair a failed scan or unrelated status check. Verify actual configuration read-only per target repository/edition.
