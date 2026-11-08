@@ -37,3 +37,7 @@ Any future delegated dismissal execution needs separately reviewed GitHub App ro
 - [GitHub delegated alert dismissal](https://docs.github.com/en/code-security/concepts/security-at-scale/delegated-alert-dismissal)
 - [GitHub code scanning REST API](https://docs.github.com/en/rest/code-scanning/code-scanning)
 - [GitHub dismissal request API](https://docs.github.com/en/rest/code-scanning/alert-dismissal-requests)
+
+## Documentation sufficiency and handover
+
+The [integrated governance and requirements register](sufficiency/README.md) identifies canonical documents for both suites, proposed RACI and decision rights, 79 requirements and their evidence gaps, pilot/production readiness blockers and a traceable remediation backlog. This is **not** enterprise deployment authorization.

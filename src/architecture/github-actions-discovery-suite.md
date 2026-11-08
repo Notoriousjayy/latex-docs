@@ -60,3 +60,7 @@ The pair manifest is [`tooling/manifests/reusable-artifact-pairs.json`](../../to
 ## Companion: AppSec Code Scanning automation and merge governance
 
 The [enterprise Code Scanning Triage and Merge Governance suite](../security/github-advanced-security/code-scanning/enterprise-triage-governance/README.md) consumes read-only architecture discovery evidence to enrich alert assessment, explain independent PR merge blockers, and model deterministic policy decisions. The discovery collector remains without write permissions. Inferred E2 relationships never authorize code scanning dismissal. Its [Architecture Description](technical-documents/enterprise-appsec-code-scanning-architecture-description.tex) and [Viewpoint](technical-documents/enterprise-appsec-code-scanning-viewpoint-specification.tex) complement rather than replace the present four discovery Template–Blank pairs.
+
+## Integrated enterprise documentation sufficiency
+
+The [controlled Discovery and AppSec documentation crosswalk](../security/github-advanced-security/code-scanning/enterprise-triage-governance/sufficiency/README.md) supplies the requirements matrix, canonical document register, proposed decision rights, evidence contract, readiness gates and prioritized remediation. It does not treat unfilled Discovery forms as actual approval evidence.
