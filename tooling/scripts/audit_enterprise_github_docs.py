@@ -72,6 +72,12 @@ def inspect() -> dict:
             problems.append(f"{rid}: unsupported evidence claim")
         if row["earliest_gate"] not in {"L1", "L2", "L3"}:
             problems.append(f"{rid}: invalid gate")
+        if row.get("disposition") not in {"retain-and-verify", "revise-or-complete", "create"}:
+            problems.append(f"{rid}: no governed disposition")
+        for required_field in ("acceptance_criterion", "dependencies", "operational_risk_if_unmet",
+                               "source_assessment_basis"):
+            if not row.get(required_field):
+                problems.append(f"{rid}: missing {required_field}")
         if not row["owner_role"] or not row["reviewer_role"] or not row["verification_id"]:
             problems.append(f"{rid}: missing review/test role or ID")
         paths = [p.strip() for p in row["canonical_document"].split(";")]

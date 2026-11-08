@@ -47,6 +47,31 @@ The user stories below extend, rather than replace, the existing [Agile backlog]
 
 For each story, implementation tasks are: enumerate exact in-scope identities; update appropriate canonical document or form; implement the independent positive and negative verification case; retain reviewer identity and immutable version in restricted records; revise impacted architecture diagrams/ADRs; report unresolved evidence. Maintain sprint ownership and status in the project's actual work tracker if provisioned; no Taiga project is created here.
 
+## Story-level implementation tasks and explicit Definition of Done
+
+Each story below uses the corresponding table row for owner role, priority, points, dependencies and Given/When/Then acceptance. The following activities and controls are **additional requirements**, not evidence that the story has been executed.
+
+| Story | Implementation tasks | Story-specific DoD |
+|---|---|---|
+| DOC-GOV-01 | Obtain sponsor scope; identify control owners; map delegated authority; check conflicting decisions; approve charter | Charter and conflict review signed by authorized sponsor |
+| DOC-GOV-02 | Query authorized read-only inventory; reconcile repo IDs and monorepo components; sample ownership with independent owner | Versioned census, gaps and owner attestations independently reviewed |
+| DOC-GOV-03 | Draft deterministic policy ownership; bind version/digest; define protected update workflow; test unauthorized edits | Accepted rule bundle, change record and negative integrity test |
+| DOC-INT-01 | Establish data schema; bind source version and status; validate E1/E2/E3; test missing/ambiguous links | Reviewed producer/consumer schema, contract tests and missing-state evidence |
+| DOC-INT-02 | Inspect installation permission matrix; split collector/executor identities; test denied writes; verify fork PR trust | Security-approved installation record with negative privilege tests |
+| DOC-APP-01 | Map delegated review APIs and roles; verify request/reviewer identity; test weak reason and self approval | Evidence-backed delegated review decision procedure and adversarial test |
+| DOC-APP-02 | Sample blocked PRs; compare status checks, code scan merge rule, review and queue; adjudicate ambiguity | Blocker confusion matrix, sample evidence and approved routing |
+| DOC-SEC-01 | Threat model untrusted data and policy changes; assess STRIDE threats; execute denial and replay cases | Independent threat-model findings, closure status and risk owner review |
+| DOC-OPS-01 | Inventory evidence classes; select restricted retention store; set access/logging/legal hold rules; test retrieval | Approved records schedule and verified audit access test |
+| DOC-OPS-02 | Simulate incorrect dismissal; suspend future executor; trace branches; rehearse authorized reopening and log reconciliation | Timed signed exercise with GitHub-observed correction and remaining gaps |
+| DOC-PILOT-01 | Establish scope and cohort; collect before metrics; run shadow policy and reviewer comparison; approve exit gate | Signed pilot form with missed-data and incorrect-decision counts |
+| DOC-PROD-01 | Verify L2 evidence; audit executor and token rights; test rollback and alarms; acquire change decision | Written production authorization and independently observed activation/reversal |
+| DOC-OPS-03 | Select explicit latency/quality denominators; define SLO window and exclusions; review with owners | Approved baseline and targets with reproducible query definitions |
+| DOC-OPS-04 | Build role training; run synthetic triage and incident practical; verify escalation route | Signed competency review and named trained backups |
+| DOC-ARC-01 | Consolidate proposal alternatives; assess impact on schema/storage/executor; convene architecture review | Recorded accept/reject decision with reversibility and owner |
+| DOC-AUD-01 | Obtain applicable standards baseline; map each chosen control to tested evidence; conduct gap review | Tailored control matrix with observed evidence, auditor/ISMS review and open findings |
+
+No item is closed merely because its form, code snippet or synthetic fixture exists. Evidence must be stored in an authorized restricted system and referenced by opaque record ID in public documentation.
+
 ## Existing Template–Blank instruments reused
 
 Discovery (four pairs): AD, viewpoint, implementation workbook, evidence and validation workbook. AppSec (twelve pairs): merge-blocker assessment, repository policy profile, automated decision record, false-positive validation, dismissal review, risk acceptance, privileged access review, threat model, control evidence crosswalk, pilot readiness, evidence validation, effectiveness scorecard. These sixteen pairs cover the requested operational forms at **design level**, so no new printable pairs are justified until a concrete missing record is identified and reviewed. Forms remain unfilled and never constitute sign-off.
