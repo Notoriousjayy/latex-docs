@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (231)
+## Primary reusable templates (243)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -220,6 +220,18 @@
 - [threat detection template](../src/security/computer-security-art-and-science/forms/threat-detection-template.tex) — computer security/formal models and assurance · **provisional**
 - [threat model template](../src/security/computer-security-art-and-science/forms/threat-model-template.tex) — computer security/formal models and assurance · **provisional**
 - [vulnerability assessment template](../src/security/computer-security-art-and-science/forms/vulnerability-assessment-template.tex) — computer security/formal models and assurance · **provisional**
+- [automated triage decision record template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/automated-triage-decision-record-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [dismissal request review template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/dismissal-request-review-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [effectiveness scorecard template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/effectiveness-scorecard-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [evidence validation workbook template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/evidence-validation-workbook-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [false positive validation template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/false-positive-validation-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [merge blocker root cause template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/merge-blocker-root-cause-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [pilot readiness template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/pilot-readiness-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [privileged access review template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/privileged-access-review-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [repository security policy profile template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/repository-security-policy-profile-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [risk acceptance register template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/risk-acceptance-register-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [security control evidence crosswalk template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/security-control-evidence-crosswalk-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [threat model assessment template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/threat-model-assessment-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
 - [08 compliance templates traceability](../src/security/standards/iso-27000/08-compliance-templates-traceability.tex) — standards/iso 27000 · **provisional**
 - [business model canvas template](../src/startups/small-business-management/forms/templates/business-model-canvas-template.tex) — small-business-management/forms/templates · **provisional**
 - [business plan template](../src/startups/small-business-management/forms/templates/business-plan-template.tex) — small-business-management/forms/templates · **provisional**
