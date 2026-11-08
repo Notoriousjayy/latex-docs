@@ -18,4 +18,4 @@ python3 src/security/github-advanced-security/code-scanning/enterprise-triage-go
 - `github-app-permissions.example.json`: conceptual least-privilege read-only collector manifest, not a GitHub App registration schema.
 - `readonly-workflow.example.yml`: intentionally outside `.github/workflows`; must undergo security review and pinning before any adoption.
 
-The existing [delegated-review field guide](../../administration/automating-review-github-advanced-sec-alert.tex) uses illustrative comment-length and reason checks. These are insufficient to approve real dismissal requests. All actual delegated approvals must be independently verified by an authorized reviewer, with an explicit security decision and future executor design.
+The existing [delegated-review field guide](../../../administration/automating-review-github-advanced-sec-alert.tex) uses illustrative comment-length and reason checks. These are insufficient to approve real dismissal requests. All actual delegated approvals must be independently verified by an authorized reviewer, with an explicit security decision and future executor design.

@@ -136,7 +136,7 @@ class OfflinePolicyTests(unittest.TestCase):
 
     def test_all_pairs_registered_and_printable(self):
         data = json.loads((ROOT / "tooling/manifests/reusable-artifact-pairs.json").read_text(encoding="utf-8"))
-        pairs = [p for p in data["pairs"] if p["id"].startswith("SEC-APPSEC-")]
+        pairs = [p for p in data["pairs"] if "/enterprise-triage-governance/forms/" in p["template"]]
         self.assertEqual(12, len(pairs))
         for p in pairs:
             with self.subTest(pair=p["id"]):
