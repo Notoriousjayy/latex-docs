@@ -98,3 +98,7 @@ The [Views and Beyond Documentation Engineering Suite](views-and-beyond/document
 ## Open-source enterprise technology architecture and operations suite
 
 The [Open-Source Enterprise Technology Architecture and Operations Suite](enterprise/open-source-enterprise-technology-suite/README.md) consolidates the existing security platform, AppSec/operations and finance references without duplicating their original LaTeX sources. It includes twelve architecture references, five proposed ADRs, six operating runbooks, eleven independently printable Template/Blank pairs, two PlantUML architecture diagrams, and five machine-readable CSV registers. It separates personal finance from enterprise accounting; GHAS is explicitly a commercial exception rather than an OSS component. Each proposed connector requires target-edition verification and safety testing.
+
+## Enterprise Code Scanning Governance companion
+
+The [AppSec companion architecture](../security/github-advanced-security/code-scanning/enterprise-triage-governance/README.md) builds on the read-only enterprise [GitHub Actions Discovery suite](github-actions-discovery-suite.md). [Architecture Description](technical-documents/enterprise-appsec-code-scanning-architecture-description.tex), [Viewpoint](technical-documents/enterprise-appsec-code-scanning-viewpoint-specification.tex), and [proposed ADRs](decisions/appsec-code-scanning/README.md) are separate artifact types; none authorizes a live alert dismissal.

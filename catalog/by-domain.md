@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## architecture (346)
+## architecture (351)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -95,6 +95,9 @@
 - [ADR-0006: Separate validation and deployment trust](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0006.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [Secure AWS Terraform Repository and Deployment Architecture Standard](../src/architecture/cloud/secure-aws-terraform-repository-deployment/standard/aws-terraform-repository-deployment-standard.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
 - [adr lifecycle and review guide](../src/architecture/decisions/adr-lifecycle-and-review-guide.tex) — decisions · **provisional**
+- [adr appsec 001 read only discovery](../src/architecture/decisions/appsec-code-scanning/adr-appsec-001-read-only-discovery.tex) — appsec-code-scanning/decisions · **provisional**
+- [adr appsec 002 deterministic policy](../src/architecture/decisions/appsec-code-scanning/adr-appsec-002-deterministic-policy.tex) — appsec-code-scanning/decisions · **provisional**
+- [adr appsec 003 delegated review](../src/architecture/decisions/appsec-code-scanning/adr-appsec-003-delegated-review.tex) — appsec-code-scanning/decisions · **provisional**
 - [adr ai and agentic systems template](../src/architecture/decisions/templates/adr-ai-and-agentic-systems-template.tex) — decisions · **provisional**
 - [adr cloud platform template](../src/architecture/decisions/templates/adr-cloud-platform-template.tex) — decisions · **provisional**
 - [adr data and storage template](../src/architecture/decisions/templates/adr-data-and-storage-template.tex) — decisions · **provisional**
@@ -247,6 +250,8 @@
 - [architecture definition and description](../src/architecture/technical-documents/architecture-definition-and-description.tex) — architecture · **provisional**
 - [Architecture Documentation: Standards, Frameworks, Modeling Languages, and Tooling](../src/architecture/technical-documents/architecture-documentation-standards-frameworks-and-tooling.tex) — architecture · **reviewed**
 - [c4 plantuml technical guide](../src/architecture/technical-documents/c4-plantuml-technical-guide.tex) — architecture · **provisional**
+- [enterprise appsec code scanning architecture description](../src/architecture/technical-documents/enterprise-appsec-code-scanning-architecture-description.tex) — appsec-code-scanning/architecture · **provisional**
+- [enterprise appsec code scanning viewpoint specification](../src/architecture/technical-documents/enterprise-appsec-code-scanning-viewpoint-specification.tex) — appsec-code-scanning/architecture · **provisional**
 - [GitHub Actions Architecture Discovery at Enterprise Scale](../src/architecture/technical-documents/github-actions-architecture-discovery-enterprise-scale.tex) — github-actions/enterprise-discovery · **reviewed**
 - [iso iec ieee 42010 2022 clean handout](../src/architecture/technical-documents/iso-iec-ieee-42010-2022-clean-handout.tex) — architecture · **provisional**
 - [Architecture Description Template (ISO/IEC/IEEE 42010)](../src/architecture/templates/42010-ad-template-polished.tex) — architecture description authoring template · **reviewed**
@@ -1904,7 +1909,7 @@
 - [07 hands on labs](../src/programming/web/micro-frontends/07-hands-on-labs.tex) — web/micro frontends · **provisional**
 - [08 learning curriculum](../src/programming/web/micro-frontends/08-learning-curriculum.tex) — web/micro frontends · **provisional**
 
-## security (228)
+## security (250)
 
 - [01 security foundations](../src/security/application-security/assessment/01-security-foundations.tex) — application security/assessment · **provisional**
 - [02 vulnerability taxonomy](../src/security/application-security/assessment/02-vulnerability-taxonomy.tex) — application security/assessment · **provisional**
@@ -2067,6 +2072,28 @@
 - [applying codeql scanning exam oriented guide](../src/security/github-advanced-security/code-scanning/applying-codeql-scanning-exam-oriented-guide.tex) — github advanced security/code scanning · **provisional**
 - [codeql capabilities exam ready cheat sheet](../src/security/github-advanced-security/code-scanning/codeql-capabilities-exam-ready-cheat-sheet.tex) — github advanced security/code scanning · **provisional**
 - [codeql source security assessment](../src/security/github-advanced-security/code-scanning/codeql-source-security-assessment.tex) — github advanced security/code scanning · **provisional**
+- [automated triage decision record template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/automated-triage-decision-record-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [dismissal request review template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/dismissal-request-review-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [effectiveness scorecard template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/effectiveness-scorecard-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [evidence validation workbook template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/evidence-validation-workbook-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [false positive validation template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/false-positive-validation-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [merge blocker root cause template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/merge-blocker-root-cause-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [pilot readiness template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/pilot-readiness-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [privileged access review template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/privileged-access-review-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [repository security policy profile template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/repository-security-policy-profile-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [risk acceptance register template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/risk-acceptance-register-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [security control evidence crosswalk template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/security-control-evidence-crosswalk-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [threat model assessment template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/threat-model-assessment-template.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [enterprise architecture reference](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/01-enterprise-architecture-reference.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [merge blocker governance](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/02-merge-blocker-governance.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [policy as code](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/03-policy-as-code.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [delegated dismissal exception](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/04-delegated-dismissal-exception.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [github integration](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/05-github-integration.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [threat model control matrix](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/06-threat-model-control-matrix.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [observability and kpis](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/07-observability-and-kpis.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [adoption roadmap](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/08-adoption-roadmap.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [operations playbook](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/09-operations-playbook.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [agile backlog](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/10-agile-backlog.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
 - [external scanning sarif upload categories](../src/security/github-advanced-security/code-scanning/external-scanning-sarif-upload-categories.tex) — github advanced security/code scanning · **provisional**
 - [github code scanning quickstart codeql plus](../src/security/github-advanced-security/code-scanning/github-code-scanning-quickstart-codeql-plus.tex) — github advanced security/code scanning · **provisional**
 - [how to use this sop](../src/security/github-advanced-security/code-scanning/how-to-use-this-sop.tex) — github advanced security/code scanning · **provisional**

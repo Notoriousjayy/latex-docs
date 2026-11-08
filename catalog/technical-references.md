@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (713)
+## Primary technical references (723)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -648,6 +648,16 @@
 - [purpose and outcomes](../src/security/github-advanced-security/administration/purpose-and-outcomes.tex) — github advanced security/administration · **provisional**
 - [applying codeql scanning exam oriented guide](../src/security/github-advanced-security/code-scanning/applying-codeql-scanning-exam-oriented-guide.tex) — github advanced security/code scanning · **provisional**
 - [codeql capabilities exam ready cheat sheet](../src/security/github-advanced-security/code-scanning/codeql-capabilities-exam-ready-cheat-sheet.tex) — github advanced security/code scanning · **provisional**
+- [enterprise architecture reference](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/01-enterprise-architecture-reference.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [merge blocker governance](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/02-merge-blocker-governance.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [policy as code](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/03-policy-as-code.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [delegated dismissal exception](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/04-delegated-dismissal-exception.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [github integration](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/05-github-integration.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [threat model control matrix](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/06-threat-model-control-matrix.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [observability and kpis](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/07-observability-and-kpis.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [adoption roadmap](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/08-adoption-roadmap.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [operations playbook](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/09-operations-playbook.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
+- [agile backlog](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/references/10-agile-backlog.tex) — github advanced security/code scanning/enterprise triage governance · **provisional**
 - [external scanning sarif upload categories](../src/security/github-advanced-security/code-scanning/external-scanning-sarif-upload-categories.tex) — github advanced security/code scanning · **provisional**
 - [github code scanning quickstart codeql plus](../src/security/github-advanced-security/code-scanning/github-code-scanning-quickstart-codeql-plus.tex) — github advanced security/code scanning · **provisional**
 - [how to use this sop](../src/security/github-advanced-security/code-scanning/how-to-use-this-sop.tex) — github advanced security/code scanning · **provisional**

@@ -117,3 +117,7 @@ Explore the [User Stories and Agile Requirements Engineering suite](src/business
 ## Computer security formal models and assurance
 
 The [Computer Security Engineering and Information Assurance Suite](src/security/computer-security-art-and-science/README.md) complements the existing security-engineering, SAST, and GHAS documents with 31 original Bishop-aligned study guides, a gated curriculum, formal model exercises, threat/vulnerability procedures, synthetic code labs, and printable Template–Blank pairs.
+
+## Enterprise AppSec Code Scanning Governance companion
+
+The [Code Scanning Triage, Dismissal Automation and Merge Governance engineering suite](src/security/github-advanced-security/code-scanning/enterprise-triage-governance/README.md) complements [GitHub Actions Architecture Discovery](src/architecture/github-actions-discovery-suite.md) with policy-as-code, blocker diagnosis, permission-separated dismissal design, twelve Template–Blank pairs, synthetic offline labs, eleven diagrams and proposed ADRs. **No production dismissal service or security-policy change is deployed.**
