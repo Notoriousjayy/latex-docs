@@ -68,3 +68,7 @@ Language-specific secure coding standards are maintained under [Programming lang
 ## Bishop: Computer Security Engineering and Information Assurance
 
 The [31-chapter Computer Security: Art and Science companion](computer-security-art-and-science/README.md) adds a formal-policy curriculum, assurance methods, synthetic C/C++/Python labs, evidence-based security procedures, control crosswalks, and printable Template–Blank form pairs. It references (rather than supersedes) existing security engineering, SAST, GHAS, and GRC collections.
+
+## Enterprise GitHub Code Scanning governance
+
+The [AppSec Code Scanning Governance companion](github-advanced-security/code-scanning/enterprise-triage-governance/README.md) provides an architecture-linked, offline and evidence-driven model for PR blocker analysis, policy decisions and dismissal-review controls. It does not modify live GitHub alerts, reviews, permissions or rulesets.

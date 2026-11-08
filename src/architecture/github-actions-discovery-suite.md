@@ -56,3 +56,7 @@ make build-category-architecture
 ```
 
 The pair manifest is [`tooling/manifests/reusable-artifact-pairs.json`](../../tooling/manifests/reusable-artifact-pairs.json), and the central [Template–Blank catalog](../../catalog/template-blank-pairs.md) also indexes the four pairs. PDF output is a build artifact; **LaTeX is the canonical source**. An empty form is not evidence of review or ISO/IEC/IEEE 42010 conformance.
+
+## Companion: AppSec Code Scanning automation and merge governance
+
+The [enterprise Code Scanning Triage and Merge Governance suite](../security/github-advanced-security/code-scanning/enterprise-triage-governance/README.md) consumes read-only architecture discovery evidence to enrich alert assessment, explain independent PR merge blockers, and model deterministic policy decisions. The discovery collector remains without write permissions. Inferred E2 relationships never authorize code scanning dismissal. Its [Architecture Description](technical-documents/enterprise-appsec-code-scanning-architecture-description.tex) and [Viewpoint](technical-documents/enterprise-appsec-code-scanning-viewpoint-specification.tex) complement rather than replace the present four discovery Template–Blank pairs.

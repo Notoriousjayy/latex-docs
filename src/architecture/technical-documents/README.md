@@ -23,3 +23,8 @@ See the [architecture index](../README.md) for the parent collection and related
 Preserve original titles, citations, styles, and any LaTeX input paths. Place new files here only when they match this collection's purpose.
 
 Build/validate using the repository's supported LaTeX tooling; do not treat this index as evidence that all documents have compiled.
+
+## Companion AppSec architecture references
+
+- [Enterprise Code Scanning Governance Architecture Description](enterprise-appsec-code-scanning-architecture-description.tex) — proposed AD; not an operational deployment.
+- [Enterprise Code Scanning Governance Viewpoint](enterprise-appsec-code-scanning-viewpoint-specification.tex) — reusable E1/E2/E3 security views; not an ADR or accepted decision.

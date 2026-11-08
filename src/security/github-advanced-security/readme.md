@@ -32,3 +32,7 @@ These commands compile LaTeX references; they do not change GitHub settings or r
 ## Related
 
 [Security catalog](../README.md) · [DevOps](../../devops/README.md)
+
+## Enterprise AppSec governance companion
+
+The [Code Scanning Triage and Merge Governance companion](code-scanning/enterprise-triage-governance/README.md) builds on [Architecture Discovery](../../architecture/github-actions-discovery-suite.md), distinguishes code scanning merge-protection rulesets from required checks and reviews, and documents safeguards for delegated dismissal. Read-only evidence and deterministic tests are not approval for production security mutations.
