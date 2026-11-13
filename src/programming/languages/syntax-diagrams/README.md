@@ -52,7 +52,7 @@ The repository-owned pinned PlantUML renderer consumes the generated railroad-ge
 
     python3 tooling/scripts/generate_railroad_ebnf.py --check-only
 
-The existing render workflow can publish the resulting PNG files for PDF embedding and for the static GitHub Pages gallery. If any of the 1,166 required PNG files is absent or invalid, the gallery staging job fails rather than publishing broken images. The complete gallery is rendered on publication in the existing raster job. Pull-request CI renders a smaller representative sample to control cost.
+The existing render workflow can publish the resulting PNG files for PDF embedding and for the static GitHub Pages gallery. If any of the 1,166 required PNG files is absent or invalid, the gallery staging job fails rather than publishing broken images. The complete gallery is rendered by the existing raster job for both pull requests and publication. The dedicated native-grammar CI also performs a quicker ten-image renderer smoke test.
 
 **Complete grammar publication:** all 1,166 textual productions are indexed and displayed individually on five static HTML language pages. Each production has a build-time generated PlantUML EBNF PNG, the exact original textual grammar, and a searchable rule name. Factory-derived diagrams are marked as visual interpretations; unsupported factory constructs are displayed as explicitly identified text-only schematics. There is no claim of certified semantic or graphical equivalence to each original JavaScript railroad rendering.
 

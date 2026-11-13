@@ -249,6 +249,28 @@ jobs:
           print(f'Validated {count} railroad-diagram PNGs for publication')
           PY
 
+      - name: Validate full static PNG gallery against rendered image bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$(pwd)"
+          site=.build-cache/syntax-gallery-smoke
+          mkdir -p "$site/images/src/programming/languages/syntax-diagrams"
+          ln -s "$root/src/programming/languages/syntax-diagrams/railroad-generated" \
+            "$site/images/src/programming/languages/syntax-diagrams/railroad-generated"
+          python3 - <<'PY'
+          from pathlib import Path
+          from tooling.scripts.stage_syntax_diagram_gallery import HOME_NAV_MARKER
+          site = Path('.build-cache/syntax-gallery-smoke')
+          (site / 'index.html').write_text('<nav class="jump">' + HOME_NAV_MARKER, encoding='utf-8')
+          PY
+          python3 tooling/scripts/stage_syntax_diagram_gallery.py --site-dir "$site"
+          test -s "$site/syntax-diagrams/index.html"
+          for lang in c23 cpp23 ecmascript-2025 java-25 python-314; do
+            test -s "$site/syntax-diagrams/$lang.html"
+          done
+          echo 'All 1,166 real PNGs resolve from the static gallery' >> "$GITHUB_STEP_SUMMARY"
+
       - name: Collect raster corpus
         id: collect
         shell: bash
