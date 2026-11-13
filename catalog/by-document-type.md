@@ -245,7 +245,7 @@
 - [three statement lab](../src/startups/small-business-management/financial-labs/three-statement-lab.tex) — small-business-management/financial-labs · **provisional**
 - [working capital cycle lab](../src/startups/small-business-management/financial-labs/working-capital-cycle-lab.tex) — small-business-management/financial-labs · **provisional**
 
-## latex-fragment (8)
+## latex-fragment (13)
 
 - [architecture style](../src/architecture/views-and-beyond/documentation-engineering-suite/shared/architecture-style.tex) — views-and-beyond/documentation-engineering-suite/shared · **provisional** · non-standalone
 - [preamble](../src/business-analysis/parliamentary-procedure-and-governance/shared/preamble.tex) — parliamentary-procedure-and-governance/shared · **provisional** · non-standalone
@@ -253,6 +253,11 @@
 - [Algorithm Style](../src/programming/algorithms/algorithm-engineering/shared/algorithm-style.tex) — algorithm engineering / shared · **provisional** · non-standalone
 - [Compiler Suite Shared Style Preamble](../src/programming/compilers/compiler-engineering/shared/compiler-suite-style.tex) — compiler engineering / engineering a compiler / shared · **provisional** · non-standalone
 - [Parsing Macros](../src/programming/compilers/parsing-techniques/shared/parsing-macros.tex) — compiler engineering / parsing techniques / shared · **provisional** · non-standalone
+- [c23 rules](../src/programming/languages/syntax-diagrams/generated/c23-rules.tex) — languages/syntax-diagrams · **provisional** · non-standalone
+- [cpp23 rules](../src/programming/languages/syntax-diagrams/generated/cpp23-rules.tex) — languages/syntax-diagrams · **provisional** · non-standalone
+- [ecmascript 2025 rules](../src/programming/languages/syntax-diagrams/generated/ecmascript-2025-rules.tex) — languages/syntax-diagrams · **provisional** · non-standalone
+- [java 25 rules](../src/programming/languages/syntax-diagrams/generated/java-25-rules.tex) — languages/syntax-diagrams · **provisional** · non-standalone
+- [python 314 rules](../src/programming/languages/syntax-diagrams/generated/python-314-rules.tex) — languages/syntax-diagrams · **provisional** · non-standalone
 - [Assessment Curricula Shared Preamble](../src/security/application-security/learning/assessment-curricula/assessment-curricula-common.tex) — shared LaTeX preamble for AppSec curricula · **reviewed** · non-standalone
 - [preamble](../src/startups/small-business-management/shared/preamble.tex) — small-business-management/shared · **provisional** · non-standalone
 
@@ -1140,7 +1145,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (723)
+## technical-reference (729)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -1707,6 +1712,12 @@
 - [04 compiler execution pipeline](../src/programming/languages/python/04-compiler-execution-pipeline.tex) — languages/python · **provisional**
 - [05 memory management concurrency](../src/programming/languages/python/05-memory-management-concurrency.tex) — languages/python · **provisional**
 - [06 c api extension engineering](../src/programming/languages/python/06-c-api-extension-engineering.tex) — languages/python · **provisional**
+- [c23 syntax reference](../src/programming/languages/syntax-diagrams/c23-syntax-reference.tex) — languages/syntax-diagrams · **provisional**
+- [cpp23 syntax reference](../src/programming/languages/syntax-diagrams/cpp23-syntax-reference.tex) — languages/syntax-diagrams · **provisional**
+- [ecmascript 2025 syntax reference](../src/programming/languages/syntax-diagrams/ecmascript-2025-syntax-reference.tex) — languages/syntax-diagrams · **provisional**
+- [grammar notation guide](../src/programming/languages/syntax-diagrams/grammar-notation-guide.tex) — languages/syntax-diagrams · **provisional**
+- [java 25 syntax reference](../src/programming/languages/syntax-diagrams/java-25-syntax-reference.tex) — languages/syntax-diagrams · **provisional**
+- [python 314 syntax reference](../src/programming/languages/syntax-diagrams/python-314-syntax-reference.tex) — languages/syntax-diagrams · **provisional**
 - [typescript template usage guide](../src/programming/languages/typescript/typescript-template-usage-guide.tex) — languages/typescript · **provisional**
 - [01 technical reference](../src/programming/linux-unix-system-programming/01-technical-reference.tex) — linux unix system programming · **provisional**
 - [04 system call api reference](../src/programming/linux-unix-system-programming/04-system-call-api-reference.tex) — linux unix system programming · **provisional**

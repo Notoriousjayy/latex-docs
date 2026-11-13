@@ -20,6 +20,10 @@ Use language-specific collections for implementation guidance, standards, secure
 
 For Java, see its [existing CERT/Oracle rules](java/secure-coding/README.md) alongside the new enterprise baseline. For JavaScript, consult the [ECMAScript implementation collection](ecmascript/README.md). Cross-cutting language-specific developer standards belong here; security assessment procedures and the GHAS verification program remain in [AppSec](../../security/application-security/readme.md).
 
+## Grammar and syntax diagrams
+
+The [native grammar and PNG railroad diagram suite](syntax-diagrams/README.md) preserves 1,166 grammar productions from five pinned repositories with six standalone LaTeX references. It uses the existing PlantUML image renderer, not React or Webpack. [Read the grammar notation guide](syntax-diagrams/grammar-notation-guide.tex).
+
 ## Placement rules
 
 Place a source next to the language whose features it discusses. Do not create extra nesting solely for document type; add subcollections only when multiple related documents warrant them. Use the central [document catalogs](../../../catalog/README.md) to browse across artifact types.
