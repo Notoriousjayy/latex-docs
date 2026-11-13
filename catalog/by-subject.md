@@ -158,6 +158,10 @@
 
 - [ai for games algorithms pseudocode handout](../src/game-development/ai/ai-for-games-algorithms-pseudocode-handout.tex) — ai · **provisional**
 
+## ai-agent-engineering/curriculum (1)
+
+- [AI Agent Engineering: Comprehensive Developer Curriculum](../src/data-systems/ai-agent-engineering/curriculum/ai-agent-engineering-comprehensive-syllabus.tex) — ai-agent-engineering/curriculum · **provisional**
+
 ## algebra (2)
 
 - [how matrices polynomials relate algebraic ops](../src/mathematics/algebra/how-matrices-polynomials-relate-algebraic-ops.tex) — algebra · **provisional**

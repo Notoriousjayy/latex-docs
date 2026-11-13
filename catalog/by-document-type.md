@@ -338,7 +338,7 @@
 - [operational resilience template](../src/startups/small-business-management/scorecards/templates/operational-resilience-template.tex) — small-business-management/scorecards/templates · **provisional**
 - [venture feasibility template](../src/startups/small-business-management/scorecards/templates/venture-feasibility-template.tex) — small-business-management/scorecards/templates · **provisional**
 
-## study-guide (471)
+## study-guide (472)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -456,6 +456,7 @@
 - [19 estimating the stories](../src/business-analysis/user-stories/study-guides/19-estimating-the-stories.tex) — agile requirements / user stories · **provisional**
 - [20 the release plan](../src/business-analysis/user-stories/study-guides/20-the-release-plan.tex) — agile requirements / user stories · **provisional**
 - [21 the acceptance tests](../src/business-analysis/user-stories/study-guides/21-the-acceptance-tests.tex) — agile requirements / user stories · **provisional**
+- [AI Agent Engineering: Comprehensive Developer Curriculum](../src/data-systems/ai-agent-engineering/curriculum/ai-agent-engineering-comprehensive-syllabus.tex) — ai-agent-engineering/curriculum · **provisional**
 - [Competency And Assessment Roadmap](../src/data-systems/enterprise-data-modeling/curriculum/competency-and-assessment-roadmap.tex) — enterprise-data-modeling · **provisional**
 - [Prerequisite Based Curriculum](../src/data-systems/enterprise-data-modeling/curriculum/prerequisite-based-curriculum.tex) — enterprise-data-modeling · **provisional**
 - [Chapter 01 Introduction](../src/data-systems/enterprise-data-modeling/study-guides/chapter-01-introduction.tex) — enterprise-data-modeling · **provisional**
