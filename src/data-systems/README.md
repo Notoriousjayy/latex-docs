@@ -18,6 +18,10 @@ This domain covers data platforms, streaming and AI/ML systems. Place domain-ind
 | [Workbooks and exercises](workbooks/README.md) | Practice, exercises, checklists and worked activities | 2 |
 
 
+### AI Agent Engineering and Enterprise Agent Architecture
+
+- [AI Agent Engineering curriculum](ai-agent-engineering/README.md): 16-week developer-focused syllabus covering framework and harness implementation, MCP integration, guardrails, evaluation, observability, and a governed GitHub CodeQL capstone.
+
 ### Enterprise Data Governance and Information Management
 
 - [Standards and Frameworks Reference](enterprise-data-governance/standards-and-frameworks/README.md): publisher source map, authority selection, decision rights, traceability, capability assessment, legal applicability and governed printable forms.
