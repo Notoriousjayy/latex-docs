@@ -12,6 +12,12 @@ import html
 from pathlib import Path
 from urllib.parse import quote
 
+import sys
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from tooling.scripts.generate_railroad_ebnf import (
     COLLECTION, LANGUAGES, rule_path, source_data, grammar_parts, build_rule,
 )
