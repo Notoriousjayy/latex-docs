@@ -16,6 +16,7 @@ A source-controlled engineering documentation library covering software architec
 | Study small-business management and entrepreneurship | [Small Business Management suite](src/startups/small-business-management/README.md) |
 | Browse reusable templates, workbooks, scorecards or user stories | [Discovery catalog](catalog/README.md) and [Template–Blank pair catalog](catalog/template-blank-pairs.md) |
 | Study algorithm engineering across TAOCP Volumes 1–4B | [Algorithm Engineering suite](src/programming/algorithms/algorithm-engineering/README.md) |
+| Explore programming-language railroad diagrams (PNG) | [Native Syntax and Grammar collection](src/programming/languages/syntax-diagrams/README.md) |
 | Find secure coding standards by language | [Programming language guide](src/programming/languages/README.md) |
 | Compare architecture documentation standards and tooling | [Architecture documentation technical reference](src/architecture/technical-documents/architecture-documentation-standards-frameworks-and-tooling.tex) |
 | Govern secure AWS Terraform deployments | [Secure AWS Terraform architecture standard](src/architecture/cloud/secure-aws-terraform-repository-deployment/README.md) |
