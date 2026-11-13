@@ -1590,7 +1590,7 @@
 - [tools measure direct sunlight guide gardeners](../src/personal/gardening/tools-measure-direct-sunlight-guide-gardeners.tex) — gardening · **provisional**
 - [calibre drm free ebook to pdf workflow handout](../src/personal/technical-documents/calibre-drm-free-ebook-to-pdf-workflow-handout.tex) — personal · **provisional**
 
-## programming (317)
+## programming (328)
 
 - [capstone assessment and rubric](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/assessments/capstone-assessment-and-rubric.tex) — algorithms · **provisional**
 - [foundations diagnostic assessment](../src/programming/algorithms/algorithm-analysis-and-analytic-combinatorics/assessments/foundations-diagnostic-assessment.tex) — algorithms · **provisional**
@@ -1865,6 +1865,17 @@
 - [RUBY secure coding standard](../src/programming/languages/ruby/secure-coding-standard-ruby.tex) — ruby secure coding · **reviewed**
 - [RUST secure coding standard](../src/programming/languages/rust/secure-coding-standard-rust.tex) — rust secure coding · **reviewed**
 - [SWIFT secure coding standard](../src/programming/languages/swift/secure-coding-standard-swift.tex) — swift secure coding · **reviewed**
+- [c23 syntax reference](../src/programming/languages/syntax-diagrams/c23-syntax-reference.tex) — languages/syntax-diagrams · **provisional**
+- [cpp23 syntax reference](../src/programming/languages/syntax-diagrams/cpp23-syntax-reference.tex) — languages/syntax-diagrams · **provisional**
+- [ecmascript 2025 syntax reference](../src/programming/languages/syntax-diagrams/ecmascript-2025-syntax-reference.tex) — languages/syntax-diagrams · **provisional**
+- [c23 rules](../src/programming/languages/syntax-diagrams/generated/c23-rules.tex) — languages/syntax-diagrams · **provisional** · non-standalone
+- [cpp23 rules](../src/programming/languages/syntax-diagrams/generated/cpp23-rules.tex) — languages/syntax-diagrams · **provisional** · non-standalone
+- [ecmascript 2025 rules](../src/programming/languages/syntax-diagrams/generated/ecmascript-2025-rules.tex) — languages/syntax-diagrams · **provisional** · non-standalone
+- [java 25 rules](../src/programming/languages/syntax-diagrams/generated/java-25-rules.tex) — languages/syntax-diagrams · **provisional** · non-standalone
+- [python 314 rules](../src/programming/languages/syntax-diagrams/generated/python-314-rules.tex) — languages/syntax-diagrams · **provisional** · non-standalone
+- [grammar notation guide](../src/programming/languages/syntax-diagrams/grammar-notation-guide.tex) — languages/syntax-diagrams · **provisional**
+- [java 25 syntax reference](../src/programming/languages/syntax-diagrams/java-25-syntax-reference.tex) — languages/syntax-diagrams · **provisional**
+- [python 314 syntax reference](../src/programming/languages/syntax-diagrams/python-314-syntax-reference.tex) — languages/syntax-diagrams · **provisional**
 - [TYPESCRIPT secure coding standard](../src/programming/languages/typescript/secure-coding-standard-typescript.tex) — typescript secure coding · **reviewed**
 - [TypeScript Cookbook — User Stories Study Plan](../src/programming/languages/typescript/typescript-cookbook-user-stories-study-plan.tex) — TypeScript Cookbook learning stories · **reviewed**
 - [typescript template usage guide](../src/programming/languages/typescript/typescript-template-usage-guide.tex) — languages/typescript · **provisional**

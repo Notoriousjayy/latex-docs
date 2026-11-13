@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (723)
+## Primary technical references (729)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -569,6 +569,12 @@
 - [04 compiler execution pipeline](../src/programming/languages/python/04-compiler-execution-pipeline.tex) — languages/python · **provisional**
 - [05 memory management concurrency](../src/programming/languages/python/05-memory-management-concurrency.tex) — languages/python · **provisional**
 - [06 c api extension engineering](../src/programming/languages/python/06-c-api-extension-engineering.tex) — languages/python · **provisional**
+- [c23 syntax reference](../src/programming/languages/syntax-diagrams/c23-syntax-reference.tex) — languages/syntax-diagrams · **provisional**
+- [cpp23 syntax reference](../src/programming/languages/syntax-diagrams/cpp23-syntax-reference.tex) — languages/syntax-diagrams · **provisional**
+- [ecmascript 2025 syntax reference](../src/programming/languages/syntax-diagrams/ecmascript-2025-syntax-reference.tex) — languages/syntax-diagrams · **provisional**
+- [grammar notation guide](../src/programming/languages/syntax-diagrams/grammar-notation-guide.tex) — languages/syntax-diagrams · **provisional**
+- [java 25 syntax reference](../src/programming/languages/syntax-diagrams/java-25-syntax-reference.tex) — languages/syntax-diagrams · **provisional**
+- [python 314 syntax reference](../src/programming/languages/syntax-diagrams/python-314-syntax-reference.tex) — languages/syntax-diagrams · **provisional**
 - [typescript template usage guide](../src/programming/languages/typescript/typescript-template-usage-guide.tex) — languages/typescript · **provisional**
 - [01 technical reference](../src/programming/linux-unix-system-programming/01-technical-reference.tex) — linux unix system programming · **provisional**
 - [04 system call api reference](../src/programming/linux-unix-system-programming/04-system-call-api-reference.tex) — linux unix system programming · **provisional**
