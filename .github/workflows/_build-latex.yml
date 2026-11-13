@@ -215,6 +215,62 @@ jobs:
           # established that a rendering input changed.
           force: 'true'
 
+      # Grammar PNGs are generated from pinned, versioned source factories.
+      # They are built into the verified raster corpus, never committed as
+      # redundant binary source files or deployed through another publisher.
+      - name: Generate complete language railroad diagram sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tooling/scripts/generate_railroad_ebnf.py \
+            --limit-per-language 0 \
+            --manifest .build-cache/grammar-source-inventory.json
+
+      - name: Render language grammar PNG corpus using pinned PlantUML
+        uses: ./.github/actions/render-plantuml
+        with:
+          source-dir: 'src/programming/languages/syntax-diagrams/railroad-generated'
+          extra-roots: ''
+          formats: 'png'
+          generate-jpg: 'false'
+          force: 'true'
+          result-path: '.build-cache/grammar-png-render.json'
+
+      - name: Verify complete grammar PNG count in every build
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path('src/programming/languages/syntax-diagrams/railroad-generated')
+          count = len(list(root.rglob('png/*.png')))
+          if count != 1166:
+              raise SystemExit(f'Expected 1,166 grammar PNGs; found {count}')
+          print(f'Validated {count} railroad-diagram PNGs for publication')
+          PY
+
+      - name: Validate full static PNG gallery against rendered image bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$(pwd)"
+          site=.build-cache/syntax-gallery-smoke
+          mkdir -p "$site/images/src/programming/languages/syntax-diagrams"
+          ln -s "$root/src/programming/languages/syntax-diagrams/railroad-generated" \
+            "$site/images/src/programming/languages/syntax-diagrams/railroad-generated"
+          python3 - <<'PY'
+          from pathlib import Path
+          from tooling.scripts.stage_syntax_diagram_gallery import HOME_NAV_MARKER
+          site = Path('.build-cache/syntax-gallery-smoke')
+          (site / 'index.html').write_text('<nav class="jump">' + HOME_NAV_MARKER, encoding='utf-8')
+          PY
+          python3 tooling/scripts/stage_syntax_diagram_gallery.py --site-dir "$site"
+          test -s "$site/syntax-diagrams/index.html"
+          for lang in c23 cpp23 ecmascript-2025 java-25 python-314; do
+            test -s "$site/syntax-diagrams/$lang.html"
+          done
+          echo 'All 1,166 real PNGs resolve from the static gallery' >> "$GITHUB_STEP_SUMMARY"
+
       - name: Collect raster corpus
         id: collect
         shell: bash

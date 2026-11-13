@@ -14,6 +14,6 @@ Display **PNG** in the PDFs and in the published Pages gallery. The gallery is a
 
 ## Trade-offs
 
-This approach avoids redundant frontend infrastructure, preserves reproducible documentation builds and provides one consistent published site. Only five representative EBNF diagrams are presently authored; all 1,164 original factories are preserved but NOT visually migrated. Full graphical parity requires separate semantic validation and rendering work.
+This approach avoids redundant frontend infrastructure, preserves reproducible documentation builds and provides one consistent published site. Five hand-authored EBNF diagrams remain in the document references. The build-time Python converter now emits a PNG for every one of the 1,166 imported textual productions on the Pages gallery. Unsupported factories are marked as text-only schematics rather than asserting a false grammar equivalence. Complete graphical or semantic parity remains a separate verification problem.
 
 No standards compliance or source completeness certification is implied.
