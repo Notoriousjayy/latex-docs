@@ -215,6 +215,41 @@ jobs:
           # established that a rendering input changed.
           force: 'true'
 
+      # Grammar PNGs are generated from pinned, versioned source factories.
+      # They are built into the verified raster corpus, never committed as
+      # redundant binary source files or deployed through another publisher.
+      - name: Generate complete language railroad diagram sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tooling/scripts/generate_railroad_ebnf.py \
+            --limit-per-language ${{ inputs.publish && '0' || '2' }} \
+            --manifest .build-cache/grammar-source-inventory.json
+
+      - name: Render language grammar PNG corpus using pinned PlantUML
+        uses: ./.github/actions/render-plantuml
+        with:
+          source-dir: 'src/programming/languages/syntax-diagrams/railroad-generated'
+          extra-roots: ''
+          formats: 'png'
+          generate-jpg: 'false'
+          force: 'true'
+          result-path: '.build-cache/grammar-png-render.json'
+
+      - name: Verify complete grammar image count for publication
+        if: ${{ inputs.publish }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path('src/programming/languages/syntax-diagrams/railroad-generated')
+          count = len(list(root.rglob('png/*.png')))
+          if count != 1166:
+              raise SystemExit(f'Expected 1,166 grammar PNGs; found {count}')
+          print(f'Validated {count} railroad-diagram PNGs for publication')
+          PY
+
       - name: Collect raster corpus
         id: collect
         shell: bash
