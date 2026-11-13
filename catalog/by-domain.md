@@ -993,8 +993,9 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## data-systems (75)
+## data-systems (76)
 
+- [AI Agent Engineering: Comprehensive Developer Curriculum](../src/data-systems/ai-agent-engineering/curriculum/ai-agent-engineering-comprehensive-syllabus.tex) — ai-agent-engineering/curriculum · **provisional**
 - [Data Governance Regulatory Applicability Register Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/registers/data-governance-regulatory-applicability-register-template.tex) — enterprise-data-governance · **provisional**
 - [Governance Compliance Evidence Register Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/registers/governance-compliance-evidence-register-template.tex) — enterprise-data-governance · **provisional**
 - [DCAM-Based Capability Assessment Scorecard Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/scorecards/dcam-based-capability-assessment-scorecard-template.tex) — enterprise-data-governance · **provisional**
