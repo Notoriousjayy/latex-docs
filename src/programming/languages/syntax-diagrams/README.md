@@ -22,10 +22,10 @@ The sixth [Grammar Notation Guide](grammar-notation-guide.tex) discusses BNF, EB
 - data: pinned grammar text, exact source revision, rule names, section order and original template literals in JSON.
 - data/upstream: original TypeScript grammar factory files archived as inert text for provenance only.
 - generated: deterministic LaTeX listing fragments generated from the JSON.
-- railroad-samples: illustrative PlantUML EBNF sources. The canonical renderer emits PNG and SVG, but both the **web gallery and PDF documents display PNG**.
+- railroad-samples: five curated PlantUML EBNF examples retained for PDFs. During CI, tooling/scripts/generate_railroad_ebnf.py generates native EBNF sources for every production under railroad-generated; the pinned renderer then creates 1,166 PNGs for the static Pages site. These build outputs are not checked in.
 - The six standalone LaTeX documents are compiled by the existing PDF build.
 
-The existing GitHub Pages publication includes a static PNG gallery at the relative site path /syntax-diagrams/. The gallery is authored as plain HTML by the repository-owned Python staging helper, not by React, Webpack or a second Pages deployment.
+The existing GitHub Pages publication includes a [static PNG gallery](https://notoriousjayy.github.io/latex-docs/syntax-diagrams/) at the relative site path /syntax-diagrams/, with five searchable language-specific pages. The gallery is authored as plain HTML by the repository-owned Python staging helper, not by React, Webpack or a second Pages deployment.
 
 ## Verification
 
@@ -44,8 +44,16 @@ Render native syntax diagrams through the existing pinned PlantUML engine:
 
     make render-plantuml
 
-The existing render workflow can publish the resulting PNG files for PDF embedding and for the static GitHub Pages gallery. If any of the five required PNG files is absent or invalid, the gallery staging job fails rather than publishing broken images.
+For local generation of the complete build-only source corpus:
 
-**Visual parity is not yet complete:** all 1,166 grammar texts and 1,164 original factory source registrations are preserved for reference, but the published PNG gallery currently contains five curated native EBNF diagrams, not a picture for every production. Extending this to validated per-production railroad diagrams is further work.
+    python3 tooling/scripts/generate_railroad_ebnf.py
+
+The repository-owned pinned PlantUML renderer consumes the generated railroad-generated directory during Pages publishing. To review the 1,166-rule conversion manifest without creating assets:
+
+    python3 tooling/scripts/generate_railroad_ebnf.py --check-only
+
+The existing render workflow can publish the resulting PNG files for PDF embedding and for the static GitHub Pages gallery. If any of the 1,166 required PNG files is absent or invalid, the gallery staging job fails rather than publishing broken images. The complete gallery is rendered on publication in the existing raster job. Pull-request CI renders a smaller representative sample to control cost.
+
+**Complete grammar publication:** all 1,166 textual productions are indexed and displayed individually on five static HTML language pages. Each production has a build-time generated PlantUML EBNF PNG, the exact original textual grammar, and a searchable rule name. Factory-derived diagrams are marked as visual interpretations; unsupported factory constructs are displayed as explicitly identified text-only schematics. There is no claim of certified semantic or graphical equivalence to each original JavaScript railroad rendering.
 
 See [source provenance](migration-provenance.md) and [rendering architecture decision](adr-native-grammar-rendering.md).
