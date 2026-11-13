@@ -2100,7 +2100,7 @@ PLANTUML_ERROR_TEXT = re.compile(
 )
 _PLANTUML_VERSION_RE = re.compile(r"PlantUML version (\S+)")
 _PLANTUML_C4_VERSION_RE = re.compile(r"^c4\s*\n\s*Version\s+(\S+)", re.MULTILINE | re.IGNORECASE)
-_STARTUML_RE = re.compile(r"^@startuml[ \t]*([^\s]*)[ \t]*$", re.MULTILINE)
+_STARTUML_RE = re.compile(r"^@start(?:uml|ebnf)[ \t]*([^\s]*)[ \t]*$", re.MULTILINE)
 _PLANTUML_INCLUDE_RE = re.compile(r"^\s*!include(?:sub)?\s+(\S+)", re.MULTILINE)
 
 
@@ -2171,7 +2171,7 @@ def check_plantuml_engine(env: dict[str, str] | None = None, *, pin: dict[str, s
 
 
 def _plantuml_output_names(source: Path, text: str) -> list[str]:
-    """PlantUML names each output after `@startuml <name>`, else the file stem (then stem_001, ...)."""
+    """PlantUML names each output after a named @startuml/@startebnf block, else the file stem (then stem_001, ...)."""
     names: list[str] = []
     for index, match in enumerate(_STARTUML_RE.finditer(text)):
         explicit = match.group(1)
@@ -2499,7 +2499,7 @@ def render_plantuml(
             ):
                 invalid_names.append(path)
                 record["status"] = "failed"
-                record["reason"] = "@startuml name must not contain a path separator"
+                record["reason"] = "PlantUML block name must not contain a path separator"
                 continue
             config_path = plantuml_config_for(path)
             record["config"] = _rel(config_path) if config_path else ""

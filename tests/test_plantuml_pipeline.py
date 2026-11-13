@@ -281,5 +281,30 @@ class GeneratedImageStagingTests(unittest.TestCase):
         self.assertEqual(2, len([line for line in self._cached().splitlines() if line]))
 
 
+
+class EbnfRendererDiscoveryTests(unittest.TestCase):
+    """EBNF railroad diagrams use the same pinned PlantUML discovery and asset pipeline."""
+
+    def test_ebnf_output_paths_use_existing_render_contract(self) -> None:
+        source = Path("src/programming/languages/syntax-diagrams/railroad-samples/example.puml")
+        text = "@startebnf\nexample = \"A\" | \"B\";\n@endebnf\n"
+        self.assertEqual(
+            [source.parent / "png" / "example.png"],
+            latex_build.plantuml_output_paths(source, "png", text),
+        )
+        self.assertEqual(
+            [source.parent / "svg" / "example.svg"],
+            latex_build.plantuml_output_paths(source, "svg", text),
+        )
+
+    def test_multiple_ebnf_blocks_receive_distinct_expected_names(self) -> None:
+        source = Path("examples/grammar.puml")
+        text = "@startebnf\nfirst = \"a\";\n@endebnf\n@startebnf\nsecond = \"b\";\n@endebnf\n"
+        self.assertEqual(
+            [Path("examples/png/grammar.png"), Path("examples/png/grammar_001.png")],
+            latex_build.plantuml_output_paths(source, "png", text),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
