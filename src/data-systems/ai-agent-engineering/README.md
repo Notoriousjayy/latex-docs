@@ -4,6 +4,9 @@ A developer-focused, source-controlled course on building secure, reliable, and 
 
 ## Start here
 
+- [L01-L16 Beamer laboratory presentations](curriculum/lab-presentations/README.md) -- instructional slide decks aligned to each week.
+
+
 - [Comprehensive 16-week syllabus](curriculum/ai-agent-engineering-comprehensive-syllabus.tex) — 12 technical modules, 16 engineering labs, approximately 160 hours, midterm, and final architecture review.
 - [Curriculum collection](curriculum/README.md) — build instructions and source provenance.
 

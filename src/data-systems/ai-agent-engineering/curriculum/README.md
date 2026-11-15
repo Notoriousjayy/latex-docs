@@ -1,5 +1,9 @@
 # AI Agent Engineering Curriculum
 
+## Slide presentations
+
+- [Lab presentations L01-L16](lab-presentations/README.md) -- source-linked LaTeX Beamer teaching material.
+
 ## Source document
 
 - [AI Agent Engineering: Comprehensive Developer Curriculum](ai-agent-engineering-comprehensive-syllabus.tex) — 16-week, approximately 160-hour instructional syllabus covering agent frameworks, harness architecture, Model Context Protocol, enterprise guardrails, reliability, and GitHub AppSec governance.
