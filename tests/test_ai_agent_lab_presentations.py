@@ -11,8 +11,8 @@ class LabPresentationTests(unittest.TestCase):
         for index,deck in enumerate(decks,1):
             txt=deck.read_text(encoding="utf-8")
             self.assertTrue(deck.name.startswith(f"l{index:02d}-"))
-            self.assertIn(r"\\documentclass[aspectratio=169,10pt]{beamer}",txt)
-            self.assertGreaterEqual(txt.count(r"\\begin{frame}"),25)
+            self.assertIn(r"\documentclass[aspectratio=169,10pt]{beamer}",txt)
+            self.assertGreaterEqual(txt.count(r"\begin{frame}"),25)
             for term in ("Architecture and data flow","Negative and adversarial verification","Acceptance criteria","Reproducibility and evidence"):
                 self.assertIn(term,txt)
     def test_manifest(self):
