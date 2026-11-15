@@ -162,6 +162,25 @@
 
 - [AI Agent Engineering: Comprehensive Developer Curriculum](../src/data-systems/ai-agent-engineering/curriculum/ai-agent-engineering-comprehensive-syllabus.tex) — ai-agent-engineering/curriculum · **provisional**
 
+## ai-agent-engineering/curriculum/lab-presentations (16)
+
+- [L01: Agent system boundaries and LLM tool semantics (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l01-agent-system-boundaries.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
+- [L02: Minimal framework-free agent execution (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l02-framework-free-agent.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
+- [L03: Framework orchestration: LangGraph and SDK alternatives (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l03-framework-orchestration.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
+- [L04: Durable state, checkpoint recovery and human interrupts (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l04-durable-state.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
+- [L05: Agent harness control plane, context and environment (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l05-agent-harness.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
+- [L06: MCP host/client/server fundamentals and protocol revisions (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l06-mcp-fundamentals.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
+- [L07: Authenticated GitHub MCP and REST integration (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l07-github-mcp-integration.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
+- [L08: Context engineering, retrieval and midterm demonstration (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l08-context-retrieval.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
+- [L09: Agent threat modeling and adversarial boundaries (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l09-agent-threat-modeling.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
+- [L10: Policy-as-code, human approval and safe actions (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l10-policy-and-approvals.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
+- [L11: Multi-agent delegation and distributed execution (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l11-multi-agent-delegation.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
+- [L12: Evaluation-driven agent quality engineering (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l12-agent-evaluation.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
+- [L13: Observability, SLOs and operational fault recovery (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l13-agent-observability.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
+- [L14: Containerized deployment, CI/CD and workload isolation (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l14-deployment-and-ci.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
+- [L15: Capstone integration: GitHub AppSec agent (read-only) (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l15-appsec-capstone.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
+- [L16: Capstone hardening, independent review and operational handoff (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l16-capstone-hardening.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
+
 ## algebra (2)
 
 - [how matrices polynomials relate algebraic ops](../src/mathematics/algebra/how-matrices-polynomials-relate-algebraic-ops.tex) — algebra · **provisional**
