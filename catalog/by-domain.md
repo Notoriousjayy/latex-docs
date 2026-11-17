@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## architecture (351)
+## architecture (352)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -16,6 +16,7 @@
 - [lab 09 architecture package governance and review](../src/architecture/c4-model/documentation-suite/labs/lab-09-architecture-package-governance-and-review.tex) — c4-model/documentation-suite/labs · **provisional**
 - [c4 architecture visualization engineering manual](../src/architecture/c4-model/documentation-suite/reference/c4-architecture-visualization-engineering-manual.tex) — c4-model/documentation-suite/reference · **provisional**
 - [c4 foundations reference](../src/architecture/c4-model/documentation-suite/reference/c4-foundations-reference.tex) — c4-model/documentation-suite/reference · **provisional**
+- [architecture diagram review checklist and measurable acceptance criteria](../src/architecture/c4-model/documentation-suite/reference/diagram-review-checklist-and-acceptance-criteria.tex) — c4-model/documentation-suite/reference · **provisional**
 - [diagram specification catalog](../src/architecture/c4-model/documentation-suite/reference/diagram-specification-catalog.tex) — c4-model/documentation-suite/reference · **provisional**
 - [iso42010 integration crosswalk](../src/architecture/c4-model/documentation-suite/reference/iso42010-integration-crosswalk.tex) — c4-model/documentation-suite/reference · **provisional**
 - [plantuml engineering reference](../src/architecture/c4-model/documentation-suite/reference/plantuml-engineering-reference.tex) — c4-model/documentation-suite/reference · **provisional**
