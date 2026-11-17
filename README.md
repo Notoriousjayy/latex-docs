@@ -22,6 +22,7 @@ A source-controlled engineering documentation library covering software architec
 | Govern secure AWS Terraform deployments | [Secure AWS Terraform architecture standard](src/architecture/cloud/secure-aws-terraform-repository-deployment/README.md) |
 | Review architectural choices | [ADR template library](src/architecture/decisions/readme.md) |
 | Build enterprise-scale GitHub architecture discovery | [Discovery technical reference and working forms](src/architecture/github-actions-discovery-suite.md) |
+| Configure Codex with GitHub Copilot and VS Code | [Codex + GitHub Copilot integration guide](src/data-systems/ai-agent-engineering/technical-documents/codex-github-copilot-integration-guide.tex) |
 | Understand architecture governance | [CCoE governance suite](src/architecture/governance/ccoe/readme.md) |
 | Browse structured study notes | [Cornell Notes collections](src/cornell-notes/README.md) |
 | Author diagrams consistently | [PlantUML style framework](tooling/plantuml/README.md) |

@@ -57,6 +57,8 @@ Use the [Secure AWS Terraform architecture standard](../architecture/cloud/secur
 
 - Cross-reference [security workflows](../security/README.md) when discussing code scanning, dependency findings and secret scanning.
 
+- For AI coding-agent issue delegation, VS Code local/cloud Codex sessions, permission governance and CI checks, see the [Codex + GitHub Copilot integration guide](../data-systems/ai-agent-engineering/technical-documents/codex-github-copilot-integration-guide.tex) in the AI Agent Engineering collection.
+
 ## Maintenance conventions
 
 - An illustrative CI/CD pipeline is not a deployed pipeline; identify integrations and secrets before adapting it.

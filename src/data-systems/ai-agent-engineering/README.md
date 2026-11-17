@@ -15,6 +15,7 @@ A developer-focused, source-controlled course on building secure, reliable, and 
 - [Curriculum collection](curriculum/README.md) — build instructions and source provenance.
 
 - [OpenAI Codex Custom Subagents: Configuration, Precedence, and Secure Orchestration](technical-documents/codex-custom-subagents-technical-guide.tex) — subagent TOML definitions, scope and precedence, model overrides, secure delegation, and verification.
+- [OpenAI Codex Integration with GitHub Copilot](technical-documents/codex-github-copilot-integration-guide.tex) — GitHub-hosted issue delegation, VS Code local/cloud operation, authentication, permissions, enterprise policy, AGENTS.md, CI/CD, troubleshooting and measurable rollout acceptance criteria.
 
 ## Scope and safeguards
 

@@ -12,6 +12,7 @@ Standalone technical references that complement the [AI Agent Engineering curric
 - [AGENTS.md: Repository-Aware Guidance for AI Coding Agents](agents-md-repository-guidance.tex) — a pdfLaTeX-compatible engineering reference covering instruction-file conventions, scope and overrides, agent security controls, and a repository-specific implementation plan with a reusable AGENTS.md template.
 
 - [OpenAI Codex Custom Subagents: Configuration, Precedence, and Secure Orchestration](codex-custom-subagents-technical-guide.tex) — repository-compatible technical reference with role configuration, model resolution, security boundaries, orchestration diagrams, TOML examples, and validation checklist.
+- [OpenAI Codex Integration with GitHub Copilot](codex-github-copilot-integration-guide.tex) — 22-page engineering guide covering GitHub and VS Code setup, cloud issue handoff, local harness execution, identity and permission boundaries, agent instructions, CI/CD examples, enterprise governance and troubleshooting.
 
 ## Build and validation
 
