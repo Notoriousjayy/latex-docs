@@ -181,8 +181,10 @@
 - [L15: Capstone integration: GitHub AppSec agent (read-only) (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l15-appsec-capstone.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
 - [L16: Capstone hardening, independent review and operational handoff (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l16-capstone-hardening.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
 
-## ai-agent-engineering/technical-documents (1)
+## ai-agent-engineering/technical-documents (3)
 
+- [Agent Engineering Standards: SKILL.md, AGENTS.md, MCP, and Agent Harnesses](../src/data-systems/ai-agent-engineering/technical-documents/agent-engineering-standards-skills-agents-mcp-harnesses.tex) — ai-agent-engineering/technical-documents · **provisional**
+- [AGENTS.md: Repository-Aware Guidance for AI Coding Agents](../src/data-systems/ai-agent-engineering/technical-documents/agents-md-repository-guidance.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [AI Agent Harness Architecture and Engineering Guide](../src/data-systems/ai-agent-engineering/technical-documents/ai-agent-harness-architecture-and-engineering-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
 
 ## algebra (2)

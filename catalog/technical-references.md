@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (730)
+## Primary technical references (732)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -341,6 +341,8 @@
 - [ch14 statistical description notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch14-statistical-description-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
 - [ch15 data modeling notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch15-data-modeling-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
 - [ch16 classification inference notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch16-classification-inference-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
+- [Agent Engineering Standards: SKILL.md, AGENTS.md, MCP, and Agent Harnesses](../src/data-systems/ai-agent-engineering/technical-documents/agent-engineering-standards-skills-agents-mcp-harnesses.tex) — ai-agent-engineering/technical-documents · **provisional**
+- [AGENTS.md: Repository-Aware Guidance for AI Coding Agents](../src/data-systems/ai-agent-engineering/technical-documents/agents-md-repository-guidance.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [AI Agent Harness Architecture and Engineering Guide](../src/data-systems/ai-agent-engineering/technical-documents/ai-agent-harness-architecture-and-engineering-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [Governance Roles and Decision Rights Specification](../src/data-systems/enterprise-data-governance/standards-and-frameworks/technical-documents/governance-roles-and-decision-rights-specification.tex) — enterprise-data-governance · **provisional**
 - [Data Governance Standards and Frameworks Technical Reference](../src/data-systems/enterprise-data-governance/standards-and-frameworks/technical-documents/standards-and-frameworks-technical-reference.tex) — enterprise-data-governance · **provisional**

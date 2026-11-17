@@ -4,6 +4,7 @@ A developer-focused, source-controlled course on building secure, reliable, and 
 
 ## Start here
 
+- [Agent Engineering Standards: SKILL.md, AGENTS.md, MCP, and Agent Harnesses](technical-documents/agent-engineering-standards-skills-agents-mcp-harnesses.tex) — integrated technical reference with architecture diagrams, implementation patterns, MCP versioning, security controls, and validation guidance.
 - [L01-L16 Beamer laboratory presentations](curriculum/lab-presentations/README.md) -- instructional slide decks aligned to each week.
 
 

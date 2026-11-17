@@ -1,0 +1,644 @@
+% !TeX program = pdflatex
+% Agent Engineering Standards: AGENTS.md, SKILL.md, MCP, and agent harnesses
+% Repository: Notoriousjayy/latex-docs
+% Build: make preflight && make build-category-data-systems (pdfLaTeX + minted)
+% Standards reviewed: 2026-11-16; MCP baseline 2026-07-28
+\documentclass[11pt,letterpaper]{article}
+\usepackage{technical-implementation}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds,shapes.geometric}
+% Diagram-only aliases of the repository's house palette.
+\colorlet{Midnight}{Navy}
+\colorlet{DeepBlue}{Navy}
+\colorlet{Pale}{Soft}
+\colorlet{LightGray}{Soft}
+\colorlet{GrayInk}{Steel}
+\colorlet{Rule}{Meta!45}
+\colorlet{Danger}{Brick}
+\setstretch{1.07}
+\newcommand{\good}[1]{\textcolor{Teal}{#1}}
+\newcommand{\risk}[1]{\textcolor{Brick}{#1}}
+\newcommand{\smallcaps}[1]{{\sffamily\bfseries\small\textcolor{Teal}{#1}}}
+\setDocTitle{Agent Engineering Standards}
+\setDocSubtitle{SKILL.md, AGENTS.md, MCP, and Agent Harnesses}
+\setDocVersion{1.0}
+\setDocStatus{Technical reference}
+\setDocOwner{AI Agent Engineering}
+\setDocAuthor{Engineering Documentation}
+\setDocDate{16 November 2026}
+\setDocSummary{An implementation-oriented technical guide to repository instructions, reusable agent skills, the Model Context Protocol, and governed agent runtimes. Includes reference architectures, security controls, code examples, testing and adoption guidance.}
+\hypersetup{pdftitle={Agent Engineering Standards: SKILL.md, AGENTS.md, MCP, and Agent Harnesses},pdfsubject={Repository instructions, agent skills, MCP, and harness engineering}}
+\begin{document}
+\pagenumbering{roman}
+\makedoctitle
+\makedocsummary
+\section*{Executive summary}
+Modern agent systems operate through multiple cooperating layers, not through a single prompt or configuration file. The \term{agent harness} executes the control loop and enforces operational boundaries; \term{MCP} standardizes connections to external tools and data; \term{Agent Skills} packaged through \filename{SKILL.md} describe reusable workflows; and \filename{AGENTS.md} conveys repository-specific instructions for coding agents. Each mechanism solves a different problem and none is a complete substitute for the others.\cite{agentsmd,agentskills,mcp2026,harnesslangchain}
+
+This guide provides an implementation-oriented treatment of their responsibilities, interoperability, protocol evolution, security controls, operating model, and testing. It distinguishes \emph{normative specification requirements} from \emph{recommended engineering patterns} and \emph{illustrative examples}. The current MCP baseline used here is the \textbf{2026-07-28 revision}; earlier, initialization/session-based protocol examples require compatibility handling.\cite{mcp2026,mcpversion}
+
+\begin{tipbox}[The essential mental model]
+\textbf{Repository instructions} tell the agent how to work \emph{here}. \textbf{Skills} explain how to perform a class of work. \textbf{MCP} provides standardized access to capabilities. \textbf{The harness} decides what to load, what may execute, how to check results, and when to stop.
+\end{tipbox}
+
+\noindent\smallcaps{Intended readers} Software engineers, agent-platform architects, developer-experience teams, DevSecOps engineers, application-security practitioners, and technical educators.\\
+\smallcaps{Prerequisites} Git, Markdown, JSON, basic API concepts, and fundamental software testing.\\
+\smallcaps{Reading paths} Architecture overview: \S\S\ref{sec:map}--\ref{sec:matrix}; implementation: \S\S\ref{sec:agents}--\ref{sec:integrate}; security: \S\ref{sec:security}; operations: \S\S\ref{sec:evaluation}--\ref{sec:rollout}.
+
+\newpage
+\tableofcontents
+\newpage
+\pagenumbering{arabic}
+
+\section{The four-layer model}\label{sec:map}
+\subsection{Four questions, four answers}
+\begin{table}[htbp]\centering\small
+\renewcommand{\arraystretch}{1.32}
+\begin{tabularx}{\linewidth}{@{}p{0.20\linewidth}X X@{}}
+\toprule
+\textbf{Element} & \textbf{Primary question} & \textbf{Responsibility}\\ \midrule
+\filename{AGENTS.md} & How should the agent work in this repository? & Codebase orientation, build/test commands, conventions, local constraints.\\
+\filename{SKILL.md} & How does an agent complete this kind of task? & Task-specific methods, triggers, reusable guidance, auxiliary assets.\\
+MCP & How does a host interact with external tools and context? & Standard protocol for discovery, resource access, prompts, and tool invocation.\\
+Agent harness & Who controls execution and reliability? & Model/tool loop, context assembly, sandbox, policy checks, durable state, verification.\\
+\bottomrule
+\end{tabularx}
+\caption{Conceptual ownership. A single product may implement several layers.}
+\end{table}
+
+\subsection{Reference architecture}
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[font=\sffamily\scriptsize, node distance=7mm and 8mm,
+  layer/.style={draw=DeepBlue,fill=Pale,rounded corners=2pt,align=center,minimum height=10mm,inner sep=5pt},
+  rt/.style={draw=Midnight,fill=LightGray,rounded corners=2pt,align=center,minimum height=10mm,inner sep=5pt},
+  flow/.style={-{Latex[length=2.5mm]},thick,draw=Accent}]
+\node[layer,minimum width=3.0cm] (user) {User task and approval};
+\node[rt,below=of user,minimum width=3.0cm] (harness) {Agent harness\\policy, context, loop, state};
+\node[layer,below left=11mm and 4mm of harness,minimum width=3.2cm] (repo) {\texttt{AGENTS.md}\\repository guidance};
+\node[layer,below right=11mm and 4mm of harness,minimum width=3.2cm] (skill) {\texttt{SKILL.md}\\workflow instructions};
+\node[rt,below=23mm of harness,minimum width=3.0cm] (mcp) {MCP client(s)\\tool and context bridge};
+\node[layer,below=of mcp,minimum width=5.6cm] (server) {MCP server(s)\\tools \textbullet\ resources \textbullet\ prompts};
+\draw[flow] (user) -- (harness);
+\draw[flow] (repo) -- (harness);
+\draw[flow] (skill) -- (harness);
+\draw[flow] (harness) -- (mcp);
+\draw[flow] (mcp) -- (server);
+\draw[flow,dashed] ([xshift=11pt]server.east) .. controls +(1.0,0.5) and +(1.0,-0.5) .. ([xshift=11pt]mcp.east);
+\node[anchor=west,text=GrayInk] at ([xshift=4pt]mcp.east) {request};
+\end{tikzpicture}
+\caption{Logical dependencies. The harness may also call non-MCP tools; arrows show information and control flow, not authority transfer.}
+\end{figure}
+
+\subsection{Distinguish standards from product behavior}
+\begin{itemize}
+\item \term{AGENTS.md} is a Markdown convention, not a policy engine. Nested-file precedence is described by its documentation; actual loading and override mechanisms remain agent-dependent.\cite{agentsmd}
+\item \term{Agent Skills} specifies a skill folder and file format; activation, tool permissions, installation paths, and lifecycle integration depend on the host.\cite{agentskills}
+\item \term{MCP} is a wire-level interoperability protocol, not a complete agent planner or a general authorization guarantee.\cite{mcp2026}
+\item \term{Harness} is an architectural term, not one universally prescribed protocol or file format.\cite{harnesslangchain,anthropicharness}
+\end{itemize}
+
+\section{Ownership, precedence, and trust boundaries}\label{sec:matrix}
+\subsection{Authority versus information}
+Instruction precedence, data provenance, and the capability to execute are separate concepts. A document may describe what to do without \emph{authorizing} it. A tool may accept a request without proving that a model's instruction was trustworthy. Therefore use defense-in-depth: trusted user/developer requirements and system policy at the control plane, repository and skill guidance at the instruction plane, and external responses at the data plane.
+
+\begin{table}[htbp]\centering\footnotesize
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{@{}p{0.21\linewidth}p{0.28\linewidth}X@{}}
+\toprule
+\textbf{Artifact} & \textbf{What it may express} & \textbf{What it cannot enforce alone}\\\midrule
+\filename{AGENTS.md} & Coding rules, tests, folder-specific instructions & File permissions, credential scopes, branch protection\\
+\filename{SKILL.md} & Workflow procedure, selection cues, references & Tool allowlists or approval gates without host enforcement\\
+MCP schema & Tool contracts, callable operations, capabilities & User intent, least-privilege credentials, trust in model output\\
+Harness policy & Approval requirements, budgets, sandbox configuration & Safety if implementation is bypassable or external systems lack controls\\
+CI and platform policy & Required checks, environment protection, review gates & Correctness of every model-derived decision\\\bottomrule
+\end{tabularx}
+\caption{Avoid treating descriptions as enforceable permissions.}
+\end{table}
+
+\subsection{Suggested precedence strategy (implementation pattern)}
+Keep hard authorization checks outside model-generated text. Within the agent's instruction-routing implementation, use explicit system/developer policy and user intent above repository and skill content. For the AGENTS.md convention, the closest applicable file governs the corresponding subtree, subject to the agent's support and user instructions. The harness should detect conflicts, surface ambiguity, and refuse to interpret untrusted tool results as higher-priority instructions.\cite{agentsmd}
+
+\section{Repository instructions with \texttt{AGENTS.md}}\label{sec:agents}
+\subsection{Purpose and scope}
+\filename{AGENTS.md} is a plain Markdown repository guide focused on coding agents. It commonly explains project topology, local development, coding conventions, tests, deployment precautions, and PR etiquette. The format does not prescribe mandatory YAML or required headings. A root document may be complemented by nested documents in subprojects.\cite{agentsmd}
+
+\subsection{Recommended repository structure}
+\par\smallskip\noindent{\small\bfseries\color{Navy}Illustrative monorepo layout; filenames are case-sensitive.}\par
+\begin{minted}{text}
+workspace/
+|-- AGENTS.md                  # Repository-wide guidance
+|-- services/
+|   |-- api/
+|   |   |-- AGENTS.md          # Java service-specific rules
+|   |   `-- pom.xml
+|   `-- analyzer/
+|       `-- AGENTS.md          # C/C++ component rules
+|-- docs/
+|   |-- AGENTS.md              # LaTeX authoring rules
+|   `-- guides/
+`-- .github/workflows/
+\end{minted}
+
+\subsection{Sample root \texttt{AGENTS.md}}
+\par\smallskip\noindent{\small\bfseries\color{Navy}Repository-root instruction example (Markdown).}\par
+\begin{minted}{text}
+# Repository guide for coding agents
+
+## Purpose
+Maintain a multi-language engineering repository with
+reproducible builds and reviewable changes.
+
+## Where to look
+- `services/api`: Java 17 / Maven backend.
+- `services/analyzer`: CMake-based C application.
+- `docs`: pdfLaTeX technical documentation.
+
+## Before editing
+- Read the nearest applicable `AGENTS.md`.
+- Inspect existing patterns; avoid speculative refactors.
+- Do not read or print secrets from `.env` files.
+
+## Required checks
+- Java: `./mvnw -q verify`
+- C: `cmake --build build && ctest --test-dir build`
+- Docs: `latexmk -pdf -shell-escape -halt-on-error guide.tex`
+
+## Change discipline
+- Keep patches scoped; explain deliberate exceptions.
+- Do not publish releases or merge PRs without approval.
+- Report commands run, failures, and unverified assumptions.
+\end{minted}
+
+\subsection{Nested guidance and conflict handling}
+Imagine a root \filename{AGENTS.md} requiring tests before submission, and \filename{docs/AGENTS.md} requiring a documentation link check. For a file under \filename{docs/}, both requirements are relevant: the scoped document adds a specific validation step. If there is an actual conflict, the convention states that the nearest file wins, while explicit user prompts can override the repository's suggestions; still, security policy and authorization enforced by the harness must not be bypassed.\cite{agentsmd}
+
+\subsection{Documentation quality checklist}
+\begin{itemize}
+\item Use verified commands; label destructive or environment-specific commands.
+\item Keep the content concise and task-relevant; link to maintained human documentation rather than duplicate it.
+\item Specify test entry points, fixtures, paths, generated outputs, and validation evidence.
+\item Explain which operations need human authorization (secrets, production changes, merges, releases).
+\item Test instructions using the actual coding agents and CI checks in use.
+\end{itemize}
+
+\section{Reusable capabilities with \texttt{SKILL.md}}\label{sec:skills}
+\subsection{Formal skill anatomy}
+An Agent Skill is a directory containing a required \filename{SKILL.md}. That file begins with YAML frontmatter and continues with a Markdown instruction body. Required fields are \filename{name} and \filename{description}; optional fields include \filename{license}, \filename{compatibility}, \filename{metadata}, and an experimental \filename{allowed-tools} field. The skill name must match the parent folder; it must be 1--64 characters using lowercase letters, digits, and hyphens without consecutive hyphens. Description length is 1--1024 characters.\cite{agentskills}
+
+\begin{table}[htbp]\centering\small
+\begin{tabularx}{\linewidth}{@{}p{0.21\linewidth}p{0.18\linewidth}X@{}}
+\toprule
+\textbf{Field} & \textbf{Status} & \textbf{Engineering guidance}\\\midrule
+\filename{name} & Required & Stable task slug matching folder name; avoid ambiguous names.\\
+\filename{description} & Required & Describe what the skill does \emph{and when to use it}.\\
+\filename{license} & Optional & State redistribution and usage terms when appropriate.\\
+\filename{compatibility} & Optional & State required runtimes, platforms, network or tools.\\
+\filename{metadata} & Optional & Use string-valued namespaced keys where useful.\\
+\filename{allowed-tools} & Experimental & Do not assume uniform support or enforcement across hosts.\\\bottomrule
+\end{tabularx}
+\caption{Agent Skills frontmatter fields as documented in the official format.}
+\end{table}
+
+\subsection{Minimal working skill example}
+\par\smallskip\noindent{\small\bfseries\color{Navy}Example \texttt{skills/latex-guide/SKILL.md}.}\par
+\begin{minted}{text}
+---
+name: latex-guide
+description: >-
+  Create and validate maintainable LaTeX engineering
+  documents. Use for technical guides, diagrams,
+  source-controlled reports, and PDF build diagnostics.
+license: MIT
+compatibility: Requires pdfLaTeX, latexmk, minted, and Git.
+metadata:
+  owner: documentation-engineering
+  version: "1.0"
+---
+
+# LaTeX engineering guide
+
+## Workflow
+1. Read the repository's applicable AGENTS.md files.
+2. Find the nearest existing document template.
+3. Update LaTeX without breaking style or references.
+4. Run `latexmk -pdf -shell-escape -halt-on-error <file>.tex`.
+5. Inspect compilation logs and the rendered PDF.
+6. Report changed files and any unresolved warnings.
+
+## Constraints
+- Do not delete existing sections without request.
+- Preserve labels, citations, and source attribution.
+- Never claim compilation succeeded unless it ran.
+
+## Supporting materials
+- See `references/latex-style.md` for conventions.
+- Run `scripts/check-build.sh` for CI verification.
+\end{minted}
+
+\subsection{Progressive disclosure and context economics}
+Official guidance describes three stages: the agent sees compact metadata for skill discovery, loads the full instruction body when it activates a relevant skill, and reads reference or script files on demand. The published guidance recommends keeping main skill instructions relatively brief (under about 500 lines) and offloading supporting detail into focused files. This minimizes context pressure and reduces irrelevant instruction collisions.\cite{agentskills}
+
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[node distance=7mm, font=\sffamily\scriptsize,
+ s/.style={draw=DeepBlue,rounded corners=2pt,minimum width=9.8cm,minimum height=10mm,align=center},
+ a/.style={-{Latex[length=2mm]},thick,draw=Accent}]
+\node[s,fill=Pale] (meta) {\textbf{Discover} \quad name + description \quad (small catalog metadata)};
+\node[s,below=of meta,fill=LightGray] (body) {\textbf{Activate} \quad read \texttt{SKILL.md} instructions for matched task};
+\node[s,below=of body,fill=white] (res) {\textbf{Execute} \quad consult \texttt{references/}, run \texttt{scripts/}, use \texttt{assets/} as needed};
+\draw[a] (meta)--(body); \draw[a] (body)--(res);
+\end{tikzpicture}
+\caption{Progressive disclosure is a loading strategy, not a security boundary.}
+\end{figure}
+
+\subsection{Skill discovery and validation}
+Discoverability depends on meaningful descriptions and host support; the specification does not guarantee that every agent will automatically discover or install every skill. To validate the folder metadata, the official format recommends the \filename{skills-ref} reference validator:\cite{agentskills}
+\par\smallskip\noindent{\small\bfseries\color{Navy}Validating a skill directory.}\par
+\begin{minted}{bash}
+skills-ref validate ./skills/latex-guide
+\end{minted}
+
+\begin{cautionbox}[Never confuse skill instructions with executable authorization]
+A skill may mention a script, tool name, or an experimental \filename{allowed-tools} field; this does not supersede the harness's permission checks or operating-system controls. Vet third-party skill packages and every script that can execute in your environment.
+\end{cautionbox}
+
+\section{Model Context Protocol (MCP)}\label{sec:mcp}
+\subsection{What MCP standardizes}
+MCP provides a JSON-RPC 2.0 protocol between an AI application \term{host}, host-managed \term{clients}, and capability-providing \term{servers}. In the 2026-07-28 architecture, each host may create multiple clients, and each client communicates with a particular server. MCP lets servers expose \term{tools}, \term{resources}, and \term{prompts}; transport, versioning, authorization, and opt-in extensions are separate facets.\cite{mcp2026,mcparch}
+
+\begin{table}[htbp]\centering\small
+\begin{tabularx}{\linewidth}{@{}p{0.19\linewidth}p{0.34\linewidth}X@{}}
+\toprule
+\textbf{Primitive} & \textbf{Representative use} & \textbf{Selection / control}\\\midrule
+Tools & Query issue tracker, compile document, request repository review & Model may select; host must enforce approval and policy.\\
+Resources & Retrieve repository metadata, read schema, access docs & Host/application decides what to load or expose.\\
+Prompts & Provide reusable templates for a user workflow & Commonly user/application initiated; server provides content.\\
+Extensions & Tasks, Skills over MCP, UI apps & Optional; require compatible client/server support.\\\bottomrule
+\end{tabularx}
+\caption{MCP interface primitives; exact availability depends on server capabilities and protocol version.}
+\end{table}
+
+\subsection{Transport choices}
+The current specification defines \term{stdio} (a host-launched local subprocess communicating via standard streams) and \term{Streamable HTTP} (request-scoped HTTP POSTs, optionally responding via an SSE stream). Custom bindings are permitted if they preserve required protocol semantics. A transport conveys messages; it does not grant blanket trust to remote content.\cite{mcptransport}
+
+\subsection{Protocol evolution: 2026 versus 2025}
+\begin{tipbox}[Version-sensitive implementation detail]
+\textbf{2026-07-28 (modern):} requests are stateless and self-contained, carrying protocol version and client capabilities through request metadata. \textbf{2025-11-25 and earlier (legacy):} session-based interactions use an \filename{initialize} handshake. These are distinct protocol eras; clients supporting both need explicit compatibility logic.\cite{mcpversion}
+\end{tipbox}
+
+In modern MCP, every request must include \path{io.modelcontextprotocol/protocolVersion} and \path{io.modelcontextprotocol/clientCapabilities} in \path{params._meta}; the \filename{clientInfo} field is recommended but optional. Servers advertise capabilities via \filename{server/discover}, which a client may call before other operations. Responses use a \filename{resultType}, commonly \filename{complete}.\cite{mcpbase,mcpversion}
+
+\subsection{Illustrative request and response}
+The following \filename{tools/call} request follows the modern per-request metadata structure. The tool name, arguments, and returned content are fictional; the example illustrates wire structure, not a deployed server.\cite{mcptools,mcpbase}
+\par\smallskip\noindent{\small\bfseries\color{Navy}MCP 2026-07-28 \texttt{tools/call} request (JSON).}\par
+\begin{minted}{text}
+{
+  "jsonrpc": "2.0",
+  "id": 42,
+  "method": "tools/call",
+  "params": {
+    "_meta": {
+      "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+      "io.modelcontextprotocol/clientInfo": {
+        "name": "engineering-harness", "version": "1.0.0"
+      },
+      "io.modelcontextprotocol/clientCapabilities": {}
+    },
+    "name": "repository_status",
+    "arguments": {"repository": "sample-repo"}
+  }
+}
+\end{minted}
+\par\smallskip\noindent{\small\bfseries\color{Navy}Illustrative completed tool result; business data is untrusted input.}\par
+\begin{minted}{text}
+{
+  "jsonrpc": "2.0",
+  "id": 42,
+  "result": {
+    "resultType": "complete",
+    "content": [
+      {"type": "text", "text": "Working tree is clean."}
+    ]
+  }
+}
+\end{minted}
+
+\subsection{MCP discovery patterns}
+For an MCP server, supported operations may include \path{tools/list}, \path{tools/call}, \path{resources/list}, \path{resources/read}, \path{prompts/list}, and \path{prompts/get}, subject to advertised capabilities. Resource identifiers are URI-based. In modern MCP, lists may have pagination and caching semantics; consumers should respect authorization-aware results rather than assuming uniform catalogs.\cite{mcptools,mcpresources,mcp2026}
+
+\subsection{Skills over MCP: a useful connection}
+The official \term{Skills over MCP} extension (currently documented as \emph{beta}) permits MCP servers to publish Agent Skills using the Agent Skills file format. It defines discovery methods such as \filename{skills/list} and \filename{skills/get} and exposes skill files as resources, conventionally under \filename{skill://} URIs. Thus \filename{SKILL.md} remains the skill \emph{content format}, while MCP may be its \emph{transport and discovery mechanism}. Supporting this extension is optional; it is not required for ordinary local skills.\cite{mcpskills}
+
+\section{The agent harness as runtime and control plane}\label{sec:harness}
+\subsection{Why the harness is necessary}
+The harness is the non-model software that turns model outputs into governed actions and observable results. In a production system it commonly assembles prompts and policy, selects tools and skills, executes sandboxed work, captures results, updates task state, tracks resource budgets, and verifies outcomes. This is an engineering decomposition, not a formal universal harness specification.\cite{harnesslangchain,anthropicharness}
+
+\subsection{Required subsystems for a dependable implementation}
+\begin{enumerate}
+\item \term{Coordinator:} parses intent, manages execution states and termination conditions.
+\item \term{Context manager:} loads relevant \filename{AGENTS.md}, skills, retrieved evidence, and prior task state.
+\item \term{Tool adapter:} brokers MCP clients and direct tools, validates arguments and result schemas.
+\item \term{Policy engine:} authenticates actors, evaluates least privilege, applies approval requirements.
+\item \term{Execution sandbox:} constrains filesystems, process privileges, network destinations and resource consumption.
+\item \term{Verification layer:} runs tests, linting, dry-runs, diff checks, and postconditions.
+\item \term{Persistence layer:} records checkpoints, intermediate artifacts, and recovery metadata.
+\item \term{Telemetry:} logs trace IDs, tool decisions, token/cost budgets, errors, approvals and outcomes.
+\end{enumerate}
+
+\subsection{A minimal conceptual control loop}
+This language-neutral Python-style sketch is \emph{illustrative pseudocode}, not a secure ready-made runtime. In particular, the \filename{authorize}, \filename{execute}, and \filename{validate} functions require real implementations.
+\par\smallskip\noindent{\small\bfseries\color{Navy}Harness orchestration with explicit policy and validation hooks.}\par
+\begin{minted}{python}
+def run_agent(task, runtime):
+    state = runtime.load_or_create_task(task)
+    for step in range(runtime.max_steps):
+        context = runtime.assemble_context(
+            task=task,
+            repo_rules=runtime.load_applicable_agents_md(),
+            skill=runtime.select_and_verify_skill(task),
+            history=state.summary,
+        )
+        proposal = runtime.model.propose(context)
+        if proposal.kind == "final":
+            runtime.verify_completion(proposal, state)
+            return runtime.publish_result(proposal, state)
+
+        runtime.validate_tool_schema(proposal)
+        runtime.authorize(task.actor, proposal, state)
+        result = runtime.execute_in_sandbox(proposal)
+        runtime.validate_and_sanitize_result(result)
+        state = runtime.record_step(state, proposal, result)
+        runtime.check_time_token_cost_budgets(state)
+
+    raise RuntimeError("Step limit reached: task incomplete")
+\end{minted}
+
+\subsection{Long-running work: checkpoints and resumability}
+Long-horizon agents should persist task status, tests performed, changed files, failure context, and next safe steps between sessions. A practical state record could include \path{task_id}, \path{repository_revision}, \path{plan_version}, \path{completed_steps}, \path{pending_approval}, \path{test_evidence}, \path{artifact_hashes}, and \path{remaining_budget}. Research on long-running harnesses emphasizes incremental progress and explicit handoff artifacts rather than relying solely on conversation compaction.\cite{anthropicharness,harnesslangchain}
+
+\section{Putting the layers together}\label{sec:integrate}
+\subsection{End-to-end flow: a document-generation task}
+A user requests a new technical guide for a Git repository. The harness identifies the repository, loads relevant root and nested \filename{AGENTS.md}, activates a LaTeX authoring skill, requests external repository information through an MCP client when available, edits source files in a restricted workspace, compiles the document, inspects the PDF, and reports findings. All high-impact remote actions remain subject to explicit approval.
+
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[font=\sffamily\scriptsize,
+  box/.style={draw=DeepBlue,rounded corners=2pt,align=center,fill=Pale,minimum width=2.4cm,minimum height=12mm,inner sep=4pt},
+  node distance=8mm and 7mm,
+  f/.style={-{Latex[length=2.2mm]},draw=Accent,thick}]
+\node[box] (a) {1. Understand\\request};
+\node[box,right=of a] (b) {2. Load\\AGENTS.md};
+\node[box,right=of b] (c) {3. Select\\SKILL.md};
+\node[box,below=11mm of c] (d) {4. Discover MCP\\resources/tools};
+\node[box,left=of d] (e) {5. Author files\\in sandbox};
+\node[box,left=of e] (f1) {6. Build and\\validate};
+\node[box,below=10mm of f1] (g) {7. Inspect diff\\and evidence};
+\node[box,right=of g] (h) {8. Gate remote\\write / merge};
+\node[box,right=of h] (i) {9. Summarize\\results};
+\draw[f] (a)--(b); \draw[f] (b)--(c);
+\draw[f] (c)--(d); \draw[f] (d)--(e); \draw[f] (e)--(f1);
+\draw[f] (f1)--(g); \draw[f] (g)--(h); \draw[f] (h)--(i);
+\end{tikzpicture}
+\caption{One possible controlled workflow; the harness owns step sequencing and gating.}
+\end{figure}
+
+\subsection{Folder strategy}
+\par\smallskip\noindent{\small\bfseries\color{Navy}Reference layout: project-specific rules plus reusable skills.}\par
+\begin{minted}{text}
+engineering-repository/
+|-- AGENTS.md
+|-- .github/
+|   `-- workflows/latex-validation.yml
+|-- docs/
+|   |-- AGENTS.md
+|   `-- agent-standards/
+|       `-- guide.tex
+|-- .agent/
+|   `-- skills/
+|       `-- latex-guide/
+|           |-- SKILL.md
+|           |-- references/latex-style.md
+|           `-- scripts/check-build.sh
+`-- src/
+\end{minted}
+The \filename{.agent/skills} path above is a \emph{project convention}, not a universal installation directory. Different agents use different discovery paths and configuration methods. Configure or register the path for the actual harness in use.
+
+\subsection{Case study: code scanning triage and merge governance}
+Consider an AppSec workflow that assesses code scanning alerts. A root \filename{AGENTS.md} specifies required CI checks; a \filename{code-scanning-triage} skill encodes reproducible investigation steps and evidence standards; an MCP-accessible source-control service supplies alert metadata and pull-request context; and the harness validates scopes, blocks unauthorized dismissals, requires human review where policy dictates, and emits an audit trail. This separation avoids transforming a skill's prose such as ``dismiss low-confidence alerts'' into uncontrolled repository write access.
+
+\begin{table}[htbp]\centering\footnotesize
+\begin{tabularx}{\linewidth}{@{}p{0.21\linewidth}X p{0.25\linewidth}@{}}
+\toprule
+\textbf{Component} & \textbf{Deliverable} & \textbf{Control evidence}\\\midrule
+\filename{AGENTS.md} & CI / branch protection requirements & Commit SHA, workflow names\\
+\filename{SKILL.md} & Triage decision process and rubric & Skill hash, decision rationale\\
+MCP integration & Alert read, PR read, authorized operations & Tool request / response IDs\\
+Harness & Identity, policy, approvals, retries & Audit trace, actor, decision\\
+CI / Git host & Required tests and merge gating & Check-run result, branch rule\\\bottomrule
+\end{tabularx}
+\caption{An example of separating workflow guidance from enforceable merge governance.}
+\end{table}
+
+\section{Security and threat modeling}\label{sec:security}
+\subsection{Trust-boundary diagram}
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[font=\sffamily\scriptsize, node distance=6mm,
+  b/.style={draw=DeepBlue,rounded corners=1pt,minimum width=4.0cm,minimum height=10mm,align=center,fill=Pale},
+  arr/.style={-{Latex[length=2mm]},thick,draw=Accent}]
+\node[b] (trusted) {Policy / identity / user approvals\\trusted control plane};
+\node[b,below=of trusted] (h) {Harness authorization and validation};
+\node[b,below=of h,fill=LightGray] (tool) {MCP and other tool adapters};
+\node[b,below=of tool,fill=white] (ext) {External data, repositories, third-party skills\\untrusted until checked};
+\draw[arr] (trusted)--(h);\draw[arr] (h)--(tool);\draw[arr] (tool)--(ext);
+\draw[red!70,dashed,thick] ([xshift=-2.4cm,yshift=4pt]ext.west) -- ([xshift=2.4cm,yshift=4pt]ext.east);
+\node[anchor=west,text=Danger] at ([xshift=7pt]ext.east) {untrusted inputs};
+\end{tikzpicture}
+\caption{Tool and skill content cross a trust boundary; a model reading text does not make it authoritative.}
+\end{figure}
+
+\subsection{Threat model table}
+\begin{longtable}{@{}p{0.23\linewidth}p{0.32\linewidth}p{0.37\linewidth}@{}}
+\toprule\textbf{Threat} & \textbf{Failure mode} & \textbf{Mitigation}\\\midrule\endhead
+Prompt injection & README, MCP resource, tool response or skill contains hostile instructions & Label external content as untrusted, restrict tool privileges, require approval for risky actions.\\
+Malicious skill supply chain & Downloaded script executes arbitrary commands & Review source and provenance, pin versions/digests, sandbox execution, verify dependencies.\\
+Credential exposure & Model/tool prints secrets or forwards tokens & Secret manager, redaction, scoped short-lived credentials, outbound network controls.\\
+Confused deputy & MCP proxy uses its stronger authority for attacker request & Bind identity and consent to requested resource, validate clients, enforce scopes.\\
+SSRF / exfiltration & URL-driven tools access internal services or leak data & Destination allowlists, DNS/IP checks, egress proxy, URL validation.\\
+Approval bypass & A prose directive is mistaken for permission & Central policy checks, two-phase mutation, human sign-off for protected actions.\\
+Tool result tampering & Compromised server returns misleading completion & Source attestation, independent verification, record authoritative outcomes.\\
+Runaway execution & Tool loop, enormous output or excessive billing & Step/time/token limits, cost budgets, cancellation and circuit breakers.\\
+Cross-tenant disclosure & Shared catalog, cache or workspace leaks private data & Per-principal isolation, cache scopes, authorization-aware discovery.\\\bottomrule
+\end{longtable}
+
+\subsection{Specific MCP security considerations}
+MCP security guidance identifies confused-deputy flows, token passthrough, SSRF, local server compromise, and authorization pitfalls. Remote HTTP deployments should follow the appropriate MCP authorization specification and OAuth-related requirements; local stdio integration usually uses environment-provided credentials and process isolation instead. Enforce resource ownership on the server as well as in the host: a client-side UI approval alone is insufficient.\cite{mcpsecurity,mcpauth}
+
+\subsection{Guardrail policy: example decision table}
+\begin{table}[htbp]\centering\small
+\begin{tabularx}{\linewidth}{@{}p{0.23\linewidth}p{0.24\linewidth}X@{}}
+\toprule\textbf{Operation} & \textbf{Default decision} & \textbf{Additional condition}\\\midrule
+Read public docs & Permit & Trace origin and preserve citations.\\
+Read private repository & Authenticated / scoped & Only authorized repositories and paths.\\
+Edit local working tree & Permit in sandbox & Preserve diff and validate changes.\\
+Create remote branch / PR & Approval or delegated policy & Constrain repository, branch and actor scopes.\\
+Dismiss security alert & Human or validated policy gate & Record rationale, evidence and audit identity.\\
+Merge into protected branch & Enforce host-side branch protection & Required checks and review approvals.\\
+Access production secrets & Deny by default & Explicit, narrowly scoped operational exception.\\\bottomrule
+\end{tabularx}
+\caption{Illustrative organizational policy, not behavior guaranteed by any standard.}
+\end{table}
+
+\section{Testing, evaluation and observability}\label{sec:evaluation}
+\subsection{Test each layer independently}
+\begin{enumerate}
+\item \term{AGENTS.md tests:} verify correct nearest-file selection, valid commands, and conflict handling.
+\item \term{Skill tests:} validate frontmatter, broken relative links, script exit codes, trigger precision and false activations.
+\item \term{MCP contract tests:} verify capability advertisement, schema validation, auth failures, pagination, protocol-version handling and transport errors.
+\item \term{Harness integration tests:} mock model proposals and tool responses; assert approval gates, isolation, retry rules and termination.
+\item \term{End-to-end tests:} execute a representative task in a disposable repository and compare source diffs, compiled outputs and audit logs.
+\end{enumerate}
+
+\subsection{Measures that matter}
+Suggested metrics include task success rate, verification pass rate, unsafe-action prevention rate, tool-call failure rate, false skill activation rate, average intervention count, latency, cost per successful task, context utilization, and regression rate. Use separate benchmark sets for routine cases, ambiguous requests, adversarial tool content, and multi-session recovery. A single demo that reaches an answer is not evidence of reliable production performance.
+
+\subsection{Observable event schema}
+\par\smallskip\noindent{\small\bfseries\color{Navy}Illustrative structured trace (JSON Lines event).}\par
+\begin{minted}{text}
+{
+  "trace_id": "trace-0274",
+  "task_id": "doc-standards-001",
+  "actor": "engineer@example.invalid",
+  "repo_revision": "abc1234",
+  "skill": "latex-guide@sha256:<digest>",
+  "mcp_server": "source-control-gateway",
+  "operation": "repository_status",
+  "authorization": "allowed-read-only",
+  "duration_ms": 180,
+  "result": "success",
+  "secret_fields_redacted": true
+}
+\end{minted}
+Use real trace IDs and hashes in an implementation; do not expose full prompts, credentials, or sensitive tool results by default. Model output summaries are insufficient audit evidence for actions performed by remote services.
+
+\section{Recommended design patterns and anti-patterns}
+\subsection{Preferred patterns}
+\begin{itemize}
+\item \term{Small root guide, precise nested guidance:} avoid repeating all operational rules across every package.
+\item \term{Task-focused skills:} one clear activation purpose, short instructions, supporting references on demand.
+\item \term{Capability-scoped servers:} separate read-only discovery from write and administrative tools.
+\item \term{Approval before impact:} dry-run first, show diffs, then authorize remote mutations.
+\item \term{Reproducible verification:} tests and checks should be runnable outside the model.
+\item \term{Versioned interfaces:} pin skill versions, record MCP protocol support, and run compatibility tests.
+\end{itemize}
+
+\subsection{Frequent mistakes}
+\begin{table}[htbp]\centering\small
+\begin{tabularx}{\linewidth}{@{}p{0.37\linewidth}X@{}}
+\toprule\textbf{Anti-pattern} & \textbf{Prefer instead}\\\midrule
+One 10,000-line \filename{AGENTS.md} for everything & Compact root plus scoped project guidance.\\
+Put every skill's documentation in the system prompt & Discovery metadata + progressive activation.\\
+Treat an MCP tool description as permission & Separate host and server authorization.\\
+Assume \filename{allowed-tools} works everywhere & Enforce permissions in the harness.\\
+Use 2025 initialization messages with a 2026-only server & Explicit dual-era compatibility/version testing.\\
+Claim success based only on the model's final message & Validate tool outcomes, artifacts and postconditions.\\
+Hide side-effecting tools inside read operations & Narrow, inspectable, auditable API contracts.\\\bottomrule
+\end{tabularx}
+\caption{Common implementation pitfalls and safer substitutes.}
+\end{table}
+
+\section{Practical build and CI integration}\label{sec:ci}
+\subsection{Repository-compatible document compilation}
+This source is maintained in \filename{src/data-systems/ai-agent-engineering/technical-documents/} and follows the \filename{latex-docs} repository's pdfLaTeX-only and minted-only conventions. The canonical build scripts discover standalone roots under \filename{src/}, apply the shared style and validate generated PDFs. Do not commit build products into the source tree.
+\par\smallskip\noindent{\small\bfseries\color{Navy}Local repository validation and build commands}\par
+\begin{minted}{bash}
+# From the latex-docs repository root:
+make preflight
+make build-category-data-systems
+
+# Optional single-document build (with repo style paths):
+export TEXINPUTS="$(pwd)/tooling/latex//:$(pwd)/tooling/styles/latex//:${TEXINPUTS:-}"
+cd src/data-systems/ai-agent-engineering/technical-documents
+latexmk -pdf -shell-escape -interaction=nonstopmode \\
+  -halt-on-error -file-line-error \\
+  agent-engineering-standards-skills-agents-mcp-harnesses.tex
+\end{minted}
+
+\subsection{Continuous integration and publishing}
+The repository already uses \path{.github/workflows/latex-ci.yml} and the shared \path{.github/workflows/_build-latex.yml} for pull-request validation. The Pages workflow \path{.github/workflows/latex-pages.yml} builds the corpus for publication. Adding a new document requires using these existing workflows rather than introducing a second, parallel LaTeX pipeline. Confirm the workflow result, log and rendered PDF after merging; do not infer publication solely from committing the source.
+
+\begin{cautionbox}[Reproducibility]
+Production pipelines should use approved, pinned toolchain and action versions. MCP protocol examples in this guide target revision 2026-07-28; test against the actual server and client protocol versions before deployment.
+\end{cautionbox}
+
+\section{A phased adoption roadmap}\label{sec:rollout}
+\begin{table}[htbp]\centering\small
+\begin{tabularx}{\linewidth}{@{}p{0.12\linewidth}p{0.30\linewidth}X@{}}
+\toprule\textbf{Phase} & \textbf{Focus} & \textbf{Exit criteria}\\\midrule
+1 & Baseline repository guidance & Root and nested \filename{AGENTS.md} reviewed; build commands reproducible.\\
+2 & Reusable skills & Two or three skills validated and benchmarked on real tasks.\\
+3 & MCP read integrations & Narrow scopes, server registry, schema tests, privacy review.\\
+4 & Governed writes & Approval workflows, dry-run support, sandbox and audit logging.\\
+5 & Reliability at scale & Regression suite, tracing, metrics, checkpoint/recovery validation.\\\bottomrule
+\end{tabularx}
+\caption{Incremental adoption reduces the blast radius of early design errors.}
+\end{table}
+
+\subsection{Suggested responsibility assignments}
+\term{Repository owners} maintain \filename{AGENTS.md} and project tests. \term{Domain experts} maintain skills and example cases. \term{Platform engineering} owns the harness, MCP client adapters, sandbox and telemetry. \term{Integration owners} maintain MCP servers and API contracts. \term{Security and compliance} establish trust boundaries, credential standards, sensitive-data handling, approval policies, and audit requirements. All teams participate in integration testing and incident review.
+
+\section{Frequently asked architecture questions}
+\subsection{Does \texttt{SKILL.md} replace \texttt{AGENTS.md}?}
+No. Use \filename{AGENTS.md} for codebase-specific conventions and \filename{SKILL.md} for a task-oriented, reusable procedure. A skill can explicitly instruct an agent to read applicable repository guidance first.
+
+\subsection{Can skills call MCP tools?}
+A skill can document which tools a workflow needs; the harness must expose those tools and enforce permissions. A skill does not itself implement an MCP protocol client. The optional Skills over MCP extension can also \emph{deliver} skills over MCP, which is a different relationship.\cite{mcpskills}
+
+\subsection{Is an MCP server an agent?}
+Not necessarily. A normal MCP server supplies tools, prompts, or resources. Planning, model selection, iteration, and cross-tool orchestration usually belong to the host/harness. An MCP server could internally run an agent, but that is a separate implementation decision.\cite{mcparch}
+
+\subsection{Which component protects production?}
+Use layered controls: the harness gates requests; the MCP server validates identities and permissions; underlying platforms enforce branch rules, API authorization, infrastructure access and audit retention. No Markdown file alone is an enforcement boundary.
+
+\subsection{Can the four layers be used separately?}
+Yes. A coding agent may use \filename{AGENTS.md} without MCP; a runtime may call MCP without skills; a skill may use local files and tools; and a harness may contain direct tool adapters. Combine only the components needed, preserving their contracts.
+
+\section{Glossary}
+\begin{description}[style=nextline,font=\bfseries\color{DeepBlue}]
+\item[Agent] A system using a model and runtime logic to make decisions and take actions toward a task goal.
+\item[Agent harness] Execution and orchestration environment surrounding a model.
+\item[AGENTS.md] Repository-scoped Markdown guidance convention for coding agents.
+\item[Agent Skill] A reusable, self-contained task capability represented by a directory and \filename{SKILL.md}.
+\item[Client (MCP)] Host-managed protocol participant communicating with one MCP server.
+\item[Host (MCP)] AI application coordinating one or more MCP clients and user interaction.
+\item[JSON-RPC] Remote-procedure-call message convention used by MCP.
+\item[Least privilege] Grant only capabilities necessary for the task and actor.
+\item[MCP] Model Context Protocol, a standardized interface for tools and context.
+\item[Progressive disclosure] Loading skill details only as a task needs them.
+\item[Resource (MCP)] URI-addressed contextual material provided by a server.
+\item[Server (MCP)] Endpoint or local process offering MCP capabilities.
+\item[Tool (MCP)] Named function with schema that can be invoked through MCP.
+\item[Trust boundary] Separation across which data or instructions require validation before use.
+\end{description}
+
+\section{Conclusion}
+The most reliable agent architectures preserve \emph{separation of concerns}. Repository guidance is local and descriptive; skills package reusable work; MCP provides portable access to data and tools; and the harness converts a task into policy-governed, verified execution. The resulting system is easier to document, test, audit, adapt, and secure. Long-term success depends less on the number of tools offered than on choosing clear boundaries, validating outcomes, and preserving human control over consequential actions.
+
+\newpage
+\section*{Sources and further reading}
+\addcontentsline{toc}{section}{Sources and further reading}
+\noindent The references below emphasize original specification text and maintainer technical guidance. Protocol-specific examples target the \textbf{2026-07-28} MCP revision and were reviewed on \textbf{16 November 2026}. Standards and products evolve; revisit the versioned references before implementing production integrations.
+\begin{thebibliography}{99}\setlength{\itemsep}{4pt}
+\bibitem{agentsmd} Agentic AI Foundation, \emph{AGENTS.md: An open format for guiding coding agents}. \url{https://agents.md/}.
+\bibitem{agentskills} Agent Skills, \emph{Agent Skills specification}. \url{https://agentskills.io/specification}.
+\bibitem{mcp2026} Model Context Protocol, \emph{Specification, revision 2026-07-28}. \url{https://modelcontextprotocol.io/specification/2026-07-28}.
+\bibitem{mcparch} Model Context Protocol, \emph{Architecture, revision 2026-07-28}. \url{https://modelcontextprotocol.io/specification/2026-07-28/architecture}.
+\bibitem{mcpbase} Model Context Protocol, \emph{Base Protocol, revision 2026-07-28}. \url{https://modelcontextprotocol.io/specification/2026-07-28/basic}.
+\bibitem{mcpversion} Model Context Protocol, \emph{Versioning and Compatibility, revision 2026-07-28}. \url{https://modelcontextprotocol.io/specification/2026-07-28/basic/versioning}.
+\bibitem{mcptransport} Model Context Protocol, \emph{Transports, revision 2026-07-28}. \url{https://modelcontextprotocol.io/specification/2026-07-28/basic/transports}.
+\bibitem{mcptools} Model Context Protocol, \emph{Server Tools, revision 2026-07-28}. \url{https://modelcontextprotocol.io/specification/2026-07-28/server/tools}.
+\bibitem{mcpresources} Model Context Protocol, \emph{Server Resources, revision 2026-07-28}. \url{https://modelcontextprotocol.io/specification/2026-07-28/server/resources}.
+\bibitem{mcpskills} Model Context Protocol, \emph{Skills Extension (beta)}. \url{https://skills.extensions.modelcontextprotocol.io/specification/beta/skills}.
+\bibitem{mcpauth} Model Context Protocol, \emph{Authorization, revision 2026-07-28}. \url{https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization}.
+\bibitem{mcpsecurity} Model Context Protocol, \emph{Security Best Practices}. \url{https://modelcontextprotocol.io/docs/2026-07-28/tutorials/security/security_best_practices}.
+\bibitem{harnesslangchain} V. Trivedy, \emph{The Anatomy of an Agent Harness}. LangChain, 10 March 2026. \url{https://www.langchain.com/blog/the-anatomy-of-an-agent-harness}.
+\bibitem{anthropicharness} Anthropic Engineering, \emph{Effective Harnesses for Long-Running Agents}. 26 November 2025. \url{https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents}.
+\end{thebibliography}
+\end{document}
