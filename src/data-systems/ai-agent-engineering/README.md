@@ -4,6 +4,7 @@ A developer-focused, source-controlled course on building secure, reliable, and 
 
 ## Start here
 
+- [Multi-Language AI Agent Skills: Verified Repositories, Installation and Governance](technical-documents/multi-language-ai-agent-skills-verified-repositories-installation-and-governance.tex) — research guide comparing installable skills with registries and pattern references, with verified CLI syntax, language-specific choices, templates, and a skill security audit process.
 - [Agent Engineering Standards: SKILL.md, AGENTS.md, MCP, and Agent Harnesses](technical-documents/agent-engineering-standards-skills-agents-mcp-harnesses.tex) — integrated technical reference with architecture diagrams, implementation patterns, MCP versioning, security controls, and validation guidance.
 - [L01-L16 Beamer laboratory presentations](curriculum/lab-presentations/README.md) -- instructional slide decks aligned to each week.
 
