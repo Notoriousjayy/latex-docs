@@ -7,6 +7,7 @@ Standalone technical references that complement the [AI Agent Engineering curric
 ## Documents
 
 - [AI Agent Harness Architecture and Engineering Guide](ai-agent-harness-architecture-and-engineering-guide.tex) — an editable, self-contained LaTeX reference with an architecture diagram, eight harness components, a bounded Python control-loop example, context and memory management, security guardrails, verification evidence, an eight-phase roadmap, and a practical repository-aware coding-agent laboratory.
+- [AGENTS.md: Repository-Aware Guidance for AI Coding Agents](agents-md-repository-guidance.tex) — a pdfLaTeX-compatible engineering reference covering instruction-file conventions, scope and overrides, agent security controls, and a repository-specific implementation plan with a reusable AGENTS.md template.
 
 ## Build and validation
 
