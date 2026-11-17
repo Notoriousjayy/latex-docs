@@ -1161,7 +1161,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (729)
+## technical-reference (730)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -1500,6 +1500,7 @@
 - [ch14 statistical description notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch14-statistical-description-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
 - [ch15 data modeling notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch15-data-modeling-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
 - [ch16 classification inference notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch16-classification-inference-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
+- [AI Agent Harness Architecture and Engineering Guide](../src/data-systems/ai-agent-engineering/technical-documents/ai-agent-harness-architecture-and-engineering-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [Governance Roles and Decision Rights Specification](../src/data-systems/enterprise-data-governance/standards-and-frameworks/technical-documents/governance-roles-and-decision-rights-specification.tex) — enterprise-data-governance · **provisional**
 - [Data Governance Standards and Frameworks Technical Reference](../src/data-systems/enterprise-data-governance/standards-and-frameworks/technical-documents/standards-and-frameworks-technical-reference.tex) — enterprise-data-governance · **provisional**
 - [Dimensional And Analytical Modeling](../src/data-systems/enterprise-data-modeling/references/dimensional-and-analytical-modeling.tex) — enterprise-data-modeling · **provisional**
