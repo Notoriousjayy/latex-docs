@@ -1161,7 +1161,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (734)
+## technical-reference (735)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -1174,6 +1174,7 @@
 - [lab 09 architecture package governance and review](../src/architecture/c4-model/documentation-suite/labs/lab-09-architecture-package-governance-and-review.tex) — c4-model/documentation-suite/labs · **provisional**
 - [c4 architecture visualization engineering manual](../src/architecture/c4-model/documentation-suite/reference/c4-architecture-visualization-engineering-manual.tex) — c4-model/documentation-suite/reference · **provisional**
 - [c4 foundations reference](../src/architecture/c4-model/documentation-suite/reference/c4-foundations-reference.tex) — c4-model/documentation-suite/reference · **provisional**
+- [architecture diagram review checklist and measurable acceptance criteria](../src/architecture/c4-model/documentation-suite/reference/diagram-review-checklist-and-acceptance-criteria.tex) — c4-model/documentation-suite/reference · **provisional**
 - [diagram specification catalog](../src/architecture/c4-model/documentation-suite/reference/diagram-specification-catalog.tex) — c4-model/documentation-suite/reference · **provisional**
 - [iso42010 integration crosswalk](../src/architecture/c4-model/documentation-suite/reference/iso42010-integration-crosswalk.tex) — c4-model/documentation-suite/reference · **provisional**
 - [plantuml engineering reference](../src/architecture/c4-model/documentation-suite/reference/plantuml-engineering-reference.tex) — c4-model/documentation-suite/reference · **provisional**
