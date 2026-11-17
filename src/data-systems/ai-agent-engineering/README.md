@@ -14,6 +14,8 @@ A developer-focused, source-controlled course on building secure, reliable, and 
 - [AGENTS.md: Repository-Aware Guidance for AI Coding Agents](technical-documents/agents-md-repository-guidance.tex) — technical guide to repository-scoped agent instructions, tool compatibility, instruction layering, validation, and a ready-to-adapt AGENTS.md template for `latex-docs`.
 - [Curriculum collection](curriculum/README.md) — build instructions and source provenance.
 
+- [OpenAI Codex Custom Subagents: Configuration, Precedence, and Secure Orchestration](technical-documents/codex-custom-subagents-technical-guide.tex) — subagent TOML definitions, scope and precedence, model overrides, secure delegation, and verification.
+
 ## Scope and safeguards
 
 The learning sequence moves from a framework-free Python agent to LangGraph/framework selection, custom harness controls, MCP integration, context management, policy enforcement, multi-agent orchestration, evaluation, observability, and deployment.
