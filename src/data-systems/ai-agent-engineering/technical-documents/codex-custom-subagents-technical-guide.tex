@@ -1,0 +1,357 @@
+% !TeX program = pdflatex
+% Repository: Notoriousjayy/latex-docs
+% Technical reference: Codex custom subagents
+% Builds using repository shared semantic style and minted; generated PDFs are not committed.
+\documentclass[11pt,letterpaper]{article}
+\usepackage{technical-implementation}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit}
+\usepackage{needspace}
+
+% Diagram-only aliases of the shared house palette.
+\colorlet{Slate}{Steel}
+\colorlet{Fog}{Soft}
+\colorlet{Rule}{Meta!40}
+\colorlet{LightTeal}{Teal!9}
+\newcommand{\codexpath}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\codexsource}[1]{\textsuperscript{\textcolor{Teal}{[#1]}}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\setDocTitle{OpenAI Codex Custom Subagents}
+\setDocSubtitle{Configuration, Precedence, and Secure Orchestration}
+\setDocVersion{1.0}
+\setDocStatus{Technical reference}
+\setDocOwner{AI Agent Engineering}
+\setDocAuthor{Engineering Documentation}
+\setDocDate{16 November 2026}
+\setDocSummary{A comprehensive engineering guide to Codex subagent roles, project and user configuration, model-selection precedence, permissions, secure orchestration, and repository-aware validation. Includes TOML examples, native diagrams, and operational guidance.}
+\hypersetup{
+  pdftitle={OpenAI Codex Custom Subagents: Configuration, Precedence, and Secure Orchestration},
+  pdfauthor={Engineering Documentation},
+  pdfsubject={Codex custom subagents, TOML configuration, precedence, security, and orchestration},
+  pdfkeywords={Codex, subagents, TOML, AGENTS.md, SKILL.md, MCP, governance}
+}
+
+\begin{document}
+\pagenumbering{roman}
+\makedoctitle
+\makedocsummary
+
+\tableofcontents
+\vspace{14pt}
+\begin{tipbox}[Executive summary]
+\textbf{Executive summary.} Codex supports custom subagents declared as standalone TOML files at repository and user scope. Agent definitions are behavioral role configurations, not independent permission sandboxes. The parent session retains control of sandboxing, approvals, provider selection, and MCP integrations. Distinguish configuration-file precedence from model-override precedence, and verify runtime behavior with the installed Codex release.\codexsource{1}\codexsource{2}
+\end{tipbox}
+\clearpage
+\pagenumbering{arabic}
+
+\section{Purpose and Scope}
+A \emph{subagent} is a delegated Codex agent thread assigned a bounded task. The parent agent coordinates delegation, waits for results, and synthesizes a final response. Custom subagents configure specialized behavior through TOML files, while repository guidance and skills supply broader instructions and repeatable procedures.\codexsource{1}\codexsource{4}
+
+This guide describes the \emph{local Codex} customization model. ChatGPT Work also offers subagent workflows, but its hosted permissions and user interface differ from local Codex configuration. The configuration names and examples below reflect the documentation reviewed on 16 November 2026.\codexsource{1}
+
+\subsection{Architectural vocabulary}
+\begin{tabularx}{\textwidth}{@{}>{\bfseries}p{0.21\textwidth} Y@{}}
+\toprule
+Mechanism & Primary responsibility \\
+\midrule
+\codexpath{AGENTS.md} & Persistent repository guidance such as build commands, test expectations, conventions, and scope rules. \\
+\codexpath{SKILL.md} & Reusable procedures, reference material, and domain-specific workflows. \\
+MCP & Connections to external data sources and tools, configured for the parent environment. \\
+Subagent TOML & A named specialized role with description, instructions, and optionally a model or feature restrictions. \\
+Codex harness & The runtime governing agent threads, tools, context, approvals, sandboxing, and orchestration. \\
+\bottomrule
+\end{tabularx}
+
+\section{Agent Locations and Resolution}
+\subsection{Supported definition locations}
+Each standalone TOML file represents one custom agent. The supported locations are:\codexsource{1}
+\begin{itemize}
+  \item \textbf{Repository-scoped:} \codexpath{.codex/agents/} in a project, suitable for role definitions shared through version control.
+  \item \textbf{User-scoped:} \codexpath{~/.codex/agents/}. A customized \codexpath{CODEX_HOME} changes the base directory.
+\end{itemize}
+
+Codex also includes three built-in roles: \codexpath{default} (general fallback), \codexpath{worker} (implementation and fixes), and \codexpath{explorer} (read-heavy codebase exploration). A custom agent with the same \emph{name field} as a built-in role takes precedence over that built-in role. The \codexpath{name} property, not the filename, identifies an agent.\codexsource{1}
+
+\begin{warnbox}[Security or precedence caution]
+\textbf{Precedence nuance.} Official documentation explicitly confirms that custom names override matching built-in names and that nested project \emph{configuration files} use closest-directory precedence. It does not establish a universal duplicate-name order for every nested custom-agent directory combination. Avoid relying on ambiguous duplicate custom-agent names across project layers without checking the installed version.\codexsource{1}\codexsource{2}
+\end{warnbox}
+
+\subsection{Recommended repository layout}
+\begin{minted}[fontsize=\footnotesize,breaklines,linenos]{text}
+repository/
+|-- AGENTS.md
+|-- .codex/
+|   |-- config.toml
+|   `-- agents/
+|       |-- architect.toml
+|       |-- code-reviewer.toml
+|       |-- security-reviewer.toml
+|       |-- test-engineer.toml
+|       |-- ci-engineer.toml
+|       `-- documentation-writer.toml
+|-- .agents/
+|   `-- skills/
+|       `-- code-review/
+|           `-- SKILL.md
+|-- src/
+`-- tests/
+\end{minted}
+The \codexpath{.agents/skills/} entry is an illustrative skills folder; follow the applicable skills installation and discovery rules for your chosen Codex client. Team conventions should be recorded in \codexpath{AGENTS.md}, not duplicated in every agent role.
+
+\section{Configuring Codex Subagents}
+\subsection{Required custom-agent fields}
+Every standalone custom-agent TOML file requires three fields.\codexsource{1}
+
+\begin{tabularx}{\textwidth}{@{}>{\ttfamily}p{0.30\textwidth} p{0.12\textwidth} Y@{}}
+\toprule
+\textrm{Field} & Required & Meaning \\
+\midrule
+name & Yes & Name Codex uses when spawning or referring to the role. \\
+description & Yes & Human-readable guidance for agent selection. \\
+developer\_instructions & Yes & Primary behavioral instructions for the role. \\
+model & No & Model to use for this role, when available. \\
+model\_reasoning\_effort & No & Supported reasoning effort for the chosen model. \\
+\bottomrule
+\end{tabularx}
+
+Optional fields can include \codexpath{model_reasoning_summary} and \codexpath{model_verbosity}. Supported feature flags can reduce certain capabilities (for example \codexpath{features.shell_tool = false}); they are not a replacement for the parent sandbox or approval policy.\codexsource{1}
+
+\clearpage
+\subsection{Security-reviewer example}
+Save the following as \codexpath{.codex/agents/security-reviewer.toml}:
+\begin{listing}[htbp]
+\caption{Application security subagent definition.}
+\label{lst:secagent}
+\begin{minted}[fontsize=\footnotesize,breaklines,linenos]{toml}
+name = "security_reviewer"
+description = "Reviews code for security flaws and trust-boundary risks."
+
+# Use a model supported by your Codex workspace.
+model = "gpt-6.1-sol"
+model_reasoning_effort = "high"
+
+developer_instructions = """
+Act as a senior application security reviewer.
+
+Scope:
+- Inspect changed code, dependencies, and security-sensitive flows.
+- Consider OWASP categories, CWE classes, and trust boundaries.
+- Trace user-controlled input to dangerous operations.
+- Identify authentication, authorization, and secrets risks.
+
+Working rules:
+- Do not modify project files.
+- Do not dismiss security alerts or alter branch protections.
+- Distinguish confirmed issues from hypotheses.
+- Cite file paths, line numbers, and reproduction evidence.
+
+Return:
+1. Risk-ranked findings and evidence.
+2. Exploitability assumptions and uncertainty.
+3. Minimal remediation guidance.
+4. Regression tests and validation steps.
+"""
+\end{minted}
+\end{listing}
+
+The model name is an illustrative documented option, not a guarantee of account entitlement. Omitting both model settings is often preferable when inheriting the parent model is intended.\codexsource{1}
+
+\subsection{Parent orchestration defaults}
+Save the following as \codexpath{.codex/config.toml} in a \emph{trusted} repository:\codexsource{1}\codexsource{2}
+\begin{listing}[htbp]
+\caption{Local Codex multi-agent defaults.}
+\label{lst:config}
+\begin{minted}[fontsize=\footnotesize,breaklines,linenos]{toml}
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 6
+default_subagent_model = "gpt-6-luna"
+default_subagent_reasoning_effort = "medium"
+interrupt_message = true
+\end{minted}
+\end{listing}
+
+\begin{infobox}[Implementation note]
+\textbf{Version note.} \codexpath{max_concurrent_threads_per_session} is the preferred documented setting. \codexpath{agents.max_threads} remains a legacy alias. If the concurrency setting is omitted, Codex chooses a default; do not assume a fixed default in all clients. The present official configuration reference does not list \codexpath{agents.max_depth} as a standard knob; do not use it as a security control.\codexsource{1}\codexsource{3}
+\end{infobox}
+
+\section{Precedence: Keep the Two Models Separate}
+\subsection{General configuration-file precedence}
+Codex resolves ordinary configuration values from the following layers, highest priority first. Policy requirements can impose limits regardless of the values specified in lower-priority configuration files.\codexsource{2}
+\begin{enumerate}
+  \item CLI flags and \codexpath{--config} overrides.
+  \item Trusted project \codexpath{.codex/config.toml} layers, from root to working directory (closest wins).
+  \item Selected profile file, such as \codexpath{~/.codex/profile-name.config.toml}.
+  \item User \codexpath{~/.codex/config.toml}.
+  \item Cloud-managed configuration defaults, when delivered.
+  \item System \codexpath{/etc/codex/config.toml} on Unix, when present.
+  \item Built-in defaults.
+\end{enumerate}
+Untrusted projects do not load project-scoped \codexpath{.codex/} configuration layers. Administratively enforced requirements remain distinct from overridable defaults.\codexsource{2}
+
+\subsection{Per-subagent model resolution}
+For \codexpath{model} and \codexpath{model_reasoning_effort}, the custom-agent file's explicit value takes precedence over the resolved agent-launch settings. Before applying a custom file, values are resolved as follows:\codexsource{1}
+\begin{enumerate}
+  \item Explicit value provided when spawning the subagent.
+  \item Matching \codexpath{[agents]} default.
+  \item Parent session value, subject to the model-specific defaulting behavior described below.
+\end{enumerate}
+If an explicit spawn or \codexpath{[agents]} default selects a model without a specified reasoning effort, the selected model's default effort may be used. A custom file that sets \emph{only} \codexpath{model} preserves the previously resolved reasoning effort. Where compatibility is uncertain, declare both fields together.\codexsource{1}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  node distance=5mm,
+  rolebox/.style={draw=Rule,fill=Fog,rounded corners=2pt,text width=.78\linewidth,align=center,minimum height=9mm,font=\small},
+  top/.style={rolebox,draw=Teal,fill=LightTeal},
+  arr/.style={-{Stealth[length=2.5mm]},line width=.65pt,draw=Teal}
+]
+\node[top] (custom) {\textbf{Custom role TOML}\\ Explicit \texttt{model} / \texttt{model\_reasoning\_effort}};
+\node[rolebox,below=of custom] (spawn) {Explicit spawn-time value};
+\node[rolebox,below=of spawn] (defaults) {\texttt{[agents]} default};
+\node[rolebox,below=of defaults] (parent) {Parent session value / selected model default};
+\draw[arr] (custom)--(spawn);
+\draw[arr] (spawn)--(defaults);
+\draw[arr] (defaults)--(parent);
+\end{tikzpicture}
+\caption{Precedence for each model-related setting, from strongest override to inherited fallback.}
+\end{figure}
+
+\section{Security Boundary and Governance}
+\begin{warnbox}[Security or precedence caution]
+\textbf{Critical security rule.} A custom agent's instruction to ``avoid editing files'' is a behavioral directive, not an enforceable read-only sandbox. Subagents inherit the parent session's sandbox and approval mode. Custom-agent TOML cannot replace \codexpath{sandbox_mode}, \codexpath{approval_policy}, \codexpath{model_provider}, or \codexpath{mcp_servers} from the parent configuration.\codexsource{1}
+\end{warnbox}
+
+\subsection{Defensive configuration pattern}
+\begin{itemize}
+  \item \textbf{Constrain the parent runtime:} select an appropriate sandbox and approval policy before delegation.
+  \item \textbf{Minimize capabilities:} use supported feature-disabling flags where appropriate. These reduce the agent's available tools but do not grant an independent sandbox.
+  \item \textbf{Separate review from modification:} assign read-heavy analysis to reviewers and allow one implementation owner for overlapping files.
+  \item \textbf{Protect repository governance:} require human authorization or independently enforced controls for alert dismissals, merge-policy updates, secrets exposure, and production changes.
+  \item \textbf{Preserve evidence:} require concrete file references, reproducible commands, and uncertainty labels.
+\end{itemize}
+
+For example, a custom role may disable shell access when the task does not require command execution:
+\begin{listing}[htbp]
+\caption{Optional feature restriction inside a custom agent TOML file.}
+\begin{minted}[fontsize=\footnotesize,breaklines,linenos]{toml}
+[features]
+shell_tool = false
+\end{minted}
+\end{listing}
+This switch only applies where the corresponding client capability is supported. If MCP services or external connectors must be available to subagents, configure them in the parent session and validate permissions at the tool boundary.\codexsource{1}
+
+\section{Delegation and Review Workflow}
+\subsection{Recommended role catalog}
+\begin{tabularx}{\textwidth}{@{}>{\footnotesize\raggedright\arraybackslash}p{0.28\textwidth} Y p{0.15\textwidth}@{}}
+\toprule
+Role & Responsibility & Effort \\
+\midrule
+\codexpath{architect} & Architectural consistency, dependency direction, domain boundaries & High \\
+\codexpath{security_reviewer} & AppSec, threat analysis, sensitive flows, security regression & High \\
+\codexpath{code_reviewer} & Correctness, maintainability, regression detection & Medium--High \\
+\codexpath{test_engineer} & Missing assertions, test gaps, flaky-test analysis & Medium \\
+\codexpath{ci_engineer} & GitHub Actions, Jenkins, build gates, supply-chain concerns & High \\
+\codexpath{documentation_writer} & Documentation accuracy, LaTeX generation, diagrams & Medium \\
+\bottomrule
+\end{tabularx}
+
+These roles are \emph{recommended examples}, not additional built-ins. Set effort by task complexity and by the model's accepted values. Parallel work consumes additional model usage; prefer independent investigations, rather than several agents editing the same files.\codexsource{1}
+
+\subsection{Parent/subagent workflow}
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  box/.style={draw=Rule,rounded corners=3pt,fill=Fog,minimum height=10mm,align=center,font=\small},
+  parent/.style={box,fill=LightTeal,draw=Teal,minimum width=58mm},
+  child/.style={box,text width=36mm,minimum height=13mm},
+  edge/.style={-{Stealth[length=2.2mm]},draw=Teal,line width=.8pt}
+]
+\node[parent] (parent) at (0,2.0) {\textbf{Parent Codex session}\\Scope + permissions + coordination};
+\node[child] (a) at (-4,0) {Architecture\\analysis};
+\node[child] (s) at (0,0) {Security\\review};
+\node[child] (t) at (4,0) {Test / CI\\review};
+\node[parent] (result) at (0,-2.1) {\textbf{Consolidated decision}\\Evidence, severity, remediation};
+\draw[edge] (parent.south) -- (a.north);
+\draw[edge] (parent.south) -- (s.north);
+\draw[edge] (parent.south) -- (t.north);
+\draw[edge] (a.south) -- (result.north);
+\draw[edge] (s.south) -- (result.north);
+\draw[edge] (t.south) -- (result.north);
+\end{tikzpicture}
+\caption{Independent read-heavy investigations can run concurrently; the parent consolidates results.}
+\end{figure}
+
+\subsection{Repository-aware delegation prompt}
+\begin{listing}[htbp]
+\caption{Example instruction issued to the parent Codex agent.}
+\begin{minted}[fontsize=\footnotesize,breaklines,linenos]{text}
+Review the current branch against main.
+
+Delegate independent tasks to these named subagents:
+- architect: architecture and design consistency
+- security_reviewer: vulnerabilities and trust boundaries
+- code_reviewer: correctness and regressions
+- test_engineer: test gaps and flaky behavior
+
+Do not ask multiple agents to edit the same files.
+Wait for all agents to complete before synthesizing findings.
+
+Consolidate results into one report:
+1. Severity and confidence
+2. File path, line, and supporting evidence
+3. Recommended remediation
+4. Relevant verification test or command
+5. Residual risks and unresolved questions
+
+Do not modify source code or dismiss security alerts.
+\end{minted}
+\end{listing}
+
+\section{Deployment and Verification Checklist}
+\begin{enumerate}
+  \item \textbf{Verify the client release.} Inspect \codexpath{codex --version} and confirm the local client exposes subagent workflows.
+  \item \textbf{Confirm trusted scope.} Ensure the project is trusted before expecting project-local \codexpath{.codex/} settings to load.
+  \item \textbf{Validate TOML syntax.} Check all three required fields and ensure names are unique. Specifically, require \codexpath{name}, \codexpath{description}, and \codexpath{developer_instructions}.
+  \item \textbf{Check model access.} Select names and reasoning values supported by the account and runtime; omit optional settings when portability matters.
+  \item \textbf{Review permissions.} Establish parent sandbox, approvals, and MCP access before spawning.
+  \item \textbf{Exercise one role.} Ask Codex for a bounded, verifiable read-only task and inspect the resulting thread.
+  \item \textbf{Exercise parallel review.} Spawn independent reviewers, wait for completion, and compare cited findings with actual files.
+  \item \textbf{Inspect CLI threads.} In interactive Codex CLI sessions, use \codexpath{/subagents} to inspect or switch among agent threads.\codexsource{1}
+  \item \textbf{Require completion gates.} Confirm tests and policy checks are executed by the primary workflow or CI; do not assume agent declarations enforce them.
+\end{enumerate}
+
+\subsection{Common implementation mistakes}
+\begin{tabularx}{\textwidth}{@{}>{\bfseries\raggedright\arraybackslash}p{0.36\textwidth} Y@{}}
+\toprule
+Failure mode & Safer approach \\
+\midrule
+Treating role instructions as a sandbox & Set enforcement in the parent runtime and repository protections. \\
+Using outdated concurrency keys & Prefer \codexpath{max_concurrent_threads_per_session}; legacy \codexpath{max_threads} is an alias. \\
+Assuming project settings always load & Confirm project trust and active configuration layers. \\
+Overlapping agent edits & Delegate independent reads, or assign exclusive file ownership. \\
+Hard-coding an unavailable model & Check entitlement or omit \codexpath{model} to inherit parent selection. \\
+Confusing filename and role identity & Ensure the TOML \codexpath{name} is correct and unique. \\
+\bottomrule
+\end{tabularx}
+
+\section{Operating Recommendations}
+Adopt a small number of narrow, auditable roles before creating a large catalog. Maintain user-level roles for portable personal routines and project-level roles for repository-specific requirements. Put continuous engineering rules in \codexpath{AGENTS.md}, procedural reference knowledge in skills, tool access in the parent MCP configuration, and task specialization in subagent TOML files.\codexsource{1}\codexsource{4}
+
+For application-security and merge-governance workflows, preserve a strict distinction between \emph{finding} risks and \emph{authorizing} changes. Subagents can gather evidence and propose decisions; enforce dismissal and merge controls through separately governed systems. Review tool permissions, logging, and escalation behavior as part of any production rollout.
+
+\Needspace{30\baselineskip}
+\section*{References and Official Sources}
+\addcontentsline{toc}{section}{References and Official Sources}
+\begin{enumerate}[label={[\arabic*]},leftmargin=1.1cm,itemsep=8pt]
+  \item OpenAI, \emph{Subagents}, ChatGPT Learn.\\\url{https://learn.chatgpt.com/docs/agent-configuration/subagents}
+  \item OpenAI, \emph{Config basics}, ChatGPT Learn.\\\url{https://learn.chatgpt.com/docs/config-file/config-basic}
+  \item OpenAI, \emph{Configuration Reference}, ChatGPT Learn.\\\url{https://learn.chatgpt.com/docs/config-file/config-reference}
+  \item OpenAI, \emph{Customization overview}, ChatGPT Learn.\\\url{https://learn.chatgpt.com/docs/customization/overview}
+  \item OpenAI, \emph{Custom instructions with AGENTS.md}, ChatGPT Learn.\\\url{https://learn.chatgpt.com/docs/agent-configuration/agents-md}
+\end{enumerate}
+\begin{infobox}[Implementation note]
+\textbf{Verification statement.} Configuration fields, security inheritance, built-in agent names, and precedence descriptions were checked against official OpenAI documentation on 16 November 2026. Examples are instructional and must be tested against the installed Codex version. This document is not an official OpenAI publication.
+\end{infobox}
+\end{document}
