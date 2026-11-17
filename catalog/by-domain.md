@@ -993,7 +993,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## data-systems (95)
+## data-systems (96)
 
 - [AI Agent Engineering: Comprehensive Developer Curriculum](../src/data-systems/ai-agent-engineering/curriculum/ai-agent-engineering-comprehensive-syllabus.tex) — ai-agent-engineering/curriculum · **provisional**
 - [L01: Agent system boundaries and LLM tool semantics (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l01-agent-system-boundaries.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
@@ -1013,6 +1013,7 @@
 - [L15: Capstone integration: GitHub AppSec agent (read-only) (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l15-appsec-capstone.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
 - [L16: Capstone hardening, independent review and operational handoff (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l16-capstone-hardening.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
 - [Agent Engineering Standards: SKILL.md, AGENTS.md, MCP, and Agent Harnesses](../src/data-systems/ai-agent-engineering/technical-documents/agent-engineering-standards-skills-agents-mcp-harnesses.tex) — ai-agent-engineering/technical-documents · **provisional**
+- [Multi-Language AI Agent Skills: Verified Repositories, Installation, Architecture and Governance](../src/data-systems/ai-agent-engineering/technical-documents/agent-skills-multilanguage-guide.tex) — ai-agent-engineering/technical-documents · **reviewed**
 - [AGENTS.md: Repository-Aware Guidance for AI Coding Agents](../src/data-systems/ai-agent-engineering/technical-documents/agents-md-repository-guidance.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [AI Agent Harness Architecture and Engineering Guide](../src/data-systems/ai-agent-engineering/technical-documents/ai-agent-harness-architecture-and-engineering-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [Data Governance Regulatory Applicability Register Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/registers/data-governance-regulatory-applicability-register-template.tex) — enterprise-data-governance · **provisional**
