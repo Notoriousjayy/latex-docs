@@ -9,6 +9,7 @@ A developer-focused, source-controlled course on building secure, reliable, and 
 
 - [Comprehensive 16-week syllabus](curriculum/ai-agent-engineering-comprehensive-syllabus.tex) — 12 technical modules, 16 engineering labs, approximately 160 hours, midterm, and final architecture review.
 - [AI Agent Harness Architecture and Engineering Guide](technical-documents/ai-agent-harness-architecture-and-engineering-guide.tex) — standalone technical reference covering the control loop, tools, context compaction, state, verification, guardrails, orchestration, implementation phases, and a coding-agent lab.
+- [AGENTS.md: Repository-Aware Guidance for AI Coding Agents](technical-documents/agents-md-repository-guidance.tex) — technical guide to repository-scoped agent instructions, tool compatibility, instruction layering, validation, and a ready-to-adapt AGENTS.md template for `latex-docs`.
 - [Curriculum collection](curriculum/README.md) — build instructions and source provenance.
 
 ## Scope and safeguards
