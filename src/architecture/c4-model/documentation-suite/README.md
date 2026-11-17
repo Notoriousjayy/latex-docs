@@ -17,7 +17,8 @@ The accompanying textbook is **not** included. None of these materials claim con
 3. `reference/diagram-specification-catalog.tex` and `viewpoints/` selection for stakeholder concerns.
 4. `labs/` in numbered order, with original PlantUML examples in `examples/`.
 5. `workbooks/` for concern-view-evidence paths and cross-view correspondence.
-6. `scorecards/` and `templates/` or `blanks/` for review and acceptance records.
+6. `reference/diagram-review-checklist-and-acceptance-criteria.tex` for the expanded Appendix A checklist, 63 measurable criteria, mandatory gates, and review disposition.
+7. `scorecards/` and `templates/` or `blanks/` for review and acceptance records.
 
 ## Model and document type distinctions
 

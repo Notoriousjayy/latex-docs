@@ -7,6 +7,7 @@ Deep technical references: source-grounded C4 vocabulary and independently autho
 - [`c4-architecture-visualization-engineering-manual.tex`](c4-architecture-visualization-engineering-manual.tex)
 - [`c4-foundations-reference.tex`](c4-foundations-reference.tex)
 - [`diagram-specification-catalog.tex`](diagram-specification-catalog.tex)
+- [`diagram-review-checklist-and-acceptance-criteria.tex`](diagram-review-checklist-and-acceptance-criteria.tex) — Appendix A: 63 testable criteria, quality gates, evidence and sign-off
 - [`iso42010-integration-crosswalk.tex`](iso42010-integration-crosswalk.tex)
 - [`plantuml-engineering-reference.tex`](plantuml-engineering-reference.tex)
 - [`security-and-quality-reference.tex`](security-and-quality-reference.tex)
