@@ -5,6 +5,7 @@
 - `c4-architecture-visualization-engineering-manual.tex`
 - `c4-foundations-reference.tex`
 - `diagram-specification-catalog.tex`
+- `diagram-review-checklist-and-acceptance-criteria.tex`
 - `iso42010-integration-crosswalk.tex`
 - `plantuml-engineering-reference.tex`
 - `security-and-quality-reference.tex`
