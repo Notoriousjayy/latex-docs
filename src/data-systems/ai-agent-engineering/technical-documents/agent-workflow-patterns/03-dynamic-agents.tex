@@ -1,0 +1,109 @@
+
+\section{Dynamic Agent Execution and Delegation}
+Dynamic patterns delegate some decision-making to a model while deterministic code bounds the number, type, and effect of actions. They are most useful when the sequence of subtasks cannot be completely enumerated before inspecting the environment.
+
+\subsection{Single-agent loop (ReAct-style)}
+The model selects an allowed tool or returns a completion proposal; the harness validates the proposal, executes a tool if authorized, records the observation, and repeats until a terminal condition. ReAct combines reasoning and acting with observations \cite{react}. Production systems should log action decisions and evidence rather than depending on disclosure of hidden model reasoning.
+
+\begin{figure}[htbp]\centering
+\resizebox{0.91\linewidth}{!}{%
+\begin{tikzpicture}
+\node[flowbox] (model) at (0,0) {Model proposes\\tool or finish};
+\node[flowcontrol] (policy) at (3.4,0) {Schema, ACL, budget};
+\node[flowbox] (tool) at (6.8,0) {Sandboxed\\tool executor};
+\node[flowbox] (obs) at (6.8,-1.7) {Tool observation};
+\node[flowcontrol] (stop) at (3.4,-1.7) {Stop rule and\\checkpoint};
+\node[flowbox] (out) at (0,-1.7) {Verified outcome\\or failure};
+\draw[flowline] (model)--(policy);
+\draw[flowline] (policy)--(tool);
+\draw[flowline] (tool)--(obs);
+\draw[flowline] (obs)--(stop);
+\draw[flowline] (stop)--(out);
+\draw[flowline] (stop.north) .. controls (3.4,1.25) and (0,1.25) .. node[flowlabel,above]{continue if budget remains} (model.north);
+\end{tikzpicture}}
+\caption{Bounded single-agent loop. Completion is verified independently.}
+\label{fig:react}
+\end{figure}
+
+\textbf{Fit:} iterative research, read-only repository navigation, uncertain troubleshooting. \textbf{Avoid:} single-step transformations and arbitrary high-impact writes. \textbf{Controls:} explicit tool allowlist, maximum turns and time, maximum cost, independent authorization and completion checks. Approximation: $T_{\mathrm{loop}}\simeq\sum_{j=1}^{k}(T_{\mathrm{model},j}+T_{\mathrm{tool},j}+T_{\mathrm{policy},j})$ for bounded $k$ turns.
+
+\subsection{Plan-and-execute}
+A planner produces a dependency graph; an executor validates the graph and executes ready steps; a replanner updates the plan only when new evidence changes the feasible path. Planning artifacts do not grant permissions and must be invalidated when the environment changes.
+
+\begin{figure}[htbp]\centering
+\resizebox{0.93\linewidth}{!}{%
+\begin{tikzpicture}
+\node[flowbox] (goal) at (0,0) {Goal};
+\node[flowbox] (plan) at (3,0) {Planner\\Step DAG};
+\node[flowcontrol] (validate) at (6,0) {Validate scope\\and dependencies};
+\node[flowbox] (exec) at (9,0) {Execute next\\ready step};
+\node[flowcontrol] (check) at (9,-1.8) {Verify evidence\\and checkpoint};
+\node[flowbox] (replan) at (5,-1.8) {Bounded replan};
+\node[flowbox] (finish) at (0,-1.8) {Verified finish};
+\draw[flowline] (goal)--(plan);
+\draw[flowline] (plan)--(validate);
+\draw[flowline] (validate)--(exec);
+\draw[flowline] (exec)--(check);
+\draw[flowline] (check)--(finish);
+\draw[feedback] (check)--(replan);
+\draw[flowline] (replan.north)--(plan.south);
+\end{tikzpicture}}
+\caption{Planner/executor separation with bounded replanning and explicit checkpoints.}
+\label{fig:plan}
+\end{figure}
+
+\textbf{Fit:} multi-stage migration planning, change proposals, long research projects. \textbf{Risk:} fabricated dependencies and stale plans. \textbf{Controls:} typed steps, dependency and artifact checks, plan versions, bounded replans, progress invariants.
+
+\subsection{Orchestrator--workers (hierarchical delegation)}
+An orchestrator dynamically decides the number and type of subtasks from the request. That is different from static parallel fan-out: the decomposition is generated at runtime. A worker must receive only the capabilities and context needed for its assigned work, and each result needs an evidence trail.
+
+\begin{figure}[htbp]\centering
+\resizebox{0.92\linewidth}{!}{%
+\begin{tikzpicture}
+\node[flowbox] (in) at (0,0) {Dynamic task};
+\node[flowcontrol] (super) at (3,0) {Supervisor\\scope and budget};
+\node[flowbox] (a) at (6.4,1.4) {Evidence worker};
+\node[flowbox] (b) at (6.4,0) {Code worker};
+\node[flowbox] (c) at (6.4,-1.4) {Policy worker};
+\node[flowcontrol] (merge) at (10,0) {Synthesize, reconcile, verify};
+\draw[flowline] (in)--(super);
+\foreach \w in {a,b,c} {\draw[flowline] (super.east)--(\w.west); \draw[feedback] (\w.east)--(merge.west);}
+\end{tikzpicture}}
+\caption{Input-dependent decomposition with supervised workers and deterministic synthesis gates.}
+\label{fig:supervisor}
+\end{figure}
+
+\textbf{Fit:} variable-sized code changes, multi-source investigations, work that benefits from bounded specialist context. \textbf{Costs:} duplicated tokens, orchestration overhead, synthesis failures. \textbf{Controls:} worker identity, minimum viable context, task/trace IDs, maximum fan-out, timeout and cancellation, merge consistency.
+
+\subsection{Collaborative peer agents and meshes}
+Independent agents can exchange structured tasks and artifacts through a broker, shared blackboard, or direct authenticated endpoints. Mesh coordination is not synonymous with MCP or A2A: those are possible integration mechanisms. Shared memory requires ownership, concurrency control, retention and access policy.
+
+\begin{figure}[htbp]\centering
+\resizebox{0.87\linewidth}{!}{%
+\begin{tikzpicture}
+\node[flowbox] (a) at (0,1) {Analysis agent};
+\node[flowcontrol] (broker) at (3,1) {Policy-aware broker};
+\node[flowbox] (b) at (6,1) {Build agent};
+\node[flowbox] (c) at (3,-1.3) {Verification agent};
+\draw[flowline] (a)--(broker);
+\draw[flowline] (broker)--(b);
+\draw[flowline] (b)--(c);
+\draw[flowline] (c)--(a);
+\end{tikzpicture}}
+\caption{Governed collaboration: a broker or receiver independently authorizes each exchanged task.}
+\label{fig:collab}
+\end{figure}
+
+\textbf{Fit:} independently operated teams or services with genuinely distinct responsibilities. \textbf{Costs:} distributed-state complexity, trust negotiation, attribution gaps, cycles, duplicated work. \textbf{Controls:} signed/validated work items, receiver-side ACLs, causal trace IDs, deduplication and cycle detection.
+
+\subsection{Comparing the dynamic patterns}
+\begin{table}[htbp]\small\centering
+\begin{tabularx}{\linewidth}{@{}p{28mm}Y Y@{}}\toprule
+\textbf{Pattern} & \textbf{Primary decision made at runtime} & \textbf{Distinctive hard problem}\\\midrule
+Single-agent loop & Which tool to call next, or stop & Guarding permissions and termination\\
+Plan-and-execute & Which dependent step to run or replan & Invalid/stale plans and state consistency\\
+Orchestrator--workers & Which subtasks and workers to create & Delegation scope, fan-out, merge correctness\\
+Peer collaboration & Which peer to engage and exchange with & Distributed identity, state conflicts, provenance\\\bottomrule
+\end{tabularx}
+\caption{Agent topology should follow demonstrated task requirements, not an assumption that more agents are inherently better.}
+\end{table}
