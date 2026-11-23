@@ -1,0 +1,116 @@
+
+\section{Feedback, Human Approval, and Runtime Governance}
+Evaluation and approval are cross-cutting patterns. They can wrap chains, single agents, supervisors, or multi-agent systems.
+
+\subsection{Evaluator--optimizer (reflection)}
+A generator produces an artifact; tests and a rubric-based evaluator assess it; bounded revisions run when measurable improvement is feasible. A model judge is useful feedback but not an independent correctness or security oracle.
+
+\begin{figure}[htbp]\centering
+\resizebox{0.94\linewidth}{!}{%
+\begin{tikzpicture}
+\node[flowbox] (gen) at (0,0) {Generator\\Artifact vN};
+\node[flowcontrol] (test) at (3.3,0) {Automated tests\\and evidence};
+\node[flowbox] (judge) at (6.6,0) {Rubric evaluator};
+\node[flowcontrol] (pass) at (6.6,-1.7) {Acceptance gate};
+\node[flowbox] (rev) at (2.5,-1.7) {Bounded revision};
+\draw[flowline] (gen)--(test);
+\draw[flowline] (test)--(judge);
+\draw[flowline] (judge)--node[flowlabel,right]{pass}(pass);
+\draw[feedback] (judge)--node[flowlabel,above]{failed criterion}(rev);
+\draw[flowline] (rev.west) .. controls (-0.8,-1.7) and (-0.8,0) .. (gen.west);
+\end{tikzpicture}}
+\caption{Evaluator--optimizer. A failed objective test cannot be overruled by evaluator prose.}
+\label{fig:evaluator}
+\end{figure}
+
+Use objective tests whenever possible: schema conformance, compilability, unit tests, citations and evidence coverage. Terminate at a maximum revision count, non-improving score, expired deadline, or verified acceptance.
+
+\subsection{Human-in-the-loop (HITL)}
+HITL is a durable workflow state, not merely a prompt. Bind approval to the principal, exact operation, target resource, argument or patch digest, environment/commit version, and expiry. Any change invalidates the grant. Reauthorize immediately before execution to prevent time-of-check/time-of-use violations.
+
+\begin{figure}[htbp]\centering
+\resizebox{0.96\linewidth}{!}{%
+\begin{tikzpicture}
+\node[flowbox] (proposal) at (0,0) {Proposed sensitive action};
+\node[flowcontrol] (pre) at (3.3,0) {Preflight policy and action digest};
+\node[flowreview] (human) at (6.6,0) {Approve, deny, or expire};
+\node[flowcontrol] (recheck) at (10,0) {Recheck ACL and version};
+\node[flowbox] (audit) at (10,-1.7) {Execute and audit};
+\draw[flowline] (proposal)--(pre);
+\draw[flowline] (pre)--(human);
+\draw[flowline] (human)--node[flowlabel,above]{approved}(recheck);
+\draw[flowline] (recheck)--(audit);
+\end{tikzpicture}}
+\caption{Action-specific approval gate. Denial and expiry terminate or return to review.}
+\label{fig:approval}
+\end{figure}
+
+\subsection{Reliability and failure semantics}
+\begin{itemize}
+\item Enforce wall time, model calls, token/cost budget, worker fan-out and iteration limits in software.
+\item Retry only within a deadline; distinguish read-only, idempotent and non-idempotent tools. Writes require idempotency keys and reconciliation.
+\item Represent malformed output, policy denial, tool failure, timeout, cancellation, stale approval and verification failure as distinct outcomes.
+\item Persist checkpoints and make partial failures explicit. An incomplete join must not be treated as success.
+\item Treat external content, tool messages, and agent memory as untrusted data.
+\end{itemize}
+
+\section{Interoperability: MCP, A2A, and the Harness}
+MCP is a capability interface connecting application hosts and clients to tool/resource/prompt servers. The July 2026 specification documents a host--client--server architecture \cite{mcp}. A2A supports agent discovery and task collaboration across independent agent services \cite{a2a}. Neither chooses the orchestration graph or automatically grants permissions. Verify deployed protocol versions before implementing wire-level integrations.
+
+\begin{figure}[htbp]\centering
+\resizebox{0.94\linewidth}{!}{%
+\begin{tikzpicture}
+\node[flowcontrol,text width=33mm] (host) at (0,0) {Harness: orchestration and identity};
+\node[flowbox] (client) at (3.8,1) {MCP client};
+\node[flowbox] (server) at (7.1,1) {MCP tool/resource server};
+\node[flowbox] (a2a) at (3.8,-1) {A2A client};
+\node[flowbox] (peer) at (7.1,-1) {Remote agent service};
+\draw[flowline] (host)--(client);
+\draw[flowline] (client)--node[flowlabel,above]{MCP}(server);
+\draw[flowline] (host)--(a2a);
+\draw[flowline] (a2a)--node[flowlabel,above]{A2A}(peer);
+\draw[feedback] (peer.south) |- (host.south);
+\end{tikzpicture}}
+\caption{Protocols expose capabilities and collaboration; the application owns policy.}
+\label{fig:interoperability}
+\end{figure}
+
+\begin{table}[htbp]\small\centering
+\begin{tabularx}{\linewidth}{@{}p{23mm}Y Y@{}}\toprule
+\textbf{Component} & \textbf{Provided capability} & \textbf{What it does not imply}\\\midrule
+Model API & Inference and structured tool proposals & Permission to execute tools\\
+Agent harness & State machine, tool dispatch, approvals and tracing & Model-generated correctness\\
+MCP & Tools/resources/prompts over a host--server boundary & Agent-to-agent delegation or blanket ACL\\
+A2A & Agent discovery, messages, tasks and artifacts & Shared internals or inherited identity\\
+AGENTS.md / skills & Repository instructions and reusable procedures & Trusted execution or elevated privileges\\\bottomrule
+\end{tabularx}
+\caption{Protocols, runtime, instructions and topology solve different problems.}
+\end{table}
+
+\section{Security Architecture and Threat Model}
+OWASP describes prompt injection, tool abuse, memory poisoning, exfiltration, excessive agency, and cascading failures as practical agent risks \cite{owasp}. NIST AI RMF and the Generative AI Profile provide organizational risk-management context \cite{nist,nistgenai}.
+
+\begin{table}[htbp]\small\centering
+\begin{tabularx}{\linewidth}{@{}p{25mm}Y Y@{}}\toprule
+\textbf{Threat} & \textbf{Typical exposure} & \textbf{Required defense}\\\midrule
+Prompt injection & Web documents, tools, agent messages & Separate data/instructions, policy outside prompts\\
+Excessive agency & ReAct, planners, supervisors & ACL, caps, timeout, sandbox and approval\\
+Credential escalation & Workers and A2A peers & Per-worker identity, receiver-side authorization\\
+Memory poisoning & Shared or persistent state & Provenance, isolation, write policy, expiry\\
+Denial of wallet & Fan-out and reflection & Concurrency, turn, token and cost limits\\
+Evidence laundering & Synthesis, voting and evaluation & Source-linked evidence and independent tests\\
+Approval bypass & Remediation or deployment & Action-bound expiring approval and version recheck\\\bottomrule
+\end{tabularx}
+\caption{Threat-informed controls apply across orchestration choices.}
+\end{table}
+
+\subsection{Non-negotiable invariants}
+\begin{enumerate}
+\item A model proposes actions; a separate executor authorizes and executes them.
+\item Authorization checks current identity, resource, action, policy and arguments.
+\item Each worker gets isolated state, narrow capabilities and auditable identity.
+\item Source content never overrides the instruction hierarchy or enterprise policy.
+\item Every loop has a deadline, budget, cancellation and terminal error state.
+\item High-impact changes require exact approval, revalidation and an audit trail.
+\item Logs redact secrets and do not collect private model reasoning by default.
+\end{enumerate}
