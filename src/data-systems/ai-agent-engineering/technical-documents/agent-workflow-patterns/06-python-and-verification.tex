@@ -1,0 +1,149 @@
+
+\section{Python Reference Implementation}
+The following Python 3.11+ example is intentionally independent of a specific LLM provider. It models a \emph{proposer} and a \emph{dispatcher} separately. Policy and stopping are deterministic. Production deployments must add authenticated principals, resource-level authorization, argument-schema verification, persistence, telemetry, secret redaction and an external completion oracle.
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{python}
+from dataclasses import dataclass
+from time import monotonic
+from typing import Callable, Literal
+
+Kind = Literal["tool", "finish"]
+
+@dataclass(frozen=True)
+class Proposal:
+    kind: Kind
+    tool: str = ""
+    resource: str = ""
+    arguments: tuple[str, ...] = ()
+
+@dataclass(frozen=True)
+class Scope:
+    resources: frozenset[str]
+    read_tools: frozenset[str]
+    max_turns: int = 8
+    timeout_s: float = 45.0
+
+class Denied(Exception):
+    """The requested action is outside the approved capability scope."""
+
+def authorize(proposal: Proposal, scope: Scope) -> None:
+    if proposal.kind == "finish":
+        return
+    if proposal.kind != "tool":
+        raise Denied("invalid proposal kind")
+    if proposal.tool not in scope.read_tools:
+        raise Denied("tool not authorized")
+    if proposal.resource not in scope.resources:
+        raise Denied("resource not authorized")
+    if not isinstance(proposal.arguments, tuple):
+        raise Denied("invalid arguments")
+
+def run(
+    propose: Callable[[tuple[str, ...]], Proposal],
+    dispatch: Callable[[Proposal], str],
+    scope: Scope,
+) -> tuple[str, tuple[str, ...]]:
+    deadline = monotonic() + scope.timeout_s
+    observations: tuple[str, ...] = ()
+    for _ in range(scope.max_turns):
+        if monotonic() >= deadline:
+            return "TIMED_OUT", observations
+        action = propose(observations)
+        authorize(action, scope)
+        if action.kind == "finish":
+            # A separate oracle must verify completion.
+            return "NEEDS_VERIFICATION", observations
+        result = dispatch(action)
+        observations += (result,)
+    return "BUDGET_EXHAUSTED", observations
+\end{minted}
+
+The dispatcher must re-check the authenticated caller and resource permission immediately before using credentials. A model-supplied resource string alone is not proof of identity or authorization. Tool results must be size-limited and handled as data, not as instructions.
+
+\subsection{Offline unit tests for authority boundaries}
+\begin{minted}[fontsize=\footnotesize,breaklines]{python}
+def test_unauthorized_tool():
+    scope = Scope(frozenset({"repository-A"}), frozenset({"read"}))
+    def propose(_):
+        return Proposal("tool", tool="delete", resource="repository-A")
+    try:
+        run(propose, lambda _: "unexpected execution", scope)
+    except Denied:
+        pass
+    else:
+        raise AssertionError("unsafe action was not denied")
+
+def test_turn_limit():
+    scope = Scope(frozenset({"repository-A"}), frozenset({"read"}),
+                  max_turns=2)
+    def propose(_):
+        return Proposal("tool", tool="read", resource="repository-A")
+    status, records = run(propose, lambda _: "read completed", scope)
+    assert status == "BUDGET_EXHAUSTED"
+    assert len(records) == 2
+
+def test_finish_does_not_claim_verification():
+    scope = Scope(frozenset(), frozenset())
+    status, _ = run(lambda _: Proposal("finish"),
+                    lambda _: "unused", scope)
+    assert status == "NEEDS_VERIFICATION"
+\end{minted}
+
+\section{Observability, Evaluation and Benchmarking}
+Instrument model and tool spans separately. Record task ID, policy revision, worker role, model identifier, request and tool span IDs, allowed capability category, outcome classification, aggregate token count, tool latency, retry count and final verification result. Logs should reference redacted or hashed arguments rather than exposing secrets, credentials, complete private files, or private reasoning.
+
+\begin{table}[htbp]\small\centering
+\begin{tabularx}{\linewidth}{@{}p{30mm}Y Y@{}}\toprule
+\textbf{Metric} & \textbf{Operational definition} & \textbf{Use}\\\midrule
+Verified completion rate & Verified completed tasks / eligible tasks & Measured task value\\
+Unauthorized execution & Unauthorized executed actions / attempted unauthorized actions & Security invariant; target zero in controlled tests\\
+Policy denial recall & Denied unsafe cases / total unsafe test cases & Guardrail regression\\
+p95 end-to-end latency & 95th percentile of complete task elapsed times & User-facing SLO\\
+Cost per verified task & Total model/tool spend / verified successful tasks & Resource efficiency\\
+Evidence precision & Confirmed supported findings / total reported findings & Report quality\\
+Failure recovery rate & Expected outcomes after injected failures / all injected failures & Resilience\\
+Approval turnaround & Time from request to approval, denial or expiry & Human workload and process delay\\\bottomrule
+\end{tabularx}
+\caption{Use representative task cohorts and a frozen benchmark to compare patterns.}
+\end{table}
+
+\subsection{Evaluation dataset and adversarial cases}
+Version-control a dataset with: ordinary and hard tasks; ambiguous router input; malformed JSON; missing or delayed tools; duplicated worker results; conflicting evidence; contaminated web snippets; unsafe requested actions; memory poisoning; worker delegation loops; approval denial and expiry; invalid commit versions; transient rate limits; budget exhaustion; and an incorrect model declaration of success. Compare a simpler baseline and the proposed topology on the same tasks, with repeated trials and appropriate uncertainty intervals.
+
+\subsection{Acceptance criteria and traceability}
+\begin{traceability}
+\Trace{AR-01}{Every tool request is authenticated, schema-checked and authorized before execution}{Policy engine and dispatcher}{All seeded unsafe tool cases fail without execution}
+\Trace{AR-02}{All iterative paths have hard budgets and deadlines}{Scheduler and harness}{Non-terminating agent reaches a terminal state within the configured bound}
+\Trace{AR-03}{Parallel joins handle partial failures deterministically}{Aggregator}{Tests cover missing, duplicate, stale, conflicting and late results}
+\Trace{AR-04}{High-risk operations require action-specific approval}{Approval service}{Expired, denied, mutated-action and stale-version attempts cannot execute}
+\Trace{AR-05}{Report findings have linked evidence identifiers}{Report validator}{Missing required evidence blocks report acceptance}
+\Trace{AR-06}{Traces join worker, tool, policy and output lineage}{Telemetry}{Every synthetic test run emits a consistent trace identifier}
+\Trace{AR-07}{Architecture change has a measured advantage or explicit requirement}{Evaluation suite}{Baseline and candidate use matched tasks and declared quality/cost/latency goals}
+\end{traceability}
+
+\section{Production Adoption Roadmap}
+\begin{enumerate}
+\item \textbf{Baseline:} identify task outcomes, manual controls and a single-call or deterministic reference.
+\item \textbf{Contracts:} implement typed messages, tool schemas, authentication, policy, state and error taxonomy.
+\item \textbf{Simple topology:} add chaining, routing or parallelization only to fix a measured shortcoming.
+\item \textbf{Bounded agent:} add a sandboxed read-only tool loop and checkpointed executor when external observations are unpredictable.
+\item \textbf{Delegation:} add workers only when adaptive specialization measurably improves results.
+\item \textbf{Sensitive mutations:} implement exact-action, expiring approval and a separate privileged executor.
+\item \textbf{Operational hardening:} test adversarial inputs, faults, cancellation and rollback; publish SLOs, ownership and retention rules.
+\end{enumerate}
+
+\subsection{Architecture anti-patterns}
+Avoid unbounded reflection, recursive delegation without a cycle cap, unscoped tool execution, default approval for writes, assuming three agreeing models constitute proof, using an MCP connection as a permission grant, sharing privileged API tokens across peers, accepting a model's completion claim without evidence, and adopting a multi-agent mesh for predictable single-step work.
+
+\section{Review Checklist}
+\begin{itemize}
+\item Is the architecture scope, viewpoint, owner and supported task clearly named?
+\item Are fixed workflow transitions distinguishable from model-selected actions?
+\item Is there a specified typed contract for every agent, worker, tool and artifact?
+\item Does the diagram show the location of authorization, verification and approval?
+\item Are timeouts, denial, cancellation, retries, partial failures and terminal statuses explicit?
+\item Is prompt injection prevented from turning retrieved data into executable instruction?
+\item Are memory and inter-agent messages appropriately isolated and attributed?
+\item Has the candidate pattern been measured against a simpler baseline for success, latency, cost and security?
+\item Can a reviewer locate tests, evidence, source code, policy revisions and an incident rollback procedure?
+\end{itemize}
