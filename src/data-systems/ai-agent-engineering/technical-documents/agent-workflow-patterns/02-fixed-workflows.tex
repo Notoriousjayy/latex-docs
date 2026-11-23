@@ -1,0 +1,69 @@
+
+\section{Fixed Workflow and Control Patterns}
+\subsection{Sequential prompt chaining}
+The output of one defined stage becomes input to the next; validators run between stages. Appropriate for extraction--normalization--drafting--verification, compliance form pipelines, and ordered document production. Failure of a stage should stop or move to a typed recovery branch.
+
+\begin{figure}[htbp]\centering
+\resizebox{0.96\linewidth}{!}{%
+\begin{tikzpicture}
+\node[flowbox] (in) at (0,0) {Typed input};
+\node[flowbox] (a) at (3,0) {Model A\\Extract};
+\node[flowcontrol] (gate) at (6,0) {Validate output};
+\node[flowbox] (b) at (9,0) {Model B\\Transform};
+\node[flowcontrol] (out) at (12,0) {Final verification};
+\foreach \a/\b in {in/a,a/gate,gate/b,b/out} {\draw[flowline] (\a)--(\b);}
+\end{tikzpicture}}
+\caption{Prompt chaining with a deterministic intermediate gate.}
+\label{fig:chaining}
+\end{figure}
+
+\textbf{Strengths:} explicit contracts, repeatability of orchestration, simple tests. \textbf{Costs:} summed stage latency and error propagation. \textbf{Controls:} per-stage validation, bounded retry on transient failure, versioned transformations, dead-letter outcomes. Approximate critical path: $T_{\mathrm{chain}}\simeq\sum_{i=1}^{n}(T_i+V_i)$, where $V_i$ represents validation or handoff cost.
+
+\subsection{Parallelization: sectioning and voting}
+Sectioning assigns disjoint independent tasks to workers. Voting obtains multiple perspectives or attempts for the same task. Voting does \emph{not} create an independent ground-truth oracle when the models share data or failure modes. Aggregation must handle missing, late, duplicate, and conflicting results.
+
+\begin{figure}[htbp]\centering
+\resizebox{0.94\linewidth}{!}{%
+\begin{tikzpicture}
+\node[flowbox] (in) at (0,0) {Input};
+\node[flowbox] (a) at (3,1.4) {Worker A\\Section one};
+\node[flowbox] (b) at (3,0) {Worker B\\Section two};
+\node[flowbox] (c) at (3,-1.4) {Worker C\\Section three};
+\node[flowcontrol] (join) at (6.5,0) {Join and reconcile};
+\node[flowbox] (out) at (10,0) {Validated result};
+\foreach \w in {a,b,c} {\draw[flowline] (in.east)--(\w.west); \draw[flowline] (\w.east)--(join.west);}
+\draw[flowline] (join)--(out);
+\end{tikzpicture}}
+\caption{Static fan-out/fan-in. Parallel workers do not automatically imply multi-agent autonomy.}
+\label{fig:parallel}
+\end{figure}
+
+\textbf{Strengths:} shorter critical path for independent tasks, specialized checks. \textbf{Costs:} concurrency, duplicate tokens, stragglers, integration failures. \textbf{Controls:} bounded fan-out, worker deadlines, explicit all-required/quorum policies, deterministic conflict handling. Approximation: $T_{\mathrm{parallel}}\simeq T_{\mathrm{dispatch}}+\max(T_i)+T_{\mathrm{join}}$.
+
+\subsection{Routing and dispatch}
+A classifier selects a specialized path based on validated intent, constraints, and risk. Implement confidence/unknown handling as a typed result; use a safe fallback rather than guessing at an unauthorized action. Routing decisions can be deterministic rules, a small classifier, or a model, but downstream execution permissions remain independent.
+
+\begin{figure}[htbp]\centering
+\resizebox{0.95\linewidth}{!}{%
+\begin{tikzpicture}
+\node[flowbox] (in) at (0,0) {Request};
+\node[flowcontrol] (route) at (3,0) {Schema and intent router};
+\node[flowbox] (a) at (6,1.3) {Read-only research};
+\node[flowbox] (b) at (6,0) {Code assessment};
+\node[flowreview] (c) at (6,-1.3) {Unknown or high risk};
+\node[flowcontrol] (norm) at (9.6,0) {Normalize and verify};
+\draw[flowline] (in)--(route);
+\foreach \w in {a,b,c} {\draw[flowline] (route.east)--(\w.west); \draw[flowline] (\w.east)--(norm.west);}
+\end{tikzpicture}}
+\caption{Routing with a first-class fallback for ambiguous or high-risk requests.}
+\label{fig:routing}
+\end{figure}
+
+\textbf{Strengths:} lower average cost, specialist prompts and tools, clear isolation. \textbf{Costs:} misclassification, prompt-injection-induced routing errors, changing categories. \textbf{Controls:} golden-set intent tests, explicit uncertainty, deny-by-default mutation paths, audit of route decisions.
+
+\subsection{Deterministic control enclosing agentic reasoning}
+The model may interpret evidence or draft an action; code implements valid transitions and executes only authorized changes. This approach is essential whenever reproducible policy, legal/regulatory controls, or expensive irreversible outcomes dominate the requirement \cite{databricks}. Determinism here concerns \emph{the authority decision}, not the phrasing of model-generated output.
+
+\begin{notebox}[Common composition]
+A regulated process may combine a router, parallel read-only investigation, an evaluator, and a human approval checkpoint while its outer state machine remains deterministic.
+\end{notebox}
