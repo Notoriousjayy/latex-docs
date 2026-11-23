@@ -6,6 +6,8 @@ Standalone technical references that complement the [AI Agent Engineering curric
 
 ## Documents
 
+- [Agent Skills Engineering: Specification, Architecture, Testing, and Security](agent-skills-engineering-guide.tex) — comprehensive guide to the Agent Skills specification, package architecture, authoring, installation, cross-agent compatibility, Python skill implementation, testing, security, and governance.
+
 - [Multi-Language AI Agent Skills: Verified Repositories, Installation and Governance](agent-skills-multilanguage-guide.tex) — source-checked skill packs and directories, current CLI installation commandbook, C/C++, Java, Python, Go, Rust, TypeScript, framework references, and security/governance review checklists.
 - [Agent Engineering Standards: SKILL.md, AGENTS.md, MCP, and Agent Harnesses](agent-engineering-standards-skills-agents-mcp-harnesses.tex) — comprehensive, repository-compatible technical reference covering instruction boundaries, reusable skills, MCP protocol architecture, harness control loops, security, implementation examples, validation and an adoption roadmap.
 - [AI Agent Harness Architecture and Engineering Guide](ai-agent-harness-architecture-and-engineering-guide.tex) — an editable, self-contained LaTeX reference with an architecture diagram, eight harness components, a bounded Python control-loop example, context and memory management, security guardrails, verification evidence, an eight-phase roadmap, and a practical repository-aware coding-agent laboratory.
