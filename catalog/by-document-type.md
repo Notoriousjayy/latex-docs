@@ -245,11 +245,18 @@
 - [three statement lab](../src/startups/small-business-management/financial-labs/three-statement-lab.tex) — small-business-management/financial-labs · **provisional**
 - [working capital cycle lab](../src/startups/small-business-management/financial-labs/working-capital-cycle-lab.tex) — small-business-management/financial-labs · **provisional**
 
-## latex-fragment (13)
+## latex-fragment (20)
 
 - [architecture style](../src/architecture/views-and-beyond/documentation-engineering-suite/shared/architecture-style.tex) — views-and-beyond/documentation-engineering-suite/shared · **provisional** · non-standalone
 - [preamble](../src/business-analysis/parliamentary-procedure-and-governance/shared/preamble.tex) — parliamentary-procedure-and-governance/shared · **provisional** · non-standalone
 - [preamble](../src/business-analysis/user-stories/shared/preamble.tex) — agile requirements / user stories · **provisional** · non-standalone
+- [Workflow and Agent Architecture Foundations](../src/data-systems/ai-agent-engineering/technical-documents/agent-workflow-patterns/01-foundations.tex) — ai-agent-engineering/technical-documents/agent-workflow-patterns · **provisional** · non-standalone
+- [Fixed Workflow and Control Patterns](../src/data-systems/ai-agent-engineering/technical-documents/agent-workflow-patterns/02-fixed-workflows.tex) — ai-agent-engineering/technical-documents/agent-workflow-patterns · **provisional** · non-standalone
+- [Dynamic Agent Execution and Delegation](../src/data-systems/ai-agent-engineering/technical-documents/agent-workflow-patterns/03-dynamic-agents.tex) — ai-agent-engineering/technical-documents/agent-workflow-patterns · **provisional** · non-standalone
+- [Agent Governance, Feedback, Security, MCP and A2A](../src/data-systems/ai-agent-engineering/technical-documents/agent-workflow-patterns/04-governance-and-protocols.tex) — ai-agent-engineering/technical-documents/agent-workflow-patterns · **provisional** · non-standalone
+- [Agent Pattern Selection and Secure-Code-Review Case Study](../src/data-systems/ai-agent-engineering/technical-documents/agent-workflow-patterns/05-selection-and-case-study.tex) — ai-agent-engineering/technical-documents/agent-workflow-patterns · **provisional** · non-standalone
+- [Bounded Python Agent and Verification Requirements](../src/data-systems/ai-agent-engineering/technical-documents/agent-workflow-patterns/06-python-and-verification.tex) — ai-agent-engineering/technical-documents/agent-workflow-patterns · **provisional** · non-standalone
+- [Agent Architecture Diagrams and Reference Register](../src/data-systems/ai-agent-engineering/technical-documents/agent-workflow-patterns/07-references.tex) — ai-agent-engineering/technical-documents/agent-workflow-patterns · **provisional** · non-standalone
 - [Algorithm Style](../src/programming/algorithms/algorithm-engineering/shared/algorithm-style.tex) — algorithm engineering / shared · **provisional** · non-standalone
 - [Compiler Suite Shared Style Preamble](../src/programming/compilers/compiler-engineering/shared/compiler-suite-style.tex) — compiler engineering / engineering a compiler / shared · **provisional** · non-standalone
 - [Parsing Macros](../src/programming/compilers/parsing-techniques/shared/parsing-macros.tex) — compiler engineering / parsing techniques / shared · **provisional** · non-standalone
@@ -1161,7 +1168,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (736)
+## technical-reference (738)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -1502,9 +1509,11 @@
 - [ch15 data modeling notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch15-data-modeling-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
 - [ch16 classification inference notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch16-classification-inference-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
 - [Agent Engineering Standards: SKILL.md, AGENTS.md, MCP, and Agent Harnesses](../src/data-systems/ai-agent-engineering/technical-documents/agent-engineering-standards-skills-agents-mcp-harnesses.tex) — ai-agent-engineering/technical-documents · **provisional**
+- [Agent Skills Engineering Guide](../src/data-systems/ai-agent-engineering/technical-documents/agent-skills-engineering-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [Multi-Language AI Agent Skills: Verified Repositories, Installation, Architecture and Governance](../src/data-systems/ai-agent-engineering/technical-documents/agent-skills-multilanguage-guide.tex) — ai-agent-engineering/technical-documents · **reviewed**
 - [AGENTS.md: Repository-Aware Guidance for AI Coding Agents](../src/data-systems/ai-agent-engineering/technical-documents/agents-md-repository-guidance.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [AI Agent Harness Architecture and Engineering Guide](../src/data-systems/ai-agent-engineering/technical-documents/ai-agent-harness-architecture-and-engineering-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
+- [AI Agent Workflow and Orchestration Patterns: Architecture, Security, and Evaluation](../src/data-systems/ai-agent-engineering/technical-documents/ai-agent-workflow-orchestration-patterns-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [OpenAI Codex Custom Subagents: Configuration, Precedence, and Secure Orchestration](../src/data-systems/ai-agent-engineering/technical-documents/codex-custom-subagents-technical-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [OpenAI Codex Integration with GitHub Copilot](../src/data-systems/ai-agent-engineering/technical-documents/codex-github-copilot-integration-guide.tex) — ai-agent-engineering/technical-documents · **reviewed**
 - [Governance Roles and Decision Rights Specification](../src/data-systems/enterprise-data-governance/standards-and-frameworks/technical-documents/governance-roles-and-decision-rights-specification.tex) — enterprise-data-governance · **provisional**

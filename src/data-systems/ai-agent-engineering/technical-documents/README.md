@@ -6,6 +6,8 @@ Standalone technical references that complement the [AI Agent Engineering curric
 
 ## Documents
 
+- [AI Agent Workflow and Orchestration Patterns](ai-agent-workflow-orchestration-patterns-guide.tex) — modular pdfLaTeX technical reference with twelve native TikZ architecture diagrams, qualitative design trade-offs, MCP/A2A boundaries, governed AppSec example, bounded Python control loop, and measurable verification criteria.
+
 - [Agent Skills Engineering: Specification, Architecture, Testing, and Security](agent-skills-engineering-guide.tex) — comprehensive guide to the Agent Skills specification, package architecture, authoring, installation, cross-agent compatibility, Python skill implementation, testing, security, and governance.
 
 - [Multi-Language AI Agent Skills: Verified Repositories, Installation and Governance](agent-skills-multilanguage-guide.tex) — source-checked skill packs and directories, current CLI installation commandbook, C/C++, Java, Python, Go, Rust, TypeScript, framework references, and security/governance review checklists.

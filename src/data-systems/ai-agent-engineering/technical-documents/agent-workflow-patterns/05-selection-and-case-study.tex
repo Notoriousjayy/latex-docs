@@ -1,0 +1,93 @@
+
+\section{Architecture Comparison and Selection}
+The table below gives qualitative engineering hypotheses, \emph{not} results from controlled performance experiments. Actual latency, cost, and accuracy depend on workload, model, external tool latency, and implementation quality.
+
+\begin{table}[htbp]\small\centering
+\begin{tabularx}{\linewidth}{@{}p{26mm}p{20mm}p{22mm}Y@{}}\toprule
+\textbf{Pattern} & \textbf{Flow control} & \textbf{Latency shape} & \textbf{Main operational difficulty}\\\midrule
+Single call & Predetermined & One call & Variable response quality\\
+Sequential chain & Predetermined & Sum of stages & Intermediate error propagation\\
+Parallel sectioning & Predetermined & Slowest branch + join & Stragglers, reconciliation\\
+Parallel voting & Predetermined & Slowest vote + judge & Correlated wrong answers\\
+Router & Conditional & Router + chosen path & Misclassification, fallback\\
+ReAct loop & Model-selected steps & Sum of bounded turns & Unbounded action without harness controls\\
+Plan-and-execute & Planned dependency DAG & Plan + critical path & Stale plan and replanning\\
+Orchestrator--workers & Dynamic delegation & Supervisor + critical path & Worker scope and synthesis\\
+Peer collaboration & Distributed delegation & Negotiation/network dependent & Trust, state and attribution\\
+Evaluator--optimizer & Bounded feedback & Sum of revision rounds & Judge failure or non-convergent loop\\\bottomrule
+\end{tabularx}
+\caption{Workflow, latency shape, and failure mode comparison.}
+\label{tab:comparison}
+\end{table}
+
+\subsection{Selection algorithm}
+\begin{enumerate}
+\item Can deterministic code or one schema-constrained model call pass the acceptance test? Prefer it.
+\item Are the subtasks predictable and ordered? Use sequential chaining with validation gates.
+\item Are subtasks independent and mergeable? Use parallel sectioning. Do not claim voting is independent verification.
+\item Is the input type variable but accurately classifiable? Use routing and a typed safe fallback.
+\item Must the system iteratively inspect unpredictable external results? Consider a bounded ReAct-style loop.
+\item Is a dynamic multi-step dependency plan essential? Consider plan-and-execute.
+\item Are the task count and specialization dynamic? Consider orchestrator--workers.
+\item Is collaboration needed across independently operated agent services? Consider governed peer agents and A2A.
+\item Can quality be objectively measured? Add a bounded evaluator--optimizer loop.
+\item Does any step mutate consequential state? Require separately validated authorization and exact human approval, regardless of topology.
+\end{enumerate}
+
+\subsection{Measurement model}
+For a chain of $n$ stages, a baseline approximation is
+\[
+ T_{\mathrm{chain}} \approx \sum_{i=1}^{n}(T_i+V_i).
+\]
+For independent parallel stages,
+\[
+ T_{\mathrm{parallel}}\approx T_{\mathrm{dispatch}}+\max_i T_i+T_{\mathrm{join}}.
+\]
+For a loop bounded to $k$ turns,
+\[
+ T_{\mathrm{agent}}\approx\sum_{j=1}^{k}
+ (T_{\mathrm{model},j}+T_{\mathrm{tool},j}+T_{\mathrm{policy},j}).
+\]
+These formulas omit queueing, retries, rate limits and overlapping operations. Measure p50/p95/p99 latency and \emph{cost per externally verified task}, not just tokens per request.
+
+\section{Applied Reference Architecture: Governed Secure-Code Review}
+The example task is to analyze a repository for security risks, correlate SAST, dependency and secret-scanning evidence, and produce an auditable report. It does \emph{not} authorize alert dismissal, default-branch changes, or production deployment. This composition demonstrates routing, read-only parallel collection, a bounded investigation loop, deterministic validation, and optional human approval.
+
+\begin{figure}[htbp]\centering
+\resizebox{0.96\linewidth}{!}{%
+\begin{tikzpicture}
+\node[flowcontrol] (req) at (0,0) {Principal, repo scope, SHA};
+\node[flowbox] (route) at (3,0) {Route and plan evidence};
+\node[flowbox] (sast) at (6,1.3) {SAST evidence};
+\node[flowbox] (deps) at (6,-1.3) {Dependencies and secrets};
+\node[flowcontrol] (join) at (9,0) {Deduplicate and correlate};
+\node[flowbox] (invest) at (9,-2.1) {Bounded read-only agent};
+\node[flowcontrol] (report) at (6,-3.7) {Report verification};
+\node[flowreview] (human) at (3,-3.7) {Approve specific write if requested};
+\draw[flowline] (req)--(route);
+\draw[flowline] (route)--(sast);
+\draw[flowline] (route)--(deps);
+\draw[flowline] (sast)--(join);
+\draw[flowline] (deps)--(join);
+\draw[flowline] (join)--(invest);
+\draw[flowline] (invest)--(report);
+\draw[flowline] (report)--(human);
+\end{tikzpicture}}
+\caption{Composed secure-code assessment: the default execution path is read-only.}
+\label{fig:appsec}
+\end{figure}
+
+\subsection{Data and evidence contracts}
+\begin{itemize}
+\item \textbf{Request:} request ID, repository ID, immutable commit SHA, authenticated principal, classification, allowed tools, deadline, budget and policy version.
+\item \textbf{Evidence:} scanner type/version, rule ID, path and range, detection method, retrieval time, immutable reference, severity input and uncertainty.
+\item \textbf{Finding:} stable deduplication key, source IDs, affected component, reproduction status, CWE or other taxonomy when supported, remediation proposal and confidence limitations.
+\item \textbf{Report:} schema-validated prioritized findings, explicit unknowns, provenance links, verification status, reviewer notes and non-actionable failure records.
+\item \textbf{Mutation:} disabled by default. A remediation PR or alert disposition is a new command requiring narrow permissions and separate human approval.
+\end{itemize}
+
+\subsection{Pattern alternatives for the same use case}
+A small repository with one scanner and deterministic rules may need only a chain. Large repositories with distinct languages can use static fan-out. A heterogeneous workload benefits from routing. Only when follow-up investigation has unpredictable tool paths should an agent loop be introduced. Dynamic delegation is justified by task-specific decomposition; a peer mesh is usually unnecessary unless teams operate independent agent services.
+
+\subsection{Architecture decision record template}
+Record context, goals, task distribution, protected assets, stakeholder and regulatory constraints, selected pattern, rejected alternatives, control/permission boundaries, expected latency and cost, failure paths, measurable acceptance tests, evidence from a baseline evaluation, rollout safeguards, and rollback triggers. Document any assumptions that are not yet measured.

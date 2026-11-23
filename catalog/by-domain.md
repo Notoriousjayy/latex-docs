@@ -994,7 +994,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## data-systems (98)
+## data-systems (107)
 
 - [AI Agent Engineering: Comprehensive Developer Curriculum](../src/data-systems/ai-agent-engineering/curriculum/ai-agent-engineering-comprehensive-syllabus.tex) — ai-agent-engineering/curriculum · **provisional**
 - [L01: Agent system boundaries and LLM tool semantics (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l01-agent-system-boundaries.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
@@ -1014,9 +1014,18 @@
 - [L15: Capstone integration: GitHub AppSec agent (read-only) (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l15-appsec-capstone.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
 - [L16: Capstone hardening, independent review and operational handoff (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l16-capstone-hardening.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
 - [Agent Engineering Standards: SKILL.md, AGENTS.md, MCP, and Agent Harnesses](../src/data-systems/ai-agent-engineering/technical-documents/agent-engineering-standards-skills-agents-mcp-harnesses.tex) — ai-agent-engineering/technical-documents · **provisional**
+- [Agent Skills Engineering Guide](../src/data-systems/ai-agent-engineering/technical-documents/agent-skills-engineering-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [Multi-Language AI Agent Skills: Verified Repositories, Installation, Architecture and Governance](../src/data-systems/ai-agent-engineering/technical-documents/agent-skills-multilanguage-guide.tex) — ai-agent-engineering/technical-documents · **reviewed**
+- [Workflow and Agent Architecture Foundations](../src/data-systems/ai-agent-engineering/technical-documents/agent-workflow-patterns/01-foundations.tex) — ai-agent-engineering/technical-documents/agent-workflow-patterns · **provisional** · non-standalone
+- [Fixed Workflow and Control Patterns](../src/data-systems/ai-agent-engineering/technical-documents/agent-workflow-patterns/02-fixed-workflows.tex) — ai-agent-engineering/technical-documents/agent-workflow-patterns · **provisional** · non-standalone
+- [Dynamic Agent Execution and Delegation](../src/data-systems/ai-agent-engineering/technical-documents/agent-workflow-patterns/03-dynamic-agents.tex) — ai-agent-engineering/technical-documents/agent-workflow-patterns · **provisional** · non-standalone
+- [Agent Governance, Feedback, Security, MCP and A2A](../src/data-systems/ai-agent-engineering/technical-documents/agent-workflow-patterns/04-governance-and-protocols.tex) — ai-agent-engineering/technical-documents/agent-workflow-patterns · **provisional** · non-standalone
+- [Agent Pattern Selection and Secure-Code-Review Case Study](../src/data-systems/ai-agent-engineering/technical-documents/agent-workflow-patterns/05-selection-and-case-study.tex) — ai-agent-engineering/technical-documents/agent-workflow-patterns · **provisional** · non-standalone
+- [Bounded Python Agent and Verification Requirements](../src/data-systems/ai-agent-engineering/technical-documents/agent-workflow-patterns/06-python-and-verification.tex) — ai-agent-engineering/technical-documents/agent-workflow-patterns · **provisional** · non-standalone
+- [Agent Architecture Diagrams and Reference Register](../src/data-systems/ai-agent-engineering/technical-documents/agent-workflow-patterns/07-references.tex) — ai-agent-engineering/technical-documents/agent-workflow-patterns · **provisional** · non-standalone
 - [AGENTS.md: Repository-Aware Guidance for AI Coding Agents](../src/data-systems/ai-agent-engineering/technical-documents/agents-md-repository-guidance.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [AI Agent Harness Architecture and Engineering Guide](../src/data-systems/ai-agent-engineering/technical-documents/ai-agent-harness-architecture-and-engineering-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
+- [AI Agent Workflow and Orchestration Patterns: Architecture, Security, and Evaluation](../src/data-systems/ai-agent-engineering/technical-documents/ai-agent-workflow-orchestration-patterns-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [OpenAI Codex Custom Subagents: Configuration, Precedence, and Secure Orchestration](../src/data-systems/ai-agent-engineering/technical-documents/codex-custom-subagents-technical-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [OpenAI Codex Integration with GitHub Copilot](../src/data-systems/ai-agent-engineering/technical-documents/codex-github-copilot-integration-guide.tex) — ai-agent-engineering/technical-documents · **reviewed**
 - [Data Governance Regulatory Applicability Register Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/registers/data-governance-regulatory-applicability-register-template.tex) — enterprise-data-governance · **provisional**
