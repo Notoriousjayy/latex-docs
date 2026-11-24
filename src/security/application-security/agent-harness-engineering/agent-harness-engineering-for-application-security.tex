@@ -1,0 +1,353 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage{technical-design-spec}
+\setDocTitle{Agent Harness Engineering for Application Security}
+\setDocSubtitle{Architecture, Design Patterns, Security Controls, and Enterprise Implementation}
+\setDocVersion{1.0}
+\setDocStatus{Proposed reference design}
+\setDocOwner{Application Security Engineering}
+\setDocDate{24 November 2026}
+\setDocSummary{A vendor-neutral architecture and implementation study for policy-governed AI-assisted application security, from read-only finding triage to supervised remediation.}
+\newcommand{\viewfigure}[3]{%
+\begin{figure}[htbp]\centering
+\IfFileExists{diagrams/png/#1.png}{\includegraphics[width=.95\linewidth,height=.65\textheight,keepaspectratio]{diagrams/png/#1.png}}{\parbox{.9\linewidth}{\textbf{Diagram source:} \path{diagrams/#1.puml}. #3 Render with the repository PlantUML toolchain to include the visual.}}
+\caption{#2}\label{fig:#1}
+\end{figure}}
+\newcommand{\term}[1]{\textbf{#1}}
+\begin{document}
+\makedoctocpage
+\section{Executive summary}
+Application security (AppSec) teams must reconcile noisy scanner output with source context, business impact, remediation ownership and release constraints. A model can propose interpretations, but is not an authorization mechanism, evidence repository, vulnerability scanner or risk owner. An agent harness converts probabilistic inference into bounded work: it constructs context, validates typed proposals, checks authoritative policy, invokes narrowly scoped tools, records outcomes, and independently verifies completion. The same security architecture must govern both agents that perform AppSec and coding agents whose changes introduce AppSec risk.
+
+The recommended baseline is a single, read-only investigation agent with deterministic ingestion, evidence retrieval and review routing. Expand to branch-scoped patch generation only after demonstrating negative authorization tests, reproducible evidence, bounded execution and review quality. Keep alert suppression, production scanning, credential rotation, protected branch merges and risk acceptance outside autonomous authority. A successful model response is neither evidence of a vulnerability nor proof of remediation.
+
+\subsection{Audience, boundaries and assumptions}
+This reference design serves AppSec engineers, software architects, platform engineers, SOC personnel, developers, security governance and audit teams. It assumes an organization with version-controlled repositories, scanner APIs or exported artifacts, a trusted workload identity provider, an asset inventory, controlled CI/CD, and human risk owners. The architecture is vendor-neutral; examples use Python, PostgreSQL, OPA, MCP and GitHub. The examples are synthetic and offline, not production credentials, live security assessments or exploit recipes. DAST verification is restricted to explicitly authorized test environments and preapproved checks. No production integration, certification or empirical performance claim is made.
+
+\subsection{Distinguish the layers}
+\begin{description}
+\item[Model] Produces structured assessments, proposed actions and candidate patches. It has no independent authority.
+\item[Agent framework] Supplies orchestration primitives, connectors, agent abstractions or graph execution.
+\item[Harness] Owns runtime state, budgets, tool brokering, policy enforcement, validation, evidence and recovery.
+\item[MCP] Exchanges capabilities and requests between clients and servers; discovery does not imply permission \cite{mcp}.
+\item[Agent Skills] Package reusable instructions and optional resources or scripts; package approval does not grant execution rights \cite{skills}.
+\item[Application governance] Owns entitlements, risk policy, approvals, retention and change control.
+\end{description}
+Long-running harness research illustrates the value of structured checkpoints, explicit progress artifacts and verification between sessions \cite{anthropic}. For AppSec, that idea must be augmented with independent authority and tamper-resistant evidence; resuming a task cannot resume expired permissions.
+
+\section{Architecture description and stakeholders}
+The entity of interest is the enterprise AppSec Agent Harness, including its control plane, execution broker and state/evidence services. Scanners, SCM, model providers, CI and ticketing are external systems. This architecture description is organized using the concepts of ISO/IEC/IEEE 42010:2022 \cite{iso}. It identifies concerns, viewpoints, model kinds, correspondence rules and decisions. It is an alignment exercise; a formal conformance assessment against the complete normative text has not been performed. C4 supplies abstraction levels; UML supplies behavioral notation; PlantUML implements the diagrams \cite{c4}. C4 containers are applications or data stores, not necessarily Docker containers.
+
+\begin{longtable}{@{}p{.24\linewidth}p{.68\linewidth}@{}}
+\toprule Stakeholder & Concerns and acceptance questions\\\midrule\endhead
+AppSec analyst & Can findings be reproduced, deduplicated, classified and escalated without silent suppression?\\
+Developer & Are recommendations specific to the pinned revision and actionable without exposing secrets?\\
+Platform engineer & Are integrations isolated, observable, deployable and recoverable?\\
+Security architect & Are identities, data and execution boundaries enforceable even if the model is compromised?\\
+Risk owner & Who authorizes exceptions, with what evidence, scope and expiration?\\
+Auditor & Can an independent reviewer reconstruct each decision without reading raw credentials?\\
+Privacy officer & Are data minimization, residency, retention and deletion requirements enforced?\\
+\bottomrule
+\end{longtable}
+
+\subsection{Viewpoint catalog and correspondence}
+\begin{longtable}{@{}p{.17\linewidth}p{.30\linewidth}p{.45\linewidth}@{}}
+\toprule View & Model kind and audience & Concerns and interpretation\\\midrule\endhead
+V1 Context & C4 system context; stakeholders & Boundary, external dependencies, authority owners.\\
+V2 Containers & C4 container; engineers & Runtime responsibilities, interfaces and persistence.\\
+V3 Components & C4 component; developers & Inside orchestration service only; ports, broker calls and state.\\
+V4 Interaction & UML sequence; reviewers & One authorized investigation; alternate deny path, no side effects on deny.\\
+V5 Lifecycle & UML state machine; operators & Durable transitions, review, verification and terminal states.\\
+V6 Deployment & UML deployment; platform & Network isolation, identities and runtime allocation.\\
+\bottomrule
+\end{longtable}
+Correspondence rules: every V2 container belongs to V1's system boundary; every V3 component belongs to the orchestration container; each V4 lifeline maps to a V2 service or external actor and each message to a documented interface; V5 transitions have guards, events and evidence; V6 allocates V2 runtime services to execution nodes. Changes to an interface, trust boundary or permission require reviewing dependent views and recording an ADR. The diagrams have scoped titles, typed elements and labeled directional relationships; the repository style provides notation. A code-level C4 view is intentionally omitted because interfaces and the executable example expose relevant detail.
+
+\viewfigure{appsec-context}{V1: System context.}{The harness reads scanner and source data, calls an inference provider, and routes evidence to authorized reviewers.}
+\viewfigure{appsec-containers}{V2: Container view.}{Ingestion, orchestration, policy, execution and persistence are separated.}
+\viewfigure{appsec-components}{V3: Orchestration components.}{The proposal validator and coordinator cannot invoke privileged adapters directly.}
+
+\section{Architectural requirements}
+\Req{AH-01}{Authenticate workload and user identities and derive tenant, repository and purpose from trusted server-side bindings.}
+\Req{AH-02}{Deny any tool call absent explicit operation, resource and data-flow authorization; deny on policy timeout or malformed decision.}
+\Req{AH-03}{Validate every model proposal against strict schemas; never treat model-provided identity or approval fields as trusted.}
+\Req{AH-04}{Bind each finding and evidence object to an immutable revision, scanner version, rule and tenant.}
+\Req{AH-05}{Exclude raw secrets from prompts, logs, tickets, traces and retained evaluation fixtures.}
+\Req{AH-06}{Isolate untrusted code and scanner content from host credentials, control-plane APIs and unauthorized networks.}
+\Req{AH-07}{Require distinct, authenticated human authorization for privileged actions, bound to exact intent, expiry and policy version.}
+\Req{AH-08}{Verify generated changes independently using baseline and post-change checks; preserve human merge authority.}
+\Req{AH-09}{Persist bounded execution budgets and checkpoints with idempotency and terminal cancellation.}
+\Req{AH-10}{Record policy, evidence and execution provenance; preserve confidentiality, integrity and retention constraints.}
+\Req{AH-11}{Keep scanner disposition, model recommendation and authorized human disposition separate.}
+\Req{AH-12}{Use shadow deployment and evaluated promotion; support emergency suspension, rollback and model/provider replacement.}
+
+\section{Reference architecture: responsibilities and interfaces}
+\subsection{Control plane and data plane}
+The ingestion service authenticates webhook producers, validates payload size and schema, normalizes findings, redacts secrets and stores content hashes. The orchestrator owns the run state, retrieves only approved evidence, composes a bounded context and calls the model adapter. It validates structured output and sends a proposed action to a policy enforcement point (PEP). The PEP constructs authorization input from trusted workload context, resolves canonical resource identifiers, obtains a policy decision point (PDP) result and binds any approval to the exact action. Only then can the execution broker lease narrowly scoped credentials and dispatch to a typed adapter. Verification uses an independent scanner or test process, not a model assertion.
+
+The model endpoint is an external data destination. Its access must be governed by classification, contractual processing terms, residency, allowed content and retention. Do not forward full repositories by default. The evidence store is separated from the mutable run store: object retention, access logs and cryptographic digests support provenance; write-once retention is an infrastructure setting, not a property implied by hashing alone. The model cannot directly query either store or issue arbitrary network requests.
+
+\begin{longtable}{@{}p{.22\linewidth}p{.33\linewidth}p{.37\linewidth}@{}}
+\toprule Interface & Contract & Enforcement\\\midrule\endhead
+Ingest finding & Signed event; tenant and source, event ID, payload digest & Verify signature, deduplicate, validate schema, sanitize.\\
+Read evidence & Finding ID, commit, typed evidence selector & Resolve authorized resource; minimize and redact.\\
+Infer & Bounded evidence references and schema & Egress filter, approved provider, timeout, token cap.\\
+Propose & Typed tool name and bounded arguments & Strict validation, reject extras, no identity claims.\\
+Decide & Authenticated run context plus canonical intent & Default deny; versioned policy; decision receipt.\\
+Execute & Single-use capability bound to action digest & Verify scope, expiry, replay and current policy; broker dispatch.\\
+Verify & Baseline, candidate revision and test plan & Independent job, signed or attributable results.\\
+Publish & Review report or draft PR with evidence references & Separate permission and DLP; no protected-branch merge.\\
+\bottomrule
+\end{longtable}
+
+\subsection{Finding and evidence contracts}
+Normalize source records without erasing source-specific semantics. The natural key includes tenant, repository identifier, scanner, rule, native finding identifier and revision. A stable fingerprint may cluster instances across commits but must not silently collapse distinct locations or credentials. Keep source severity distinct from normalized severity, confidence and business priority. SARIF is suitable for many code-analysis results but is not a universal representation of runtime tests, SBOMs or secret incidents. Preserve native references and scanner version. GitHub exposes distinct code-scanning and secret-scanning APIs; read and update operations require separate permissions \cite{ghcode,ghsecret}.
+
+\begin{verbatim}
+Finding:
+  tenant_id, repo_id, revision, scanner, scanner_version
+  native_id, rule_id, weakness_id, severity, fingerprint
+  evidence_refs[], source_state, observed_at
+Assessment:
+  finding_id, disposition, rationale, confidence
+  evidence_refs[], missing_evidence[], model_version
+Decision:
+  run_id, action_digest, policy_version, outcome
+  approver_ref?, expires_at?, decision_id
+\end{verbatim}
+Evidence records carry provenance, revision, collector identity, timestamps, content digest, classification and redaction status. A missing or conflicting source must produce an indeterminate recommendation rather than invented evidence. Calibrate confidence against held-out analyst labels; confidence is not a permission or a probability of exploitation unless separately validated.
+
+\section{Architectural and orchestration patterns}
+\begin{longtable}{@{}p{.24\linewidth}p{.34\linewidth}p{.34\linewidth}@{}}
+\toprule Pattern & AppSec use & Trade-off and constraint\\\midrule\endhead
+Pipeline & Normalize, enrich, assess, route & Deterministic ordering; isolate failures and replay safely.\\
+Fan-out/fan-in & Independent SAST/SCA evidence retrieval & Bound concurrency; reconcile inconsistent observations.\\
+Router & Dispatch typed findings to specialized skills & Classifier errors must not expand tool permissions.\\
+Orchestrator-worker & Multi-repo investigation with narrow child scope & Delegation inherits or reduces permissions; no recursive escalation.\\
+Evaluator-optimizer & Candidate patch and independent test feedback & Bound iteration; tests may be incomplete or compromised.\\
+Human checkpoint & Suppression, write operations, risk acceptance & Approval queues add latency; stale approvals expire.\\
+Ports and adapters & Swap scanner, inference and storage implementations & Typed interfaces reduce coupling but require contract tests.\\
+Event-driven workflow & Scanner events and CI triggers & At-least-once delivery; deduplication and dead-letter handling.\\
+State machine & Investigation lifecycle & Explicit states prevent ambiguous retries or premature closure.\\
+Bulkhead and breaker & Isolate tenants, tool pools and provider outages & Fail closed for authorization and preserve queued work.\\
+Transactional outbox & Reliable review notification after state commit & Consumers must deduplicate; reconcile delivery receipts.\\
+\bottomrule
+\end{longtable}
+Use a workflow graph for predictable transitions and a bounded model loop only when context gathering requires judgment. Choose multi-agent orchestration only where evaluations show measurable benefits over a single coordinator. More agents create more trust boundaries, token costs and inconsistent results. Deterministic parsing, deduplication, authorization and final state transitions should remain conventional software.
+
+\viewfigure{appsec-investigation-sequence}{V4: Authorized investigation interaction.}{The policy decision is independent of the model; denial ends the proposed operation.}
+\viewfigure{appsec-lifecycle}{V5: Finding investigation state machine.}{Review and verification are distinct; failed or cancelled work cannot imply closure.}
+
+\section{AppSec workflow engineering}
+\subsection{SAST and secure code review}
+Collect scanner rule metadata, pinned source snippets, call graph or data-flow evidence when available, configuration and test coverage. Identify source, sink, sanitization and trust boundary for each candidate. Distinguish a likely true positive, likely false positive, duplicate and insufficient evidence; preserve the original scanner record. The agent can recommend a fix and explain assumptions; no automatic dismissal is permitted. A second reviewer validates the actual path rather than trusting a model summary. For a synthetic training case, compare two code paths, one using parameter binding and one passing untrusted input to a query construction routine. Use static reasoning and approved tests to establish evidence without probing real systems.
+
+\subsection{DAST and IAST}
+Ingest the existing scan record and its target authorization, request/response metadata after redaction, scanner configuration, test account and target deployment revision. Correlate endpoints and application routes. Dynamic verification requires an explicit allowlist of scheme, canonical host, port, path, environment, method, rate and time window; block redirects and DNS changes outside the approved boundary, including private or metadata services unless separately authorized. Use a controlled staging fixture and non-destructive preapproved scanner checks. No unrestricted payload generation, target discovery, credential harvesting or production exploitation. IAST findings can add runtime call-path context; sampling and instrumentation coverage limitations remain explicit. Verification records whether the condition was reproduced, inconclusive or not observed under specified conditions, never that an application is universally secure.
+
+\subsection{Software composition analysis}
+Bind package ecosystem, resolved version, lockfile revision, vulnerability advisory identifier and package URL when available. Reconcile advisory version ranges with the resolved artifact, distinguish direct and transitive dependencies and record runtime reachability evidence. Prioritize using exploit intelligence, exposed attack surface, asset criticality and compensating controls, not severity alone. A dependency upgrade proposal must preserve compatibility and lockfile integrity; verify with tests, an SBOM comparison and a fresh vulnerability scan. Missing reachability is not proof of non-exploitability.
+
+\subsection{Secret scanning and credential incidents}
+Normalize alert identifiers without retaining the secret. Use a keyed fingerprint in a restricted service if deduplication needs value correlation; a plain digest of a low-entropy secret may allow guessing. The broker returns metadata such as credential type, location, exposure history, revision and owner. Avoid copying secrets even into internal tickets or model logs. Treat validity as unknown unless an approved provider-native metadata or validity mechanism establishes it under explicit authorization. Never use an exposed credential for arbitrary access. Route likely real exposures promptly to the credential owner and incident response. Rotation or revocation belongs to a dedicated approved service; removing a string from the latest commit does not revoke it or erase history. Retain only minimal sanitized evidence of rotation and subsequent scan. Synthetic fixtures use nonfunctional placeholders and do not resemble live tokens.
+
+\subsection{Contextual remediation and PR generation}
+A reviewed remediation intent is scoped to the repository and base commit; the worker receives a fresh isolated worktree with no production credentials. Limit edits by path, size and allowed dependency changes; treat build scripts and tests as untrusted executable content. Capture the baseline result first. Generate a candidate diff, run deterministic formatting, unit and regression tests, type checks, relevant SAST/SCA/secret checks and a diff-policy gate. Separate test-generation suggestions from the trusted acceptance suite to prevent the agent from weakening its own tests. On verification failure, allow a bounded revision loop or escalate. A distinct publishing identity can open a draft PR referencing the finding and test receipts, but cannot merge or alter rulesets. Changes to base SHA invalidate prior approval and require re-evaluation. Fix status is confirmed on the intended deployed or protected revision, not merely on a branch.
+
+\subsection{Govern coding agents and CI/CD}
+Apply the same PEP to coding-agent shell, repository, file and connector access. Treat \path{AGENTS.md}, pull requests, scanner descriptions, web text and skill resources as potentially hostile instruction-bearing data. Approved local guidance can shape procedure but cannot supersede organization policy. CI gates should evaluate signed or attributable results from trusted workflows, not an agent-created success flag. Protect workflow files, action pins, scanner configuration, suppressions, dependency manifests and policy bundles with code review. Never run untrusted PR scripts in a privileged CI context; separate untrusted jobs from publishing and deployment identities. Build artifacts, attestations and results must reference the exact tested revision. Risk exceptions use a separate workflow with owner, justification, expiration and compensating controls.
+
+\section{Authorization and trust boundaries}
+\subsection{Threat model}
+Threat actors include malicious repository contributors, compromised tools or models, insiders with excessive privileges, hostile external content and cross-tenant attackers. Assets include source code, credentials, scanner evidence, policy, identities, sandbox hosts, approval receipts and audit records. The following threat-to-control register is a design crosswalk informed by the OWASP agentic risks catalog \cite{owasp}; it is not a reproduction of that catalog or a claim of full coverage.
+
+\begin{longtable}{@{}p{.16\linewidth}p{.37\linewidth}p{.39\linewidth}@{}}
+\toprule ID & Threat scenario & Primary defense and test\\\midrule\endhead
+T01 & Goal hijack through source text or scanner output & Typed allowlist; adversarial fixture must not trigger a new capability.\\
+T02 & Tool misuse, injected arguments, confused deputy & Canonicalize resource; check trusted identity; reject arbitrary shell.\\
+T03 & Identity or privilege escalation across agents & Audience-bound leases and subset delegation; cross-tenant denial tests.\\
+T04 & Poisoned skill, adapter or dependency & Review signed/pinned package; deny unapproved version.\\
+T05 & Unexpected code execution or sandbox escape & Ephemeral isolated worker; no host socket; restricted egress and identity.\\
+T06 & Memory poisoning and stale context & Provenance, revision binding, typed state; reject unverified write.\\
+T07 & Forged inter-agent message or approval & Authenticated channels, nonce, intent hash, replay protection.\\
+T08 & Cascading failures or runaway execution & Quotas, deadlines, circuit breakers, idempotent jobs.\\
+T09 & Human over-trust in fabricated evidence & Evidence-required reports and independent review.\\
+T10 & Rogue agent with autonomous state changes & External enforcement, revocation and emergency stop.\\
+T11 & Sensitive data exfiltration through prompts or telemetry & Classification, redaction, allowlisted egress, restricted trace fields.\\
+T12 & Audit tampering or false closure & Append-only receipts, protected storage, separation of duties.\\
+\bottomrule
+\end{longtable}
+
+\subsection{Policy decision inputs and approval semantics}
+OPA is a possible PDP; it evaluates policy against input but does not enforce execution itself \cite{opa}. The broker is the PEP and must be the sole path to privileged operations. Use trusted inputs: authenticated principal, tenant, resource, operation, revision, classified data destination, run budget, current policy version and server-resolved approval. Schema validation alone does not constrain semantic authorization. Reject unknown tools, unknown resource aliases, path traversal, symlinks escaping the root, stale revisions, unsigned policy bundles and failed decisions. Check resource authorization after canonicalization and immediately before execution; prevent time-of-check/time-of-use drift by binding execution to immutable objects where possible.
+
+Separate permission to read code, read alert metadata, create a ticket, create a branch, publish a PR, modify an alert and accept risk. The last two remain human-owned in the baseline. An approval is not a reusable boolean: store approver identity, role, canonical action digest, resource revision, policy version, expiry, nonce and consumption status. Verify authority and revocation at execution, atomically consume the receipt and record the outcome. If the side effect succeeds but recording fails, reconcile with a stable external operation identifier rather than retry blindly.
+
+\subsection{Least privilege and isolation}
+Use one workload identity per adapter and separate read from publish credentials. Restrict access by tenant/repository and operation rather than organization-wide tokens. Fetch credentials just in time, never place them in prompts, and prevent sandbox processes from reaching the broker's token endpoints. Use network policy plus an independent egress gateway; application-layer checks alone do not address redirect or DNS rebinding. Deny host mounts, privileged containers and container engine sockets; use hardened runtime profiles, seccomp, non-root UIDs, resource limits and disposable filesystems. For untrusted code, select stronger isolation (for example a microVM) based on threat model and test it; containers by themselves do not guarantee tenant isolation.
+
+\section{MCP, Skills and application integration}
+MCP is a protocol boundary, not a substitute for authorization. The specification page resolved to revision 2026-07-28 at source review \cite{mcp}; pin the actual supported revision and validate feature negotiation in deployment. Register only approved servers and typed tools; review tool schema and server identity, restrict tokens to their intended audience, never forward a user token indiscriminately, and validate output as untrusted data. Tool descriptions and returned content are not authority. Restrict transport, sandbox local servers, disallow arbitrary installation by the model, and apply independent per-call policy to MCP just as to REST and CLI adapters.
+
+An Agent Skills directory contains a \path{SKILL.md} with YAML metadata and procedure text, optionally scripts, references and assets \cite{skills}. Maintain specialized packages for SAST triage, secret triage, SCA analysis, DAST triage, secure review, remediation and verification. Review skill provenance and pin its digest. Load only the skill needed for the task; scripts are executed through the broker and sandbox. A skill may specify required evidence, expected outputs, decision criteria and escalation conditions, but it cannot grant itself tools. Example procedure for a secret triage skill: retrieve redacted metadata, correlate commit and owner, record uncertainty, recommend routing, and never print the credential. Require conformance to the finding and assessment contracts regardless of skill implementation.
+
+\section{Reference implementation and policy example}
+The companion \path{examples/harness_demo.py} uses the Python standard library and synthetic records. It demonstrates strict typed proposal parsing, immutable server-side context, scoped read-only authorization, bounded calls, sanitized receipts and abstention on invalid requests. It deliberately contains no real scanner clients, credentials, model API or live network. The accompanying tests exercise allowed read, wrong repository, wrong revision, unexpected fields, unknown operation, budget exhaustion and an invalid response. Production needs persistent atomic budgets, authenticated identity, durable idempotency, independent sandbox enforcement, real PDP transport, approval consumption and an audit store; the demo does not implement those.
+
+\subsection{Illustrative Rego decision}
+The following policy assumes the broker builds all input fields from trusted identity and validated canonical intent. It grants only a read of redacted evidence for an exact repository and revision. Undefined or failed decisions are denied by the broker. This snippet is illustrative and requires OPA contract tests before use.
+\begin{verbatim}
+package appsec.authz
+import rego.v1
+
+default allow := false
+
+allow if {
+  input.principal.role == "appsec-investigator"
+  input.action.tool == "read_evidence"
+  input.action.tenant == input.scope.tenant
+  input.action.repo == input.scope.repo
+  input.action.revision == input.scope.revision
+  input.action.classification == "redacted"
+  input.budget.remaining > 0
+}
+\end{verbatim}
+Production policy must separately enforce allowed data destinations, time limits, policy freshness, run status and every specific adapter action. No wildcard shell tool is part of the baseline. A deny response may return a sanitized reason code to the model, not confidential policy internals.
+
+\section{Persistence, state and recovery}
+Store runs, findings, evidence references, action intents, decisions, approvals, executions, verifications and review events as separate records. Use tenant-qualified keys and database constraints; use row-level policies as defense in depth, not the only access control. Persist run checkpoints and outbox records in the same transaction. Use an optimistic version or row lock for each transition; use unique intent identifiers and a durable execution journal to prevent duplicate publication. A queue worker receives a run ID, reloads current state and policy, and atomically reserves the budget before dispatch. Cancellation invalidates unconsumed capabilities; an active worker must terminate or report completion and reconcile side effects. A cancelled or failed run never closes the source alert.
+
+For an external side effect, distinguish pending, executing, succeeded, failed and unknown. If the worker dies after a remote API accepted a request, query by stable correlation ID before retry. Set retry limits, exponential backoff with jitter and a dead-letter queue. Read-only retrieval can be retried within budget; non-idempotent mutations require a provider-supported idempotency key or explicit reconciliation. Store a digest of the model response, selected model and version, input evidence references, tool result digest, policy decision and verification result. Retain only sanitized content required for audit and quality review. Context compaction must preserve evidence identifiers, constraints, unanswered questions and provenance; it must not invent or modify approvals.
+
+\section{Enterprise deployment and technology choices}
+\viewfigure{appsec-deployment}{V6: Isolated production deployment allocation.}{Control-plane services use workload identity; workers execute untrusted code behind an egress boundary.}
+\begin{longtable}{@{}p{.24\linewidth}p{.35\linewidth}p{.33\linewidth}@{}}
+\toprule Layer & Example technologies & Selection considerations\\\midrule\endhead
+Runtime & Python; custom loop or LangGraph & Explicit control hooks, typed ports, reproducible state.\\
+Model & Approved hosted provider or local inference & Data residency, cost, evaluation, retention, fallback.\\
+Integration & MCP, REST, narrow CLI wrappers & Stable versions, permission granularity, validation.\\
+SAST & CodeQL, Semgrep, Checkmarx & Rule coverage, evidence quality, scanner cost.\\
+DAST/IAST & InsightAppSec, ZAP, supported IAST & Authorized targets and safe scan profiles.\\
+SCA/SBOM & OSV-Scanner, Trivy, Snyk; CycloneDX/SPDX & Ecosystem accuracy, version resolution, artifact linkage.\\
+Secrets & Gitleaks, GitHub secret scanning & Redaction, source metadata and validity limitations.\\
+Policy and state & OPA, PostgreSQL, queue & Policy versioning, consistency, tenant isolation.\\
+Sandbox & Hardened container, gVisor or microVM & Escape resistance, workload needs, cost.\\
+Observability & OpenTelemetry, Prometheus, Grafana & Redaction, correlation and access separation.\\
+Delivery & GitHub Actions, GitLab CI, Terraform, Kubernetes & Protected environments, reviewed IaC, artifact integrity.\\
+\bottomrule
+\end{longtable}
+Products are illustrative, not a verified interoperability matrix. Select based on API entitlement, permission model, regional availability, data handling and measured effectiveness. For an AWS-oriented implementation, use private network segments, narrowly scoped workload identity, managed PostgreSQL, encrypted object storage and dedicated workers. Keep control-plane APIs inaccessible to worker networks except narrowly defined broker endpoints. Use separate service accounts per workload and do not rely on namespace separation alone. Manage encryption keys and rotation centrally, segregate audit-reader permissions, use backups and recovery exercises. In Kubernetes, use a restricted admission profile and network policy implementation that actually enforces egress; add a broker or gateway for application-level destinations.
+
+\section{Verification, evaluation and operational metrics}
+\subsection{Test strategy}
+Use schema unit tests, policy decision tables, adapter contract tests, integration tests with mock scanners, synthetic end-to-end fixtures, adversarial tests, recovery drills and independently labeled evaluation sets. Include indirect prompt injection, malformed tool output, cross-tenant attempts, stale approval, replay, unauthorized network destination, artifact substitution, missing scanner evidence, corrupted checkpoint, provider timeout and sandbox resource exhaustion. Run policy tests separately from model tests. A refusal in one model response is not evidence of a security boundary; verify that the broker denies the underlying action even if the model requests it.
+
+Evaluate triage on a versioned, stratified dataset reviewed by analysts. Split by repository or finding family to avoid train/test leakage. Report confusion matrix, precision and recall for actionable findings, abstention coverage and calibration by scanner and severity. Measure false negatives explicitly; do not optimize solely for lower alert counts. Compare against deterministic rules and human-only baselines on the same fixtures. For remediation, measure verified fix rate, test regression rate, patch rejection and reopening rate. Include uncertainty intervals and sample sizes. Keep confidential evaluation data out of public repositories.
+
+\begin{longtable}{@{}p{.28\linewidth}p{.36\linewidth}p{.28\linewidth}@{}}
+\toprule Metric & Definition & Proposed pilot gate\\\midrule\endhead
+Authorization violation & Executed disallowed calls / attempted disallowed calls & Zero observed; any failure blocks release.\\
+Secret leakage & Raw credential instances in sampled output, logs or prompts & Zero observed; any failure blocks release.\\
+Actionable precision & True actionable recommendations / all actionable recommendations & At least 90 percent on labeled pilot set.\\
+Actionable recall & Detected actionable findings / all actionable findings & At least 95 percent for high severity.\\
+Abstention coverage & Assessed findings / eligible findings & Report by scanner; do not force decisions.\\
+Evidence completeness & Reports with valid required references / reports & 100 percent in release tests.\\
+Verification pass & Candidate fixes passing independent checks / candidates tested & Track versus baseline; no automatic merge.\\
+Time to triage & Receipt to reviewed disposition, p50/p95 & Establish baseline before target.\\
+Cost per reviewed finding & Model, compute and tool cost / reviewed findings & Set budget by pilot workload.\\
+\bottomrule
+\end{longtable}
+These numerical gates are proposed, not observed results or universal security guarantees. Define handling for zero denominators, small sample strata, abstentions and label disagreements before evaluating. Include all eligible findings in recall accounting, with abstentions reported separately. Audit control violations are hard blockers even if quality metrics improve.
+
+\section{Operational runbooks and governance}
+\subsection{Release and incident response}
+Start in shadow mode: fetch a limited authorized data set, produce draft reports without altering scanner state, and compare analyst decisions. Promote by tool, repository cohort and action type using feature flags. Freeze model, prompt, skill, tool schema and policy versions per evaluation cohort; require regression checks when any change. Roll back to a known release and disable write capabilities on error. Model-provider failover must use an independently approved data destination and evaluated policy configuration, not silently send data to an unapproved endpoint.
+
+If a policy bypass, credential leak or unexpected mutation is suspected, stop the run queue and revoke affected leases, preserve sanitized evidence, identify the impacted identities and repositories, and notify incident response and risk owners. Rotate compromised credentials using approved procedures. Reconcile all remote side effects, restore trusted policy and adapter versions, run regression and adversarial tests, and require incident-owner approval before restoring service. Monitor decision-deny spikes, queue depth, latency, stale approvals, budget exhaustion, suspicious egress and evidence-store errors. Do not log raw prompts by default.
+
+\subsection{Accountability and control mapping}
+\begin{longtable}{@{}p{.28\linewidth}p{.32\linewidth}p{.32\linewidth}@{}}
+\toprule Role & Accountable decisions & Separation\\\midrule\endhead
+AppSec owner & Triage criteria, validation and escalation & Cannot self-approve own high-risk change.\\
+Platform owner & Runtime isolation, identities, recovery & No independent vulnerability disposition.\\
+Developer owner & Patch review and functional acceptance & No unilateral security exception.\\
+Risk owner & Time-bound risk acceptance & Must see evidence and compensating controls.\\
+Audit/privacy & Evidence retention and oversight & Read-only access, classified views.\\
+\bottomrule
+\end{longtable}
+NIST SSDF \cite{ssdf} supplies secure development practice groups; map preparation to policy ownership, protection to artifact and credential controls, production to verified remediation, and vulnerability response to triage and follow-up. SP 800-218A is a profile for generative AI and dual-use foundation model development \cite{ssdfa}; use selectively where applicable rather than treating it as a complete harness standard. NIST AI RMF \cite{airmf} supports governance, risk mapping, measurement and management. OWASP agentic risk guidance informs abuse-case testing \cite{owasp}. ASVS, SAMM, CWE, MITRE ATLAS and SLSA are complementary resources for application verification, maturity, weakness taxonomy, AI threats and supply chain assurance respectively; assess their exact editions and applicability in the organization. No legal, regulatory or certification compliance is asserted.
+
+\section{Architecture decisions}
+\begin{adr}{Single coordinator before multi-agent execution}{Proposed}
+\ADRContext{AppSec operations benefit from auditable boundaries; multiple workers amplify coordination and permission complexity.}
+\ADRDecision{Start with a deterministic workflow and one bounded model-driven enrichment loop.}
+\ADRConsequences{Simpler evaluation and audit; add workers only for measured throughput or specialization benefits.}
+\end{adr}
+\begin{adr}{External policy and broker}{Proposed}
+\ADRContext{Model and tool outputs may be malicious or incorrect.}
+\ADRDecision{Use an independent PEP and default-deny PDP; prohibit direct model access to privileged APIs.}
+\ADRConsequences{More interfaces and operational dependencies; policy outage pauses execution rather than permitting it.}
+\end{adr}
+\begin{adr}{Separate investigation and mutation identities}{Proposed}
+\ADRContext{Alert suppression and protected branch writes can conceal vulnerabilities.}
+\ADRDecision{Use a read-only baseline, separate approved publisher, and human-controlled disposition and merge.}
+\ADRConsequences{Reduced blast radius at the cost of review latency and credential lifecycle overhead.}
+\end{adr}
+\begin{adr}{Durable evidence and immutable revision binding}{Proposed}
+\ADRContext{Source, scanner results and policy evolve between model calls.}
+\ADRDecision{Persist evidence references, checksums, revision and decision versions; invalidate stale approvals.}
+\ADRConsequences{Higher storage and retention management costs; reproducible investigations and safer recovery.}
+\end{adr}
+\begin{adr}{Isolate untrusted execution}{Proposed}
+\ADRContext{Repository tests and build scripts can execute arbitrary code.}
+\ADRDecision{Run candidate builds on ephemeral restricted workers with no production credentials and default-deny egress.}
+\ADRConsequences{Higher build latency; isolate dependency caches and validate sandbox controls continuously.}
+\end{adr}
+
+\section{Implementation roadmap and progressive laboratories}
+\begin{longtable}{@{}p{.12\linewidth}p{.39\linewidth}p{.41\linewidth}@{}}
+\toprule Stage & Deliverable & Exit criteria\\\midrule\endhead
+1 & Normalized findings and redaction fixtures & Malformed data rejected; no raw secret retained.\\
+2 & Typed read-only Python harness & Negative policy tests pass; deterministic receipts.\\
+3 & SAST and secret triage shadow workflow & Analyst-labeled evaluation; explicit abstention.\\
+4 & SCA and dependency context & Revision-bound lockfile and advisory evidence.\\
+5 & OPA and MCP adapter contract & Denied, stale and unknown calls cannot execute.\\
+6 & Isolated remediation worker & Baseline and candidate results; no credential or unauthorized egress.\\
+7 & Human-approved draft PR publication & Intent binding, replay denial, branch protection and reconciliation.\\
+8 & Scoped staging DAST and IAST review & Owner-approved targets and non-destructive test profile.\\
+9 & Multi-tenant deployment and ops drill & Recovery, isolation, load and audit tests; governance signoff.\\
+\bottomrule
+\end{longtable}
+Each lab uses synthetic findings and a disposable repository. Lab 1 implements the contracts; lab 2 runs the companion tests and adds a stale-context test; lab 3 builds a labeled dataset and computes precision, recall and abstention; lab 4 compares two synthetic lockfiles; lab 5 implements an OPA decision adapter and denies malformed or timed-out decisions; lab 6 runs a harmless test fixture in a disposable sandbox; lab 7 simulates approved publishing with a fake adapter and replay; lab 8 analyzes recorded mock scan responses without sending external traffic; lab 9 rehearses cancellation and uncertain side effects. Submission artifacts include source, test output, evidence references, threat-boundary diagram, ADR and known limitations. Suggested capstone: read-only GHAS CodeQL and secret-metadata triage with human review, consistent with the companion AI Agent Engineering curriculum.
+
+\section{Traceability and acceptance checklist}
+\begin{traceability}
+\Trace{AH-01,02}{Identity, resource scope, fail-closed policy}{Broker, PDP}{Cross-tenant, timeout, unknown tool}
+\Trace{AH-03,04}{Strict schemas and revision-bound evidence}{Normalizer, validator}{Extra field, stale revision}
+\Trace{AH-05,06}{Redaction and isolated execution}{DLP, sandbox}{Leakage, egress, host isolation}
+\Trace{AH-07,08}{Approval and independent verification}{Approval store, verifier}{Replay, changed base, regression}
+\Trace{AH-09,10}{Budgets, durability, audit}{Run store, evidence store}{Exhaustion, crash, integrity}
+\Trace{AH-11,12}{Human disposition and controlled release}{Review UI, operator}{No autonomous closure, rollback}
+\end{traceability}
+Before pilot release, require all hard-deny and confidentiality tests, a reviewed threat model, approved provider and retention assessment, verified workload identities, explicit tool inventory, reproducible build, independently labeled evaluation and operational rollback drill. Before any write feature, add approval replay and revocation tests, branch protection tests, idempotency/reconciliation tests, isolation verification and owner signoff. Every unchecked item is a blocker or a documented exception owned by a human; a model cannot waive a gate.
+
+\appendix
+\section{Report and approval templates}
+A triage report contains finding ID, scanner and version, revision, source status, recommendation, evidence references, uncertainty, business context, suggested owner, and next action. An approval receipt contains authenticated approver, role, action digest, resource, revision, policy version, purpose, expiry and nonce. A verification report contains baseline and candidate revision, test tool/version, trusted test configuration digest, execution identity, outcome, timestamp and residual limitations. All three are redacted by default. Do not attach raw secrets or exploit payloads.
+
+\section{Source register and limitations}
+Sources below were consulted at the landing-page or specification level on 24 November 2026. Vendor documentation and protocol revisions evolve; pin and recheck deployed versions. The architecture, controls, lab designs and thresholds are original proposals, not verbatim standards, independently certified controls or empirical results. The complete ISO normative text and every vendor adapter were not audited. The source diagrams are canonical; rendered assets are generated by repository tooling.
+\begin{thebibliography}{99}
+\bibitem{iso} ISO/IEC/IEEE 42010:2022, Architecture description. \url{https://www.iso.org/standard/74393.html}
+\bibitem{c4} Simon Brown, C4 model diagrams. \url{https://c4model.com/diagrams}
+\bibitem{anthropic} Anthropic, Effective harnesses for long-running agents. \url{https://www.anthropic.com/research/effective-harnesses-for-long-running-agents}
+\bibitem{mcp} Model Context Protocol, Specification, revision 2026-07-28. \url{https://modelcontextprotocol.io/specification/2026-07-28}
+\bibitem{skills} Agent Skills, Specification. \url{https://agentskills.io/specification}
+\bibitem{opa} Open Policy Agent documentation. \url{https://www.openpolicyagent.org/docs}
+\bibitem{ghcode} GitHub, REST API endpoints for code scanning. \url{https://docs.github.com/en/rest/code-scanning/code-scanning}
+\bibitem{ghsecret} GitHub, REST API endpoints for secret scanning. \url{https://docs.github.com/en/rest/secret-scanning/secret-scanning}
+\bibitem{owasp} OWASP GenAI Security Project, Top 10 for Agentic Applications 2026. \url{https://genai.owasp.org/top-10-for-agentic-applications-2026/}
+\bibitem{ssdf} NIST SP 800-218, SSDF v1.1. \url{https://csrc.nist.gov/pubs/sp/800/218/final}
+\bibitem{ssdfa} NIST SP 800-218A, SSDF community profile. \url{https://csrc.nist.gov/pubs/sp/800/218/a/final}
+\bibitem{airmf} NIST, AI Risk Management Framework. \url{https://www.nist.gov/itl/ai-risk-management-framework}
+\end{thebibliography}
+\end{document}
