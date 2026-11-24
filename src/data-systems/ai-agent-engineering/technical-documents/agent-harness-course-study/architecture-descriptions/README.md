@@ -5,3 +5,5 @@
 - [AD-AHC-P03](part-03-ppa-learning/README.md)
 
 Drafts extend the existing consolidated study; pinned source commit and separate conformance assessments. Rendering and independent verification remain pending.
+
+[Shared validation and cross-AD correspondence register](shared/README.md).
