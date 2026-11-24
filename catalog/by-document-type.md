@@ -1173,7 +1173,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (740)
+## technical-reference (741)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -1784,6 +1784,7 @@
 - [03 architecture decision framework](../src/programming/web/micro-frontends/03-architecture-decision-framework.tex) — web/micro frontends · **provisional**
 - [05 devsecops cicd](../src/programming/web/micro-frontends/05-devsecops-cicd.tex) — web/micro frontends · **provisional**
 - [06 migration playbook](../src/programming/web/micro-frontends/06-migration-playbook.tex) — web/micro frontends · **provisional**
+- [Agent Harness Engineering for Application Security: Architecture, Design Patterns, Security Controls, and Enterprise Implementation](../src/security/application-security/agent-harness-engineering/agent-harness-engineering-for-application-security.tex) — application security/agent harness engineering · **reviewed**
 - [01 security foundations](../src/security/application-security/assessment/01-security-foundations.tex) — application security/assessment · **provisional**
 - [02 vulnerability taxonomy](../src/security/application-security/assessment/02-vulnerability-taxonomy.tex) — application security/assessment · **provisional**
 - [04 static analysis algorithms](../src/security/application-security/assessment/04-static-analysis-algorithms.tex) — application security/assessment · **provisional**
