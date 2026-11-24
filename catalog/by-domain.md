@@ -994,7 +994,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## data-systems (114)
+## data-systems (117)
 
 - [AI Agent Engineering: Comprehensive Developer Curriculum](../src/data-systems/ai-agent-engineering/curriculum/ai-agent-engineering-comprehensive-syllabus.tex) — ai-agent-engineering/curriculum · **provisional**
 - [L01: Agent system boundaries and LLM tool semantics (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l01-agent-system-boundaries.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
@@ -1021,6 +1021,9 @@
 - [Agent Engineering Curriculum Integration](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/05-curriculum-integration.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Hands-On Agent Harness Learning Roadmap](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/06-hands-on-learning-roadmap.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [AI Agent Harness Course Architecture Description](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-description/main.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [AI Agent Harness Architecture Description — Part 1: ERPA: Memory-First Assistant Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-descriptions/part-01-erpa/ai-agent-harness-architecture-part-01.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [AI Agent Harness Architecture Description — Part 2: PPA: Governed Personal Productivity Assistant Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-descriptions/part-02-ppa/ai-agent-harness-architecture-part-02.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [AI Agent Harness Architecture Description — Part 3: PPA That Improves: Learning and Adaptive Harness Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-descriptions/part-03-ppa-learning/ai-agent-harness-architecture-part-03.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Agent Skills Engineering Guide](../src/data-systems/ai-agent-engineering/technical-documents/agent-skills-engineering-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [Multi-Language AI Agent Skills: Verified Repositories, Installation, Architecture and Governance](../src/data-systems/ai-agent-engineering/technical-documents/agent-skills-multilanguage-guide.tex) — ai-agent-engineering/technical-documents · **reviewed**
 - [Workflow and Agent Architecture Foundations](../src/data-systems/ai-agent-engineering/technical-documents/agent-workflow-patterns/01-foundations.tex) — ai-agent-engineering/technical-documents/agent-workflow-patterns · **provisional** · non-standalone
