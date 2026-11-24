@@ -745,9 +745,10 @@
 - [venture lifecycle reference](../src/startups/small-business-management/technical-reference/venture-lifecycle-reference.tex) — small-business-management/technical-reference · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## Related reviewed sources with secondary technical references content (4)
+## Related reviewed sources with secondary technical references content (5)
 
 - [Comprehensive Architecture Analysis](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/01-comprehensive-architecture-analysis.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Security Architecture Assessment](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/03-security-architecture-assessment.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Vendor-Neutral Python Reference Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/04-vendor-neutral-python-reference-architecture.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [AI Agent Harness Course Architecture Description](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-description/main.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Object-Oriented Programming in ANSI C: Rules and Practical Checklists](../src/programming/languages/c-cpp/object-oriented-programming-ansi-c-checklists.tex) — ANSI C object-oriented programming checklists · **reviewed**

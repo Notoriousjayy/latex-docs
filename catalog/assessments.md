@@ -56,10 +56,11 @@
 - [06 vulnerability assessment dfir](../src/security/security-engineering/06-vulnerability-assessment-dfir.tex) — security engineering · **provisional**
 - [07 audit assessment evidence](../src/security/standards/iso-27000/07-audit-assessment-evidence.tex) — standards/iso 27000 · **provisional**
 
-## Related reviewed sources with secondary assessments content (5)
+## Related reviewed sources with secondary assessments content (6)
 
 - [Procurement Audit — Working Form](../src/architecture/governance/ccoe/closure/5-1-procurement-audit.tex) — CCoE procurement evaluation form · **reviewed**
 - [Team Performance Assessment — Working Form](../src/architecture/governance/ccoe/execution/3-8-team-performance-assessment.tex) — CCoE team evaluation form · **reviewed**
 - [ISO/IEC/IEEE 42010 Conformance Assessment Workbook](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment.tex) — ISO/IEC/IEEE 42010 conformance evidence · **reviewed**
 - [Minimum Curriculum Quality Checklist](../src/business-analysis/workbooks/babok-minimum-checklist.tex) — curriculum review and learning outcomes · **reviewed**
+- [AI Agent Harness Course Architecture Description](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-description/main.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Open-Source Enterprise Security Platform: Reference Architecture and Tool Strategy](../src/security/technical-documents/open-source-enterprise-security-platform.tex) — enterprise security platform architecture · **reviewed**

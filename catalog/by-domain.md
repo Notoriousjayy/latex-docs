@@ -994,7 +994,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## data-systems (113)
+## data-systems (114)
 
 - [AI Agent Engineering: Comprehensive Developer Curriculum](../src/data-systems/ai-agent-engineering/curriculum/ai-agent-engineering-comprehensive-syllabus.tex) — ai-agent-engineering/curriculum · **provisional**
 - [L01: Agent system boundaries and LLM tool semantics (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l01-agent-system-boundaries.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
@@ -1020,6 +1020,7 @@
 - [Vendor-Neutral Python Reference Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/04-vendor-neutral-python-reference-architecture.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Agent Engineering Curriculum Integration](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/05-curriculum-integration.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Hands-On Agent Harness Learning Roadmap](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/06-hands-on-learning-roadmap.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [AI Agent Harness Course Architecture Description](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-description/main.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Agent Skills Engineering Guide](../src/data-systems/ai-agent-engineering/technical-documents/agent-skills-engineering-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [Multi-Language AI Agent Skills: Verified Repositories, Installation, Architecture and Governance](../src/data-systems/ai-agent-engineering/technical-documents/agent-skills-multilanguage-guide.tex) — ai-agent-engineering/technical-documents · **reviewed**
 - [Workflow and Agent Architecture Foundations](../src/data-systems/ai-agent-engineering/technical-documents/agent-workflow-patterns/01-foundations.tex) — ai-agent-engineering/technical-documents/agent-workflow-patterns · **provisional** · non-standalone

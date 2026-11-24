@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## architecture-document (26)
+## architecture-document (27)
 
 - [Secure AWS Platform: Six Architecture Acceptance Gates](../src/architecture/cloud/reusable-secure-aws-cloud-environment/architecture-and-acceptance-gates.tex) — cloud/reusable-secure-aws-cloud-environment · **provisional**
 - [ADR-0001: Application-aligned repository ownership](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0001.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
@@ -16,6 +16,7 @@
 - [enterprise appsec code scanning viewpoint specification](../src/architecture/technical-documents/enterprise-appsec-code-scanning-viewpoint-specification.tex) — appsec-code-scanning/architecture · **provisional**
 - [Comprehensive Architecture Analysis](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/01-comprehensive-architecture-analysis.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Vendor-Neutral Python Reference Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/04-vendor-neutral-python-reference-architecture.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [AI Agent Harness Course Architecture Description](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-description/main.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [deployment promotion and rollback](../src/devops/ci-cd/continuous-integration-engineering/specifications/deployment-promotion-and-rollback.tex) — ci cd/continuous integration engineering/specifications · **provisional**
 - [oidc authorization trust boundaries](../src/devops/ci-cd/continuous-integration-engineering/specifications/oidc-authorization-trust-boundaries.tex) — ci cd/continuous integration engineering/specifications · **provisional**
 - [pipeline reference architecture](../src/devops/ci-cd/continuous-integration-engineering/specifications/pipeline-reference-architecture.tex) — ci cd/continuous integration engineering/specifications · **provisional**

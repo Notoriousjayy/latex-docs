@@ -192,7 +192,7 @@
 - [OpenAI Codex Custom Subagents: Configuration, Precedence, and Secure Orchestration](../src/data-systems/ai-agent-engineering/technical-documents/codex-custom-subagents-technical-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [OpenAI Codex Integration with GitHub Copilot](../src/data-systems/ai-agent-engineering/technical-documents/codex-github-copilot-integration-guide.tex) — ai-agent-engineering/technical-documents · **reviewed**
 
-## ai-agent-engineering/technical-documents/agent-harness-course-study (6)
+## ai-agent-engineering/technical-documents/agent-harness-course-study (7)
 
 - [Comprehensive Architecture Analysis](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/01-comprehensive-architecture-analysis.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Harness Engineering Technical Guide](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/02-harness-engineering-technical-guide.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
@@ -200,6 +200,7 @@
 - [Vendor-Neutral Python Reference Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/04-vendor-neutral-python-reference-architecture.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Agent Engineering Curriculum Integration](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/05-curriculum-integration.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Hands-On Agent Harness Learning Roadmap](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/06-hands-on-learning-roadmap.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [AI Agent Harness Course Architecture Description](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-description/main.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 
 ## ai-agent-engineering/technical-documents/agent-workflow-patterns (7)
 
