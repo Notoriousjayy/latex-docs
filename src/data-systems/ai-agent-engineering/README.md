@@ -57,3 +57,7 @@ Curriculum edition 1.0, source review dated November 12, 2026. The program was d
 - [Architecture](../../architecture/README.md)
 - [Application Security](../../security/README.md)
 - [DevOps](../../devops/README.md)
+
+## Application Security specialization
+
+- [Agent Harness Engineering for Application Security](../../security/application-security/agent-harness-engineering/README.md) — cross-domain reference architecture, AppSec workflow controls, Python example, PlantUML views, threat model and progressive implementation labs.
