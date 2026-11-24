@@ -72,3 +72,7 @@ The [31-chapter Computer Security: Art and Science companion](computer-security-
 ## Enterprise GitHub Code Scanning governance
 
 The [AppSec Code Scanning Governance companion](github-advanced-security/code-scanning/enterprise-triage-governance/README.md) provides an architecture-linked, offline and evidence-driven model for PR blocker analysis, policy decisions and dismissal-review controls. It does not modify live GitHub alerts, reviews, permissions or rulesets.
+
+## Agent harness engineering for Application Security
+
+The [Agent Harness Engineering for Application Security study](application-security/agent-harness-engineering/README.md) connects governed agent execution with vulnerability triage, secret scanning, supervised remediation, independent verification and enterprise deployment. It includes six PlantUML architecture views and an offline Python example; it is a proposed design, not a deployed service.
