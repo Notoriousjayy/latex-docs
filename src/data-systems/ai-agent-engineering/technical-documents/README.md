@@ -18,6 +18,8 @@ Standalone technical references that complement the [AI Agent Engineering curric
 - [OpenAI Codex Custom Subagents: Configuration, Precedence, and Secure Orchestration](codex-custom-subagents-technical-guide.tex) — repository-compatible technical reference with role configuration, model resolution, security boundaries, orchestration diagrams, TOML examples, and validation checklist.
 - [OpenAI Codex Integration with GitHub Copilot](codex-github-copilot-integration-guide.tex) — 22-page engineering guide covering GitHub and VS Code setup, cloud issue handoff, local harness execution, identity and permission boundaries, agent instructions, CI/CD examples, enterprise governance and troubleshooting.
 
+- [Agent Harness Course Study (six standalone documents)](agent-harness-course-study/README.md) — source-specific architecture analysis, operating guide, security assessment, vendor-neutral Python design, curriculum crosswalk, and laboratory workbook.
+
 ## Build and validation
 
 From the repository root:
