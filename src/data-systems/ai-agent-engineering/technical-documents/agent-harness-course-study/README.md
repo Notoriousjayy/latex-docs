@@ -11,6 +11,8 @@ Six standalone pdfLaTeX technical documents based on the supplied course snapsho
 
 - [Formal Architecture Description — C4, UML and ISO/IEC/IEEE 42010:2022](architecture-description/README.md) — draft source-based AD, 27 editable PlantUML models, architecture catalogs, evidence, security risks, retrospective ADRs and partial conformance assessment.
 
+- [Three independent architecture descriptions](architecture-descriptions/README.md) — ERPA, governed PPA, learning-enabled PPA; source-linked C4/UML and provisional ISO assessments.
+
 ## Build
 
 From the repository root run `make build-category-data-systems`, or run `latexmk -pdf -interaction=nonstopmode -halt-on-error <document>.tex` from this directory. All diagrams are native TikZ; each document is a separately discoverable root. The suite retains the self-contained style of the original integrated study and neighboring agent-engineering guides.
