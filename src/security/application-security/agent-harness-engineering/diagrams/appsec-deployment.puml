@@ -1,0 +1,47 @@
+' View of proposed AppSec Agent Harness; see study for scope and correspondence.
+@startuml appsec-deployment
+!include ../../../../../tooling/styles/plantuml/structural/deployment-diagram-style.iuml
+
+title AppSec agent harness - V6 production deployment
+node "Private control-plane network" {
+ node "Service runtime" {
+  artifact "Ingestion" as I
+  artifact "Orchestrator" as O
+  artifact "Execution broker" as B
+  artifact "Policy decision service" as P
+ }
+ node "Data tier" {
+  database "Run store" as R
+  database "Evidence store" as E
+ }
+}
+node "Isolated worker network" {
+ node "Ephemeral restricted worker" {
+  artifact "Verification worker" as W
+ }
+ node "Egress gateway" as G
+}
+cloud "Approved external systems" {
+ node "Inference endpoint" as M
+ node "Scanner and SCM APIs" as S
+ node "Trusted CI" as C
+}
+I --> R : scoped SQL
+I --> E : sanitized writes
+O --> R : scoped SQL
+O --> B : typed intent
+O --> M : approved TLS route
+B --> P : policy query
+B --> R : decision receipts
+B --> E : scoped evidence
+B --> S : approved TLS route
+B --> W : scoped job dispatch
+W --> G : permitted verification traffic
+G --> S : allowed target only
+G --> C : approved CI API
+W --> B : verification receipts
+note bottom of W
+ No host socket or production identity.
+ Egress denied unless explicitly allowed.
+end note
+@enduml
