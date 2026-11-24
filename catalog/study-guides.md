@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary study guides (488)
+## Primary study guides (489)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -137,6 +137,7 @@
 - [L14: Containerized deployment, CI/CD and workload isolation (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l14-deployment-and-ci.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
 - [L15: Capstone integration: GitHub AppSec agent (read-only) (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l15-appsec-capstone.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
 - [L16: Capstone hardening, independent review and operational handoff (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l16-capstone-hardening.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
+- [Hands-On Agent Harness Learning Roadmap](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/06-hands-on-learning-roadmap.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Competency And Assessment Roadmap](../src/data-systems/enterprise-data-modeling/curriculum/competency-and-assessment-roadmap.tex) — enterprise-data-modeling · **provisional**
 - [Prerequisite Based Curriculum](../src/data-systems/enterprise-data-modeling/curriculum/prerequisite-based-curriculum.tex) — enterprise-data-modeling · **provisional**
 - [Chapter 01 Introduction](../src/data-systems/enterprise-data-modeling/study-guides/chapter-01-introduction.tex) — enterprise-data-modeling · **provisional**
@@ -493,8 +494,9 @@
 - [chapter 22 managing the firm s assets](../src/startups/small-business-management/study-guides/chapter-22-managing-the-firm-s-assets.tex) — small-business-management/study-guides · **provisional**
 - [chapter 23 managing risk](../src/startups/small-business-management/study-guides/chapter-23-managing-risk.tex) — small-business-management/study-guides · **provisional**
 
-## Related reviewed sources with secondary study guides content (3)
+## Related reviewed sources with secondary study guides content (4)
 
+- [Agent Engineering Curriculum Integration](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/05-curriculum-integration.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [TypeScript Cookbook — User Stories Study Plan](../src/programming/languages/typescript/typescript-cookbook-user-stories-study-plan.tex) — TypeScript Cookbook learning stories · **reviewed**
 - [Application Security Program Guide: User Stories (Compact)](../src/security/application-security/fundamentals/user-stories-app-sec-program-guide-compact.tex) — AppSec program chapter study stories · **reviewed**
 - [Application Security Program Guide: User Stories (Expanded)](../src/security/application-security/fundamentals/user-stories-app-sec-program-guide.tex) — AppSec program learning and delivery stories · **reviewed**

@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## architecture-document (24)
+## architecture-document (26)
 
 - [Secure AWS Platform: Six Architecture Acceptance Gates](../src/architecture/cloud/reusable-secure-aws-cloud-environment/architecture-and-acceptance-gates.tex) — cloud/reusable-secure-aws-cloud-environment · **provisional**
 - [ADR-0001: Application-aligned repository ownership](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0001.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
@@ -14,6 +14,8 @@
 - [00 executive architecture and scope](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/00-executive-architecture-and-scope.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
 - [enterprise appsec code scanning architecture description](../src/architecture/technical-documents/enterprise-appsec-code-scanning-architecture-description.tex) — appsec-code-scanning/architecture · **provisional**
 - [enterprise appsec code scanning viewpoint specification](../src/architecture/technical-documents/enterprise-appsec-code-scanning-viewpoint-specification.tex) — appsec-code-scanning/architecture · **provisional**
+- [Comprehensive Architecture Analysis](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/01-comprehensive-architecture-analysis.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [Vendor-Neutral Python Reference Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/04-vendor-neutral-python-reference-architecture.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [deployment promotion and rollback](../src/devops/ci-cd/continuous-integration-engineering/specifications/deployment-promotion-and-rollback.tex) — ci cd/continuous integration engineering/specifications · **provisional**
 - [oidc authorization trust boundaries](../src/devops/ci-cd/continuous-integration-engineering/specifications/oidc-authorization-trust-boundaries.tex) — ci cd/continuous integration engineering/specifications · **provisional**
 - [pipeline reference architecture](../src/devops/ci-cd/continuous-integration-engineering/specifications/pipeline-reference-architecture.tex) — ci cd/continuous integration engineering/specifications · **provisional**
@@ -29,7 +31,7 @@
 - [subsystem and lifecycle specification](../src/game-development/game-engine-architecture-suite/architecture-specifications/subsystem-and-lifecycle-specification.tex) — game-engine-architecture-suite/architecture-specifications · **provisional**
 - [Open-Source Enterprise Security Platform: Reference Architecture and Tool Strategy](../src/security/technical-documents/open-source-enterprise-security-platform.tex) — enterprise security platform architecture · **reviewed**
 
-## assessment (50)
+## assessment (51)
 
 - [architecture traceability scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/architecture-traceability-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
 - [diagram quality scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/diagram-quality-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
@@ -46,6 +48,7 @@
 - [governance bylaws maturity template](../src/business-analysis/parliamentary-procedure-and-governance/scorecards/templates/governance-bylaws-maturity-template.tex) — parliamentary-procedure-and-governance/scorecards/templates · **provisional**
 - [meeting validity assessment template](../src/business-analysis/parliamentary-procedure-and-governance/scorecards/templates/meeting-validity-assessment-template.tex) — parliamentary-procedure-and-governance/scorecards/templates · **provisional**
 - [minutes and records assessment template](../src/business-analysis/parliamentary-procedure-and-governance/scorecards/templates/minutes-and-records-assessment-template.tex) — parliamentary-procedure-and-governance/scorecards/templates · **provisional**
+- [Security Architecture Assessment](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/03-security-architecture-assessment.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [DCAM-Based Capability Assessment Scorecard Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/scorecards/dcam-based-capability-assessment-scorecard-template.tex) — enterprise-data-governance · **provisional**
 - [devsecops control assurance template](../src/devops/ci-cd/continuous-delivery-release-engineering/scorecards/devsecops-control-assurance-template.tex) — ci cd/continuous delivery release engineering/scorecards · **provisional**
 - [pipeline architecture template](../src/devops/ci-cd/continuous-delivery-release-engineering/scorecards/pipeline-architecture-template.tex) — ci cd/continuous delivery release engineering/scorecards · **provisional**
@@ -350,7 +353,7 @@
 - [operational resilience template](../src/startups/small-business-management/scorecards/templates/operational-resilience-template.tex) — small-business-management/scorecards/templates · **provisional**
 - [venture feasibility template](../src/startups/small-business-management/scorecards/templates/venture-feasibility-template.tex) — small-business-management/scorecards/templates · **provisional**
 
-## study-guide (488)
+## study-guide (489)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -485,6 +488,7 @@
 - [L14: Containerized deployment, CI/CD and workload isolation (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l14-deployment-and-ci.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
 - [L15: Capstone integration: GitHub AppSec agent (read-only) (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l15-appsec-capstone.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
 - [L16: Capstone hardening, independent review and operational handoff (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l16-capstone-hardening.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
+- [Hands-On Agent Harness Learning Roadmap](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/06-hands-on-learning-roadmap.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Competency And Assessment Roadmap](../src/data-systems/enterprise-data-modeling/curriculum/competency-and-assessment-roadmap.tex) — enterprise-data-modeling · **provisional**
 - [Prerequisite Based Curriculum](../src/data-systems/enterprise-data-modeling/curriculum/prerequisite-based-curriculum.tex) — enterprise-data-modeling · **provisional**
 - [Chapter 01 Introduction](../src/data-systems/enterprise-data-modeling/study-guides/chapter-01-introduction.tex) — enterprise-data-modeling · **provisional**
@@ -1168,7 +1172,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (738)
+## technical-reference (740)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -1509,6 +1513,8 @@
 - [ch15 data modeling notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch15-data-modeling-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
 - [ch16 classification inference notes](../src/cornell-notes/mathematics/numerical-methods/statistics-modeling-and-inference/ch16-classification-inference-notes.tex) — numerical methods/statistics modeling and inference · **provisional**
 - [Agent Engineering Standards: SKILL.md, AGENTS.md, MCP, and Agent Harnesses](../src/data-systems/ai-agent-engineering/technical-documents/agent-engineering-standards-skills-agents-mcp-harnesses.tex) — ai-agent-engineering/technical-documents · **provisional**
+- [Harness Engineering Technical Guide](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/02-harness-engineering-technical-guide.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [Agent Engineering Curriculum Integration](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/05-curriculum-integration.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Agent Skills Engineering Guide](../src/data-systems/ai-agent-engineering/technical-documents/agent-skills-engineering-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [Multi-Language AI Agent Skills: Verified Repositories, Installation, Architecture and Governance](../src/data-systems/ai-agent-engineering/technical-documents/agent-skills-multilanguage-guide.tex) — ai-agent-engineering/technical-documents · **reviewed**
 - [AGENTS.md: Repository-Aware Guidance for AI Coding Agents](../src/data-systems/ai-agent-engineering/technical-documents/agents-md-repository-guidance.tex) — ai-agent-engineering/technical-documents · **provisional**

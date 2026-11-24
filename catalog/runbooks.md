@@ -49,3 +49,7 @@
 - [marketing experiment sop](../src/startups/small-business-management/procedures/marketing-experiment-sop.tex) — small-business-management/procedures · **provisional**
 - [monthly financial close sop](../src/startups/small-business-management/procedures/monthly-financial-close-sop.tex) — small-business-management/procedures · **provisional**
 - [supplier and inventory sop](../src/startups/small-business-management/procedures/supplier-and-inventory-sop.tex) — small-business-management/procedures · **provisional**
+
+## Related reviewed sources with secondary operational runbooks content (1)
+
+- [Harness Engineering Technical Guide](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/02-harness-engineering-technical-guide.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**

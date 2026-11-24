@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary assessments (50)
+## Primary assessments (51)
 
 - [architecture traceability scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/architecture-traceability-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
 - [diagram quality scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/diagram-quality-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
@@ -19,6 +19,7 @@
 - [governance bylaws maturity template](../src/business-analysis/parliamentary-procedure-and-governance/scorecards/templates/governance-bylaws-maturity-template.tex) — parliamentary-procedure-and-governance/scorecards/templates · **provisional**
 - [meeting validity assessment template](../src/business-analysis/parliamentary-procedure-and-governance/scorecards/templates/meeting-validity-assessment-template.tex) — parliamentary-procedure-and-governance/scorecards/templates · **provisional**
 - [minutes and records assessment template](../src/business-analysis/parliamentary-procedure-and-governance/scorecards/templates/minutes-and-records-assessment-template.tex) — parliamentary-procedure-and-governance/scorecards/templates · **provisional**
+- [Security Architecture Assessment](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/03-security-architecture-assessment.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [DCAM-Based Capability Assessment Scorecard Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/scorecards/dcam-based-capability-assessment-scorecard-template.tex) — enterprise-data-governance · **provisional**
 - [devsecops control assurance template](../src/devops/ci-cd/continuous-delivery-release-engineering/scorecards/devsecops-control-assurance-template.tex) — ci cd/continuous delivery release engineering/scorecards · **provisional**
 - [pipeline architecture template](../src/devops/ci-cd/continuous-delivery-release-engineering/scorecards/pipeline-architecture-template.tex) — ci cd/continuous delivery release engineering/scorecards · **provisional**

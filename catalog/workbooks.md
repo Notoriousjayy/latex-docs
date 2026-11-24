@@ -154,7 +154,8 @@
 - [unit economics template](../src/startups/small-business-management/workbooks/templates/unit-economics-template.tex) — small-business-management/workbooks/templates · **provisional**
 - [working capital template](../src/startups/small-business-management/workbooks/templates/working-capital-template.tex) — small-business-management/workbooks/templates · **provisional**
 
-## Related reviewed sources with secondary workbooks and exercises content (2)
+## Related reviewed sources with secondary workbooks and exercises content (3)
 
 - [Duration Estimating Worksheet — Working Form](../src/architecture/governance/ccoe/planning/2-18-duration-estimating-worksheet.tex) — CCoE duration estimate worksheet · **reviewed**
+- [Hands-On Agent Harness Learning Roadmap](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/06-hands-on-learning-roadmap.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [CPython Engineering Curriculum and Laboratory](../src/programming/languages/python/08-engineering-curriculum-laboratory.tex) — CPython engineering curriculum · **reviewed**
