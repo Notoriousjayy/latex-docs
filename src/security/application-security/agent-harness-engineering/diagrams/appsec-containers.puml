@@ -1,0 +1,37 @@
+' View of proposed AppSec Agent Harness; see study for scope and correspondence.
+@startuml appsec-containers
+!include ../../../../../tooling/styles/plantuml/c4/container-diagram-style.iuml
+
+C4_TITLE(AppSec Agent Harness, V2 container view)
+Person(analyst, "Analyst", "Reviews recommendations")
+System_Ext(scanners, "Scanners", "Findings and independent verification")
+System_Ext(scm, "Source control", "Revision and PR APIs")
+System_Ext(model, "Model provider", "Inference only")
+System_Ext(ci, "CI and review systems", "Verification and review")
+System_Boundary(harness, "AppSec Agent Harness") {
+ Container(ingest, "Ingestion", "Python service", "Normalizes and redacts")
+ Container(orch, "Orchestrator", "Python service", "Coordinates bounded runs")
+ Container(pdp, "Policy decision service", "OPA", "Evaluates trusted input")
+ Container(broker, "Execution broker", "Python service", "Enforces policy and dispatches typed calls")
+ Container(worker, "Verification worker", "Isolated job", "Runs approved checks")
+ ContainerDb(state, "Run store", "PostgreSQL", "Run state, receipts and approvals")
+ ContainerDb(evidence, "Evidence store", "Protected object store", "Sanitized evidence and digests")
+}
+Rel(scanners, ingest, "Delivers findings", "Signed event")
+Rel(ingest, evidence, "Stores redacted findings", "API")
+Rel(ingest, state, "Creates work", "SQL")
+Rel(analyst, orch, "Reviews results", "HTTPS")
+Rel(orch, state, "Loads checkpoints", "SQL")
+Rel(orch, model, "Requests inference", "HTTPS")
+Rel(orch, broker, "Proposes typed action", "HTTPS")
+Rel(broker, pdp, "Requests decision", "HTTPS")
+Rel(broker, state, "Records decision", "SQL")
+Rel(broker, evidence, "Retrieves scoped evidence", "API")
+Rel(broker, scm, "Calls scoped adapter", "HTTPS")
+Rel(broker, worker, "Dispatches approved checks", "Job API")
+Rel(worker, scanners, "Runs approved verification", "Scoped API")
+Rel(worker, ci, "Requests trusted checks", "API")
+Rel(worker, evidence, "Records verification", "API")
+Rel(broker, ci, "Routes reviewed report", "API")
+SHOW_LEGEND()
+@enduml
