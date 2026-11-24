@@ -604,6 +604,10 @@
 
 - [Application Review Analysis Template](../src/security/application-security/processes/application-review-analysis-template.tex) — application security review · **reviewed**
 
+## application security/agent harness engineering (1)
+
+- [Agent Harness Engineering for Application Security: Architecture, Design Patterns, Security Controls, and Enterprise Implementation](../src/security/application-security/agent-harness-engineering/agent-harness-engineering-for-application-security.tex) — application security/agent harness engineering · **reviewed**
+
 ## application security/assessment (7)
 
 - [01 security foundations](../src/security/application-security/assessment/01-security-foundations.tex) — application security/assessment · **provisional**

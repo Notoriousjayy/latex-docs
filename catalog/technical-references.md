@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (740)
+## Primary technical references (741)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -613,6 +613,7 @@
 - [03 architecture decision framework](../src/programming/web/micro-frontends/03-architecture-decision-framework.tex) — web/micro frontends · **provisional**
 - [05 devsecops cicd](../src/programming/web/micro-frontends/05-devsecops-cicd.tex) — web/micro frontends · **provisional**
 - [06 migration playbook](../src/programming/web/micro-frontends/06-migration-playbook.tex) — web/micro frontends · **provisional**
+- [Agent Harness Engineering for Application Security: Architecture, Design Patterns, Security Controls, and Enterprise Implementation](../src/security/application-security/agent-harness-engineering/agent-harness-engineering-for-application-security.tex) — application security/agent harness engineering · **reviewed**
 - [01 security foundations](../src/security/application-security/assessment/01-security-foundations.tex) — application security/assessment · **provisional**
 - [02 vulnerability taxonomy](../src/security/application-security/assessment/02-vulnerability-taxonomy.tex) — application security/assessment · **provisional**
 - [04 static analysis algorithms](../src/security/application-security/assessment/04-static-analysis-algorithms.tex) — application security/assessment · **provisional**

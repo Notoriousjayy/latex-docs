@@ -1960,8 +1960,9 @@
 - [07 hands on labs](../src/programming/web/micro-frontends/07-hands-on-labs.tex) — web/micro frontends · **provisional**
 - [08 learning curriculum](../src/programming/web/micro-frontends/08-learning-curriculum.tex) — web/micro frontends · **provisional**
 
-## security (250)
+## security (251)
 
+- [Agent Harness Engineering for Application Security: Architecture, Design Patterns, Security Controls, and Enterprise Implementation](../src/security/application-security/agent-harness-engineering/agent-harness-engineering-for-application-security.tex) — application security/agent harness engineering · **reviewed**
 - [01 security foundations](../src/security/application-security/assessment/01-security-foundations.tex) — application security/assessment · **provisional**
 - [02 vulnerability taxonomy](../src/security/application-security/assessment/02-vulnerability-taxonomy.tex) — application security/assessment · **provisional**
 - [03 manual code auditing](../src/security/application-security/assessment/03-manual-code-auditing.tex) — application security/assessment · **provisional**
