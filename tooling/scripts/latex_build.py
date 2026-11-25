@@ -92,6 +92,7 @@ class BuildSummary:
     slowest_roots: list[dict[str, Any]] = field(default_factory=list)
     cache_hits: int = 0
     cache_misses: int = 0
+    warning_audit: list[dict[str, Any]] = field(default_factory=list)
 
 
 def _percentile(values: Sequence[float], fraction: float) -> float:
@@ -171,6 +172,9 @@ def _write_build_summary(log_dir: Path | None, summary: BuildSummary, output_dir
         f"wall clock seconds: {summary.wall_clock_seconds}",
         f"compile seconds: {summary.compile_seconds}",
         f"build status: {summary.build_status}",
+        f"warning-audited roots: {sum(r['status'] != 'missing-log' for r in summary.warning_audit)}",
+        f"warning-bearing roots: {sum(r['status'] == 'warnings' for r in summary.warning_audit)}",
+        f"missing final logs: {sum(r['status'] == 'missing-log' for r in summary.warning_audit)}",
     ]
     for key, value in sorted(summary.timing_stats.items()):
         lines.append(f"timing {key}: {value}")
@@ -194,6 +198,9 @@ def _write_build_summary(log_dir: Path | None, summary: BuildSummary, output_dir
         encoding="utf-8",
     )
 
+    (log_dir / "build-warning-audit.json").write_text(
+        json.dumps(summary.warning_audit, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     first_errors_path.write_text(json.dumps(summary.first_errors, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     failure_clusters_path.write_text(json.dumps(summary.failure_clusters, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -1461,6 +1468,47 @@ def _repo_relative(path: Path) -> str:
     return resolved.relative_to(ROOT).as_posix() if resolved.is_relative_to(ROOT) else str(resolved)
 
 
+# Inspect only latexmk's final native engine pass, not intermediate passes
+# (where unresolved references and rerun notices are expected to be transient).
+# Include box diagnostics even though TeX does not prefix them with "Warning".
+LATEX_WARNING_PATTERN = re.compile(
+    r"^(?:(?:LaTeX(?: Font)?|Package\s+\S+|Class\s+\S+|pdfTeX|BibTeX)\s+Warning\b"
+    r"|pdfTeX warning\b|(?:Over|Under)full\s+\\[hv]box\b"
+    r"|(?:Font|Missing character:).*?(?:Warning|There is no))",
+    re.IGNORECASE,
+)
+LATEX_WARNING_CONTINUATION = re.compile(r"^\([^)]+\)\s{2,}")
+
+def _audit_final_log(path: Path) -> dict[str, Any]:
+    """Return explicit final-pass status and actionable native-log diagnostics.
+
+    A missing or unreadable log is not evidence of a clean build.
+    Retain the full warning-bearing native log for source context.
+    """
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return {"status": "missing-log", "warning_count": 0, "diagnostics": []}
+    if not lines or not any("Output written on " in line for line in lines):
+        return {"status": "missing-log", "warning_count": 0, "diagnostics": []}
+    diagnostics = []
+    for index, line in enumerate(lines):
+        if not LATEX_WARNING_PATTERN.match(line.strip()) and not line.startswith("Missing character:"):
+            continue
+        message = line.strip()
+        for following in lines[index + 1:index + 7]:
+            if LATEX_WARNING_CONTINUATION.match(following):
+                message += " " + following.strip()
+            else:
+                break
+        diagnostics.append({"log_line": index + 1, "message": message})
+    return {
+        "status": "warnings" if diagnostics else "clean",
+        "warning_count": len(diagnostics),
+        "diagnostics": diagnostics,
+    }
+
+
 def _prune_success_logs(tex_path: Path, log_dir: Path | None) -> None:
     """Drop per-document logs for a successful build.
 
@@ -1504,6 +1552,7 @@ def build_roots(
         reset_output_tree(log_dir)
 
     failures: List[tuple[Path, int, dict[str, str]]] = []
+    warning_audit: list[dict[str, Any]] = []
 
     def report_failure(tex_path: Path, result_code: int) -> None:
         stdout_path, stderr_path = _log_paths(tex_path, log_dir)
@@ -1553,7 +1602,17 @@ def build_roots(
             failure_count += 1
             report_failure(tex_path, result_code)
         else:
-            _prune_success_logs(tex_path, log_dir)
+            native = _native_log_copy_path(tex_path, log_dir)
+            if native is None or not native.exists():
+                native = tex_path.with_suffix(".log")
+            audit = _audit_final_log(native)
+            audit["root"] = _repo_relative(tex_path)
+            warning_audit.append(audit)
+            if audit["status"] == "clean":
+                _prune_success_logs(tex_path, log_dir)
+            else:
+                print(f"LaTeX warning audit: {audit['root']}: {audit['status']} "
+                      f"({audit['warning_count']} diagnostics)", file=sys.stderr)
 
     wall_clock = time.perf_counter() - started
     compile_seconds = sum(durations.values())
@@ -1611,6 +1670,7 @@ def build_roots(
         slowest_roots=[{"root": source, "seconds": seconds} for source, seconds in slowest],
         cache_hits=cache_hits,
         cache_misses=len(tex_paths),
+        warning_audit=warning_audit,
     )
     _write_build_summary(log_dir, summary, output_dir)
     return exit_code
@@ -1939,6 +1999,20 @@ def aggregate_shards(
     compile_seconds = sum(float(item.get("compile_seconds", 0.0)) for item in summaries)
     wall_seconds = max((float(item.get("wall_clock_seconds", 0.0)) for item in summaries), default=0.0)
 
+    warning_audit = [row for summary in summaries for row in summary.get("warning_audit", [])]
+    warning_roots = [row for row in warning_audit if row["status"] == "warnings"]
+    missing_logs = [row for row in warning_audit if row["status"] == "missing-log"]
+    audited_roots = sum(row["status"] in {"clean", "warnings"} for row in warning_audit)
+    warning_count = sum(row["warning_count"] for row in warning_roots)
+    warning_status = ("incomplete" if audited_roots != attempted or failed else
+                      "warnings" if warning_roots else "clean")
+    (output_dir / "build-warning-audit.json").write_text(
+        json.dumps({"status": warning_status, "attempted": attempted, "audited": audited_roots,
+                    "warning_count": warning_count, "warning_roots": warning_roots,
+                    "missing_logs": missing_logs}, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
     first_errors: list[dict[str, Any]] = []
     clusters: Counter[str] = Counter()
     durations: dict[str, float] = {}
@@ -1985,6 +2059,10 @@ def aggregate_shards(
         problems.append(f"one or more build shards reported `{shard_result}`")
     if failed:
         problems.append(f"{failed} document(s) failed to compile")
+    if warning_status == "incomplete":
+        problems.append(f"final-pass warning audit incomplete: {audited_roots}/{attempted} roots audited")
+    if warning_roots:
+        problems.append(f"{len(warning_roots)} document(s) emitted {warning_count} final-pass LaTeX diagnostics")
     if shards_reported < shards_expected:
         problems.append(f"only {shards_reported} of {shards_expected} shards reported results")
     if missing_selected:
@@ -2012,6 +2090,11 @@ def aggregate_shards(
         "attempted_roots": attempted,
         "succeeded_roots": succeeded,
         "failed_roots": failed,
+        "warning_audit_status": warning_status,
+        "warning_audited_roots": audited_roots,
+        "warning_bearing_roots": len(warning_roots),
+        "warning_count": warning_count,
+        "missing_warning_logs": len(missing_logs),
         "shards_expected": shards_expected,
         "shards_reported": shards_reported,
         "expected_pdfs": len(expected),
@@ -2046,6 +2129,11 @@ def aggregate_shards(
         f"| Attempted | {attempted} |",
         f"| Succeeded | {succeeded} |",
         f"| Failed | {failed} |",
+        f"| Final-pass warning audit | {warning_status} |",
+        f"| Warning-audited roots | {audited_roots}/{attempted} |",
+        f"| Warning-bearing roots | {len(warning_roots)} |",
+        f"| Final-pass diagnostics | {warning_count} |",
+        f"| Missing final logs | {len(missing_logs)} |",
         f"| Shards reported | {shards_reported}/{shards_expected} |",
         f"| PDFs present / expected | {len(present)}/{len(expected)} |",
         f"| Stale PDFs removed | {len(stale)} |",
@@ -2058,6 +2146,12 @@ def aggregate_shards(
     if aggregate["failure_clusters"]:
         report += ["", "#### Failure clusters", "", "| Count | Signature |", "| --- | --- |"]
         report += [f"| {item['count']} | {item['signature'][:180]} |" for item in aggregate["failure_clusters"][:15]]
+    if warning_roots:
+        report += ["", "#### Warning-bearing documents (first 50)", "",
+                   "Complete messages and native log locations are in the shard log artifacts and build-warning-audit.json.", "",
+                   "| Diagnostics | Root |", "| --- | --- |"]
+        report += [f"| {row['warning_count']} | {row['root']} |"
+                   for row in sorted(warning_roots, key=lambda r: (-r["warning_count"], r["root"]))[:50]]
     if aggregate["slowest_roots"]:
         report += ["", "<details><summary>Slowest 25 documents</summary>", "", "| Seconds | Root |", "| --- | --- |"]
         report += [f"| {item['seconds']} | {item['root']} |" for item in aggregate["slowest_roots"]]
