@@ -527,8 +527,8 @@ class PlantUMLRendererAccountingTests(unittest.TestCase):
             os.utime(leaf, (now + 20, now + 20))
             self.assertFalse(latex_build._plantuml_is_current(source, None, [output], list(includes)))
 
-    def test_existing_jpeg_derivative_is_refreshed_without_regenerating_legacy_jpg(self) -> None:
-        """JPEG derivatives refresh; legacy JPG remains byte-for-byte unchanged."""
+    def test_legacy_jpg_and_jpeg_are_never_regenerated(self) -> None:
+        """Both legacy formats remain byte-for-byte unchanged."""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             src = root / "src"
@@ -544,9 +544,6 @@ class PlantUMLRendererAccountingTests(unittest.TestCase):
                     return SimpleNamespace(returncode=0, stdout="PlantUML version " + latex_build.load_plantuml_pin()["version"], stderr="")
                 if "-stdlib" in command:
                     return SimpleNamespace(returncode=0, stdout="c4\nVersion " + latex_build.load_plantuml_pin().get("c4_plantuml", ""), stderr="")
-                if command[0] == "fake-convert":
-                    Path(command[-1]).write_bytes(b"\xff\xd8\xffnew")
-                    return SimpleNamespace(returncode=0, stdout="", stderr="")
                 out = Path(command[command.index("-o") + 1])
                 out.mkdir(parents=True, exist_ok=True)
                 fmt = next(a[2:] for a in command if a.startswith("-t"))
@@ -555,14 +552,13 @@ class PlantUMLRendererAccountingTests(unittest.TestCase):
                         (out / f"{Path(name).stem}.{fmt}").write_bytes(png_magic if fmt == "png" else b"<svg/>")
                 return SimpleNamespace(returncode=0, stdout="", stderr=b"")
 
-            with patch("tooling.scripts.latex_build.subprocess.run", side_effect=fake_run), \
-                    patch("tooling.scripts.latex_build.image_magick_convert", return_value="fake-convert"):
+            with patch("tooling.scripts.latex_build.subprocess.run", side_effect=fake_run):
                 status = latex_build.render_plantuml(source_dir=src, formats=["svg"], force=True, result_path=root / "r.json")
             self.assertEqual(0, status)
             self.assertEqual(b"\xff\xd8\xffold", (src / "jpg" / "d.jpg").read_bytes())
-            self.assertEqual(b"\xff\xd8\xffnew", (src / "jpeg" / "d.jpeg").read_bytes())
+            self.assertEqual(b"\xff\xd8\xffold", (src / "jpeg" / "d.jpeg").read_bytes())
             data = json.loads((root / "r.json").read_text(encoding="utf-8"))
-            self.assertEqual({"svg": 1, "jpeg": 1}, data["outputs_by_format"])
+            self.assertEqual({"svg": 1}, data["outputs_by_format"])
 
     def test_render_outputs_come_from_the_result_not_from_globbing(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

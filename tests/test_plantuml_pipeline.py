@@ -247,10 +247,10 @@ class GeneratedImageStagingTests(unittest.TestCase):
         (self.diagrams / "svg" / "d.svg").write_text("<svg>2</svg>", encoding="ascii")
         self.assertEqual(["M\tsrc/area/diagrams/svg/d.svg"], self._stage())
 
-    def test_jpg_outputs_are_staged_when_present(self) -> None:
+    def test_legacy_jpg_outputs_are_not_staged_as_generated(self) -> None:
         (self.diagrams / "jpg").mkdir()
         (self.diagrams / "jpg" / "d.jpg").write_bytes(b"jpg")
-        self.assertEqual(["A\tsrc/area/diagrams/jpg/d.jpg"], self._stage())
+        self.assertEqual([], self._stage())
 
     def test_deleted_tracked_image_is_staged_as_a_deletion(self) -> None:
         """Prevent renamed @startuml outputs from lingering: deletions must be staged too."""

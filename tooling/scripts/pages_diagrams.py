@@ -132,7 +132,7 @@ def render_card(key: Path, variants: list[Path], *, standalone: bool = False) ->
         return escape("images/" + quote(path.as_posix(), safe="/:@-._~"))
 
     def label(path: Path) -> str:
-        return "JPG (legacy)" if path.suffix.lower() == ".jpg" else path.suffix[1:].upper()
+        return path.suffix[1:].upper() + (" (legacy)" if path.suffix.lower() in {".jpg", ".jpeg"} else "")
 
     search = escape(" ".join(p.as_posix() for p in ordered).casefold())
     title = escape(key.name)

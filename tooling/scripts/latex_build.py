@@ -2201,17 +2201,13 @@ def _plantuml_config_for(path: Path, config_names: Sequence[str]) -> Path | None
 
 PLANTUML_MANIFEST = ROOT / "tooling" / "manifests" / "plantuml.json"
 PLANTUML_FORMATS = ("png", "svg", "jpeg", "jpg")  # Recognize legacy assets for inventory and staging.
-PLANTUML_RENDER_FORMATS = ("png", "svg", "jpeg")  # Never generate .jpg.
-# PlantUML itself emits PNG and SVG; JPEG is a derivative of PNG.
+PLANTUML_RENDER_FORMATS = ("png", "svg")  # JPG/JPEG generation is prohibited.
 PLANTUML_ENGINE_FORMATS = ("png", "svg")
 PLANTUML_INCLUDE_DIRS = (ROOT / "tooling" / "plantuml", ROOT / "tooling" / "styles" / "plantuml")
 PLANTUML_EXAMPLES_DIR = ROOT / "tooling" / "plantuml"
 PLANTUML_GLOBAL_CONFIG = ROOT / "tooling" / "plantuml" / "config.puml"
 PLANTUML_CONFIG_NAMES = ("plantuml-config.puml", "config.puml")
 PLANTUML_RESULT_DEFAULT = ROOT / "public" / "logs" / "plantuml-render.json"
-# The JPEG derivative has no alpha channel; transparent renders are flattened onto the house paper tone.
-PLANTUML_JPG_BACKGROUND = "#F7F7F2"
-PLANTUML_JPG_QUALITY = "90"
 # PlantUML draws these into the image instead of failing; the SVG text uses U+00A0 for spaces.
 PLANTUML_ERROR_TEXT = re.compile(
     r"Syntax Error|Please use CSS style|cannot include|Cannot include|"
@@ -2391,7 +2387,7 @@ def _plantuml_is_current(
 
 
 def unmanaged_diagram_images(source_dirs: Iterable[Path]) -> list[Path]:
-    """Image files sitting beside a .puml instead of in its png/svg/jpeg directory."""
+    """Image files sitting beside a .puml instead of in its png/svg directory."""
     found: list[Path] = []
     for directory in source_dirs:
         if not directory.is_dir():
@@ -2402,44 +2398,10 @@ def unmanaged_diagram_images(source_dirs: Iterable[Path]) -> list[Path]:
     return found
 
 
-def image_magick_convert() -> str | None:
-    """The ImageMagick converter used for JPEG derivatives, or None when unavailable."""
-    for name in ("magick", "convert"):
-        found = shutil.which(name)
-        if found:
-            return found
-    return None
-
-
-def png_to_jpg_command(converter: str, png: Path, jpg: Path) -> list[str]:
-    """Flatten transparency onto the house paper tone and strip volatile metadata for reproducible bytes."""
-    cmd = [converter]
-    if Path(converter).name == "magick":
-        cmd.append("convert")
-    cmd += [
-        str(png),
-        "-background", PLANTUML_JPG_BACKGROUND,
-        "-flatten",
-        "-alpha", "off",
-        "-strip",
-        "-quality", PLANTUML_JPG_QUALITY,
-        str(jpg),
-    ]
-    return cmd
-
-
 def _png_is_valid(path: Path) -> bool:
     try:
         with path.open("rb") as handle:
             return handle.read(8) == b"\x89PNG\r\n\x1a\n"
-    except OSError:
-        return False
-
-
-def _jpg_is_valid(path: Path) -> bool:
-    try:
-        with path.open("rb") as handle:
-            return handle.read(3) == b"\xff\xd8\xff"
     except OSError:
         return False
 
@@ -2452,7 +2414,7 @@ def _svg_is_valid(path: Path) -> bool:
     return "<svg" in head
 
 
-_OUTPUT_VALIDATORS = {"png": _png_is_valid, "svg": _svg_is_valid, "jpeg": _jpg_is_valid}
+_OUTPUT_VALIDATORS = {"png": _png_is_valid, "svg": _svg_is_valid}
 
 
 def _same_bytes(a: Path, b: Path) -> bool:
@@ -2522,9 +2484,8 @@ def render_plantuml(
     directory, validated (process status, presence, format magic, error text
     drawn into SVGs) and only then promoted over the committed files, so a
     failed render leaves the previous valid image in place and is reported as
-    failed rather than as current. JPEG is produced from the PNG through
-    ImageMagick because the engine has no JPEG writer. Existing legacy JPGs
-    are preserved but never regenerated; existing JPEG derivatives are refreshed.
+    failed rather than as current. Only PNG and SVG are generated.
+    Existing JPG and JPEG assets are preserved without regeneration.
     """
     result = PlantUMLRenderResult(forced=force)
     search_roots = [Path(source_dir or SRC_DIR).resolve(), *(Path(root).resolve() for root in extra_roots)]
@@ -2561,7 +2522,6 @@ def render_plantuml(
         print(f"Configuration error: unsupported PlantUML format(s) {unknown}", file=sys.stderr)
         return 2
     result.formats = formats
-    converter = image_magick_convert()
 
     include_paths = [path for path in PLANTUML_INCLUDE_DIRS if path.exists()]
     # Shared inputs: every style module, the engine pin and this renderer (its recipe is an input too).
@@ -2626,20 +2586,15 @@ def render_plantuml(
             record["includes"] = sorted(_rel(inc) for inc in local_includes)
             inputs = [*shared_inputs, *local_includes]
 
-            # Refresh existing JPEG derivatives, but never regenerate legacy JPG files.
-            effective_formats = list(formats)
-            if "jpeg" not in effective_formats and any(output.exists() for output in plantuml_output_paths(path, "jpeg", text)):
-                effective_formats.append("jpeg")
-
             engine_formats_needed: set[str] = set()
-            for fmt in effective_formats:
+            for fmt in formats:
                 outputs = plantuml_output_paths(path, fmt, text)
                 expected_outputs.setdefault(path.parent / fmt, set()).update(outputs)
                 current = not force and _plantuml_is_current(path, config_path, outputs, inputs)
                 record["formats"][fmt] = "current" if current else "pending"
                 if current:
                     continue
-                engine_fmt = "png" if fmt == "jpeg" else fmt
+                engine_fmt = fmt
                 engine_formats_needed.add(engine_fmt)
                 wanted.setdefault((path, engine_fmt), set()).add(fmt)
             if engine_formats_needed:
@@ -2657,10 +2612,6 @@ def render_plantuml(
             file=sys.stderr,
         )
         return finish(1)
-
-    if any("jpeg" in targets for targets in wanted.values()) and converter is None:
-        print("Configuration error: jpeg output requires ImageMagick (`magick` or `convert`) on PATH", file=sys.stderr)
-        return 2
 
     result.invalid_named_diagrams = len(invalid_names)
     for path in invalid_names:
@@ -2704,27 +2655,6 @@ def render_plantuml(
                         if phrase:
                             problems.append(f"error text in {candidate.name}: {phrase}")
 
-                derived: dict[str, list[tuple[Path, Path]]] = {}
-                if not problems:
-                    for fmt in sorted(targets):
-                        pairs: list[tuple[Path, Path]] = []
-                        for engine_output, temp_file in zip(engine_outputs, produced):
-                            if fmt == engine_fmt:
-                                pairs.append((temp_file, engine_output))
-                                continue
-                            jpeg_temp = temp_output / (engine_output.stem + ".jpeg")
-                            conv = subprocess.run(
-                                png_to_jpg_command(converter or "convert", temp_file, jpeg_temp),
-                                check=False,
-                                capture_output=True,
-                                text=True,
-                            )
-                            if conv.returncode != 0 or not _jpg_is_valid(jpeg_temp):
-                                problems.append(f"jpeg conversion failed for {engine_output.name}: {conv.stderr.strip()[-200:]}")
-                                break
-                            pairs.append((jpeg_temp, source.parent / "jpeg" / jpeg_temp.name))
-                        derived[fmt] = pairs
-
                 if problems:
                     failed_sources.add(source)
                     record["status"] = "failed"
@@ -2736,7 +2666,8 @@ def render_plantuml(
                     print(f"PlantUML failed in {_rel(source)} ({engine_fmt}): {reason}", file=sys.stderr)
                     continue
 
-                for fmt, pairs in derived.items():
+                for fmt in sorted(targets):
+                    pairs = list(zip(produced, engine_outputs))
                     for temp_file, destination in pairs:
                         destination.parent.mkdir(parents=True, exist_ok=True)
                         changed = not (destination.exists() and _same_bytes(temp_file, destination))
@@ -2764,7 +2695,7 @@ def render_plantuml(
                     record["formats"][fmt] = "failed"
     result.diagrams = [diagram_records[path] for path in sorted(diagram_records)]
 
-    # Files in a png/svg/jpeg directory that no source produces (e.g. left over from a
+    # Files in a png/svg directory that no source produces (e.g. left over from a
     # renamed @startuml) are reported, never deleted: deletion is a reviewed change.
     orphans = sorted(
         candidate
@@ -2777,7 +2708,7 @@ def render_plantuml(
     for orphan in result.stale_outputs:
         print(f"PlantUML: stale output without a source: {orphan}", file=sys.stderr)
 
-    # Every render writes into <source>/png|svg|jpeg, so an image sitting directly
+    # Every render writes into <source>/png|svg, so an image sitting directly
     # beside a .puml came from an earlier flat-output run: it is never refreshed,
     # revalidated or overwritten here and will keep serving whatever it last held.
     result.unmanaged_images = [_rel(stale) for stale in sorted(unmanaged_diagram_images(source_dirs))]
@@ -2907,7 +2838,7 @@ def smoke_plantuml(output_dir: Path, examples_dir: Path | None = None) -> int:
     return 1 if problems else 0
 
 
-def generated_image_paths(repo_root: Path, source_dir: str = "src", formats: Sequence[str] = PLANTUML_FORMATS) -> list[str]:
+def generated_image_paths(repo_root: Path, source_dir: str = "src", formats: Sequence[str] = PLANTUML_RENDER_FORMATS) -> list[str]:
     """Tracked and untracked files matching <source_dir>/**/<fmt>/*.<fmt>, as repo-relative POSIX paths."""
 
     def git_paths(*args: str) -> list[str]:
@@ -2927,7 +2858,7 @@ def generated_image_paths(repo_root: Path, source_dir: str = "src", formats: Seq
     return sorted(selected)
 
 
-def stage_generated_images(repo_root: Path, source_dir: str = "src", formats: Sequence[str] = PLANTUML_FORMATS) -> list[str]:
+def stage_generated_images(repo_root: Path, source_dir: str = "src", formats: Sequence[str] = PLANTUML_RENDER_FORMATS) -> list[str]:
     """Stage additions, modifications and deletions of generated diagram images only.
 
     A literal `git add 'src/**/jpg/*.jpg'` aborts the whole add when one optional
@@ -3054,7 +2985,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     render_parser = subparsers.add_parser("render-plantuml", help="Render every diagram under --source-dir with the pinned engine")
     render_parser.add_argument("--source-dir", type=Path, default=None)
     render_parser.add_argument("--extra-root", type=Path, action="append", default=[], help="Additional first-party diagram root (repeatable)")
-    render_parser.add_argument("--formats", nargs="*", default=["png", "svg"], help="png svg jpeg; jpeg is derived from png with ImageMagick")
+    render_parser.add_argument("--formats", nargs="*", default=["png", "svg"], help="png svg only; JPG/JPEG generation is disabled")
     render_parser.add_argument("--force", action="store_true", help="Re-render diagrams even when outputs are current")
     render_parser.add_argument("--result", type=Path, default=None, help=f"Where to write the JSON render result (default {PLANTUML_RESULT_DEFAULT.relative_to(ROOT)})")
     render_parser.add_argument("--require-diagrams", action="store_true", help="Fail when the roots contain no renderable diagram")
@@ -3069,7 +3000,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     smoke_parser = subparsers.add_parser("smoke-plantuml", help="Render tooling/plantuml/*-example.puml and fail on any error text")
     smoke_parser.add_argument("--output-dir", type=Path, required=True)
 
-    stage_parser = subparsers.add_parser("stage-plantuml-images", help="git add only managed png/svg/jpeg and legacy jpg diagram outputs")
+    stage_parser = subparsers.add_parser("stage-plantuml-images", help="git add only managed PNG and SVG diagram outputs")
     stage_parser.add_argument("--repo-root", type=Path, default=None)
     stage_parser.add_argument("--source-dir", default="src")
 

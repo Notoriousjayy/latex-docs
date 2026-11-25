@@ -203,7 +203,7 @@ def build_inventory(render_result: Path | None = None) -> dict:
                         "includes": includes,
                         "config": _rel(config) if config else "",
                         "outputs": {fmt: entries[index] for fmt, entries in outputs.items() if index < len(entries)},
-                        "required_formats": ["png", "svg"] + (["jpeg"] if outputs["jpeg"][index]["exists"] else []),
+                        "required_formats": ["png", "svg"],
                         "consumers": sorted(consumers.get(source, set())),
                         "render_status": status.get("status", "unknown"),
                         "render_formats": status.get("formats", {}),
