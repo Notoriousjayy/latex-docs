@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## architecture (360)
+## architecture (366)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -340,6 +340,12 @@
 - [sei software arch docs handout views](../src/architecture/views-and-beyond/fundamentals/sei-software-arch-docs-handout-views.tex) — views and beyond/fundamentals · **provisional**
 - [stakeholders and their documentation needs](../src/architecture/views-and-beyond/fundamentals/stakeholders-and-their-documentation-needs.tex) — views and beyond/fundamentals · **provisional**
 - [system name arch docs beyond views](../src/architecture/views-and-beyond/fundamentals/system-name-arch-docs-beyond-views.tex) — views and beyond/fundamentals · **provisional**
+- [Architecture Description Conformance Guide: ISO/IEC/IEEE 42010:2022](../src/architecture/views-and-beyond/integrated-42010-documentation-suite/architecture-conformance-guide-42010-2022.tex) — views-and-beyond/integrated-42010-documentation-suite · **reviewed**
+- [Architecture Documentation Review Checklist](../src/architecture/views-and-beyond/integrated-42010-documentation-suite/architecture-documentation-review-checklist.tex) — views-and-beyond/integrated-42010-documentation-suite · **reviewed**
+- [Architecture Viewpoint Catalog: Views and Beyond and ISO 42010](../src/architecture/views-and-beyond/integrated-42010-documentation-suite/architecture-viewpoint-catalog-vb-42010.tex) — views-and-beyond/integrated-42010-documentation-suite · **reviewed**
+- [Integrated Software Architecture Document Template](../src/architecture/views-and-beyond/integrated-42010-documentation-suite/integrated-sad-template.tex) — views-and-beyond/integrated-42010-documentation-suite · **reviewed**
+- [Reference Software Architecture Document: Repository Security Analysis](../src/architecture/views-and-beyond/integrated-42010-documentation-suite/reference-sad-security-analysis.tex) — views-and-beyond/integrated-42010-documentation-suite · **reviewed**
+- [Software Architecture Documentation with Views and Beyond and ISO/IEC/IEEE 42010:2022](../src/architecture/views-and-beyond/integrated-42010-documentation-suite/software-architecture-docs-vb-iso-42010-2022.tex) — views-and-beyond/integrated-42010-documentation-suite · **reviewed**
 - [architectural style ref mapping](../src/architecture/views-and-beyond/style-catalogs/allocation/deployment-style/architectural-style-ref-mapping.tex) — allocation/deployment style · **provisional**
 - [architectural style ref mapping software](../src/architecture/views-and-beyond/style-catalogs/allocation/install-style/architectural-style-ref-mapping-software.tex) — allocation/install style · **provisional**
 - [architectural views ref](../src/architecture/views-and-beyond/style-catalogs/component-and-connector/component-and-connector-views/architectural-views-ref.tex) — component and connector/component and connector views · **provisional**
