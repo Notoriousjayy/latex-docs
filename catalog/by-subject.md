@@ -181,7 +181,7 @@
 - [L15: Capstone integration: GitHub AppSec agent (read-only) (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l15-appsec-capstone.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
 - [L16: Capstone hardening, independent review and operational handoff (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l16-capstone-hardening.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
 
-## ai-agent-engineering/technical-documents (8)
+## ai-agent-engineering/technical-documents (9)
 
 - [Agent Engineering Standards: SKILL.md, AGENTS.md, MCP, and Agent Harnesses](../src/data-systems/ai-agent-engineering/technical-documents/agent-engineering-standards-skills-agents-mcp-harnesses.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [Agent Skills Engineering Guide](../src/data-systems/ai-agent-engineering/technical-documents/agent-skills-engineering-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
@@ -191,6 +191,7 @@
 - [AI Agent Workflow and Orchestration Patterns: Architecture, Security, and Evaluation](../src/data-systems/ai-agent-engineering/technical-documents/ai-agent-workflow-orchestration-patterns-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [OpenAI Codex Custom Subagents: Configuration, Precedence, and Secure Orchestration](../src/data-systems/ai-agent-engineering/technical-documents/codex-custom-subagents-technical-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [OpenAI Codex Integration with GitHub Copilot](../src/data-systems/ai-agent-engineering/technical-documents/codex-github-copilot-integration-guide.tex) — ai-agent-engineering/technical-documents · **reviewed**
+- [Custom Harness Engineering for AI Coding Agents: Architecture, Design Patterns, Context Management, Verification Loops, and Enterprise Implementation with Claude Code and Codex](../src/data-systems/ai-agent-engineering/technical-documents/custom-harness-engineering-guide.tex) — ai-agent-engineering/technical-documents · **reviewed**
 
 ## ai-agent-engineering/technical-documents/agent-harness-course-study (13)
 
