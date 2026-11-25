@@ -2059,6 +2059,10 @@ def aggregate_shards(
         problems.append(f"one or more build shards reported `{shard_result}`")
     if failed:
         problems.append(f"{failed} document(s) failed to compile")
+    if warning_status == "incomplete":
+        problems.append(f"final-pass warning audit incomplete: {audited_roots}/{attempted} roots audited")
+    if warning_roots:
+        problems.append(f"{len(warning_roots)} document(s) emitted {warning_count} final-pass LaTeX diagnostics")
     if shards_reported < shards_expected:
         problems.append(f"only {shards_reported} of {shards_expected} shards reported results")
     if missing_selected:
