@@ -8,13 +8,9 @@ inputs:
     required: false
     default: 'src'
   formats:
-    description: 'Space-separated output formats (png svg jpg)'
+    description: 'Space-separated output formats (png svg only)'
     required: false
     default: 'png svg'
-  generate-jpg:
-    description: 'Generate JPG from PNG (requires ImageMagick)'
-    required: false
-    default: 'false'
   extra-roots:
     description: 'Space-separated additional first-party diagram roots (e.g. tooling/plantuml for the framework examples)'
     required: false
@@ -78,17 +74,11 @@ runs:
       run: |
         set -euo pipefail
         echo "::group::Installing PlantUML dependencies"
-        # Graphviz, Java and ImageMagick intentionally follow the Ubuntu runner
-        # packages; the PlantUML jar is the pinned, repository-controlled
-        # renderer. ImageMagick is unconditional because the renderer refreshes
-        # managed JPGs when PNG output is requested, preserving the full output
-        # matrix even when generate-jpg is false.
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends \
           ca-certificates \
           graphviz \
           fonts-dejavu-core \
-          imagemagick \
           default-jre-headless
         sudo rm -rf /var/lib/apt/lists/*
         PINNED="$(python3 -c 'import json; print(json.load(open("tooling/manifests/plantuml.json"))["version"])')"
@@ -109,9 +99,6 @@ runs:
         set -euo pipefail
         ROOT="${{ inputs.source-dir }}"
         read -ra FORMATS <<< "${{ inputs.formats }}"
-        if [[ "${{ inputs.generate-jpg }}" == "true" ]]; then
-          FORMATS+=("jpg")
-        fi
         EXTRA=()
         for root in ${{ inputs.extra-roots }}; do EXTRA+=(--extra-root "$root"); done
         FORCE=()

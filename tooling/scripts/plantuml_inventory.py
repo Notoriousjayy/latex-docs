@@ -133,7 +133,7 @@ def _consumers() -> dict[Path, set[str]]:
             if "\\" in ref or "#" in ref or ref.startswith("http"):
                 continue
             base = doc.parent / ref
-            candidates = [base] if Path(ref).suffix else [base.with_suffix(ext) for ext in (".png", ".svg", ".jpg", ".pdf")]
+            candidates = [base] if Path(ref).suffix else [base.with_suffix(ext) for ext in (".png", ".svg", ".jpeg", ".jpg", ".pdf")]
             for candidate in candidates:
                 hit = outputs.get(candidate.resolve())
                 if hit is not None:
@@ -203,7 +203,7 @@ def build_inventory(render_result: Path | None = None) -> dict:
                         "includes": includes,
                         "config": _rel(config) if config else "",
                         "outputs": {fmt: entries[index] for fmt, entries in outputs.items() if index < len(entries)},
-                        "required_formats": ["png", "svg"] + (["jpg"] if outputs["jpg"][index]["exists"] else []),
+                        "required_formats": ["png", "svg"],
                         "consumers": sorted(consumers.get(source, set())),
                         "render_status": status.get("status", "unknown"),
                         "render_formats": status.get("formats", {}),
