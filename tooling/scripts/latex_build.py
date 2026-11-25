@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = ROOT / "src"
 LATEXMK = os.environ.get("LATEXMK", "latexmk")
 TIMING_HISTORY_PATH = ROOT / "tooling" / "manifests" / "build-timings.json"
-RASTER_SUFFIXES = {".png": "png", ".svg": "svg", ".jpg": "jpg", ".jpeg": "jpeg"}  # Includes vector previews.
+RASTER_SUFFIXES = {".png": "png", ".svg": "svg"}  # Publish only PNG/SVG previews.
 
 FATAL_PATTERNS = [
     re.compile(r"LaTeX Error:\s+.+"),
@@ -1069,7 +1069,7 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = Non
                 f'<span class="document-path">{path_label}</span></a>'
             )
             if keys:
-                handle.write('<div class="related-diagrams"><p class="related-label">Referenced diagrams</p>')
+                handle.write('<div class="related-diagrams"><p class="related-label">Related diagrams</p>')
                 _emit_cards(handle, keys)
                 handle.write('</div>')
             handle.write('</li>')
@@ -1196,14 +1196,14 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
         if not pdf_rel_paths:
             handle.write("<p>No PDFs are currently staged for publication.</p>")
 
-        handle.write('</section><section class="library" id="plantuml-diagrams" aria-label="Diagram previews" data-category-section>')
-        handle.write(_heading(2, "PlantUML Diagrams — other assets"))
+        handle.write('</section>')
         if unreferenced:
+            handle.write('<section class="library" id="plantuml-diagrams" aria-label="Unmatched diagram previews" data-category-section>')
+            handle.write(_heading(2, "PlantUML Diagrams — other assets"))
             _emit_cards(handle, unreferenced, standalone=True)
-        else:
-            handle.write('<p>No unassociated diagram assets are staged.</p>')
+            handle.write('</section>')
 
-        handle.write("""</section>
+        handle.write("""
 </main>
 <footer><div class="shell">""" + str(total_documents) + """ PDFs and """ + str(len(image_groups)) + """ diagrams published</div></footer>
 <script>
@@ -2200,7 +2200,7 @@ def _plantuml_config_for(path: Path, config_names: Sequence[str]) -> Path | None
 
 
 PLANTUML_MANIFEST = ROOT / "tooling" / "manifests" / "plantuml.json"
-PLANTUML_FORMATS = ("png", "svg", "jpeg", "jpg")  # Recognize legacy assets for inventory and staging.
+PLANTUML_FORMATS = ("png", "svg")
 PLANTUML_RENDER_FORMATS = ("png", "svg")  # JPG/JPEG generation is prohibited.
 PLANTUML_ENGINE_FORMATS = ("png", "svg")
 PLANTUML_INCLUDE_DIRS = (ROOT / "tooling" / "plantuml", ROOT / "tooling" / "styles" / "plantuml")

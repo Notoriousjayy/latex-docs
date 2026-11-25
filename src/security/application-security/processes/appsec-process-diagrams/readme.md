@@ -27,7 +27,7 @@ make render-plantuml
 python3 tooling/scripts/plantuml_lint.py
 ```
 
-Run from the repository root. Source `.puml` files are in this directory; rendered images are organized in `png/`, `svg/` and `jpg/`. Apply [the shared PlantUML framework](../../../../../tooling/plantuml/README.md) when extending a workflow.
+Run from the repository root. Source `.puml` files are in this directory; rendered images are organized in `png/` and `svg/`. Apply [the shared PlantUML framework](../../../../../tooling/plantuml/README.md) when extending a workflow.
 
 ## Interpretation
 

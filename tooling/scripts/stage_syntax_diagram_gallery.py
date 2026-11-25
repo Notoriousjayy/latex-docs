@@ -27,9 +27,11 @@ HOME_NAV_MARKER = '</nav></section><section class="library" aria-label="Publishe
 EXPECTED_TOTAL = 1166
 
 
-def asset_path(language: str, index: int, rule: str) -> Path:
+def asset_path(language: str, index: int, rule: str, fmt: str = "png") -> Path:
+    if fmt not in {"png", "svg"}:
+        raise ValueError("Unsupported image format: " + fmt)
     original = rule_path(language, index, rule)
-    return IMAGE_ROOT / original.parent / "png" / (original.stem + ".png")
+    return IMAGE_ROOT / original.parent / fmt / (original.stem + "." + fmt)
 
 
 def template(title: str, body: str, extra_script: str = "") -> str:
@@ -60,6 +62,8 @@ p { max-width:90ch }
 .rule h3 { margin:0 0 .4rem;overflow-wrap:anywhere }
 .rule img { display:block;max-width:100%;height:auto;background:white;border:1px solid #bbb;padding:.5rem;border-radius:5px }
 .rule a { display:inline-block;margin:.5rem 0 }
+.format-links { display:flex;gap:.6rem;flex-wrap:wrap }
+.format-links a[aria-current="true"] { font-weight:700; text-decoration:underline }
 .rule pre { overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;padding:1rem;border:1px solid GrayText;border-radius:6px }
 .notice { border-left:4px solid #987b29;padding:.5rem 1rem }
 .sections { margin:1.5rem 0;display:flex;flex-wrap:wrap;gap:.6rem }
@@ -98,6 +102,17 @@ SEARCH_SCRIPT = """
   }
   counter.textContent = String(count) + ' of ' + rules.length + ' rules shown';
  }
+ document.addEventListener('click', function(event) {
+  const link = event.target.closest('[data-format-link]');
+  if (!link || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+  const card = link.closest('.rule');
+  if (!card) return;
+  event.preventDefault();
+  card.querySelector('img').src = link.href;
+  card.querySelector('[data-full-image]').href = link.href;
+  card.querySelectorAll('[data-format-link]').forEach(a => a.removeAttribute('aria-current'));
+  link.setAttribute('aria-current', 'true');
+ });
  input.addEventListener('input', filter);
  input.addEventListener('keydown', function(event) {
   if (event.key === 'Escape') { input.value = ''; filter(); }
@@ -135,19 +150,29 @@ def language_page(site: Path, language: str, title: str) -> tuple[str, int]:
             with asset.open("rb") as stream:
                 if stream.read(8) != b"\x89PNG\r\n\x1a\n":
                     raise ValueError("Invalid PNG diagram: " + relative.as_posix())
+        relative_svg = asset_path(language, index, name, "svg")
+        svg = site / "images" / relative_svg
+        if not svg.is_file():
+            missing.append(relative_svg.as_posix())
+        elif "<svg" not in svg.read_text(encoding="utf-8")[:512]:
+            raise ValueError("Invalid SVG diagram: " + relative_svg.as_posix())
         rendered_names.add(name)
         _, mode = build_rule(language, name, factories.get(name))
         safe_name = html.escape(name)
         url = "../images/" + quote(relative.as_posix(), safe="/-._~")
+        svg_url = "../images/" + quote(relative_svg.as_posix(), safe="/-._~")
         caption = "Factory-derived diagram" if mode == "factory-derived" else "Text-only schematic (factory not convertible)"
         fragments.append(
             '<article class="rule" id="rule-' + format(index, "04d") +
             '" data-rule="' + html.escape((name + " " + entry["text"]).casefold(), quote=True) + '">'
             + "<h3>" + safe_name + "</h3>"
             + '<p class="summary">' + html.escape(caption) + "</p>"
-            + '<a href="' + html.escape(url, quote=True) + '" title="View original PNG">'
+            + '<a data-full-image href="' + html.escape(url, quote=True) + '" title="View selected image">'
             + '<img loading="lazy" src="' + html.escape(url, quote=True)
             + '" alt="' + html.escape(title + " railroad diagram for " + name, quote=True) + '"></a>'
+            + '<nav class="format-links" aria-label="Diagram image format">'
+            + '<a data-format-link aria-current="true" href="' + html.escape(url, quote=True) + '">PNG</a>'
+            + '<a data-format-link href="' + html.escape(svg_url, quote=True) + '">SVG</a></nav>'
             + "<details><summary>Full textual grammar definition</summary><pre>"
             + html.escape(entry["text"])
             + "</pre></details></article>"
@@ -176,7 +201,7 @@ def language_page(site: Path, language: str, title: str) -> tuple[str, int]:
                       + "".join(fragments[start:]) + "</section>")
         nav.append('<a href="#section-extra">Additional productions (' + str(len(extra)) + ")</a>")
     if missing:
-        raise FileNotFoundError(str(len(missing)) + " required grammar PNGs missing for " + language
+        raise FileNotFoundError(str(len(missing)) + " required grammar PNG/SVG files missing for " + language
                                 + "; examples: " + ", ".join(missing[:8]))
     if len(rendered_names) != len(data["rules"]):
         raise ValueError("Gallery omitted grammar productions")
@@ -184,7 +209,7 @@ def language_page(site: Path, language: str, title: str) -> tuple[str, int]:
         '<p><a href="./">All syntax diagrams</a> / ' + html.escape(title) + "</p>"
         + "<h1>" + html.escape(title) + " Grammar Railroad Diagrams</h1>"
         + '<p>All <strong>' + str(len(rendered_names)) + "</strong> imported textual productions are indexed below. "
-        + "Each has a PNG rendered by the repository-owned PlantUML pipeline, plus the complete original grammar text.</p>"
+        + "Each has paired PNG and SVG images rendered by the repository-owned PlantUML pipeline, plus the complete original grammar text.</p>"
         + '<p class="notice">Diagram syntax is a visual interpretation of source railroad factories, not a normative language specification. '
         + "Factory conversion gaps are explicitly marked. PEG ordered choice, contextual rules and semantic restrictions "
         + "must be checked against the language specification.</p>"
@@ -223,16 +248,16 @@ def stage_gallery(site: Path) -> Path:
             + html.escape(title, quote=True) + ' railroad diagram"></a></article>'
         )
     if expected != EXPECTED_TOTAL:
-        raise ValueError("Incomplete PNG publication: " + str(expected) + "/" + str(EXPECTED_TOTAL))
+        raise ValueError("Incomplete diagram publication: " + str(expected) + "/" + str(EXPECTED_TOTAL))
     body = (
         '<p><a href="../">Documentation library</a> / Programming grammars</p>'
         + "<h1>Programming Language Railroad Diagrams</h1>"
         + "<p>Explore <strong>1,166 grammar productions</strong> across five language specifications. "
-        + "The diagrams are PNG images generated by the repository's pinned PlantUML pipeline. "
+        + "The diagrams are PNG and SVG images generated by the repository's pinned PlantUML pipeline. "
         + "The complete textual rules remain available alongside every image.</p>"
         + '<div class="stats"><span class="pill">5 languages</span>'
         + '<span class="pill">1,166 productions</span>'
-        + '<span class="pill">Static HTML and PNG</span></div>'
+        + '<span class="pill">Static HTML, PNG and SVG</span></div>'
         + '<div class="grid">' + "".join(index_pieces) + "</div>"
         + '<p class="notice">Railroad visualizations are educational companions, not conformance '
         + 'certifications or guarantees that PEG, contextual, and semantic constraints are represented.</p>'
@@ -242,7 +267,7 @@ def stage_gallery(site: Path) -> Path:
     if HOME_NAV_MARKER not in original:
         raise ValueError("The canonical Pages home navigation has changed")
     new_home = original.replace(HOME_NAV_MARKER,
-                                '<a href="syntax-diagrams/">Programming Syntax Diagrams (PNG)</a>'
+                                '<a href="syntax-diagrams/">Programming Syntax Diagrams (PNG/SVG)</a>'
                                 + HOME_NAV_MARKER, 1)
     gallery.mkdir(parents=True, exist_ok=True)
     for name, content in generated_pages.items():

@@ -1012,7 +1012,7 @@ class BuildToolTests(unittest.TestCase):
             self.assertIn("document-list", first_html)
             self.assertIn("document-search", first_html)
 
-    def test_stage_pages_site_includes_nested_png_and_jpg_preview_links(self) -> None:
+    def test_stage_pages_site_excludes_legacy_jpeg_preview_links(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             pdf_dir = root / "public" / "pdfs"
@@ -1029,13 +1029,12 @@ class BuildToolTests(unittest.TestCase):
 
             self.assertEqual([Path("architecture/guide.pdf")], rel_paths)
             self.assertTrue((site_dir / "images" / "png" / "architecture" / "guide.png").exists())
-            self.assertTrue((site_dir / "images" / "jpg" / "architecture" / "guide.jpeg").exists())
+            self.assertFalse((site_dir / "images" / "jpg" / "architecture" / "guide.jpeg").exists())
             index_html = (site_dir / "index.html").read_text(encoding="utf-8")
             self.assertIn('href="pdfs/architecture/guide.pdf"', index_html)
             self.assertIn('src="images/png/architecture/guide.png"', index_html)
             self.assertIn('href="images/png/architecture/guide.png"', index_html)
-            self.assertIn('src="images/jpg/architecture/guide.jpeg"', index_html)
-            self.assertIn('href="images/jpg/architecture/guide.jpeg"', index_html)
+            self.assertNotIn("images/jpg/architecture/guide.jpeg", index_html)
             self.assertIn("Documents", index_html)
             self.assertIn("PlantUML Diagrams", index_html)
 
@@ -1054,13 +1053,11 @@ class BuildToolTests(unittest.TestCase):
             with patch("tooling.scripts.latex_build.ROOT", root), patch("tooling.scripts.latex_build.SRC_DIR", src):
                 manifest = latex_build.collect_raster_corpus(src, root / "artifact", root / "manifest.json", require_nonempty=True)
 
-            self.assertEqual(4, manifest["total"])
-            self.assertEqual({"png": 2, "svg": 0, "jpg": 1, "jpeg": 1}, manifest["counts"])
+            self.assertEqual(2, manifest["total"])
+            self.assertEqual({"png": 2, "svg": 0, "jpg": 0, "jpeg": 0}, manifest["counts"])
             for relative_path in (
                 "src/architecture/a/png/overview.png",
                 "src/security/b/png/overview.png",
-                "src/security/b/jpg/overview.jpg",
-                "src/security/b/jpg/detail.JPEG",
             ):
                 self.assertTrue((root / "artifact" / relative_path).is_file())
                 self.assertIn(relative_path, {item["path"] for item in manifest["files"]})

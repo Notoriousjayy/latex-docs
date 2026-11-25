@@ -25,6 +25,9 @@ class CompleteGrammarGalleryTests(unittest.TestCase):
                     path = root / "images" / asset_path(lang, index, item["name"])
                     path.parent.mkdir(parents=True, exist_ok=True)
                     path.write_bytes(b"\x89PNG\r\n\x1a\nsynthetic")
+                    svg = root / "images" / asset_path(lang, index, item["name"], "svg")
+                    svg.parent.mkdir(parents=True, exist_ok=True)
+                    svg.write_text("<svg/>", encoding="utf-8")
                     total += 1
         return total
 
@@ -45,7 +48,9 @@ class CompleteGrammarGalleryTests(unittest.TestCase):
                 self.assertEqual(page.count('<img loading="lazy"'), count)
                 self.assertIn("Full textual grammar definition", page)
                 self.assertIn('id="rule-search"', page)
-                self.assertNotIn(".svg", page)
+                self.assertEqual(page.count('data-format-link href='), count)
+                self.assertEqual(page.count('data-format-link aria-current="true"'), count)
+                self.assertIn("card.querySelector('img').src = link.href", page)
                 total_cards += count
             self.assertEqual(total_cards, 1166)
             self.assertIn("syntax-diagrams/", (root / "index.html").read_text(encoding="utf-8"))
@@ -54,6 +59,16 @@ class CompleteGrammarGalleryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             self.make_site(root, all_png=False)
+            with self.assertRaises(FileNotFoundError):
+                stage_gallery(root)
+            self.assertFalse((root / "syntax-diagrams/index.html").exists())
+
+    def test_missing_svg_aborts_publication(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            self.make_site(root)
+            first = source_data(LANGUAGES[0][0])["rules"][0]
+            (root / "images" / asset_path(LANGUAGES[0][0], 1, first["name"], "svg")).unlink()
             with self.assertRaises(FileNotFoundError):
                 stage_gallery(root)
             self.assertFalse((root / "syntax-diagrams/index.html").exists())

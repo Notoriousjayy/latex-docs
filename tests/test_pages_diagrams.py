@@ -24,13 +24,13 @@ class PagesDiagramTests(unittest.TestCase):
             write(src / "architecture" / "b" / "guide.tex", br"\includegraphics{diagrams/svg/overview.svg}")
             write(pdfs / "architecture" / "a" / "guide.pdf")
             write(pdfs / "architecture" / "b" / "guide.pdf")
-            for fmt in ("png", "svg", "jpeg", "jpg"):
+            for fmt in ("png", "svg"):
                 write(src / "architecture" / "a" / "diagrams" / fmt / ("overview." + fmt))
             write(src / "architecture" / "b" / "diagrams" / "svg" / "overview.svg")
             write(src / "architecture" / "b" / "diagrams" / "png" / "unreferenced.png")
             with patch.object(latex_build, "ROOT", root):
                 manifest = latex_build.collect_raster_corpus(src, images)
-            self.assertEqual({"png": 2, "svg": 2, "jpeg": 1, "jpg": 1}, manifest["counts"])
+            self.assertEqual({"png": 2, "svg": 2, "jpeg": 0, "jpg": 0}, manifest["counts"])
             latex_build.stage_pages_site(pdfs, site, images, source_dir=src)
             page = (site / "index.html").read_text()
             # Include each document's opening list item (and its data-search
@@ -41,7 +41,7 @@ class PagesDiagramTests(unittest.TestCase):
             self.assertGreaterEqual(a, 0)
             self.assertGreater(b, a)
             other = page.index('id="plantuml-diagrams"')
-            self.assertIn("Referenced diagrams", page[a:b])
+            self.assertIn("Related diagrams", page[a:b])
             self.assertEqual(1, page[a:b].count('class="image-card"'))
             self.assertIn('src="images/src/architecture/a/diagrams/png/overview.png"', page[a:b])
             self.assertNotIn("architecture/b/diagrams", page[a:b])
@@ -50,11 +50,31 @@ class PagesDiagramTests(unittest.TestCase):
             self.assertEqual(1, page[b:other].count('class="image-card"'))
             self.assertIn("unreferenced.png", page[other:])
             self.assertIn('data-format-link aria-current="true">PNG', page[a:b])
-            for fmt in ("png", "svg", "jpeg", "jpg"):
+            for fmt in ("png", "svg"):
                 self.assertIn(f'images/src/architecture/a/diagrams/{fmt}/overview.{fmt}', page[a:b])
             for url in re.findall(r'(?:src|href)="(images/[^"]+)"', page):
                 self.assertTrue((site / unquote(url)).is_file(), url)
             self.assertIn("image.src = link.href", page)
+
+    def test_unique_authored_collection_and_unmatched_gallery(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            src, pdfs, images, site = (root / name for name in ("src", "pdfs", "images", "site"))
+            topic = Path("security/appsec")
+            (src / topic / "diagrams").mkdir(parents=True)
+            (pdfs / topic).mkdir(parents=True)
+            (src / topic / "guide.tex").write_text(r"\section{Application security}")
+            (src / topic / "diagrams" / "flow.puml").write_text("@startuml\nA -> B\n@enduml\n")
+            (pdfs / topic / "guide.pdf").write_bytes(b"PDF")
+            for fmt in ("png", "svg"):
+                out = images / "src" / topic / "diagrams" / fmt / ("flow." + fmt)
+                out.parent.mkdir(parents=True)
+                out.write_bytes(b"image")
+            latex_build.stage_pages_site(pdfs, site, images, source_dir=src)
+            page = (site / "index.html").read_text()
+            self.assertIn("Related diagrams", page)
+            self.assertIn('data-format-link>SVG', page)
+            self.assertNotIn('id="plantuml-diagrams"', page)
 
     def test_shared_asset_is_rendered_beneath_each_consumer(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -70,7 +90,8 @@ class PagesDiagramTests(unittest.TestCase):
             latex_build.stage_pages_site(pdfs, site, images, source_dir=src)
             page = (site / "index.html").read_text()
             self.assertEqual(2, page.count('src="images/src/docs/png/shared.png"'))
-            self.assertIn("No unassociated diagram assets", page)
+            self.assertNotIn('id="plantuml-diagrams"', page)
+            self.assertNotIn("PlantUML Diagrams — other assets", page)
             self.assertNotIn("data-standalone>", page)
 
 

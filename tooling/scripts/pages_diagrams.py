@@ -7,7 +7,7 @@ from collections import defaultdict
 from pathlib import Path
 from urllib.parse import quote
 
-FORMATS = ("png", "svg", "jpeg", "jpg")
+FORMATS = ("png", "svg")
 SUFFIXES = {"." + fmt for fmt in FORMATS}
 GRAPHICS = re.compile(r"\\(?:includegraphics|safeincludegraphics)\*?\s*(?:\[[^\]]*\])?\s*\{([^{}]+)\}")
 INPUTS = re.compile(r"\\(?:input|include|subfile|subfileinclude)\s*\{([^{}]+)\}")
@@ -28,7 +28,8 @@ def group_key(path: Path) -> Path:
 def group_images(paths: list[Path]) -> dict[Path, list[Path]]:
     groups: dict[Path, list[Path]] = defaultdict(list)
     for path in sorted(paths):
-        groups[group_key(path)].append(path)
+        if path.suffix.lower() in SUFFIXES:
+            groups[group_key(path)].append(path)
     return dict(sorted(groups.items()))
 
 
@@ -120,7 +121,106 @@ def document_diagrams(pdfs: list[Path], groups: dict[Path, list[Path]], source_r
                         break
         if keys:
             related[pdf] = sorted(keys)
+    # Explicit references take precedence. Only unassigned images enter the
+    # contextual pass; never associate across unrelated subject directories.
+    inferred = infer_related(pdfs, groups, source_root, related)
+    for pdf, keys in inferred.items():
+        related[pdf] = sorted(set(related.get(pdf, [])) | set(keys))
     return related
+
+
+GENERIC = {"architecture", "document", "documentation", "guide", "reference", "diagram",
+           "diagrams", "style", "model", "system", "software", "technical", "views",
+           "overview", "index", "notes", "design", "examples", "example", "patterns",
+           "part", "chapter", "the", "and", "for", "with", "from"}
+ASSET_FOLDERS = {"diagrams", "images", "figures", "assets", "examples", "railroad-samples"}
+
+
+def terms(text: str) -> set[str]:
+    return {word for word in re.findall(r"[a-z0-9]+", text.casefold())
+            if len(word) > 2 and word not in GENERIC and not word.isdigit()}
+
+
+def infer_related(pdfs, groups, source_root, explicit):
+    """Associate unreferenced images by bounded collection and topic evidence.
+
+    A sole document in a dedicated diagram collection is a strong ownership
+    signal. Otherwise require overlapping distinctive terms and a unique best
+    candidate. Railroad diagrams have an exact language-to-document mapping.
+    No fallback to a broad top-level category or arbitrary basename tie-break.
+    """
+    result = defaultdict(list)
+    attached = {key for keys in explicit.values() for key in keys}
+    by_parent = defaultdict(list)
+    metadata = {}
+    for pdf in pdfs:
+        tex = source_root / pdf.with_suffix(".tex")
+        if not tex.is_file():
+            continue
+        by_parent[pdf.parent].append(pdf)
+        try:
+            content = tex.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            content = ""
+        titles = re.findall(r"\\(?:title|section|subsection|chapter)\*?\s*\{([^{}]+)\}", content)
+        metadata[pdf] = (terms(pdf.stem + " " + " ".join(titles)), terms(content))
+    for key in groups:
+        if key in attached:
+            continue
+        relative = Path(*key.parts[1:]) if key.parts[0] == source_root.name else key
+        parts = relative.parts
+        # Generated grammar assets share a language-specific reference PDF.
+        if "railroad-generated" in parts:
+            pos = parts.index("railroad-generated")
+            if pos + 1 < len(parts):
+                target = Path(*parts[:pos]) / (parts[pos + 1] + "-syntax-reference.pdf")
+                if target in metadata:
+                    result[target].append(key)
+                    continue
+        if "railroad-samples" in parts:
+            pos = parts.index("railroad-samples")
+            for pdf in by_parent.get(Path(*parts[:pos]), []):
+                if relative.stem == pdf.stem.removesuffix("-syntax-reference"):
+                    result[pdf].append(key)
+                    break
+            else:
+                pdf = None
+            if pdf is not None and key in result.get(pdf, []):
+                continue
+        scope = relative.parent
+        while scope.name in ASSET_FOLDERS:
+            scope = scope.parent
+        # Scope must be a real subject collection, not a category like security.
+        if len(scope.parts) < 2:
+            continue
+        image_words = terms(relative.stem)
+        candidates = by_parent.get(scope, [])
+        # Detect an authored PlantUML collection even if the block output
+        # filename differs from the source filename.
+        diagram_dir = source_root / relative.parent
+        authored = any(diagram_dir.glob("*.puml"))
+        if len(candidates) == 1 and authored:
+            result[candidates[0]].append(key)
+            continue
+        # Collection index may be next to a nested diagram library, not inside.
+        # Permit at most two ancestors, require specific title/topic overlap.
+        nearby = set(candidates)
+        for ancestor in list(scope.parents)[:2]:
+            if len(ancestor.parts) >= 2:
+                nearby.update(by_parent.get(ancestor, []))
+        ranked = []
+        scope_words = terms(scope.name)
+        for pdf in nearby:
+            title, body = metadata[pdf]
+            direct = image_words & title
+            shared_scope = scope_words & title
+            content_hits = image_words & body
+            if len(direct) >= 2 or (len(shared_scope) >= 2 and len(content_hits) >= 1):
+                ranked.append((4 * len(direct) + 3 * len(shared_scope) + min(3, len(content_hits)), pdf))
+        ranked.sort(key=lambda row: (-row[0], row[1].as_posix()))
+        if ranked and (len(ranked) == 1 or ranked[0][0] >= ranked[1][0] + 3):
+            result[ranked[0][1]].append(key)
+    return result
 
 
 def render_card(key: Path, variants: list[Path], *, standalone: bool = False) -> str:
@@ -132,7 +232,7 @@ def render_card(key: Path, variants: list[Path], *, standalone: bool = False) ->
         return escape("images/" + quote(path.as_posix(), safe="/:@-._~"))
 
     def label(path: Path) -> str:
-        return path.suffix[1:].upper() + (" (legacy)" if path.suffix.lower() in {".jpg", ".jpeg"} else "")
+        return path.suffix[1:].upper()
 
     search = escape(" ".join(p.as_posix() for p in ordered).casefold())
     title = escape(key.name)

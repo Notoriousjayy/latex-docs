@@ -370,7 +370,7 @@ directory, and generated wrapper files are per-document
 - PDF artifacts upload with `compression-level: 0` — PDFs are already compressed,
   so deflating thousands of them is pure CPU on upload *and* download.
 - `latex-raster` is produced once by the reusable workflow's raster job from the
-  source-relative committed PNG/JPG/JPEG corpus, after same-run PlantUML rendering
+  source-relative committed PNG/SVG corpus, after same-run PlantUML rendering
   when diagrams changed.
 - Shard PDFs (3-day retention) are separated from the published corpus (14 days)
   and from diagnostics/timings.
