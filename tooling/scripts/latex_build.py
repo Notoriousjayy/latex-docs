@@ -1100,20 +1100,27 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = Non
             handle.write('</li>')
         handle.write("</ul>")
 
-    def _emit_diagram_gallery(handle: Any, keys: list[Path], level: int) -> None:
+    def _emit_diagram_gallery(handle: Any, keys: list[Path], level: int, *, unmatched: bool = False) -> None:
         if not keys:
             return
-        handle.write('<details class="document-group diagram-gallery"><summary>')
-        handle.write(_heading(min(level, 6), "PlantUML Diagrams — other assets"))
-        handle.write('</summary>')
+        if unmatched:
+            handle.write('<details class="document-group diagram-gallery"><summary>')
+            handle.write(_heading(min(level, 6), "PlantUML Diagrams — other assets"))
+            handle.write('</summary>')
+        else:
+            # The owning category already provides the disclosure. Show the
+            # actual image cards as soon as that category is expanded.
+            handle.write('<div class="diagram-gallery" data-diagram-gallery>')
+            handle.write('<p class="related-label">PlantUML Diagrams</p>')
         _emit_cards(handle, keys, standalone=True)
-        handle.write('</details>')
+        handle.write('</details>' if unmatched else '</div>')
 
     def _emit_directory_tree(handle: Any, paths: list[Path], depth: int, level: int) -> None:
         """Render the hierarchy from each PDF's own directory path; no collection allowlist."""
         here = [path for path in paths if len(path.parts) == depth + 1]
         if here:
             _emit_tree_links(handle, here)
+        _emit_diagram_gallery(handle, scoped_diagrams.get(paths[0].parts[:depth], []), level)
         groups: dict[str, list[Path]] = {}
         for path in paths:
             if len(path.parts) > depth + 1:
@@ -1125,7 +1132,6 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = Non
             handle.write('</summary>')
             _emit_directory_tree(handle, groups[segment], depth + 1, level + 1)
             handle.write('</details>')
-        _emit_diagram_gallery(handle, scoped_diagrams.get(paths[0].parts[:depth], []), level)
 
     index_path = site_dir / "index.html"
     with index_path.open("w", encoding="utf-8") as handle:
@@ -1193,6 +1199,7 @@ a { color: var(--accent); }
 .image-meta { margin-top: .65rem; font-size: .88rem; overflow-wrap: anywhere; }
 .image-meta a { color: var(--text); text-decoration: none; }
 .related-diagrams { margin: .7rem 0 1rem 1rem; padding-left: .9rem; border-left: 2px solid var(--border); }
+div.diagram-gallery { margin: 1rem 0; }
 .related-label { font-size: .9rem; font-weight: 650; color: var(--muted); margin: 0 0 .5rem; }
 .image-format-links { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .55rem; }
 .image-format-links a { display: inline-block; border: 1px solid var(--border); padding: .22rem .55rem; border-radius: 4px; font-size: .82rem; text-decoration: none; }
@@ -1245,7 +1252,7 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
         handle.write('</section>')
         if unmatched_diagrams:
             handle.write('<section class="library" id="plantuml-diagrams" aria-label="Unmatched diagram previews" data-category-section>')
-            _emit_diagram_gallery(handle, unmatched_diagrams, 2)
+            _emit_diagram_gallery(handle, unmatched_diagrams, 2, unmatched=True)
             handle.write('</section>')
 
         handle.write("""
@@ -1258,6 +1265,7 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
     const rows = Array.from(document.querySelectorAll('.document-row, .image-card[data-standalone]'));
     const sections = Array.from(document.querySelectorAll('[data-category-section]'));
     const groups = Array.from(document.querySelectorAll('details.document-group'));
+    const galleries = Array.from(document.querySelectorAll('[data-diagram-gallery]'));
     let preSearchState = null;
     const matchingRow = '.document-row:not([hidden]), .image-card[data-standalone]:not([hidden])';
     function update() {
@@ -1279,6 +1287,9 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
             else if (preSearchState !== null) group.open = preSearchState[index];
         });
         if (!query) preSearchState = null;
+        galleries.forEach(function (gallery) {
+            gallery.hidden = !!query && !gallery.querySelector(matchingRow);
+        });
         sections.forEach(function (section) {
             section.hidden = !!query && !section.querySelector(matchingRow);
         });
