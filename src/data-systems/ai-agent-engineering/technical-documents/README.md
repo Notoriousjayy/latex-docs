@@ -6,6 +6,8 @@ Standalone technical references that complement the [AI Agent Engineering curric
 
 ## Documents
 
+- [Custom Harness Engineering for AI Coding Agents: Architecture, Design Patterns, Context Management, Verification Loops, and Enterprise Implementation with Claude Code and Codex](custom-harness-engineering-guide.tex) — 35 core sections, native TikZ diagrams, 30 patterns, 18 labs, source verification register and companion implementation. See the [capability register](custom-harness-engineering-capability-register.csv) and [reference examples](custom-harness-engineering-reference/README.md). Local standalone build and tests passed; native-agent and repository CI qualification remain outstanding.
+
 - [AI Agent Workflow and Orchestration Patterns](ai-agent-workflow-orchestration-patterns-guide.tex) — modular pdfLaTeX technical reference with twelve native TikZ architecture diagrams, qualitative design trade-offs, MCP/A2A boundaries, governed AppSec example, bounded Python control loop, and measurable verification criteria.
 
 - [Agent Skills Engineering: Specification, Architecture, Testing, and Security](agent-skills-engineering-guide.tex) — comprehensive guide to the Agent Skills specification, package architecture, authoring, installation, cross-agent compatibility, Python skill implementation, testing, security, and governance.

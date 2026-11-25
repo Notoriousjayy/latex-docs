@@ -1002,7 +1002,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## data-systems (120)
+## data-systems (121)
 
 - [AI Agent Engineering: Comprehensive Developer Curriculum](../src/data-systems/ai-agent-engineering/curriculum/ai-agent-engineering-comprehensive-syllabus.tex) — ai-agent-engineering/curriculum · **provisional**
 - [L01: Agent system boundaries and LLM tool semantics (Beamer slides)](../src/data-systems/ai-agent-engineering/curriculum/lab-presentations/l01-agent-system-boundaries.tex) — ai-agent-engineering/curriculum/lab-presentations · **provisional**
@@ -1049,6 +1049,7 @@
 - [AI Agent Workflow and Orchestration Patterns: Architecture, Security, and Evaluation](../src/data-systems/ai-agent-engineering/technical-documents/ai-agent-workflow-orchestration-patterns-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [OpenAI Codex Custom Subagents: Configuration, Precedence, and Secure Orchestration](../src/data-systems/ai-agent-engineering/technical-documents/codex-custom-subagents-technical-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [OpenAI Codex Integration with GitHub Copilot](../src/data-systems/ai-agent-engineering/technical-documents/codex-github-copilot-integration-guide.tex) — ai-agent-engineering/technical-documents · **reviewed**
+- [Custom Harness Engineering for AI Coding Agents: Architecture, Design Patterns, Context Management, Verification Loops, and Enterprise Implementation with Claude Code and Codex](../src/data-systems/ai-agent-engineering/technical-documents/custom-harness-engineering-guide.tex) — ai-agent-engineering/technical-documents · **reviewed**
 - [Data Governance Regulatory Applicability Register Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/registers/data-governance-regulatory-applicability-register-template.tex) — enterprise-data-governance · **provisional**
 - [Governance Compliance Evidence Register Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/registers/governance-compliance-evidence-register-template.tex) — enterprise-data-governance · **provisional**
 - [DCAM-Based Capability Assessment Scorecard Template](../src/data-systems/enterprise-data-governance/standards-and-frameworks/scorecards/dcam-based-capability-assessment-scorecard-template.tex) — enterprise-data-governance · **provisional**
