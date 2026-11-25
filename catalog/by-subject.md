@@ -192,7 +192,7 @@
 - [OpenAI Codex Custom Subagents: Configuration, Precedence, and Secure Orchestration](../src/data-systems/ai-agent-engineering/technical-documents/codex-custom-subagents-technical-guide.tex) — ai-agent-engineering/technical-documents · **provisional**
 - [OpenAI Codex Integration with GitHub Copilot](../src/data-systems/ai-agent-engineering/technical-documents/codex-github-copilot-integration-guide.tex) — ai-agent-engineering/technical-documents · **reviewed**
 
-## ai-agent-engineering/technical-documents/agent-harness-course-study (10)
+## ai-agent-engineering/technical-documents/agent-harness-course-study (13)
 
 - [Comprehensive Architecture Analysis](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/01-comprehensive-architecture-analysis.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Harness Engineering Technical Guide](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/02-harness-engineering-technical-guide.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
@@ -204,6 +204,9 @@
 - [AI Agent Harness Architecture Description — Part 1: ERPA: Memory-First Assistant Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-descriptions/part-01-erpa/ai-agent-harness-architecture-part-01.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [AI Agent Harness Architecture Description — Part 2: PPA: Governed Personal Productivity Assistant Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-descriptions/part-02-ppa/ai-agent-harness-architecture-part-02.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [AI Agent Harness Architecture Description — Part 3: PPA That Improves: Learning and Adaptive Harness Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-descriptions/part-03-ppa-learning/ai-agent-harness-architecture-part-03.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [Software Architecture Document — Part 1: ERPA: Memory-First Agent Harness Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/software-architecture-documents/part-01-erpa/software-architecture-document-part-01.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [Software Architecture Document — Part 2: PPA: Governed Personal Productivity Agent Harness Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/software-architecture-documents/part-02-ppa/software-architecture-document-part-02.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [Software Architecture Document — Part 3: PPA That Improves: Learning and Adaptive Agent Harness Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/software-architecture-documents/part-03-ppa-learning/software-architecture-document-part-03.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 
 ## ai-agent-engineering/technical-documents/agent-workflow-patterns (7)
 
