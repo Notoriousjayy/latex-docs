@@ -1,0 +1,45 @@
+@startuml
+!include ../../../../../tooling/styles/plantuml/interaction/sequence-diagram-style.iuml
+title Authorized Execution | Proposed agent harness
+actor User
+participant "E-01 API" as API
+participant "E-09 Core" as O
+participant "E-10 Model adapter" as M
+participant "E-11 Policy" as P
+participant "E-13 Approval" as A
+participant "E-12 Broker" as B
+participant "E-05 Sandbox" as X
+database "E-03 State" as S
+participant "E-16 Telemetry" as L
+User -> API : submit authenticated task
+API -> S : create run
+O -> S : claim run
+O -> M : request proposal
+M --> O : structured proposal
+O -> P : validate action and evaluate
+alt deny or invalid
+ O -> L : emit denial
+else allow / approval required
+ opt approval required
+  O -> S : persist pending intent
+  User -> API : approve exact intent (authorized approver)
+  API -> S : persist scoped approval
+ end
+ O -> B : dispatch candidate
+ B -> P : re-evaluate current policy
+ B -> A : verify approval if required
+ alt denied, expired or unverifiable
+  B --> O : denied, no execution
+ else authorized
+  B -> X : execute with scoped capability
+  X --> B : result / uncertain outcome
+  B --> O : typed outcome
+ end
+ O -> S : checkpoint / reconcile
+ O -> L : emit redacted outcome
+end
+legend bottom
+Solid arrow = request; dashed arrow = response; fragments = conditional trace.
+Status: proposed, not implementation evidence.
+endlegend
+@enduml

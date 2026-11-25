@@ -26,6 +26,7 @@ The Views and Beyond methodology for documenting software architecture
 | `style-catalogs/` | Style catalog grouped by viewpoint family (allocation, component-and-connector, module). |
 | `view-packets/` | Structured documentation packets and worked view examples. |
 | [`documentation-engineering-suite/`](documentation-engineering-suite/README.md) | 66 standalone references, study guides, laboratories, viewpoints, templates/blanks, workbooks, and scorecards. |
+| [`architecture-documentation-suite/`](architecture-documentation-suite/README.md) | Seven compact operational references, authoring template, review gates, repository recovery, proposed agent harness models and 48-hour curriculum. |
 
 ## Working sequence
 

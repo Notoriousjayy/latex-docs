@@ -1,0 +1,54 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern,geometry,microtype,xcolor,enumitem,hyperref,fancyhdr}
+\geometry{margin=0.78in}
+\definecolor{ink}{HTML}{17324D}
+\definecolor{accent}{HTML}{126A78}
+\hypersetup{colorlinks=true,linkcolor=accent,urlcolor=accent,breaklinks=true}
+\setlength{\parindent}{0pt}
+\setlength{\emergencystretch}{3em}
+\setlist[itemize]{leftmargin=*,itemsep=3pt,topsep=3pt}
+\pagestyle{fancy}\fancyhf{}\fancyhead[L]{\small Architecture Documentation Suite}\fancyhead[R]{\small v1.0}\fancyfoot[R]{\thepage}\setlength{\headheight}{15pt}
+\begin{document}
+\thispagestyle{empty}
+{\color{accent}\large TECHNICAL REFERENCE \hfill NOVEMBER 2026}\par\vspace{1.1cm}
+{\color{ink}\LARGE\bfseries\raggedright AI Agent Harness Architecture Documentation Standard}\par\vspace{0.35cm}
+{\Large Proposed reference architecture and security-oriented viewpoints}\par\vspace{0.55cm}
+\rule{\textwidth}{0.7pt}\par\smallskip
+{\small Architecture Documentation Suite | Release 1.0}\par\vspace{0.7cm}
+\tableofcontents
+\newpage
+\section*{1. Status and scope}\addcontentsline{toc}{section}{1. Status and scope}
+This is a proposed vendor-neutral Python agent harness architecture, not a description of an inspected implementation. It applies V\&B to a system that accepts a task, obtains a model proposal, mediates tools, manages state and returns results. A model may propose an action; the harness must own execution authority. An external model service is a driven dependency, not an implicit policy authority. The examples are target architecture and require implementation validation.\par\smallskip
+\section*{2. Stakeholders and concerns}\addcontentsline{toc}{section}{2. Stakeholders and concerns}
+Developer C-01: change providers and tools without modifying core policy. Security reviewer C-02: prevent unapproved side effects and untrusted content from gaining authority. Operator C-03: diagnose bounded retries, recovery and latency. Governance owner C-04: reconstruct decision, approval and execution lineage. Data owner C-05: enforce retention, tenant isolation and secret redaction. Map C-01 to module/component views, C-02 to security and behavior, C-03 to deployment/behavior, C-04 to runtime/security, C-05 to data/security. Targets require explicit test evidence before acceptance.\par\smallskip
+\section*{3. Context and container structure}\addcontentsline{toc}{section}{3. Context and container structure}
+SYS-01 harness interacts with user, external model provider and external tool/resource services. E-01 API accepts authenticated task and tenant context; E-02 worker executes orchestration; E-03 state store persists task/checkpoint/approval records; E-04 audit sink captures redacted, append-oriented event records; E-05 sandbox executes scoped operations; E-06 model provider and E-07 resource/tool service are external. E-08 approval operator may approve a scoped intent through the API. These logical containers do not prescribe a particular cloud. See diagrams/01-context.puml and 02-containers.puml.\par\smallskip
+\section*{4. Module and component views}\addcontentsline{toc}{section}{4. Module and component views}
+E-09 orchestration core owns run state machine and budget. E-10 model port/adapters translate provider outputs into strict proposal schema. E-11 policy engine evaluates identity, tool action, target, tenant and data classification. E-12 tool broker validates arguments and dispatches only after authorization. E-13 approval service binds approval to a canonical operation digest, identity, expiration and policy version. E-14 persistence port/adapters perform conditional updates and checkpoints. E-15 context builder segregates instructions, user input and retrieved data; E-16 telemetry redacts before emission. Domain policy should not import vendor SDKs; adapters depend on ports. See 03-components and 04-modules diagrams.\par\smallskip
+\section*{5. Runtime behavior and failure handling}\addcontentsline{toc}{section}{5. Runtime behavior and failure handling}
+An authenticated task receives run ID and budget. Context builder assembles typed data; model adapter requests a proposal. Validate schema and reject malformed or unknown tool IDs. Policy returns deny, allow or require approval. Denial produces an audited result with no tool execution. Approval binds the exact action and expires; re-evaluate policy and verify scope immediately before dispatch. Broker issues a short-lived, scoped execution capability; sandbox executes with bounded resources and restricted egress. Record tool result as untrusted data. Reconcile the result, checkpoint and repeat only within budgets; return or terminate on completion, cancellation, exhaustion or unrecoverable error. See 05-authorized-execution and 06-run-state.\par\smallskip
+On transient failures, retry only permitted idempotent operations with bounded backoff. If a side effect may have occurred before timeout, enter reconciliation rather than blindly retry. Use idempotency keys and atomic checkpoint transitions; define compensation where possible. Fail closed on unavailable policy or unverifiable approval. Never equate tool execution success with correct task completion.\par\smallskip
+\section*{6. Interfaces and data}\addcontentsline{toc}{section}{6. Interfaces and data}
+ModelPort.generate accepts typed context and limits; returns a structured proposal or typed error; it has no execution permissions. PolicyPort.evaluate accepts principal, tenant, canonical action and context; returns decision, policy version and reason code. ToolBroker.execute requires validated request, scoped authorization and idempotency key; returns typed outcome with provenance or explicit uncertain-side-effect state. StatePort.checkpoint uses run ID, tenant, expected version and new state; rejects conflicts. AuditPort.append accepts minimal redacted event with run ID, correlation ID and outcome; never logs secret values or hidden model reasoning. ApprovalPort.verify checks exact digest, actor, expiry, policy and one-time or idempotent consumption. Document concrete schemas, timeout, error contracts, auth and compatibility in implementation-specific packets.\par\smallskip
+\section*{7. Security viewpoint and controls}\addcontentsline{toc}{section}{7. Security viewpoint and controls}
+\begin{itemize}
+\item Prompt injection: retrieved content remains untrusted data; strict tool schemas, authorization outside the model, action allowlists and outbound restrictions.
+\item Confused deputy and excessive privilege: bind principal and tenant to each action; deny unknown actions; use scoped credentials and explicit approval for risk-classified writes.
+\item Memory poisoning: tag provenance and trust level, validate writes, isolate tenants, enforce retention and support deletion; memory must not override policy.
+\item Sandbox escape and egress: process/container isolation, least privilege, resource quotas, restricted filesystem and network, no ambient credentials; validate isolation through tests.
+\item Replay and time-of-check/time-of-use: canonical digest, expiry, current policy recheck, idempotency and atomic consume/reconcile.
+\item Data exfiltration and audit leakage: classify inputs, limit context, redact output and traces, restrict destination, record only necessary metadata.
+\item Resource exhaustion and model failure: token/time/step budgets, concurrency limits, circuit breakers, cancellation and durable checkpoints.
+\end{itemize}
+The diagram 07-trust-boundaries shows intended enforcement, not proof of effectiveness. Denial tests must assert no external side effect, not merely a denial message.\par\smallskip
+\section*{8. Deployment, correspondence and variation}\addcontentsline{toc}{section}{8. Deployment, correspondence and variation}
+Proposed production environment: authenticated ingress, isolated worker, separate sandbox boundary, state database and audit sink; provider and tool services outside the boundary. Restrict network paths according to policy and use workload identity. Map worker components E-09 through E-16 to E-02; map execution E-05 to sandbox node. A module may map to multiple runtime processes; maintain explicit mapping. Variability points include provider adapter at configuration binding, tool registry by policy-approved deployment, persistence backend and approval thresholds. Record allowed combinations, defaults, credential scope and compatibility tests. See 08-deployment.puml and 09-data-model.puml.\par\smallskip
+\section*{9. Quality attribute scenarios (proposed targets)}\addcontentsline{toc}{section}{9. Quality attribute scenarios (proposed targets)}
+Security: malformed or forbidden tool proposal at normal load is denied before dispatch; target zero side effects in denial tests. Reliability: worker crash after checkpoint resumes without duplicate externally visible effect for supported idempotent actions; test crash injection. Availability: policy service unavailable results in a bounded safe failure, not bypass. Performance: define p95 latency budget per tool class and measure model, policy and tool segments separately; no numeric SLA claimed. Auditability: reconstruct run, policy version and approval from redacted event IDs; test full lineage. Privacy: cross-tenant read/write tests deny every unauthorized attempt; retention and deletion validated per chosen policy.\par\smallskip
+\section*{10. Decisions and review}\addcontentsline{toc}{section}{10. Decisions and review}
+Proposed ADR-01: externalize execution policy rather than trusting model tool proposals; cost is added complexity and latency, benefit independent enforcement. ADR-02: use provider ports rather than direct SDK calls in core; cost adapter maintenance, benefit substitutability. ADR-03: durable checkpoint and idempotency rather than blind retry; cost persistence overhead, benefit recovery control. Validate with contract tests, policy denial, approval replay, tenant isolation, crash recovery, budget exhaustion and trace redaction. No claims of implemented or certified controls. Source: V\&B chapters 1--8 and 10; this agent harness design is an original application.\par\smallskip
+\section*{Bibliographic foundation}
+Paul Clements et al., \emph{Documenting Software Architectures: Views and Beyond}, 2nd ed., Addison-Wesley/Pearson, copyright 2011, ISBN 978-0-321-55268-6. Section and chapter references refer to the supplied edition. Additional framework sources are identified in the applicable documents.\par
+\end{document}
