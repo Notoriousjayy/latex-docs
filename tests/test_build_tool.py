@@ -941,6 +941,72 @@ class BuildToolTests(unittest.TestCase):
             self.assertIn('href="pdfs/cornell-notes/security/certifications/cissp/01-security-and-risk-management-cornell-notes.pdf"', index_text)
             self.assertIn('href="pdfs/architecture/guide.pdf"', index_text)
 
+    def test_stage_pages_site_document_groups_are_nested_and_closed(self) -> None:
+        from html.parser import HTMLParser
+
+        class DisclosureParser(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.stack = []
+                self.groups = []
+                self.links = {}
+
+            def handle_starttag(self, tag, attrs):
+                attrs = dict(attrs)
+                if tag == "details":
+                    group = {"attrs": attrs, "headings": [], "summaries": 0}
+                    self.groups.append(group)
+                    self.stack.append(group)
+                elif tag == "summary" and self.stack:
+                    self.stack[-1]["summaries"] += 1
+                elif tag in ("h3", "h4", "h5", "h6") and self.stack:
+                    self.stack[-1]["headings"].append(attrs["id"])
+                elif tag == "a" and attrs.get("href", "").startswith("pdfs/"):
+                    self.links[attrs["href"]] = tuple(
+                        group["headings"][0] for group in self.stack
+                    )
+
+            def handle_endtag(self, tag):
+                if tag == "details":
+                    self.stack.pop()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            pdf_dir = root / "pdfs"
+            documents = [
+                "architecture/guide.pdf",
+                "architecture/c4-model/documentation-suite/blanks/context.pdf",
+                "security/review.pdf",
+            ]
+            for relative in documents:
+                path = pdf_dir / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"%PDF-1.4")
+            site_dir = root / "site"
+            latex_build.stage_pages_site(pdf_dir, site_dir, source_dir=root / "src")
+            page = (site_dir / "index.html").read_text(encoding="utf-8")
+            parser = DisclosureParser()
+            parser.feed(page)
+            self.assertEqual([], parser.stack)
+            self.assertEqual(5, len(parser.groups))
+            for group in parser.groups:
+                self.assertEqual("document-group", group["attrs"]["class"])
+                self.assertNotIn("open", group["attrs"])
+                self.assertEqual(1, group["summaries"])
+                self.assertEqual(1, len(group["headings"]))
+            nested = parser.links["pdfs/" + documents[1]]
+            self.assertEqual(4, len(nested))
+            self.assertEqual(
+                ("section-architecture-c4-model",
+                 "section-architecture-c4-model-documentation-suite",
+                 "section-architecture-c4-model-documentation-suite-blanks"),
+                nested[1:],
+            )
+            self.assertEqual((nested[0],), parser.links["pdfs/" + documents[0]])
+            self.assertEqual(1, len(parser.links["pdfs/" + documents[2]]))
+            self.assertIn('href="#category-architecture"', page)
+            self.assertIn('id="category-architecture"', page)
+
     def test_stage_pages_site_groups_cpp_cornell_sections(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
