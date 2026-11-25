@@ -1086,8 +1086,11 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = Non
                 groups.setdefault(path.parts[depth], []).append(path)
         for segment in sorted(groups, key=_natural_key):
             anchor = "section-" + re.sub(r"[^a-z0-9]+", "-", "/".join(groups[segment][0].parts[: depth + 1]).casefold()).strip("-")
+            handle.write('<details class="document-group"><summary>')
             handle.write(_heading(min(level, 6), _humanize_segment(segment), anchor=anchor))
+            handle.write('</summary>')
             _emit_directory_tree(handle, groups[segment], depth + 1, level + 1)
+            handle.write('</details>')
 
     index_path = site_dir / "index.html"
     with index_path.open("w", encoding="utf-8") as handle:
@@ -1136,6 +1139,12 @@ a { color: var(--accent); }
 .library h3 { margin: 2rem 0 .7rem; font-size: 1.3rem; }
 .library h4 { margin: 1.35rem 0 .5rem; font-size: 1.08rem; }
 .library h5, .library h6 { margin: 1rem 0 .35rem; color: var(--muted); font-size: 1rem; }
+.document-group > summary { display: flow-root; position: relative; cursor: pointer; list-style: none; padding-right: 1.5rem; }
+.document-group > summary::-webkit-details-marker { display: none; }
+.document-group > summary::after { content: ""; position: absolute; right: .4rem; top: 50%; width: .5rem; height: .5rem; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: translateY(-50%) rotate(-45deg); }
+.document-group[open] > summary::after { transform: translateY(-50%) rotate(45deg); }
+.document-group > summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.document-group[hidden] { display: none !important; }
 .document-list { display: grid; gap: .55rem; margin: 0; padding: 0; list-style: none; }
 .document-row { min-width: 0; }
 .document-row > a { display: grid; gap: .1rem; min-width: 0; padding: .75rem .9rem; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 6px; text-decoration: none; }
@@ -1189,9 +1198,11 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
         for name in category_names:
             slug = _category_slug(name)
             handle.write(f'<section class="category-section" id="{html.escape(slug, quote=True)}" data-category-section>')
+            handle.write('<details class="document-group"><summary>')
             handle.write(_heading(3, _humanize_segment(name)))
+            handle.write('</summary>')
             _emit_directory_tree(handle, categories[name], depth=1, level=4)
-            handle.write("</section>")
+            handle.write('</details></section>')
 
         if not pdf_rel_paths:
             handle.write("<p>No PDFs are currently staged for publication.</p>")
@@ -1212,8 +1223,14 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
     const count = document.getElementById('result-count');
     const rows = Array.from(document.querySelectorAll('.document-row, .image-card[data-standalone]'));
     const sections = Array.from(document.querySelectorAll('[data-category-section]'));
+    const groups = Array.from(document.querySelectorAll('details.document-group'));
+    let preSearchState = null;
+    const matchingRow = '.document-row:not([hidden]), .image-card[data-standalone]:not([hidden])';
     function update() {
         const query = (input ? input.value : '').trim().toLocaleLowerCase();
+        if (query && preSearchState === null) {
+            preSearchState = groups.map(function (group) { return group.open; });
+        }
         let visible = 0;
         rows.forEach(function (row) {
             const searchText = (row.dataset.search || '').toLocaleLowerCase();
@@ -1221,11 +1238,51 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
             row.hidden = !matches;
             if (matches) visible += 1;
         });
+        groups.forEach(function (group, index) {
+            const matches = !!group.querySelector(matchingRow);
+            group.hidden = !!query && !matches;
+            if (query) group.open = matches;
+            else if (preSearchState !== null) group.open = preSearchState[index];
+        });
+        if (!query) preSearchState = null;
         sections.forEach(function (section) {
-            section.hidden = !section.querySelector('.document-row:not([hidden]), .image-card:not([hidden])');
+            section.hidden = !!query && !section.querySelector(matchingRow);
         });
         count.textContent = 'Showing ' + visible + ' of ' + rows.length + ' assets';
     }
+    function revealAnchor(hash) {
+        if (!hash || hash.length < 2) return;
+        let id;
+        try { id = decodeURIComponent(hash.slice(1)); }
+        catch (error) { return; }
+        const target = document.getElementById(id);
+        if (!target) return;
+        if (target.closest('[hidden]') && input && input.value) {
+            input.value = '';
+            update();
+        }
+        let group = target.closest('details.document-group');
+        if (!group && target.matches('[data-category-section]')) {
+            group = target.querySelector('details.document-group');
+        }
+        while (group) {
+            group.open = true;
+            group = group.parentElement.closest('details.document-group');
+        }
+    }
+    document.querySelectorAll('.jump a[href^="#"]').forEach(function (link) {
+        link.addEventListener('click', function (event) {
+            if (!event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey && event.button === 0) {
+                revealAnchor(link.hash);
+            }
+        });
+    });
+    window.addEventListener('hashchange', function () {
+        revealAnchor(window.location.hash);
+        const target = document.getElementById(window.location.hash.slice(1));
+        if (target) target.scrollIntoView();
+    });
+    revealAnchor(window.location.hash);
     document.addEventListener('click', function (event) {
         const link = event.target.closest('a[data-format-link]');
         if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
