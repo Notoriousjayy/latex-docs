@@ -380,3 +380,9 @@ All entries below are registered as separately maintained guided Templates and p
 | SEC-APPSEC-PILOT_READINESS | [Template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/pilot-readiness-template.tex) | [Blank](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/pilot-readiness-blank.tex) |
 | SEC-APPSEC-EVIDENCE_VALIDATION_WORKBOOK | [Template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/evidence-validation-workbook-template.tex) | [Blank](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/evidence-validation-workbook-blank.tex) |
 | SEC-APPSEC-EFFECTIVENESS_SCORECARD | [Template](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/effectiveness-scorecard-template.tex) | [Blank](../src/security/github-advanced-security/code-scanning/enterprise-triage-governance/forms/effectiveness-scorecard-blank.tex) |
+
+## Views and Beyond architecture documentation suite
+
+| Logical ID | Family | Template | Blank |
+|---|---|---|---|
+| ARCH-VAB-SAD-AUTHORING | architecture-description | [Template](../src/architecture/views-and-beyond/architecture-documentation-suite/02-software-architecture-document-template.tex) | [Blank](../src/architecture/views-and-beyond/architecture-documentation-suite/02-software-architecture-document-blank.tex) |
