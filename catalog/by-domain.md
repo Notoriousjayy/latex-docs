@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## architecture (359)
+## architecture (360)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -255,6 +255,7 @@
 - [enterprise appsec code scanning viewpoint specification](../src/architecture/technical-documents/enterprise-appsec-code-scanning-viewpoint-specification.tex) — appsec-code-scanning/architecture · **provisional**
 - [GitHub Actions Architecture Discovery at Enterprise Scale](../src/architecture/technical-documents/github-actions-architecture-discovery-enterprise-scale.tex) — github-actions/enterprise-discovery · **reviewed**
 - [iso iec ieee 42010 2022 clean handout](../src/architecture/technical-documents/iso-iec-ieee-42010-2022-clean-handout.tex) — architecture · **provisional**
+- [Software Repository Comprehension and Architecture Reverse Engineering: A Systematic Engineering Methodology](../src/architecture/technical-documents/software-repository-comprehension-and-architecture-reverse-engineering.tex) — architecture · **reviewed**
 - [Architecture Description Template (ISO/IEC/IEEE 42010)](../src/architecture/templates/42010-ad-template-polished.tex) — architecture description authoring template · **reviewed**
 - [42010 vp template polished](../src/architecture/templates/42010-vp-template-polished.tex) — architecture · **provisional**
 - [GitHub Actions Discovery Architecture Description Template](../src/architecture/templates/github-actions-architecture-discovery-ad-template.tex) — github-actions/enterprise-discovery · **reviewed**

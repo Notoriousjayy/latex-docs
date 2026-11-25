@@ -703,7 +703,7 @@
 - [adr appsec 002 deterministic policy](../src/architecture/decisions/appsec-code-scanning/adr-appsec-002-deterministic-policy.tex) — appsec-code-scanning/decisions · **provisional**
 - [adr appsec 003 delegated review](../src/architecture/decisions/appsec-code-scanning/adr-appsec-003-delegated-review.tex) — appsec-code-scanning/decisions · **provisional**
 
-## architecture (10)
+## architecture (11)
 
 - [architecture decisions descriptions and viewpoint specifications](../src/architecture/technical-documents/adr-ad-viewpoint-governance-handout.tex) — architecture · **reviewed**
 - [applying iso iec ieee 42010 2022 enterprise](../src/architecture/technical-documents/applying-iso-iec-ieee-42010-2022-enterprise.tex) — architecture · **provisional**
@@ -711,6 +711,7 @@
 - [Architecture Documentation: Standards, Frameworks, Modeling Languages, and Tooling](../src/architecture/technical-documents/architecture-documentation-standards-frameworks-and-tooling.tex) — architecture · **reviewed**
 - [c4 plantuml technical guide](../src/architecture/technical-documents/c4-plantuml-technical-guide.tex) — architecture · **provisional**
 - [iso iec ieee 42010 2022 clean handout](../src/architecture/technical-documents/iso-iec-ieee-42010-2022-clean-handout.tex) — architecture · **provisional**
+- [Software Repository Comprehension and Architecture Reverse Engineering: A Systematic Engineering Methodology](../src/architecture/technical-documents/software-repository-comprehension-and-architecture-reverse-engineering.tex) — architecture · **reviewed**
 - [42010 vp template polished](../src/architecture/templates/42010-vp-template-polished.tex) — architecture · **provisional**
 - [viewpoint section](../src/architecture/templates/viewpoint-section.tex) — architecture · **provisional**
 - [viewpoint template polished](../src/architecture/templates/viewpoint-template-polished.tex) — architecture · **provisional**

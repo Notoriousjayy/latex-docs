@@ -1180,7 +1180,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (743)
+## technical-reference (744)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -1337,6 +1337,7 @@
 - [c4 plantuml technical guide](../src/architecture/technical-documents/c4-plantuml-technical-guide.tex) — architecture · **provisional**
 - [GitHub Actions Architecture Discovery at Enterprise Scale](../src/architecture/technical-documents/github-actions-architecture-discovery-enterprise-scale.tex) — github-actions/enterprise-discovery · **reviewed**
 - [iso iec ieee 42010 2022 clean handout](../src/architecture/technical-documents/iso-iec-ieee-42010-2022-clean-handout.tex) — architecture · **provisional**
+- [Software Repository Comprehension and Architecture Reverse Engineering: A Systematic Engineering Methodology](../src/architecture/technical-documents/software-repository-comprehension-and-architecture-reverse-engineering.tex) — architecture · **reviewed**
 - [viewpoint section](../src/architecture/templates/viewpoint-section.tex) — architecture · **provisional**
 - [document authoring template guide detailed](../src/architecture/togaf/document-authoring-template-guide-detailed.tex) — togaf · **provisional**
 - [document authoring template guide](../src/architecture/togaf/document-authoring-template-guide.tex) — togaf · **provisional**

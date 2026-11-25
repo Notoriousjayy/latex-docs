@@ -14,7 +14,7 @@ Architecture descriptions, ADRs, viewpoints, patterns, and governance belong her
 
 | Collection | Use it for | LaTeX sources |
 |---|---|---:|
-| [Technical documents](technical-documents/README.md) | Design guides, engineering references and explanatory technical material | 7 |
+| [Technical documents](technical-documents/README.md) | Design guides, engineering references and explanatory technical material | 10 |
 | [Templates](templates/README.md) | Reusable structured starting points and document forms | 8 |
 | [Workbooks and exercises](workbooks/README.md) | Practice, exercises, checklists and worked activities | 5 |
 
@@ -77,6 +77,8 @@ The [Views and Beyond Documentation Engineering Suite](views-and-beyond/document
 - Read the [ADR vs. AD vs. Viewpoint technical handout](technical-documents/adr-ad-viewpoint-governance-handout.tex) for authoritative terminology, lifecycle rules, traceability examples, and a semantic classification of unresolved architecture forms.
 
 - Consult the [CCoE suite](governance/ccoe/readme.md) for governance templates and project-control records.
+
+- Read the [software repository comprehension and architecture reverse engineering guide](technical-documents/software-repository-comprehension-and-architecture-reverse-engineering.tex) for an evidence-driven seven-phase method, worked Python example, and review checklist.
 
 ## Maintenance conventions
 
