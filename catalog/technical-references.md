@@ -749,7 +749,7 @@
 - [venture lifecycle reference](../src/startups/small-business-management/technical-reference/venture-lifecycle-reference.tex) — small-business-management/technical-reference · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## Related reviewed sources with secondary technical references content (11)
+## Related reviewed sources with secondary technical references content (14)
 
 - [Views and Beyond: Technical Study](../src/architecture/views-and-beyond/architecture-documentation-suite/01-views-and-beyond-study.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
 - [Architecture Documentation Review Framework](../src/architecture/views-and-beyond/architecture-documentation-suite/05-architecture-review-framework.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
@@ -761,4 +761,7 @@
 - [AI Agent Harness Architecture Description — Part 1: ERPA: Memory-First Assistant Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-descriptions/part-01-erpa/ai-agent-harness-architecture-part-01.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [AI Agent Harness Architecture Description — Part 2: PPA: Governed Personal Productivity Assistant Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-descriptions/part-02-ppa/ai-agent-harness-architecture-part-02.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [AI Agent Harness Architecture Description — Part 3: PPA That Improves: Learning and Adaptive Harness Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-descriptions/part-03-ppa-learning/ai-agent-harness-architecture-part-03.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [Software Architecture Document — Part 1: ERPA: Memory-First Agent Harness Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/software-architecture-documents/part-01-erpa/software-architecture-document-part-01.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [Software Architecture Document — Part 2: PPA: Governed Personal Productivity Agent Harness Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/software-architecture-documents/part-02-ppa/software-architecture-document-part-02.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [Software Architecture Document — Part 3: PPA That Improves: Learning and Adaptive Agent Harness Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/software-architecture-documents/part-03-ppa-learning/software-architecture-document-part-03.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Object-Oriented Programming in ANSI C: Rules and Practical Checklists](../src/programming/languages/c-cpp/object-oriented-programming-ansi-c-checklists.tex) — ANSI C object-oriented programming checklists · **reviewed**

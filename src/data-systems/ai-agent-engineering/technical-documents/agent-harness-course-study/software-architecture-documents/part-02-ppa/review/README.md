@@ -1,0 +1,3 @@
+# SAD-AHC-P02 architecture review
+
+Authoring review only; no independent human reviewer. Source paths/blob prefixes checked against the pinned live tree. Review found: physical schema and cardinality incomplete; precise ports, protocol and delivery semantics incomplete; notebook/call-site coverage selective; missing runtime recovery and negative tests; render/PDF/CI pending. Acceptance requires source trace, complete view packets, interface tests, rendered visual inspection, native repository checks and independent stakeholder review. Do not treat this as full V&B completion or ISO conformance.

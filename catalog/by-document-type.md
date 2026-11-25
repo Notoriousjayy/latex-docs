@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## architecture-document (31)
+## architecture-document (34)
 
 - [Secure AWS Platform: Six Architecture Acceptance Gates](../src/architecture/cloud/reusable-secure-aws-cloud-environment/architecture-and-acceptance-gates.tex) — cloud/reusable-secure-aws-cloud-environment · **provisional**
 - [ADR-0001: Application-aligned repository ownership](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0001.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
@@ -21,6 +21,9 @@
 - [AI Agent Harness Architecture Description — Part 1: ERPA: Memory-First Assistant Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-descriptions/part-01-erpa/ai-agent-harness-architecture-part-01.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [AI Agent Harness Architecture Description — Part 2: PPA: Governed Personal Productivity Assistant Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-descriptions/part-02-ppa/ai-agent-harness-architecture-part-02.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [AI Agent Harness Architecture Description — Part 3: PPA That Improves: Learning and Adaptive Harness Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-descriptions/part-03-ppa-learning/ai-agent-harness-architecture-part-03.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [Software Architecture Document — Part 1: ERPA: Memory-First Agent Harness Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/software-architecture-documents/part-01-erpa/software-architecture-document-part-01.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [Software Architecture Document — Part 2: PPA: Governed Personal Productivity Agent Harness Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/software-architecture-documents/part-02-ppa/software-architecture-document-part-02.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [Software Architecture Document — Part 3: PPA That Improves: Learning and Adaptive Agent Harness Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/software-architecture-documents/part-03-ppa-learning/software-architecture-document-part-03.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [deployment promotion and rollback](../src/devops/ci-cd/continuous-integration-engineering/specifications/deployment-promotion-and-rollback.tex) — ci cd/continuous integration engineering/specifications · **provisional**
 - [oidc authorization trust boundaries](../src/devops/ci-cd/continuous-integration-engineering/specifications/oidc-authorization-trust-boundaries.tex) — ci cd/continuous integration engineering/specifications · **provisional**
 - [pipeline reference architecture](../src/devops/ci-cd/continuous-integration-engineering/specifications/pipeline-reference-architecture.tex) — ci cd/continuous integration engineering/specifications · **provisional**

@@ -13,6 +13,8 @@ Six standalone pdfLaTeX technical documents based on the supplied course snapsho
 
 - [Three independent architecture descriptions](architecture-descriptions/README.md) — ERPA, governed PPA, learning-enabled PPA; source-linked C4/UML and provisional ISO assessments.
 
+- [Three independent Software Architecture Documents (Views and Beyond)](software-architecture-documents/README.md) — module, component-and-connector and allocation views, interface contracts, behavior and variability.
+
 ## Build
 
 From the repository root run `make build-category-data-systems`, or run `latexmk -pdf -interaction=nonstopmode -halt-on-error <document>.tex` from this directory. All diagrams are native TikZ; each document is a separately discoverable root. The suite retains the self-contained style of the original integrated study and neighboring agent-engineering guides.

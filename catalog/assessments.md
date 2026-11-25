@@ -57,7 +57,7 @@
 - [06 vulnerability assessment dfir](../src/security/security-engineering/06-vulnerability-assessment-dfir.tex) — security engineering · **provisional**
 - [07 audit assessment evidence](../src/security/standards/iso-27000/07-audit-assessment-evidence.tex) — standards/iso 27000 · **provisional**
 
-## Related reviewed sources with secondary assessments content (9)
+## Related reviewed sources with secondary assessments content (12)
 
 - [Procurement Audit — Working Form](../src/architecture/governance/ccoe/closure/5-1-procurement-audit.tex) — CCoE procurement evaluation form · **reviewed**
 - [Team Performance Assessment — Working Form](../src/architecture/governance/ccoe/execution/3-8-team-performance-assessment.tex) — CCoE team evaluation form · **reviewed**
@@ -67,4 +67,7 @@
 - [AI Agent Harness Architecture Description — Part 1: ERPA: Memory-First Assistant Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-descriptions/part-01-erpa/ai-agent-harness-architecture-part-01.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [AI Agent Harness Architecture Description — Part 2: PPA: Governed Personal Productivity Assistant Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-descriptions/part-02-ppa/ai-agent-harness-architecture-part-02.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [AI Agent Harness Architecture Description — Part 3: PPA That Improves: Learning and Adaptive Harness Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-descriptions/part-03-ppa-learning/ai-agent-harness-architecture-part-03.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [Software Architecture Document — Part 1: ERPA: Memory-First Agent Harness Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/software-architecture-documents/part-01-erpa/software-architecture-document-part-01.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [Software Architecture Document — Part 2: PPA: Governed Personal Productivity Agent Harness Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/software-architecture-documents/part-02-ppa/software-architecture-document-part-02.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
+- [Software Architecture Document — Part 3: PPA That Improves: Learning and Adaptive Agent Harness Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/software-architecture-documents/part-03-ppa-learning/software-architecture-document-part-03.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Open-Source Enterprise Security Platform: Reference Architecture and Tool Strategy](../src/security/technical-documents/open-source-enterprise-security-platform.tex) — enterprise security platform architecture · **reviewed**
