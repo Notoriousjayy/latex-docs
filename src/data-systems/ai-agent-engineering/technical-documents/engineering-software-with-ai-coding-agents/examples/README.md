@@ -1,0 +1,9 @@
+# Local reference implementation
+
+Teaching prototype, not a sandbox. Python 3.11+ and Git required. Use synthetic data and an isolated disposable account/container. No production secrets. Live agent, MCP, CI, and external approval integrations are not qualified.
+
+Run `python -m unittest discover -s tests -v` and `python orchestrate.py --provider mock --workspace /tmp/agentic-example-new`. The sample module is already correct; the mock checks controller mechanics, not model coding ability. Run `python evaluate.py records.jsonl` for synthetic metrics. `python install_skills.py` copies reviewed skills to both discovery directories.
+
+For live use install/authenticate CLIs through vendor docs, inspect `codex --version`, `codex exec --help`, `claude --version`, `claude --help`; pin versions. Validate permissions and OS sandbox. Run with `--provider codex` or `--provider claude` in a disposable isolated environment only. The post-execution path check cannot prevent side effects, and in-process worker code can compromise local tests. Production requires separate worker/verifier security boundaries, controlled credentials and egress, trusted tests and immutable candidate approvals. The controller never pushes or approves. The Claude deny rules are examples, not comprehensive policy. In dontAsk mode only separately allowed actions run; denial is a safe failure. 
+
+For hybrid, use a separate read-only reviewer checkout containing the candidate diff; ask the other agent to report findings and locations. Re-run trusted verification and obtain human approval. No native cross-vendor integration is claimed. For MCP use a reviewed, pinned Python SDK in a venv and the official host registration docs; `policy_mcp.py` is illustrative. The included workflow is an unqualified CI sample; it does not establish trusted tests or required checks by itself.

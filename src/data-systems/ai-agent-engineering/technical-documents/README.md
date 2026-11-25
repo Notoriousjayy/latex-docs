@@ -6,6 +6,8 @@ Standalone technical references that complement the [AI Agent Engineering curric
 
 ## Documents
 
+- [Engineering Software with AI Coding Agents](engineering-software-with-ai-coding-agents/README.md) — 30-chapter technical reference with editable TikZ diagrams, workflow patterns, implementation labs, reference skills and Python examples. Local standalone fallback build passed; repository CI and live agent qualification remain outstanding.
+
 - [Custom Harness Engineering for AI Coding Agents: Architecture, Design Patterns, Context Management, Verification Loops, and Enterprise Implementation with Claude Code and Codex](custom-harness-engineering-guide.tex) — 35 core sections, native TikZ diagrams, 30 patterns, 18 labs, source verification register and companion implementation. See the [capability register](custom-harness-engineering-capability-register.csv) and [reference examples](custom-harness-engineering-reference/README.md). Local standalone build and tests passed; native-agent and repository CI qualification remain outstanding.
 
 - [AI Agent Workflow and Orchestration Patterns](ai-agent-workflow-orchestration-patterns-guide.tex) — modular pdfLaTeX technical reference with twelve native TikZ architecture diagrams, qualitative design trade-offs, MCP/A2A boundaries, governed AppSec example, bounded Python control loop, and measurable verification criteria.

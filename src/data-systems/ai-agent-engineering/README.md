@@ -4,6 +4,8 @@ A developer-focused, source-controlled course on building secure, reliable, and 
 
 ## Start here
 
+- [Engineering Software with AI Coding Agents](technical-documents/engineering-software-with-ai-coding-agents/README.md) — Codex and Claude Code across the SDLC, harness extensions, verification, isolation, security, and enterprise governance.
+
 - [AI Agent Workflow and Orchestration Patterns](technical-documents/ai-agent-workflow-orchestration-patterns-guide.tex) — comprehensive architecture comparison of sequential chains, parallel workers, routers, ReAct loops, planners, supervisors, peer agents, evaluators and approval gates; includes twelve editable TikZ diagrams, Python examples, security and testing criteria.
 
 - [Agent Skills Engineering: Specification, Architecture, Testing, and Security](technical-documents/agent-skills-engineering-guide.tex) — detailed technical guide covering skill packages, cross-agent integration, lifecycle validation, testing, and secure deployment.

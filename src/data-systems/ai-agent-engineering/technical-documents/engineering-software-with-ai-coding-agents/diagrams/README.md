@@ -1,0 +1,28 @@
+# Diagrams
+
+Companion source files for the engineering reference.
+
+- [figure-01.tex](figure-01.tex)
+- [figure-02.tex](figure-02.tex)
+- [figure-03.tex](figure-03.tex)
+- [figure-04.tex](figure-04.tex)
+- [figure-05.tex](figure-05.tex)
+- [figure-06.tex](figure-06.tex)
+- [figure-07.tex](figure-07.tex)
+- [figure-08.tex](figure-08.tex)
+- [figure-09.tex](figure-09.tex)
+- [figure-10.tex](figure-10.tex)
+- [figure-11.tex](figure-11.tex)
+- [figure-12.tex](figure-12.tex)
+- [figure-13.tex](figure-13.tex)
+- [figure-14.tex](figure-14.tex)
+- [figure-15.tex](figure-15.tex)
+- [figure-16.tex](figure-16.tex)
+- [figure-17.tex](figure-17.tex)
+- [figure-18.tex](figure-18.tex)
+- [figure-19.tex](figure-19.tex)
+- [figure-20.tex](figure-20.tex)
+- [figure-21.tex](figure-21.tex)
+- [figure-22.tex](figure-22.tex)
+- [figure-23.tex](figure-23.tex)
+- [figure-24.tex](figure-24.tex)
