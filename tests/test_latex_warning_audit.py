@@ -1,4 +1,7 @@
 """Regression tests for final-pass LaTeX warning collection."""
+import os
+import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -37,3 +40,38 @@ class LatexWarningAuditTests(unittest.TestCase):
         self.assertEqual(7, result["warning_count"])
         self.assertIn("removing math shift", result["diagnostics"][1]["message"])
         self.assertEqual(4, result["diagnostics"][2]["log_line"])
+
+    @unittest.skipUnless(shutil.which("latexmk") and shutil.which("pdflatex"), "LaTeX toolchain not installed")
+    def test_narrow_table_paragraphs_compile_without_warnings(self):
+        package_dir = Path(__file__).resolve().parents[1] / "tooling" / "latex"
+        source = r"""
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{tabularx}
+\usepackage{lds-table-layout}
+\begin{document}
+\noindent\begin{tabular}{p{1in} >{\centering\arraybackslash}p{1in} >{\raggedleft\arraybackslash}p{1in}}
+An engineering workflow with very narrow text columns & Centered text in a narrow column & Explicitly right aligned text.\\
+\end{tabular}\par
+\noindent\begin{tabularx}{\linewidth}{p{1in} X}
+An engineering workflow with very narrow text columns & Flexible column used to display relevant additional detail for this example.\\
+\end{tabularx}\par
+\begin{longtable}{p{1in} >{\centering\arraybackslash}p{1in}}
+An engineering workflow with very narrow text columns & Centered text in a narrow column.\\
+\end{longtable}
+\end{document}
+"""
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp)
+            (work / "document.tex").write_text(source, encoding="utf-8")
+            env = dict(os.environ)
+            env["TEXINPUTS"] = str(package_dir) + os.pathsep + env.get("TEXINPUTS", "") + os.pathsep
+            result = subprocess.run(
+                ["latexmk", "-pdf", "-interaction=nonstopmode", "-halt-on-error", "document.tex"],
+                cwd=work, env=env, capture_output=True, text=True, timeout=60,
+            )
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            audit = _audit_final_log(work / "document.log")
+            self.assertEqual("clean", audit["status"], audit)
+
