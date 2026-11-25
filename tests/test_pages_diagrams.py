@@ -33,14 +33,21 @@ class PagesDiagramTests(unittest.TestCase):
             self.assertEqual({"png": 2, "svg": 2, "jpeg": 1, "jpg": 1}, manifest["counts"])
             latex_build.stage_pages_site(pdfs, site, images, source_dir=src)
             page = (site / "index.html").read_text()
-            a = page.index('href="pdfs/architecture/a/guide.pdf"')
-            b = page.index('href="pdfs/architecture/b/guide.pdf"')
+            # Include each document's opening list item (and its data-search
+            # attribute), not just the PDF anchor. Otherwise the next document's
+            # search metadata is mistakenly treated as part of the first row.
+            a = page.rfind('<li class="document-row"', 0, page.index('href="pdfs/architecture/a/guide.pdf"'))
+            b = page.rfind('<li class="document-row"', 0, page.index('href="pdfs/architecture/b/guide.pdf"'))
+            self.assertGreaterEqual(a, 0)
+            self.assertGreater(b, a)
             other = page.index('id="plantuml-diagrams"')
             self.assertIn("Referenced diagrams", page[a:b])
             self.assertEqual(1, page[a:b].count('class="image-card"'))
             self.assertIn('src="images/src/architecture/a/diagrams/png/overview.png"', page[a:b])
             self.assertNotIn("architecture/b/diagrams", page[a:b])
             self.assertIn('src="images/src/architecture/b/diagrams/svg/overview.svg"', page[b:other])
+            self.assertNotIn("architecture/a/diagrams", page[b:other])
+            self.assertEqual(1, page[b:other].count('class="image-card"'))
             self.assertIn("unreferenced.png", page[other:])
             self.assertIn('data-format-link aria-current="true">PNG', page[a:b])
             for fmt in ("png", "svg", "jpeg", "jpg"):
