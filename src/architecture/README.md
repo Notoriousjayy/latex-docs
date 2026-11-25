@@ -37,7 +37,7 @@ These collections retain topic, standard, chapter, governance or diagram boundar
 | [systems engineering](systems-engineering/README.md) | Systems engineering perspectives. | 1 |
 | [togaf](togaf/README.md) | TOGAF material and guidance. | 5 |
 | [uml](uml/) | UML notation material and reference diagrams. | 1 |
-| [views and beyond](views-and-beyond/) | Viewpoint methodology, style catalogs, view packets, and the 66-document engineering suite. | 103 |
+| [views and beyond](views-and-beyond/) | Viewpoint methodology, style catalogs, view packets, and documentation suites. | 110 |
 
 
 ## Build and validate
@@ -104,3 +104,7 @@ The [Open-Source Enterprise Technology Architecture and Operations Suite](enterp
 ## Enterprise Code Scanning Governance companion
 
 The [AppSec companion architecture](../security/github-advanced-security/code-scanning/enterprise-triage-governance/README.md) builds on the read-only enterprise [GitHub Actions Discovery suite](github-actions-discovery-suite.md). [Architecture Description](technical-documents/enterprise-appsec-code-scanning-architecture-description.tex), [Viewpoint](technical-documents/enterprise-appsec-code-scanning-viewpoint-specification.tex), and [proposed ADRs](decisions/appsec-code-scanning/README.md) are separate artifact types; none authorizes a live alert dismissal.
+
+## Integrated V&B and ISO 42010:2022 documentation suite
+
+The [integrated architecture documentation suite](views-and-beyond/integrated-42010-documentation-suite/README.md) provides the methodology, SAD Template–Blank pair, viewpoint catalog, conformance guide, review checklist and worked security-analysis SAD.

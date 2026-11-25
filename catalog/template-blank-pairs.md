@@ -386,3 +386,9 @@ All entries below are registered as separately maintained guided Templates and p
 | Logical ID | Family | Template | Blank |
 |---|---|---|---|
 | ARCH-VAB-SAD-AUTHORING | architecture-description | [Template](../src/architecture/views-and-beyond/architecture-documentation-suite/02-software-architecture-document-template.tex) | [Blank](../src/architecture/views-and-beyond/architecture-documentation-suite/02-software-architecture-document-blank.tex) |
+
+## Integrated V&B and ISO 42010:2022 SAD
+
+| Logical ID | Family | Template | Blank |
+|---|---|---|---|
+| ARCH-AD-INTEGRATED-VB-42010 | architecture-description | [Template](../src/architecture/views-and-beyond/integrated-42010-documentation-suite/integrated-sad-template.tex) | [Blank](../src/architecture/views-and-beyond/integrated-42010-documentation-suite/integrated-sad-blank.tex) |

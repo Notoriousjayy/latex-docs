@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (244)
+## Primary reusable templates (245)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -63,6 +63,7 @@
 - [component interface record template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Component_Interface_Record_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
 - [quality attribute scenario template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Quality_Attribute_Scenario_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
 - [stakeholder concern register template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Stakeholder_Concern_Register_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
+- [Integrated Software Architecture Document Template](../src/architecture/views-and-beyond/integrated-42010-documentation-suite/integrated-sad-template.tex) — views-and-beyond/integrated-42010-documentation-suite · **reviewed**
 - [action and decision register template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/action-and-decision-register-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
 - [amendment stack register template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/amendment-stack-register-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
 - [ballot election tellers report template](../src/business-analysis/parliamentary-procedure-and-governance/forms/templates/ballot-election-tellers-report-template.tex) — parliamentary-procedure-and-governance/forms/templates · **provisional**
