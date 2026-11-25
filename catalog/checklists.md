@@ -2,11 +2,12 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary checklists (9)
+## Primary checklists (10)
 
 - [impl checklist](../src/architecture/enterprise/business-operations/small-business-core-systems/impl-checklist.tex) — business operations/small business core systems · **provisional**
 - [integr impl checklist minimum readiness](../src/architecture/enterprise/itsm-cmdb/glpi-itop/integr-impl-checklist-minimum-readiness.tex) — itsm cmdb/glpi itop · **provisional**
 - [checklist effective diagrams turning complex](../src/architecture/views-and-beyond/fundamentals/checklist-effective-diagrams-turning-complex.tex) — views and beyond/fundamentals · **provisional**
+- [Architecture Documentation Review Checklist](../src/architecture/views-and-beyond/integrated-42010-documentation-suite/architecture-documentation-review-checklist.tex) — views-and-beyond/integrated-42010-documentation-suite · **reviewed**
 - [Minimum Curriculum Quality Checklist](../src/business-analysis/workbooks/babok-minimum-checklist.tex) — curriculum review and learning outcomes · **reviewed**
 - [authentik implementation checklist](../src/devops/platform/identity/authentik/authentik-implementation-checklist.tex) — identity/authentik · **provisional**
 - [authentik security hardening checklist](../src/devops/platform/identity/authentik/authentik-security-hardening-checklist.tex) — identity/authentik · **provisional**
