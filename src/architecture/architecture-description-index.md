@@ -127,7 +127,7 @@ Every identified perspective (learning, authoring, operational, reading, deploym
 | CM-2 | Within one depicted system, element aliases are reused across its views (context/container/component/deployment) | C4 views of one system | manual (only one C4 view per system exists so far) | holds trivially; documented gap: no multi-view system yet |
 | CM-3 | Current-state facts and target-state proposals are distinguishable: `$tags="proposed"` and header `Status:` | C4 views | manual review | holds for the four C4 sources |
 | CM-4 | A view component using a hidden role stereotype carries a legend | sources ↔ legends | `plantuml_lint.check_source_style_discipline` | holds |
-| CM-5 | Every static figure reference into a managed `png/`, `svg/`, `jpg/` directory resolves to a rendered output | documents ↔ outputs | `diagram_reference_validator --validate` | holds (48 violations fixed in this migration) |
+| CM-5 | Every static figure reference into a managed `png/`, `svg/` directory resolves to a rendered output | documents ↔ outputs | `diagram_reference_validator --validate` | holds (48 violations fixed in this migration) |
 | CM-6 | Output names follow `@startuml <name>`; no two sources in a directory produce the same output | sources ↔ outputs | `plantuml_inventory.py --check` | holds (0 collisions) |
 
 Known inconsistencies (6.9.1): the Views-and-Beyond C&C catalogue draws ports and connector roles in the book's reference notation rather than UML 11.3.4 ports; this is intentional (the model kind is the book's, not UML) and is recorded per collection rather than "fixed".
@@ -141,7 +141,7 @@ Known inconsistencies (6.9.1): the Views-and-Beyond C&C catalogue draws ports an
 | AD-3 | Role tokens by meaning (primary/dynamic/ok/caution/invalid/alt/neutral) with fill/deep/line depths; meaning also carried by labels and shapes | grayscale and colour-vision safety; enables the migration of 1576 literals without per-diagram design | per-collection palettes (no coherence); pure grayscale (loses teaching distinctions) |
 | AD-4 | Convert four software-architecture diagrams to C4; keep UML and reference-model catalogues in their notation | their questions are C4 questions (containers/deployment); the catalogues' value is the notation they teach | manufacturing four C4 levels per topic |
 | AD-5 | `DejaVu Sans` as the house font | "Helvetica" was never installed locally or in CI, so Java substituted silently and lost U+25AF; DejaVu is present on both | keep the logical name (unreproducible glyph coverage) |
-| AD-6 | JPEG derived from PNG via ImageMagick, flattened onto paper | the engine has no JPEG writer (`-tjpg` yields PNG); transparency must be flattened deliberately | pretending `-tjpg` works (the previous test asserted this) |
+| AD-6 | Generate and publish paired PNG and SVG only | lossless raster and scalable vector representations; no JPEG derivatives | lossy JPEG conversion and duplicate gallery cards |
 | AD-7 | Sequence-diagram numbering opt-in (`SEQ_AUTONUMBER()`) | 11 of 16 corpus diagrams number messages by hand; implicit autonumber produced double numbering | strip hand numbers from 11 diagrams |
 | AD-8 | Extension notation approximated as solid triangle line + `<<extension>>` label | PlantUML has no filled-triangle head in class diagrams; the label carries the distinction and the limitation is stated in the module | keep dashed realization (semantically wrong) |
 

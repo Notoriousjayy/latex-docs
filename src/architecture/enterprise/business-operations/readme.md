@@ -20,7 +20,7 @@ A reusable operating model for essential business functions. **The tracked hando
 
 ## Architecture model
 
-The canonical diagram is [small-business-core-systems-operating-model.puml](small-business-core-systems/small-business-core-systems-operating-model.puml); rendered [PNG](small-business-core-systems/png/), [SVG](small-business-core-systems/svg/) and [JPG](small-business-core-systems/jpg/) are available for inspection.
+The canonical diagram is [small-business-core-systems-operating-model.puml](small-business-core-systems/small-business-core-systems-operating-model.puml); rendered [PNG](small-business-core-systems/png/) and [SVG](small-business-core-systems/svg/) are available for inspection.
 
 ## How to apply
 

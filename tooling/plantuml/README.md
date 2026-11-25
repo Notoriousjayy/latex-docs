@@ -173,8 +173,8 @@ tooling/
 │   ├── uml-base.iuml                        # UML root (includes house-tokens only)
 │   ├── uml-structural.iuml / uml-behavioral.iuml / uml-interaction.iuml
 │   ├── c4-base.iuml                         # C4 root (includes house-tokens, then <C4/C4_*> from the jar's stdlib)
-│   ├── *-example.puml                       # one renderable example per family; rendered into png/ svg/ jpg/
-│   └── png/ svg/ jpg/                       # managed outputs of the examples
+│   ├── *-example.puml                       # one renderable example per family; rendered into png/ svg/
+│   └── png/ svg/                       # managed outputs of the examples
 └── styles/plantuml/
     ├── structural/   class, object, component, deployment, package, composite-structure, profile
     ├── behavioral/   usecase, activity, statemachine
@@ -198,7 +198,7 @@ Conventions:
 * Domain helper includes (e.g. `pipe-and-filter-roles.iuml` beside the
   diagrams that use it) may sit next to sources; they consume tokens and never
   define colours.
-* Rendered outputs live only in `<source dir>/png|svg|jpg/` and are named
+* Rendered outputs live only in `<source dir>/png|svg/` and are named
   after `@startuml <name>` (else the file stem). An image beside a `.puml`
   is an error.
 
@@ -313,7 +313,7 @@ category parent or even in `uml-base`. See section 9.
 ## 7. Example diagrams
 
 Six runnable examples live beside this README and render into `png/`,
-`svg/` and `jpg/` next to them (they are part of the managed corpus and
+and `svg/` next to them (they are part of the managed corpus and
 the CI smoke test). Each illustrates the framework idiomatically: a single
 `!include` line, framework macros instead of raw arrows, and palette +
 typography inherited from the shared modules.
@@ -358,7 +358,7 @@ PLANTUML_JAR="$(python3 tooling/scripts/latex_build.py fetch-plantuml)" \
 
 ```bash
 make render-plantuml                                   # incremental, src/ only
-make render-plantuml RENDER_ARGS="--force --extra-root tooling/plantuml --formats png svg jpg"
+make render-plantuml RENDER_ARGS="--force --extra-root tooling/plantuml --formats png svg"
 python3 tooling/scripts/latex_build.py render-plantuml --help
 python3 tooling/scripts/plantuml_lint.py               # style + include contract
 python3 tooling/scripts/plantuml_inventory.py --check  # inventory, collisions, missing outputs
@@ -372,8 +372,8 @@ shared-style edit re-renders the whole corpus. Outputs are rendered into a
 temporary directory, validated (exit status, presence, format magic, error
 text drawn into SVGs) and only then promoted; a failed diagram keeps its
 previous image and is reported as failed in
-`public/logs/plantuml-render.json`. JPEG is derived from the PNG with
-ImageMagick (flattened onto paper), because the engine has no JPEG writer.
+`public/logs/plantuml-render.json`. PNG and SVG are the only supported output formats.
+Run `python3 -m tooling.scripts.verify_diagram_pairs` to reject missing pairs and legacy JPEG files.
 
 A minimal sequence diagram:
 

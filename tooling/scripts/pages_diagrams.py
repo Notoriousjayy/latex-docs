@@ -9,7 +9,6 @@ from urllib.parse import quote
 
 FORMATS = ("png", "svg")
 SUFFIXES = {"." + fmt for fmt in FORMATS}
-LEGACY_SUFFIXES = {".jpg", ".jpeg"}
 GRAPHICS = re.compile(r"\\(?:includegraphics|safeincludegraphics)\*?\s*(?:\[[^\]]*\])?\s*\{([^{}]+)\}")
 INPUTS = re.compile(r"\\(?:input|include|subfile|subfileinclude)\s*\{([^{}]+)\}")
 GRAPHICSPATH = re.compile(r"\\graphicspath\s*\{((?:\s*\{[^}]*\}\s*)+)\}")

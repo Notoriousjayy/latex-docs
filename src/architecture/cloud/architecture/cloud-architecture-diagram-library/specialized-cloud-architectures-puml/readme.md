@@ -30,7 +30,7 @@ Review the chapter section, select the corresponding `.puml` source and inspect 
 
 ## Source and output layout
 
-The tracked sources are in this folder. Generated representations are co-located under `png/`, `svg/` and `jpg/`; modify the `.puml` source first.
+The tracked sources are in this folder. Generated representations are co-located under `png/` and `svg/`; modify the `.puml` source first.
 
 ## Style and conventions
 
