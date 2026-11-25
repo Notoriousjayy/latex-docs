@@ -1014,7 +1014,8 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = Non
         )
 
     image_groups = group_images(raster_rel_paths)
-    related = document_diagrams(pdf_rel_paths, image_groups, (source_dir or SRC_DIR).resolve())
+    source_root = (source_dir or SRC_DIR).resolve()
+    related = document_diagrams(pdf_rel_paths, image_groups, source_root)
     attached = {key for keys in related.values() for key in keys}
     unreferenced = [key for key in image_groups if key not in attached]
 
@@ -1043,6 +1044,30 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = Non
         if rel_path.parts:
             categories.setdefault(rel_path.parts[0], []).append(rel_path)
     category_names = sorted(categories, key=_natural_key)
+
+    # A diagram without a document-level match still belongs to its nearest
+    # populated directory in the document taxonomy. Match complete path segments,
+    # never filename similarity or a category name occurring deeper in the path.
+    taxonomy_dirs = {
+        tuple(path.parts[:depth])
+        for path in pdf_rel_paths
+        for depth in range(1, len(path.parts))
+    }
+    scoped_diagrams: dict[tuple[str, ...], list[Path]] = {}
+    unmatched_diagrams: list[Path] = []
+    for key in unreferenced:
+        relative = key.parts
+        if relative[0] == source_root.name:
+            relative = relative[1:]
+        owner = next(
+            (relative[:depth] for depth in range(len(relative) - 1, 0, -1)
+             if relative[:depth] in taxonomy_dirs),
+            None,
+        )
+        if owner is None:
+            unmatched_diagrams.append(key)
+        else:
+            scoped_diagrams.setdefault(owner, []).append(key)
 
     heading_counter = 0
 
@@ -1075,6 +1100,15 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = Non
             handle.write('</li>')
         handle.write("</ul>")
 
+    def _emit_diagram_gallery(handle: Any, keys: list[Path], level: int) -> None:
+        if not keys:
+            return
+        handle.write('<details class="document-group diagram-gallery"><summary>')
+        handle.write(_heading(min(level, 6), "PlantUML Diagrams — other assets"))
+        handle.write('</summary>')
+        _emit_cards(handle, keys, standalone=True)
+        handle.write('</details>')
+
     def _emit_directory_tree(handle: Any, paths: list[Path], depth: int, level: int) -> None:
         """Render the hierarchy from each PDF's own directory path; no collection allowlist."""
         here = [path for path in paths if len(path.parts) == depth + 1]
@@ -1091,6 +1125,7 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = Non
             handle.write('</summary>')
             _emit_directory_tree(handle, groups[segment], depth + 1, level + 1)
             handle.write('</details>')
+        _emit_diagram_gallery(handle, scoped_diagrams.get(paths[0].parts[:depth], []), level)
 
     index_path = site_dir / "index.html"
     with index_path.open("w", encoding="utf-8") as handle:
@@ -1189,7 +1224,7 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
                 f'<a href="#{html.escape(slug, quote=True)}">{html.escape(_humanize_segment(name))}'
                 f' <span class="jump-count">{len(categories[name])}</span></a>'
             )
-        if unreferenced:
+        if unmatched_diagrams:
             handle.write('<a href="#plantuml-diagrams">Other diagrams</a>')
         handle.write('</nav></section><section class="library" aria-label="Published documents">')
 
@@ -1208,10 +1243,9 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
             handle.write("<p>No PDFs are currently staged for publication.</p>")
 
         handle.write('</section>')
-        if unreferenced:
+        if unmatched_diagrams:
             handle.write('<section class="library" id="plantuml-diagrams" aria-label="Unmatched diagram previews" data-category-section>')
-            handle.write(_heading(2, "PlantUML Diagrams — other assets"))
-            _emit_cards(handle, unreferenced, standalone=True)
+            _emit_diagram_gallery(handle, unmatched_diagrams, 2)
             handle.write('</section>')
 
         handle.write("""
