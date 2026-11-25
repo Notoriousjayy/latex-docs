@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary architecture documents (30)
+## Primary architecture documents (31)
 
 - [Secure AWS Platform: Six Architecture Acceptance Gates](../src/architecture/cloud/reusable-secure-aws-cloud-environment/architecture-and-acceptance-gates.tex) — cloud/reusable-secure-aws-cloud-environment · **provisional**
 - [ADR-0001: Application-aligned repository ownership](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0001.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
@@ -14,6 +14,7 @@
 - [00 executive architecture and scope](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/00-executive-architecture-and-scope.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
 - [enterprise appsec code scanning architecture description](../src/architecture/technical-documents/enterprise-appsec-code-scanning-architecture-description.tex) — appsec-code-scanning/architecture · **provisional**
 - [enterprise appsec code scanning viewpoint specification](../src/architecture/technical-documents/enterprise-appsec-code-scanning-viewpoint-specification.tex) — appsec-code-scanning/architecture · **provisional**
+- [AI Agent Harness Architecture Documentation Standard](../src/architecture/views-and-beyond/architecture-documentation-suite/07-agent-harness-architecture-standard.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
 - [Comprehensive Architecture Analysis](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/01-comprehensive-architecture-analysis.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Vendor-Neutral Python Reference Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/04-vendor-neutral-python-reference-architecture.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [AI Agent Harness Course Architecture Description](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-description/main.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**

@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary study guides (489)
+## Primary study guides (491)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -18,6 +18,8 @@
 - [chapter 11 beyond the basics](../src/architecture/c4-model/documentation-suite/study-guides/chapter-11-beyond-the-basics.tex) — c4-model/documentation-suite/study-guides · **provisional**
 - [chapter 12 c4 model in practice](../src/architecture/c4-model/documentation-suite/study-guides/chapter-12-c4-model-in-practice.tex) — c4-model/documentation-suite/study-guides · **provisional**
 - [02 cloud architecture curriculum](../src/architecture/cloud/engineering-suite/02-cloud-architecture-curriculum.tex) — cloud/engineering suite · **provisional**
+- [Views and Beyond: Technical Study](../src/architecture/views-and-beyond/architecture-documentation-suite/01-views-and-beyond-study.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
+- [Architecture Documentation Curriculum](../src/architecture/views-and-beyond/architecture-documentation-suite/08-architecture-documentation-curriculum.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
 - [prerequisite based architecture documentation curriculum](../src/architecture/views-and-beyond/documentation-engineering-suite/curriculum/Prerequisite_Based_Architecture_Documentation_Curriculum.tex) — views-and-beyond/documentation-engineering-suite/curriculum · **provisional**
 - [study guide 00 prologue](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_00_Prologue.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
 - [study guide 01 module views](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_01_Module_Views.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**

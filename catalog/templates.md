@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary reusable templates (243)
+## Primary reusable templates (244)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -53,6 +53,7 @@
 - [viewpoint template polished](../src/architecture/templates/viewpoint-template-polished.tex) — architecture · **provisional**
 - [TOGAF User Stories (Day in the Life)](../src/architecture/togaf/togaf-user-stories-day-in-the-life.tex) — TOGAF user story scaffold · **reviewed**
 - [Viewpoint Template](../src/architecture/views-and-beyond/advanced-concepts/viewpoint-template.tex) — software architecture viewpoint specification · **reviewed**
+- [Software Architecture Document (SAD) Authoring Template](../src/architecture/views-and-beyond/architecture-documentation-suite/02-software-architecture-document-template.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
 - [architecture change impact record template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Architecture_Change_Impact_Record_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
 - [architecture decision record template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Architecture_Decision_Record_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
 - [architecture description record template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Architecture_Description_Record_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**

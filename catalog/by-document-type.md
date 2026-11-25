@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## architecture-document (30)
+## architecture-document (31)
 
 - [Secure AWS Platform: Six Architecture Acceptance Gates](../src/architecture/cloud/reusable-secure-aws-cloud-environment/architecture-and-acceptance-gates.tex) — cloud/reusable-secure-aws-cloud-environment · **provisional**
 - [ADR-0001: Application-aligned repository ownership](../src/architecture/cloud/secure-aws-terraform-repository-deployment/adrs/adr-0001.tex) — cloud/secure-aws-terraform-repository-deployment · **provisional**
@@ -14,6 +14,7 @@
 - [00 executive architecture and scope](../src/architecture/enterprise/open-source-enterprise-technology-suite/reference/00-executive-architecture-and-scope.tex) — enterprise/open-source-enterprise-technology-suite/reference · **provisional**
 - [enterprise appsec code scanning architecture description](../src/architecture/technical-documents/enterprise-appsec-code-scanning-architecture-description.tex) — appsec-code-scanning/architecture · **provisional**
 - [enterprise appsec code scanning viewpoint specification](../src/architecture/technical-documents/enterprise-appsec-code-scanning-viewpoint-specification.tex) — appsec-code-scanning/architecture · **provisional**
+- [AI Agent Harness Architecture Documentation Standard](../src/architecture/views-and-beyond/architecture-documentation-suite/07-agent-harness-architecture-standard.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
 - [Comprehensive Architecture Analysis](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/01-comprehensive-architecture-analysis.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Vendor-Neutral Python Reference Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/04-vendor-neutral-python-reference-architecture.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [AI Agent Harness Course Architecture Description](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/architecture-description/main.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
@@ -35,13 +36,14 @@
 - [subsystem and lifecycle specification](../src/game-development/game-engine-architecture-suite/architecture-specifications/subsystem-and-lifecycle-specification.tex) — game-engine-architecture-suite/architecture-specifications · **provisional**
 - [Open-Source Enterprise Security Platform: Reference Architecture and Tool Strategy](../src/security/technical-documents/open-source-enterprise-security-platform.tex) — enterprise security platform architecture · **reviewed**
 
-## assessment (51)
+## assessment (52)
 
 - [architecture traceability scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/architecture-traceability-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
 - [diagram quality scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/diagram-quality-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
 - [release readiness scorecard template](../src/architecture/c4-model/documentation-suite/scorecards/release-readiness-scorecard-template.tex) — c4-model/documentation-suite/scorecards · **provisional**
 - [3 5 quality audit](../src/architecture/governance/ccoe/execution/3-5-quality-audit.tex) — ccoe/execution · **provisional**
 - [2 33 probability and impact assessment](../src/architecture/governance/ccoe/planning/2-33-probability-and-impact-assessment.tex) — ccoe/planning · **provisional**
+- [Architecture Documentation Review Framework](../src/architecture/views-and-beyond/architecture-documentation-suite/05-architecture-review-framework.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
 - [architecture description quality template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Architecture_Description_Quality_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
 - [architecture view completeness template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Architecture_View_Completeness_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
 - [documentation review readiness template](../src/architecture/views-and-beyond/documentation-engineering-suite/scorecards/Documentation_Review_Readiness_Template.tex) — views-and-beyond/documentation-engineering-suite/scorecards · **provisional**
@@ -357,7 +359,7 @@
 - [operational resilience template](../src/startups/small-business-management/scorecards/templates/operational-resilience-template.tex) — small-business-management/scorecards/templates · **provisional**
 - [venture feasibility template](../src/startups/small-business-management/scorecards/templates/venture-feasibility-template.tex) — small-business-management/scorecards/templates · **provisional**
 
-## study-guide (489)
+## study-guide (491)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [chapter 01 a failure to communicate](../src/architecture/c4-model/documentation-suite/study-guides/chapter-01-a-failure-to-communicate.tex) — c4-model/documentation-suite/study-guides · **provisional**
@@ -373,6 +375,8 @@
 - [chapter 11 beyond the basics](../src/architecture/c4-model/documentation-suite/study-guides/chapter-11-beyond-the-basics.tex) — c4-model/documentation-suite/study-guides · **provisional**
 - [chapter 12 c4 model in practice](../src/architecture/c4-model/documentation-suite/study-guides/chapter-12-c4-model-in-practice.tex) — c4-model/documentation-suite/study-guides · **provisional**
 - [02 cloud architecture curriculum](../src/architecture/cloud/engineering-suite/02-cloud-architecture-curriculum.tex) — cloud/engineering suite · **provisional**
+- [Views and Beyond: Technical Study](../src/architecture/views-and-beyond/architecture-documentation-suite/01-views-and-beyond-study.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
+- [Architecture Documentation Curriculum](../src/architecture/views-and-beyond/architecture-documentation-suite/08-architecture-documentation-curriculum.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
 - [prerequisite based architecture documentation curriculum](../src/architecture/views-and-beyond/documentation-engineering-suite/curriculum/Prerequisite_Based_Architecture_Documentation_Curriculum.tex) — views-and-beyond/documentation-engineering-suite/curriculum · **provisional**
 - [study guide 00 prologue](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_00_Prologue.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
 - [study guide 01 module views](../src/architecture/views-and-beyond/documentation-engineering-suite/study-guides/Study_Guide_01_Module_Views.tex) — views-and-beyond/documentation-engineering-suite/study-guides · **provisional**
@@ -1176,7 +1180,7 @@
 - [ch22 optical network security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch22-optical-network-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 - [ch23 optical wireless security cornell notes](../src/cornell-notes/security/cybersecurity-reference/platform-network-and-iot/ch23-optical-wireless-security-cornell-notes.tex) — cybersecurity reference/platform network and iot · **provisional**
 
-## technical-reference (741)
+## technical-reference (743)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -1341,6 +1345,8 @@
 - [2 5 1 diagram types classification handout](../src/architecture/uml/2-5-1-diagram-types-classification-handout.tex) — uml · **provisional**
 - [spectrum of style specializations](../src/architecture/views-and-beyond/advanced-concepts/spectrum-of-style-specializations.tex) — views and beyond/advanced concepts · **provisional**
 - [variation points](../src/architecture/views-and-beyond/advanced-concepts/variation-points.tex) — views and beyond/advanced concepts · **provisional**
+- [Integrated Architecture Documentation Framework](../src/architecture/views-and-beyond/architecture-documentation-suite/04-integrated-documentation-framework.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
+- [Repository Architecture Analysis Methodology](../src/architecture/views-and-beyond/architecture-documentation-suite/06-repository-architecture-analysis.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
 - [lab 01 discover and select views](../src/architecture/views-and-beyond/documentation-engineering-suite/labs/Lab_01_Discover_and_Select_Views.tex) — views-and-beyond/documentation-engineering-suite/labs · **provisional**
 - [lab 02 model module dependencies](../src/architecture/views-and-beyond/documentation-engineering-suite/labs/Lab_02_Model_Module_Dependencies.tex) — views-and-beyond/documentation-engineering-suite/labs · **provisional**
 - [lab 03 trace runtime interactions](../src/architecture/views-and-beyond/documentation-engineering-suite/labs/Lab_03_Trace_Runtime_Interactions.tex) — views-and-beyond/documentation-engineering-suite/labs · **provisional**
@@ -1920,7 +1926,7 @@
 - [venture lifecycle reference](../src/startups/small-business-management/technical-reference/venture-lifecycle-reference.tex) — small-business-management/technical-reference · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## template (243)
+## template (244)
 
 - [code template](../src/architecture/c4-model/documentation-suite/templates/code-template.tex) — c4-model/documentation-suite/templates · **provisional**
 - [component template](../src/architecture/c4-model/documentation-suite/templates/component-template.tex) — c4-model/documentation-suite/templates · **provisional**
@@ -1971,6 +1977,7 @@
 - [viewpoint template polished](../src/architecture/templates/viewpoint-template-polished.tex) — architecture · **provisional**
 - [TOGAF User Stories (Day in the Life)](../src/architecture/togaf/togaf-user-stories-day-in-the-life.tex) — TOGAF user story scaffold · **reviewed**
 - [Viewpoint Template](../src/architecture/views-and-beyond/advanced-concepts/viewpoint-template.tex) — software architecture viewpoint specification · **reviewed**
+- [Software Architecture Document (SAD) Authoring Template](../src/architecture/views-and-beyond/architecture-documentation-suite/02-software-architecture-document-template.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
 - [architecture change impact record template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Architecture_Change_Impact_Record_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
 - [architecture decision record template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Architecture_Decision_Record_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**
 - [architecture description record template](../src/architecture/views-and-beyond/documentation-engineering-suite/templates/Architecture_Description_Record_Template.tex) — views-and-beyond/documentation-engineering-suite/templates · **provisional**

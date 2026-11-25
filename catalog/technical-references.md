@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## Primary technical references (741)
+## Primary technical references (743)
 
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
 - [lab 02 context model in plantuml](../src/architecture/c4-model/documentation-suite/labs/lab-02-context-model-in-plantuml.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -167,6 +167,8 @@
 - [2 5 1 diagram types classification handout](../src/architecture/uml/2-5-1-diagram-types-classification-handout.tex) — uml · **provisional**
 - [spectrum of style specializations](../src/architecture/views-and-beyond/advanced-concepts/spectrum-of-style-specializations.tex) — views and beyond/advanced concepts · **provisional**
 - [variation points](../src/architecture/views-and-beyond/advanced-concepts/variation-points.tex) — views and beyond/advanced concepts · **provisional**
+- [Integrated Architecture Documentation Framework](../src/architecture/views-and-beyond/architecture-documentation-suite/04-integrated-documentation-framework.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
+- [Repository Architecture Analysis Methodology](../src/architecture/views-and-beyond/architecture-documentation-suite/06-repository-architecture-analysis.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
 - [lab 01 discover and select views](../src/architecture/views-and-beyond/documentation-engineering-suite/labs/Lab_01_Discover_and_Select_Views.tex) — views-and-beyond/documentation-engineering-suite/labs · **provisional**
 - [lab 02 model module dependencies](../src/architecture/views-and-beyond/documentation-engineering-suite/labs/Lab_02_Model_Module_Dependencies.tex) — views-and-beyond/documentation-engineering-suite/labs · **provisional**
 - [lab 03 trace runtime interactions](../src/architecture/views-and-beyond/documentation-engineering-suite/labs/Lab_03_Trace_Runtime_Interactions.tex) — views-and-beyond/documentation-engineering-suite/labs · **provisional**
@@ -746,8 +748,11 @@
 - [venture lifecycle reference](../src/startups/small-business-management/technical-reference/venture-lifecycle-reference.tex) — small-business-management/technical-reference · **provisional**
 - [sba local assistance intake](../src/startups/technical-documents/sba-local-assistance-intake.tex) — startups · **provisional**
 
-## Related reviewed sources with secondary technical references content (8)
+## Related reviewed sources with secondary technical references content (11)
 
+- [Views and Beyond: Technical Study](../src/architecture/views-and-beyond/architecture-documentation-suite/01-views-and-beyond-study.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
+- [Architecture Documentation Review Framework](../src/architecture/views-and-beyond/architecture-documentation-suite/05-architecture-review-framework.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
+- [AI Agent Harness Architecture Documentation Standard](../src/architecture/views-and-beyond/architecture-documentation-suite/07-agent-harness-architecture-standard.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
 - [Comprehensive Architecture Analysis](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/01-comprehensive-architecture-analysis.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Security Architecture Assessment](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/03-security-architecture-assessment.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**
 - [Vendor-Neutral Python Reference Architecture](../src/data-systems/ai-agent-engineering/technical-documents/agent-harness-course-study/04-vendor-neutral-python-reference-architecture.tex) — ai-agent-engineering/technical-documents/agent-harness-course-study · **reviewed**

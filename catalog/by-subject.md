@@ -3671,6 +3671,16 @@
 - [stakeholder and their documentation needs](../src/architecture/views-and-beyond/view-packets/stakeholder-and-their-documentation-needs.tex) — views and beyond/view packets · **provisional**
 - [supporting development](../src/architecture/views-and-beyond/view-packets/supporting-development.tex) — views and beyond/view packets · **provisional**
 
+## views-and-beyond/architecture-documentation-suite (7)
+
+- [Views and Beyond: Technical Study](../src/architecture/views-and-beyond/architecture-documentation-suite/01-views-and-beyond-study.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
+- [Software Architecture Document (SAD) Authoring Template](../src/architecture/views-and-beyond/architecture-documentation-suite/02-software-architecture-document-template.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
+- [Integrated Architecture Documentation Framework](../src/architecture/views-and-beyond/architecture-documentation-suite/04-integrated-documentation-framework.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
+- [Architecture Documentation Review Framework](../src/architecture/views-and-beyond/architecture-documentation-suite/05-architecture-review-framework.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
+- [Repository Architecture Analysis Methodology](../src/architecture/views-and-beyond/architecture-documentation-suite/06-repository-architecture-analysis.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
+- [AI Agent Harness Architecture Documentation Standard](../src/architecture/views-and-beyond/architecture-documentation-suite/07-agent-harness-architecture-standard.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
+- [Architecture Documentation Curriculum](../src/architecture/views-and-beyond/architecture-documentation-suite/08-architecture-documentation-curriculum.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
+
 ## views-and-beyond/documentation-engineering-suite/curriculum (1)
 
 - [prerequisite based architecture documentation curriculum](../src/architecture/views-and-beyond/documentation-engineering-suite/curriculum/Prerequisite_Based_Architecture_Documentation_Curriculum.tex) — views-and-beyond/documentation-engineering-suite/curriculum · **provisional**

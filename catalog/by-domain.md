@@ -2,7 +2,7 @@
 
 **Provenance:** Reviewed entries have targeted content inspection; provisional type and subject labels are path-derived and should not be treated as verified. Links identify canonical source files.
 
-## architecture (352)
+## architecture (359)
 
 - [prerequisite curriculum](../src/architecture/c4-model/documentation-suite/curriculum/prerequisite-curriculum.tex) — c4-model/documentation-suite/curriculum · **provisional**
 - [lab 01 boundary and stakeholder discovery](../src/architecture/c4-model/documentation-suite/labs/lab-01-boundary-and-stakeholder-discovery.tex) — c4-model/documentation-suite/labs · **provisional**
@@ -270,6 +270,13 @@
 - [spectrum of style specializations](../src/architecture/views-and-beyond/advanced-concepts/spectrum-of-style-specializations.tex) — views and beyond/advanced concepts · **provisional**
 - [variation points](../src/architecture/views-and-beyond/advanced-concepts/variation-points.tex) — views and beyond/advanced concepts · **provisional**
 - [Viewpoint Template](../src/architecture/views-and-beyond/advanced-concepts/viewpoint-template.tex) — software architecture viewpoint specification · **reviewed**
+- [Views and Beyond: Technical Study](../src/architecture/views-and-beyond/architecture-documentation-suite/01-views-and-beyond-study.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
+- [Software Architecture Document (SAD) Authoring Template](../src/architecture/views-and-beyond/architecture-documentation-suite/02-software-architecture-document-template.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
+- [Integrated Architecture Documentation Framework](../src/architecture/views-and-beyond/architecture-documentation-suite/04-integrated-documentation-framework.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
+- [Architecture Documentation Review Framework](../src/architecture/views-and-beyond/architecture-documentation-suite/05-architecture-review-framework.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
+- [Repository Architecture Analysis Methodology](../src/architecture/views-and-beyond/architecture-documentation-suite/06-repository-architecture-analysis.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
+- [AI Agent Harness Architecture Documentation Standard](../src/architecture/views-and-beyond/architecture-documentation-suite/07-agent-harness-architecture-standard.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
+- [Architecture Documentation Curriculum](../src/architecture/views-and-beyond/architecture-documentation-suite/08-architecture-documentation-curriculum.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
 - [prerequisite based architecture documentation curriculum](../src/architecture/views-and-beyond/documentation-engineering-suite/curriculum/Prerequisite_Based_Architecture_Documentation_Curriculum.tex) — views-and-beyond/documentation-engineering-suite/curriculum · **provisional**
 - [lab 01 discover and select views](../src/architecture/views-and-beyond/documentation-engineering-suite/labs/Lab_01_Discover_and_Select_Views.tex) — views-and-beyond/documentation-engineering-suite/labs · **provisional**
 - [lab 02 model module dependencies](../src/architecture/views-and-beyond/documentation-engineering-suite/labs/Lab_02_Model_Module_Dependencies.tex) — views-and-beyond/documentation-engineering-suite/labs · **provisional**

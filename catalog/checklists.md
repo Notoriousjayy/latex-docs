@@ -14,13 +14,14 @@
 - [Object-Oriented Programming in ANSI C: Rules and Practical Checklists](../src/programming/languages/c-cpp/object-oriented-programming-ansi-c-checklists.tex) — ANSI C object-oriented programming checklists · **reviewed**
 - [minimum curriculum quality checklist](../src/startups/workbooks/minimum-curriculum-quality-checklist.tex) — startups · **provisional**
 
-## Related reviewed sources with secondary checklists content (14)
+## Related reviewed sources with secondary checklists content (15)
 
 - [Architecture Documentation Templates](../src/architecture/cloud/engineering-suite/05-architecture-documentation-templates.tex) — cloud architecture documentation forms · **reviewed**
 - [Cloud Security Reference Templates](../src/architecture/cloud/engineering-suite/06-security-governance-templates.tex) — cloud security governance forms · **reviewed**
 - [Procurement Audit — Working Form](../src/architecture/governance/ccoe/closure/5-1-procurement-audit.tex) — CCoE procurement evaluation form · **reviewed**
 - [Team Performance Assessment — Working Form](../src/architecture/governance/ccoe/execution/3-8-team-performance-assessment.tex) — CCoE team evaluation form · **reviewed**
 - [ISO/IEC/IEEE 42010 Conformance Assessment Workbook](../src/architecture/standards/iso-iec-ieee-42010/07-conformance-assessment.tex) — ISO/IEC/IEEE 42010 conformance evidence · **reviewed**
+- [Architecture Documentation Review Framework](../src/architecture/views-and-beyond/architecture-documentation-suite/05-architecture-review-framework.tex) — views-and-beyond/architecture-documentation-suite · **reviewed**
 - [GitHub Repository Setup and Workflow Guide](../src/devops/foundations/sdlc/1-platform-overview.tex) — GitHub setup and delivery workflow · **reviewed**
 - [GitHub Repository Setup Guide](../src/devops/platform/github/quick-start-checklist.tex) — GitHub repository/community workflow setup · **reviewed**
 - [ECMAScript Testing and Conformance Guide](../src/programming/languages/ecmascript/06-testing-conformance-guide.tex) — ECMAScript conformance and testing · **reviewed**
