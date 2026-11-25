@@ -16,8 +16,6 @@ MARKER = "<!-- Managed by tooling/scripts/ensure_plantuml_asset_readmes.py -->"
 FORMAT_EXT = {
     "png": {".png"},
     "svg": {".svg"},
-    "jpg": {".jpg", ".jpeg"},
-    "jpeg": {".jpg", ".jpeg"},
 }
 
 

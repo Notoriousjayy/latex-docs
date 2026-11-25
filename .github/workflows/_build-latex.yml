@@ -99,7 +99,7 @@ jobs:
         run: python3 -m unittest -v tests.test_architecture_adr_build_contract tests.test_latex_warning_audit
 
       - name: Validate document-linked image cards and format selection
-        run: python3 -m unittest -v tests.test_pages_diagrams
+        run: python3 -m unittest -v tests.test_pages_diagrams tests.test_diagram_pairs
 
       - name: Validate source catalog and directory migration
         run: python3 tooling/scripts/semantic_content_audit.py --check && python3 tooling/scripts/build_semantic_catalogs.py --check && python3 -m unittest -v tests.test_src_information_architecture tests.test_domain_document_type_layout tests.test_semantic_taxonomy tests.test_plantuml_asset_indexes
@@ -211,7 +211,7 @@ jobs:
         uses: ./.github/actions/render-plantuml
         with:
           source-dir: 'src'
-          extra-roots: ''
+          extra-roots: 'tooling/plantuml'
           formats: 'png svg'
 
           # Checkout mtimes are meaningless for freshness; the plan step already
@@ -234,22 +234,23 @@ jobs:
         with:
           source-dir: 'src/programming/languages/syntax-diagrams/railroad-generated'
           extra-roots: ''
-          formats: 'png'
+          formats: 'png svg'
 
           force: 'true'
           result-path: '.build-cache/grammar-png-render.json'
 
-      - name: Verify complete grammar PNG count in every build
+      - name: Verify complete grammar PNG/SVG pairs in every build
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
           root = Path('src/programming/languages/syntax-diagrams/railroad-generated')
-          count = len(list(root.rglob('png/*.png')))
-          if count != 1166:
-              raise SystemExit(f'Expected 1,166 grammar PNGs; found {count}')
-          print(f'Validated {count} railroad-diagram PNGs for publication')
+          for fmt in ('png', 'svg'):
+              count = len(list(root.rglob(f'{fmt}/*.{fmt}')))
+              if count != 1166:
+                  raise SystemExit(f'Expected 1,166 grammar {fmt.upper()}s; found {count}')
+          print('Validated 1,166 railroad-diagram PNG/SVG pairs for publication')
           PY
 
       - name: Validate full static PNG gallery against rendered image bytes
@@ -273,6 +274,9 @@ jobs:
             test -s "$site/syntax-diagrams/$lang.html"
           done
           echo 'All 1,166 real PNGs resolve from the static gallery' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enforce PNG/SVG output pairs and reject legacy JPEG files
+        run: python3 -m tooling.scripts.verify_diagram_pairs
 
       - name: Collect raster corpus
         id: collect
