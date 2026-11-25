@@ -1055,7 +1055,7 @@ class BuildToolTests(unittest.TestCase):
                 manifest = latex_build.collect_raster_corpus(src, root / "artifact", root / "manifest.json", require_nonempty=True)
 
             self.assertEqual(4, manifest["total"])
-            self.assertEqual({"png": 2, "jpg": 1, "jpeg": 1}, manifest["counts"])
+            self.assertEqual({"png": 2, "svg": 0, "jpg": 1, "jpeg": 1}, manifest["counts"])
             for relative_path in (
                 "src/architecture/a/png/overview.png",
                 "src/security/b/png/overview.png",
@@ -1113,7 +1113,7 @@ class BuildToolTests(unittest.TestCase):
                 self.assertTrue((root / "site" / "images" / item["path"]).is_file())
                 self.assertIn(f'href="images/{item["path"]}"', index_html)
 
-    def test_render_plantuml_cli_supports_jpg_through_same_interface_used_in_ci(self) -> None:
+    def test_render_plantuml_cli_supports_jpeg_through_same_interface_used_in_ci(self) -> None:
         """PlantUML has no JPEG writer (-tjpg silently yields PNG); jpg must be derived from the PNG render."""
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -1142,14 +1142,16 @@ class BuildToolTests(unittest.TestCase):
             with patch("tooling.scripts.latex_build.subprocess.run", side_effect=fake_run) as run_mock, \
                     patch("tooling.scripts.latex_build.image_magick_convert", return_value="fake-convert"):
                 status = latex_build.render_plantuml(
-                    source_dir=src, formats=["png", "jpg"], force=True, result_path=root / "result.json"
+                    source_dir=src, formats=["png", "jpeg"], force=True, result_path=root / "result.json"
                 )
 
             self.assertEqual(0, status)
             self.assertTrue(any("-tpng" in call.args[0] for call in run_mock.call_args_list))
             self.assertFalse(any("-tjpg" in call.args[0] for call in run_mock.call_args_list))
             self.assertEqual(1, sum(1 for call in run_mock.call_args_list if call.args[0][0] == "fake-convert"))
-            self.assertTrue((src / "jpg" / "diagram.jpg").is_file())
+            self.assertTrue((src / "jpeg" / "diagram.jpeg").is_file())
+            self.assertFalse((src / "jpg").exists())
+            self.assertFalse(any("-tjpeg" in call.args[0] for call in run_mock.call_args_list))
             self.assertTrue((src / "png" / "diagram.png").is_file())
 
     def test_discover_roots_includes_all_canonical_cornell_documents(self) -> None:
@@ -1472,7 +1474,7 @@ class BuildToolTests(unittest.TestCase):
         self.assertIsInstance(data, dict)
 
         expected_inputs = {
-            "source-dir", "formats", "generate-jpg", "extra-roots", "force", "result-path", "plantuml-version",
+            "source-dir", "formats", "generate-jpeg", "extra-roots", "force", "result-path", "plantuml-version",
         }
         expected_outputs = {
             "discovered-files", "diagram-count", "diagram-blocks", "rendered-count", "reused-count",
@@ -1486,7 +1488,7 @@ class BuildToolTests(unittest.TestCase):
         install_step = next(step for step in data["runs"]["steps"] if step.get("name") == "Install PlantUML and dependencies")
         install_script = install_step["run"]
         self.assertIn("imagemagick", install_script)
-        self.assertNotIn('if [[ "${{ inputs.generate-jpg }}" == "true" ]]', install_script)
+        self.assertNotIn('if [[ "${{ inputs.generate-jpeg }}" == "true" ]]', install_script)
         self.assertIn("plantuml-render-outputs", render_step["run"])
         self.assertIn("--require-diagrams", render_step["run"])
         self.assertNotIn("find ", render_step["run"])

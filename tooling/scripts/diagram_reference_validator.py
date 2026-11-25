@@ -20,7 +20,7 @@ GRAPHICS_MACRO_PATTERN = re.compile(
 # Style-reference documents wrap PNG inclusion in \diagram{name} -> png/name.png beside the document.
 DIAGRAM_SHORTHAND_PATTERN = re.compile(r"\\diagram(?:\[[^\]]*\])?\{([^{}]+)\}")
 DIAGRAM_SHORTHAND_DEFINITION = re.compile(r"\\(?:re)?newcommand\{\\diagram\}")
-MANAGED_OUTPUT_DIRS = ("png", "svg", "jpg")
+MANAGED_OUTPUT_DIRS = ("png", "svg", "jpg", "jpeg")
 
 # Fallback legacy patterns for known migration families when no runtime map is available.
 FALLBACK_LEGACY_STEMS = {

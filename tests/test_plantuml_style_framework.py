@@ -527,14 +527,16 @@ class PlantUMLRendererAccountingTests(unittest.TestCase):
             os.utime(leaf, (now + 20, now + 20))
             self.assertFalse(latex_build._plantuml_is_current(source, None, [output], list(includes)))
 
-    def test_existing_jpg_derivative_is_refreshed_even_when_not_requested(self) -> None:
-        """An optional jpg/ output must not keep an older theme after a png/svg-only render."""
+    def test_existing_jpeg_derivative_is_refreshed_without_regenerating_legacy_jpg(self) -> None:
+        """JPEG derivatives refresh; legacy JPG remains byte-for-byte unchanged."""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             src = root / "src"
             (src / "jpg").mkdir(parents=True)
             (src / "d.puml").write_text("@startuml\nA -> B\n@enduml\n", encoding="ascii")
             (src / "jpg" / "d.jpg").write_bytes(b"\xff\xd8\xffold")
+            (src / "jpeg").mkdir()
+            (src / "jpeg" / "d.jpeg").write_bytes(b"\xff\xd8\xffold")
             png_magic = b"\x89PNG\r\n\x1a\nimg"
 
             def fake_run(command, **kwargs):
@@ -557,9 +559,10 @@ class PlantUMLRendererAccountingTests(unittest.TestCase):
                     patch("tooling.scripts.latex_build.image_magick_convert", return_value="fake-convert"):
                 status = latex_build.render_plantuml(source_dir=src, formats=["svg"], force=True, result_path=root / "r.json")
             self.assertEqual(0, status)
-            self.assertEqual(b"\xff\xd8\xffnew", (src / "jpg" / "d.jpg").read_bytes())
+            self.assertEqual(b"\xff\xd8\xffold", (src / "jpg" / "d.jpg").read_bytes())
+            self.assertEqual(b"\xff\xd8\xffnew", (src / "jpeg" / "d.jpeg").read_bytes())
             data = json.loads((root / "r.json").read_text(encoding="utf-8"))
-            self.assertEqual({"svg": 1, "jpg": 1}, data["outputs_by_format"])
+            self.assertEqual({"svg": 1, "jpeg": 1}, data["outputs_by_format"])
 
     def test_render_outputs_come_from_the_result_not_from_globbing(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

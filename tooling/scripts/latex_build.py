@@ -22,12 +22,13 @@ from urllib.parse import quote
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import build_graph  # noqa: E402  (local module, resolved via the path insert above)
+from pages_diagrams import group_images, document_diagrams, render_card  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = ROOT / "src"
 LATEXMK = os.environ.get("LATEXMK", "latexmk")
 TIMING_HISTORY_PATH = ROOT / "tooling" / "manifests" / "build-timings.json"
-RASTER_SUFFIXES = {".png": "png", ".jpg": "jpg", ".jpeg": "jpeg"}
+RASTER_SUFFIXES = {".png": "png", ".svg": "svg", ".jpg": "jpg", ".jpeg": "jpeg"}  # Includes vector previews.
 
 FATAL_PATTERNS = [
     re.compile(r"LaTeX Error:\s+.+"),
@@ -980,7 +981,7 @@ def _natural_key(text: str) -> tuple:
     )
 
 
-def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = None) -> List[Path]:
+def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = None, *, source_dir: Path | None = None) -> List[Path]:
     pdf_dir = pdf_dir.resolve()
     site_dir = site_dir.resolve()
     site_pdf_dir = site_dir / "pdfs"
@@ -995,7 +996,7 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = Non
         image_dir = image_dir.resolve()
         if image_dir.exists():
             for source in sorted(image_dir.rglob("*")):
-                if not source.is_file() or source.suffix.lower() not in {".png", ".jpg", ".jpeg"}:
+                if not source.is_file() or source.suffix.lower() not in RASTER_SUFFIXES:
                     continue
                 rel_path = source.relative_to(image_dir)
                 target = site_dir / "images" / rel_path
@@ -1009,8 +1010,19 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = Non
         raster_rel_paths = sorted(
             path.relative_to(images_dir)
             for path in images_dir.rglob("*")
-            if path.is_file() and path.suffix.lower() in {".png", ".jpg", ".jpeg"}
+            if path.is_file() and path.suffix.lower() in RASTER_SUFFIXES
         )
+
+    image_groups = group_images(raster_rel_paths)
+    related = document_diagrams(pdf_rel_paths, image_groups, (source_dir or SRC_DIR).resolve())
+    attached = {key for keys in related.values() for key in keys}
+    unreferenced = [key for key in image_groups if key not in attached]
+
+    def _emit_cards(handle: Any, keys: Iterable[Path], *, standalone: bool = False) -> None:
+        handle.write('<ul class="image-grid">')
+        for key in keys:
+            handle.write(render_card(key, image_groups[key], standalone=standalone))
+        handle.write("</ul>")
 
     def _tree_order_key(path: Path) -> tuple:
         """Natural ordering with annexes sorted after chapters within a directory."""
@@ -1048,12 +1060,19 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = Non
             name = html.escape(_document_label(rel_path.stem))
             path_label = html.escape(rel_posix)
             target = html.escape("pdfs/" + quote(rel_posix, safe="/:@-._~"), quote=True)
-            search_text = html.escape(f"{_document_label(rel_path.stem)} {rel_posix}".casefold(), quote=True)
+            keys = related.get(rel_path, [])
+            image_terms = " ".join(p.as_posix() for key in keys for p in image_groups[key])
+            search_text = html.escape(f"{_document_label(rel_path.stem)} {rel_posix} {image_terms}".casefold(), quote=True)
             handle.write(
                 f'<li class="document-row" data-search="{search_text}">'
                 f'<a href="{target}" title="Open {path_label}"><span class="document-name">{name}</span>'
-                f'<span class="document-path">{path_label}</span></a></li>'
+                f'<span class="document-path">{path_label}</span></a>'
             )
+            if keys:
+                handle.write('<div class="related-diagrams"><p class="related-label">Referenced diagrams</p>')
+                _emit_cards(handle, keys)
+                handle.write('</div>')
+            handle.write('</li>')
         handle.write("</ul>")
 
     def _emit_directory_tree(handle: Any, paths: list[Path], depth: int, level: int) -> None:
@@ -1070,30 +1089,12 @@ def stage_pages_site(pdf_dir: Path, site_dir: Path, image_dir: Path | None = Non
             handle.write(_heading(min(level, 6), _humanize_segment(segment), anchor=anchor))
             _emit_directory_tree(handle, groups[segment], depth + 1, level + 1)
 
-    def _emit_raster_cards(handle: Any) -> None:
-        if not raster_rel_paths:
-            handle.write('<p>No PlantUML raster assets are staged.</p>')
-            return
-        handle.write('<ul class="image-grid">')
-        for rel_path in raster_rel_paths:
-            rel_posix = rel_path.as_posix()
-            image_href = "images/" + rel_posix
-            href = html.escape(image_href, quote=True)
-            img_src = html.escape(image_href, quote=True)
-            title = html.escape(rel_path.name)
-            handle.write(
-                f'<li class="image-card" data-search="{html.escape(rel_posix.casefold(), quote=True)}">'
-                f'<a href="{href}" target="_blank" rel="noopener noreferrer"><img src="{img_src}" alt="{title}" loading="lazy" /></a>'
-                f'<div class="image-meta"><a href="{href}" title="Open {title}">{title}</a></div>'
-                f'</li>'
-            )
-        handle.write("</ul>")
-
     index_path = site_dir / "index.html"
     with index_path.open("w", encoding="utf-8") as handle:
         total_documents = len(pdf_rel_paths)
         total_png = sum(1 for rel in raster_rel_paths if rel.suffix.lower() == ".png")
-        total_jpg = sum(1 for rel in raster_rel_paths if rel.suffix.lower() in {".jpg", ".jpeg"})
+        total_svg = sum(1 for rel in raster_rel_paths if rel.suffix.lower() == ".svg")
+        total_results = total_documents + len(unreferenced)
         category_count = len({path.parts[0] for path in pdf_rel_paths if path.parts})
         handle.write("""<!doctype html>
 <html lang="en">
@@ -1137,8 +1138,8 @@ a { color: var(--accent); }
 .library h5, .library h6 { margin: 1rem 0 .35rem; color: var(--muted); font-size: 1rem; }
 .document-list { display: grid; gap: .55rem; margin: 0; padding: 0; list-style: none; }
 .document-row { min-width: 0; }
-.document-row a { display: grid; gap: .1rem; min-width: 0; padding: .75rem .9rem; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 6px; text-decoration: none; }
-.document-row a:hover { background: var(--hover); border-color: var(--accent); }
+.document-row > a { display: grid; gap: .1rem; min-width: 0; padding: .75rem .9rem; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 6px; text-decoration: none; }
+.document-row > a:hover { background: var(--hover); border-color: var(--accent); }
 .document-name, .document-path { overflow-wrap: anywhere; }
 .document-name { font-weight: 650; }
 .document-path { color: var(--muted); font-size: .87rem; }
@@ -1147,6 +1148,12 @@ a { color: var(--accent); }
 .image-card img { width: 100%; aspect-ratio: 4 / 3; object-fit: contain; border-radius: 6px; background: #f8fafc; border: 1px solid var(--border); display: block; }
 .image-meta { margin-top: .65rem; font-size: .88rem; overflow-wrap: anywhere; }
 .image-meta a { color: var(--text); text-decoration: none; }
+.related-diagrams { margin: .7rem 0 1rem 1rem; padding-left: .9rem; border-left: 2px solid var(--border); }
+.related-label { font-size: .9rem; font-weight: 650; color: var(--muted); margin: 0 0 .5rem; }
+.image-format-links { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .55rem; }
+.image-format-links a { display: inline-block; border: 1px solid var(--border); padding: .22rem .55rem; border-radius: 4px; font-size: .82rem; text-decoration: none; }
+.image-format-links a[aria-current="true"] { background: var(--hover); border-color: var(--accent); font-weight: 700; }
+.image-card[hidden], .document-row[hidden], section[hidden] { display: none !important; }
 footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(--border); font-size: .9rem; }
 @media (max-width: 600px) { .shell { width: min(100% - 1.25rem, 1120px); } header { padding: 2.4rem 0 1.8rem; } .summary { grid-template-columns: 1fr 1fr; } main { padding-top: 1.25rem; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
@@ -1159,12 +1166,12 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
 <section class="summary" aria-label="Library summary">
 <div class="summary-card"><span class="summary-value">""" + str(total_documents) + """</span><span class="summary-label">PDFs</span></div>
 <div class="summary-card"><span class="summary-value">""" + str(total_png) + """</span><span class="summary-label">PNG diagrams</span></div>
-<div class="summary-card"><span class="summary-value">""" + str(total_jpg) + """</span><span class="summary-label">JPG/JPEG diagrams</span></div>
+<div class="summary-card"><span class="summary-value">""" + str(total_svg) + """</span><span class="summary-label">SVG diagrams</span></div>
 <div class="summary-card"><span class="summary-value">""" + str(category_count) + """</span><span class="summary-label">categories</span></div>
 </section>
 <section class="tools" aria-label="Document tools">
 <div><label class="search-label" for="document-search">Search documents</label><input class="search-input" id="document-search" type="search" placeholder="Search by name, label, format, or path" autocomplete="off"></div>
-<p class="result-count" id="result-count" aria-live="polite">Showing """ + str(total_documents + total_png + total_jpg) + """ of """ + str(total_documents + total_png + total_jpg) + """ assets</p>
+<p class="result-count" id="result-count" aria-live="polite">Showing """ + str(total_results) + """ of """ + str(total_results) + """ assets</p>
 <nav class="jump" aria-label="Jump to category"><span class="jump-title">Jump to</span>""")
 
         for name in category_names:
@@ -1173,8 +1180,8 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
                 f'<a href="#{html.escape(slug, quote=True)}">{html.escape(_humanize_segment(name))}'
                 f' <span class="jump-count">{len(categories[name])}</span></a>'
             )
-        if raster_rel_paths:
-            handle.write('<a href="#plantuml-diagrams">PlantUML Diagrams</a>')
+        if unreferenced:
+            handle.write('<a href="#plantuml-diagrams">Other diagrams</a>')
         handle.write('</nav></section><section class="library" aria-label="Published documents">')
 
         handle.write(_heading(2, "Documents"))
@@ -1190,17 +1197,20 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
             handle.write("<p>No PDFs are currently staged for publication.</p>")
 
         handle.write('</section><section class="library" id="plantuml-diagrams" aria-label="Diagram previews" data-category-section>')
-        handle.write(_heading(2, "PlantUML Diagrams"))
-        _emit_raster_cards(handle)
+        handle.write(_heading(2, "PlantUML Diagrams — other assets"))
+        if unreferenced:
+            _emit_cards(handle, unreferenced, standalone=True)
+        else:
+            handle.write('<p>No unassociated diagram assets are staged.</p>')
 
         handle.write("""</section>
 </main>
-<footer><div class="shell">""" + str(total_documents) + """ PDFs and """ + str(total_png + total_jpg) + """ diagrams published</div></footer>
+<footer><div class="shell">""" + str(total_documents) + """ PDFs and """ + str(len(image_groups)) + """ diagrams published</div></footer>
 <script>
 (function () {
     const input = document.getElementById('document-search');
     const count = document.getElementById('result-count');
-    const rows = Array.from(document.querySelectorAll('.document-row, .image-card'));
+    const rows = Array.from(document.querySelectorAll('.document-row, .image-card[data-standalone]'));
     const sections = Array.from(document.querySelectorAll('[data-category-section]'));
     function update() {
         const query = (input ? input.value : '').trim().toLocaleLowerCase();
@@ -1216,6 +1226,21 @@ footer { padding: 1.5rem 0 2rem; color: var(--muted); border-top: 1px solid var(
         });
         count.textContent = 'Showing ' + visible + ' of ' + rows.length + ' assets';
     }
+    document.addEventListener('click', function (event) {
+        const link = event.target.closest('a[data-format-link]');
+        if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
+        const card = link.closest('.image-card');
+        if (!card) return;
+        event.preventDefault();
+        const image = card.querySelector('img');
+        image.src = link.href;
+        card.querySelector('[data-full-image]').href = link.href;
+        card.querySelectorAll('[data-format-link]').forEach(function (choice) {
+            if (choice === link) choice.setAttribute('aria-current', 'true');
+            else choice.removeAttribute('aria-current');
+        });
+        card.querySelector('[data-selected-format]').textContent = link.textContent;
+    });
     if (input) {
         input.addEventListener('input', update);
         input.addEventListener('keydown', function (event) { if (event.key === 'Escape') { input.value = ''; update(); } });
@@ -1254,7 +1279,7 @@ def collect_raster_corpus(
     repo_root = ROOT.resolve()
     reset_output_tree(output_root)
 
-    counts: Counter[str] = Counter({"png": 0, "jpg": 0, "jpeg": 0})
+    counts: Counter[str] = Counter({"png": 0, "svg": 0, "jpg": 0, "jpeg": 0})
     files: list[dict[str, Any]] = []
     seen_paths: set[str] = set()
     seen_portable_paths: set[str] = set()
@@ -1308,7 +1333,7 @@ def collect_raster_corpus(
         "source_dir": source_root.relative_to(repo_root).as_posix() if source_root.is_relative_to(repo_root) else str(source_root),
         "output_dir": output_root.relative_to(repo_root).as_posix() if output_root.is_relative_to(repo_root) else str(output_root),
         "total": len(files),
-        "counts": {key: counts[key] for key in ("png", "jpg", "jpeg")},
+        "counts": {key: counts[key] for key in ("png", "svg", "jpg", "jpeg")},
         "files": files,
     }
     if manifest_path is not None:
@@ -2175,8 +2200,9 @@ def _plantuml_config_for(path: Path, config_names: Sequence[str]) -> Path | None
 
 
 PLANTUML_MANIFEST = ROOT / "tooling" / "manifests" / "plantuml.json"
-PLANTUML_FORMATS = ("png", "svg", "jpg")
-# PlantUML itself emits these; jpg is a derivative the renderer produces from png.
+PLANTUML_FORMATS = ("png", "svg", "jpeg", "jpg")  # Recognize legacy assets for inventory and staging.
+PLANTUML_RENDER_FORMATS = ("png", "svg", "jpeg")  # Never generate .jpg.
+# PlantUML itself emits PNG and SVG; JPEG is a derivative of PNG.
 PLANTUML_ENGINE_FORMATS = ("png", "svg")
 PLANTUML_INCLUDE_DIRS = (ROOT / "tooling" / "plantuml", ROOT / "tooling" / "styles" / "plantuml")
 PLANTUML_EXAMPLES_DIR = ROOT / "tooling" / "plantuml"
@@ -2365,7 +2391,7 @@ def _plantuml_is_current(
 
 
 def unmanaged_diagram_images(source_dirs: Iterable[Path]) -> list[Path]:
-    """Image files sitting beside a .puml instead of in its png/svg/jpg directory."""
+    """Image files sitting beside a .puml instead of in its png/svg/jpeg directory."""
     found: list[Path] = []
     for directory in source_dirs:
         if not directory.is_dir():
@@ -2426,7 +2452,7 @@ def _svg_is_valid(path: Path) -> bool:
     return "<svg" in head
 
 
-_OUTPUT_VALIDATORS = {"png": _png_is_valid, "svg": _svg_is_valid, "jpg": _jpg_is_valid}
+_OUTPUT_VALIDATORS = {"png": _png_is_valid, "svg": _svg_is_valid, "jpeg": _jpg_is_valid}
 
 
 def _same_bytes(a: Path, b: Path) -> bool:
@@ -2497,9 +2523,8 @@ def render_plantuml(
     drawn into SVGs) and only then promoted over the committed files, so a
     failed render leaves the previous valid image in place and is reported as
     failed rather than as current. JPEG is produced from the PNG through
-    ImageMagick because the engine has no JPEG writer; an existing jpg/ output
-    is refreshed even when jpg was not requested so an optional derivative
-    cannot keep an older theme.
+    ImageMagick because the engine has no JPEG writer. Existing legacy JPGs
+    are preserved but never regenerated; existing JPEG derivatives are refreshed.
     """
     result = PlantUMLRenderResult(forced=force)
     search_roots = [Path(source_dir or SRC_DIR).resolve(), *(Path(root).resolve() for root in extra_roots)]
@@ -2531,7 +2556,7 @@ def render_plantuml(
 
     lowered_config_names = {name.lower() for name in PLANTUML_CONFIG_NAMES}
     formats = list(dict.fromkeys(formats or ["png", "svg"]))
-    unknown = [fmt for fmt in formats if fmt not in PLANTUML_FORMATS]
+    unknown = [fmt for fmt in formats if fmt not in PLANTUML_RENDER_FORMATS]
     if unknown:
         print(f"Configuration error: unsupported PlantUML format(s) {unknown}", file=sys.stderr)
         return 2
@@ -2601,10 +2626,10 @@ def render_plantuml(
             record["includes"] = sorted(_rel(inc) for inc in local_includes)
             inputs = [*shared_inputs, *local_includes]
 
-            # An existing jpg/ derivative is part of the contract even when not requested.
+            # Refresh existing JPEG derivatives, but never regenerate legacy JPG files.
             effective_formats = list(formats)
-            if "jpg" not in effective_formats and any(output.exists() for output in plantuml_output_paths(path, "jpg", text)):
-                effective_formats.append("jpg")
+            if "jpeg" not in effective_formats and any(output.exists() for output in plantuml_output_paths(path, "jpeg", text)):
+                effective_formats.append("jpeg")
 
             engine_formats_needed: set[str] = set()
             for fmt in effective_formats:
@@ -2614,7 +2639,7 @@ def render_plantuml(
                 record["formats"][fmt] = "current" if current else "pending"
                 if current:
                     continue
-                engine_fmt = "png" if fmt == "jpg" else fmt
+                engine_fmt = "png" if fmt == "jpeg" else fmt
                 engine_formats_needed.add(engine_fmt)
                 wanted.setdefault((path, engine_fmt), set()).add(fmt)
             if engine_formats_needed:
@@ -2633,8 +2658,8 @@ def render_plantuml(
         )
         return finish(1)
 
-    if any("jpg" in targets for targets in wanted.values()) and converter is None:
-        print("Configuration error: jpg output requires ImageMagick (`magick` or `convert`) on PATH", file=sys.stderr)
+    if any("jpeg" in targets for targets in wanted.values()) and converter is None:
+        print("Configuration error: jpeg output requires ImageMagick (`magick` or `convert`) on PATH", file=sys.stderr)
         return 2
 
     result.invalid_named_diagrams = len(invalid_names)
@@ -2687,17 +2712,17 @@ def render_plantuml(
                             if fmt == engine_fmt:
                                 pairs.append((temp_file, engine_output))
                                 continue
-                            jpg_temp = temp_output / (engine_output.stem + ".jpg")
+                            jpeg_temp = temp_output / (engine_output.stem + ".jpeg")
                             conv = subprocess.run(
-                                png_to_jpg_command(converter or "convert", temp_file, jpg_temp),
+                                png_to_jpg_command(converter or "convert", temp_file, jpeg_temp),
                                 check=False,
                                 capture_output=True,
                                 text=True,
                             )
-                            if conv.returncode != 0 or not _jpg_is_valid(jpg_temp):
-                                problems.append(f"jpg conversion failed for {engine_output.name}: {conv.stderr.strip()[-200:]}")
+                            if conv.returncode != 0 or not _jpg_is_valid(jpeg_temp):
+                                problems.append(f"jpeg conversion failed for {engine_output.name}: {conv.stderr.strip()[-200:]}")
                                 break
-                            pairs.append((jpg_temp, source.parent / "jpg" / jpg_temp.name))
+                            pairs.append((jpeg_temp, source.parent / "jpeg" / jpeg_temp.name))
                         derived[fmt] = pairs
 
                 if problems:
@@ -2739,7 +2764,7 @@ def render_plantuml(
                     record["formats"][fmt] = "failed"
     result.diagrams = [diagram_records[path] for path in sorted(diagram_records)]
 
-    # Files in a png/svg/jpg directory that no source produces (e.g. left over from a
+    # Files in a png/svg/jpeg directory that no source produces (e.g. left over from a
     # renamed @startuml) are reported, never deleted: deletion is a reviewed change.
     orphans = sorted(
         candidate
@@ -2752,7 +2777,7 @@ def render_plantuml(
     for orphan in result.stale_outputs:
         print(f"PlantUML: stale output without a source: {orphan}", file=sys.stderr)
 
-    # Every render writes into <source>/png|svg|jpg, so an image sitting directly
+    # Every render writes into <source>/png|svg|jpeg, so an image sitting directly
     # beside a .puml came from an earlier flat-output run: it is never refreshed,
     # revalidated or overwritten here and will keep serving whatever it last held.
     result.unmanaged_images = [_rel(stale) for stale in sorted(unmanaged_diagram_images(source_dirs))]
@@ -3029,7 +3054,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     render_parser = subparsers.add_parser("render-plantuml", help="Render every diagram under --source-dir with the pinned engine")
     render_parser.add_argument("--source-dir", type=Path, default=None)
     render_parser.add_argument("--extra-root", type=Path, action="append", default=[], help="Additional first-party diagram root (repeatable)")
-    render_parser.add_argument("--formats", nargs="*", default=["png", "svg"], help="png svg jpg; jpg is derived from png with ImageMagick")
+    render_parser.add_argument("--formats", nargs="*", default=["png", "svg"], help="png svg jpeg; jpeg is derived from png with ImageMagick")
     render_parser.add_argument("--force", action="store_true", help="Re-render diagrams even when outputs are current")
     render_parser.add_argument("--result", type=Path, default=None, help=f"Where to write the JSON render result (default {PLANTUML_RESULT_DEFAULT.relative_to(ROOT)})")
     render_parser.add_argument("--require-diagrams", action="store_true", help="Fail when the roots contain no renderable diagram")
@@ -3044,7 +3069,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     smoke_parser = subparsers.add_parser("smoke-plantuml", help="Render tooling/plantuml/*-example.puml and fail on any error text")
     smoke_parser.add_argument("--output-dir", type=Path, required=True)
 
-    stage_parser = subparsers.add_parser("stage-plantuml-images", help="git add only generated png/svg/jpg diagram outputs")
+    stage_parser = subparsers.add_parser("stage-plantuml-images", help="git add only managed png/svg/jpeg and legacy jpg diagram outputs")
     stage_parser.add_argument("--repo-root", type=Path, default=None)
     stage_parser.add_argument("--source-dir", default="src")
 
@@ -3058,6 +3083,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     stage_parser.add_argument("--pdf-dir", type=Path, required=True)
     stage_parser.add_argument("--image-dir", type=Path, default=None)
     stage_parser.add_argument("--site-dir", type=Path, required=True)
+    stage_parser.add_argument("--source-dir", type=Path, default=SRC_DIR)
 
     clean_parser = subparsers.add_parser("clean")
     clean_parser.add_argument("--jobs", type=int, default=1)
@@ -3227,7 +3253,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     if args.command == "stage-pages":
-        stage_pages_site(args.pdf_dir, args.site_dir, args.image_dir)
+        stage_pages_site(args.pdf_dir, args.site_dir, args.image_dir, source_dir=args.source_dir)
         return 0
 
     if args.command == "render-plantuml":
@@ -3276,7 +3302,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         counts = manifest["counts"]
         print(
             f"Raster corpus: {manifest['total']} files "
-            f"({counts['png']} png, {counts['jpg']} jpg, {counts['jpeg']} jpeg)",
+            f"({counts['png']} png, {counts['svg']} svg, {counts['jpg']} legacy jpg, {counts['jpeg']} jpeg)",
             file=sys.stderr,
         )
         return 0
